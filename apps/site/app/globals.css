@@ -315,17 +315,39 @@ p {
     padding: 1rem;
   }
 
+  .hero-copy,
+  .signal-board,
+  .section-heading,
+  .pillar,
+  .status-section,
+  .status-section > *,
+  .route-link {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .nav-links a {
     flex: 1 1 calc(50% - 0.35rem);
     text-align: center;
   }
 
   h1 {
-    font-size: 3.2rem;
+    font-size: clamp(2.7rem, 14vw, 3.2rem);
+  }
+
+  h2 {
+    font-size: clamp(1.55rem, 8vw, 1.85rem);
   }
 
   .lede {
     font-size: 1.22rem;
+  }
+
+  .hero-text,
+  .pillar p,
+  .status-section p,
+  .route-link small {
+    overflow-wrap: break-word;
   }
 
   .signal-row,
