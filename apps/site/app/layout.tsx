@@ -3,7 +3,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Designesy',
-  description: 'Design intelligence infrastructure for better worlds.'
+  description:
+    'Public scaffold for Designesy design systems, review discipline, and artifact work.'
 };
 
 export default function RootLayout({
