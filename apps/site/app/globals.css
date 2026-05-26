@@ -283,6 +283,58 @@ p {
   border-color: var(--blue);
 }
 
+.surface-page {
+  max-width: 1120px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.surface-back {
+  display: inline-flex;
+  padding: 0.9rem 0;
+  color: var(--blue-dark);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.surface-hero {
+  max-width: 760px;
+  padding: 5.5rem 0 3rem;
+}
+
+.surface-note {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+.surface-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  padding-bottom: 4rem;
+}
+
+.surface-card {
+  min-height: 180px;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.surface-card span {
+  display: block;
+  margin-bottom: 0.7rem;
+  color: var(--blue-dark);
+  font-weight: 800;
+}
+
+.surface-card p {
+  color: var(--muted);
+}
+
 @media (max-width: 860px) {
   .topbar {
     align-items: flex-start;
@@ -305,13 +357,15 @@ p {
   }
 
   .pillar-grid,
-  .route-list {
+  .route-list,
+  .surface-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
-  .site-shell {
+  .site-shell,
+  .surface-page {
     padding: 1rem;
   }
 
@@ -321,7 +375,8 @@ p {
   .pillar,
   .status-section,
   .status-section > *,
-  .route-link {
+  .route-link,
+  .surface-card {
     min-width: 0;
     max-width: 100%;
   }
@@ -352,7 +407,12 @@ p {
 
   .signal-row,
   .pillar-grid,
-  .route-list {
+  .route-list,
+  .surface-grid {
     grid-template-columns: 1fr;
+  }
+
+  .surface-hero {
+    padding: 3.5rem 0 2rem;
   }
 }
