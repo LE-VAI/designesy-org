@@ -1,12 +1,9 @@
 {
   "name": "designesy-org",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
-    "dev": "npm run dev -w @designesy/site",
-    "build": "npm run build -w @designesy/site",
-    "lint": "npm run lint -w @designesy/site"
+    "dev": "cd apps/site && npm run dev",
+    "build": "cd apps/site && npm run build",
+    "lint": "cd apps/site && npm run lint"
   }
 }
