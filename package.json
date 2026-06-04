@@ -1,0 +1,9 @@
+{
+  "name": "designesy-org",
+  "private": true,
+  "scripts": {
+    "dev": "cd apps/site && npm run dev",
+    "build": "cd apps/site && npm run build",
+    "lint": "cd apps/site && npm run lint"
+  }
+}
