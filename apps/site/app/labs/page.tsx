@@ -7,6 +7,28 @@ const NAV_ROUTES = [
   { href: '/contracts', label: 'Contracts' },
 ];
 
+const LAB_ANATOMY = [
+  'Thesis',
+  'Live artifact or demo',
+  'Principle explanation',
+  'Portable contract',
+  'Codex-ready implementation prompt',
+  'Review checklist',
+  'Provenance',
+  'Anti-patterns',
+  'Remix notes',
+  'Verification artifact',
+];
+
+const NOT_LABS = [
+  'Not a blog',
+  'Not a gallery',
+  'Not a moodboard',
+  'Not generic case studies',
+  'Not a collection of decorative demos',
+  'Not a landing page for AI SaaS',
+];
+
 export default function LabsPage() {
   return (
     <>
@@ -30,35 +52,67 @@ export default function LabsPage() {
           <p className="surface-eyebrow">Experiment lane</p>
           <h1 className="surface-title">Labs</h1>
           <p className="surface-lede">
-            A lane for experiments and prototypes that can be reviewed before
-            they become public rules.
+            Experiments that compile into contracts.
           </p>
           <p className="surface-note">
-            Labs are exploratory. They do not claim that products, services, or
-            deployments are live.
+            A Lab is a controlled design experiment where a principle becomes
+            visible, testable, remixable, and reviewable. Labs are the public
+            practical layer of Designesy — a workbench where a thesis becomes a
+            live artifact, review checklist, portable contract, and
+            implementation-ready prompt.
           </p>
         </section>
 
-        <section className="surface-grid" aria-label="Labs areas">
-          <article className="surface-item">
-            <p className="surface-item-label">Prototype notes</p>
-            <p className="surface-item-desc">
-              Small experiments with clear purpose and review criteria.
-            </p>
-          </article>
-          <article className="surface-item">
-            <p className="surface-item-label">Pattern tests</p>
-            <p className="surface-item-desc">
-              Reusable ideas tested before promotion into contracts.
-            </p>
-          </article>
-          <article className="surface-item">
-            <p className="surface-item-label">Promotion path</p>
-            <p className="surface-item-desc">
-              Evidence first, then rules; unfinished work stays labeled.
-            </p>
-          </article>
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Lab anatomy</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            A mature Lab should include all of the following. Each one makes the
+            experiment inspectable, reviewable, and promotable into durable
+            rules.
+          </p>
+          <ul className="checkmark-list">
+            {LAB_ANATOMY.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Promotion rule</h2>
+          <div className="definition">
+            <p className="definition-label">Core rule</p>
+            <p>
+              An experiment becomes contract material only after its useful
+              behavior is named.
+            </p>
+          </div>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            Before promotion, a Lab records:
+          </p>
+          <ul className="checkmark-list">
+            <li>What the artifact tests</li>
+            <li>What caused the behavior</li>
+            <li>What it communicates</li>
+            <li>Where it belongs</li>
+            <li>What would make it excessive</li>
+            <li>How it degrades for accessibility, performance, or reduced motion</li>
+          </ul>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">What Labs are not</h2>
+          <ul className="avoid-list">
+            {NOT_LABS.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <div className="status-note">
+          Foundation stage — Labs is defined as an operating model. No live
+          experiments are deployed yet. When Labs open, each experiment will be
+          labeled with its thesis, review status, and promotion readiness.
+        </div>
       </main>
 
       <footer className="footer">

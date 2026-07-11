@@ -7,6 +7,27 @@ const NAV_ROUTES = [
   { href: '/contracts', label: 'Contracts' },
 ];
 
+const DIMENSIONS = [
+  { num: '01', title: 'Purpose', desc: 'What is the design trying to make possible? Which elements directly support that purpose? What can be removed without weakening action?' },
+  { num: '02', title: 'Clarity', desc: 'Is the primary action discoverable? Does the form suggest use? Do labels, hierarchy, layout, and motion reduce uncertainty?' },
+  { num: '03', title: 'Context', desc: 'Where and when will this be used? What constraints shape the experience: device, bandwidth, attention, lighting, language, ability, stress, social setting, maintenance?' },
+  { num: '04', title: 'Inclusion', desc: 'Who benefits most? Who has to work harder? What assumptions about body, language, culture, knowledge, money, or technology are embedded?' },
+  { num: '05', title: 'System coherence', desc: 'Does this follow an existing system? If it breaks the system, is the reason explicit and worth it? Can others reuse or extend the decision?' },
+  { num: '06', title: 'Durability', desc: 'Will this hold up under repeated use? Can it be maintained, repaired, localized, and adapted? Is the need more durable than the trend?' },
+  { num: '07', title: 'Delight', desc: 'Does the emotional quality clarify purpose, trust, identity, learning, or human connection? Or does it distract from weak function?' },
+  { num: '08', title: 'Responsibility', desc: 'What environmental, economic, social, or human costs are hidden? Does the design distribute effort fairly? What would make it more honest?' },
+];
+
+const REVIEW_CHECKS = [
+  'Separate observed behavior from derived judgment',
+  'Name tradeoffs',
+  'Identify hidden burdens',
+  'Check missing states',
+  'Verify accessibility, responsiveness, keyboard flow',
+  'Check persistence, performance, and source provenance',
+  'Recommend concrete corrections',
+];
+
 export default function ReviewPage() {
   return (
     <>
@@ -30,35 +51,62 @@ export default function ReviewPage() {
           <p className="surface-eyebrow">Quality gate</p>
           <h1 className="surface-title">Review</h1>
           <p className="surface-lede">
-            A public explanation of the checks Designesy uses before artifacts
-            are treated as ready.
+            Review leads with consequences, not personal taste.
           </p>
           <p className="surface-note">
-            This is review language, not a live intake workflow, approval gate, or
-            access system.
+            Designesy Review is the quality-control layer for interfaces,
+            products, artifacts, identity systems, design systems, agent output,
+            and environmental or experiential design. It evaluates purpose,
+            clarity, context, inclusion, system coherence, durability, delight,
+            responsibility, and verification proof.
           </p>
         </section>
 
-        <section className="surface-grid" aria-label="Review areas">
-          <article className="surface-item">
-            <p className="surface-item-label">Provenance</p>
-            <p className="surface-item-desc">
-              Work should show where decisions came from and what changed.
-            </p>
-          </article>
-          <article className="surface-item">
-            <p className="surface-item-label">Accessibility</p>
-            <p className="surface-item-desc">
-              Artifacts are checked for clarity, readability, and use.
-            </p>
-          </article>
-          <article className="surface-item">
-            <p className="surface-item-label">Platform fit</p>
-            <p className="surface-item-desc">
-              Outputs are reviewed against the place they will actually live.
-            </p>
-          </article>
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Review dimensions</h2>
+          <div className="principle-list">
+            {DIMENSIONS.map((d) => (
+              <div className="principle" key={d.num}>
+                <span className="principle-num">{d.num}</span>
+                <div className="principle-body">
+                  <h3>{d.title}</h3>
+                  <p>{d.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Agent review stance</h2>
+          <ul className="checkmark-list">
+            {REVIEW_CHECKS.map((check) => (
+              <li key={check}>{check}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Quality bar</h2>
+          <div className="definition">
+            <p className="definition-label">Standard</p>
+            <p>
+              The artifact should feel considered after it becomes functional.
+            </p>
+          </div>
+          <p className="surface-note">
+            Functional is the baseline. Considered is the bar. An artifact is
+            ready when every dimension above has been checked, tradeoffs have
+            been named, and the remaining tensions are documented — not hidden.
+          </p>
+        </section>
+
+        <div className="status-note">
+          Foundation stage — this is review language, not a live intake
+          workflow, approval gate, or access system. When the review process is
+          operational, each artifact will carry its review status and dimension
+          checklist.
+        </div>
       </main>
 
       <footer className="footer">
