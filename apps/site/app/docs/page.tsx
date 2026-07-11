@@ -1,6 +1,16 @@
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 
+const LAYERS = [
+  { num: '01', name: 'Core', desc: 'mission, doctrine, principles, quality bar' },
+  { num: '02', name: 'Graph', desc: 'living knowledge tree with provenance' },
+  { num: '03', name: 'Contracts', desc: 'portable design agreements' },
+  { num: '04', name: 'Labs', desc: 'experiments that compile into contracts' },
+  { num: '05', name: 'Review', desc: 'quality-control layer for artifacts' },
+  { num: '06', name: 'Agent Kits', desc: 'reusable instructions for agents' },
+  { num: '07', name: 'Logs', desc: 'institutional memory, file-based' },
+];
+
 const PRINCIPLES = [
   { num: '01', title: 'Purpose earns form', desc: 'Every meaningful element should have a job. Remove, merge, or demote anything that does not help the design act, communicate, withstand use, or create necessary feeling.' },
   { num: '02', title: 'Economy is intelligence', desc: 'Prefer fewer, stronger decisions over many weak flourishes. Reduction is valuable when it preserves user power while lowering cognitive, physical, emotional, or maintenance burden.' },
@@ -88,18 +98,18 @@ export default function DocsPage() {
               </p>
             </div>
             <div>
-              <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: 'var(--ink)' }}>
-                Seven layers
-              </h3>
-              <ul className="checkmark-list">
-                <li><strong style={{ color: 'var(--ink)' }}>Core</strong> — mission, doctrine, principles, quality bar</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Graph</strong> — living knowledge tree with provenance</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Contracts</strong> — portable design agreements</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Labs</strong> — experiments that compile into contracts</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Review</strong> — quality-control layer for artifacts</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Agent Kits</strong> — reusable instructions for agents</li>
-                <li><strong style={{ color: 'var(--ink)' }}>Logs</strong> — institutional memory, file-based</li>
-              </ul>
+              <h3 className="layer-heading">Seven layers</h3>
+              <div className="layer-stack">
+                {LAYERS.map((layer) => (
+                  <div className="layer-item" key={layer.num} data-cuelume-hover="whisper">
+                    <span className="layer-num">{layer.num}</span>
+                    <div className="layer-body">
+                      <strong className="layer-name">{layer.name}</strong>
+                      <span className="layer-desc"> — {layer.desc}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
