@@ -120,10 +120,10 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Foundation stage — these are design contracts: public artifact
-          discipline, not legal advice or client service agreements. The first
-          published contract will be the Designesy design system contract itself,
-          derived from the live tokens already in use on this site.
+          These are design contracts — public artifact discipline, not legal
+          advice or client service agreements. The first published contract will
+          be the Designesy design system contract itself, derived from the live
+          tokens already in use on this site.
         </div>
       </main>
 
