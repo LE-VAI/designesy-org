@@ -4,22 +4,22 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL('https://designesy.org'),
   title: {
-    default: 'Designesy',
+    default: 'Designesy — Design intelligence infrastructure',
     template: '%s · Designesy',
   },
   description:
-    'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
+    'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
   openGraph: {
-    title: 'Designesy',
+    title: 'Designesy — Design intelligence infrastructure',
     description:
-      'Design intelligence infrastructure for a humane creative civilization.',
+      'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
     url: 'https://designesy.org',
     siteName: 'Designesy',
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'Designesy',
+    title: 'Designesy — Design intelligence infrastructure',
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
   },

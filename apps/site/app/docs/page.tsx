@@ -161,10 +161,10 @@ export default function DocsPage() {
         </section>
 
         <div className="status-note">
-          Foundation stage — this public surface is an early, controlled
-          baseline. Private doctrine, working drafts, and internal project
-          material stay outside this surface. Ready for polish and review, not
-          deployment claims.
+          Designesy is a live operating model. Private doctrine, working drafts,
+          and internal project material stay outside this public surface — but
+          the principles, architecture, and voice documented here are the real
+          system, not a preview.
         </div>
       </main>
 

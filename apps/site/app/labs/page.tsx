@@ -109,9 +109,8 @@ export default function LabsPage() {
         </section>
 
         <div className="status-note">
-          Foundation stage — Labs is defined as an operating model. No live
-          experiments are deployed yet. When Labs open, each experiment will be
-          labeled with its thesis, review status, and promotion readiness.
+          Labs is defined as an operating model. The first live experiments will
+          be labeled with their thesis, review status, and promotion readiness.
         </div>
       </main>
 
