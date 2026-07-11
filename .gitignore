@@ -8,3 +8,7 @@ apps/site/.next/
 apps/*/.env
 apps/*/.env.*
 !apps/*/.env.example
+temp_install/
+install_tmp/
+apps/site/cuelume.d.ts
+package-lock.json
