@@ -33,10 +33,17 @@ const PILLARS = [
 const PIPELINE = ['Sources', 'Principles', 'Contracts', 'Tools', 'Artifacts'];
 
 const SURFACES = [
-  { href: '/docs', label: 'Docs', desc: 'Context surface' },
-  { href: '/labs', label: 'Labs', desc: 'Experiment lane' },
-  { href: '/review', label: 'Review', desc: 'Quality gate' },
-  { href: '/contracts', label: 'Contracts', desc: 'Operating rules' },
+  { href: '/docs', label: 'Docs', desc: 'Operating principles, architecture, and public voice' },
+  { href: '/labs', label: 'Labs', desc: 'Experiments that compile into contracts' },
+  { href: '/review', label: 'Review', desc: 'Quality dimensions and agent review stance' },
+  { href: '/contracts', label: 'Contracts', desc: 'Portable design agreements and anti-patterns' },
+];
+
+const PRINCIPLES_PREVIEW = [
+  { num: '01', title: 'Purpose earns form', desc: 'Every element should have a job. Remove anything that does not help the design act, communicate, or withstand use.' },
+  { num: '02', title: 'Economy is intelligence', desc: 'Prefer fewer, stronger decisions over many weak flourishes. Reduction is valuable when it preserves user power.' },
+  { num: '03', title: 'Context is part of the object', desc: 'Design cannot be judged in isolation. Environment, device, culture, ability, and maintenance are part of the design.' },
+  { num: '04', title: 'Responsibility is a design material', desc: 'Equity, environment, economy, and social consequence are not externalities. They are design materials.' },
 ];
 
 export default function HomePage() {
@@ -94,7 +101,7 @@ export default function HomePage() {
 
         {/* --- Pillars --- */}
         <section className="section" aria-labelledby="pillars-title">
-          <p className="section-eyebrow">Public shape</p>
+          <p className="section-eyebrow">What Designesy does</p>
           <h2 className="section-title" id="pillars-title">
             A compact system for design work.
           </h2>
@@ -109,20 +116,35 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* --- Status --- */}
-        <div className="status-bar">
-          <span className="status-badge">Foundation stage</span>
-          <p className="status-text">
-            This public surface is an early, controlled baseline. Ready for
-            polish and review — not deployment claims.
-          </p>
-        </div>
+        {/* --- Principles preview --- */}
+        <section className="section" aria-labelledby="principles-title">
+          <p className="section-eyebrow">Operating principles</p>
+          <h2 className="section-title" id="principles-title">
+            Nine principles. Four shown here.
+          </h2>
+          <div className="principle-list">
+            {PRINCIPLES_PREVIEW.map((p) => (
+              <div className="principle fade-in" key={p.num}>
+                <span className="principle-num">{p.num}</span>
+                <div className="principle-body">
+                  <h3>{p.title}</h3>
+                  <p>{p.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: '2rem' }}>
+            <Link className="button ghost" href="/docs">
+              Read all nine principles →
+            </Link>
+          </div>
+        </section>
 
         {/* --- Surfaces --- */}
         <section className="section" aria-labelledby="surfaces-title">
           <p className="section-eyebrow">Surfaces</p>
           <h2 className="section-title" id="surfaces-title">
-            Planned public lanes.
+            Public lanes.
           </h2>
           <div className="surface-list">
             {SURFACES.map((surface) => (

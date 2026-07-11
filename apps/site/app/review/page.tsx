@@ -102,10 +102,9 @@ export default function ReviewPage() {
         </section>
 
         <div className="status-note">
-          Foundation stage — this is review language, not a live intake
-          workflow, approval gate, or access system. When the review process is
-          operational, each artifact will carry its review status and dimension
-          checklist.
+          This is review language and quality discipline. Each artifact carries
+          its review status and dimension checklist as the process becomes
+          operational across live projects.
         </div>
       </main>
 
