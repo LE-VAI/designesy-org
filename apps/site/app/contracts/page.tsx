@@ -1,11 +1,5 @@
-import Link from 'next/link';
-
-const NAV_ROUTES = [
-  { href: '/docs', label: 'Docs' },
-  { href: '/labs', label: 'Labs' },
-  { href: '/review', label: 'Review' },
-  { href: '/contracts', label: 'Contracts' },
-];
+import { Topbar } from '../lib/topbar';
+import { Footer } from '../lib/footer';
 
 const CONTRACT_CONTENTS = [
   'Source and provenance',
@@ -35,20 +29,7 @@ const CONTRACT_ANTI = [
 export default function ContractsPage() {
   return (
     <>
-      <header className="topbar scrolled">
-        <div className="topbar-inner">
-          <Link className="wordmark" href="/">
-            designesy<span className="dot">.</span>
-          </Link>
-          <nav className="nav-links" aria-label="Primary">
-            {NAV_ROUTES.map((route) => (
-              <Link href={route.href} key={route.href}>
-                {route.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Topbar scrolled />
 
       <main className="surface-page">
         <section className="surface-header fade-up">
@@ -127,17 +108,7 @@ export default function ContractsPage() {
         </div>
       </main>
 
-      <footer className="footer">
-        <div className="surface-page footer-inner">
-          <div className="footer-meta">
-            <span className="wordmark">designesy<span className="dot">.</span></span>
-            <span><strong>Designesy LLC</strong> · Design intelligence infrastructure</span>
-          </div>
-          <a className="footer-link" href="mailto:le@designesy.org">
-            le@designesy.org
-          </a>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

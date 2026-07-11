@@ -159,6 +159,12 @@ p {
   width: 100%;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .nav-links {
   display: flex;
   gap: 0.25rem;
@@ -176,6 +182,40 @@ p {
 .nav-links a:hover {
   color: var(--ink);
   background: var(--surface-hover);
+}
+
+/* --- Sound toggle --- */
+
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+  padding: 0;
+}
+
+.sound-toggle:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+.sound-toggle[aria-pressed="true"] {
+  color: var(--signal-light);
+  border-color: var(--signal-dim);
+}
+
+.sound-toggle-icon {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 /* --- Hero --- */
@@ -799,6 +839,12 @@ p {
   .topbar-inner {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .topbar-right {
+    flex-direction: row;
+    align-items: center;
     gap: 0.5rem;
   }
 
