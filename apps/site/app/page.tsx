@@ -84,7 +84,7 @@ export default function HomePage() {
         {/* --- Pipeline diagram --- */}
         <section className="pipeline fade-up fade-up-delay-5" aria-label="Designesy system flow">
           {PIPELINE.map((step, i) => (
-            <div className="pipeline-step" key={step}>
+            <div className="pipeline-step" key={step} data-cuelume-hover="tick" data-cuelume-press data-cuelume-release>
               <span className="pipeline-label">{step}</span>
               {i < PIPELINE.length - 1 && <span className="pipeline-arrow" />}
             </div>
@@ -99,7 +99,7 @@ export default function HomePage() {
           </h2>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
-              <article className="pillar fade-in" key={pillar.number} data-cuelume-hover="bloom">
+              <article className="pillar fade-in" key={pillar.number} data-cuelume-hover="bloom" data-cuelume-press data-cuelume-release>
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
                 <p>{pillar.text}</p>
