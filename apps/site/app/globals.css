@@ -571,6 +571,174 @@ p {
   line-height: 1.5;
 }
 
+/* --- Doctrine content (route pages) --- */
+
+.doctrine-section {
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.doctrine-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.doctrine-heading {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 1.5rem;
+}
+
+/* Principle list — numbered entries with title + description */
+
+.principle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.principle {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.principle-num {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.principle-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+}
+
+.principle-body p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 560px;
+}
+
+/* Definition block — standalone statement with left signal border */
+
+.definition {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 2rem;
+}
+
+.definition p {
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.definition-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.5rem;
+}
+
+/* Checkmark list — what something includes */
+
+.checkmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  list-style: none;
+}
+
+.checkmark-list li {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.checkmark-list li::before {
+  content: "—";
+  color: var(--signal);
+  font-weight: 600;
+}
+
+/* Avoid list — what not to do */
+
+.avoid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.avoid-list li {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.avoid-list li::before {
+  content: "×";
+  color: var(--muted-dim);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Two-column layout for larger content blocks */
+
+.doctrine-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+}
+
+@media (max-width: 720px) {
+  .doctrine-cols {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .principle {
+    grid-template-columns: 2rem 1fr;
+    gap: 0.75rem;
+  }
+}
+
+/* Status note — honest positioning at bottom of route pages */
+
+.status-note {
+  margin-top: 2.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  font-size: 0.82rem;
+  color: var(--muted-dim);
+  line-height: 1.55;
+}
+
 /* --- Motion (fade-up entrance, reduced-motion safe) --- */
 
 @keyframes fadeUp {
