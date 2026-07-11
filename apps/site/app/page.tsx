@@ -1,11 +1,6 @@
 import Link from 'next/link';
-
-const NAV_ROUTES = [
-  { href: '/docs', label: 'Docs' },
-  { href: '/labs', label: 'Labs' },
-  { href: '/review', label: 'Review' },
-  { href: '/contracts', label: 'Contracts' },
-];
+import { Topbar } from './lib/topbar';
+import { Footer } from './lib/footer';
 
 const PILLARS = [
   {
@@ -50,20 +45,7 @@ export default function HomePage() {
   return (
     <>
       {/* --- Topbar --- */}
-      <header className="topbar" id="topbar">
-        <div className="topbar-inner">
-          <Link className="wordmark" href="/">
-            designesy<span className="dot">.</span>
-          </Link>
-          <nav className="nav-links" aria-label="Primary">
-            {NAV_ROUTES.map((route) => (
-              <Link href={route.href} key={route.href}>
-                {route.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Topbar />
 
       <main className="site-shell">
         {/* --- Hero --- */}
@@ -80,10 +62,20 @@ export default function HomePage() {
             tools. Tools into better designed work.
           </p>
           <div className="hero-actions fade-up fade-up-delay-4">
-            <Link className="button primary" href="/docs">
+            <Link
+              className="button primary"
+              href="/docs"
+              data-cuelume-press
+              data-cuelume-release
+            >
               Read docs
             </Link>
-            <Link className="button ghost" href="/review">
+            <Link
+              className="button ghost"
+              href="/review"
+              data-cuelume-press
+              data-cuelume-release
+            >
               Review surface
             </Link>
           </div>
@@ -107,7 +99,7 @@ export default function HomePage() {
           </h2>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
-              <article className="pillar fade-in" key={pillar.number}>
+              <article className="pillar fade-in" key={pillar.number} data-cuelume-hover="bloom">
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
                 <p>{pillar.text}</p>
@@ -124,7 +116,7 @@ export default function HomePage() {
           </h2>
           <div className="principle-list">
             {PRINCIPLES_PREVIEW.map((p) => (
-              <div className="principle fade-in" key={p.num}>
+              <div className="principle fade-in" key={p.num} data-cuelume-hover="whisper">
                 <span className="principle-num">{p.num}</span>
                 <div className="principle-body">
                   <h3>{p.title}</h3>
@@ -134,7 +126,12 @@ export default function HomePage() {
             ))}
           </div>
           <div style={{ marginTop: '2rem' }}>
-            <Link className="button ghost" href="/docs">
+            <Link
+              className="button ghost"
+              href="/docs"
+              data-cuelume-press
+              data-cuelume-release
+            >
               Read all nine principles →
             </Link>
           </div>
@@ -148,7 +145,14 @@ export default function HomePage() {
           </h2>
           <div className="surface-list">
             {SURFACES.map((surface) => (
-              <Link className="surface-card" href={surface.href} key={surface.href}>
+              <Link
+                className="surface-card"
+                href={surface.href}
+                key={surface.href}
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+                data-cuelume-release
+              >
                 <span className="surface-card-label">{surface.label}</span>
                 <span className="surface-card-desc">{surface.desc}</span>
                 <span className="surface-card-arrow">→</span>
@@ -159,17 +163,7 @@ export default function HomePage() {
       </main>
 
       {/* --- Footer --- */}
-      <footer className="footer">
-        <div className="site-shell footer-inner">
-          <div className="footer-meta">
-            <span className="wordmark">designesy<span className="dot">.</span></span>
-            <span><strong>Designesy LLC</strong> · Design intelligence infrastructure</span>
-          </div>
-          <a className="footer-link" href="mailto:le@designesy.org">
-            le@designesy.org
-          </a>
-        </div>
-      </footer>
+      <Footer />
 
       {/* --- Scroll detection script (progressive enhancement) --- */}
       <script
