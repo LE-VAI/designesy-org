@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Docs',
@@ -286,48 +287,26 @@ export default function DocsPage() {
               <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to imply
               </h3>
-              <div className="row-stack" role="list">
-                {[
+              <CheckGrid items={checkItemsFromStrings([
                   'Design judgment made operational',
                   'Principles with provenance',
                   'Contracts that agents and teams can use',
                   'Artifacts that can be inspected, copied, tested, remixed',
                   'Creative infrastructure for people building better worlds',
-                ].map((item, i) => (
-                  <div className="row" role="listitem" key={item}>
-                    <span className="row-index">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="row-body">
-                      <span className="row-title">{item}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
+                ])} />
             </div>
             <div>
               <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to avoid
               </h3>
-              <div className="row-stack" role="list">
-                {[
+              <CheckGrid items={checkItemsFromStrings([
                   'Generic AI SaaS language',
                   'Shallow future-of-design clichés',
                   'Vague promises with no operational mechanism',
                   'Pretending Designesy is already a massive institution',
                   'Reducing the mission to templates or a design blog',
                   'Corporate care language that feels unearned',
-                ].map((item, i) => (
-                  <div className="row is-avoid" role="listitem" key={item}>
-                    <span className="row-index">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="row-body">
-                      <span className="row-title">{item}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
+                ], { avoid: true })} />
             </div>
           </div>
         </section>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Contracts',
@@ -304,18 +305,7 @@ export default function ContractsPage() {
             structured values for machines, rationale for humans, and
             verification criteria for both.
           </p>
-          <div className="row-stack" role="list">
-            {CONTRACT_CONTENTS.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid dense items={checkItemsFromStrings(CONTRACT_CONTENTS)} />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -340,18 +330,7 @@ export default function ContractsPage() {
           >
             Anti-patterns
           </h3>
-          <div className="row-stack" role="list">
-            {CONTRACT_ANTI.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(CONTRACT_ANTI, { avoid: true })} />
         </section>
 
         {/* ========== Published contract ========== */}
@@ -385,8 +364,7 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">01 · Source and provenance</h2>
-          <div className="row-stack" role="list">
-            {[
+          <CheckGrid items={[
               {
                 title: 'Public implementation',
                 meta: 'designesy.org (Next.js App Router)',
@@ -411,18 +389,7 @@ export default function ContractsPage() {
                 title: 'Contract status',
                 meta: 'Public v0.1.1 — Poise interaction rules adopted',
               },
-            ].map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+            ]} />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -519,25 +486,14 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
-          <div className="row-stack" role="list">
-            {[
+          <CheckGrid items={checkItemsFromStrings([
               'Default radius 6px; compact controls 4px — no pill inflation',
               'Borders define structure first; shadows are secondary depth',
               'Dark technical foundation: paper black, surfaces near-black',
               'One signal accent family; do not invent secondary brand hues',
               'Cards stay flat until interaction — lift is earned on hover',
               'Status notes use soft surface + line, not loud callout chrome',
-            ].map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+            ])} />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -559,98 +515,32 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">08 · Accessibility requirements</h2>
-          <div className="row-stack" role="list">
-            {A11Y_REQUIREMENTS.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(A11Y_REQUIREMENTS)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">09 · Motion and reduced-motion</h2>
-          <div className="row-stack" role="list">
-            {MOTION_RULES.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(MOTION_RULES)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">10 · Anti-patterns</h2>
-          <div className="row-stack" role="list">
-            {ANTI_PATTERNS.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(ANTI_PATTERNS, { avoid: true })} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">11 · Implementation notes</h2>
-          <div className="row-stack" role="list">
-            {IMPLEMENTATION_NOTES.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(IMPLEMENTATION_NOTES)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">12 · Verification criteria</h2>
-          <div className="row-stack" role="list">
-            {VERIFICATION.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(VERIFICATION)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">13 · Open tensions</h2>
-          <div className="row-stack" role="list">
-            {OPEN_TENSIONS.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(OPEN_TENSIONS, { avoid: true })} />
         </section>
 
         <div className="status-note">

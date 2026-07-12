@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../../lib/topbar';
 import { Footer } from '../../../lib/footer';
+import { CheckGrid } from '../../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Poise keyboard path',
@@ -274,19 +275,7 @@ export default function PoiseKeyboardVerificationPage() {
 
         <section className="doctrine-section fade-up" id="scope">
           <h2 className="doctrine-heading">Scope</h2>
-          <div className="row-stack" role="list">
-            {SCOPE.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={SCOPE} />
         </section>
 
         <section className="doctrine-section fade-up" id="tab-order">
@@ -310,87 +299,22 @@ export default function PoiseKeyboardVerificationPage() {
 
         <section className="doctrine-section fade-up" id="focus">
           <h2 className="doctrine-heading">Focus-visible criteria</h2>
-          <div className="row-stack" role="list">
-            {FOCUS_RULES.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={FOCUS_RULES} />
         </section>
 
         <section className="doctrine-section fade-up" id="activation">
           <h2 className="doctrine-heading">Activation</h2>
-          <div className="row-stack" role="list">
-            {ACTIVATION.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={ACTIVATION} />
         </section>
 
         <section className="doctrine-section fade-up" id="reduced-motion">
           <h2 className="doctrine-heading">Reduced motion</h2>
-          <div className="row-stack" role="list">
-            {REDUCED_MOTION.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={REDUCED_MOTION} />
         </section>
 
         <section className="doctrine-section fade-up" id="results">
           <h2 className="doctrine-heading">Results</h2>
-          <div className="principle-list">
-            {RESULTS.map((item, i) => (
-              <div className="principle" key={item.title} data-cuelume-hover="whisper">
-                <span className="principle-num">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="principle-body">
-                  <h3>
-                    {item.title}
-                    <span
-                      style={{
-                        marginLeft: '0.65rem',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        color:
-                          item.status === 'Hold'
-                            ? 'var(--signal-light)'
-                            : 'var(--muted-dim)',
-                      }}
-                    >
-                      {item.status}
-                    </span>
-                  </h3>
-                  <p>{item.meta}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={RESULTS} />
         </section>
 
         <section className="doctrine-section fade-up" id="method">

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Poise field check',
@@ -315,68 +316,22 @@ export default function PoiseFieldCheckPage() {
 
         <section className="doctrine-section fade-up" id="holds">
           <h2 className="doctrine-heading">Holds</h2>
-          <div className="row-stack" role="list">
-            {HOLDS.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(HOLDS)} />
         </section>
 
         <section className="doctrine-section fade-up" id="tensions">
           <h2 className="doctrine-heading">Tensions</h2>
-          <div className="row-stack" role="list">
-            {TENSIONS.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={TENSIONS} />
         </section>
 
         <section className="doctrine-section fade-up" id="corrections">
           <h2 className="doctrine-heading">Corrections</h2>
-          <div className="row-stack" role="list">
-            {CORRECTIONS.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={CORRECTIONS} />
         </section>
 
         <section className="doctrine-section fade-up" id="verification">
           <h2 className="doctrine-heading">Verification performed</h2>
-          <div className="row-stack" role="list">
-            {VERIFICATION.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(VERIFICATION)} />
         </section>
 
         <section className="doctrine-section fade-up" id="sources">
