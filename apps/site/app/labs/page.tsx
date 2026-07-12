@@ -7,7 +7,7 @@ const LAB_ANATOMY = [
   'Live artifact or demo',
   'Principle explanation',
   'Portable contract',
-  'Codex-ready implementation prompt',
+  'Builder-ready implementation prompt',
   'Review checklist',
   'Provenance',
   'Anti-patterns',

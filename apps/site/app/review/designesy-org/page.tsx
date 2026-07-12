@@ -6,11 +6,11 @@ import { Footer } from '../../lib/footer';
 export const metadata: Metadata = {
   title: 'designesy.org review',
   description:
-    'Self-review of the Designesy public site against design system contract v0.1 and Lab One: Poise.',
+    'Public review of the Designesy site against design system contract v0.1 and Lab One: Poise.',
   openGraph: {
     title: 'designesy.org review · Designesy',
     description:
-      'A public surface checked against its own contract — holds, tensions, and concrete next moves.',
+      'A public surface checked against its own contract — holds, tensions, and next system states.',
   },
 };
 
@@ -18,17 +18,17 @@ const HOLDS = [
   {
     dim: 'Purpose',
     finding:
-      'The site makes design judgment inspectable: docs, labs, review, and contracts each have a job. Poise proves the system can leave doctrine and become behavior.',
+      'The site makes design judgment inspectable: docs, labs, review, and contracts each have a job. Poise shows the system can leave doctrine and become behavior.',
   },
   {
     dim: 'Clarity',
     finding:
-      'Hierarchy is quiet and readable. Primary paths (Read docs, Review, Contracts, Labs → Poise) are discoverable without competing chrome.',
+      'Hierarchy is quiet and readable. Primary paths — Docs, Review, Contracts, Labs, Poise — are discoverable without competing chrome.',
   },
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token file. Contract v0.1, machine export, and Poise all point at the same values. Drift rule is explicit.',
+      'Live UI draws from a single token foundation. Contract v0.1, the machine export, and Poise reference the same values. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -41,34 +41,34 @@ const TENSIONS = [
   {
     dim: 'Context',
     finding:
-      'Public surface is desktop-first in density; mobile holds, but deep contract tables and long review text still ask for patience on small screens.',
-    action: 'Keep token tables stacking; avoid new multi-column doctrine blocks under 720px.',
+      'The surface is dense by design. Mobile layouts hold, but long contract tables and review text still ask for patience on small screens.',
+    next: 'Token tables stack on narrow widths; multi-column doctrine remains a large-screen pattern.',
   },
   {
     dim: 'Inclusion',
     finding:
-      'Reduced motion and sound preference are first-class. Full keyboard audit of every route is not yet published as a verification artifact.',
-    action: 'Add a short keyboard path note to the next contract verification pass.',
+      'Reduced motion and sound preference are first-class. A published keyboard-path verification for every route is not yet part of the public record.',
+    next: 'Keyboard and focus verification belongs in the next contract verification pass.',
   },
   {
     dim: 'Durability',
     finding:
-      'Human contract page and machine JSON are dual sources until a generator owns both. That is an open tension, not a failure.',
-    action: 'When either surface changes tokens, update lib/design-system-contract.ts and globals.css together.',
+      'Human contract page and machine export remain dual sources until a single generator owns both. That is an open tension, not a failure.',
+    next: 'Token changes update both the human contract and the machine export together.',
   },
   {
     dim: 'Responsibility',
     finding:
-      'Analytics is live; visitors are counted. The site does not yet state analytics presence in public privacy language.',
-    action: 'Add a brief, honest privacy line when legal copy is ready — not before.',
+      'Web Analytics is active. Public privacy language for measurement is not yet published.',
+    next: 'Privacy language ships when ready as clear visitor-facing copy — not as a placeholder.',
   },
 ];
 
-const CORRECTIONS = [
-  'Promote Poise rules into contract v0.1.1 only after this review is accepted',
-  'Keep public names in the mini-flagship register; never ship AI-lab product vocabulary',
-  'Do not invent a second accent or light theme without contracting it first',
-  'Homepage may later link the contract and Poise — only with existing tokens, no new decoration',
+const NEXT_STATES = [
+  'Poise behaviors remain candidates for design system contract v0.1.1 until explicitly adopted',
+  'Public product names stay human and premium; research-demo vocabulary stays off public surfaces',
+  'A second accent or light theme ships only after it is contracted',
+  'Homepage links to the contract and Poise may follow — using existing tokens, without new decoration',
 ];
 
 const SCOPE = [
@@ -102,15 +102,15 @@ const EVIDENCE = [
   },
   {
     title: 'Tokens',
-    meta: 'globals.css :root — paper, surface, accent, radius, motion',
+    meta: 'Live design tokens — paper, surface, accent, radius, motion',
   },
   {
     title: 'Motion',
-    meta: 'wordmark opacity breath · press scale(0.97) · reduced-motion collapse',
+    meta: 'Wordmark opacity breath · press scale(0.97) · reduced-motion collapse',
   },
   {
     title: 'Sound',
-    meta: 'Designesy preference key · Cuelume applies only',
+    meta: 'Designesy owns preference · audio engine only applies it',
   },
 ];
 
@@ -130,7 +130,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <h1 className="surface-title">designesy.org</h1>
           <p className="surface-lede">
-            A self-review against design system contract v0.1.
+            A public review against design system contract v0.1.
           </p>
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
@@ -138,7 +138,7 @@ export default function PublicSurfaceReviewPage() {
             coherence, and honesty about what is still open.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
-            <span className="status-badge">Field check</span>
+            <span className="status-badge">Published</span>
             <span className="lab-meta-item">Baseline · contract v0.1</span>
             <span className="lab-meta-item">Date · 2026-07-12</span>
           </div>
@@ -175,9 +175,9 @@ export default function PublicSurfaceReviewPage() {
             <p className="definition-label">Considered after functional</p>
             <p>
               The public surface is functional and largely considered. It earns
-              its restraint. Remaining work is synchronization, verification
-              proof, and careful promotion of Poise into contract v0.1.1 — not a
-              redesign.
+              its restraint. What remains is synchronization, fuller
+              verification proof, and deliberate adoption of Poise into contract
+              v0.1.1 — not a redesign.
             </p>
           </div>
         </section>
@@ -211,7 +211,7 @@ export default function PublicSurfaceReviewPage() {
                   <h3>{item.dim}</h3>
                   <p>{item.finding}</p>
                   <p style={{ marginTop: '0.5rem', color: 'var(--muted-dim)' }}>
-                    Next · {item.action}
+                    System state · {item.next}
                   </p>
                 </div>
               </div>
@@ -220,9 +220,9 @@ export default function PublicSurfaceReviewPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Concrete corrections</h2>
+          <h2 className="doctrine-heading">Standing rules</h2>
           <ul className="checkmark-list">
-            {CORRECTIONS.map((item) => (
+            {NEXT_STATES.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
@@ -275,21 +275,21 @@ export default function PublicSurfaceReviewPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Promotion stance</h2>
+          <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition">
-            <p className="definition-label">Poise → contract v0.1.1</p>
+            <p className="definition-label">Poise and contract v0.1.1</p>
             <p>
-              Poise is accepted as Lab One. Its portable rules are listed as
-              promotion candidates in the machine contract. They become contract
-              law only when explicitly promoted — not by silence.
+              Poise is Lab One. Its portable rules are recorded as candidates in
+              the design system contract. They become contract material only when
+              explicitly adopted — silence is not adoption.
             </p>
           </div>
         </section>
 
         <div className="status-note">
-          This is a public self-review packet, not a client report or legal
-          audit. Status: field check complete for contract v0.1 baseline.
-          Promote Poise rules only on operator order.
+          Public review of the live designesy.org surface against contract v0.1.
+          This is institutional quality discipline, not a client report or legal
+          audit. Poise candidates remain open until adopted into v0.1.1.
         </div>
       </main>
 

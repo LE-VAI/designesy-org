@@ -98,20 +98,20 @@ export default function ReviewPage() {
             </div>
             <h3 className="lab-card-title">designesy.org</h3>
             <p className="lab-card-lede">
-              Self-review against design system contract v0.1.
+              Public review against design system contract v0.1.
             </p>
             <p className="lab-card-desc">
-              Holds, tensions, and concrete corrections for the live site —
-              including Lab One, Poise.
+              Holds, tensions, and standing rules for the live site — including
+              Lab One, Poise.
             </p>
             <span className="lab-card-arrow">Open review →</span>
           </Link>
         </section>
 
         <div className="status-note">
-          This is review language and quality discipline. Live field checks ship
-          as named packets under /review. The first is the public surface review
-          of designesy.org itself.
+          Review language and quality discipline for public artifacts. Published
+          reviews live under /review. The first is the public surface review of
+          designesy.org itself.
         </div>
       </main>
 
