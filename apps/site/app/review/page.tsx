@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Review',
@@ -80,18 +81,10 @@ export default function ReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Agent review stance</h2>
-          <div className="row-stack" role="list">
-            {REVIEW_CHECKS.map((check, i) => (
-              <div className="row" role="listitem" key={check}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{check}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Peer checks for agents and reviewers — not a story path.
+          </p>
+          <CheckGrid items={checkItemsFromStrings(REVIEW_CHECKS)} />
         </section>
 
         <section className="doctrine-section fade-up">

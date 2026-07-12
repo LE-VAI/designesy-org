@@ -5,32 +5,54 @@ type CheckItem = {
   meta?: string;
   href?: string;
   avoid?: boolean;
+  status?: string;
 };
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+function statusClass(status?: string) {
+  if (!status) return '';
+  const key = status.trim().toLowerCase();
+  if (key === 'hold' || key === 'holds') return ' is-hold';
+  return '';
+}
+
 /**
- * Tight interactive checklist grid for long uniform lists.
- * Prefer this over .row-stack when items are peer checks/labels (6+).
- * Keep .row-stack for sequential narrative links.
+ * Tight interactive checklist grid for peer lists.
+ * Prefer over .row-stack when items are peer checks/labels (≈5+).
+ * Keep .row-stack for sequential narrative paths and multi-link rows.
+ * Keep .principle-list for long prose dimensions.
  */
 export function CheckGrid({
   items,
   dense = false,
+  stack = false,
   className = '',
   start = 1,
+  labelledBy,
 }: {
   items: CheckItem[];
   dense?: boolean;
+  stack?: boolean;
   className?: string;
   start?: number;
+  labelledBy?: string;
 }) {
+  const mods = [
+    dense ? 'is-dense' : '',
+    stack ? 'is-stack' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
-      className={`check-grid${dense ? ' is-dense' : ''}${className ? ` ${className}` : ''}`}
+      className={`check-grid${mods ? ` ${mods}` : ''}`}
       role="list"
+      aria-labelledby={labelledBy}
     >
       {items.map((item, i) => {
         const index = pad(start + i);
@@ -44,16 +66,25 @@ export function CheckGrid({
               {item.meta ? (
                 <span className="check-cell-meta">{item.meta}</span>
               ) : null}
+              {item.status ? (
+                <span
+                  className={`check-cell-status${statusClass(item.status)}`}
+                >
+                  {item.status}
+                </span>
+              ) : null}
             </span>
           </>
         );
+
+        const cellClass = `check-cell${item.avoid ? ' is-avoid' : ''}`;
 
         if (item.href) {
           return (
             <Link
               key={`${item.href}-${item.title}`}
               href={item.href}
-              className={`check-cell${item.avoid ? ' is-avoid' : ''}`}
+              className={cellClass}
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
@@ -67,7 +98,7 @@ export function CheckGrid({
         return (
           <div
             key={`${index}-${item.title}`}
-            className={`check-cell${item.avoid ? ' is-avoid' : ''}`}
+            className={cellClass}
             role="listitem"
             data-cuelume-hover="whisper"
             data-cuelume-press

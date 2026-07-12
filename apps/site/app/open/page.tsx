@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
+import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Open design intelligence',
@@ -157,34 +158,14 @@ export default function OpenPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Standing rules</h2>
-          <div className="row-stack" role="list">
-            {o.standing_rules.map((rule, i) => (
-              <div className="row" role="listitem" key={rule}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{rule}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(o.standing_rules)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Anti-patterns</h2>
-          <div className="row-stack" role="list">
-            {o.anti_patterns.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            items={checkItemsFromStrings(o.anti_patterns, { avoid: true })}
+          />
         </section>
 
         <section className="doctrine-section fade-up">

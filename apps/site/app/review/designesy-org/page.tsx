@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'designesy.org review',
@@ -238,64 +239,12 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Standing rules</h2>
-          <div className="row-stack" role="list">
-            {NEXT_STATES.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(NEXT_STATES)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Evidence</h2>
-          <div className="row-stack" role="list">
-            {EVIDENCE.map((item, i) => {
-              const body = (
-                <>
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item.title}</span>
-                    <span className="row-meta">{item.meta}</span>
-                  </span>
-                </>
-              );
-
-              if (item.href) {
-                return (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    className="row"
-                    role="listitem"
-                    data-cuelume-hover="whisper"
-                    data-cuelume-press
-                    data-cuelume-release
-                  >
-                    {body}
-                  </Link>
-                );
-              }
-
-              return (
-                <div
-                  key={item.title}
-                  className="row"
-                  role="listitem"
-                  data-cuelume-hover="whisper"
-                >
-                  {body}
-                </div>
-              );
-            })}
-          </div>
+          <CheckGrid items={EVIDENCE} />
         </section>
 
         <section className="doctrine-section fade-up">

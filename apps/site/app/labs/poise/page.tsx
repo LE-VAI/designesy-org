@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { SoundToggle } from '../../lib/sound-toggle';
+import { CheckGrid, checkItemsFromStrings } from '../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Poise',
@@ -284,50 +285,17 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review checklist</h2>
-          <div className="row-stack" role="list">
-            {REVIEW_CHECKS.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(REVIEW_CHECKS)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Provenance</h2>
-          <div className="row-stack" role="list">
-            {PROVENANCE.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(PROVENANCE)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Anti-patterns</h2>
-          <div className="row-stack" role="list">
-            {ANTI.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(ANTI, { avoid: true })} />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -342,65 +310,41 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Lab anatomy coverage</h2>
-          <div className="row-stack" role="list">
-            {ANATOMY_DONE.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid dense items={checkItemsFromStrings(ANATOMY_DONE)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
-          <div className="row-stack" role="list">
-            {[
-              'Demo renders on /labs/poise with topbar sound control',
-              'Wordmark mark animates only via opacity; reduced-motion kills it',
-              'Buttons scale on :active without layout shift',
-              'Sound toggle flips aria-pressed and applies the audio preference',
-              'Keyboard path published at /review/poise/keyboard',
-              'All values map to contract tokens or named open tensions',
-              'No public surface uses internal control-plane naming',
-            ].map((item, i) => {
-              const isKeyboard = item.includes('Keyboard path');
-              const body = (
-                <>
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item}</span>
-                  </span>
-                </>
-              );
-              if (isKeyboard) {
-                return (
-                  <Link
-                    key={item}
-                    href="/review/poise/keyboard"
-                    className="row"
-                    role="listitem"
-                    data-cuelume-hover="whisper"
-                    data-cuelume-press
-                    data-cuelume-release
-                  >
-                    {body}
-                  </Link>
-                );
-              }
-              return (
-                <div className="row" role="listitem" key={item}>
-                  {body}
-                </div>
-              );
-            })}
-          </div>
+          <CheckGrid
+            items={[
+              {
+                title: 'Demo renders on /labs/poise with topbar sound control',
+              },
+              {
+                title:
+                  'Wordmark mark animates only via opacity; reduced-motion kills it',
+              },
+              {
+                title: 'Buttons scale on :active without layout shift',
+              },
+              {
+                title:
+                  'Sound toggle flips aria-pressed and applies the audio preference',
+              },
+              {
+                title: 'Keyboard path published at /review/poise/keyboard',
+                href: '/review/poise/keyboard',
+              },
+              {
+                title:
+                  'All values map to contract tokens or named open tensions',
+              },
+              {
+                title:
+                  'No public surface uses internal control-plane naming',
+              },
+            ]}
+          />
         </section>
 
         <section className="doctrine-section fade-up">
