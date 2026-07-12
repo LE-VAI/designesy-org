@@ -25,7 +25,13 @@ const PILLARS = [
   },
 ];
 
-const PIPELINE = ['Sources', 'Principles', 'Contracts', 'Tools', 'Artifacts'];
+const PIPELINE = [
+  { num: '01', label: 'Sources', note: 'Provenance' },
+  { num: '02', label: 'Principles', note: 'Judgment' },
+  { num: '03', label: 'Contracts', note: 'Rules' },
+  { num: '04', label: 'Tools', note: 'Practice' },
+  { num: '05', label: 'Artifacts', note: 'Shipped' },
+];
 
 const SURFACES = [
   {
@@ -125,13 +131,27 @@ export default function HomePage() {
         </section>
 
         {/* --- Pipeline diagram --- */}
-        <section className="pipeline fade-up fade-up-delay-5" aria-label="Designesy system flow">
-          {PIPELINE.map((step, i) => (
-            <div className="pipeline-step" key={step} data-cuelume-hover="tick" data-cuelume-press data-cuelume-release>
-              <span className="pipeline-label">{step}</span>
-              {i < PIPELINE.length - 1 && <span className="pipeline-arrow" />}
-            </div>
-          ))}
+        <section
+          className="pipeline fade-up fade-up-delay-5"
+          aria-label="Designesy system flow"
+        >
+          <p className="pipeline-eyebrow">System flow</p>
+          <ol className="pipeline-track">
+            {PIPELINE.map((step, i) => (
+              <li
+                className={`pipeline-step${i === PIPELINE.length - 1 ? ' is-end' : ''}`}
+                key={step.label}
+                data-cuelume-hover="tick"
+              >
+                <span className="pipeline-node" aria-hidden="true">
+                  <span className="pipeline-node-core" />
+                </span>
+                <span className="pipeline-num">{step.num}</span>
+                <span className="pipeline-label">{step.label}</span>
+                <span className="pipeline-note">{step.note}</span>
+              </li>
+            ))}
+          </ol>
         </section>
 
         {/* --- Pillars --- */}
