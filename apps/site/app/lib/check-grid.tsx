@@ -130,25 +130,19 @@ export function CheckGrid({
         }
 
         return (
-          <div
+          <button
             key={`${index}-${item.title}`}
             className={cellClass}
             role="listitem"
+            type="button"
             data-cuelume-hover="whisper"
             data-cuelume-press
             data-cuelume-release
-            tabIndex={0}
             onClick={() => toggle(i)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggle(i);
-              }
-            }}
             aria-pressed={isChecked}
           >
             {body}
-          </div>
+          </button>
         );
       })}
     </div>
