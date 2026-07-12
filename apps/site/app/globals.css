@@ -1183,6 +1183,31 @@ button.layer-item {
   animation: check-pop 280ms var(--ease-out) both;
   will-change: transform, opacity;
 }
+/* copy badge for CopyRow (share posts) */
+.row-copy-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted-dim);
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease), color 0.2s var(--ease);
+  align-self: center;
+}
+.row:hover .row-copy-badge,
+.row:focus-visible .row-copy-badge {
+  opacity: 1;
+}
+.row.is-copied .row-copy-badge {
+  opacity: 1;
+  color: var(--signal);
+}
+@media (hover: none), (pointer: coarse) {
+  .row-copy-badge {
+    opacity: 1;
+  }
+}
 
 button.row {
   display: grid;
@@ -2337,6 +2362,70 @@ a.check-cell:hover .check-cell-title {
   color: inherit;
   background: transparent;
   padding: 0;
+}
+
+/* CopyPrompt — one-click copy button for agent prompts and share text */
+.copy-prompt-wrap {
+  position: relative;
+}
+.copy-prompt-pre {
+  margin: 0;
+}
+.copy-prompt-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.32rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  font-family: var(--font-sans, inherit);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease), border-color 0.2s var(--ease),
+    color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.copy-prompt-wrap:hover .copy-prompt-btn,
+.copy-prompt-btn:focus-visible {
+  opacity: 1;
+}
+.copy-prompt-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.copy-prompt-btn:active {
+  transform: scale(0.96);
+}
+.copy-prompt-btn:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 1px;
+}
+.copy-prompt-btn.is-copied {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--signal) 40%, var(--line));
+  color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
+}
+@media (hover: none), (pointer: coarse) {
+  .copy-prompt-btn {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .copy-prompt-btn {
+    transition: none;
+  }
+  .copy-prompt-btn:active {
+    transform: none;
+  }
 }
 
 @media (max-width: 720px) {
