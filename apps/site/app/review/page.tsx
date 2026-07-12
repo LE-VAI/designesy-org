@@ -61,11 +61,18 @@ export default function ReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Agent review stance</h2>
-          <ul className="checkmark-list">
-            {REVIEW_CHECKS.map((check) => (
-              <li key={check}>{check}</li>
+          <div className="row-stack" role="list">
+            {REVIEW_CHECKS.map((check, i) => (
+              <div className="row" role="listitem" key={check}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{check}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
