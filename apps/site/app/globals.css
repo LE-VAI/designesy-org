@@ -1408,6 +1408,136 @@ p {
   }
 }
 
+/* --- Field cards (homepage live artifacts) --- */
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  max-width: 720px;
+}
+
+.field-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.35rem 1.35rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.field-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.field-card:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .field-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.field-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.field-card-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.field-card-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.field-card-lede {
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.field-card-desc {
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 28rem;
+}
+
+.field-card-arrow {
+  margin-top: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  transition: color 0.2s var(--ease);
+}
+
+.field-card:hover .field-card-arrow {
+  color: var(--ink);
+}
+
+/* Minimal Designesy mark — opacity only, contract-safe */
+.mark-glyph {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.mark-glyph-core {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--signal);
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
+}
+
+.mark-glyph-ring {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px solid var(--signal-dim);
+  opacity: 0.85;
+}
+
+.mark-glyph--contract .mark-glyph-core {
+  border-radius: var(--radius-sm);
+  inset: 8px;
+}
+
+.mark-glyph--contract .mark-glyph-ring {
+  border-radius: var(--radius);
+}
+
+.mark-glyph--poise .mark-glyph-ring {
+  border-color: rgba(51, 88, 232, 0.35);
+}
+
+@media (max-width: 720px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Reduced motion --- */
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
@@ -219,36 +220,51 @@ export default function PoiseLabPage() {
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Rules recorded as candidates for design system contract v0.1.1:
           </p>
-          <ul className="checkmark-list">
-            <li>
-              Wordmark mark may use opacity breath only; never blur, glow, or
-              gradient decoration
-            </li>
-            <li>
-              Interactive press settle: <code>scale(0.97)</code> at ~160ms with{' '}
-              <code>--ease-out</code>
-            </li>
-            <li>
-              Sound preference key <code>designesy:sound</code>; engine follows
-              Designesy, not the reverse
-            </li>
-            <li>
-              Reduced motion disables non-essential animation and defaults sound
-              off
-            </li>
-            <li>
-              Hover translation only under fine pointer + hover-capable media
-            </li>
-            <li>
-              Public product names stay human and premium; internal token names
-              may differ
-            </li>
-          </ul>
+          <div className="row-stack" role="list">
+            {[
+              {
+                title: 'Wordmark mark',
+                meta: 'Opacity breath only — never blur, glow, or gradient decoration',
+              },
+              {
+                title: 'Press settle',
+                meta: 'scale(0.97) at ~160ms with --ease-out',
+              },
+              {
+                title: 'Sound preference',
+                meta: 'Key designesy:sound; engine follows Designesy',
+              },
+              {
+                title: 'Reduced motion',
+                meta: 'Disables non-essential animation; defaults sound off',
+              },
+              {
+                title: 'Hover translation',
+                meta: 'Only under fine pointer + hover-capable media',
+              },
+              {
+                title: 'Public names',
+                meta: 'Human and premium; internal token names may differ',
+              },
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </div>
+            ))}
+          </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts#design-system-contract">
               Design system contract v0.1
             </Link>
+            {' · '}
+            <Link href="/contracts/design-system">Contract home</Link>
           </p>
         </section>
 
@@ -262,29 +278,50 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review checklist</h2>
-          <ul className="checkmark-list">
-            {REVIEW_CHECKS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {REVIEW_CHECKS.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Provenance</h2>
-          <ul className="checkmark-list">
-            {PROVENANCE.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {PROVENANCE.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Anti-patterns</h2>
-          <ul className="avoid-list">
-            {ANTI.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {ANTI.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -299,23 +336,41 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Lab anatomy coverage</h2>
-          <ul className="checkmark-list">
-            {ANATOMY_DONE.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {ANATOMY_DONE.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
-          <ul className="checkmark-list">
-            <li>Demo renders on /labs/poise with topbar sound control</li>
-            <li>Wordmark mark animates only via opacity; reduced-motion kills it</li>
-            <li>Buttons scale on :active without layout shift</li>
-            <li>Sound toggle flips aria-pressed and applies the audio preference</li>
-            <li>All values map to contract tokens or named open tensions</li>
-            <li>No public surface uses internal control-plane naming</li>
-          </ul>
+          <div className="row-stack" role="list">
+            {[
+              'Demo renders on /labs/poise with topbar sound control',
+              'Wordmark mark animates only via opacity; reduced-motion kills it',
+              'Buttons scale on :active without layout shift',
+              'Sound toggle flips aria-pressed and applies the audio preference',
+              'All values map to contract tokens or named open tensions',
+              'No public surface uses internal control-plane naming',
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <div className="status-note">

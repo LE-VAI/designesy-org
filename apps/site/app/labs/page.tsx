@@ -78,11 +78,18 @@ export default function LabsPage() {
             experiment inspectable, reviewable, and promotable into durable
             rules.
           </p>
-          <ul className="checkmark-list">
-            {LAB_ANATOMY.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {LAB_ANATOMY.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -97,23 +104,41 @@ export default function LabsPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Before promotion, a Lab records:
           </p>
-          <ul className="checkmark-list">
-            <li>What the artifact tests</li>
-            <li>What caused the behavior</li>
-            <li>What it communicates</li>
-            <li>Where it belongs</li>
-            <li>What would make it excessive</li>
-            <li>How it degrades for accessibility, performance, or reduced motion</li>
-          </ul>
+          <div className="row-stack" role="list">
+            {[
+              'What the artifact tests',
+              'What caused the behavior',
+              'What it communicates',
+              'Where it belongs',
+              'What would make it excessive',
+              'How it degrades for accessibility, performance, or reduced motion',
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">What Labs are not</h2>
-          <ul className="avoid-list">
-            {NOT_LABS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {NOT_LABS.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <div className="status-note">

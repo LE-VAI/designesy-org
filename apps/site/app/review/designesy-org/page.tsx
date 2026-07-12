@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
@@ -68,7 +69,7 @@ const NEXT_STATES = [
   'Poise behaviors remain candidates for design system contract v0.1.1 until explicitly adopted',
   'Public product names stay human and premium; research-demo vocabulary stays off public surfaces',
   'A second accent or light theme ships only after it is contracted',
-  'Homepage links to the contract and Poise may follow — using existing tokens, without new decoration',
+  'Homepage field cards point to the contract home and Poise using existing tokens and opacity-only mark liveliness',
 ];
 
 const SCOPE = [
@@ -231,11 +232,18 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Standing rules</h2>
-          <ul className="checkmark-list">
-            {NEXT_STATES.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {NEXT_STATES.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">

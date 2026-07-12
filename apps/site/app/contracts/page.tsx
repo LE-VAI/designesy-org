@@ -213,11 +213,18 @@ export default function ContractsPage() {
             structured values for machines, rationale for humans, and
             verification criteria for both.
           </p>
-          <ul className="checkmark-list">
-            {CONTRACT_CONTENTS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {CONTRACT_CONTENTS.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -242,11 +249,18 @@ export default function ContractsPage() {
           >
             Anti-patterns
           </h3>
-          <ul className="avoid-list">
-            {CONTRACT_ANTI.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {CONTRACT_ANTI.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         {/* ========== Published contract ========== */}
@@ -279,20 +293,44 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">01 · Source and provenance</h2>
-          <ul className="checkmark-list">
-            <li>Public implementation: designesy.org (Next.js App Router)</li>
-            <li>Token source: live site design tokens</li>
-            <li>
-              Doctrine lineage: Designesy design doctrine — public surface carries
-              operational values only
-            </li>
-            <li>
-              Motion references: short settle and easing language adapted into
-              --ease-out, --ease-in-out, --ease-drawer
-            </li>
-            <li>Interaction audio: Cuelume v0.1.0 (preference owned by Designesy)</li>
-            <li>Contract status: public v0.1 — first published system contract</li>
-          </ul>
+          <div className="row-stack" role="list">
+            {[
+              {
+                title: 'Public implementation',
+                meta: 'designesy.org (Next.js App Router)',
+              },
+              {
+                title: 'Token source',
+                meta: 'Live site design tokens',
+              },
+              {
+                title: 'Doctrine lineage',
+                meta: 'Designesy design doctrine — operational values only on the public surface',
+              },
+              {
+                title: 'Motion references',
+                meta: 'Short settle language adapted into --ease-out, --ease-in-out, --ease-drawer',
+              },
+              {
+                title: 'Interaction audio',
+                meta: 'Cuelume v0.1.0 — preference owned by Designesy',
+              },
+              {
+                title: 'Contract status',
+                meta: 'Public v0.1 — first published system contract',
+              },
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -389,14 +427,25 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
-          <ul className="checkmark-list">
-            <li>Default radius 6px; compact controls 4px — no pill inflation</li>
-            <li>Borders define structure first; shadows are secondary depth</li>
-            <li>Dark technical foundation: paper black, surfaces near-black</li>
-            <li>One signal accent family; do not invent secondary brand hues</li>
-            <li>Cards stay flat until interaction — lift is earned on hover</li>
-            <li>Status notes use soft surface + line, not loud callout chrome</li>
-          </ul>
+          <div className="row-stack" role="list">
+            {[
+              'Default radius 6px; compact controls 4px — no pill inflation',
+              'Borders define structure first; shadows are secondary depth',
+              'Dark technical foundation: paper black, surfaces near-black',
+              'One signal accent family; do not invent secondary brand hues',
+              'Cards stay flat until interaction — lift is earned on hover',
+              'Status notes use soft surface + line, not loud callout chrome',
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -418,56 +467,98 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">08 · Accessibility requirements</h2>
-          <ul className="checkmark-list">
-            {A11Y_REQUIREMENTS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {A11Y_REQUIREMENTS.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">09 · Motion and reduced-motion</h2>
-          <ul className="checkmark-list">
-            {MOTION_RULES.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {MOTION_RULES.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">10 · Anti-patterns</h2>
-          <ul className="avoid-list">
-            {ANTI_PATTERNS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {ANTI_PATTERNS.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">11 · Implementation notes</h2>
-          <ul className="checkmark-list">
-            {IMPLEMENTATION_NOTES.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {IMPLEMENTATION_NOTES.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">12 · Verification criteria</h2>
-          <ul className="checkmark-list">
-            {VERIFICATION.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {VERIFICATION.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">13 · Open tensions</h2>
-          <ul className="avoid-list">
-            {OPEN_TENSIONS.map((item) => (
-              <li key={item}>{item}</li>
+          <div className="row-stack" role="list">
+            {OPEN_TENSIONS.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <div className="status-note">
