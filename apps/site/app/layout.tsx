@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
@@ -14,6 +14,13 @@ import {
   organizationJsonLd,
   websiteJsonLd,
 } from './lib/json-ld';
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   // Canonical host is www — apex 308s. Social crawlers (especially X)
@@ -64,6 +71,7 @@ export const metadata: Metadata = {
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
   },
+  manifest: '/manifest.webmanifest',
   robots: {
     index: true,
     follow: true,

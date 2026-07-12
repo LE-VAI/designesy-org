@@ -20,6 +20,8 @@ export function pageMeta({
   ogDescription,
   twitterTitle,
   twitterDescription,
+  image,
+  type,
 }: {
   title: string;
   description: string;
@@ -29,6 +31,10 @@ export function pageMeta({
   ogDescription?: string;
   twitterTitle?: string;
   twitterDescription?: string;
+  /** Absolute or root-relative OG/Twitter image URL */
+  image?: string;
+  /** OG type — defaults to website, use article for content pages */
+  type?: 'website' | 'article';
 }): Metadata {
   const normalized = path === '/' ? '' : path.replace(/\/$/, '');
   const url = `${SITE_BASE}${normalized || ''}`;
@@ -48,13 +54,15 @@ export function pageMeta({
       description: socialDesc,
       url: url || SITE_BASE,
       siteName: SITE_NAME,
-      type: 'website',
+      type: type ?? 'website',
       locale: 'en_US',
+      ...(image ? { images: [{ url: image }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title: twTitle,
       description: twDesc,
+      ...(image ? { images: [image] } : {}),
     },
   };
 }

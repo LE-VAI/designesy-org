@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 const BASE = 'https://www.designesy.org';
-const NOW = new Date('2026-07-12');
+const NOW = new Date();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

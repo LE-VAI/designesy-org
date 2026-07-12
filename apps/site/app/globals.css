@@ -2595,11 +2595,11 @@ a.check-cell:hover .check-cell-title {
   .back-button.is-leaving {
     transform: translateY(-50%);
   }
+}
 
-  @media (max-width: 720px) {
-    .back-button:active,
-    .back-button.is-leaving {
-      transform: none;
-    }
+@media (prefers-reduced-motion: reduce) and (max-width: 720px) {
+  .back-button:active,
+  .back-button.is-leaving {
+    transform: none;
   }
 }
