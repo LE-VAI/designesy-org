@@ -379,10 +379,36 @@ export default function PoiseLabPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Field check</h2>
+          <Link
+            href="/review/poise"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge">Pass with notes</span>
+              <span className="lab-card-status">Kit One</span>
+            </div>
+            <h3 className="lab-card-title">Poise · public review</h3>
+            <p className="lab-card-lede">
+              Design Review applied to this lab.
+            </p>
+            <p className="lab-card-desc">
+              Eight dimensions, holds, tensions, and corrections — the kit
+              output format made public for Lab One.
+            </p>
+            <span className="lab-card-arrow">Open field check →</span>
+          </Link>
+        </section>
+
         <div className="status-note">
           Poise is Lab One — a public experiment, not a finished product line.
           Useful behaviors above are candidates for design system contract
           v0.1.1. They become contract material only when explicitly adopted.
+          Public judgment of this lab lives at /review/poise.
         </div>
       </main>
 

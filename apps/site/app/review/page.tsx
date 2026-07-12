@@ -111,27 +111,50 @@ export default function ReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Field checks</h2>
-          <Link
-            href="/review/designesy-org"
-            className="lab-card"
-            data-cuelume-hover="tick"
-            data-cuelume-press
-            data-cuelume-release
-          >
-            <div className="lab-card-top">
-              <span className="status-badge">Public surface</span>
-              <span className="lab-card-status">Live</span>
-            </div>
-            <h3 className="lab-card-title">designesy.org</h3>
-            <p className="lab-card-lede">
-              Public review against design system contract v0.1.
-            </p>
-            <p className="lab-card-desc">
-              Holds, tensions, and standing rules for the live site — including
-              Lab One, Poise.
-            </p>
-            <span className="lab-card-arrow">Open review →</span>
-          </Link>
+          <div className="field-grid" style={{ maxWidth: '100%' }}>
+            <Link
+              href="/review/poise"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <div className="lab-card-top">
+                <span className="status-badge status-badge--lab">Lab One</span>
+                <span className="lab-card-status">Pass with notes</span>
+              </div>
+              <h3 className="lab-card-title">Poise</h3>
+              <p className="lab-card-lede">
+                Kit One output format on the live lab.
+              </p>
+              <p className="lab-card-desc">
+                Eight dimensions, holds, tensions, and corrections for restrained
+                interaction — candidate for contract v0.1.1.
+              </p>
+              <span className="lab-card-arrow">Open field check →</span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <div className="lab-card-top">
+                <span className="status-badge">Public surface</span>
+                <span className="lab-card-status">Live</span>
+              </div>
+              <h3 className="lab-card-title">designesy.org</h3>
+              <p className="lab-card-lede">
+                Public review against design system contract v0.1.
+              </p>
+              <p className="lab-card-desc">
+                Holds, tensions, and standing rules for the live site — including
+                Lab One, Poise.
+              </p>
+              <span className="lab-card-arrow">Open review →</span>
+            </Link>
+          </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Field checks publish when an artifact is live enough to judge.
             Empty slots are not advertised as upcoming reviews.
