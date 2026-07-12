@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Privacy',
@@ -169,18 +170,9 @@ export default function PrivacyPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">What we do not do here</h2>
-          <div className="row-stack" role="list">
-            {DO_NOT.map((line, i) => (
-              <div className="row" role="listitem" key={line}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{line}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            items={checkItemsFromStrings(DO_NOT, { avoid: true })}
+          />
         </section>
 
         <section className="doctrine-section fade-up">

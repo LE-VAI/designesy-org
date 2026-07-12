@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { designSystemContract } from '../../lib/design-system-contract';
+import { CheckGrid, checkItemsFromStrings } from '../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Design system contract',
@@ -106,24 +107,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Contents</h2>
-          <div className="row-stack" role="list">
-            {SECTIONS.map((item, i) => (
-              <div
-                key={item.title}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="whisper"
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid dense items={SECTIONS} />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -263,18 +247,7 @@ export default function DesignSystemContractPage() {
               adoption — this version is the explicit order.
             </p>
           </div>
-          <div className="row-stack" role="list" style={{ marginTop: '1.25rem' }}>
-            {c.interaction.rules.map((rule, i) => (
-              <div className="row" role="listitem" key={rule}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{rule}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(c.interaction.rules)} />
         </section>
 
         <div className="status-note">

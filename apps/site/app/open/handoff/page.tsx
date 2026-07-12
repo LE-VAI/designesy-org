@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { openIndex } from '../../lib/open-index';
+import { CheckGrid } from '../../lib/check-grid';
 
 export const metadata: Metadata = {
   title: 'Open handoff',
@@ -254,19 +255,7 @@ export default function OpenHandoffPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
-          <div className="row-stack" role="list">
-            {VERIFY.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={VERIFY} />
         </section>
 
         <section className="doctrine-section fade-up">
