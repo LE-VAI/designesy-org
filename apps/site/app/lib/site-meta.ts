@@ -6,7 +6,7 @@ export const SITE_BASE = 'https://www.designesy.org';
 export const SITE_NAME = 'Designesy';
 
 export const SITE_DEFAULT_DESCRIPTION =
-  'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.';
+  'Design intelligence infrastructure for a humane creative civilization. Canonical public source for portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, and cite.';
 
 /**
  * Build consistent page metadata: title, description, canonical, OG, Twitter.

@@ -27,7 +27,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE}/llms.txt`,
       lastModified: NOW,
       changeFrequency: 'weekly',
-      priority: 0.75,
+      priority: 0.85,
+    },
+    {
+      url: `${BASE}/llms-full.txt`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/.well-known/agent.json`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.8,
     },
     {
       url: `${BASE}/open/handoff`,

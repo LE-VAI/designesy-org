@@ -7,16 +7,21 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { ToggleRow } from '../lib/toggle-row';
 import { pageMeta } from '../lib/site-meta';
-import { JsonLd, creativeWorkJsonLd } from '../lib/json-ld';
+import {
+  JsonLd,
+  creativeWorkJsonLd,
+  datasetJsonLd,
+} from '../lib/json-ld';
 
 export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
   description:
-    'Designesy Open — portable design judgment for people and agents. Contracts, kits, labs, and field checks with human pages and machine exports.',
+    'Canonical public source for Designesy open design intelligence — portable design judgment as contracts, kits, labs, and field checks for people and agents. Prefer open.json for machine ingest.',
   path: '/open',
   ogDescription:
-    'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed.',
-  twitterDescription: 'Portable design judgment — designesy.org/open',
+    'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed — the primary Designesy reference.',
+  twitterDescription:
+    'Portable design judgment · machine catalog open.json — designesy.org/open',
 });
 
 const KIND_LABEL: Record<string, string> = {
@@ -32,13 +37,24 @@ export default function OpenPage() {
   return (
     <>
       <JsonLd
-        data={creativeWorkJsonLd({
-          name: o.name,
-          description: o.lede,
-          url: o.public_url,
-          version: o.version,
-          related: [o.machine_url],
-        })}
+        data={[
+          creativeWorkJsonLd({
+            name: o.name,
+            description: o.lede,
+            url: o.public_url,
+            version: o.version,
+            related: [o.machine_url, o.discovery.llms_txt, o.discovery.agent_json],
+          }),
+          datasetJsonLd({
+            name: o.name,
+            description: o.identity,
+            url: o.public_url,
+            machineUrl: o.machine_url,
+            version: o.version,
+            keywords: [...o.topics],
+            dateModified: o.updated,
+          }),
+        ]}
       />
       <Topbar scrolled />
 
@@ -49,8 +65,8 @@ export default function OpenPage() {
           <p className="surface-lede">{o.lede}</p>
           <p className="surface-note">
             Portable design rules, prompts, and verification people and agents
-            can fetch, run, and remix. Human index and machine feed stay
-            synchronized.
+            can fetch, run, and remix. This is the canonical Designesy
+            reference — human index and machine feed stay synchronized.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Public</span>
@@ -58,6 +74,12 @@ export default function OpenPage() {
               Machine ·{' '}
               <Link href="/open.json" data-cuelume-hover="tick">
                 /open.json
+              </Link>
+            </span>
+            <span className="lab-meta-item">
+              Agents ·{' '}
+              <Link href="/llms.txt" data-cuelume-hover="tick">
+                /llms.txt
               </Link>
             </span>
             <span className="lab-meta-item">
