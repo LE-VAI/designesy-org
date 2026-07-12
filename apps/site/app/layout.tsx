@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Designesy — Design intelligence infrastructure',
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
