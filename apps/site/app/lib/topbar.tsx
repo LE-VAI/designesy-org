@@ -11,8 +11,8 @@ const NAV_ROUTES = [
 ];
 
 /**
- * Shared topbar — extracted from page duplication.
- * Includes sound toggle and cuelume hover attributes on nav links.
+ * Shared topbar — wordmark, primary routes, sound.
+ * Mobile: single-row sticky chrome; nav scrolls horizontally instead of wrapping.
  * Pass `scrolled` to force the scrolled state on route pages.
  */
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {

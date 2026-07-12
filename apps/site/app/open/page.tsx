@@ -17,8 +17,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Open design intelligence · Designesy',
-    description:
-      'Start open design intelligence at designesy.org/open',
+    description: 'Start open design intelligence at designesy.org/open',
   },
 };
 
@@ -35,15 +34,28 @@ export default function OpenPage() {
   return (
     <>
       <Topbar scrolled />
-      <main className="site-shell">
-        <section className="lab-hero fade-up">
-          <p className="lab-eyebrow">Open · v{o.version}</p>
-          <h1 className="lab-title">{o.name}</h1>
-          <p className="lab-lede">{o.lede}</p>
-          <div className="lab-meta-row">
+
+      <main className="surface-page">
+        <section className="surface-header fade-up">
+          <p className="surface-eyebrow">Open · v{o.version}</p>
+          <h1 className="surface-title">{o.name}</h1>
+          <p className="surface-lede">{o.lede}</p>
+          <p className="surface-note">
+            Portable design rules, prompts, and verification people and agents
+            can fetch, run, and remix. Human index and machine feed stay
+            synchronized.
+          </p>
+          <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Public</span>
-            <span className="lab-meta-item">Machine · /open.json</span>
-            <span className="lab-meta-item">Stack · contracts · kits · labs · reviews</span>
+            <span className="lab-meta-item">
+              Machine ·{' '}
+              <Link href="/open.json" data-cuelume-hover="tick">
+                /open.json
+              </Link>
+            </span>
+            <span className="lab-meta-item">
+              Stack · contracts · kits · labs · reviews
+            </span>
           </div>
         </section>
 
@@ -75,7 +87,8 @@ export default function OpenPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Packages</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Live portable cargo. Machine URLs are CORS-open JSON for agents and tools.
+            Live portable cargo. Machine URLs are CORS-open JSON for agents and
+            tools.
           </p>
           <div className="row-stack" role="list">
             {o.packages.map((pkg, i) => (
@@ -85,23 +98,29 @@ export default function OpenPage() {
                 </span>
                 <span className="row-body">
                   <span className="row-title">
-                    {pkg.number ? `${KIND_LABEL[pkg.kind]} ${pkg.number} · ` : ''}
+                    {pkg.number
+                      ? `${KIND_LABEL[pkg.kind]} ${pkg.number} · `
+                      : `${KIND_LABEL[pkg.kind]} · `}
                     {pkg.title}
                     {pkg.version ? ` · v${pkg.version}` : ''}
                   </span>
                   <span className="row-meta">{pkg.lede}</span>
-                  <span className="row-meta" style={{ marginTop: '0.35rem' }}>
+                  <span className="row-meta open-package-paths">
                     <Link href={pkg.path} data-cuelume-hover="tick">
                       {pkg.path}
                     </Link>
                     {pkg.machine_path ? (
                       <>
-                        {' · '}
+                        <span className="open-path-sep" aria-hidden="true">
+                          ·
+                        </span>
                         <Link href={pkg.machine_path} data-cuelume-hover="tick">
                           {pkg.machine_path}
                         </Link>
                       </>
-                    ) : null}
+                    ) : (
+                      <span className="open-path-note"> · human surface</span>
+                    )}
                   </span>
                 </span>
               </div>
@@ -156,7 +175,7 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">Anti-patterns</h2>
           <div className="row-stack" role="list">
             {o.anti_patterns.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
+              <div className="row is-avoid" role="listitem" key={item}>
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
                 </span>
@@ -196,7 +215,9 @@ export default function OpenPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Portable agent prompt · human + machine</span>
+                <span className="row-meta">
+                  Portable agent prompt · human + machine
+                </span>
               </span>
             </Link>
             <Link
@@ -210,7 +231,9 @@ export default function OpenPage() {
               <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Docs</span>
-                <span className="row-meta">Mission, principles, architecture</span>
+                <span className="row-meta">
+                  Mission, principles, architecture
+                </span>
               </span>
             </Link>
           </div>
@@ -222,6 +245,7 @@ export default function OpenPage() {
           published.
         </div>
       </main>
+
       <Footer />
     </>
   );
