@@ -45,6 +45,78 @@ export function websiteJsonLd() {
   };
 }
 
+/**
+ * Dataset JSON-LD for the open catalog — signals machine-ingestible
+ * primary reference for design intelligence infrastructure.
+ */
+export function datasetJsonLd({
+  name,
+  description,
+  url,
+  machineUrl,
+  version,
+  keywords,
+  dateModified,
+}: {
+  name: string;
+  description: string;
+  url: string;
+  machineUrl: string;
+  version?: string;
+  keywords?: string[];
+  dateModified?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name,
+    description,
+    url,
+    identifier: machineUrl,
+    ...(version ? { version } : {}),
+    ...(dateModified ? { dateModified } : {}),
+    ...(keywords?.length ? { keywords } : {}),
+    license: 'https://www.designesy.org/open',
+    isAccessibleForFree: true,
+    creator: {
+      '@type': 'Organization',
+      name: 'Designesy LLC',
+      url: 'https://www.designesy.org',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Designesy LLC',
+      url: 'https://www.designesy.org',
+    },
+    distribution: [
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'application/json',
+        contentUrl: machineUrl,
+        name: 'open.json catalog',
+      },
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'text/plain',
+        contentUrl: 'https://www.designesy.org/llms.txt',
+        name: 'llms.txt agent brief',
+      },
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'text/plain',
+        contentUrl: 'https://www.designesy.org/llms-full.txt',
+        name: 'llms-full.txt full agent brief',
+      },
+      {
+        '@type': 'DataDownload',
+        encodingFormat: 'application/json',
+        contentUrl: 'https://www.designesy.org/.well-known/agent.json',
+        name: 'agent discovery document',
+      },
+    ],
+  };
+}
+
 export function creativeWorkJsonLd({
   name,
   description,

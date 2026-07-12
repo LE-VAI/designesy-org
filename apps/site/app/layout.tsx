@@ -24,8 +24,30 @@ export const metadata: Metadata = {
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DEFAULT_DESCRIPTION,
+  keywords: [
+    'Designesy',
+    'design intelligence infrastructure',
+    'portable design judgment',
+    'design system contract',
+    'design review kit',
+    'open design intelligence',
+    'agent-ready design rules',
+  ],
   alternates: {
     canonical: SITE_BASE,
+    types: {
+      'application/json': [
+        { url: `${SITE_BASE}/open.json`, title: 'Open catalog' },
+        {
+          url: `${SITE_BASE}/.well-known/agent.json`,
+          title: 'Agent discovery',
+        },
+      ],
+      'text/plain': [
+        { url: `${SITE_BASE}/llms.txt`, title: 'Agent brief' },
+        { url: `${SITE_BASE}/llms-full.txt`, title: 'Full agent brief' },
+      ],
+    },
   },
   openGraph: {
     title: `${SITE_NAME} — Design intelligence infrastructure`,
