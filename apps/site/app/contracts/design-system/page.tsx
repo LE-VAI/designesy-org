@@ -1,0 +1,239 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Topbar } from '../../lib/topbar';
+import { Footer } from '../../lib/footer';
+import { designSystemContract } from '../../lib/design-system-contract';
+
+export const metadata: Metadata = {
+  title: 'Design system contract',
+  description:
+    'Designesy design system contract v0.1 — human overview and machine export for portable design judgment.',
+  openGraph: {
+    title: 'Design system contract · Designesy',
+    description:
+      'Portable design agreement for designesy.org. Human overview with machine-readable export.',
+  },
+};
+
+const SECTIONS = [
+  { title: 'Colors', meta: 'Primitive and semantic color roles' },
+  { title: 'Typography', meta: 'Stacks, scale, and type rules' },
+  { title: 'Rounded', meta: 'Radius tokens' },
+  { title: 'Spacing', meta: 'Layout spacing and breakpoints' },
+  { title: 'Motion', meta: 'Duration, easing, reduced-motion' },
+  { title: 'Components', meta: 'Behavior and states' },
+  { title: 'Accessibility', meta: 'Focus, preference, landmarks' },
+  { title: 'Verification', meta: 'How to know the system still holds' },
+];
+
+const COLOR_PREVIEW = [
+  designSystemContract.colors.ink,
+  designSystemContract.colors.paper,
+  designSystemContract.colors.surface,
+  designSystemContract.colors.signal,
+  designSystemContract.colors.signal_light,
+  designSystemContract.colors.activation,
+];
+
+export default function DesignSystemContractPage() {
+  const c = designSystemContract;
+
+  return (
+    <>
+      <Topbar scrolled />
+
+      <main className="surface-page">
+        <section className="surface-header fade-up">
+          <p className="surface-eyebrow">
+            <Link href="/contracts" className="lab-crumb">
+              Contracts
+            </Link>
+            <span aria-hidden="true"> · </span>
+            Design system
+          </p>
+          <h1 className="surface-title">{c.name}</h1>
+          <p className="surface-lede">
+            Portable design judgment for designesy.org — version {c.version}.
+          </p>
+          <p className="surface-note">
+            This page is the human face of the contract. Exact values, roles, and
+            rules live here in overview form, and in full on the contracts
+            surface. Machines read the JSON export.
+          </p>
+          <div className="lab-meta fade-up fade-up-delay-1">
+            <span className="status-badge">v{c.version}</span>
+            <span className="lab-meta-item">Status · {c.status}</span>
+            <span className="lab-meta-item">Updated · {c.updated}</span>
+          </div>
+          <div className="hero-actions fade-up fade-up-delay-2" style={{ marginTop: '1.75rem' }}>
+            <Link
+              className="button primary"
+              href="/contracts/design-system.json"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              Open machine export
+            </Link>
+            <Link
+              className="button ghost"
+              href="/contracts#design-system-contract"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              Full contract
+            </Link>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">What this contract is</h2>
+          <div className="definition">
+            <p className="definition-label">Operating agreement</p>
+            <p>
+              A Designesy contract answers exact value, role, application,
+              behavior, avoidance, and verification. It is public artifact
+              discipline — not legal advice or a client service agreement.
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Contents</h2>
+          <div className="row-stack" role="list">
+            {SECTIONS.map((item, i) => (
+              <div
+                key={item.title}
+                className="row"
+                role="listitem"
+                data-cuelume-hover="whisper"
+              >
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Token preview</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Core color roles from the live foundation. Full tables live on the
+            contracts surface and in the machine export.
+          </p>
+          <div className="token-table" role="table" aria-label="Core color tokens">
+            <div className="token-table-head" role="row">
+              <span role="columnheader">Token</span>
+              <span role="columnheader">Value</span>
+              <span role="columnheader">Role</span>
+            </div>
+            {COLOR_PREVIEW.map((row) => (
+              <div className="token-table-row" role="row" key={row.token}>
+                <code role="cell">{row.token}</code>
+                <code role="cell" className="token-value">
+                  {row.value}
+                </code>
+                <span role="cell">{row.role}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Surfaces</h2>
+          <div className="row-stack" role="list">
+            <Link
+              href="/contracts#design-system-contract"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Human contract</span>
+                <span className="row-meta">
+                  Full published contract on /contracts
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts/design-system.json"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Machine export</span>
+                <span className="row-meta">/contracts/design-system.json</span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Lab One · Poise</span>
+                <span className="row-meta">
+                  Interaction rules · candidates for v0.1.1
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Public review</span>
+                <span className="row-meta">
+                  Field check of designesy.org against this contract
+                </span>
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Adoption</h2>
+          <div className="definition">
+            <p className="definition-label">
+              Poise · {c.promotion_candidates.status} for v
+              {c.promotion_candidates.target_version}
+            </p>
+            <p>
+              Portable rules from Lab One are recorded as candidates. They become
+              contract material only when explicitly adopted — silence is not
+              adoption.
+            </p>
+          </div>
+        </section>
+
+        <div className="status-note">
+          Design system contract v{c.version}. Live styles remain authoritative
+          when they and this contract disagree. Human and machine surfaces stay
+          synchronized.
+        </div>
+      </main>
+
+      <Footer />
+    </>
+  );
+}

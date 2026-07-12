@@ -262,9 +262,14 @@ export default function ContractsPage() {
             </p>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Machine export ·{' '}
+            Contract home ·{' '}
             <Link href="/contracts/design-system">
               /contracts/design-system
+            </Link>
+            {' · '}
+            Machine export ·{' '}
+            <Link href="/contracts/design-system.json">
+              /contracts/design-system.json
             </Link>
             {' · '}
             Public review ·{' '}
@@ -468,9 +473,14 @@ export default function ContractsPage() {
         <div className="status-note">
           Designesy design system contract v0.1 — public artifact discipline, not
           legal advice or a client service agreement. Values are taken from the
-          live site tokens. Machine export:{' '}
-          <Link href="/contracts/design-system">/contracts/design-system</Link>.
-          When the human page and the live styles disagree, the live styles are
+          live site tokens. Contract home:{' '}
+          <Link href="/contracts/design-system">/contracts/design-system</Link>
+          {' · '}
+          Machine export:{' '}
+          <Link href="/contracts/design-system.json">
+            /contracts/design-system.json
+          </Link>
+          . When the human page and the live styles disagree, the live styles are
           authoritative until the contract is revised. Human and machine surfaces
           stay synchronized.
         </div>

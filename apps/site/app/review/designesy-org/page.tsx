@@ -79,21 +79,31 @@ const SCOPE = [
   { href: '/contracts', label: 'Contracts', meta: '/contracts' },
   {
     href: '/contracts/design-system',
-    label: 'Machine contract',
+    label: 'Design system',
     meta: '/contracts/design-system',
+  },
+  {
+    href: '/contracts/design-system.json',
+    label: 'Machine export',
+    meta: '/contracts/design-system.json',
   },
 ];
 
 const EVIDENCE = [
   {
-    title: 'Contract (human)',
+    title: 'Contract (full)',
     meta: '/contracts#design-system-contract',
     href: '/contracts#design-system-contract',
   },
   {
-    title: 'Contract (machine)',
+    title: 'Contract home',
     meta: '/contracts/design-system',
     href: '/contracts/design-system',
+  },
+  {
+    title: 'Machine export',
+    meta: '/contracts/design-system.json',
+    href: '/contracts/design-system.json',
   },
   {
     title: 'Lab One · Poise',
