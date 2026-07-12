@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: 'Poise · Lab One',
     description:
       'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
-    url: 'https://designesy.org/labs/poise',
+    url: 'https://www.designesy.org/labs/poise',
   },
   twitter: {
     card: 'summary_large_image',

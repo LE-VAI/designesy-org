@@ -4,7 +4,9 @@ import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://designesy.org'),
+  // Canonical host is www — apex 308s. Social crawlers (especially X)
+  // often fail image fetch when og/twitter image URLs redirect.
+  metadataBase: new URL('https://www.designesy.org'),
   title: {
     default: 'Designesy — Design intelligence infrastructure',
     template: '%s · Designesy',
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
     title: 'Designesy — Design intelligence infrastructure',
     description:
       'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
-    url: 'https://designesy.org',
+    url: 'https://www.designesy.org',
     siteName: 'Designesy',
     type: 'website',
     locale: 'en_US',

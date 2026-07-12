@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'Contracts · Designesy',
     description:
       'Portable design agreements for people and agents. Design system contract v0.1 is live.',
-    url: 'https://designesy.org/contracts',
+    url: 'https://www.designesy.org/contracts',
   },
   twitter: {
     card: 'summary_large_image',
@@ -138,7 +138,7 @@ const ANTI_PATTERNS = [
 const IMPLEMENTATION_NOTES = [
   'Single live token source of truth — no secondary theme framework',
   'Server-rendered by default; client only for sound, bind, and preference controls',
-  'metadataBase is https://designesy.org; public label is Designesy',
+  'metadataBase is https://www.designesy.org (apex redirects); public label is Designesy',
   'Interaction audio via Cuelume; middle-click guard is required',
   'Sitemap and robots follow standard site conventions',
   'Production deploys from the main branch',

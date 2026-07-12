@@ -237,7 +237,7 @@ export const designSystemContract = {
   implementation: [
     'Single live token source of truth — no secondary theme framework',
     'Server-rendered by default; client only for sound, bind, and preference controls',
-    'metadataBase is https://designesy.org; public label is Designesy',
+    'metadataBase is https://www.designesy.org (apex redirects); public label is Designesy',
     'Interaction audio via Cuelume with middle-click guard',
     'Sitemap and robots follow standard site conventions',
     'Production deploys from the main branch',

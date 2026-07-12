@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'Labs · Designesy',
     description:
       'Experiments that compile into contracts. Lab One · Poise is live.',
-    url: 'https://designesy.org/labs',
+    url: 'https://www.designesy.org/labs',
   },
   twitter: {
     card: 'summary_large_image',
