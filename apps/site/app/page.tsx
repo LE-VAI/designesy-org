@@ -133,6 +133,13 @@ export default function HomePage() {
       <main id="main-content" className="site-shell">
         {/* --- Hero --- */}
         <section className="hero" aria-labelledby="hero-title">
+          <div className="hero-mark" aria-hidden="true">
+            <span className="hero-mark-orbit" />
+            <span className="hero-mark-square" />
+            <span className="hero-mark-triangle" />
+            <span className="hero-mark-block" />
+            <span className="hero-mark-core" />
+          </div>
           <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
           <h1 className="wordmark-hero hero-title fade-up fade-up-delay-1" id="hero-title">
             designesy<span className="dot">.</span>
@@ -216,7 +223,7 @@ export default function HomePage() {
           <h2 className="section-title" id="principles-title">
             Nine principles. Four shown here.
           </h2>
-          <div className="principle-list">
+          <div className="principle-list principle-list--rail">
             {PRINCIPLES_PREVIEW.map((p) => (
               <div className="principle fade-in" key={p.num}>
                 <span className="principle-num">{p.num}</span>
@@ -227,14 +234,14 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: '2rem' }}>
+          <div className="section-more">
             <Link
-              className="button ghost"
+              className="text-link"
               href="/docs"
-              data-cuelume-press
-              data-cuelume-release
+              data-cuelume-hover="tick"
             >
-              Read all nine principles →
+              Read all nine principles
+              <span aria-hidden="true"> →</span>
             </Link>
           </div>
         </section>
@@ -274,7 +281,13 @@ export default function HomePage() {
                     <span className="mark-glyph-ring" />
                   </span>
                 </div>
-                <div className="field-card-status">{item.status}</div>
+                <div
+                  className={`field-card-status${
+                    item.status === 'Live' ? ' is-live' : ''
+                  }`}
+                >
+                  {item.status}
+                </div>
                 <h3 className="field-card-title">{item.title}</h3>
                 <p className="field-card-lede">{item.lede}</p>
                 <p className="field-card-desc">{item.desc}</p>
@@ -362,27 +375,6 @@ export default function HomePage() {
 
       {/* --- Footer --- */}
       <Footer />
-
-      {/* --- Scroll detection script (progressive enhancement) --- */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              var topbar = document.getElementById('topbar');
-              if (!topbar) return;
-              function onScroll() {
-                if (window.scrollY > 40) {
-                  topbar.classList.add('scrolled');
-                } else {
-                  topbar.classList.remove('scrolled');
-                }
-              }
-              window.addEventListener('scroll', onScroll, { passive: true });
-              onScroll();
-            })();
-          `,
-        }}
-      />
     </>
   );
 }

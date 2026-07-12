@@ -119,7 +119,8 @@ p {
 .wordmark-hero .dot {
   color: var(--signal);
   display: inline-block;
-  margin-left: -0.04em;
+  margin-left: -0.055em;
+  transform: translateY(-0.02em);
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
@@ -148,10 +149,9 @@ p {
   top: 0;
   z-index: 100;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1rem 0;
+  flex-direction: column;
+  gap: 0;
+  padding: 1rem 0 0;
   transition: background var(--duration) var(--ease),
     border-color var(--duration) var(--ease),
     backdrop-filter var(--duration) var(--ease);
@@ -168,12 +168,36 @@ p {
 .topbar-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
   width: 100%;
+}
+
+/* Scroll progress hairline — orientation without chrome bloat */
+.scroll-progress {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: transparent;
+  overflow: hidden;
+}
+
+.topbar.scrolled .scroll-progress {
+  background: var(--line-faint);
+}
+
+.scroll-progress-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: var(--signal);
+  opacity: 0.85;
+  will-change: transform;
 }
 
 .topbar-right {
@@ -204,6 +228,7 @@ p {
 
 .nav-links a {
   flex: 0 0 auto;
+  position: relative;
   padding: 0.5rem 0.65rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -216,6 +241,24 @@ p {
 .nav-links a:hover {
   color: var(--ink);
   background: var(--surface-hover);
+}
+
+.nav-links a.is-active,
+.nav-links a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.nav-links a.is-active::after,
+.nav-links a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: 0.2rem;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0.9;
 }
 
 .nav-links a:focus-visible {
@@ -264,11 +307,91 @@ p {
 /* --- Hero --- */
 
 .hero {
-  padding: 5rem 0 4rem;
-  min-height: min(620px, 80vh);
+  position: relative;
+  padding: 4.75rem 0 3.75rem;
+  min-height: min(600px, 78vh);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Ghost modular mark — PFP composition as site geometry, opacity only */
+.hero-mark {
+  position: absolute;
+  right: max(-0.5rem, 2%);
+  top: 48%;
+  width: min(260px, 40vw);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.05;
+}
+
+.hero-mark-orbit,
+.hero-mark-square,
+.hero-mark-triangle,
+.hero-mark-block,
+.hero-mark-core {
+  position: absolute;
+}
+
+.hero-mark-orbit {
+  left: 10%;
+  top: 12%;
+  width: 48%;
+  height: 48%;
+  border-radius: 50%;
+  border: 2px solid var(--signal);
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  transform: rotate(-18deg);
+}
+
+.hero-mark-square {
+  right: 16%;
+  top: 20%;
+  width: 20%;
+  height: 20%;
+  background: var(--ink);
+}
+
+.hero-mark-triangle {
+  left: 30%;
+  bottom: 24%;
+  width: 22%;
+  height: 22%;
+  background: var(--ink);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.hero-mark-block {
+  right: 12%;
+  bottom: 16%;
+  width: 26%;
+  height: 16%;
+  border-radius: 0.45rem;
+  background: var(--ink);
+}
+
+.hero-mark-core {
+  left: 46%;
+  top: 46%;
+  width: 7%;
+  height: 7%;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+.hero-eyebrow,
+.hero-title,
+.hero-lede,
+.hero-body,
+.hero-actions {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-eyebrow {
@@ -277,11 +400,11 @@ p {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.35rem;
 }
 
 .hero-title {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.35rem;
 }
 
 .hero-lede {
@@ -290,7 +413,8 @@ p {
   line-height: 1.35;
   font-weight: 500;
   color: var(--ink);
-  margin-bottom: 1rem;
+  margin-bottom: 0.9rem;
+  text-wrap: balance;
 }
 
 .hero-body {
@@ -298,7 +422,8 @@ p {
   font-size: 0.95rem;
   color: var(--muted);
   line-height: 1.6;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.25rem;
+  text-wrap: pretty;
 }
 
 .hero-actions {
@@ -461,6 +586,7 @@ p {
   background: var(--signal);
   width: 0.4rem;
   height: 0.4rem;
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
 .pipeline-step.is-end .pipeline-label {
@@ -524,14 +650,19 @@ p {
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 28%),
+    var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
 }
 
 .pillar:hover {
   border-color: var(--line-strong);
-  background: var(--surface-raised);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%),
+    var(--surface-raised);
 }
 
 .pillar:active {
@@ -579,14 +710,19 @@ p {
   padding: 1.25rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface);
-  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease),
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 30%),
+    var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
 }
 
 .surface-card:hover {
   border-color: var(--line-strong);
-  background: var(--surface-raised);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%),
+    var(--surface-raised);
 }
 
 .surface-card:active {
@@ -626,11 +762,17 @@ p {
   padding-top: 0.75rem;
   font-size: 0.75rem;
   color: var(--muted-dim);
-  transition: color 0.2s var(--ease);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .surface-card:hover .surface-card-arrow {
   color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .surface-card:hover .surface-card-arrow {
+    transform: translateX(2px);
+  }
 }
 
 /* --- Status bar --- */
@@ -694,11 +836,28 @@ p {
   font-weight: 500;
 }
 
+.footer-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
 .footer-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  margin-top: 0.65rem;
+  align-items: center;
+  gap: 0.55rem 0.9rem;
+}
+
+.footer-group-label {
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-right: 0.15rem;
 }
 
 .footer-nav a {
@@ -710,6 +869,15 @@ p {
 
 .footer-nav a:hover {
   color: var(--ink);
+}
+
+.footer-nav--machine a {
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer-nav--machine a:hover {
+  color: var(--muted);
 }
 
 .footer-link {
@@ -820,14 +988,31 @@ p {
   gap: 1.75rem;
 }
 
+.principle-list--rail {
+  position: relative;
+}
+
+.principle-list--rail::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 1px;
+  background: var(--line-faint);
+  pointer-events: none;
+}
+
 .principle {
   display: grid;
   grid-template-columns: 2.5rem 1fr;
   gap: 1rem;
   align-items: baseline;
+  position: relative;
 }
 
 .principle-num {
+  position: relative;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--signal);
@@ -835,11 +1020,32 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+.principle-list--rail .principle-num {
+  padding-left: 0.7rem;
+}
+
+.principle-list--rail .principle-num::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.4em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px var(--paper);
+}
+
+.principle-list--rail .principle:first-child .principle-num::before {
+  background: var(--signal-light);
+}
+
 .principle-body h3 {
   font-size: 1rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: 0.35rem;
+  text-wrap: balance;
 }
 
 .principle-body p {
@@ -847,6 +1053,28 @@ p {
   color: var(--muted);
   line-height: 1.6;
   max-width: 560px;
+}
+
+.section-more {
+  margin-top: 2rem;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+  padding-bottom: 0.1rem;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+
+.text-link:hover {
+  color: var(--signal-light);
+  border-bottom-color: var(--signal-light);
 }
 
 /* Definition block — standalone statement with left signal border */
@@ -2152,10 +2380,13 @@ a.check-cell:hover .check-cell-title {
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 28%),
+    var(--surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease),
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
 }
 
@@ -2173,7 +2404,9 @@ a.check-cell:hover .check-cell-title {
 
 .field-card:hover {
   border-color: var(--line-strong);
-  background: var(--surface-raised);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%),
+    var(--surface-raised);
 }
 
 .field-card--contract:hover {
@@ -2215,6 +2448,12 @@ a.check-cell:hover .check-cell-title {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-card-status.is-live {
+  color: var(--signal-light);
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
 .field-card-title {
@@ -2243,11 +2482,17 @@ a.check-cell:hover .check-cell-title {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted-dim);
-  transition: color 0.2s var(--ease);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
 .field-card:hover .field-card-arrow {
   color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .field-card:hover .field-card-arrow {
+    transform: translateX(2px);
+  }
 }
 
 .field-card--contract:hover .field-card-arrow {
@@ -2447,6 +2692,24 @@ a.check-cell:hover .check-cell-title {
     animation-duration: 0.001s !important;
     animation-delay: 0s !important;
     transition-duration: 0.001s !important;
+  }
+
+  .hero-mark {
+    opacity: 0.035;
+  }
+
+  .field-card-status.is-live,
+  .pipeline-step.is-end .pipeline-node-core,
+  .wordmark-hero .dot,
+  .mark-glyph--contract .mark-glyph-core,
+  .mark-glyph--lab .mark-glyph-core,
+  .mark-glyph--kit .mark-glyph-core {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .scroll-progress-fill {
+    transition: none;
   }
 }
 

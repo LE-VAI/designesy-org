@@ -1,8 +1,30 @@
 import Link from 'next/link';
 
+const SURFACE_LINKS = [
+  { href: '/open', label: 'Open' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/labs', label: 'Labs' },
+  { href: '/kits', label: 'Kits' },
+  { href: '/review', label: 'Review' },
+  { href: '/contracts', label: 'Contracts' },
+  { href: '/kits/design-review', label: 'Design Review' },
+  { href: '/review/poise', label: 'Poise review' },
+  { href: '/contracts/design-system', label: 'Design system' },
+  { href: '/privacy', label: 'Privacy' },
+];
+
+const MACHINE_LINKS = [
+  { href: '/open.json', label: 'open.json' },
+  { href: '/llms.txt', label: 'llms.txt' },
+  { href: '/llms-full.txt', label: 'llms-full.txt' },
+  { href: '/.well-known/agent.json', label: 'agent.json' },
+  { href: '/open/handoff', label: 'Open handoff' },
+  { href: '/review/keyboard', label: 'Keyboard' },
+];
+
 /**
- * Shared footer — wordmark, legal line, wayfinding, contact.
- * No monogram. No placeholder lanes.
+ * Shared footer — wordmark, legal line, grouped wayfinding, contact.
+ * Surfaces vs machine links stay separated for scan clarity.
  */
 export function Footer() {
   return (
@@ -15,56 +37,33 @@ export function Footer() {
           <span>
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>
-          <nav className="footer-nav" aria-label="Footer">
-            <Link href="/open" data-cuelume-hover="tick">
-              Open
-            </Link>
-            <Link href="/docs" data-cuelume-hover="tick">
-              Docs
-            </Link>
-            <Link href="/labs" data-cuelume-hover="tick">
-              Labs
-            </Link>
-            <Link href="/kits" data-cuelume-hover="tick">
-              Kits
-            </Link>
-            <Link href="/review" data-cuelume-hover="tick">
-              Review
-            </Link>
-            <Link href="/contracts" data-cuelume-hover="tick">
-              Contracts
-            </Link>
-            <Link href="/kits/design-review" data-cuelume-hover="tick">
-              Design Review
-            </Link>
-            <Link href="/review/poise" data-cuelume-hover="tick">
-              Poise review
-            </Link>
-            <Link href="/contracts/design-system" data-cuelume-hover="tick">
-              Design system
-            </Link>
-            <Link href="/open.json" data-cuelume-hover="tick">
-              open.json
-            </Link>
-            <Link href="/llms.txt" data-cuelume-hover="tick">
-              llms.txt
-            </Link>
-            <Link href="/llms-full.txt" data-cuelume-hover="tick">
-              llms-full.txt
-            </Link>
-            <Link href="/.well-known/agent.json" data-cuelume-hover="tick">
-              agent.json
-            </Link>
-            <Link href="/open/handoff" data-cuelume-hover="tick">
-              Open handoff
-            </Link>
-            <Link href="/review/keyboard" data-cuelume-hover="tick">
-              Keyboard
-            </Link>
-            <Link href="/privacy" data-cuelume-hover="tick">
-              Privacy
-            </Link>
-          </nav>
+
+          <div className="footer-groups">
+            <nav className="footer-nav" aria-label="Surfaces">
+              <span className="footer-group-label">Surfaces</span>
+              {SURFACE_LINKS.map((link) => (
+                <Link
+                  href={link.href}
+                  key={link.href}
+                  data-cuelume-hover="tick"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <nav className="footer-nav footer-nav--machine" aria-label="Machine">
+              <span className="footer-group-label">Machine</span>
+              {MACHINE_LINKS.map((link) => (
+                <Link
+                  href={link.href}
+                  key={link.href}
+                  data-cuelume-hover="tick"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
         <a
           className="footer-link"
