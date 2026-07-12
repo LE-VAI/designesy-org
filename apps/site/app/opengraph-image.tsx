@@ -3,6 +3,10 @@ import { ImageResponse } from 'next/og';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
+/**
+ * Social share card — wordmark only.
+ * No monogram tile. The signal lives in the period of designesy.
+ */
 export default function OpenGraphImage() {
   return new ImageResponse(
     (
@@ -20,25 +24,7 @@ export default function OpenGraphImage() {
       >
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 80,
-            height: 80,
-            background: '#0133cb',
-            borderRadius: 12,
-            fontSize: 56,
-            fontWeight: 800,
-            color: '#ffffff',
-            letterSpacing: '-0.04em',
-            marginBottom: 40,
-          }}
-        >
-          d
-        </div>
-        <div
-          style={{
-            fontSize: 64,
+            fontSize: 72,
             fontWeight: 800,
             color: '#ffffff',
             letterSpacing: '-0.04em',
@@ -52,7 +38,7 @@ export default function OpenGraphImage() {
             fontSize: 28,
             fontWeight: 500,
             color: '#a0a0a0',
-            marginTop: 16,
+            marginTop: 20,
           }}
         >
           Design intelligence infrastructure

@@ -3,6 +3,10 @@ import { ImageResponse } from 'next/og';
 export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
+/**
+ * Home-screen mark — authorized signal mark only.
+ * No monogram, no letter logo. Matches wordmark period language.
+ */
 export default function AppleIcon() {
   return new ImageResponse(
     (
@@ -13,15 +17,17 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0133cb',
-          fontSize: 120,
-          fontWeight: 800,
-          fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-          color: '#ffffff',
-          letterSpacing: '-0.04em',
+          background: '#000000',
         }}
       >
-        d
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            background: '#0133cb',
+          }}
+        />
       </div>
     ),
     size

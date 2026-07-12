@@ -3,6 +3,10 @@ import { ImageResponse } from 'next/og';
 export const size = { width: 32, height: 32 };
 export const contentType = 'image/png';
 
+/**
+ * Tab mark — authorized signal mark only.
+ * No monogram, no letter logo. Matches wordmark period language.
+ */
 export default function Icon() {
   return new ImageResponse(
     (
@@ -13,16 +17,17 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0133cb',
-          fontSize: 22,
-          fontWeight: 800,
-          fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
-          color: '#ffffff',
-          letterSpacing: '-0.04em',
-          borderRadius: 4,
+          background: '#000000',
         }}
       >
-        d
+        <div
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: 7,
+            background: '#0133cb',
+          }}
+        />
       </div>
     ),
     size
