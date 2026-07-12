@@ -18,6 +18,9 @@ const NAV_ROUTES = [
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   return (
     <header className={`topbar${scrolled ? ' scrolled' : ''}`} id="topbar">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <div className="topbar-inner">
         <Link
           className="wordmark"
