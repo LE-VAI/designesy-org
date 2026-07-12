@@ -3,6 +3,19 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { designReviewKit as k } from '../../lib/kits/design-review';
+import { CheckGrid, checkItemsFromStrings } from '../../lib/check-grid';
+
+const ANATOMY_HREFS: Record<string, string> = {
+  Purpose: '#purpose',
+  'When to use': '#when',
+  'Required inputs': '#inputs',
+  'Eight review dimensions': '#dimensions',
+  'Agent prompt': '#prompt',
+  'Output format': '#output',
+  'Verification checklist': '#verification',
+  'Anti-patterns': '#anti-patterns',
+  'Related contracts and surfaces': '#related',
+};
 
 export const metadata: Metadata = {
   title: 'Design Review',
@@ -83,37 +96,31 @@ export default function DesignReviewKitPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up" id="anatomy">
+          <h2 className="doctrine-heading">Kit anatomy</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Package map first — jump cells land on sections so the rest of the
+            kit does not have to be read as one long stack.
+          </p>
+          <CheckGrid
+            dense
+            items={checkItemsFromStrings(k.anatomy, { hrefs: ANATOMY_HREFS })}
+          />
+        </section>
+
         <section className="doctrine-section fade-up" id="when">
           <h2 className="doctrine-heading">When to use</h2>
-          <div className="row-stack" role="list">
-            {k.when_to_use.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(k.when_to_use)} />
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Required inputs</h2>
-          <div className="row-stack" role="list">
-            {k.required_inputs.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            items={k.required_inputs.map((item) => ({
+              title: item.title,
+              meta: item.meta,
+            }))}
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="dimensions">
@@ -152,51 +159,28 @@ export default function DesignReviewKitPage() {
 
         <section className="doctrine-section fade-up" id="output">
           <h2 className="doctrine-heading">Output format</h2>
-          <div className="row-stack" role="list">
-            {k.output_format.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            items={k.output_format.map((item) => ({
+              title: item.title,
+              meta: item.meta,
+            }))}
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="verification">
           <h2 className="doctrine-heading">Verification checklist</h2>
-          <div className="row-stack" role="list">
-            {k.verification.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Peer checks, not a scroll essay. Work the grid; leave no cell
+            unexamined when the artifact is UI-bearing.
+          </p>
+          <CheckGrid items={checkItemsFromStrings(k.verification)} />
         </section>
 
         <section className="doctrine-section fade-up" id="anti-patterns">
           <h2 className="doctrine-heading">Anti-patterns</h2>
-          <div className="row-stack" role="list">
-            {k.anti_patterns.map((item, i) => (
-              <div className="row is-avoid" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            items={checkItemsFromStrings(k.anti_patterns, { avoid: true })}
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="related">
@@ -220,22 +204,6 @@ export default function DesignReviewKitPage() {
                   <span className="row-meta">{item.meta}</span>
                 </span>
               </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Kit anatomy</h2>
-          <div className="row-stack" role="list">
-            {k.anatomy.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
             ))}
           </div>
         </section>
