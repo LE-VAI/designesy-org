@@ -184,7 +184,7 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/labs/poise"
+              href="/open"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -192,6 +192,22 @@ export default function DesignSystemContractPage() {
               data-cuelume-release
             >
               <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Open design intelligence</span>
+                <span className="row-meta">
+                  Package catalog · this contract is entry one
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
@@ -207,7 +223,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">04</span>
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
                 <span className="row-meta">
@@ -223,7 +239,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">05</span>
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">

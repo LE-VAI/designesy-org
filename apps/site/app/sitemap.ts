@@ -13,6 +13,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${BASE}/open`,
+      lastModified: new Date('2026-07-12'),
+      changeFrequency: 'weekly',
+      priority: 0.95,
+    },
+    {
+      url: `${BASE}/open.json`,
+      lastModified: new Date('2026-07-12'),
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
+    {
       url: `${BASE}/docs`,
       lastModified,
       changeFrequency: 'weekly',
@@ -41,6 +53,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date('2026-07-12'),
       changeFrequency: 'monthly',
       priority: 0.9,
+    },
+    {
+      url: `${BASE}/kits/design-review.json`,
+      lastModified: new Date('2026-07-12'),
+      changeFrequency: 'monthly',
+      priority: 0.65,
     },
     {
       url: `${BASE}/review`,

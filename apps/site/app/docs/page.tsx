@@ -30,9 +30,9 @@ const LAYERS = [
   },
   {
     num: '02',
-    name: 'Graph',
-    desc: 'living knowledge tree with provenance',
-    state: 'Internal — not published as a public browser',
+    name: 'Open',
+    desc: 'portable package catalog for people and agents',
+    state: 'Public · /open + open.json',
   },
   {
     num: '03',
@@ -56,10 +56,16 @@ const LAYERS = [
     num: '06',
     name: 'Kits',
     desc: 'portable instruction packages for people and agents',
-    state: 'Public · Kit One Design Review',
+    state: 'Public · Kit One Design Review + machine export',
   },
   {
     num: '07',
+    name: 'Graph',
+    desc: 'living knowledge tree with provenance',
+    state: 'Internal — not published as a public browser',
+  },
+  {
+    num: '08',
     name: 'Logs',
     desc: 'institutional memory, file-based',
     state: 'Internal — not a public feed',
@@ -68,9 +74,14 @@ const LAYERS = [
 
 const START_HERE = [
   {
+    href: '/open',
+    title: 'Open design intelligence',
+    meta: 'Human index and machine feed of portable packages',
+  },
+  {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
-    meta: 'Portable review package for people and agents',
+    meta: 'Portable review package · human + machine export',
   },
   {
     href: '/contracts/design-system',
