@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Poise · field check',
     description:
-      'Lab One reviewed with Use Kit One · Design Review. Pass with notes — candidate for contract v0.1.1.',
+      'Lab One reviewed with Use Kit One · Design Review. Pass with notes — interaction rules adopted in contract v0.1.1.',
     url: 'https://www.designesy.org/review/poise',
   },
   twitter: {
@@ -64,21 +64,21 @@ const DIMENSIONS = [
     num: '05',
     title: 'System coherence',
     observation:
-      'Values cite contract tokens: --signal, ease-out, ease-in-out, 160ms press, opacity-only wordmark breath. Kind language matches lab mark (circle). Portable rules are recorded as candidates for v0.1.1, not silent canon.',
+      'Values cite contract tokens: --signal, ease-out, ease-in-out, 160ms press, opacity-only wordmark breath. Kind language matches lab mark (circle). Portable rules are adopted into design system contract v0.1.1.',
     judgment:
-      'Strong coherence. Poise extends the system without inventing a second accent family or monogram.',
+      'Strong coherence. Poise extends the system without inventing a second accent family or monogram. Adoption is explicit.',
     action:
-      'Keep candidates explicit until adoption. Silence is not adoption.',
+      'Keep lab demo, contract.interaction, and live CSS synchronized after adoption.',
   },
   {
     num: '06',
     title: 'Durability',
     observation:
-      'Full lab anatomy is present. Builder prompt is remixable. Behaviors are named so they can promote into contract rules. Preference storage for sound is site-owned; audio engine only applies it.',
+      'Full lab anatomy is present. Builder prompt is remixable. Behaviors are named and adopted into contract rules. Preference storage for sound is site-owned; audio engine only applies it.',
     judgment:
-      'Durable as a lab package. Promotion path is clear. Risk is dual-source drift if contract tables and live CSS diverge later.',
+      'Durable as a lab package and as contract material. Risk is dual-source drift if contract tables and live CSS diverge later.',
     action:
-      'When any Poise token changes, update live CSS, lab notes, and contract candidate language together.',
+      'When any Poise token changes, update live CSS, lab notes, and contract.interaction together.',
   },
   {
     num: '07',
@@ -93,11 +93,11 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in sound or motion. Preference and reduced motion are first-class. Public naming stays human (Poise), not research-demo jargon. Page does not claim contract adoption it has not earned.',
+      'No dark pattern in sound or motion. Preference and reduced motion are first-class. Public naming stays human (Poise), not research-demo jargon. Adoption into v0.1.1 is explicit and public.',
     judgment:
-      'Honest about status: live experiment, candidate for v0.1.1. That honesty is a responsibility hold.',
+      'Honest about status: live experiment whose rules are now contract material. That honesty is a responsibility hold.',
     action:
-      'Keep status language accurate. Adopt into v0.1.1 only by explicit order, then update this packet.',
+      'Keep status language accurate. Future rule changes require a new contract version, not silent edits.',
   },
 ];
 
@@ -107,7 +107,7 @@ const HOLDS = [
   'Token-cited behaviors — no anonymous taste motion',
   'Full lab anatomy shipped (thesis through verification)',
   'Public name is human and premium — not lab-jargon product naming',
-  'Candidates for contract v0.1.1 are labeled, not smuggled into canon',
+  'Interaction rules adopted into design system contract v0.1.1',
 ];
 
 const TENSIONS = [
@@ -116,16 +116,16 @@ const TENSIONS = [
     meta: 'Poise proof is published; other public routes are not covered by this artifact',
   },
   {
-    title: 'Contract adoption still open',
-    meta: 'Poise rules remain candidates until v0.1.1 is explicitly ordered',
-  },
-  {
     title: 'Long anatomy on small screens',
     meta: 'Demo is clear; deep sections still demand patience below the fold',
   },
   {
     title: 'Dual-source risk after adoption',
-    meta: 'Live CSS, lab copy, and contract tables must stay synchronized',
+    meta: 'Live CSS, lab copy, and contract.interaction must stay synchronized',
+  },
+  {
+    title: 'Lab remains the demo surface',
+    meta: 'Adopted rules still need the live lab for inspectable proof — do not archive Poise',
   },
 ];
 
@@ -135,22 +135,22 @@ const CORRECTIONS = [
     meta: 'Re-run /review/poise/keyboard when demo controls or chrome change',
   },
   {
-    title: 'Keep v0.1.1 adoption explicit',
-    meta: 'Do not imply contract status until Commander order and contract edit ship',
+    title: 'Version future interaction changes',
+    meta: 'New contact rules require a contract bump after v0.1.1 — not silent edits',
   },
   {
     title: 'Expand keyboard packets route by route',
     meta: 'Do not claim site-wide keyboard proof from the Poise packet alone',
   },
   {
-    title: 'On adoption, refresh this packet outcome',
-    meta: 'Move from pass-with-notes candidate to adopted rule set',
+    title: 'Keep machine export and human tables aligned',
+    meta: 'design-system.json and /contracts must show the same adopted rules',
   },
 ];
 
 const VERIFICATION = [
   'Live route inspected: /labs/poise structure, demo blocks, status language',
-  'Compared to design system contract v0.1 tokens and motion stance',
+  'Compared to design system contract v0.1.1 tokens, motion, and interaction rules',
   'Compared to Use Kit One · Design Review output format',
   'Checked anti-patterns: no glow, bounce, unsolicited sound, monogram mark',
   'Checked naming: Poise remains human product language',
@@ -176,8 +176,8 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1',
-    meta: 'Governing token and motion baseline',
+    title: 'Design system contract v0.1.1',
+    meta: 'Governing tokens · Poise interaction rules adopted',
   },
   {
     href: '/review/designesy-org',
@@ -230,10 +230,10 @@ export default function PoiseFieldCheckPage() {
               Poise is a considered lab. The live artifact proves restrained
               contact: opacity-only wordmark breath, short press settle, opt-in
               sound, and reduced-motion respect — all token-cited. Full anatomy
-              is present. Keyboard-path verification is published. Remaining
-              work is adoption discipline and site-wide proof expansion: keep
-              candidate status honest, and promote to contract v0.1.1 only by
-              explicit order.
+              is present. Keyboard-path verification is published. Interaction
+              rules are adopted into design system contract v0.1.1. Remaining
+              work is synchronization and site-wide proof expansion — not
+              re-arguing adoption.
             </p>
           </div>
         </section>
@@ -273,7 +273,7 @@ export default function PoiseFieldCheckPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.1 · Kit One Design Review · lab anti-patterns
+                  Contract v0.1.1 · Kit One Design Review · lab anti-patterns
                 </span>
               </span>
             </div>
@@ -455,8 +455,8 @@ export default function PoiseFieldCheckPage() {
         <div className="status-note">
           Field check of Lab One · Poise using Use Kit One · Design Review.
           Outcome: pass with notes. Institutional quality discipline — not a
-          client report. Candidates for contract v0.1.1 remain open until
-          explicitly adopted.
+          client report. Interaction rules are adopted into contract v0.1.1;
+          remaining notes are synchronization and site-wide proof expansion.
         </div>
       </main>
 

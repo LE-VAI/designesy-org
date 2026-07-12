@@ -62,7 +62,7 @@ const SURFACES = [
     href: '/contracts',
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
-    meta: 'v0.1 public',
+    meta: 'v0.1.1 public',
   },
 ];
 
@@ -70,10 +70,10 @@ const FIELD = [
   {
     href: '/contracts/design-system',
     badge: 'Contract',
-    status: 'v0.1',
+    status: 'v0.1.1',
     title: 'Design system',
     lede: 'Portable design judgment for designesy.org.',
-    desc: 'Human overview, full tables, and a machine export for agents and tools.',
+    desc: 'Human overview, full tables, and a machine export — Poise interaction rules adopted.',
     arrow: 'Open contract →',
     kind: 'contract' as const,
   },
@@ -294,12 +294,12 @@ export default function HomePage() {
           <div className="row-stack" role="list">
             {[
               {
-                title: 'Design system contract v0.1',
-                meta: 'Human home, full tables, machine export',
+                title: 'Design system contract v0.1.1',
+                meta: 'Human home, full tables, machine export · Poise adopted',
               },
               {
                 title: 'Lab One · Poise',
-                meta: 'Restrained interaction — candidate rules for v0.1.1',
+                meta: 'Restrained interaction — rules adopted into v0.1.1',
               },
               {
                 title: 'Use Kit One · Design Review',

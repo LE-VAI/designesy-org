@@ -6,11 +6,11 @@ import { Footer } from '../lib/footer';
 export const metadata: Metadata = {
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1 is public.',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1.1 is public (Poise adopted).',
   openGraph: {
     title: 'Contracts · Designesy',
     description:
-      'Portable design agreements for people and agents. Design system contract v0.1 is live.',
+      'Portable design agreements for people and agents. Design system contract v0.1.1 is live — Poise interaction rules adopted.',
     url: 'https://www.designesy.org/contracts',
   },
   twitter: {
@@ -239,7 +239,7 @@ export default function ContractsPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system · v0.1</span>
+                <span className="row-title">Design system · v0.1.1</span>
                 <span className="row-meta">
                   Human overview, full tables below, machine JSON export
                 </span>
@@ -255,9 +255,9 @@ export default function ContractsPage() {
             >
               <span className="row-index">02</span>
               <span className="row-body">
-                <span className="row-title">Poise candidates</span>
+                <span className="row-title">Poise adopted</span>
                 <span className="row-meta">
-                  Lab One rules recorded for possible v0.1.1 adoption
+                  Lab One interaction rules adopted in contract v0.1.1
                 </span>
               </span>
             </Link>
@@ -358,10 +358,11 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="design-system-contract">
           <h2 className="doctrine-heading">Published contract</h2>
           <div className="definition">
-            <p className="definition-label">Designesy design system · v0.1</p>
+            <p className="definition-label">Designesy design system · v0.1.1</p>
             <p>
-              First public design contract for designesy.org. Derived from the
-              live site token foundation. Provisional, doctrine-referenced, and
+              Public design contract for designesy.org. Derived from the live
+              site token foundation, with Lab One · Poise interaction rules
+              adopted. Provisional, doctrine-referenced, and
               meant to be verified against the running site — not a frozen brand
               bible.
             </p>
@@ -408,7 +409,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.1 — first published system contract',
+                meta: 'Public v0.1.1 — Poise interaction rules adopted',
               },
             ].map((item, i) => (
               <div className="row" role="listitem" key={item.title}>
@@ -653,9 +654,10 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract v0.1 — public artifact discipline, not
-          legal advice or a client service agreement. Values are taken from the
-          live site tokens. Contract home:{' '}
+          Designesy design system contract v0.1.1 — public artifact discipline,
+          not legal advice or a client service agreement. Values are taken from
+          the live site tokens. Poise interaction rules are adopted. Contract
+          home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>
           {' · '}
           Machine export:{' '}

@@ -1,17 +1,18 @@
 /**
- * Designesy design system contract v0.1 — machine + human source.
+ * Designesy design system contract v0.1.1 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
+ * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'public',
   name: 'Designesy design system',
-  public_url: 'https://designesy.org/contracts/design-system',
-  full_contract_url: 'https://designesy.org/contracts#design-system-contract',
-  machine_url: 'https://designesy.org/contracts/design-system.json',
+  public_url: 'https://www.designesy.org/contracts/design-system',
+  full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
+  machine_url: 'https://www.designesy.org/contracts/design-system.json',
   updated: '2026-07-12',
   schema_hints: {
     colors: 'primitive + semantic color roles',
@@ -19,6 +20,7 @@ export const designSystemContract = {
     rounded: 'radius tokens',
     spacing: 'layout spacing and breakpoints',
     components: 'behavior and states',
+    interaction: 'Poise-adopted contact rules',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -30,8 +32,16 @@ export const designSystemContract = {
     interaction_audio: 'Cuelume v0.1.0; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
-      url: 'https://designesy.org/labs/poise',
-      role: 'Source lab for interaction rules under review for adoption',
+      url: 'https://www.designesy.org/labs/poise',
+      role: 'Source lab for interaction rules adopted in v0.1.1',
+    },
+    adoption: {
+      version: '0.1.1',
+      date: '2026-07-12',
+      from_lab: 'Poise',
+      field_check: 'https://www.designesy.org/review/poise',
+      keyboard_proof: 'https://www.designesy.org/review/poise/keyboard',
+      note: 'Explicit adoption of Lab One portable rules into contract material',
     },
   },
   colors: {
@@ -156,10 +166,28 @@ export const designSystemContract = {
     },
     rules: [
       'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
-      'Interactive settle: scale(0.97) at ~160ms --ease-out',
-      'Hover lift only under (hover: hover) and (pointer: fine)',
-      'Wordmark mark: opacity breath only (~3.2s --ease-in-out); no blur, glow, or gradient decoration',
-      'prefers-reduced-motion: reduce collapses non-essential motion; sound defaults off',
+      'Interactive settle: scale(0.97) at ~160ms --ease-out (Poise · adopted v0.1.1)',
+      'Hover lift only under (hover: hover) and (pointer: fine) (Poise · adopted v0.1.1)',
+      'Wordmark mark: opacity breath only (~3.2s --ease-in-out); no blur, glow, or gradient decoration (Poise · adopted v0.1.1)',
+      'prefers-reduced-motion: reduce collapses non-essential motion; sound defaults off (Poise · adopted v0.1.1)',
+    ],
+  },
+  interaction: {
+    source_lab: 'Poise',
+    adopted_in: '0.1.1',
+    rules: [
+      'Wordmark mark may use opacity breath only; never blur, glow, or gradient decoration',
+      'Interactive press settle: scale(0.97) at ~160ms with --ease-out',
+      'Sound preference key designesy:sound; Designesy owns preference; audio engine only applies it',
+      'Reduced motion disables non-essential animation and defaults sound off',
+      'Hover translation only under fine pointer + hover-capable media',
+      'Public product names stay human and premium; internal token names may differ',
+      'If the response is louder than the action, it fails',
+    ],
+    verification: [
+      'https://www.designesy.org/labs/poise',
+      'https://www.designesy.org/review/poise',
+      'https://www.designesy.org/review/poise/keyboard',
     ],
   },
   typography: {
@@ -251,6 +279,8 @@ export const designSystemContract = {
     'prefers-reduced-motion disables entrance and wordmark breath',
     'Contrast remains readable for ink, muted, and accent on paper',
     'No public surface displays internal control-plane naming',
+    'Poise interaction rules match live /labs/poise and contract.interaction',
+    'Poise keyboard-path verification remains published and current',
   ],
   open_tensions: [
     'Light theme is not contracted — dark technical foundation is provisional',
@@ -258,19 +288,33 @@ export const designSystemContract = {
     'Inter is named in the stack but not self-hosted; system fallback is intentional',
     'Shadow tokens exist; elevation language is still light-touch (borders lead)',
     'Human contract page and machine export remain dual sources until a single generator owns both',
+    'Keyboard-path verification packets are published for Poise only — not every public route',
+  ],
+  adoption_history: [
+    {
+      version: '0.1.0',
+      date: '2026-07-12',
+      summary: 'First public design system contract — tokens, motion, components, verification',
+    },
+    {
+      version: '0.1.1',
+      date: '2026-07-12',
+      summary:
+        'Adopted Lab One · Poise interaction rules: wordmark breath, press settle, sound preference, reduced motion, hover media, naming discipline',
+      from_lab: 'Poise',
+      evidence: [
+        'https://www.designesy.org/labs/poise',
+        'https://www.designesy.org/review/poise',
+        'https://www.designesy.org/review/poise/keyboard',
+      ],
+    },
   ],
   promotion_candidates: {
-    from_lab: 'Poise',
-    target_version: '0.1.1',
-    status: 'candidate',
-    rules: [
-      'Wordmark mark may use opacity breath only; never blur, glow, or gradient decoration',
-      'Interactive press settle: scale(0.97) at ~160ms with --ease-out',
-      'Sound preference key designesy:sound; engine follows Designesy',
-      'Reduced motion disables non-essential animation and defaults sound off',
-      'Hover translation only under fine pointer + hover-capable media',
-      'Public product names stay human and premium; internal token names may differ',
-    ],
+    from_lab: null,
+    target_version: null,
+    status: 'none',
+    rules: [] as readonly string[],
+    note: 'No open promotion candidates. Poise rules were adopted in v0.1.1.',
   },
 } as const;
 

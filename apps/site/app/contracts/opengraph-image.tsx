@@ -11,6 +11,6 @@ export default function OpenGraphImage() {
     lede: 'Exact values, roles, behavior, anti-patterns, and verification — judgment agents and teams can carry.',
     path: 'designesy.org/contracts',
     kind: 'contract',
-    badge: 'v0.1 public',
+    badge: 'v0.1.1',
   });
 }

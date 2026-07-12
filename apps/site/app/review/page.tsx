@@ -129,7 +129,7 @@ export default function ReviewPage() {
               </p>
               <p className="lab-card-desc">
                 Eight dimensions, holds, tensions, corrections, and keyboard-path
-                proof — candidate for contract v0.1.1.
+                proof — rules adopted into contract v0.1.1.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
@@ -146,7 +146,7 @@ export default function ReviewPage() {
               </div>
               <h3 className="lab-card-title">designesy.org</h3>
               <p className="lab-card-lede">
-                Public review against design system contract v0.1.
+                Public review against design system contract v0.1.1.
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including
@@ -199,7 +199,7 @@ export default function ReviewPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.1</span>
+                <span className="row-title">Design system contract v0.1.1</span>
                 <span className="row-meta">Human home and machine export</span>
               </span>
             </Link>
@@ -241,7 +241,7 @@ export default function ReviewPage() {
         <div className="status-note">
           Review language and quality discipline for public artifacts. Published
           reviews live under /review. The first is the public surface review of
-          designesy.org itself — judged against contract v0.1, not against taste.
+          designesy.org itself — judged against contract v0.1.1, not against taste.
         </div>
       </main>
 
