@@ -104,6 +104,11 @@ const START_HERE = [
     meta: 'designesy.org checked against its own contract',
   },
   {
+    href: '/privacy',
+    title: 'Privacy',
+    meta: 'What this surface collects, what it does not, open export scope',
+  },
+  {
     href: '/contracts#design-system-contract',
     title: 'Full contract tables',
     meta: 'Complete human contract on /contracts',
