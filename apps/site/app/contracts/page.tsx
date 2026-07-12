@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 
@@ -261,6 +262,15 @@ export default function ContractsPage() {
               the running site — not a frozen brand bible.
             </p>
           </div>
+          <p className="surface-note" style={{ marginTop: '1rem' }}>
+            Machine export (JSON) ·{' '}
+            <Link href="/contracts/design-system">
+              /contracts/design-system
+            </Link>
+            {' · '}
+            Field review ·{' '}
+            <Link href="/review/designesy-org">/review/designesy-org</Link>
+          </p>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -459,8 +469,9 @@ export default function ContractsPage() {
         <div className="status-note">
           Designesy design system contract v0.1 — public artifact discipline, not
           legal advice or a client service agreement. Values above are extracted
-          from the live site tokens. When CSS and this page disagree, globals.css
-          wins until the contract is revised.
+          from the live site tokens. Machine JSON lives at /contracts/design-system.
+          When CSS and this page disagree, globals.css wins until the contract is
+          revised. Keep lib/design-system-contract.ts in sync when tokens change.
         </div>
       </main>
 
