@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { Toggle } from '../lib/toggle';
 
 export const metadata: Metadata = {
   title: 'Docs',
@@ -228,7 +229,7 @@ export default function DocsPage() {
           <h2 className="doctrine-heading">Operating principles</h2>
           <div className="principle-list">
             {PRINCIPLES.map((p) => (
-              <div className="principle" key={p.num} data-cuelume-hover="whisper">
+              <div className="principle" key={p.num}>
                 <span className="principle-num">{p.num}</span>
                 <div className="principle-body">
                   <h3>{p.title}</h3>
@@ -261,14 +262,20 @@ export default function DocsPage() {
               <h3 className="layer-heading">Seven layers</h3>
               <div className="layer-stack">
                 {LAYERS.map((layer) => (
-                  <div className="layer-item" key={layer.num} data-cuelume-hover="whisper">
+                  <Toggle
+                    className="layer-item"
+                    key={layer.num}
+                    data-cuelume-hover="whisper"
+                    data-cuelume-press
+                    data-cuelume-release
+                  >
                     <span className="layer-num">{layer.num}</span>
                     <div className="layer-body">
                       <strong className="layer-name">{layer.name}</strong>
                       <span className="layer-desc"> — {layer.desc}</span>
                       <span className="layer-state">{layer.state}</span>
                     </div>
-                  </div>
+                  </Toggle>
                 ))}
               </div>
             </div>

@@ -289,7 +289,7 @@ export default function PoiseFieldCheckPage() {
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (
-              <div className="principle" key={d.num} data-cuelume-hover="whisper">
+              <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
                   <h3>{d.title}</h3>
