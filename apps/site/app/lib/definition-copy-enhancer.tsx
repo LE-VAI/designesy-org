@@ -6,25 +6,45 @@ import { useEffect } from 'react';
  * Auto-enhances all .definition elements with click-to-copy behavior.
  * Added once to the root layout; works across all pages via
  * MutationObserver that catches new definitions on navigation.
- * No page files need to change.
+ *
+ * Copy payload resolution (most useful first):
+ * 1. data-copy attribute — explicit agent-ready / paste-ready payload
+ * 2. Visible value text — excludes .definition-label and badge
+ *
+ * Optional data-copy-label customizes the badge (e.g. "agent prompt").
  */
 export function DefinitionCopyEnhancer() {
   useEffect(() => {
-    const enhance = (def: HTMLElement) => {
-      if (def.classList.contains('is-copyable')) return;
-      if (def.tagName === 'BUTTON') return;
-
-      // Extract only the value text — exclude labels and badges
+    const extractVisibleValue = (def: HTMLElement): string => {
       const clone = def.cloneNode(true) as HTMLElement;
       clone
         .querySelectorAll('.definition-label, .definition-copy-badge')
         .forEach((el) => el.remove());
-      const textToCopy = clone.textContent?.trim() ?? '';
+      return clone.textContent?.trim() ?? '';
+    };
+
+    const enhance = (def: HTMLElement) => {
+      if (def.classList.contains('is-copyable')) return;
+      if (def.tagName === 'BUTTON') return;
+
+      // Prefer explicit paste payload over visible display text.
+      // Share/handoff lines display a human line but copy the agent prompt.
+      const explicit = def.getAttribute('data-copy')?.trim() ?? '';
+      const textToCopy = explicit || extractVisibleValue(def);
       if (!textToCopy) return;
+
+      const copyLabel =
+        def.getAttribute('data-copy-label')?.trim() || 'text';
 
       def.classList.add('is-copyable');
       def.setAttribute('role', 'button');
       def.setAttribute('tabindex', '0');
+      def.setAttribute(
+        'aria-label',
+        explicit
+          ? `Copy ${copyLabel}`
+          : `Copy ${copyLabel === 'text' ? 'definition' : copyLabel}`,
+      );
 
       const badge = document.createElement('span');
       badge.className = 'definition-copy-badge';
