@@ -187,6 +187,78 @@ export default function ContractsPage() {
             and artifacts. They make design judgment inspectable — not reliant
             on slogans or vibes.
           </p>
+          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
+            <Link
+              className="button primary"
+              href="/contracts/design-system"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              Contract home
+            </Link>
+            <Link
+              className="button ghost"
+              href="/contracts/design-system.json"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              Machine export
+            </Link>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Published now</h2>
+          <div className="row-stack" role="list">
+            <Link
+              href="/contracts/design-system"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Design system · v0.1</span>
+                <span className="row-meta">
+                  Human overview, full tables below, machine JSON export
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Poise candidates</span>
+                <span className="row-meta">
+                  Lab One rules recorded for possible v0.1.1 adoption
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Field check</span>
+                <span className="row-meta">
+                  Live site reviewed against this contract
+                </span>
+              </span>
+            </Link>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">

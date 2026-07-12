@@ -113,12 +113,52 @@ export default function ReviewPage() {
             </p>
             <span className="lab-card-arrow">Open review →</span>
           </Link>
+          <p className="surface-note" style={{ marginTop: '1.25rem' }}>
+            Field checks publish when an artifact is live enough to judge.
+            Empty slots are not advertised as upcoming reviews.
+          </p>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Review against</h2>
+          <div className="row-stack" role="list">
+            <Link
+              href="/contracts/design-system"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Design system contract v0.1</span>
+                <span className="row-meta">Human home and machine export</span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Lab One · Poise</span>
+                <span className="row-meta">
+                  Interaction behaviors under review for adoption
+                </span>
+              </span>
+            </Link>
+          </div>
         </section>
 
         <div className="status-note">
           Review language and quality discipline for public artifacts. Published
           reviews live under /review. The first is the public surface review of
-          designesy.org itself.
+          designesy.org itself — judged against contract v0.1, not against taste.
         </div>
       </main>
 

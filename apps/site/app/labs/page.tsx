@@ -55,7 +55,7 @@ export default function LabsPage() {
             data-cuelume-release
           >
             <div className="lab-card-top">
-              <span className="status-badge">Lab One</span>
+              <span className="status-badge status-badge--lab">Lab One</span>
               <span className="lab-card-status">Live</span>
             </div>
             <h3 className="lab-card-title">Poise</h3>
@@ -69,6 +69,49 @@ export default function LabsPage() {
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
+          <p className="surface-note" style={{ marginTop: '1.25rem' }}>
+            One live lab is intentional. The lane stays empty until the next
+            experiment earns a thesis, demo, and portable rules — not a filler
+            card.
+          </p>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Related surfaces</h2>
+          <div className="row-stack" role="list">
+            <Link
+              href="/contracts/design-system"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Design system contract</span>
+                <span className="row-meta">
+                  Where lab behavior is measured and candidates are recorded
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Public surface review</span>
+                <span className="row-meta">
+                  Poise included in the live designesy.org field check
+                </span>
+              </span>
+            </Link>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">

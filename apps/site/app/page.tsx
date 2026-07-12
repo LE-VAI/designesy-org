@@ -28,10 +28,30 @@ const PILLARS = [
 const PIPELINE = ['Sources', 'Principles', 'Contracts', 'Tools', 'Artifacts'];
 
 const SURFACES = [
-  { href: '/docs', label: 'Docs', desc: 'Operating principles, architecture, and public voice' },
-  { href: '/labs', label: 'Labs', desc: 'Experiments that compile into contracts' },
-  { href: '/review', label: 'Review', desc: 'Quality dimensions and agent review stance' },
-  { href: '/contracts', label: 'Contracts', desc: 'Portable design agreements and anti-patterns' },
+  {
+    href: '/docs',
+    label: 'Docs',
+    desc: 'Mission, nine principles, architecture, public voice',
+    meta: 'Orientation',
+  },
+  {
+    href: '/labs',
+    label: 'Labs',
+    desc: 'Experiments that compile into contracts',
+    meta: 'Poise live',
+  },
+  {
+    href: '/review',
+    label: 'Review',
+    desc: 'Eight dimensions and field checks',
+    meta: '1 field check',
+  },
+  {
+    href: '/contracts',
+    label: 'Contracts',
+    desc: 'Portable design agreements and verification',
+    meta: 'v0.1 public',
+  },
 ];
 
 const FIELD = [
@@ -87,19 +107,19 @@ export default function HomePage() {
           <div className="hero-actions fade-up fade-up-delay-4">
             <Link
               className="button primary"
-              href="/docs"
+              href="/contracts/design-system"
               data-cuelume-press
               data-cuelume-release
             >
-              Read docs
+              Open design system
             </Link>
             <Link
               className="button ghost"
-              href="/review"
+              href="/labs/poise"
               data-cuelume-press
               data-cuelume-release
             >
-              Review surface
+              Try Poise
             </Link>
           </div>
         </section>
@@ -207,7 +227,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="surfaces-title">
           <p className="section-eyebrow">Surfaces</p>
           <h2 className="section-title" id="surfaces-title">
-            Public lanes.
+            Public lanes with live cargo.
           </h2>
           <div className="surface-list">
             {SURFACES.map((surface) => (
@@ -219,10 +239,48 @@ export default function HomePage() {
                 data-cuelume-press
                 data-cuelume-release
               >
+                <span className="surface-card-meta">{surface.meta}</span>
                 <span className="surface-card-label">{surface.label}</span>
                 <span className="surface-card-desc">{surface.desc}</span>
                 <span className="surface-card-arrow">→</span>
               </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="section" aria-labelledby="system-state-title">
+          <p className="section-eyebrow">System state</p>
+          <h2 className="section-title" id="system-state-title">
+            What is real on this site.
+          </h2>
+          <div className="row-stack" role="list">
+            {[
+              {
+                title: 'Design system contract v0.1',
+                meta: 'Human home, full tables, machine export',
+              },
+              {
+                title: 'Lab One · Poise',
+                meta: 'Restrained interaction — candidate rules for v0.1.1',
+              },
+              {
+                title: 'Public surface review',
+                meta: 'designesy.org checked against its own contract',
+              },
+              {
+                title: 'Drift rule',
+                meta: 'Every new public UI cites a contract token or open tension',
+              },
+            ].map((item, i) => (
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </div>
             ))}
           </div>
         </section>
