@@ -5,24 +5,18 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { Toggle } from '../lib/toggle';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Docs',
   description:
     'Designesy orientation — mission, nine operating principles, architecture layers, public voice, and paths to live engines.',
-  openGraph: {
-    title: 'Docs · Designesy',
-    description:
-      'Mission, principles, architecture, and public voice — with paths to live contract, labs, and review.',
-    url: 'https://www.designesy.org/docs',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Docs · Designesy',
-    description:
-      'Orientation for a live design intelligence system — designesy.org/docs',
-  },
-};
+  path: '/docs',
+  ogDescription:
+    'Mission, principles, architecture, and public voice — with paths to live contract, labs, and review.',
+  twitterDescription:
+    'Orientation for a live design intelligence system — designesy.org/docs',
+});
 
 const LAYERS = [
   {

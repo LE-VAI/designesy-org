@@ -7,24 +7,19 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
+import { pageMeta } from '../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Poise',
   description:
     'How Designesy responds when someone touches it. A lab on restrained interaction: wordmark, press, sound preference, and reduced motion.',
-  openGraph: {
-    title: 'Poise · Lab One',
-    description:
-      'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
-    url: 'https://www.designesy.org/labs/poise',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Poise · Lab One',
-    description:
-      'How Designesy responds when someone touches it. Tell your agent: designesy.org/labs/poise',
-  },
-};
+  path: '/labs/poise',
+  ogTitle: 'Poise · Lab One',
+  ogDescription:
+    'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
+  twitterDescription:
+    'Restrained interaction lab — designesy.org/labs/poise',
+});
 
 const ANATOMY_DONE = [
   'Thesis',

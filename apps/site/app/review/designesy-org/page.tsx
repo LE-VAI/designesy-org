@@ -4,24 +4,19 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
+import { pageMeta } from '../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
   description:
     'Public review of the Designesy site against design system contract v0.1.1 and Lab One: Poise.',
-  openGraph: {
-    title: 'designesy.org · public surface review',
-    description:
-      'A public surface checked against its own contract — holds, tensions, and standing rules.',
-    url: 'https://www.designesy.org/review/designesy-org',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'designesy.org · public surface review',
-    description:
-      'Field check against design system contract v0.1.1 — designesy.org/review/designesy-org',
-  },
-};
+  path: '/review/designesy-org',
+  ogTitle: 'designesy.org · public surface review',
+  ogDescription:
+    'A public surface checked against its own contract — holds, tensions, and standing rules.',
+  twitterDescription:
+    'Field check against design system contract v0.1.1 — designesy.org/review/designesy-org',
+});
 
 const HOLDS = [
   {

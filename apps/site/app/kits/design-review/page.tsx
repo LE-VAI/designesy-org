@@ -6,6 +6,8 @@ import { designReviewKit as k } from '../../lib/kits/design-review';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { CopyPrompt } from '../../lib/copy-prompt';
+import { pageMeta } from '../../lib/site-meta';
+import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 
 const ANATOMY_HREFS: Record<string, string> = {
   Purpose: '#purpose',
@@ -19,27 +21,30 @@ const ANATOMY_HREFS: Record<string, string> = {
   'Related contracts and surfaces': '#related',
 };
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Design Review',
   description:
     'Use Kit One · Design Review — portable design judgment for people and agents. Eight dimensions, agent prompt, output format, verification.',
-  openGraph: {
-    title: 'Design Review · Kit One',
-    description:
-      'Turn taste into inspection. Portable review package for interfaces, systems, and agent output.',
-    url: 'https://www.designesy.org/kits/design-review',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Design Review · Kit One',
-    description:
-      'Tell your agent to review with Designesy — designesy.org/kits/design-review',
-  },
-};
+  path: '/kits/design-review',
+  ogTitle: 'Design Review · Kit One',
+  ogDescription:
+    'Turn taste into inspection. Portable review package for interfaces, systems, and agent output.',
+  twitterDescription:
+    'Eight dimensions and a portable agent prompt — designesy.org/kits/design-review',
+});
 
 export default function DesignReviewKitPage() {
   return (
     <>
+      <JsonLd
+        data={creativeWorkJsonLd({
+          name: `Use Kit One · ${k.title}`,
+          description: k.lede,
+          url: k.public_url,
+          version: k.version,
+          related: [k.machine_url, 'https://www.designesy.org/open'],
+        })}
+      />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page">

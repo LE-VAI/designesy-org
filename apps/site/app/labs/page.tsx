@@ -4,24 +4,17 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
     'Designesy Labs — experiments that compile into contracts. Lab One is Poise: restrained interaction made inspectable.',
-  openGraph: {
-    title: 'Labs · Designesy',
-    description:
-      'Experiments that compile into contracts. Lab One · Poise is live.',
-    url: 'https://www.designesy.org/labs',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Labs · Designesy',
-    description:
-      'Tell your agent to try Poise — designesy.org/labs/poise',
-  },
-};
+  path: '/labs',
+  ogDescription:
+    'Experiments that compile into contracts. Lab One · Poise is live.',
+  twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
+});
 
 const LAB_ANATOMY = [
   'Thesis',
