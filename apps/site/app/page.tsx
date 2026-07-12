@@ -34,6 +34,29 @@ const SURFACES = [
   { href: '/contracts', label: 'Contracts', desc: 'Portable design agreements and anti-patterns' },
 ];
 
+const FIELD = [
+  {
+    href: '/contracts/design-system',
+    badge: 'Contract',
+    status: 'v0.1',
+    title: 'Design system',
+    lede: 'Portable design judgment for designesy.org.',
+    desc: 'Human overview, full tables, and a machine export for agents and tools.',
+    arrow: 'Open contract →',
+    mark: 'contract' as const,
+  },
+  {
+    href: '/labs/poise',
+    badge: 'Lab One',
+    status: 'Live',
+    title: 'Poise',
+    lede: 'How Designesy responds when someone touches it.',
+    desc: 'Restrained interaction — wordmark, press, sound preference, reduced motion.',
+    arrow: 'Open lab →',
+    mark: 'poise' as const,
+  },
+];
+
 const PRINCIPLES_PREVIEW = [
   { num: '01', title: 'Purpose earns form', desc: 'Every element should have a job. Remove anything that does not help the design act, communicate, or withstand use.' },
   { num: '02', title: 'Economy is intelligence', desc: 'Prefer fewer, stronger decisions over many weak flourishes. Reduction is valuable when it preserves user power.' },
@@ -134,6 +157,42 @@ export default function HomePage() {
             >
               Read all nine principles →
             </Link>
+          </div>
+        </section>
+
+        {/* --- Field cards --- */}
+        <section className="section" aria-labelledby="field-title">
+          <p className="section-eyebrow">Now live</p>
+          <h2 className="section-title" id="field-title">
+            Contract and Lab One.
+          </h2>
+          <div className="field-grid">
+            {FIELD.map((item) => (
+              <Link
+                className="field-card"
+                href={item.href}
+                key={item.href}
+                data-cuelume-hover="tick"
+                data-cuelume-press
+                data-cuelume-release
+              >
+                <div className="field-card-top">
+                  <span className="status-badge">{item.badge}</span>
+                  <span
+                    className={`mark-glyph mark-glyph--${item.mark}`}
+                    aria-hidden="true"
+                  >
+                    <span className="mark-glyph-core" />
+                    <span className="mark-glyph-ring" />
+                  </span>
+                </div>
+                <div className="field-card-status">{item.status}</div>
+                <h3 className="field-card-title">{item.title}</h3>
+                <p className="field-card-lede">{item.lede}</p>
+                <p className="field-card-desc">{item.desc}</p>
+                <span className="field-card-arrow">{item.arrow}</span>
+              </Link>
+            ))}
           </div>
         </section>
 

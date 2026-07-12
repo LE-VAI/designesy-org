@@ -127,26 +127,48 @@ export default function DocsPage() {
               <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to imply
               </h3>
-              <ul className="checkmark-list">
-                <li>Design judgment made operational</li>
-                <li>Principles with provenance</li>
-                <li>Contracts that agents and teams can use</li>
-                <li>Artifacts that can be inspected, copied, tested, remixed</li>
-                <li>Creative infrastructure for people building better worlds</li>
-              </ul>
+              <div className="row-stack" role="list">
+                {[
+                  'Design judgment made operational',
+                  'Principles with provenance',
+                  'Contracts that agents and teams can use',
+                  'Artifacts that can be inspected, copied, tested, remixed',
+                  'Creative infrastructure for people building better worlds',
+                ].map((item, i) => (
+                  <div className="row" role="listitem" key={item}>
+                    <span className="row-index">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="row-body">
+                      <span className="row-title">{item}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to avoid
               </h3>
-              <ul className="avoid-list">
-                <li>Generic AI SaaS language</li>
-                <li>Shallow future-of-design clichés</li>
-                <li>Vague promises with no operational mechanism</li>
-                <li>Pretending Designesy is already a massive institution</li>
-                <li>Reducing the mission to templates or a design blog</li>
-                <li>Corporate care language that feels unearned</li>
-              </ul>
+              <div className="row-stack" role="list">
+                {[
+                  'Generic AI SaaS language',
+                  'Shallow future-of-design clichés',
+                  'Vague promises with no operational mechanism',
+                  'Pretending Designesy is already a massive institution',
+                  'Reducing the mission to templates or a design blog',
+                  'Corporate care language that feels unearned',
+                ].map((item, i) => (
+                  <div className="row is-avoid" role="listitem" key={item}>
+                    <span className="row-index">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="row-body">
+                      <span className="row-title">{item}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
