@@ -117,22 +117,22 @@ const ANTI_PATTERNS = [
 ];
 
 const IMPLEMENTATION_NOTES = [
-  'Single globals.css token source of truth — no Tailwind, no second theme file',
-  'React Server Components by default; client only for sound, Cuelume bind, toggles',
-  'metadataBase is https://designesy.org; public label is Designesy (never ATLAS on renderable surfaces)',
-  'Cuelume v0.1.0 via app/lib/cuelume-binder.tsx; middle-click guard is required',
-  'Sitemap and robots are Next.js file conventions under app/',
-  'Deploy path: push main → Vercel auto-deploy from GitHub',
+  'Single live token source of truth — no secondary theme framework',
+  'Server-rendered by default; client only for sound, bind, and preference controls',
+  'metadataBase is https://designesy.org; public label is Designesy',
+  'Interaction audio via Cuelume; middle-click guard is required',
+  'Sitemap and robots follow standard site conventions',
+  'Production deploys from the main branch',
 ];
 
 const VERIFICATION = [
-  'Token values in this contract match :root in apps/site/app/globals.css',
+  'Token values in this contract match the live site foundation',
   'All five routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
   'Primary interactive elements show focus-visible rings',
-  'Sound toggle flips aria-pressed and calls Cuelume setEnabled',
-  'prefers-reduced-motion disables entrance and pulse animations',
-  'Contrast: ink on paper, muted on paper, signal on paper remain readable',
-  'No public surface displays the internal control-plane name ATLAS',
+  'Sound toggle flips aria-pressed and applies the audio preference',
+  'prefers-reduced-motion disables entrance and wordmark breath',
+  'Contrast: ink on paper, muted on paper, accent on paper remain readable',
+  'No public surface displays internal control-plane naming',
 ];
 
 const OPEN_TENSIONS = [
@@ -140,7 +140,7 @@ const OPEN_TENSIONS = [
   '--activation exists but has limited public surface usage; needs role discipline',
   'Inter is named in the stack but not self-hosted; system fallback is intentional for now',
   'Shadow tokens exist; elevation language is still light-touch (borders lead, shadows secondary)',
-  'Contract schema is human-first on this page; machine-export JSON package is not yet published',
+  'Human contract page and machine export remain dual sources until a single generator owns both',
 ];
 
 function TokenTable({
@@ -256,19 +256,18 @@ export default function ContractsPage() {
             <p className="definition-label">Designesy design system · v0.1</p>
             <p>
               First public design contract for designesy.org. Derived from the
-              live <code style={{ color: 'var(--ink)' }}>:root</code> tokens in{' '}
-              <code style={{ color: 'var(--ink)' }}>apps/site/app/globals.css</code>
-              . Provisional, doctrine-referenced, and meant to be verified against
-              the running site — not a frozen brand bible.
+              live site token foundation. Provisional, doctrine-referenced, and
+              meant to be verified against the running site — not a frozen brand
+              bible.
             </p>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Machine export (JSON) ·{' '}
+            Machine export ·{' '}
             <Link href="/contracts/design-system">
               /contracts/design-system
             </Link>
             {' · '}
-            Field review ·{' '}
+            Public review ·{' '}
             <Link href="/review/designesy-org">/review/designesy-org</Link>
           </p>
         </section>
@@ -277,14 +276,14 @@ export default function ContractsPage() {
           <h2 className="doctrine-heading">01 · Source and provenance</h2>
           <ul className="checkmark-list">
             <li>Public implementation: designesy.org (Next.js App Router)</li>
-            <li>Token source: apps/site/app/globals.css :root</li>
+            <li>Token source: live site design tokens</li>
             <li>
-              Doctrine lineage: Designesy DESIGN.md §7 tokens, §9 anti-patterns
-              (private source; public surface carries only operational values)
+              Doctrine lineage: Designesy design doctrine — public surface carries
+              operational values only
             </li>
             <li>
-              Motion references: Emil Kowalski / Apple WWDC easing language
-              (adapted into --ease-out, --ease-in-out, --ease-drawer)
+              Motion references: short settle and easing language adapted into
+              --ease-out, --ease-in-out, --ease-drawer
             </li>
             <li>Interaction audio: Cuelume v0.1.0 (preference owned by Designesy)</li>
             <li>Contract status: public v0.1 — first published system contract</li>
@@ -468,10 +467,12 @@ export default function ContractsPage() {
 
         <div className="status-note">
           Designesy design system contract v0.1 — public artifact discipline, not
-          legal advice or a client service agreement. Values above are extracted
-          from the live site tokens. Machine JSON lives at /contracts/design-system.
-          When CSS and this page disagree, globals.css wins until the contract is
-          revised. Keep lib/design-system-contract.ts in sync when tokens change.
+          legal advice or a client service agreement. Values are taken from the
+          live site tokens. Machine export:{' '}
+          <Link href="/contracts/design-system">/contracts/design-system</Link>.
+          When the human page and the live styles disagree, the live styles are
+          authoritative until the contract is revised. Human and machine surfaces
+          stay synchronized.
         </div>
       </main>
 

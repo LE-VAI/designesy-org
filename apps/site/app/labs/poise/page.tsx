@@ -49,10 +49,10 @@ const ANTI = [
 
 const PROVENANCE = [
   'Designesy design system contract v0.1 — live tokens on designesy.org',
-  'globals.css :root — --signal, --ease-out, --ease-in-out, --duration',
-  'Cuelume v0.1.0 — interaction audio, preference owned by Designesy',
+  'Live token foundation — accent, ease-out, ease-in-out, duration',
+  'Cuelume v0.1.0 — interaction audio; preference owned by Designesy',
   'Motion stance — short settles, entrance economy, reduced-motion respect',
-  'Public naming standard — mini-flagship product names; no AI-lab vocabulary',
+  'Public naming — human, premium product names; no research-demo vocabulary',
 ];
 
 const PROMPT = `Build interaction feedback that feels finished, not flashy.
@@ -63,7 +63,7 @@ Rules:
 3. Sound is opt-in via a single toggle; store preference; default off when prefers-reduced-motion.
 4. Hover lift only under (hover: hover) and (pointer: fine).
 5. prefers-reduced-motion collapses non-essential animation to near-zero duration.
-6. Cite contract tokens (--signal, --ease-out, --duration) or name an open tension.
+6. Cite contract tokens (accent, ease-out, duration) or name an open tension.
 7. Public name must sound like a product, not a research demo.`;
 
 export default function PoiseLabPage() {
@@ -92,7 +92,7 @@ export default function PoiseLabPage() {
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Live</span>
             <span className="lab-meta-item">Status · public experiment</span>
-            <span className="lab-meta-item">Promotion · candidate for contract v0.1.1</span>
+            <span className="lab-meta-item">Contract path · candidate for v0.1.1</span>
           </div>
         </section>
 
@@ -217,7 +217,7 @@ export default function PoiseLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Portable contract</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Rules ready to promote into design system contract v0.1.1:
+            Rules recorded as candidates for design system contract v0.1.1:
           </p>
           <ul className="checkmark-list">
             <li>
@@ -255,7 +255,7 @@ export default function PoiseLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Implementation notes</h2>
           <div className="definition">
-            <p className="definition-label">Codex-ready prompt</p>
+            <p className="definition-label">Builder prompt</p>
             <pre className="lab-prompt">{PROMPT}</pre>
           </div>
         </section>
@@ -312,7 +312,7 @@ export default function PoiseLabPage() {
             <li>Demo renders on /labs/poise with topbar sound control</li>
             <li>Wordmark mark animates only via opacity; reduced-motion kills it</li>
             <li>Buttons scale on :active without layout shift</li>
-            <li>Sound toggle flips aria-pressed and Cuelume setEnabled</li>
+            <li>Sound toggle flips aria-pressed and applies the audio preference</li>
             <li>All values map to contract tokens or named open tensions</li>
             <li>No public surface uses internal control-plane naming</li>
           </ul>
@@ -320,8 +320,8 @@ export default function PoiseLabPage() {
 
         <div className="status-note">
           Poise is Lab One — a public experiment, not a finished product line.
-          Useful behaviors above are promotion candidates for design system
-          contract v0.1.1 after review.
+          Useful behaviors above are candidates for design system contract
+          v0.1.1. They become contract material only when explicitly adopted.
         </div>
       </main>
 

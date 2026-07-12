@@ -1,7 +1,7 @@
 /**
  * Designesy design system contract v0.1 — machine + human source.
- * Values must match apps/site/app/globals.css :root.
- * When CSS and this file disagree, globals.css wins until revised.
+ * Values must match the live site token foundation in globals.css :root.
+ * When CSS and this file disagree, the live styles win until revised.
  */
 
 export const designSystemContract = {
@@ -21,16 +21,16 @@ export const designSystemContract = {
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
-    token_source: 'apps/site/app/globals.css :root',
+    token_source: 'Live site design tokens (:root)',
     doctrine:
-      'Designesy DESIGN.md §7 tokens and §9 anti-patterns (private source; public surface carries operational values only)',
+      'Designesy design doctrine — public surface carries operational values only',
     motion_references:
       'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer',
     interaction_audio: 'Cuelume v0.1.0; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
       url: 'https://designesy.org/labs/poise',
-      role: 'Promotion candidate source for interaction rules',
+      role: 'Source lab for interaction rules under review for adoption',
     },
   },
   colors: {
@@ -234,19 +234,19 @@ export const designSystemContract = {
     'Public product names that sound like research demos or AI jargon',
   ],
   implementation: [
-    'Single globals.css token source of truth — no Tailwind',
-    'React Server Components by default; client only for sound, bind, toggles',
+    'Single live token source of truth — no secondary theme framework',
+    'Server-rendered by default; client only for sound, bind, and preference controls',
     'metadataBase is https://designesy.org; public label is Designesy',
-    'Cuelume via app/lib/cuelume-binder.tsx with middle-click guard',
-    'Sitemap and robots are Next.js file conventions under app/',
-    'Deploy path: push main → Vercel auto-deploy from GitHub',
-    'Site drift rule: every new public UI change cites a contract token or open tension',
+    'Interaction audio via Cuelume with middle-click guard',
+    'Sitemap and robots follow standard site conventions',
+    'Production deploys from the main branch',
+    'Drift rule: every new public UI change cites a contract token or open tension',
   ],
   verification: [
-    'Token values match :root in apps/site/app/globals.css',
+    'Token values match the live site :root foundation',
     'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
     'Primary interactive elements show focus-visible rings',
-    'Sound toggle flips aria-pressed and calls Cuelume setEnabled',
+    'Sound toggle flips aria-pressed and applies the audio preference',
     'prefers-reduced-motion disables entrance and wordmark breath',
     'Contrast remains readable for ink, muted, and accent on paper',
     'No public surface displays internal control-plane naming',
@@ -256,12 +256,12 @@ export const designSystemContract = {
     '--activation exists but has limited public surface usage',
     'Inter is named in the stack but not self-hosted; system fallback is intentional',
     'Shadow tokens exist; elevation language is still light-touch (borders lead)',
-    'Human contract page and machine JSON must stay synchronized by hand until a single generator owns both',
+    'Human contract page and machine export remain dual sources until a single generator owns both',
   ],
   promotion_candidates: {
     from_lab: 'Poise',
     target_version: '0.1.1',
-    status: 'awaiting operator promotion',
+    status: 'candidate',
     rules: [
       'Wordmark mark may use opacity breath only; never blur, glow, or gradient decoration',
       'Interactive press settle: scale(0.97) at ~160ms with --ease-out',
