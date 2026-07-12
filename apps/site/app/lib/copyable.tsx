@@ -23,8 +23,15 @@ export function Copyable({
   const ref = useRef<HTMLDivElement>(null);
 
   const copy = useCallback(async () => {
-    const value = text ?? ref.current?.textContent?.trim() ?? '';
-
+    let value = text;
+    if (!value && ref.current) {
+      // Exclude label and badge from copied text
+      const clone = ref.current.cloneNode(true) as HTMLElement;
+      clone
+        .querySelectorAll('.definition-label, .definition-copy-badge')
+        .forEach((el) => el.remove());
+      value = clone.textContent?.trim() ?? '';
+    }
     if (!value) return;
 
     try {
