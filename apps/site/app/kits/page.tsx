@@ -87,14 +87,34 @@ export default function KitsPage() {
             <span className="lab-card-arrow">Open kit →</span>
           </Link>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
-            One live kit is intentional. The lane stays empty until the next
-            package earns full anatomy — not a teaser card.
+            One live kit is intentional. Machine export lives at{' '}
+            <Link href="/kits/design-review.json" data-cuelume-hover="tick">
+              /kits/design-review.json
+            </Link>
+            . The lane stays empty until the next package earns full anatomy —
+            not a teaser card.
           </p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
+            <Link
+              href="/open"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Open design intelligence</span>
+                <span className="row-meta">
+                  Package catalog · human + machine feed
+                </span>
+              </span>
+            </Link>
             <Link
               href="/review"
               className="row"
@@ -103,7 +123,7 @@ export default function KitsPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">01</span>
+              <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Review</span>
                 <span className="row-meta">
@@ -119,7 +139,7 @@ export default function KitsPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">02</span>
+              <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
@@ -135,11 +155,11 @@ export default function KitsPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">03</span>
+              <span className="row-index">04</span>
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Interaction behaviors under review for adoption
+                  Source lab · rules adopted into contract v0.1.1
                 </span>
               </span>
             </Link>
