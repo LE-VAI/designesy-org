@@ -72,12 +72,46 @@ const CORRECTIONS = [
 ];
 
 const SCOPE = [
-  { href: '/', label: 'Home' },
-  { href: '/docs', label: 'Docs' },
-  { href: '/labs', label: 'Labs' },
-  { href: '/labs/poise', label: 'Poise' },
-  { href: '/contracts', label: 'Contracts' },
-  { href: '/contracts/design-system', label: 'Machine contract' },
+  { href: '/', label: 'Home', meta: '/' },
+  { href: '/docs', label: 'Docs', meta: '/docs' },
+  { href: '/labs', label: 'Labs', meta: '/labs' },
+  { href: '/labs/poise', label: 'Poise', meta: '/labs/poise' },
+  { href: '/contracts', label: 'Contracts', meta: '/contracts' },
+  {
+    href: '/contracts/design-system',
+    label: 'Machine contract',
+    meta: '/contracts/design-system',
+  },
+];
+
+const EVIDENCE = [
+  {
+    title: 'Contract (human)',
+    meta: '/contracts#design-system-contract',
+    href: '/contracts#design-system-contract',
+  },
+  {
+    title: 'Contract (machine)',
+    meta: '/contracts/design-system',
+    href: '/contracts/design-system',
+  },
+  {
+    title: 'Lab One · Poise',
+    meta: '/labs/poise',
+    href: '/labs/poise',
+  },
+  {
+    title: 'Tokens',
+    meta: 'globals.css :root — paper, surface, accent, radius, motion',
+  },
+  {
+    title: 'Motion',
+    meta: 'wordmark opacity breath · press scale(0.97) · reduced-motion collapse',
+  },
+  {
+    title: 'Sound',
+    meta: 'Designesy preference key · Cuelume applies only',
+  },
 ];
 
 export default function PublicSurfaceReviewPage() {
@@ -112,16 +146,27 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Scope</h2>
-          <ul className="checkmark-list">
-            {SCOPE.map((item) => (
-              <li key={item.href}>
-                <span className="scope-line">
-                  <Link href={item.href}>{item.label}</Link>
-                  <span className="scope-path">{item.href}</span>
+          <div className="row-stack" role="list">
+            {SCOPE.map((item, i) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="row"
+                role="listitem"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+                data-cuelume-release
+              >
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
                 </span>
-              </li>
+                <span className="row-body">
+                  <span className="row-title">{item.label}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </Link>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -185,39 +230,48 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Evidence</h2>
-          <ul className="checkmark-list">
-            <li>
-              <span className="scope-line">
-                <span>Contract (human)</span>
-                <Link href="/contracts#design-system-contract" className="scope-path-link">
-                  /contracts#design-system-contract
-                </Link>
-              </span>
-            </li>
-            <li>
-              <span className="scope-line">
-                <span>Contract (machine)</span>
-                <Link href="/contracts/design-system" className="scope-path-link">
-                  /contracts/design-system
-                </Link>
-              </span>
-            </li>
-            <li>
-              <span className="scope-line">
-                <span>Lab One · Poise</span>
-                <Link href="/labs/poise" className="scope-path-link">
-                  /labs/poise
-                </Link>
-              </span>
-            </li>
-            <li>
-              Tokens · globals.css :root (paper, surface, accent, radius, motion)
-            </li>
-            <li>
-              Motion · wordmark opacity breath; press scale(0.97); reduced-motion collapse
-            </li>
-            <li>Sound · Designesy preference key; Cuelume applies only</li>
-          </ul>
+          <div className="row-stack" role="list">
+            {EVIDENCE.map((item, i) => {
+              const body = (
+                <>
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </>
+              );
+
+              if (item.href) {
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.href}
+                    className="row"
+                    role="listitem"
+                    data-cuelume-hover="whisper"
+                    data-cuelume-press
+                    data-cuelume-release
+                  >
+                    {body}
+                  </Link>
+                );
+              }
+
+              return (
+                <div
+                  key={item.title}
+                  className="row"
+                  role="listitem"
+                  data-cuelume-hover="whisper"
+                >
+                  {body}
+                </div>
+              );
+            })}
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
