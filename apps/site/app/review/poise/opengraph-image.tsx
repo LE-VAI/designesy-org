@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Review · Field check',
     title: 'Poise',
-    lede: 'Lab One reviewed with Use Kit One · Design Review. Pass with notes — candidate for contract v0.1.1.',
+    lede: 'Lab One reviewed with Use Kit One · Design Review. Pass with notes — interaction rules adopted in contract v0.1.1.',
     path: 'designesy.org/review/poise',
     kind: 'review',
     badge: 'Pass with notes',

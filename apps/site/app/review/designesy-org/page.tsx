@@ -6,7 +6,7 @@ import { Footer } from '../../lib/footer';
 export const metadata: Metadata = {
   title: 'designesy.org review',
   description:
-    'Public review of the Designesy site against design system contract v0.1 and Lab One: Poise.',
+    'Public review of the Designesy site against design system contract v0.1.1 and Lab One: Poise.',
   openGraph: {
     title: 'designesy.org · public surface review',
     description:
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'designesy.org · public surface review',
     description:
-      'Field check against design system contract v0.1 — designesy.org/review/designesy-org',
+      'Field check against design system contract v0.1.1 — designesy.org/review/designesy-org',
   },
 };
 
@@ -35,7 +35,7 @@ const HOLDS = [
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract v0.1, the machine export, and Poise reference the same values. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract v0.1.1, the machine export, and Poise reference the same values — including adopted interaction rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -72,7 +72,7 @@ const TENSIONS = [
 ];
 
 const NEXT_STATES = [
-  'Poise behaviors remain candidates for design system contract v0.1.1 until explicitly adopted',
+  'Poise interaction rules are adopted into design system contract v0.1.1; the lab remains the inspectable demo',
   'Public product names stay human and premium; research-demo vocabulary stays off public surfaces',
   'A second accent or light theme ships only after it is contracted',
   'Homepage field cards point to the contract home and Poise using existing tokens and opacity-only mark liveliness',
@@ -156,7 +156,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
-            <span className="lab-meta-item">Baseline · contract v0.1</span>
+            <span className="lab-meta-item">Baseline · contract v0.1.1</span>
             <span className="lab-meta-item">Date · 2026-07-12</span>
           </div>
         </section>
@@ -193,8 +193,8 @@ export default function PublicSurfaceReviewPage() {
             <p>
               The public surface is functional and largely considered. It earns
               its restraint. What remains is synchronization, fuller
-              verification proof, and deliberate adoption of Poise into contract
-              v0.1.1 — not a redesign.
+              verification proof, and keeping adopted Poise rules synchronized —
+              not a redesign.
             </p>
           </div>
         </section>
@@ -303,17 +303,18 @@ export default function PublicSurfaceReviewPage() {
           <div className="definition">
             <p className="definition-label">Poise and contract v0.1.1</p>
             <p>
-              Poise is Lab One. Its portable rules are recorded as candidates in
-              the design system contract. They become contract material only when
-              explicitly adopted — silence is not adoption.
+              Poise is Lab One. Its portable interaction rules were adopted into
+              design system contract v0.1.1 by explicit order. The lab remains the
+              live demo; the contract carries the rules.
             </p>
           </div>
         </section>
 
         <div className="status-note">
-          Public review of the live designesy.org surface against contract v0.1.
-          This is institutional quality discipline, not a client report or legal
-          audit. Poise candidates remain open until adopted into v0.1.1.
+          Public review of the live designesy.org surface against contract
+          v0.1.1. This is institutional quality discipline, not a client report
+          or legal audit. Poise interaction rules are adopted; the lab remains
+          the inspectable source demo.
         </div>
       </main>
 

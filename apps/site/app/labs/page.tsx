@@ -110,7 +110,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Where lab behavior is measured and candidates are recorded
+                  Where lab behavior is measured — Poise rules adopted in v0.1.1
                 </span>
               </span>
             </Link>
@@ -142,7 +142,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  designesy.org checked against contract v0.1
+                  designesy.org checked against contract v0.1.1
                 </span>
               </span>
             </Link>

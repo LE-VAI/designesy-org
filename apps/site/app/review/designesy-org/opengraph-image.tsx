@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Review · Public surface',
     title: 'designesy.org',
-    lede: 'A public field check against design system contract v0.1 — holds, tensions, and standing rules.',
+    lede: 'A public field check against design system contract v0.1.1 — holds, tensions, and standing rules.',
     path: 'designesy.org/review/designesy-org',
     kind: 'review',
     badge: 'Published',

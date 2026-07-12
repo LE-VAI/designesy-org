@@ -7,16 +7,16 @@ import { designSystemContract } from '../../lib/design-system-contract';
 export const metadata: Metadata = {
   title: 'Design system contract',
   description:
-    'Designesy design system contract v0.1 — human overview and machine export for portable design judgment.',
+    'Designesy design system contract v0.1.1 — human overview and machine export. Lab One · Poise interaction rules adopted.',
   openGraph: {
-    title: 'Design system contract · v0.1',
+    title: 'Design system contract · v0.1.1',
     description:
-      'Portable design agreement for designesy.org. Human overview with machine-readable export.',
+      'Portable design agreement for designesy.org. Poise interaction rules adopted. Human overview with machine export.',
     url: 'https://www.designesy.org/contracts/design-system',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Design system contract · v0.1',
+    title: 'Design system contract · v0.1.1',
     description:
       'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
   },
@@ -195,7 +195,23 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Interaction rules · candidates for v0.1.1
+                  Source lab · interaction rules adopted in v0.1.1
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Field check · Poise</span>
+                <span className="row-meta">
+                  Kit One review that supported adoption
                 </span>
               </span>
             </Link>
@@ -207,7 +223,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">04</span>
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
@@ -222,14 +238,26 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Poise · {c.promotion_candidates.status} for v
-              {c.promotion_candidates.target_version}
+              Poise · adopted in v{c.version}
             </p>
             <p>
-              Portable rules from Lab One are recorded as candidates. They become
-              contract material only when explicitly adopted — silence is not
-              adoption.
+              Lab One portable rules are contract material: wordmark breath,
+              press settle, sound preference ownership, reduced motion, hover
+              media discipline, and human public naming. Silence was not
+              adoption — this version is the explicit order.
             </p>
+          </div>
+          <div className="row-stack" role="list" style={{ marginTop: '1.25rem' }}>
+            {c.interaction.rules.map((rule, i) => (
+              <div className="row" role="listitem" key={rule}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{rule}</span>
+                </span>
+              </div>
+            ))}
           </div>
         </section>
 
