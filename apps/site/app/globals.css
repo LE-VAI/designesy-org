@@ -1127,12 +1127,23 @@ button.layer-item {
   width: 100%;
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
   text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
   border-radius: 0;
 }
 
 button.pillar {
+  border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+button.row,
+button.layer-item {
+  border-left: 2px solid var(--line);
 }
 
 /* checked state — shared across all toggle patterns */
@@ -1308,6 +1319,9 @@ button.check-cell {
   width: 100%;
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 0;
+  color: inherit;
   border-radius: 0;
 }
 
