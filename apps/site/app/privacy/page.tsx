@@ -140,7 +140,6 @@ export default function PrivacyPage() {
               <div
                 className="principle"
                 key={item.num}
-                data-cuelume-hover="whisper"
               >
                 <span className="principle-num">{item.num}</span>
                 <div className="principle-body">

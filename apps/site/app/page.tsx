@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
+import { Toggle } from './lib/toggle';
 
 const PILLARS = [
   {
@@ -173,7 +174,6 @@ export default function HomePage() {
               <li
                 className={`pipeline-step${i === PIPELINE.length - 1 ? ' is-end' : ''}`}
                 key={step.label}
-                data-cuelume-hover="tick"
               >
                 <span className="pipeline-node" aria-hidden="true">
                   <span className="pipeline-node-core" />
@@ -194,11 +194,17 @@ export default function HomePage() {
           </h2>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
-              <article className="pillar fade-in" key={pillar.number} data-cuelume-hover="bloom" data-cuelume-press data-cuelume-release>
+              <Toggle
+                className="pillar fade-in"
+                key={pillar.number}
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+                data-cuelume-release
+              >
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
                 <p>{pillar.text}</p>
-              </article>
+              </Toggle>
             ))}
           </div>
         </section>
@@ -211,7 +217,7 @@ export default function HomePage() {
           </h2>
           <div className="principle-list">
             {PRINCIPLES_PREVIEW.map((p) => (
-              <div className="principle fade-in" key={p.num} data-cuelume-hover="whisper">
+              <div className="principle fade-in" key={p.num}>
                 <span className="principle-num">{p.num}</span>
                 <div className="principle-body">
                   <h3>{p.title}</h3>
