@@ -49,6 +49,12 @@ export function Footer() {
             <Link href="/llms.txt" data-cuelume-hover="tick">
               llms.txt
             </Link>
+            <Link href="/llms-full.txt" data-cuelume-hover="tick">
+              llms-full.txt
+            </Link>
+            <Link href="/.well-known/agent.json" data-cuelume-hover="tick">
+              agent.json
+            </Link>
             <Link href="/open/handoff" data-cuelume-hover="tick">
               Open handoff
             </Link>
