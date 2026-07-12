@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
+import { ToggleRow } from './lib/toggle-row';
 
 const PILLARS = [
   {
@@ -348,15 +349,12 @@ export default function HomePage() {
                 meta: 'Every new public UI cites a contract token or open tension',
               },
             ].map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>

@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { ToggleRow } from '../lib/toggle-row';
 
 export const metadata: Metadata = {
   title: 'Open design intelligence',
@@ -73,15 +74,12 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">How to use</h2>
           <div className="row-stack" role="list">
             {o.how_to_use.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>

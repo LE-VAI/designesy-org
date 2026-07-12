@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../../lib/topbar';
 import { Footer } from '../../../lib/footer';
 import { CheckGrid } from '../../../lib/check-grid';
+import { ToggleRow } from '../../../lib/toggle-row';
 
 export const metadata: Metadata = {
   title: 'Poise keyboard path',
@@ -286,13 +287,12 @@ export default function PoiseKeyboardVerificationPage() {
           </p>
           <div className="row-stack" role="list">
             {TAB_ORDER.map((item) => (
-              <div className="row" role="listitem" key={item.step}>
-                <span className="row-index">{item.step}</span>
+              <ToggleRow key={item.step} index={item.step}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>
@@ -321,14 +321,11 @@ export default function PoiseKeyboardVerificationPage() {
           <h2 className="doctrine-heading">Re-run method</h2>
           <div className="row-stack" role="list">
             {METHOD.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={item} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{item}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>

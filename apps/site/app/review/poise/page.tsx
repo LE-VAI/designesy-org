@@ -4,6 +4,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
+import { ToggleRow } from '../../lib/toggle-row';
 
 export const metadata: Metadata = {
   title: 'Poise field check',
@@ -243,42 +244,38 @@ export default function PoiseFieldCheckPage() {
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Inputs used</h2>
           <div className="row-stack" role="list">
-            <div className="row" role="listitem">
-              <span className="row-index">01</span>
+            <ToggleRow index="01">
               <span className="row-body">
                 <span className="row-title">Artifact</span>
                 <span className="row-meta">
                   https://www.designesy.org/labs/poise
                 </span>
               </span>
-            </div>
-            <div className="row" role="listitem">
-              <span className="row-index">02</span>
+            </ToggleRow>
+            <ToggleRow index="02">
               <span className="row-body">
                 <span className="row-title">Purpose claim</span>
                 <span className="row-meta">
                   Make Designesy contact feel intentional without spectacle
                 </span>
               </span>
-            </div>
-            <div className="row" role="listitem">
-              <span className="row-index">03</span>
+            </ToggleRow>
+            <ToggleRow index="03">
               <span className="row-body">
                 <span className="row-title">Audience and context</span>
                 <span className="row-meta">
                   Public builders, agents, and reviewers on designesy.org
                 </span>
               </span>
-            </div>
-            <div className="row" role="listitem">
-              <span className="row-index">04</span>
+            </ToggleRow>
+            <ToggleRow index="04">
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
                   Contract v0.1.1 · Kit One Design Review · lab anti-patterns
                 </span>
               </span>
-            </div>
+            </ToggleRow>
           </div>
         </section>
 
