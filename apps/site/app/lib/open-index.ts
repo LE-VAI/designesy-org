@@ -41,7 +41,7 @@ export const openIndex = {
     ],
     human_index: 'https://www.designesy.org/open',
     site: 'https://www.designesy.org',
-    license: 'public-read; cite designesy.org when reusing package rules',
+    license: 'https://creativecommons.org/licenses/by/4.0/',
     contact: 'le@designesy.org',
   },
   /**

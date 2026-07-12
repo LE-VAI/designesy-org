@@ -8,6 +8,24 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), payment=()',
   },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload',
+  },
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self'",
+      "connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  },
 ];
 
 /** HTML pages advertise machine counterparts for agent crawlers. */
@@ -75,6 +93,15 @@ const nextConfig: NextConfig = {
       {
         source: '/kits/design-review',
         headers: agentLinkHeaders.kit,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/index',
+        destination: '/',
+        permanent: true,
       },
     ];
   },
