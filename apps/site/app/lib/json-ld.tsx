@@ -25,7 +25,10 @@ export function organizationJsonLd() {
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
     logo: 'https://www.designesy.org/icon',
-    sameAs: [] as string[],
+    sameAs: [
+      'https://x.com/designesy',
+      'https://github.com/designesy',
+    ],
   };
 }
 
@@ -76,7 +79,7 @@ export function datasetJsonLd({
     ...(version ? { version } : {}),
     ...(dateModified ? { dateModified } : {}),
     ...(keywords?.length ? { keywords } : {}),
-    license: 'https://www.designesy.org/open',
+    license: 'https://creativecommons.org/licenses/by/4.0/',
     isAccessibleForFree: true,
     creator: {
       '@type': 'Organization',
