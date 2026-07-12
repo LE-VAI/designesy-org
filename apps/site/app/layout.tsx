@@ -26,9 +26,6 @@ export const metadata: Metadata = {
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
   },
-  alternates: {
-    canonical: 'https://designesy.org',
-  },
   robots: {
     index: true,
     follow: true,
