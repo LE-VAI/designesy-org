@@ -17,7 +17,13 @@ const T = {
   signalDim: 'rgba(1, 51, 203, 0.14)',
 } as const;
 
-export type OgKind = 'default' | 'lab' | 'contract' | 'review' | 'docs';
+export type OgKind =
+  | 'default'
+  | 'lab'
+  | 'contract'
+  | 'review'
+  | 'docs'
+  | 'kit';
 
 export type OgCardProps = {
   eyebrow: string;
@@ -43,9 +49,11 @@ export function renderOgCard({
 }: OgCardProps) {
   const isLab = kind === 'lab';
   const isContract = kind === 'contract';
-  const markRadius = isContract ? 6 : 999;
-  const markFill = isLab ? T.signalLight : T.signal;
-  const markRing = isContract ? 8 : 999;
+  const isKit = kind === 'kit';
+  // contract = square; kit = soft square (usable package); lab/default = circle
+  const markRadius = isContract ? 6 : isKit ? 10 : 999;
+  const markFill = isLab || isKit ? T.signalLight : T.signal;
+  const markRing = isContract ? 8 : isKit ? 10 : 999;
 
   return new ImageResponse(
     (

@@ -54,9 +54,9 @@ const LAYERS = [
   },
   {
     num: '06',
-    name: 'Agent Kits',
-    desc: 'reusable instructions for agents',
-    state: 'Internal kits — public machine export only',
+    name: 'Kits',
+    desc: 'portable instruction packages for people and agents',
+    state: 'Public · Kit One Design Review',
   },
   {
     num: '07',
@@ -67,6 +67,11 @@ const LAYERS = [
 ];
 
 const START_HERE = [
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'Portable review package for people and agents',
+  },
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
@@ -297,9 +302,9 @@ export default function DocsPage() {
         </section>
 
         <div className="status-note">
-          Designesy is a live operating model. Graph, agent kits, and logs remain
-          internal by design. What is public here — principles, architecture,
-          voice, contracts, labs, and review — is the real system, not a preview
+          Designesy is a live operating model. Graph and logs remain internal by
+          design. What is public here — principles, architecture, voice,
+          contracts, labs, kits, and review — is the real system, not a preview
           of a larger empty product.
         </div>
       </main>

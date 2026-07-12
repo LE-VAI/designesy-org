@@ -22,11 +22,17 @@ export function Footer() {
             <Link href="/labs" data-cuelume-hover="tick">
               Labs
             </Link>
+            <Link href="/kits" data-cuelume-hover="tick">
+              Kits
+            </Link>
             <Link href="/review" data-cuelume-hover="tick">
               Review
             </Link>
             <Link href="/contracts" data-cuelume-hover="tick">
               Contracts
+            </Link>
+            <Link href="/kits/design-review" data-cuelume-hover="tick">
+              Design Review
             </Link>
             <Link href="/contracts/design-system" data-cuelume-hover="tick">
               Design system

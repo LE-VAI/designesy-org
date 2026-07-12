@@ -188,7 +188,7 @@ p {
 }
 
 .nav-links a {
-  padding: 0.5rem 0.85rem;
+  padding: 0.5rem 0.7rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--muted);
@@ -1569,9 +1569,9 @@ p {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
-  max-width: 720px;
+  max-width: 980px;
 }
 
 /*
@@ -1602,6 +1602,10 @@ p {
   border-left-color: var(--signal-light);
 }
 
+.field-card--kit {
+  border-left-color: rgba(51, 88, 232, 0.75);
+}
+
 .field-card:hover {
   border-color: var(--line-strong);
   background: var(--surface-raised);
@@ -1613,6 +1617,11 @@ p {
 }
 
 .field-card--lab:hover {
+  border-left-color: var(--signal-light);
+  border-color: var(--line-strong);
+}
+
+.field-card--kit:hover {
   border-left-color: var(--signal-light);
   border-color: var(--line-strong);
 }
@@ -1684,6 +1693,10 @@ p {
   color: var(--signal-light);
 }
 
+.field-card--kit:hover .field-card-arrow {
+  color: var(--signal-light);
+}
+
 /* Kind badges — same family, different weight */
 .status-badge--contract {
   color: var(--signal-light);
@@ -1693,6 +1706,12 @@ p {
 
 .status-badge--lab {
   color: var(--ink);
+  border-color: rgba(51, 88, 232, 0.45);
+  background: transparent;
+}
+
+.status-badge--kit {
+  color: var(--signal-light);
   border-color: rgba(51, 88, 232, 0.45);
   background: transparent;
 }
@@ -1742,6 +1761,42 @@ p {
 .mark-glyph--lab .mark-glyph-ring {
   border-radius: 50%;
   border-color: rgba(51, 88, 232, 0.4);
+}
+
+/* Kit = soft square package (usable instruction surface) */
+.mark-glyph--kit .mark-glyph-core {
+  border-radius: 5px;
+  inset: 8px;
+  background: var(--signal-light);
+  animation: signalPulse 3.8s var(--ease-in-out) infinite;
+}
+
+.mark-glyph--kit .mark-glyph-ring {
+  border-radius: 8px;
+  border-color: rgba(51, 88, 232, 0.4);
+}
+
+/* Agent prompt block on kit pages */
+.kit-prompt {
+  margin: 0;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.kit-prompt code {
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  padding: 0;
 }
 
 @media (max-width: 720px) {
