@@ -1183,6 +1183,9 @@ a.check-cell {
 button.check-cell {
   font: inherit;
   width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
 }
 
 /* tail column: arrow for links, checkmark for toggled cells */
