@@ -17,20 +17,27 @@ export function Copyable({
   children: ReactNode;
   label?: string;
   className?: string;
+  /** Explicit paste payload. Prefer this when display text is a human summary. */
   text?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const copy = useCallback(async () => {
-    let value = text;
+    // Prefer explicit paste payload (agent prompt, machine URL, etc.)
+    // over visible display text (human share line / summary).
+    let value = text?.trim();
     if (!value && ref.current) {
-      // Exclude label and badge from copied text
-      const clone = ref.current.cloneNode(true) as HTMLElement;
-      clone
-        .querySelectorAll('.definition-label, .definition-copy-badge')
-        .forEach((el) => el.remove());
-      value = clone.textContent?.trim() ?? '';
+      const explicit = ref.current.getAttribute('data-copy')?.trim();
+      if (explicit) {
+        value = explicit;
+      } else {
+        const clone = ref.current.cloneNode(true) as HTMLElement;
+        clone
+          .querySelectorAll('.definition-label, .definition-copy-badge')
+          .forEach((el) => el.remove());
+        value = clone.textContent?.trim() ?? '';
+      }
     }
     if (!value) return;
 

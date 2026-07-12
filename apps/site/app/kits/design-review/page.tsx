@@ -69,11 +69,17 @@ export default function DesignReviewKitPage() {
 
         <section className="doctrine-section fade-up" id="handoff">
           <h2 className="doctrine-heading">Handoff</h2>
-          <div className="definition">
+          <div
+            className="definition"
+            data-copy={k.agent_prompt}
+            data-copy-label="agent prompt"
+          >
             <p className="definition-label">Share line</p>
             <p>{k.handoff_line}</p>
           </div>
           <p className="surface-note">
+            Shows a human share line. Click copies the full agent prompt —
+            paste into your AI tool, replace the placeholders, run the review.
             Human face: this page. Machine face:{' '}
             <Link href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
@@ -82,7 +88,7 @@ export default function DesignReviewKitPage() {
             <Link href="/open" data-cuelume-hover="tick">
               /open
             </Link>
-            . Contract when tokens are in scope.
+            .
           </p>
         </section>
 

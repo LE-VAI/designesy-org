@@ -43,35 +43,6 @@ const SHARE_POSTS = [
   },
 ];
 
-const AGENT_PROMPT = `You are working with Designesy open design intelligence.
-
-Permission: read-only by default. Inspect, review, and report.
-Do not edit files, deploy changes, or claim write authority
-the operator did not grant.
-
-If you can fetch URLs:
-  1. Fetch https://www.designesy.org/open.json
-  2. Choose the package needed (contract, kit, lab, or review).
-  3. If machine_url is present, fetch it for structured rules.
-  4. For Design Review, fetch the kit prompt and run the eight dimensions.
-  5. Cite contract tokens when proposing UI changes.
-  6. If a rule is missing, name an open tension instead of inventing policy.
-
-If you cannot fetch URLs:
-  The human index at designesy.org/open lists all packages.
-  Ask the operator to paste the relevant package content.
-
-Rules:
-  - Separate observed behavior from derived judgment.
-  - Do not invent private brand systems, monogram logos, or unversioned rules.
-  - Public surfaces never display internal control-plane naming.
-  - Versionless rules that change silently are an anti-pattern.
-
-Primary human index: https://www.designesy.org/open
-Machine feed: https://www.designesy.org/open.json
-Design Review kit: https://www.designesy.org/kits/design-review
-Design system contract: https://www.designesy.org/contracts/design-system`;
-
 const VERIFY = [
   {
     title: 'Human index resolves',
@@ -136,10 +107,18 @@ export default function OpenHandoffPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">One-line handoff</h2>
-          <div className="definition">
+          <div
+            className="definition"
+            data-copy={o.agent_prompt}
+            data-copy-label="agent prompt"
+          >
             <p className="definition-label">Share this</p>
             <p>{o.handoff_line}</p>
           </div>
+          <p className="surface-note" style={{ marginTop: '0.75rem' }}>
+            Shows a short human line. Click copies the full agent brief —
+            paste into your AI tool so it can fetch open.json and apply packages.
+          </p>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -239,7 +218,7 @@ export default function OpenHandoffPage() {
             and apply the rules. Read-only by default.
           </p>
           <CopyPrompt label="agent prompt">
-            {AGENT_PROMPT}
+            {o.agent_prompt}
           </CopyPrompt>
         </section>
 
