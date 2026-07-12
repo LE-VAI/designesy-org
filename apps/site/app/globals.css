@@ -1138,7 +1138,7 @@ p {
   border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--paper);
+  background: var(--line-faint);
 }
 
 /* denser tiles for short labels (anatomy, maps, do-not lists) */
