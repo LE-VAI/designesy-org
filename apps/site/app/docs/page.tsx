@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'Docs · Designesy',
     description:
       'Mission, principles, architecture, and public voice — with paths to live contract, labs, and review.',
-    url: 'https://designesy.org/docs',
+    url: 'https://www.designesy.org/docs',
   },
   twitter: {
     card: 'summary_large_image',

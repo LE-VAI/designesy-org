@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'designesy.org · public surface review',
     description:
       'A public surface checked against its own contract — holds, tensions, and standing rules.',
-    url: 'https://designesy.org/review/designesy-org',
+    url: 'https://www.designesy.org/review/designesy-org',
   },
   twitter: {
     card: 'summary_large_image',

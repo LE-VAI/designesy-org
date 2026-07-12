@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: 'Design system contract · v0.1',
     description:
       'Portable design agreement for designesy.org. Human overview with machine-readable export.',
-    url: 'https://designesy.org/contracts/design-system',
+    url: 'https://www.designesy.org/contracts/design-system',
   },
   twitter: {
     card: 'summary_large_image',
