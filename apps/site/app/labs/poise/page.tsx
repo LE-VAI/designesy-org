@@ -6,6 +6,7 @@ import { SoundToggle } from '../../lib/sound-toggle';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
+import { CopyPrompt } from '../../lib/copy-prompt';
 
 export const metadata: Metadata = {
   title: 'Poise',
@@ -278,8 +279,10 @@ export default function PoiseLabPage() {
           <h2 className="doctrine-heading">Implementation notes</h2>
           <div className="definition">
             <p className="definition-label">Builder prompt</p>
-            <pre className="lab-prompt">{PROMPT}</pre>
           </div>
+          <CopyPrompt label="builder prompt">
+            {PROMPT}
+          </CopyPrompt>
         </section>
 
         <section className="doctrine-section fade-up">
