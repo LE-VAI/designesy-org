@@ -35,7 +35,7 @@ export default function OpenPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Open · v{o.version}</p>
           <h1 className="surface-title">{o.name}</h1>
@@ -223,12 +223,44 @@ export default function OpenPage() {
             <Link
               className="row"
               role="listitem"
-              href="/docs"
+              href="/open/handoff"
               data-cuelume-hover="whisper"
               data-cuelume-press
               data-cuelume-release
             >
               <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Open handoff pack</span>
+                <span className="row-meta">
+                  Share copy, agent prompt, verification paths
+                </span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/review/keyboard"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Keyboard path · site-wide</span>
+                <span className="row-meta">
+                  Skip link, main landmark, shared chrome
+                </span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/docs"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Docs</span>
                 <span className="row-meta">

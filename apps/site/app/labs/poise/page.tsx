@@ -78,7 +78,7 @@ export default function PoiseLabPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">
             <Link href="/labs" className="lab-crumb">

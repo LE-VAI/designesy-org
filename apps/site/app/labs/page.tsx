@@ -48,7 +48,7 @@ export default function LabsPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Experiment lane</p>
           <h1 className="surface-title">Labs</h1>

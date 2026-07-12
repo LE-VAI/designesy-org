@@ -47,7 +47,7 @@ export default function ReviewPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Quality gate</p>
           <h1 className="surface-title">Review</h1>
@@ -153,6 +153,27 @@ export default function ReviewPage() {
                 Lab One, Poise.
               </p>
               <span className="lab-card-arrow">Open review →</span>
+            </Link>
+            <Link
+              href="/review/keyboard"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <div className="lab-card-top">
+                <span className="status-badge">Verification</span>
+                <span className="lab-card-status">Holds</span>
+              </div>
+              <h3 className="lab-card-title">Keyboard path</h3>
+              <p className="lab-card-lede">
+                Site-wide skip link, tab order, and focus-visible proof.
+              </p>
+              <p className="lab-card-desc">
+                Shared chrome packet for every public route — complements the
+                Lab One keyboard path.
+              </p>
+              <span className="lab-card-arrow">Open keyboard path →</span>
             </Link>
           </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>

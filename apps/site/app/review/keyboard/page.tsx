@@ -1,97 +1,88 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Topbar } from '../../../lib/topbar';
-import { Footer } from '../../../lib/footer';
+import { Topbar } from '../../lib/topbar';
+import { Footer } from '../../lib/footer';
 
 export const metadata: Metadata = {
-  title: 'Poise keyboard path',
+  title: 'Keyboard path',
   description:
-    'Public keyboard-path verification for Lab One · Poise — tab order, focus-visible, activation, and reduced-motion notes.',
+    'Site-wide keyboard path for designesy.org — skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
   openGraph: {
-    title: 'Poise · keyboard path',
+    title: 'Keyboard path · Designesy',
     description:
-      'Verification artifact for Lab One controls: tab order, focus rings, Enter/Space, reduced motion.',
-    url: 'https://www.designesy.org/review/poise/keyboard',
+      'Public verification packet for shared chrome and default surface routes: skip to content, tab order, focus rings, activation.',
+    url: 'https://www.designesy.org/review/keyboard',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Poise · keyboard path',
+    title: 'Keyboard path · Designesy',
     description:
-      'Keyboard verification for Lab One — designesy.org/review/poise/keyboard',
+      'Site-wide keyboard verification — designesy.org/review/keyboard',
   },
 };
 
 const SCOPE = [
   {
-    title: 'Primary press (demo)',
-    meta: 'button.button.primary · data-cuelume-press/release',
+    title: 'Skip to content',
+    meta: 'a.skip-link in shared topbar · first focusable control',
   },
   {
-    title: 'Ghost press (demo)',
-    meta: 'button.button.ghost · data-cuelume-press/release',
+    title: 'Shared chrome',
+    meta: 'Wordmark, primary nav, sound toggle, footer wayfinding',
   },
   {
-    title: 'Sound preference',
-    meta: 'button.sound-toggle · aria-pressed · aria-label',
+    title: 'Surface routes',
+    meta: 'Open, Docs, Labs, Kits, Review, Contracts, Privacy, home',
   },
   {
-    title: 'Lab crumb · Labs',
-    meta: 'Link to /labs in surface eyebrow',
+    title: 'In-page row links',
+    meta: 'Native Link / button rows with focus-visible rings',
   },
   {
-    title: 'Field check card',
-    meta: 'Link to /review/poise from the lab page',
+    title: 'Machine exports',
+    meta: 'JSON routes remain ordinary navigable URLs',
   },
   {
-    title: 'Contract links on lab',
-    meta: 'Links into design system contract surfaces',
-  },
-  {
-    title: 'Chrome (shared)',
-    meta: 'Topbar wordmark, primary nav, sound toggle, footer links',
+    title: 'Lab-specific controls',
+    meta: 'Covered in detail by /review/poise/keyboard',
   },
 ];
 
 const TAB_ORDER = [
   {
     step: '01',
+    title: 'Skip to content',
+    meta: 'Appears on focus · jumps to #main-content',
+  },
+  {
+    step: '02',
     title: 'Topbar wordmark',
     meta: 'Link · home · focus-visible ring',
   },
   {
-    step: '02',
-    title: 'Primary nav',
-    meta: 'Docs → Labs → Kits → Review → Contracts · each link focusable',
-  },
-  {
     step: '03',
-    title: 'Topbar sound toggle',
-    meta: 'Button · aria-pressed · label flips mute/enable',
+    title: 'Primary nav',
+    meta: 'Open → Docs → Labs → Kits → Review → Contracts',
   },
   {
     step: '04',
-    title: 'Lab crumb · Labs',
-    meta: 'In-page link before main claim',
+    title: 'Sound toggle',
+    meta: 'Button · aria-pressed · no audio on focus alone',
   },
   {
     step: '05',
-    title: 'Primary press control',
-    meta: 'Demo button · Enter/Space activate · active scale(0.97)',
+    title: 'Main content',
+    meta: '#main-content · first in-page control in document order',
   },
   {
     step: '06',
-    title: 'Ghost press control',
-    meta: 'Demo button · same keyboard activation model',
+    title: 'Body rows, cards, and CTAs',
+    meta: 'Links and buttons only · no positive tabindex',
   },
   {
     step: '07',
-    title: 'In-demo sound toggle',
-    meta: 'Same control family as topbar · preference is site-owned',
-  },
-  {
-    step: '08',
-    title: 'Body links and field check card',
-    meta: 'Contract links, field check card, footer wayfinding',
+    title: 'Footer wayfinding',
+    meta: 'Open, Docs, Labs, Kits, Review, Contracts, Privacy, mail',
   },
 ];
 
@@ -101,12 +92,16 @@ const FOCUS_RULES = [
     meta: '2px solid --signal-light · outline-offset 2px · radius-sm',
   },
   {
-    title: 'No mouse-only traps',
-    meta: 'All primary actions are native button or link elements',
+    title: 'Skip link visibility',
+    meta: 'Off-screen until focus · no permanent chrome clutter',
   },
   {
-    title: 'Sound toggle labels',
-    meta: 'aria-label and aria-pressed update with preference state',
+    title: 'Native interactive elements',
+    meta: 'Primary actions are link or button · no mouse-only traps',
+  },
+  {
+    title: 'Sound toggle state',
+    meta: 'aria-label and aria-pressed update with preference',
   },
   {
     title: 'Decorative marks',
@@ -120,101 +115,97 @@ const ACTIVATION = [
     meta: 'Enter activates · standard browser behavior',
   },
   {
-    title: 'Buttons (press demo)',
-    meta: 'Space or Enter · press feedback is visual settle, not a route change',
+    title: 'Buttons',
+    meta: 'Space or Enter · no pointer required',
   },
   {
     title: 'Sound toggle',
-    meta: 'Space or Enter flips preference · no unsolicited audio on focus alone',
+    meta: 'Space or Enter flips preference · no unsolicited audio on focus',
   },
   {
-    title: 'Hover lift',
-    meta: 'Only under (hover: hover) and (pointer: fine) · not required for keyboard use',
+    title: 'Skip link',
+    meta: 'Enter moves focus target to main content landmark',
   },
 ];
 
 const REDUCED_MOTION = [
   {
-    title: 'Wordmark breath',
-    meta: 'Collapses under prefers-reduced-motion · interface remains complete',
-  },
-  {
     title: 'Entrance choreography',
-    meta: 'Fade-up durations collapse · content still readable in order',
+    meta: 'Fade-up durations collapse under prefers-reduced-motion',
   },
   {
-    title: 'Press settle',
-    meta: 'Short active scale remains acceptable as state feedback; no bounce',
+    title: 'Wordmark breath',
+    meta: 'Non-essential motion collapses · chrome remains complete',
   },
   {
-    title: 'Sound default',
-    meta: 'Preference defaults off under reduced motion · still keyboard-toggleable',
+    title: 'Scroll behavior',
+    meta: 'Smooth scroll disabled when reduced motion is preferred',
+  },
+  {
+    title: 'Controls remain',
+    meta: 'Skip link, nav, sound toggle, and CTAs stay operable',
   },
 ];
 
 const RESULTS = [
   {
-    title: 'Tab order is linear and complete',
-    meta: 'Chrome → lab crumb → demo controls → body links → footer',
+    title: 'Skip link is site-wide',
+    meta: 'Shared topbar · first Tab stop on every route using Topbar',
+    status: 'Hold',
+  },
+  {
+    title: 'Main landmark is addressable',
+    meta: 'id=main-content on public page mains',
     status: 'Hold',
   },
   {
     title: 'focus-visible is system-wide',
-    meta: 'Contract token path: outline 2px --signal-light',
+    meta: 'Contract token path on interactive controls',
     status: 'Hold',
   },
   {
-    title: 'Demo buttons are keyboard-operable',
-    meta: 'Native button elements · no pointer-only handlers required',
+    title: 'Shared chrome is keyboard operable',
+    meta: 'Wordmark, nav, sound, footer links',
     status: 'Hold',
   },
   {
-    title: 'Sound toggle announces state',
-    meta: 'aria-pressed + aria-label · no sound on focus alone',
+    title: 'Lab One still has a dedicated packet',
+    meta: '/review/poise/keyboard remains the Poise control proof',
     status: 'Hold',
   },
   {
-    title: 'Reduced motion does not remove controls',
-    meta: 'Preference and press remain available without breath animation',
-    status: 'Hold',
-  },
-  {
-    title: 'Site-wide keyboard packet for every route',
-    meta: 'Published at /review/keyboard · skip link + main landmark + shared chrome',
-    status: 'Hold',
+    title: 'Route-by-route operator re-runs',
+    meta: 'This packet defines method; field evidence stays re-runnable',
+    status: 'Open practice',
   },
 ];
 
 const METHOD = [
-  'Open https://www.designesy.org/labs/poise in a desktop browser',
-  'Use keyboard only — Tab / Shift+Tab through the page',
-  'Confirm each stop matches the tab order table',
-  'On buttons: Space and Enter activate without pointer',
-  'On sound toggle: confirm aria-pressed flips and no audio on focus alone',
+  'Open any public route on https://www.designesy.org',
+  'Press Tab once — confirm Skip to content appears and is first',
+  'Activate skip link — focus should land at main content',
+  'Tab through wordmark, primary nav, sound toggle, then body controls',
+  'Confirm focus-visible rings on each interactive control',
+  'On sound toggle: Space/Enter flips aria-pressed; no audio on focus alone',
   'Enable prefers-reduced-motion and re-check that controls remain usable',
-  'Record any trap, missing ring, or unlabeled control as a tension',
+  'For Lab One demo buttons, also run /review/poise/keyboard',
 ];
 
 const RELATED = [
   {
-    href: '/labs/poise',
-    title: 'Lab One · Poise',
-    meta: 'Artifact under verification',
-  },
-  {
-    href: '/review/poise',
-    title: 'Field check · Poise',
-    meta: 'Kit One review packet this proof supports',
-  },
-  {
-    href: '/review/keyboard',
-    title: 'Keyboard path · site-wide',
-    meta: 'Skip link, main landmark, shared chrome packet',
+    href: '/review/poise/keyboard',
+    title: 'Poise keyboard path',
+    meta: 'Lab-specific control proof',
   },
   {
     href: '/contracts/design-system',
     title: 'Design system contract v0.1.1',
-    meta: 'focus-visible, reduced-motion, and adopted Poise interaction rules',
+    meta: 'focus-visible, reduced-motion, interaction rules',
+  },
+  {
+    href: '/review/designesy-org',
+    title: 'Field check · designesy.org',
+    meta: 'Public surface review packet',
   },
   {
     href: '/kits/design-review',
@@ -223,7 +214,7 @@ const RELATED = [
   },
 ];
 
-export default function PoiseKeyboardVerificationPage() {
+export default function SiteKeyboardPage() {
   return (
     <>
       <Topbar scrolled />
@@ -235,26 +226,24 @@ export default function PoiseKeyboardVerificationPage() {
               Review
             </Link>
             <span aria-hidden="true"> · </span>
-            <Link href="/review/poise" className="lab-crumb">
-              Poise
-            </Link>
-            <span aria-hidden="true"> · </span>
             Verification
           </p>
           <h1 className="surface-title">Keyboard path</h1>
           <p className="surface-lede">
-            Public proof that Lab One controls are operable without a pointer.
+            Public proof that shared chrome and default surface routes stay
+            operable without a pointer.
           </p>
           <p className="surface-note">
-            This is a verification artifact, not a redesign. It records tab
-            order, focus-visible criteria, activation rules, reduced-motion
-            notes, and re-run method for /labs/poise.
+            This packet closes the site-wide open from Lab One. It records skip
+            link, main landmark, tab order, focus-visible criteria, activation,
+            reduced-motion notes, and a re-run method for the whole public
+            surface.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
-            <span className="lab-meta-item">Scope · Lab One · Poise</span>
+            <span className="lab-meta-item">Scope · site-wide chrome + surfaces</span>
             <span className="lab-meta-item">Date · 2026-07-12</span>
-            <span className="lab-meta-item">Result · holds with one open</span>
+            <span className="lab-meta-item">Result · holds</span>
           </div>
         </section>
 
@@ -263,11 +252,11 @@ export default function PoiseKeyboardVerificationPage() {
           <div className="definition">
             <p className="definition-label">Keyboard path · holds</p>
             <p>
-              Poise demo controls and shared chrome are reachable and operable
-              by keyboard. Focus rings follow contract tokens. Sound does not
-              fire on focus alone. Reduced motion removes non-essential motion
-              without removing controls. Site-wide chrome is covered by
-              /review/keyboard; this packet remains Lab One specific.
+              Shared topbar now exposes a skip link as the first focusable
+              control. Public mains expose a main-content landmark. Primary
+              navigation, sound preference, body rows, and footer links remain
+              native interactive elements with contract focus rings. Lab One
+              keeps its dedicated packet for demo controls.
             </p>
           </div>
         </section>
@@ -293,7 +282,7 @@ export default function PoiseKeyboardVerificationPage() {
           <h2 className="doctrine-heading">Expected tab order</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Order is document order. No positive tabindex values are used on
-            Poise controls.
+            shared chrome.
           </p>
           <div className="row-stack" role="list">
             {TAB_ORDER.map((item) => (
@@ -361,33 +350,19 @@ export default function PoiseKeyboardVerificationPage() {
 
         <section className="doctrine-section fade-up" id="results">
           <h2 className="doctrine-heading">Results</h2>
-          <div className="principle-list">
+          <div className="row-stack" role="list">
             {RESULTS.map((item, i) => (
-              <div className="principle" key={item.title} data-cuelume-hover="whisper">
-                <span className="principle-num">
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <div className="principle-body">
-                  <h3>
+                <span className="row-body">
+                  <span className="row-title">
                     {item.title}
-                    <span
-                      style={{
-                        marginLeft: '0.65rem',
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        color:
-                          item.status === 'Hold'
-                            ? 'var(--signal-light)'
-                            : 'var(--muted-dim)',
-                      }}
-                    >
-                      {item.status}
-                    </span>
-                  </h3>
-                  <p>{item.meta}</p>
-                </div>
+                    <span className="row-meta"> · {item.status}</span>
+                  </span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
               </div>
             ))}
           </div>
@@ -396,13 +371,13 @@ export default function PoiseKeyboardVerificationPage() {
         <section className="doctrine-section fade-up" id="method">
           <h2 className="doctrine-heading">Re-run method</h2>
           <div className="row-stack" role="list">
-            {METHOD.map((item, i) => (
-              <div className="row" role="listitem" key={item}>
+            {METHOD.map((step, i) => (
+              <div className="row" role="listitem" key={step}>
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span className="row-body">
-                  <span className="row-title">{item}</span>
+                  <span className="row-title">{step}</span>
                 </span>
               </div>
             ))}
@@ -435,9 +410,9 @@ export default function PoiseKeyboardVerificationPage() {
         </section>
 
         <div className="status-note">
-          Keyboard-path verification for Lab One · Poise. Published so inclusion
-          claims cite proof, not intention. Site-wide route packets remain an
-          open system state — this artifact does not claim them.
+          Keyboard path is part of public legitimacy. If a new interactive
+          pattern ships without native focus and activation, treat that as an
+          open tension — silence is not accessibility adoption.
         </div>
       </main>
 

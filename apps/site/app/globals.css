@@ -1927,3 +1927,29 @@ p {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* Skip link — first focusable control in shared chrome */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 0.15s var(--ease-out);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}

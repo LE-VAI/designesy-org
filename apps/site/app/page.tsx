@@ -128,7 +128,7 @@ export default function HomePage() {
       {/* --- Topbar --- */}
       <Topbar />
 
-      <main className="site-shell">
+      <main id="main-content" className="site-shell">
         {/* --- Hero --- */}
         <section className="hero" aria-labelledby="hero-title">
           <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
