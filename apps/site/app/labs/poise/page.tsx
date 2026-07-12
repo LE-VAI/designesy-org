@@ -277,9 +277,7 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Implementation notes</h2>
-          <div className="definition">
-            <p className="definition-label">Builder prompt</p>
-          </div>
+          <p className="definition-label" style={{ marginBottom: '0.75rem' }}>Builder prompt</p>
           <CopyPrompt label="builder prompt">
             {PROMPT}
           </CopyPrompt>

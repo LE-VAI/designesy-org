@@ -14,7 +14,12 @@ export function DefinitionCopyEnhancer() {
       if (def.classList.contains('is-copyable')) return;
       if (def.tagName === 'BUTTON') return;
 
-      const textToCopy = def.textContent?.trim() ?? '';
+      // Extract only the value text — exclude labels and badges
+      const clone = def.cloneNode(true) as HTMLElement;
+      clone
+        .querySelectorAll('.definition-label, .definition-copy-badge')
+        .forEach((el) => el.remove());
+      const textToCopy = clone.textContent?.trim() ?? '';
       if (!textToCopy) return;
 
       def.classList.add('is-copyable');
