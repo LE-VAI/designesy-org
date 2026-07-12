@@ -1242,7 +1242,7 @@ a.check-cell:hover .check-cell-title {
 
 /* avoid / anti-pattern cells — same grid, quieter signal */
 .check-cell.is-avoid {
-  background: color-mix(in srgb, var(--paper) 92%, var(--surface-soft));
+  background: var(--surface-raised);
 }
 
 .check-cell.is-avoid .check-cell-index {
@@ -1250,12 +1250,12 @@ a.check-cell:hover .check-cell-title {
 }
 
 .check-cell.is-avoid .check-cell-title {
-  color: var(--ink);
+  color: var(--muted);
   font-weight: 600;
 }
 
 .check-cell.is-avoid:hover {
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover));
 }
 
 /* optional status chip in meta-rich result cells */
