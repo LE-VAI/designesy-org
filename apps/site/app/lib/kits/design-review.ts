@@ -28,9 +28,14 @@ export const designReviewKit = {
       meta: 'Human home and machine export',
     },
     {
+      href: '/review/poise',
+      title: 'Field check · Poise',
+      meta: 'Kit One applied to Lab One · pass with notes',
+    },
+    {
       href: '/review/designesy-org',
       title: 'Field check · designesy.org',
-      meta: 'Worked example of this kit in public',
+      meta: 'Public surface review against contract v0.1',
     },
     {
       href: '/labs/poise',
