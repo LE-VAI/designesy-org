@@ -83,6 +83,11 @@ const START_HERE = [
     meta: 'How Designesy responds when someone touches it',
   },
   {
+    href: '/review/poise',
+    title: 'Field check · Poise',
+    meta: 'Kit One applied to Lab One · pass with notes',
+  },
+  {
     href: '/review/designesy-org',
     title: 'Public surface review',
     meta: 'designesy.org checked against its own contract',

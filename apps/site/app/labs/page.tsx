@@ -115,7 +115,7 @@ export default function LabsPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/review/poise"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -124,9 +124,25 @@ export default function LabsPage() {
             >
               <span className="row-index">02</span>
               <span className="row-body">
+                <span className="row-title">Field check · Poise</span>
+                <span className="row-meta">
+                  Kit One review of Lab One · pass with notes
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  Poise included in the live designesy.org field check
+                  designesy.org checked against contract v0.1
                 </span>
               </span>
             </Link>

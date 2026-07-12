@@ -56,7 +56,7 @@ const SURFACES = [
     href: '/review',
     label: 'Review',
     desc: 'Eight dimensions and field checks',
-    meta: '1 field check',
+    meta: '2 field checks',
   },
   {
     href: '/contracts',
@@ -304,6 +304,10 @@ export default function HomePage() {
               {
                 title: 'Use Kit One · Design Review',
                 meta: 'Portable review package for people and agents',
+              },
+              {
+                title: 'Field check · Poise',
+                meta: 'Lab One reviewed with Kit One · pass with notes',
               },
               {
                 title: 'Public surface review',

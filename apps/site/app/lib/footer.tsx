@@ -34,6 +34,9 @@ export function Footer() {
             <Link href="/kits/design-review" data-cuelume-hover="tick">
               Design Review
             </Link>
+            <Link href="/review/poise" data-cuelume-hover="tick">
+              Poise review
+            </Link>
             <Link href="/contracts/design-system" data-cuelume-hover="tick">
               Design system
             </Link>
