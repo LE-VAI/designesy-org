@@ -4,6 +4,7 @@ import { SoundToggle } from './sound-toggle';
 const NAV_ROUTES = [
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },
+  { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
   { href: '/contracts', label: 'Contracts' },
 ];
