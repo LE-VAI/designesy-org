@@ -54,11 +54,11 @@ const DIMENSIONS = [
     num: '04',
     title: 'Inclusion',
     observation:
-      'prefers-reduced-motion collapses non-essential animation. Sound is opt-in and defaults off under reduced motion. Buttons are standard controls with focus-visible from the system. A published keyboard-path proof for this route is not yet a public artifact.',
+      'prefers-reduced-motion collapses non-essential animation. Sound is opt-in and defaults off under reduced motion. Buttons are standard controls with focus-visible from the system. Keyboard-path verification for Poise is published at /review/poise/keyboard.',
     judgment:
-      'Structural inclusion is real for motion and sound. Keyboard verification remains an open proof gap, not a claim of failure.',
+      'Structural inclusion is real for motion, sound, and keyboard proof on this lab. Site-wide route packets remain open — this packet covers Poise only.',
     action:
-      'Fix proof, not only behavior: publish keyboard-path verification for Poise controls in the next verification pass.',
+      'Keep the Poise keyboard artifact current when controls change. Expand to other routes as separate packets, not silent claims.',
   },
   {
     num: '05',
@@ -112,8 +112,8 @@ const HOLDS = [
 
 const TENSIONS = [
   {
-    title: 'Keyboard-path verification artifact',
-    meta: 'Behavior likely holds; public proof packet is not yet published',
+    title: 'Site-wide keyboard packets',
+    meta: 'Poise proof is published; other public routes are not covered by this artifact',
   },
   {
     title: 'Contract adoption still open',
@@ -131,16 +131,16 @@ const TENSIONS = [
 
 const CORRECTIONS = [
   {
-    title: 'Publish keyboard-path verification for Poise controls',
-    meta: 'Tab order, focus-visible, and reduced-motion checks as a public artifact',
+    title: 'Keep Poise keyboard artifact current',
+    meta: 'Re-run /review/poise/keyboard when demo controls or chrome change',
   },
   {
     title: 'Keep v0.1.1 adoption explicit',
     meta: 'Do not imply contract status until Commander order and contract edit ship',
   },
   {
-    title: 'Link this field check from the lab',
-    meta: 'Close the loop: experiment → kit → public judgment packet',
+    title: 'Expand keyboard packets route by route',
+    meta: 'Do not claim site-wide keyboard proof from the Poise packet alone',
   },
   {
     title: 'On adoption, refresh this packet outcome',
@@ -154,7 +154,7 @@ const VERIFICATION = [
   'Compared to Use Kit One · Design Review output format',
   'Checked anti-patterns: no glow, bounce, unsolicited sound, monogram mark',
   'Checked naming: Poise remains human product language',
-  'Keyboard-path public proof: not yet a published artifact (named tension)',
+  'Keyboard-path public proof: published at /review/poise/keyboard',
   'Mobile density: demo first; long doctrine remains a known context cost',
 ];
 
@@ -163,6 +163,11 @@ const SOURCES = [
     href: '/labs/poise',
     title: 'Lab One · Poise',
     meta: 'Artifact under review',
+  },
+  {
+    href: '/review/poise/keyboard',
+    title: 'Keyboard path · Poise',
+    meta: 'Tab order, focus-visible, activation proof',
   },
   {
     href: '/kits/design-review',
@@ -225,9 +230,10 @@ export default function PoiseFieldCheckPage() {
               Poise is a considered lab. The live artifact proves restrained
               contact: opacity-only wordmark breath, short press settle, opt-in
               sound, and reduced-motion respect — all token-cited. Full anatomy
-              is present. Remaining work is proof and adoption discipline:
-              publish keyboard-path verification, keep candidate status honest,
-              and promote to contract v0.1.1 only by explicit order.
+              is present. Keyboard-path verification is published. Remaining
+              work is adoption discipline and site-wide proof expansion: keep
+              candidate status honest, and promote to contract v0.1.1 only by
+              explicit order.
             </p>
           </div>
         </section>
@@ -416,7 +422,7 @@ export default function PoiseFieldCheckPage() {
               </span>
             </Link>
             <Link
-              href="/kits/design-review"
+              href="/review/poise/keyboard"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -424,6 +430,20 @@ export default function PoiseFieldCheckPage() {
               data-cuelume-release
             >
               <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Keyboard path verification</span>
+                <span className="row-meta">Public proof for Lab One controls</span>
+              </span>
+            </Link>
+            <Link
+              href="/kits/design-review"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">Run the same method on your work</span>
