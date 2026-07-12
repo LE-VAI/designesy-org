@@ -2386,3 +2386,116 @@ a.check-cell:hover .check-cell-title {
   outline: 2px solid var(--signal-light);
   outline-offset: 2px;
 }
+
+/* ------------------------------------------------------------------
+   Back button — elegant floating return-to-origin.
+   Appears on the left edge when navigation history exists.
+   Subtle by default, full presence on hover/focus.
+   ------------------------------------------------------------------ */
+
+.back-button {
+  position: fixed;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--line-faint);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--muted-dim);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease), border-color 0.2s var(--ease),
+    color 0.2s var(--ease), transform 0.3s var(--ease-out);
+  animation: back-button-in 0.4s var(--ease-out) 0.4s forwards;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.back-button:hover {
+  opacity: 1;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.back-button:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.back-button:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.back-button.is-leaving {
+  opacity: 0;
+  transform: translateY(-50%) translateX(-0.5rem);
+}
+
+@keyframes back-button-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-0.5rem);
+  }
+  to {
+    opacity: 0.32;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .back-button {
+    left: 0.6rem;
+    width: 2rem;
+    height: 2rem;
+    top: auto;
+    bottom: 1.5rem;
+    transform: none;
+  }
+
+  .back-button:active {
+    transform: scale(0.92);
+  }
+
+  .back-button.is-leaving {
+    transform: translateX(-0.5rem);
+  }
+
+  @keyframes back-button-in {
+    from {
+      opacity: 0;
+      transform: translateX(-0.5rem);
+    }
+    to {
+      opacity: 0.32;
+      transform: translateX(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-button {
+    animation: none;
+    opacity: 0.32;
+    transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .back-button:active,
+  .back-button.is-leaving {
+    transform: translateY(-50%);
+  }
+
+  @media (max-width: 720px) {
+    .back-button:active,
+    .back-button.is-leaving {
+      transform: none;
+    }
+  }
+}
