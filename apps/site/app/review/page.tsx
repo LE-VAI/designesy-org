@@ -139,6 +139,31 @@ export default function ReviewPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Use this as a kit</h2>
+          <Link
+            href="/kits/design-review"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge status-badge--kit">Kit One</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Design Review</h3>
+            <p className="lab-card-lede">
+              Portable package of these dimensions for agents and teams.
+            </p>
+            <p className="lab-card-desc">
+              Prompt, output format, verification, and anti-patterns — ready to
+              hand off as a shareable path.
+            </p>
+            <span className="lab-card-arrow">Open kit →</span>
+          </Link>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review against</h2>
           <div className="row-stack" role="list">
             <Link
@@ -168,6 +193,22 @@ export default function ReviewPage() {
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
                   Interaction behaviors under review for adoption
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/kits/design-review"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Use Kit One · Design Review</span>
+                <span className="row-meta">
+                  Runnable package of these dimensions
                 </span>
               </span>
             </Link>

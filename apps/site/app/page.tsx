@@ -47,6 +47,12 @@ const SURFACES = [
     meta: 'Poise live',
   },
   {
+    href: '/kits',
+    label: 'Kits',
+    desc: 'Portable instruction packages for people and agents',
+    meta: 'Design Review live',
+  },
+  {
     href: '/review',
     label: 'Review',
     desc: 'Eight dimensions and field checks',
@@ -80,6 +86,16 @@ const FIELD = [
     desc: 'Restrained interaction — wordmark, press, sound preference, reduced motion.',
     arrow: 'Open lab →',
     kind: 'lab' as const,
+  },
+  {
+    href: '/kits/design-review',
+    badge: 'Kit One',
+    status: 'Live',
+    title: 'Design Review',
+    lede: 'Turn taste into inspection.',
+    desc: 'Eight dimensions, portable agent prompt, output format, and verification.',
+    arrow: 'Open kit →',
+    kind: 'kit' as const,
   },
 ];
 
@@ -121,11 +137,11 @@ export default function HomePage() {
             </Link>
             <Link
               className="button ghost"
-              href="/labs/poise"
+              href="/kits/design-review"
               data-cuelume-press
               data-cuelume-release
             >
-              Try Poise
+              Use Design Review
             </Link>
           </div>
         </section>
@@ -204,7 +220,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="field-title">
           <p className="section-eyebrow">Now live</p>
           <h2 className="section-title" id="field-title">
-            Contract and Lab One.
+            Contract, Lab One, and Kit One.
           </h2>
           <div className="field-grid">
             {FIELD.map((item) => (
@@ -226,7 +242,9 @@ export default function HomePage() {
                     title={
                       item.kind === 'contract'
                         ? 'Contract mark · structure'
-                        : 'Lab mark · living experiment'
+                        : item.kind === 'kit'
+                          ? 'Kit mark · usable package'
+                          : 'Lab mark · living experiment'
                     }
                   >
                     <span className="mark-glyph-core" />
@@ -282,6 +300,10 @@ export default function HomePage() {
               {
                 title: 'Lab One · Poise',
                 meta: 'Restrained interaction — candidate rules for v0.1.1',
+              },
+              {
+                title: 'Use Kit One · Design Review',
+                meta: 'Portable review package for people and agents',
               },
               {
                 title: 'Public surface review',
