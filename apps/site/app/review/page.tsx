@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: 'Review · Designesy',
     description:
       'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
-    url: 'https://designesy.org/review',
+    url: 'https://www.designesy.org/review',
   },
   twitter: {
     card: 'summary_large_image',

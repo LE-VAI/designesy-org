@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://designesy.org/sitemap.xml',
+    sitemap: 'https://www.designesy.org/sitemap.xml',
   };
 }
