@@ -1,14 +1,73 @@
+import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 
 const LAYERS = [
-  { num: '01', name: 'Core', desc: 'mission, doctrine, principles, quality bar' },
-  { num: '02', name: 'Graph', desc: 'living knowledge tree with provenance' },
-  { num: '03', name: 'Contracts', desc: 'portable design agreements' },
-  { num: '04', name: 'Labs', desc: 'experiments that compile into contracts' },
-  { num: '05', name: 'Review', desc: 'quality-control layer for artifacts' },
-  { num: '06', name: 'Agent Kits', desc: 'reusable instructions for agents' },
-  { num: '07', name: 'Logs', desc: 'institutional memory, file-based' },
+  {
+    num: '01',
+    name: 'Core',
+    desc: 'mission, doctrine, principles, quality bar',
+    state: 'Public on this surface',
+  },
+  {
+    num: '02',
+    name: 'Graph',
+    desc: 'living knowledge tree with provenance',
+    state: 'Internal — not published as a public browser',
+  },
+  {
+    num: '03',
+    name: 'Contracts',
+    desc: 'portable design agreements',
+    state: 'Public · design system v0.1',
+  },
+  {
+    num: '04',
+    name: 'Labs',
+    desc: 'experiments that compile into contracts',
+    state: 'Public · Lab One Poise',
+  },
+  {
+    num: '05',
+    name: 'Review',
+    desc: 'quality-control layer for artifacts',
+    state: 'Public · dimensions + field check',
+  },
+  {
+    num: '06',
+    name: 'Agent Kits',
+    desc: 'reusable instructions for agents',
+    state: 'Internal kits — public machine export only',
+  },
+  {
+    num: '07',
+    name: 'Logs',
+    desc: 'institutional memory, file-based',
+    state: 'Internal — not a public feed',
+  },
+];
+
+const START_HERE = [
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: 'Portable values, roles, verification · v0.1',
+  },
+  {
+    href: '/labs/poise',
+    title: 'Lab One · Poise',
+    meta: 'How Designesy responds when someone touches it',
+  },
+  {
+    href: '/review/designesy-org',
+    title: 'Public surface review',
+    meta: 'designesy.org checked against its own contract',
+  },
+  {
+    href: '/contracts#design-system-contract',
+    title: 'Full contract tables',
+    meta: 'Complete human contract on /contracts',
+  },
 ];
 
 const PRINCIPLES = [
@@ -46,6 +105,35 @@ export default function DocsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Start here</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            Orientation is useful only when it leads to live artifacts. These
+            are the public engines on designesy.org today.
+          </p>
+          <div className="row-stack" role="list">
+            {START_HERE.map((item, i) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="row"
+                role="listitem"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+                data-cuelume-release
+              >
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Mission</h2>
           <div className="definition">
             <p className="definition-label">Working sentence</p>
@@ -61,6 +149,21 @@ export default function DocsPage() {
             should be able to contain practical products, public resources,
             agent kits, labs, contracts, research systems, review systems, and
             creative infrastructure without being reduced to any one of them.
+          </p>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Quality bar</h2>
+          <div className="definition">
+            <p className="definition-label">Standard</p>
+            <p>
+              The artifact should feel considered after it becomes functional.
+            </p>
+          </div>
+          <p className="surface-note">
+            Functional is the baseline. Considered is the bar. Public work on
+            this site is expected to cite a contract token or name an open
+            tension — silence is not quality.
           </p>
         </section>
 
@@ -106,6 +209,7 @@ export default function DocsPage() {
                     <div className="layer-body">
                       <strong className="layer-name">{layer.name}</strong>
                       <span className="layer-desc"> — {layer.desc}</span>
+                      <span className="layer-state">{layer.state}</span>
                     </div>
                   </div>
                 ))}
@@ -174,10 +278,10 @@ export default function DocsPage() {
         </section>
 
         <div className="status-note">
-          Designesy is a live operating model. Private doctrine, working drafts,
-          and internal project material stay outside this public surface — but
-          the principles, architecture, and voice documented here are the real
-          system, not a preview.
+          Designesy is a live operating model. Graph, agent kits, and logs remain
+          internal by design. What is public here — principles, architecture,
+          voice, contracts, labs, and review — is the real system, not a preview
+          of a larger empty product.
         </div>
       </main>
 
