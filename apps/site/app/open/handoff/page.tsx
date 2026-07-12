@@ -4,7 +4,8 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { openIndex } from '../../lib/open-index';
 import { CheckGrid } from '../../lib/check-grid';
-import { ToggleRow } from '../../lib/toggle-row';
+import { CopyPrompt } from '../../lib/copy-prompt';
+import { CopyRow } from '../../lib/copy-row';
 
 export const metadata: Metadata = {
   title: 'Open handoff',
@@ -42,18 +43,34 @@ const SHARE_POSTS = [
   },
 ];
 
-const AGENT_PROMPT = `You are reviewing or applying Designesy open design intelligence.
+const AGENT_PROMPT = `You are working with Designesy open design intelligence.
 
-1. Fetch https://www.designesy.org/open.json
-2. Choose the package needed (contract, kit, lab, or review).
-3. If machine_url is present, fetch it. Prefer machine exports for structured rules.
-4. For Design Review, use the kit prompt and eight dimensions; separate observed behavior from judgment.
-5. Cite contract tokens when proposing UI changes. If a rule is missing, name an open tension instead of inventing policy.
-6. Do not invent private brand systems, monogram logos, or unversioned rules.
-7. Default permission is read/inspect. Do not claim write authority the operator did not grant.
+Permission: read-only by default. Inspect, review, and report.
+Do not edit files, deploy changes, or claim write authority
+the operator did not grant.
+
+If you can fetch URLs:
+  1. Fetch https://www.designesy.org/open.json
+  2. Choose the package needed (contract, kit, lab, or review).
+  3. If machine_url is present, fetch it for structured rules.
+  4. For Design Review, fetch the kit prompt and run the eight dimensions.
+  5. Cite contract tokens when proposing UI changes.
+  6. If a rule is missing, name an open tension instead of inventing policy.
+
+If you cannot fetch URLs:
+  The human index at designesy.org/open lists all packages.
+  Ask the operator to paste the relevant package content.
+
+Rules:
+  - Separate observed behavior from derived judgment.
+  - Do not invent private brand systems, monogram logos, or unversioned rules.
+  - Public surfaces never display internal control-plane naming.
+  - Versionless rules that change silently are an anti-pattern.
 
 Primary human index: https://www.designesy.org/open
-Handoff pack: https://www.designesy.org/open/handoff`;
+Machine feed: https://www.designesy.org/open.json
+Design Review kit: https://www.designesy.org/kits/design-review
+Design system contract: https://www.designesy.org/contracts/design-system`;
 
 const VERIFY = [
   {
@@ -192,20 +209,24 @@ export default function OpenHandoffPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Suggested public thread</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Institutional voice for a later @designesy post when cleanup and
-            operator timing allow. Copy is public-ready; posting still needs
-            explicit execute on the social lane.
+            Institutional voice for a later @designesy post. Click any post
+            to copy it. Posting still needs explicit execute on the social lane.
           </p>
           <div className="row-stack" role="list">
             {SHARE_POSTS.map((post, i) => (
-              <ToggleRow key={post.role} index={String(i + 1).padStart(2, '0')}>
+              <CopyRow
+                key={post.role}
+                text={post.text}
+                index={String(i + 1).padStart(2, '0')}
+                label={post.role}
+              >
                 <span className="row-body">
                   <span className="row-title">{post.role}</span>
                   <span className="row-meta" style={{ whiteSpace: 'pre-wrap' }}>
                     {post.text}
                   </span>
                 </span>
-              </ToggleRow>
+              </CopyRow>
             ))}
           </div>
         </section>
@@ -213,11 +234,13 @@ export default function OpenHandoffPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Agent prompt</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Paste into an agent that can fetch URLs. Read-only by default.
+            Copy the block. Paste into an AI tool that can fetch URLs.
+            The agent will fetch the open index, choose the right package,
+            and apply the rules. Read-only by default.
           </p>
-          <pre className="kit-prompt">
-            <code>{AGENT_PROMPT}</code>
-          </pre>
+          <CopyPrompt label="agent prompt">
+            {AGENT_PROMPT}
+          </CopyPrompt>
         </section>
 
         <section className="doctrine-section fade-up">

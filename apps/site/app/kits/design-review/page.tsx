@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { designReviewKit as k } from '../../lib/kits/design-review';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
+import { CopyPrompt } from '../../lib/copy-prompt';
 
 const ANATOMY_HREFS: Record<string, string> = {
   Purpose: '#purpose',
@@ -150,12 +151,14 @@ export default function DesignReviewKitPage() {
         <section className="doctrine-section fade-up" id="prompt">
           <h2 className="doctrine-heading">Agent prompt</h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Copy the block. Replace the placeholders. Permission stays
-            read-only unless the operator explicitly grants edit scope.
+            Copy the block. Paste into your AI tool. Replace the placeholders
+            with your artifact, purpose, audience, and governing rules.
+            The agent returns a structured review across all eight dimensions.
+            Permission stays read-only unless the operator grants edit scope.
           </p>
-          <pre className="kit-prompt" tabIndex={0}>
-            <code>{k.agent_prompt}</code>
-          </pre>
+          <CopyPrompt label="agent prompt">
+            {k.agent_prompt}
+          </CopyPrompt>
         </section>
 
         <section className="doctrine-section fade-up" id="output">

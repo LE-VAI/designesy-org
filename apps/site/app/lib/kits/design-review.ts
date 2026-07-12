@@ -136,30 +136,57 @@ Open index: https://www.designesy.org/open.json
 Optional contract: https://www.designesy.org/contracts/design-system
 Optional machine rules: https://www.designesy.org/contracts/design-system.json
 
-Review the artifact below. Lead with consequences, not personal taste.
-Separate observed behavior from derived judgment.
-Name tradeoffs. Identify hidden burdens. Check missing states.
-Verify accessibility, keyboard flow, responsiveness, persistence, performance, and provenance when relevant.
-Recommend concrete corrections.
+Permission: read-only by default. Report findings. Do not edit files,
+deploy changes, or claim write authority the operator did not grant.
 
-Artifact:
-{{ARTIFACT}}
+Goal: review the artifact below against eight dimensions. Lead with
+consequences, not personal taste. Separate observed behavior from
+derived judgment. Name tradeoffs. Identify hidden burdens. Check
+missing states. Recommend concrete corrections.
 
-Purpose claim:
-{{PURPOSE}}
+If you can fetch URLs:
+  1. Fetch the machine kit for structured rules.
+  2. Fetch the contract machine rules if a governing system applies.
+  3. Cite contract tokens when proposing UI changes.
 
-Audience and context:
-{{CONTEXT}}
+If you cannot fetch URLs:
+  Use the dimensions and output format below. They are self-contained.
 
-Governing rules (if any):
-{{RULES}}
+---
 
-For each of the eight dimensions (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility):
-1. Observation — what is present or missing
-2. Judgment — consequence for the user or system
-3. Action — keep, fix, remove, or document as open tension
+ARTIFACT:
+{{ARTIFACT — URL, screenshots, route, component, or document}}
 
-Then return the Output format defined by the kit.`,
+PURPOSE CLAIM:
+{{PURPOSE — what the design is trying to make possible, one sentence}}
+
+AUDIENCE AND CONTEXT:
+{{CONTEXT — who uses it, on what device, under what stress or constraint}}
+
+GOVERNING RULES (if any):
+{{RULES — contract, lab, or prior review to measure against}}
+
+---
+
+Review each of the eight dimensions:
+  01 Purpose — what is the design trying to make possible?
+  02 Clarity — is the primary action discoverable?
+  03 Context — what constraints shape the experience?
+  04 Inclusion — who has to work harder?
+  05 System coherence — does this follow an existing system?
+  06 Durability — will this hold up under repeated use?
+  07 Delight — does emotion clarify or distract?
+  08 Responsibility — what costs are hidden?
+
+For each dimension:
+  1. Observation — what is present or missing
+  2. Judgment — consequence for the user or system
+  3. Action — keep, fix, remove, or document as open tension
+
+Then return the Output format defined by the kit:
+  Summary, Outcome (pass / pass with notes / needs revision / blocked),
+  Dimension findings (all eight), Holds, Tensions, Corrections,
+  Verification performed, Sources used.`,
   output_format: [
     {
       title: 'Summary',
