@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
-import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
+import { CheckGrid } from '../lib/check-grid';
+import { checkItemsFromStrings } from '../lib/check-items';
 
 export const metadata: Metadata = {
   title: 'Docs',
