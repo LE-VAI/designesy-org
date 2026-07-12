@@ -115,8 +115,10 @@ export default function PublicSurfaceReviewPage() {
           <ul className="checkmark-list">
             {SCOPE.map((item) => (
               <li key={item.href}>
-                <Link href={item.href}>{item.label}</Link>
-                <span style={{ color: 'var(--muted-dim)' }}> · {item.href}</span>
+                <span className="scope-line">
+                  <Link href={item.href}>{item.label}</Link>
+                  <span className="scope-path">{item.href}</span>
+                </span>
               </li>
             ))}
           </ul>
@@ -185,19 +187,28 @@ export default function PublicSurfaceReviewPage() {
           <h2 className="doctrine-heading">Evidence</h2>
           <ul className="checkmark-list">
             <li>
-              Contract (human) ·{' '}
-              <Link href="/contracts#design-system-contract">
-                /contracts#design-system-contract
-              </Link>
+              <span className="scope-line">
+                <span>Contract (human)</span>
+                <Link href="/contracts#design-system-contract" className="scope-path-link">
+                  /contracts#design-system-contract
+                </Link>
+              </span>
             </li>
             <li>
-              Contract (machine) ·{' '}
-              <Link href="/contracts/design-system">
-                /contracts/design-system
-              </Link>
+              <span className="scope-line">
+                <span>Contract (machine)</span>
+                <Link href="/contracts/design-system" className="scope-path-link">
+                  /contracts/design-system
+                </Link>
+              </span>
             </li>
             <li>
-              Lab One · <Link href="/labs/poise">/labs/poise</Link>
+              <span className="scope-line">
+                <span>Lab One · Poise</span>
+                <Link href="/labs/poise" className="scope-path-link">
+                  /labs/poise
+                </Link>
+              </span>
             </li>
             <li>
               Tokens · globals.css :root (paper, surface, accent, radius, motion)

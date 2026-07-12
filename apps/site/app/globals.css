@@ -763,7 +763,7 @@ p {
 
 .checkmark-list li {
   display: grid;
-  grid-template-columns: 1.25rem 1fr;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
   gap: 0.5rem;
   align-items: baseline;
   font-size: 0.9rem;
@@ -771,10 +771,55 @@ p {
   line-height: 1.5;
 }
 
+/* Guard: any direct multi-node content must live in one cell */
+.checkmark-list li > :not(.scope-line):not(a):not(span):not(code):not(strong) {
+  min-width: 0;
+}
+
 .checkmark-list li::before {
   content: "—";
   color: var(--signal);
   font-weight: 600;
+}
+
+/* Scope lines — single grid cell so path never wraps under the dash */
+.scope-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
+  min-width: 0;
+}
+
+.scope-line a {
+  color: var(--ink);
+  font-weight: 500;
+  transition: color 0.2s var(--ease);
+}
+
+.scope-line a:hover {
+  color: var(--signal-light);
+}
+
+.scope-path,
+.scope-path-link {
+  color: var(--muted-dim);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.scope-path::before,
+.scope-path-link::before {
+  content: "· ";
+  color: var(--muted-dim);
+}
+
+.scope-path-link {
+  transition: color 0.2s var(--ease);
+}
+
+.scope-path-link:hover {
+  color: var(--signal-light);
 }
 
 /* Avoid list — what not to do */
