@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, useRef, type ReactNode } from 'react';
 
 /**
  * Definition block with click-to-copy the canonical text.
  * Shows a brief "Copied" confirmation after clipboard write.
- * Falls back gracefully if clipboard API is unavailable.
+ * Falls back to element textContent when no explicit text prop
+ * is given, so any definition content is copyable without extra wiring.
  */
 export function Copyable({
   children,
@@ -19,11 +20,10 @@ export function Copyable({
   text?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   const copy = useCallback(async () => {
-    const value =
-      text ??
-      (typeof children === 'string' ? children : '');
+    const value = text ?? ref.current?.textContent?.trim() ?? '';
 
     if (!value) return;
 
@@ -45,10 +45,11 @@ export function Copyable({
     } catch {
       /* clipboard unavailable — silent fail */
     }
-  }, [text, children]);
+  }, [text]);
 
   return (
     <div
+      ref={ref}
       className={`definition is-copyable${copied ? ' is-copied' : ''}${className ? ` ${className}` : ''}`}
       onClick={copy}
       role="button"

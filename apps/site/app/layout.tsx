@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
+import { BackButton } from './lib/back-button';
+import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 
 export const metadata: Metadata = {
   // Canonical host is www — apex 308s. Social crawlers (especially X)
@@ -43,6 +45,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <CuelumeBinder />
+        <BackButton />
+        <DefinitionCopyEnhancer />
         {children}
         <Analytics />
       </body>
