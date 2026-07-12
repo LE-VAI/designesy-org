@@ -1111,6 +1111,161 @@ p {
   color: var(--muted-dim);
 }
 
+/* ------------------------------------------------------------------
+   Check grid — tight interactive checklist cells for long lists.
+   Same interaction language as .row (hover/press/focus), but tiled
+   so 6–12 items don't force a long vertical stack.
+   Use for: verification, anatomy, anti-patterns, short label sets.
+   Keep .row-stack for sequential links and long narrative steps.
+   ------------------------------------------------------------------ */
+
+.check-grid {
+  --check-cols: 2;
+  --check-min: 15rem;
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--check-min)), 1fr)
+  );
+  gap: 0;
+  max-width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--line-faint);
+}
+
+/* denser tiles for short labels (anatomy, tags) */
+.check-grid.is-dense {
+  --check-min: 10.5rem;
+}
+
+/* single-column force when needed */
+.check-grid.is-stack {
+  --check-min: 100%;
+  grid-template-columns: 1fr;
+}
+
+.check-cell {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  min-height: 100%;
+  margin: 0;
+  padding: 0.9rem 0.95rem;
+  border: 0;
+  border-right: 1px solid var(--line-faint);
+  border-bottom: 1px solid var(--line-faint);
+  background: var(--paper);
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: default;
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease),
+    transform 140ms var(--ease-out);
+}
+
+a.check-cell {
+  cursor: pointer;
+}
+
+button.check-cell {
+  font: inherit;
+  width: 100%;
+}
+
+.check-cell:hover {
+  background: var(--surface-soft);
+  z-index: 1;
+}
+
+.check-cell:active {
+  transform: scale(0.99);
+  background: var(--surface-hover);
+}
+
+.check-cell:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+.check-cell-index {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--signal);
+  line-height: 1.45;
+  padding-top: 0.08rem;
+}
+
+.check-cell-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.check-cell-title {
+  font-size: 0.88rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.check-cell-meta {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+  line-height: 1.4;
+}
+
+/* avoid / anti-pattern cells — same grid, quieter signal */
+.check-cell.is-avoid .check-cell-index {
+  color: var(--muted-dim);
+}
+
+.check-cell.is-avoid:hover {
+  background: var(--surface-soft);
+}
+
+/* mark/check affordance without becoming a real form control */
+.check-cell-mark {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.check-cell:hover .check-cell-title {
+    color: var(--ink);
+  }
+}
+
+@media (max-width: 720px) {
+  .check-grid,
+  .check-grid.is-dense {
+    --check-min: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .check-cell {
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    gap: 0.55rem;
+    padding: 0.85rem 0.85rem;
+    border-right: 0;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 960px) {
+  .check-grid.is-dense {
+    --check-min: 11.5rem;
+  }
+}
+
 @media (max-width: 720px) {
   .doctrine-cols {
     grid-template-columns: 1fr;
