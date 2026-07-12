@@ -4,24 +4,18 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Kits',
   description:
     'Designesy Use Kits — portable instruction packages for people and agents. Kit One is Design Review.',
-  openGraph: {
-    title: 'Kits · Designesy',
-    description:
-      'Portable instruction packages agents and teams can run. Kit One · Design Review is live.',
-    url: 'https://www.designesy.org/kits',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Kits · Designesy',
-    description:
-      'Tell your agent to review with Designesy — designesy.org/kits/design-review',
-  },
-};
+  path: '/kits',
+  ogDescription:
+    'Portable instruction packages agents and teams can run. Kit One · Design Review is live.',
+  twitterDescription:
+    'Portable instruction packages for people and agents — designesy.org/kits',
+});
 
 const KIT_ANATOMY = [
   'Purpose',

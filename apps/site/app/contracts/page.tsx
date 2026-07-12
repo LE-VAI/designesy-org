@@ -4,24 +4,18 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
     'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1.1 is public (Poise adopted).',
-  openGraph: {
-    title: 'Contracts · Designesy',
-    description:
-      'Portable design agreements for people and agents. Design system contract v0.1.1 is live — Poise interaction rules adopted.',
-    url: 'https://www.designesy.org/contracts',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Contracts · Designesy',
-    description:
-      'Portable design judgment — designesy.org/contracts/design-system',
-  },
-};
+  path: '/contracts',
+  ogDescription:
+    'Portable design agreements for people and agents. Design system contract v0.1.1 is live — Poise interaction rules adopted.',
+  twitterDescription:
+    'Portable design judgment — designesy.org/contracts/design-system',
+});
 
 const CONTRACT_CONTENTS = [
   'Source and provenance',

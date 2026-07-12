@@ -6,23 +6,18 @@ import { openIndex } from '../lib/open-index';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { ToggleRow } from '../lib/toggle-row';
+import { pageMeta } from '../lib/site-meta';
+import { JsonLd, creativeWorkJsonLd } from '../lib/json-ld';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
   description:
     'Designesy Open — portable design judgment for people and agents. Contracts, kits, labs, and field checks with human pages and machine exports.',
-  openGraph: {
-    title: 'Open design intelligence · Designesy',
-    description:
-      'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed.',
-    url: 'https://www.designesy.org/open',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Open design intelligence · Designesy',
-    description: 'Start open design intelligence at designesy.org/open',
-  },
-};
+  path: '/open',
+  ogDescription:
+    'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed.',
+  twitterDescription: 'Portable design judgment — designesy.org/open',
+});
 
 const KIND_LABEL: Record<string, string> = {
   contract: 'Contract',
@@ -36,6 +31,15 @@ export default function OpenPage() {
 
   return (
     <>
+      <JsonLd
+        data={creativeWorkJsonLd({
+          name: o.name,
+          description: o.lede,
+          url: o.public_url,
+          version: o.version,
+          related: [o.machine_url],
+        })}
+      />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page">
