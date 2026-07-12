@@ -16,6 +16,9 @@ export function Footer() {
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>
           <nav className="footer-nav" aria-label="Footer">
+            <Link href="/open" data-cuelume-hover="tick">
+              Open
+            </Link>
             <Link href="/docs" data-cuelume-hover="tick">
               Docs
             </Link>
@@ -39,6 +42,9 @@ export function Footer() {
             </Link>
             <Link href="/contracts/design-system" data-cuelume-hover="tick">
               Design system
+            </Link>
+            <Link href="/open.json" data-cuelume-hover="tick">
+              open.json
             </Link>
           </nav>
         </div>

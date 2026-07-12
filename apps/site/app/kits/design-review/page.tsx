@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
@@ -59,8 +60,15 @@ export default function DesignReviewKitPage() {
             <p>{k.handoff_line}</p>
           </div>
           <p className="surface-note">
-            Human face: this page. Agent face: the prompt block below plus the
-            design system contract when tokens are in scope.
+            Human face: this page. Machine face:{' '}
+            <Link href="/kits/design-review.json" data-cuelume-hover="tick">
+              /kits/design-review.json
+            </Link>
+            . Catalog:{' '}
+            <Link href="/open" data-cuelume-hover="tick">
+              /open
+            </Link>
+            . Contract when tokens are in scope.
           </p>
         </section>
 
@@ -234,10 +242,10 @@ export default function DesignReviewKitPage() {
         </section>
 
         <div className="status-note">
-          Use Kit One · Design Review is a public package. It does not grant
-          edit rights, deployment rights, or secret access. Agents report and
-          recommend unless an operator expands scope. Worked example: the public
-          surface review of designesy.org.
+          Use Kit One · Design Review is a public package with a machine export
+          at /kits/design-review.json. It does not grant edit rights, deployment
+          rights, or secret access. Agents report and recommend unless an
+          operator expands scope. Catalog entry: /open.
         </div>
       </main>
 

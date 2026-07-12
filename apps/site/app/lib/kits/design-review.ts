@@ -1,7 +1,7 @@
 /**
  * Use Kit One · Design Review
  * Portable instruction package for humans and agents.
- * Source: public Review doctrine + design system contract v0.1.
+ * Source: public Review doctrine + design system contract v0.1.1.
  */
 
 export const designReviewKit = {
@@ -13,10 +13,16 @@ export const designReviewKit = {
   lede: 'Turn taste into inspection. Review any interface, system, or agent output against eight dimensions — with a portable prompt agents can run.',
   path: '/kits/design-review',
   public_url: 'https://www.designesy.org/kits/design-review',
+  machine_url: 'https://www.designesy.org/kits/design-review.json',
   handoff_line:
     'Tell your agent to review with Designesy — designesy.org/kits/design-review',
   permission: 'read-only by default · report only unless edit scope is explicit',
   related: [
+    {
+      href: '/open',
+      title: 'Open design intelligence',
+      meta: 'Catalog of portable packages · human + machine',
+    },
     {
       href: '/review',
       title: 'Review surface',
@@ -40,7 +46,7 @@ export const designReviewKit = {
     {
       href: '/labs/poise',
       title: 'Lab One · Poise',
-      meta: 'Interaction behaviors under review for adoption',
+      meta: 'Source lab · interaction rules adopted in v0.1.1',
     },
   ],
   anatomy: [
@@ -125,6 +131,8 @@ export const designReviewKit = {
   ],
   agent_prompt: `You are running Designesy Use Kit One: Design Review.
 Source: https://www.designesy.org/kits/design-review
+Machine kit: https://www.designesy.org/kits/design-review.json
+Open index: https://www.designesy.org/open.json
 Optional contract: https://www.designesy.org/contracts/design-system
 Optional machine rules: https://www.designesy.org/contracts/design-system.json
 

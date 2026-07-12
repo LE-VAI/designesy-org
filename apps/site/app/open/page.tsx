@@ -1,0 +1,228 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Topbar } from '../lib/topbar';
+import { Footer } from '../lib/footer';
+import { openIndex } from '../lib/open-index';
+
+export const metadata: Metadata = {
+  title: 'Open design intelligence',
+  description:
+    'Designesy Open — portable design judgment for people and agents. Contracts, kits, labs, and field checks with human pages and machine exports.',
+  openGraph: {
+    title: 'Open design intelligence · Designesy',
+    description:
+      'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed.',
+    url: 'https://www.designesy.org/open',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Open design intelligence · Designesy',
+    description:
+      'Start open design intelligence at designesy.org/open',
+  },
+};
+
+const KIND_LABEL: Record<string, string> = {
+  contract: 'Contract',
+  kit: 'Kit',
+  lab: 'Lab',
+  review: 'Review',
+};
+
+export default function OpenPage() {
+  const o = openIndex;
+
+  return (
+    <>
+      <Topbar scrolled />
+      <main className="site-shell">
+        <section className="lab-hero fade-up">
+          <p className="lab-eyebrow">Open · v{o.version}</p>
+          <h1 className="lab-title">{o.name}</h1>
+          <p className="lab-lede">{o.lede}</p>
+          <div className="lab-meta-row">
+            <span className="status-badge">Public</span>
+            <span className="lab-meta-item">Machine · /open.json</span>
+            <span className="lab-meta-item">Stack · contracts · kits · labs · reviews</span>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Thesis</h2>
+          <div className="definition">
+            <p className="definition-label">What open means here</p>
+            <p>{o.thesis}</p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">How to use</h2>
+          <div className="row-stack" role="list">
+            {o.how_to_use.map((item, i) => (
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">{item.meta}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Packages</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Live portable cargo. Machine URLs are CORS-open JSON for agents and tools.
+          </p>
+          <div className="row-stack" role="list">
+            {o.packages.map((pkg, i) => (
+              <div className="row" role="listitem" key={pkg.id}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">
+                    {pkg.number ? `${KIND_LABEL[pkg.kind]} ${pkg.number} · ` : ''}
+                    {pkg.title}
+                    {pkg.version ? ` · v${pkg.version}` : ''}
+                  </span>
+                  <span className="row-meta">{pkg.lede}</span>
+                  <span className="row-meta" style={{ marginTop: '0.35rem' }}>
+                    <Link href={pkg.path} data-cuelume-hover="tick">
+                      {pkg.path}
+                    </Link>
+                    {pkg.machine_path ? (
+                      <>
+                        {' · '}
+                        <Link href={pkg.machine_path} data-cuelume-hover="tick">
+                          {pkg.machine_path}
+                        </Link>
+                      </>
+                    ) : null}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Machine exports</h2>
+          <div className="row-stack" role="list">
+            {o.machine_exports.map((item, i) => (
+              <Link
+                className="row"
+                role="listitem"
+                href={item.path}
+                key={item.path}
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+                data-cuelume-release
+              >
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item.title}</span>
+                  <span className="row-meta">
+                    {item.path} · {item.meta}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Standing rules</h2>
+          <div className="row-stack" role="list">
+            {o.standing_rules.map((rule, i) => (
+              <div className="row" role="listitem" key={rule}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{rule}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Anti-patterns</h2>
+          <div className="row-stack" role="list">
+            {o.anti_patterns.map((item, i) => (
+              <div className="row" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Related</h2>
+          <div className="row-stack" role="list">
+            <Link
+              className="row"
+              role="listitem"
+              href="/contracts/design-system"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Design system contract</span>
+                <span className="row-meta">v0.1.1 · human + machine</span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/kits/design-review"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Use Kit One · Design Review</span>
+                <span className="row-meta">Portable agent prompt · human + machine</span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/docs"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Docs</span>
+                <span className="row-meta">Mission, principles, architecture</span>
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        <div className="status-note">
+          {o.handoff_line} Machine feed is CORS-open JSON. Packages without a
+          machine URL are human-first evidence surfaces until a schema is
+          published.
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}

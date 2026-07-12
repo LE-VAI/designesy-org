@@ -35,6 +35,12 @@ const PIPELINE = [
 
 const SURFACES = [
   {
+    href: '/open',
+    label: 'Open',
+    desc: 'Portable design intelligence — human index and machine feed',
+    meta: 'open.json live',
+  },
+  {
     href: '/docs',
     label: 'Docs',
     desc: 'Mission, nine principles, architecture, public voice',
@@ -67,6 +73,16 @@ const SURFACES = [
 ];
 
 const FIELD = [
+  {
+    href: '/open',
+    badge: 'Open',
+    status: 'v0.1',
+    title: 'Open design intelligence',
+    lede: 'Fetchable design rules for people and agents.',
+    desc: 'Catalog of contracts, kits, labs, and field checks — human index and machine feed.',
+    arrow: 'Open index →',
+    kind: 'contract' as const,
+  },
   {
     href: '/contracts/design-system',
     badge: 'Contract',
@@ -129,11 +145,11 @@ export default function HomePage() {
           <div className="hero-actions fade-up fade-up-delay-4">
             <Link
               className="button primary"
-              href="/contracts/design-system"
+              href="/open"
               data-cuelume-press
               data-cuelume-release
             >
-              Open design system
+              Open design intelligence
             </Link>
             <Link
               className="button ghost"
@@ -220,7 +236,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="field-title">
           <p className="section-eyebrow">Now live</p>
           <h2 className="section-title" id="field-title">
-            Contract, Lab One, and Kit One.
+            Open stack, contract, lab, and kit.
           </h2>
           <div className="field-grid">
             {FIELD.map((item) => (
@@ -294,6 +310,10 @@ export default function HomePage() {
           <div className="row-stack" role="list">
             {[
               {
+                title: 'Open design intelligence',
+                meta: 'Human index /open and machine feed /open.json',
+              },
+              {
                 title: 'Design system contract v0.1.1',
                 meta: 'Human home, full tables, machine export · Poise adopted',
               },
@@ -303,7 +323,7 @@ export default function HomePage() {
               },
               {
                 title: 'Use Kit One · Design Review',
-                meta: 'Portable review package for people and agents',
+                meta: 'Portable review package · human + machine export',
               },
               {
                 title: 'Field check · Poise',

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { SoundToggle } from './sound-toggle';
 
 const NAV_ROUTES = [
+  { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },
   { href: '/kits', label: 'Kits' },
