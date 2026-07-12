@@ -8,9 +8,16 @@ export const metadata: Metadata = {
   description:
     'Public review of the Designesy site against design system contract v0.1 and Lab One: Poise.',
   openGraph: {
-    title: 'designesy.org review · Designesy',
+    title: 'designesy.org · public surface review',
     description:
-      'A public surface checked against its own contract — holds, tensions, and next system states.',
+      'A public surface checked against its own contract — holds, tensions, and standing rules.',
+    url: 'https://designesy.org/review/designesy-org',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'designesy.org · public surface review',
+    description:
+      'Field check against design system contract v0.1 — designesy.org/review/designesy-org',
   },
 };
 

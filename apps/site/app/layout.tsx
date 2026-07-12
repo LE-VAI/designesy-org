@@ -18,12 +18,16 @@ export const metadata: Metadata = {
     url: 'https://designesy.org',
     siteName: 'Designesy',
     type: 'website',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Designesy — Design intelligence infrastructure',
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
+  },
+  alternates: {
+    canonical: 'https://designesy.org',
   },
   robots: {
     index: true,
