@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 
@@ -20,7 +21,7 @@ const NOT_LABS = [
   'Not a moodboard',
   'Not generic case studies',
   'Not a collection of decorative demos',
-  'Not a landing page for AI SaaS',
+  'Not a landing page for AI software',
 ];
 
 export default function LabsPage() {
@@ -42,6 +43,32 @@ export default function LabsPage() {
             live artifact, review checklist, portable contract, and
             implementation-ready prompt.
           </p>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Live labs</h2>
+          <Link
+            href="/labs/poise"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge">Lab One</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Poise</h3>
+            <p className="lab-card-lede">
+              How Designesy responds when someone touches it.
+            </p>
+            <p className="lab-card-desc">
+              Restrained interaction: wordmark, press, sound preference, and
+              reduced motion — made inspectable against the design system
+              contract.
+            </p>
+            <span className="lab-card-arrow">Open lab →</span>
+          </Link>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -90,8 +117,10 @@ export default function LabsPage() {
         </section>
 
         <div className="status-note">
-          Labs is defined as an operating model. The first live experiments will
-          be labeled with their thesis, review status, and promotion readiness.
+          Labs ship as named experiments with thesis, review status, and
+          promotion readiness. Poise is Lab One. Future labs follow the same
+          anatomy and the site drift rule: every public UI change cites a
+          contract token or an open tension.
         </div>
       </main>
 
