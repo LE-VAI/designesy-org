@@ -364,18 +364,42 @@ export default function PoiseLabPage() {
               'Wordmark mark animates only via opacity; reduced-motion kills it',
               'Buttons scale on :active without layout shift',
               'Sound toggle flips aria-pressed and applies the audio preference',
+              'Keyboard path published at /review/poise/keyboard',
               'All values map to contract tokens or named open tensions',
               'No public surface uses internal control-plane naming',
-            ].map((item, i) => (
-              <div className="row" role="listitem" key={item}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item}</span>
-                </span>
-              </div>
-            ))}
+            ].map((item, i) => {
+              const isKeyboard = item.includes('Keyboard path');
+              const body = (
+                <>
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item}</span>
+                  </span>
+                </>
+              );
+              if (isKeyboard) {
+                return (
+                  <Link
+                    key={item}
+                    href="/review/poise/keyboard"
+                    className="row"
+                    role="listitem"
+                    data-cuelume-hover="whisper"
+                    data-cuelume-press
+                    data-cuelume-release
+                  >
+                    {body}
+                  </Link>
+                );
+              }
+              return (
+                <div className="row" role="listitem" key={item}>
+                  {body}
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -402,6 +426,24 @@ export default function PoiseLabPage() {
             </p>
             <span className="lab-card-arrow">Open field check →</span>
           </Link>
+          <div className="row-stack" role="list" style={{ marginTop: '0.75rem' }}>
+            <Link
+              href="/review/poise/keyboard"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Keyboard path verification</span>
+                <span className="row-meta">
+                  Tab order, focus-visible, activation, reduced motion
+                </span>
+              </span>
+            </Link>
+          </div>
         </section>
 
         <div className="status-note">

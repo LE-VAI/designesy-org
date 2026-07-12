@@ -128,8 +128,8 @@ export default function ReviewPage() {
                 Kit One output format on the live lab.
               </p>
               <p className="lab-card-desc">
-                Eight dimensions, holds, tensions, and corrections for restrained
-                interaction — candidate for contract v0.1.1.
+                Eight dimensions, holds, tensions, corrections, and keyboard-path
+                proof — candidate for contract v0.1.1.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
