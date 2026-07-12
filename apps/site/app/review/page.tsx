@@ -69,7 +69,7 @@ export default function ReviewPage() {
           <h2 className="doctrine-heading">Review dimensions</h2>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (
-              <div className="principle" key={d.num} data-cuelume-hover="whisper">
+              <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
                   <h3>{d.title}</h3>

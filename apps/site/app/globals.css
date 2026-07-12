@@ -1032,7 +1032,8 @@ p {
   background: var(--surface-soft);
 }
 
-.row:active {
+a.row:active,
+button.row:active {
   transform: scale(0.995);
 }
 
@@ -1109,6 +1110,127 @@ p {
 
 .row.is-avoid .row-index {
   color: var(--muted-dim);
+}
+
+/* ------------------------------------------------------------------
+   Toggle interactions — every interactive-looking element has value.
+   Shared vocabulary: click toggles checkmark, dims, strikes through.
+   Matches CheckGrid interaction model.
+   ------------------------------------------------------------------ */
+
+/* button resets for converted elements */
+button.row,
+button.pillar,
+button.layer-item {
+  font: inherit;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+  border-radius: 0;
+}
+
+button.pillar {
+  border-radius: var(--radius);
+}
+
+/* checked state — shared across all toggle patterns */
+.row.is-checked,
+.pillar.is-checked,
+.layer-item.is-checked {
+  opacity: 0.48;
+  transition: opacity 0.3s var(--ease);
+}
+
+.row.is-checked:hover,
+.pillar.is-checked:hover,
+.layer-item.is-checked:hover {
+  opacity: 0.68;
+}
+
+.row.is-checked .row-title,
+.pillar.is-checked .pillar-number {
+  text-decoration: line-through;
+  text-decoration-color: var(--muted-dim);
+  text-decoration-thickness: 1px;
+}
+
+.row.is-checked .row-index,
+.layer-item.is-checked .layer-num {
+  color: var(--muted-dim);
+}
+
+/* checkmark indicator for rows */
+.row-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: var(--signal);
+  animation: check-pop 280ms var(--ease-out) both;
+  will-change: transform, opacity;
+}
+
+button.row {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+/* definition click-to-copy */
+.definition.is-copyable {
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+
+.definition.is-copyable:hover {
+  border-color: var(--line);
+}
+
+.definition.is-copied {
+  border-color: color-mix(in srgb, var(--signal) 30%, var(--line-faint));
+}
+
+.definition-copy-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+  pointer-events: none;
+}
+
+.definition.is-copyable:hover .definition-copy-badge {
+  opacity: 0.7;
+}
+
+.definition.is-copied .definition-copy-badge {
+  opacity: 1;
+  color: var(--signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row.is-checked,
+  .pillar.is-checked,
+  .layer-item.is-checked {
+    transition: none;
+  }
+
+  .row-check {
+    animation: none;
+  }
+
+  .definition-copy-badge {
+    transition: none;
+  }
 }
 
 /* ------------------------------------------------------------------
