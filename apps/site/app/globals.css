@@ -120,6 +120,17 @@ p {
   color: var(--signal);
   display: inline-block;
   margin-left: -0.04em;
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
+}
+
+@keyframes signalPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 /* --- Layout shell --- */
@@ -923,6 +934,74 @@ p {
   font-size: 0.82rem;
   color: var(--muted-dim);
   line-height: 1.55;
+}
+
+/* Token table — design contract value grid */
+
+.token-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.token-table-head,
+.token-table-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.1fr) 1.4fr;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  align-items: baseline;
+}
+
+.token-table-head {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.token-table-row {
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line-faint);
+}
+
+.token-table-row:first-of-type {
+  border-top: none;
+}
+
+.token-table-row code {
+  color: var(--ink);
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+.token-table-row .token-value {
+  color: var(--signal-light);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .token-table-head {
+    display: none;
+  }
+
+  .token-table-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .token-table-row code:first-child {
+    color: var(--ink);
+    font-weight: 600;
+  }
 }
 
 /* --- Motion (fade-up entrance, reduced-motion safe) --- */
