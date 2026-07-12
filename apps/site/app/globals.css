@@ -1157,10 +1157,11 @@ p {
 
 .check-cell {
   display: grid;
-  grid-template-columns: var(--check-index) minmax(0, 1fr);
+  grid-template-columns: var(--check-index) minmax(0, 1fr) auto;
   gap: 0.7rem;
   align-items: start;
   align-content: start;
+  position: relative;
   min-height: 100%;
   margin: 0;
   padding: var(--check-pad-y) var(--check-pad-x);
@@ -1169,9 +1170,9 @@ p {
   color: inherit;
   text-align: left;
   text-decoration: none;
-  cursor: default;
+  cursor: pointer;
   transition: background 0.18s var(--ease), transform 140ms var(--ease-out),
-    color 0.18s var(--ease);
+    color 0.18s var(--ease), opacity 0.3s var(--ease);
   box-shadow: 1px 0 0 0 var(--line-faint), 0 1px 0 0 var(--line-faint);
 }
 
@@ -1182,6 +1183,70 @@ a.check-cell {
 button.check-cell {
   font: inherit;
   width: 100%;
+}
+
+/* tail column: arrow for links, checkmark for toggled cells */
+.check-cell-tail {
+  display: flex;
+  align-items: start;
+  padding-top: 0.12rem;
+  min-width: 0;
+}
+
+.check-cell-arrow {
+  font-size: 0.82rem;
+  color: var(--muted-dim);
+  line-height: 1.5;
+  transition: transform 160ms var(--ease-out), color 160ms var(--ease);
+}
+
+a.check-cell:hover .check-cell-arrow {
+  color: var(--signal);
+  transform: translateX(3px);
+}
+
+.check-cell-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--signal);
+  animation: check-pop 280ms var(--ease-out) both;
+  will-change: transform, opacity;
+}
+
+@keyframes check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  55% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* checked state — dims the cell, strikes the title */
+.check-cell.is-checked {
+  opacity: 0.48;
+}
+
+.check-cell.is-checked:hover {
+  opacity: 0.68;
+}
+
+.check-cell.is-checked .check-cell-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--muted-dim);
+  text-decoration-thickness: 1px;
+}
+
+.check-cell.is-checked .check-cell-index {
+  color: var(--muted-dim);
 }
 
 /* equal visual weight: title can wrap; cell stretches to row height */
@@ -1302,6 +1367,18 @@ a.check-cell:hover .check-cell-title {
     transition: none;
     transform: none;
   }
+
+  .check-cell-check {
+    animation: none;
+  }
+
+  .check-cell-arrow {
+    transition: none;
+  }
+
+  .check-cell.is-checked {
+    transition: none;
+  }
 }
 
 /* phone: single column, full-bleed seams, slightly larger type */
@@ -1315,7 +1392,7 @@ a.check-cell:hover .check-cell-title {
   }
 
   .check-cell {
-    grid-template-columns: 1.55rem minmax(0, 1fr);
+    grid-template-columns: 1.55rem minmax(0, 1fr) auto;
     gap: 0.6rem;
   }
 
