@@ -1,6 +1,25 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+
+export const metadata: Metadata = {
+  title: 'Labs',
+  description:
+    'Designesy Labs — experiments that compile into contracts. Lab One is Poise: restrained interaction made inspectable.',
+  openGraph: {
+    title: 'Labs · Designesy',
+    description:
+      'Experiments that compile into contracts. Lab One · Poise is live.',
+    url: 'https://designesy.org/labs',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Labs · Designesy',
+    description:
+      'Tell your agent to try Poise — designesy.org/labs/poise',
+  },
+};
 
 const LAB_ANATOMY = [
   'Thesis',

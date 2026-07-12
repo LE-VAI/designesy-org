@@ -1,6 +1,25 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+
+export const metadata: Metadata = {
+  title: 'Review',
+  description:
+    'Designesy Review — quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
+  openGraph: {
+    title: 'Review · Designesy',
+    description:
+      'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
+    url: 'https://designesy.org/review',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Review · Designesy',
+    description:
+      'Quality gate for public artifacts — designesy.org/review',
+  },
+};
 
 const DIMENSIONS = [
   { num: '01', title: 'Purpose', desc: 'What is the design trying to make possible? Which elements directly support that purpose? What can be removed without weakening action?' },

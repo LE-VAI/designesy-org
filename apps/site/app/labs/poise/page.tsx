@@ -9,9 +9,16 @@ export const metadata: Metadata = {
   description:
     'How Designesy responds when someone touches it. A lab on restrained interaction: wordmark, press, sound preference, and reduced motion.',
   openGraph: {
-    title: 'Poise · Designesy Labs',
+    title: 'Poise · Lab One',
     description:
       'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
+    url: 'https://designesy.org/labs/poise',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Poise · Lab One',
+    description:
+      'How Designesy responds when someone touches it. Tell your agent: designesy.org/labs/poise',
   },
 };
 
