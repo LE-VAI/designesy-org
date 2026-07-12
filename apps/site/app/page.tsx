@@ -43,7 +43,7 @@ const FIELD = [
     lede: 'Portable design judgment for designesy.org.',
     desc: 'Human overview, full tables, and a machine export for agents and tools.',
     arrow: 'Open contract →',
-    mark: 'contract' as const,
+    kind: 'contract' as const,
   },
   {
     href: '/labs/poise',
@@ -53,7 +53,7 @@ const FIELD = [
     lede: 'How Designesy responds when someone touches it.',
     desc: 'Restrained interaction — wordmark, press, sound preference, reduced motion.',
     arrow: 'Open lab →',
-    mark: 'poise' as const,
+    kind: 'lab' as const,
   },
 ];
 
@@ -169,7 +169,7 @@ export default function HomePage() {
           <div className="field-grid">
             {FIELD.map((item) => (
               <Link
-                className="field-card"
+                className={`field-card field-card--${item.kind}`}
                 href={item.href}
                 key={item.href}
                 data-cuelume-hover="tick"
@@ -177,10 +177,17 @@ export default function HomePage() {
                 data-cuelume-release
               >
                 <div className="field-card-top">
-                  <span className="status-badge">{item.badge}</span>
+                  <span className={`status-badge status-badge--${item.kind}`}>
+                    {item.badge}
+                  </span>
                   <span
-                    className={`mark-glyph mark-glyph--${item.mark}`}
+                    className={`mark-glyph mark-glyph--${item.kind}`}
                     aria-hidden="true"
+                    title={
+                      item.kind === 'contract'
+                        ? 'Contract mark · structure'
+                        : 'Lab mark · living experiment'
+                    }
                   >
                     <span className="mark-glyph-core" />
                     <span className="mark-glyph-ring" />
