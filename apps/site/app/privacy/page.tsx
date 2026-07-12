@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
+import { ToggleRow } from '../lib/toggle-row';
 import { checkItemsFromStrings } from '../lib/check-items';
 
 export const metadata: Metadata = {
@@ -155,15 +156,12 @@ export default function PrivacyPage() {
           <h2 className="doctrine-heading">What may be collected</h2>
           <div className="row-stack" role="list">
             {COLLECT.map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>

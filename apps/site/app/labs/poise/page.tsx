@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { SoundToggle } from '../../lib/sound-toggle';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
+import { ToggleRow } from '../../lib/toggle-row';
 
 export const metadata: Metadata = {
   title: 'Poise',
@@ -255,15 +256,12 @@ export default function PoiseLabPage() {
                 meta: 'Human and premium; internal token names may differ',
               },
             ].map((item, i) => (
-              <div className="row" role="listitem" key={item.title}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>

@@ -4,6 +4,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { openIndex } from '../../lib/open-index';
 import { CheckGrid } from '../../lib/check-grid';
+import { ToggleRow } from '../../lib/toggle-row';
 
 export const metadata: Metadata = {
   title: 'Open handoff',
@@ -197,17 +198,14 @@ export default function OpenHandoffPage() {
           </p>
           <div className="row-stack" role="list">
             {SHARE_POSTS.map((post, i) => (
-              <div className="row" role="listitem" key={post.role}>
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+              <ToggleRow key={post.role} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
                   <span className="row-title">{post.role}</span>
                   <span className="row-meta" style={{ whiteSpace: 'pre-wrap' }}>
                     {post.text}
                   </span>
                 </span>
-              </div>
+              </ToggleRow>
             ))}
           </div>
         </section>
