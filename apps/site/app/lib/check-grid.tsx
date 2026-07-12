@@ -2,14 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useCallback } from 'react';
-
-type CheckItem = {
-  title: string;
-  meta?: string;
-  href?: string;
-  avoid?: boolean;
-  status?: string;
-};
+import type { CheckItem } from './check-items';
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
@@ -147,17 +140,6 @@ export function CheckGrid({
       })}
     </div>
   );
-}
-
-export function checkItemsFromStrings(
-  values: readonly string[],
-  opts?: { avoid?: boolean; hrefs?: Record<string, string> },
-): CheckItem[] {
-  return values.map((title) => ({
-    title,
-    avoid: opts?.avoid,
-    href: opts?.hrefs?.[title],
-  }));
 }
 
 export type { CheckItem };

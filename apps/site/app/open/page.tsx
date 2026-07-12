@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
-import { CheckGrid, checkItemsFromStrings } from '../lib/check-grid';
+import { CheckGrid } from '../lib/check-grid';
+import { checkItemsFromStrings } from '../lib/check-items';
 
 export const metadata: Metadata = {
   title: 'Open design intelligence',
