@@ -1135,11 +1135,10 @@ p {
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--line);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 3%, transparent);
+  background: var(--paper);
 }
 
 /* denser tiles for short labels (anatomy, maps, do-not lists) */
