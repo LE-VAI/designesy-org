@@ -310,6 +310,10 @@ export default function HomePage() {
                 meta: 'Lab One reviewed with Kit One · pass with notes',
               },
               {
+                title: 'Keyboard path · Poise',
+                meta: 'Published tab order and focus-visible proof for Lab One',
+              },
+              {
                 title: 'Public surface review',
                 meta: 'designesy.org checked against its own contract',
               },

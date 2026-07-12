@@ -54,8 +54,8 @@ const TENSIONS = [
   {
     dim: 'Inclusion',
     finding:
-      'Reduced motion and sound preference are first-class. A published keyboard-path verification for every route is not yet part of the public record.',
-    next: 'Keyboard and focus verification belongs in the next contract verification pass.',
+      'Reduced motion and sound preference are first-class. Lab One keyboard-path verification is published; site-wide route packets are not yet complete.',
+    next: 'Expand keyboard verification route by route; Poise proof lives at /review/poise/keyboard.',
   },
   {
     dim: 'Durability',
