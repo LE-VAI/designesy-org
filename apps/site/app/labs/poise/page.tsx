@@ -55,7 +55,7 @@ const ANTI = [
 ];
 
 const PROVENANCE = [
-  'Designesy design system contract v0.1 — live tokens on designesy.org',
+  'Designesy design system contract v0.1.1 — live tokens and adopted Poise interaction rules',
   'Live token foundation — accent, ease-out, ease-in-out, duration',
   'Cuelume v0.1.0 — interaction audio; preference owned by Designesy',
   'Motion stance — short settles, entrance economy, reduced-motion respect',
@@ -99,7 +99,7 @@ export default function PoiseLabPage() {
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Live</span>
             <span className="lab-meta-item">Status · public experiment</span>
-            <span className="lab-meta-item">Contract path · candidate for v0.1.1</span>
+            <span className="lab-meta-item">Contract · adopted in v0.1.1</span>
           </div>
         </section>
 
@@ -224,7 +224,7 @@ export default function PoiseLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Portable contract</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Rules recorded as candidates for design system contract v0.1.1:
+            Rules adopted into design system contract v0.1.1:
           </p>
           <div className="row-stack" role="list">
             {[
@@ -447,10 +447,10 @@ export default function PoiseLabPage() {
         </section>
 
         <div className="status-note">
-          Poise is Lab One — a public experiment, not a finished product line.
-          Useful behaviors above are candidates for design system contract
-          v0.1.1. They become contract material only when explicitly adopted.
-          Public judgment of this lab lives at /review/poise.
+          Poise is Lab One — a public experiment whose portable interaction rules
+          were adopted into design system contract v0.1.1. The lab remains the
+          inspectable source demo. Public judgment lives at /review/poise;
+          keyboard proof at /review/poise/keyboard.
         </div>
       </main>
 

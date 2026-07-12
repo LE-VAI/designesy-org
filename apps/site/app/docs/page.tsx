@@ -38,7 +38,7 @@ const LAYERS = [
     num: '03',
     name: 'Contracts',
     desc: 'portable design agreements',
-    state: 'Public · design system v0.1',
+    state: 'Public · design system v0.1.1',
   },
   {
     num: '04',
@@ -75,7 +75,7 @@ const START_HERE = [
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
-    meta: 'Portable values, roles, verification · v0.1',
+    meta: 'Portable values, roles, verification · v0.1.1 · Poise adopted',
   },
   {
     href: '/labs/poise',

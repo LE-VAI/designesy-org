@@ -208,8 +208,8 @@ const RELATED = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1',
-    meta: 'focus-visible and reduced-motion requirements',
+    title: 'Design system contract v0.1.1',
+    meta: 'focus-visible, reduced-motion, and adopted Poise interaction rules',
   },
   {
     href: '/kits/design-review',

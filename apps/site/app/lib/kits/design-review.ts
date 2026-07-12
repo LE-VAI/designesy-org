@@ -24,8 +24,8 @@ export const designReviewKit = {
     },
     {
       href: '/contracts/design-system',
-      title: 'Design system contract v0.1',
-      meta: 'Human home and machine export',
+      title: 'Design system contract v0.1.1',
+      meta: 'Human home and machine export · Poise adopted',
     },
     {
       href: '/review/poise',
@@ -35,7 +35,7 @@ export const designReviewKit = {
     {
       href: '/review/designesy-org',
       title: 'Field check · designesy.org',
-      meta: 'Public surface review against contract v0.1',
+      meta: 'Public surface review against contract v0.1.1',
     },
     {
       href: '/labs/poise',
