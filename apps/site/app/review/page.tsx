@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 
@@ -82,10 +83,35 @@ export default function ReviewPage() {
           </p>
         </section>
 
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Field checks</h2>
+          <Link
+            href="/review/designesy-org"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge">Public surface</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">designesy.org</h3>
+            <p className="lab-card-lede">
+              Self-review against design system contract v0.1.
+            </p>
+            <p className="lab-card-desc">
+              Holds, tensions, and concrete corrections for the live site —
+              including Lab One, Poise.
+            </p>
+            <span className="lab-card-arrow">Open review →</span>
+          </Link>
+        </section>
+
         <div className="status-note">
-          This is review language and quality discipline. Each artifact carries
-          its review status and dimension checklist as the process becomes
-          operational across live projects.
+          This is review language and quality discipline. Live field checks ship
+          as named packets under /review. The first is the public surface review
+          of designesy.org itself.
         </div>
       </main>
 
