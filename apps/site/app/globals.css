@@ -936,6 +936,186 @@ p {
   line-height: 1.55;
 }
 
+/* --- Labs: index card + Poise stage --- */
+
+.lab-crumb {
+  color: var(--muted);
+  transition: color 0.2s var(--ease);
+}
+
+.lab-crumb:hover {
+  color: var(--ink);
+}
+
+.lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.lab-meta-item {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+}
+
+.lab-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 520px;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.lab-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.lab-card:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lab-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.lab-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.lab-card-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.lab-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.lab-card-lede {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.lab-card-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 420px;
+}
+
+.lab-card-arrow {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  transition: color 0.2s var(--ease);
+}
+
+.lab-card:hover .lab-card-arrow {
+  color: var(--ink);
+}
+
+.poise-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.poise-stage-block {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.poise-stage-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 1rem;
+}
+
+.poise-wordmark {
+  font-size: clamp(2.4rem, 8vw, 3.8rem);
+  margin-bottom: 0.75rem;
+}
+
+.poise-stage-note {
+  font-size: 0.82rem;
+  color: var(--muted-dim);
+  line-height: 1.5;
+  margin-top: 0.75rem;
+}
+
+.poise-stage-note code {
+  color: var(--signal-light);
+  font-size: 0.78rem;
+}
+
+.poise-actions {
+  margin: 0;
+}
+
+.poise-actions .button {
+  width: auto;
+  min-width: 7.5rem;
+}
+
+.poise-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lab-prompt {
+  margin-top: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  border: 1px solid var(--line-faint);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (max-width: 560px) {
+  .poise-actions {
+    flex-direction: column;
+  }
+
+  .poise-actions .button {
+    width: 100%;
+  }
+}
+
 /* Token table — design contract value grid */
 
 .token-table {
