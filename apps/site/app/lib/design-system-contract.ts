@@ -9,8 +9,9 @@ export const designSystemContract = {
   version: '0.1.0',
   status: 'public',
   name: 'Designesy design system',
-  public_url: 'https://designesy.org/contracts#design-system-contract',
-  machine_url: 'https://designesy.org/contracts/design-system',
+  public_url: 'https://designesy.org/contracts/design-system',
+  full_contract_url: 'https://designesy.org/contracts#design-system-contract',
+  machine_url: 'https://designesy.org/contracts/design-system.json',
   updated: '2026-07-12',
   schema_hints: {
     colors: 'primitive + semantic color roles',
