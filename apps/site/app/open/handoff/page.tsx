@@ -6,23 +6,17 @@ import { openIndex } from '../../lib/open-index';
 import { CheckGrid } from '../../lib/check-grid';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { CopyRow } from '../../lib/copy-row';
+import { pageMeta } from '../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Open handoff',
   description:
     'First public handoff pack for Designesy Open — short share copy, agent prompt, package links, and verification paths pointing at /open.',
-  openGraph: {
-    title: 'Open handoff · Designesy',
-    description:
-      'Portable share packet for open design intelligence: human path, machine feed, and first post copy.',
-    url: 'https://www.designesy.org/open/handoff',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Open handoff · Designesy',
-    description: 'Share open design intelligence — designesy.org/open/handoff',
-  },
-};
+  path: '/open/handoff',
+  ogDescription:
+    'Portable share packet for open design intelligence: human path, machine feed, and first post copy.',
+  twitterDescription: 'Share open design intelligence — designesy.org/open/handoff',
+});
 
 const SHARE_POSTS = [
   {

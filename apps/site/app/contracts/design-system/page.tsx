@@ -5,24 +5,20 @@ import { Footer } from '../../lib/footer';
 import { designSystemContract } from '../../lib/design-system-contract';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
+import { pageMeta } from '../../lib/site-meta';
+import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
     'Designesy design system contract v0.1.1 — human overview and machine export. Lab One · Poise interaction rules adopted.',
-  openGraph: {
-    title: 'Design system contract · v0.1.1',
-    description:
-      'Portable design agreement for designesy.org. Poise interaction rules adopted. Human overview with machine export.',
-    url: 'https://www.designesy.org/contracts/design-system',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Design system contract · v0.1.1',
-    description:
-      'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
-  },
-};
+  path: '/contracts/design-system',
+  ogTitle: 'Design system contract · v0.1.1',
+  ogDescription:
+    'Portable design agreement for designesy.org. Poise interaction rules adopted. Human overview with machine export.',
+  twitterDescription:
+    'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
+});
 
 const SECTIONS = [
   { title: 'Colors', meta: 'Primitive and semantic color roles' },
@@ -49,6 +45,16 @@ export default function DesignSystemContractPage() {
 
   return (
     <>
+      <JsonLd
+        data={creativeWorkJsonLd({
+          name: `${c.name} contract`,
+          description:
+            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise interaction rules.',
+          url: c.public_url,
+          version: c.version,
+          related: [c.machine_url, 'https://www.designesy.org/open'],
+        })}
+      />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page">

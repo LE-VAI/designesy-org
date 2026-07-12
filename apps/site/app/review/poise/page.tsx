@@ -5,24 +5,18 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
+import { pageMeta } from '../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Poise field check',
   description:
     'Public Design Review of Lab One · Poise — Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
-  openGraph: {
-    title: 'Poise · field check',
-    description:
-      'Lab One reviewed with Use Kit One · Design Review. Pass with notes — interaction rules adopted in contract v0.1.1.',
-    url: 'https://www.designesy.org/review/poise',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Poise · field check',
-    description:
-      'Design Review of Lab One — designesy.org/review/poise',
-  },
-};
+  path: '/review/poise',
+  ogTitle: 'Poise · field check',
+  ogDescription:
+    'Lab One reviewed with Use Kit One · Design Review. Pass with notes — interaction rules adopted in contract v0.1.1.',
+  twitterDescription: 'Design Review of Lab One — designesy.org/review/poise',
+});
 
 const DIMENSIONS = [
   {

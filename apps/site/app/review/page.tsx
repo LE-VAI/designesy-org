@@ -4,24 +4,17 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Review',
   description:
     'Designesy Review — quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
-  openGraph: {
-    title: 'Review · Designesy',
-    description:
-      'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
-    url: 'https://www.designesy.org/review',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Review · Designesy',
-    description:
-      'Quality gate for public artifacts — designesy.org/review',
-  },
-};
+  path: '/review',
+  ogDescription:
+    'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
+  twitterDescription: 'Quality gate for public artifacts — designesy.org/review',
+});
 
 const DIMENSIONS = [
   { num: '01', title: 'Purpose', desc: 'What is the design trying to make possible? Which elements directly support that purpose? What can be removed without weakening action?' },

@@ -4,24 +4,18 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { ToggleRow } from '../../lib/toggle-row';
+import { pageMeta } from '../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Keyboard path',
   description:
     'Site-wide keyboard path for designesy.org — skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
-  openGraph: {
-    title: 'Keyboard path · Designesy',
-    description:
-      'Public verification packet for shared chrome and default surface routes: skip to content, tab order, focus rings, activation.',
-    url: 'https://www.designesy.org/review/keyboard',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Keyboard path · Designesy',
-    description:
-      'Site-wide keyboard verification — designesy.org/review/keyboard',
-  },
-};
+  path: '/review/keyboard',
+  ogDescription:
+    'Public verification packet for shared chrome and default surface routes: skip to content, tab order, focus rings, activation.',
+  twitterDescription:
+    'Site-wide keyboard verification — designesy.org/review/keyboard',
+});
 
 const SCOPE = [
   {

@@ -4,24 +4,19 @@ import { Topbar } from '../../../lib/topbar';
 import { Footer } from '../../../lib/footer';
 import { CheckGrid } from '../../../lib/check-grid';
 import { ToggleRow } from '../../../lib/toggle-row';
+import { pageMeta } from '../../../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Poise keyboard path',
   description:
     'Public keyboard-path verification for Lab One · Poise — tab order, focus-visible, activation, and reduced-motion notes.',
-  openGraph: {
-    title: 'Poise · keyboard path',
-    description:
-      'Verification artifact for Lab One controls: tab order, focus rings, Enter/Space, reduced motion.',
-    url: 'https://www.designesy.org/review/poise/keyboard',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Poise · keyboard path',
-    description:
-      'Keyboard verification for Lab One — designesy.org/review/poise/keyboard',
-  },
-};
+  path: '/review/poise/keyboard',
+  ogTitle: 'Poise · keyboard path',
+  ogDescription:
+    'Verification artifact for Lab One controls: tab order, focus rings, Enter/Space, reduced motion.',
+  twitterDescription:
+    'Keyboard verification for Lab One — designesy.org/review/poise/keyboard',
+});
 
 const SCOPE = [
   {

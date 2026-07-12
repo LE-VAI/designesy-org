@@ -5,23 +5,17 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { ToggleRow } from '../lib/toggle-row';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { pageMeta } from '../lib/site-meta';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: 'Privacy',
   description:
     'Designesy privacy — what this public surface collects, what it does not, and how machine exports stay open without turning visitors into product.',
-  openGraph: {
-    title: 'Privacy · Designesy',
-    description:
-      'Plain-language trust surface for designesy.org: logs, contact, open exports, and what we do not track.',
-    url: 'https://www.designesy.org/privacy',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Privacy · Designesy',
-    description: 'Trust language for designesy.org — designesy.org/privacy',
-  },
-};
+  path: '/privacy',
+  ogDescription:
+    'Plain-language trust surface for designesy.org: logs, contact, open exports, and what we do not track.',
+  twitterDescription: 'Trust language for designesy.org — designesy.org/privacy',
+});
 
 const PRINCIPLES = [
   {

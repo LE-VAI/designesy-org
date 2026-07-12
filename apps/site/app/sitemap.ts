@@ -1,122 +1,127 @@
 import type { MetadataRoute } from 'next';
 
 const BASE = 'https://www.designesy.org';
+const NOW = new Date('2026-07-12');
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date('2026-07-11');
-
   return [
     {
       url: BASE,
-      lastModified,
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 1,
     },
     {
       url: `${BASE}/open`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.95,
     },
     {
       url: `${BASE}/open.json`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.7,
     },
     {
+      url: `${BASE}/llms.txt`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.75,
+    },
+    {
       url: `${BASE}/open/handoff`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
     {
       url: `${BASE}/docs`,
-      lastModified,
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
       url: `${BASE}/privacy`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.55,
     },
     {
       url: `${BASE}/labs`,
-      lastModified,
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
     {
       url: `${BASE}/labs/poise`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.75,
     },
     {
       url: `${BASE}/kits`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.85,
     },
     {
       url: `${BASE}/kits/design-review`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.9,
     },
     {
       url: `${BASE}/kits/design-review.json`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.65,
     },
     {
       url: `${BASE}/review`,
-      lastModified,
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
     {
       url: `${BASE}/review/poise`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${BASE}/review/poise/keyboard`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${BASE}/review/keyboard`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.75,
     },
     {
       url: `${BASE}/review/designesy-org`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${BASE}/contracts`,
-      lastModified,
+      lastModified: NOW,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
       url: `${BASE}/contracts/design-system`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.85,
     },
     {
       url: `${BASE}/contracts/design-system.json`,
-      lastModified: new Date('2026-07-12'),
+      lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.6,
     },
