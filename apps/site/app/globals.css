@@ -856,7 +856,9 @@ p {
   gap: 2.5rem;
 }
 
-/* Layer stack — numbered architecture layers with left-border accent */
+/* Row stack — universal classification rows (Seven Layers lineage)
+   Use for ordered/inspectable sets: scope, evidence, layers, anatomy.
+   Cards remain for named destinations. Plain lists only for short prose. */
 
 .layer-heading {
   font-size: 1rem;
@@ -865,31 +867,55 @@ p {
   margin-bottom: 1rem;
 }
 
+.row-stack,
 .layer-stack {
   display: flex;
   flex-direction: column;
   gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 640px;
 }
 
+.row,
 .layer-item {
   display: grid;
-  grid-template-columns: 2.5rem 1fr;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
   gap: 0.75rem;
   align-items: baseline;
   padding: 0.85rem 0.75rem 0.85rem 1rem;
   border-left: 2px solid var(--line);
-  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease),
+    transform 160ms var(--ease-out);
 }
 
+.row + .row,
+.layer-item + .layer-item {
+  border-top: 1px solid var(--line-faint);
+}
+
+.row:hover,
 .layer-item:hover {
   border-left-color: var(--signal);
   background: var(--surface-soft);
 }
 
-.layer-item + .layer-item {
-  border-top: 1px solid var(--line-faint);
+.row:active {
+  transform: scale(0.995);
 }
 
+.row:focus-visible,
+.layer-item:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.row-index,
 .layer-num {
   font-size: 0.75rem;
   font-weight: 700;
@@ -898,19 +924,55 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+.row-body,
 .layer-body {
+  min-width: 0;
   font-size: 0.9rem;
   color: var(--muted);
   line-height: 1.5;
 }
 
+.row-title,
 .layer-name {
+  display: block;
   color: var(--ink);
   font-weight: 700;
 }
 
+.row-meta,
 .layer-desc {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--muted-dim);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* Inline desc after title (Seven Layers style) */
+.layer-body .layer-desc {
+  display: inline;
+  margin-top: 0;
   color: var(--muted);
+  font-size: inherit;
+}
+
+.layer-body .layer-name {
+  display: inline;
+}
+
+/* Quiet / avoid variant — still a row, less invitation */
+.row.is-avoid {
+  border-left-color: var(--line-faint);
+}
+
+.row.is-avoid:hover {
+  border-left-color: var(--muted-dim);
+  background: var(--surface-soft);
+}
+
+.row.is-avoid .row-index {
+  color: var(--muted-dim);
 }
 
 @media (max-width: 720px) {
