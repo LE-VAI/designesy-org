@@ -9,9 +9,16 @@ export const metadata: Metadata = {
   description:
     'Designesy design system contract v0.1 — human overview and machine export for portable design judgment.',
   openGraph: {
-    title: 'Design system contract · Designesy',
+    title: 'Design system contract · v0.1',
     description:
       'Portable design agreement for designesy.org. Human overview with machine-readable export.',
+    url: 'https://designesy.org/contracts/design-system',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Design system contract · v0.1',
+    description:
+      'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
   },
 };
 
