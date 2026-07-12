@@ -27,7 +27,7 @@ export default function DesignReviewKitPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">
             <Link className="lab-crumb" href="/kits">

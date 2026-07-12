@@ -192,7 +192,7 @@ export default function ContractsPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Operating rules</p>
           <h1 className="surface-title">Contracts</h1>

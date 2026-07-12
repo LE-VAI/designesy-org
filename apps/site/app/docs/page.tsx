@@ -109,6 +109,16 @@ const START_HERE = [
     meta: 'What this surface collects, what it does not, open export scope',
   },
   {
+    href: '/open/handoff',
+    title: 'Open handoff pack',
+    meta: 'Share copy, agent prompt, verification paths for /open',
+  },
+  {
+    href: '/review/keyboard',
+    title: 'Keyboard path',
+    meta: 'Site-wide skip link, tab order, focus-visible proof',
+  },
+  {
     href: '/contracts#design-system-contract',
     title: 'Full contract tables',
     meta: 'Complete human contract on /contracts',
@@ -132,7 +142,7 @@ export default function DocsPage() {
     <>
       <Topbar scrolled />
 
-      <main className="surface-page">
+      <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Context surface</p>
           <h1 className="surface-title">Docs</h1>
