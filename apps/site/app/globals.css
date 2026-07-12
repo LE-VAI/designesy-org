@@ -1417,12 +1417,18 @@ p {
   max-width: 720px;
 }
 
+/*
+  Field card kind language (existing tokens only):
+  - contract = structure / agreement → square mark, steadier breath, signal edge
+  - lab      = living experiment    → circle mark, full wordmark breath, signal-light lift
+*/
 .field-card {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   padding: 1.35rem 1.35rem 1.25rem;
   border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   text-decoration: none;
@@ -1431,9 +1437,27 @@ p {
     background 0.2s var(--ease);
 }
 
+.field-card--contract {
+  border-left-color: var(--signal);
+}
+
+.field-card--lab {
+  border-left-color: var(--signal-light);
+}
+
 .field-card:hover {
   border-color: var(--line-strong);
   background: var(--surface-raised);
+}
+
+.field-card--contract:hover {
+  border-left-color: var(--signal);
+  border-color: var(--line-strong);
+}
+
+.field-card--lab:hover {
+  border-left-color: var(--signal-light);
+  border-color: var(--line-strong);
 }
 
 .field-card:active {
@@ -1495,7 +1519,28 @@ p {
   color: var(--ink);
 }
 
-/* Minimal Designesy mark — opacity only, contract-safe */
+.field-card--contract:hover .field-card-arrow {
+  color: var(--signal-light);
+}
+
+.field-card--lab:hover .field-card-arrow {
+  color: var(--signal-light);
+}
+
+/* Kind badges — same family, different weight */
+.status-badge--contract {
+  color: var(--signal-light);
+  border-color: var(--signal-dim);
+  background: var(--signal-dim);
+}
+
+.status-badge--lab {
+  color: var(--ink);
+  border-color: rgba(51, 88, 232, 0.45);
+  background: transparent;
+}
+
+/* Mark glyph language — opacity only, reduced-motion safe */
 .mark-glyph {
   position: relative;
   width: 28px;
@@ -1505,31 +1550,41 @@ p {
 
 .mark-glyph-core {
   position: absolute;
-  inset: 8px;
-  border-radius: 50%;
+  inset: 9px;
   background: var(--signal);
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
 .mark-glyph-ring {
   position: absolute;
   inset: 2px;
-  border-radius: 50%;
   border: 1px solid var(--signal-dim);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
+/* Contract = square structure, quieter pulse (agreement holds) */
 .mark-glyph--contract .mark-glyph-core {
   border-radius: var(--radius-sm);
   inset: 8px;
+  background: var(--signal);
+  animation: signalPulse 4.8s var(--ease-in-out) infinite;
 }
 
 .mark-glyph--contract .mark-glyph-ring {
   border-radius: var(--radius);
+  border-color: var(--signal-dim);
 }
 
-.mark-glyph--poise .mark-glyph-ring {
-  border-color: rgba(51, 88, 232, 0.35);
+/* Lab = circular breath, wordmark lineage (experiment lives) */
+.mark-glyph--lab .mark-glyph-core {
+  border-radius: 50%;
+  inset: 9px;
+  background: var(--signal-light);
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
+}
+
+.mark-glyph--lab .mark-glyph-ring {
+  border-radius: 50%;
+  border-color: rgba(51, 88, 232, 0.4);
 }
 
 @media (max-width: 720px) {
