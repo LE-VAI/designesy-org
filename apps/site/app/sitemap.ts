@@ -108,6 +108,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${BASE}/review/takt`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${BASE}/review/poise/keyboard`,
       lastModified: NOW,
       changeFrequency: 'monthly',
