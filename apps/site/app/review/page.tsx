@@ -142,6 +142,28 @@ export default function ReviewPage() {
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
             <Link
+              href="/review/cadence"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <div className="lab-card-top">
+                <span className="status-badge status-badge--lab">Lab Three</span>
+                <span className="lab-card-status">Pass with notes</span>
+              </div>
+              <h3 className="lab-card-title">Cadence</h3>
+              <p className="lab-card-lede">
+                Kit One output format on the text rhythm lab.
+              </p>
+              <p className="lab-card-desc">
+                Font smoothing, scale, leading, tracking, measure, text-wrap,
+                tabular numbers, selection — 10 cadence rules adopted into
+                contract v0.1.3.
+              </p>
+              <span className="lab-card-arrow">Open field check →</span>
+            </Link>
+            <Link
               href="/review/designesy-org"
               className="lab-card"
               data-cuelume-hover="tick"
@@ -154,11 +176,11 @@ export default function ReviewPage() {
               </div>
               <h3 className="lab-card-title">designesy.org</h3>
               <p className="lab-card-lede">
-                Public review against design system contract v0.1.2.
+                Public review against design system contract v0.1.3.
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including
-                Poise and Takt.
+                Poise, Takt, and Cadence.
               </p>
               <span className="lab-card-arrow">Open review →</span>
             </Link>
@@ -228,8 +250,8 @@ export default function ReviewPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.1.2</span>
-                <span className="row-meta">Human home and machine export · Poise + Takt</span>
+                <span className="row-title">Design system contract v0.1.3</span>
+                <span className="row-meta">Human home and machine export · Poise + Takt + Cadence</span>
               </span>
             </Link>
             <Link
@@ -265,7 +287,7 @@ export default function ReviewPage() {
               </span>
             </Link>
             <Link
-              href="/kits/design-review"
+              href="/labs/cadence"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -273,6 +295,22 @@ export default function ReviewPage() {
               data-cuelume-release
             >
               <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Lab Three · Cadence</span>
+                <span className="row-meta">
+                  Text rhythm · adopted in v0.1.3
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/kits/design-review"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -285,8 +323,9 @@ export default function ReviewPage() {
 
         <div className="status-note">
           Review language and quality discipline for public artifacts. Published
-          reviews live under /review. Field checks for Poise, Takt, the public
-          surface, and keyboard paths judge against the live contract — not taste.
+          reviews live under /review. Field checks for Poise, Takt, Cadence, the
+          public surface, and keyboard paths judge against the live contract —
+          not taste.
         </div>
       </main>
 

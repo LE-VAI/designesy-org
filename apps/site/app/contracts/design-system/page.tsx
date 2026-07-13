@@ -11,11 +11,11 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
-    'Designesy design system contract v0.1.2 — human overview and machine export. Lab One · Poise interaction rules and Lab Two · Takt interface-feel rules adopted.',
+    'Designesy design system contract v0.1.3 — human overview and machine export. Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence rules adopted.',
   path: '/contracts/design-system',
-  ogTitle: 'Design system contract · v0.1.2',
+  ogTitle: 'Design system contract · v0.1.3',
   ogDescription:
-    'Portable design agreement for designesy.org. Poise interaction rules and Takt interface-feel rules adopted. Human overview with machine export.',
+    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, and Cadence typography rules adopted. Human overview with machine export.',
   twitterDescription:
     'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
 });
@@ -49,7 +49,7 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt rules.',
+            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence rules.',
           url: c.public_url,
           version: c.version,
           related: [c.machine_url, 'https://www.designesy.org/open'],
@@ -223,7 +223,7 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/review/poise"
+              href="/labs/cadence"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -231,6 +231,22 @@ export default function DesignSystemContractPage() {
               data-cuelume-release
             >
               <span className="row-index">06</span>
+              <span className="row-body">
+                <span className="row-title">Lab Three · Cadence</span>
+                <span className="row-meta">
+                  Source lab · typography rules adopted in v0.1.3
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">07</span>
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
                 <span className="row-meta">
@@ -246,9 +262,25 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">07</span>
+              <span className="row-index">08</span>
               <span className="row-body">
                 <span className="row-title">Field check · Takt</span>
+                <span className="row-meta">
+                  Kit One review that supported adoption
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/cadence"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">09</span>
+              <span className="row-body">
+                <span className="row-title">Field check · Cadence</span>
                 <span className="row-meta">
                   Kit One review that supported adoption
                 </span>
@@ -262,7 +294,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">08</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
@@ -305,6 +337,27 @@ export default function DesignSystemContractPage() {
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.takt.rules)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Cadence adoption</h2>
+          <div className="definition">
+            <p className="definition-label">
+              Cadence · adopted in v0.1.3
+            </p>
+            <p>
+              Lab Three portable rules are contract material: font smoothing
+              on root, rem-based scale, line-height by role, tracking by size,
+              measure cap, text-wrap balance and pretty, tabular numbers,
+              ::selection with --signal, user-select on UI chrome, and 16px
+              input floor. Rules compiled from external typography intelligence
+              (Krehel /better-typography) and verified on live CSS. Three open
+              tensions documented: font-synthesis, logical properties, and
+              underline-from-font. Silence was not adoption — this version is
+              the explicit order.
+            </p>
+          </div>
+          <CheckGrid items={checkItemsFromStrings(c.cadence.rules)} />
         </section>
 
         <div className="status-note">

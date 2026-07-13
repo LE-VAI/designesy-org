@@ -52,7 +52,7 @@ const SURFACES = [
     href: '/labs',
     label: 'Labs',
     desc: 'Experiments that compile into contracts',
-    meta: 'Poise + Takt live',
+    meta: 'Poise + Takt + Cadence live',
   },
   {
     href: '/kits',
@@ -64,13 +64,13 @@ const SURFACES = [
     href: '/review',
     label: 'Review',
     desc: 'Eight dimensions and field checks',
-    meta: '4 field checks',
+    meta: '5 field checks',
   },
   {
     href: '/contracts',
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
-    meta: 'v0.1.2 public',
+    meta: 'v0.1.3 public',
   },
 ];
 
@@ -88,10 +88,10 @@ const FIELD = [
   {
     href: '/contracts/design-system',
     badge: 'Contract',
-    status: 'v0.1.2',
+    status: 'v0.1.3',
     title: 'Design system',
     lede: 'The rules behind this site — portable and versioned.',
-    desc: 'Tokens, motion, components, Poise + Takt interaction rules. Human overview plus a machine export agents can cite directly.',
+    desc: 'Tokens, motion, components, Poise + Takt + Cadence rules. Human overview plus a machine export agents can cite directly.',
     arrow: 'Read the contract →',
     kind: 'contract' as const,
   },
@@ -112,6 +112,16 @@ const FIELD = [
     title: 'Takt',
     lede: 'How an interface feels under your hands.',
     desc: 'Concentric radii, press scale, image outlines, hit areas, stagger rhythm — rules adopted into contract v0.1.2.',
+    arrow: 'See the lab →',
+    kind: 'lab' as const,
+  },
+  {
+    href: '/labs/cadence',
+    badge: 'Lab Three',
+    status: 'Live',
+    title: 'Cadence',
+    lede: 'The rhythm of text on a page.',
+    desc: 'Font smoothing, rem-based scale, line-height by role, tracking by size, measure, text-wrap, tabular numbers, selection — rules adopted into contract v0.1.3.',
     arrow: 'See the lab →',
     kind: 'lab' as const,
   },
@@ -398,8 +408,8 @@ export default function HomePage() {
                 meta: 'Human index /open and machine feed /open.json',
               },
               {
-                title: 'Design system contract v0.1.2',
-                meta: 'Human home, full tables, machine export · Poise + Takt adopted',
+                title: 'Design system contract v0.1.3',
+                meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
               },
               {
                 title: 'Lab One · Poise',
@@ -410,11 +420,15 @@ export default function HomePage() {
                 meta: 'Interface feel — rules adopted into v0.1.2',
               },
               {
+                title: 'Lab Three · Cadence',
+                meta: 'Text rhythm — rules adopted into v0.1.3',
+              },
+              {
                 title: 'Use Kit One · Design Review',
                 meta: 'Portable review package · human + machine export',
               },
               {
-                title: 'Field checks · Poise and Takt',
+                title: 'Field checks · Poise, Takt, and Cadence',
                 meta: 'Labs reviewed with Kit One · pass with notes',
               },
               {
