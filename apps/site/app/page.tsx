@@ -244,6 +244,8 @@ export default function HomePage() {
               <li
                 className={`pipeline-step${i === PIPELINE.length - 1 ? ' is-end' : ''}`}
                 key={step.label}
+                data-cuelume-hover="tick"
+                data-cuelume-press
               >
                 <span className="pipeline-node" aria-hidden="true">
                   <span className="pipeline-node-core" />

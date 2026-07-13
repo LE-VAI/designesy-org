@@ -9,13 +9,13 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
   description:
-    'Public review of the Designesy site against design system contract v0.1.2, Lab One: Poise, and Lab Two: Takt.',
+    'Public review of the Designesy site against design system contract v0.1.3, Lab One: Poise, Lab Two: Takt, and Lab Three: Cadence.',
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
     'A public surface checked against its own contract — holds, tensions, and standing rules.',
   twitterDescription:
-    'Field check against design system contract v0.1.2 — designesy.org/review/designesy-org',
+    'Field check against design system contract v0.1.3 — designesy.org/review/designesy-org',
 });
 
 const HOLDS = [
@@ -32,7 +32,7 @@ const HOLDS = [
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract v0.1.2, the machine export, Poise, and Takt reference the same values — including adopted interaction and interface-feel rules. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract v0.1.3, the machine export, Poise, Takt, and Cadence reference the same values — including adopted interaction, interface-feel, and typography rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -69,10 +69,10 @@ const TENSIONS = [
 ];
 
 const NEXT_STATES = [
-  'Poise rules are adopted in v0.1.1; Takt rules are adopted in v0.1.2; labs remain the inspectable demos',
+  'Poise rules adopted in v0.1.1; Takt in v0.1.2; Cadence in v0.1.3; labs remain the inspectable demos',
   'Public product names stay human and premium; research-demo vocabulary stays off public surfaces',
   'A second accent or light theme ships only after it is contracted',
-  'Homepage field cards point to the contract home, Poise, and Takt using existing tokens and opacity-only mark liveliness',
+  'Homepage field cards point to the contract home, Poise, Takt, and Cadence using existing tokens and opacity-only mark liveliness',
 ];
 
 const SCOPE = [
@@ -145,16 +145,17 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <h1 className="surface-title">designesy.org</h1>
           <p className="surface-lede">
-            A public review against design system contract v0.1.2.
+            A public review against design system contract v0.1.3.
           </p>
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
-            live public site — including Lab One · Poise and Lab Two · Takt —
-            for purpose, clarity, coherence, and honesty about what is still open.
+            live public site — including Lab One · Poise, Lab Two · Takt, and
+            Lab Three · Cadence — for purpose, clarity, coherence, and honesty
+            about what is still open.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
-            <span className="lab-meta-item">Baseline · contract v0.1.2</span>
+            <span className="lab-meta-item">Baseline · contract v0.1.3</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
         </section>
@@ -247,20 +248,21 @@ export default function PublicSurfaceReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition">
-            <p className="definition-label">Poise, Takt, and contract v0.1.2</p>
+            <p className="definition-label">Poise, Takt, Cadence, and contract v0.1.3</p>
             <p>
               Poise is Lab One; its portable interaction rules were adopted into
               contract v0.1.1. Takt is Lab Two; its interface-feel rules were
-              adopted into contract v0.1.2. The labs remain the live demos; the
-              contract carries the rules.
+              adopted into contract v0.1.2. Cadence is Lab Three; its typography
+              rules were adopted into contract v0.1.3. The labs remain the live
+              demos; the contract carries the rules.
             </p>
           </div>
         </section>
 
         <div className="status-note">
           Public review of the live designesy.org surface against contract
-          v0.1.2. This is institutional quality discipline, not a client report
-          or legal audit. Poise and Takt rules are adopted; the labs remain the
+          v0.1.3. This is institutional quality discipline, not a client report
+          or legal audit. Poise, Takt, and Cadence rules are adopted; the labs remain the
           inspectable source demos.
         </div>
       </main>
