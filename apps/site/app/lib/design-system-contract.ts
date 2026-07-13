@@ -1,14 +1,15 @@
 /**
- * Designesy design system contract v0.1.2 — machine + human source.
+ * Designesy design system contract v0.1.3 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
  * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
+ * v0.1.3 adopts Lab Three · Cadence typography rules (2026-07-13).
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.1.2',
+  version: '0.1.3',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
@@ -23,6 +24,7 @@ export const designSystemContract = {
     components: 'behavior and states',
     interaction: 'Poise-adopted contact rules',
     takt: 'Takt-adopted interface-feel rules',
+    cadence: 'Cadence-adopted typography rules',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -42,6 +44,11 @@ export const designSystemContract = {
       url: 'https://www.designesy.org/labs/takt',
       role: 'Source lab for interface-feel rules adopted in v0.1.2',
     },
+    third_lab: {
+      name: 'Cadence',
+      url: 'https://www.designesy.org/labs/cadence',
+      role: 'Source lab for typography rules adopted in v0.1.3',
+    },
     external_ingests: [
       {
         name: 'Amicro',
@@ -54,6 +61,13 @@ export const designSystemContract = {
         author: 'Jakub Krehel (@jakubkrehel)',
         url: 'https://github.com/jakubkrehel/skills',
         role: '13 interface polish principles — source for concentric radii, press scale, image outlines, hit areas',
+        license: 'MIT',
+      },
+      {
+        name: 'better-typography skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: '18 typography principles — source for font smoothing, scale, leading, tracking, measure, wrapping, numbers, selection',
         license: 'MIT',
       },
     ],
@@ -235,6 +249,34 @@ export const designSystemContract = {
       'Mobile hit area 44px — desktop 40px confirmed only',
     ],
   },
+  cadence: {
+    source_lab: 'Cadence',
+    adopted_in: '0.1.3',
+    rules: [
+      'Font smoothing on root: -webkit-font-smoothing: antialiased + -moz-osx-font-smoothing: grayscale',
+      'Rem-based scale: every text size is a rem multiple of the 16px root — never px',
+      'Line-height by role: headings 1.05–1.1, body 1.5–1.6, display 1 — never a single global line-height',
+      'Tracking by size: negative for headings (-0.02 to -0.04em), positive for labels (0.03–0.18em), zero for body',
+      'Cap the measure: body text 520–580px max, layout shell 1080px — text wider than 75ch loses readers',
+      'Wrap deliberately: text-wrap: balance on headings, text-wrap: pretty on body',
+      'Tabular numbers: font-variant-numeric: tabular-nums for all data, stats, and numerical tables',
+      'Selection: ::selection styled with a token color — never default browser blue',
+      'user-select: none on UI chrome (buttons, labels, meta) — body text stays selectable',
+      '16px input floor on mobile — inputs never below 16px to avoid iOS auto-zoom',
+      'No decorative display fonts: system stack is the contract for public UI',
+    ],
+    verified_against: 'Live CSS audit (48,755 bytes) — font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale all parsed',
+    verification: [
+      'https://www.designesy.org/labs/cadence',
+      'https://www.designesy.org/review/cadence',
+    ],
+    unverified: [
+      'font-synthesis: none not yet set in CSS — browser may synthesize fake weights',
+      'text-underline-position: from-font not yet set — underlines do not align to font metrics',
+      'text-decoration-skip-ink: auto not yet set — underlinks do not skip descenders',
+      'Logical properties not yet used — direction-ready layouts are blocked',
+    ],
+  },
   typography: {
     body: '16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
     headings: 'weight 700, line-height 1.08, letter-spacing -0.02em',
@@ -244,6 +286,7 @@ export const designSystemContract = {
     lede: '1.1–1.5rem, weight 500, ink — one clear claim',
     supporting_note: '0.85–0.95rem, muted, max-width ~520–580px',
     rule: 'Never invent decorative display fonts for public UI; system stack is the contract',
+    cadence_adopted: 'v0.1.3 — font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
   },
   semantic: {
     surface_roles:
@@ -330,6 +373,13 @@ export const designSystemContract = {
     'No transition:all in the live stylesheet',
     'will-change restricted to transform and opacity only',
     'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
+    'Cadence typography rules match live CSS and contract.cadence',
+    'Font smoothing: antialiased + grayscale on :root confirmed',
+    'Rem-based scale: all text sizes in rem, root at 16px confirmed',
+    'Line-height by role: headings 1.08, body 1.55 confirmed',
+    'text-wrap: balance + pretty both present in live CSS',
+    'tabular-nums: 8 instances across the live CSS',
+    '::selection styled with var(--signal) — not browser default',
   ],
   open_tensions: [
     'Light theme is not contracted — dark technical foundation is provisional',
@@ -338,6 +388,9 @@ export const designSystemContract = {
     'Shadow tokens exist; elevation language is still light-touch (borders lead)',
     'Human contract page and machine export remain dual sources until a single generator owns both',
     'Keyboard-path verification packets are published for Poise only — not every public route',
+    'font-synthesis: none not yet set — browser may synthesize fake weights (Cadence correction)',
+    'Logical properties not yet used — direction-ready layouts are blocked (Cadence correction)',
+    'text-underline-position: from-font and text-decoration-skip-ink: auto not yet set (Cadence correction)',
   ],
   adoption_history: [
     {
@@ -368,13 +421,24 @@ export const designSystemContract = {
         'https://www.designesy.org/review/takt',
       ],
     },
+    {
+      version: '0.1.3',
+      date: '2026-07-13',
+      summary:
+        'Adopted Lab Three · Cadence typography rules: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor. Rules compiled from external typography intelligence (Krehel /better-typography) and verified on live CSS. Three open tensions documented: font-synthesis, logical properties, underline-from-font.',
+      from_lab: 'Cadence',
+      evidence: [
+        'https://www.designesy.org/labs/cadence',
+        'https://www.designesy.org/review/cadence',
+      ],
+    },
   ],
   promotion_candidates: {
     from_lab: null,
     target_version: null,
     status: 'none',
     rules: [] as readonly string[],
-    note: 'No open promotion candidates. Poise rules adopted in v0.1.1. Takt rules adopted in v0.1.2.',
+    note: 'No open promotion candidates. Poise rules adopted in v0.1.1. Takt rules adopted in v0.1.2. Cadence rules adopted in v0.1.3.',
   },
 } as const;
 

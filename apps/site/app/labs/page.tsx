@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
-    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel).',
+    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Cadence (text rhythm).',
   path: '/labs',
   ogDescription:
-    'Experiments that compile into contracts. Lab One · Poise and Lab Two · Takt are live.',
+    'Experiments that compile into contracts. Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence are live.',
   twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
 });
 
@@ -105,6 +105,29 @@ export default function LabsPage() {
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
+          <Link
+            href="/labs/cadence"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge status-badge--lab">Lab Three</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Cadence</h3>
+            <p className="lab-card-lede">
+              The rhythm of text on a page.
+            </p>
+            <p className="lab-card-desc">
+              Font smoothing, rem-based scale, line-height by role, tracking by
+              size, measure, text-wrap, tabular numbers, and selection —
+              portable rules with exact values, compiled from external
+              typography intelligence and verified on designesy.org.
+            </p>
+            <span className="lab-card-arrow">Open lab →</span>
+          </Link>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -122,7 +145,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2
+                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3
                 </span>
               </span>
             </Link>
@@ -159,7 +182,7 @@ export default function LabsPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/review/cadence"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -168,9 +191,25 @@ export default function LabsPage() {
             >
               <span className="row-index">04</span>
               <span className="row-body">
+                <span className="row-title">Field check · Cadence</span>
+                <span className="row-meta">
+                  Kit One review of Lab Three · pass with notes
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  designesy.org checked against contract v0.1.2
+                  designesy.org checked against contract v0.1.3
                 </span>
               </span>
             </Link>
@@ -182,7 +221,7 @@ export default function LabsPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">05</span>
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -235,9 +274,10 @@ export default function LabsPage() {
 
         <div className="status-note">
           Labs ship as named experiments with thesis, review status, and
-          promotion readiness. Poise is Lab One. Takt is Lab Two. Future labs
-          follow the same anatomy and the site drift rule: every public UI
-          change cites a contract token or an open tension.
+          promotion readiness. Poise is Lab One. Takt is Lab Two. Cadence is
+          Lab Three. Future labs follow the same anatomy and the site drift
+          rule: every public UI change cites a contract token or an open
+          tension.
         </div>
       </main>
 
