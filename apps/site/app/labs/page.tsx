@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
-    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel).',
+    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Pane (true glass).',
   path: '/labs',
   ogDescription:
-    'Experiments that compile into contracts. Lab One · Poise and Lab Two · Takt are live.',
+    'Experiments that compile into contracts. Lab One · Poise, Lab Two · Takt, and Lab Three · Pane are live.',
   twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
 });
 
@@ -102,6 +102,27 @@ export default function LabsPage() {
               Concentric radii, press scale, image outlines, hit areas, stagger
               rhythm — portable rules with exact values, compiled from external
               design intelligence and verified on designesy.org.
+            </p>
+            <span className="lab-card-arrow">Open lab →</span>
+          </Link>
+          <Link
+            href="/labs/pane"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge status-badge--lab">Lab Three</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Pane</h3>
+            <p className="lab-card-lede">
+              True glass for institutional surfaces — bend, not fog.
+            </p>
+            <p className="lab-card-desc">
+              Progressive glass: solid, frost, and optics-based refraction.
+              Snell maps, blob-safe SVG filters, restrained topbar integration.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
@@ -219,9 +240,9 @@ export default function LabsPage() {
 
         <div className="status-note">
           Labs ship as named experiments with thesis, review status, and
-          promotion readiness. Poise is Lab One. Takt is Lab Two. Future labs
-          follow the same anatomy and the site drift rule: every public UI
-          change cites a contract token or an open tension.
+          promotion readiness. Poise is Lab One. Takt is Lab Two. Pane is Lab
+          Three. Future labs follow the same anatomy and the site drift rule:
+          every public UI change cites a contract token or an open tension.
         </div>
       </main>
 
