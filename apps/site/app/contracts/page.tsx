@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1.2 is public (Poise + Takt adopted).',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1.3 is public (Poise + Takt + Cadence adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract v0.1.2 is live — Poise and Takt rules adopted.',
+    'Portable design agreements for people and agents. Design system contract v0.1.3 is live — Poise, Takt, and Cadence rules adopted.',
   twitterDescription:
     'Portable design judgment — designesy.org/contracts/design-system',
 });
@@ -156,6 +156,8 @@ const OPEN_TENSIONS = [
   'Inter is named in the stack but not self-hosted; system fallback is intentional for now',
   'Shadow tokens exist; elevation language is still light-touch (borders lead, shadows secondary)',
   'Human contract page and machine export remain dual sources until a single generator owns both',
+  'Block-axis logical properties not yet migrated — direction-ready is partial (inline-axis only)',
+  'border-inline-start not yet used — decorative borders still physical',
 ];
 
 function TokenTable({
@@ -235,7 +237,7 @@ export default function ContractsPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system · v0.1.2</span>
+                <span className="row-title">Design system · v0.1.3</span>
                 <span className="row-meta">
                   Human overview, full tables below, machine JSON export
                 </span>
@@ -348,11 +350,11 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="design-system-contract">
           <h2 className="doctrine-heading">Published contract</h2>
           <div className="definition">
-            <p className="definition-label">Designesy design system · v0.1.2</p>
+            <p className="definition-label">Designesy design system · v0.1.3</p>
             <p>
               Public design contract for designesy.org. Derived from the live
-              site token foundation, with Lab One · Poise and Lab Two · Takt
-              rules adopted. Provisional, doctrine-referenced, and
+              site token foundation, with Lab One · Poise, Lab Two · Takt, and
+              Lab Three · Cadence rules adopted. Provisional, doctrine-referenced, and
               meant to be verified against the running site — not a frozen brand
               bible.
             </p>
@@ -398,7 +400,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.1.2 — Poise and Takt rules adopted',
+                meta: 'Public v0.1.3 — Poise, Takt, and Cadence rules adopted',
               },
             ]} />
         </section>
@@ -555,9 +557,9 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract v0.1.2 — public artifact discipline,
+          Designesy design system contract v0.1.3 — public artifact discipline,
           not legal advice or a client service agreement. Values are taken from
-          the live site tokens. Poise and Takt rules are adopted. Contract
+          the live site tokens. Poise, Takt, and Cadence rules are adopted. Contract
           home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>
           {' · '}
