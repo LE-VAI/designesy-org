@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { buildPaneMap, PANE_PRESETS } from './optics';
 import { detectPaneTier, type PaneTier } from './capability';
 
@@ -18,13 +18,13 @@ type FilterState = {
 /**
  * Mounts once near document root.
  * - Detects Pane capability tier → data-pane-tier on <html>
- * - Builds cached displacement maps
- * - Injects SVG filter defs for Chromium refraction
+ * - Builds cached displacement maps (blob: URLs)
+ * - Injects SVG filter defs for Chromium refraction + chromatic rim
  *
- * Frost tier needs no SVG. Refract tier uses backdrop-filter: url(#pane-*).
+ * True glass = displacement of the backdrop. Blur alone is frost.
+ * Tier 2 CSS must NOT stack a heavy blur over these filters.
  */
 export function PaneRoot() {
-  const uid = useId().replace(/:/g, '');
   const [tier, setTier] = useState<PaneTier>(0);
   const [maps, setMaps] = useState<FilterState | null>(null);
 
@@ -44,13 +44,13 @@ export function PaneRoot() {
 
     setMaps({
       sheetUrl: sheet.url,
-      sheetScale: Math.min(sheet.scale, 18),
+      sheetScale: sheet.scale,
       cardUrl: card.url,
-      cardScale: Math.min(card.scale, 22),
+      cardScale: card.scale,
       chipUrl: chip.url,
-      chipScale: Math.min(chip.scale, 16),
+      chipScale: chip.scale,
       lensUrl: lens.url,
-      lensScale: Math.min(lens.scale, 28),
+      lensScale: lens.scale,
     });
 
     return () => {
@@ -75,54 +75,10 @@ export function PaneRoot() {
       style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
     >
       <defs>
-        <PaneFilter
-          id={`pane-sheet-${uid}`}
-          mapUrl={maps.sheetUrl}
-          scale={maps.sheetScale}
-          chroma={false}
-        />
-        <PaneFilter
-          id={`pane-card-${uid}`}
-          mapUrl={maps.cardUrl}
-          scale={maps.cardScale}
-          chroma
-        />
-        <PaneFilter
-          id={`pane-chip-${uid}`}
-          mapUrl={maps.chipUrl}
-          scale={maps.chipScale}
-          chroma={false}
-        />
-        <PaneFilter
-          id={`pane-lens-${uid}`}
-          mapUrl={maps.lensUrl}
-          scale={maps.lensScale}
-          chroma
-        />
-        <PaneFilter
-          id="pane-sheet"
-          mapUrl={maps.sheetUrl}
-          scale={maps.sheetScale}
-          chroma={false}
-        />
-        <PaneFilter
-          id="pane-card"
-          mapUrl={maps.cardUrl}
-          scale={maps.cardScale}
-          chroma
-        />
-        <PaneFilter
-          id="pane-chip"
-          mapUrl={maps.chipUrl}
-          scale={maps.chipScale}
-          chroma={false}
-        />
-        <PaneFilter
-          id="pane-lens"
-          mapUrl={maps.lensUrl}
-          scale={maps.lensScale}
-          chroma
-        />
+        <PaneFilter id="pane-sheet" mapUrl={maps.sheetUrl} scale={maps.sheetScale} chroma />
+        <PaneFilter id="pane-card" mapUrl={maps.cardUrl} scale={maps.cardScale} chroma />
+        <PaneFilter id="pane-chip" mapUrl={maps.chipUrl} scale={maps.chipScale} chroma />
+        <PaneFilter id="pane-lens" mapUrl={maps.lensUrl} scale={maps.lensScale} chroma />
       </defs>
     </svg>
   );
@@ -139,49 +95,24 @@ function PaneFilter({
   scale: number;
   chroma: boolean;
 }) {
-  const s = Math.max(4, Math.min(scale, 32));
-  const rScale = s * 1.06;
-  const bScale = s * 0.94;
+  // Visible institutional bend — not theatrical OS clone, but not invisible
+  const s = Math.max(32, Math.min(scale, 80));
+  // Chromatic dispersion: R/B split at the rim (the glass tell)
+  const rScale = s * 1.28;
+  const gScale = s;
+  const bScale = s * 0.72;
 
-  if (!chroma) {
-    return (
-      <filter
-        id={id}
-        x="-8%"
-        y="-8%"
-        width="116%"
-        height="116%"
-        filterUnits="objectBoundingBox"
-        colorInterpolationFilters="sRGB"
-      >
-        <feImage
-          href={mapUrl}
-          x="0"
-          y="0"
-          width="100%"
-          height="100%"
-          preserveAspectRatio="none"
-          result="map"
-        />
-        <feDisplacementMap
-          in="SourceGraphic"
-          in2="map"
-          scale={s}
-          xChannelSelector="R"
-          yChannelSelector="G"
-        />
-      </filter>
-    );
-  }
-
+  // Chromatic glass: three displaced channels at different scales.
+  // The R/B split at the rim is the dispersion tell — glass, not frost.
+  // (mono path removed: every refract surface gets chroma so the effect reads)
+  void chroma;
   return (
     <filter
       id={id}
-      x="-10%"
-      y="-10%"
-      width="120%"
-      height="120%"
-      filterUnits="objectBoundingBox"
+      x="-30%"
+      y="-30%"
+      width="160%"
+      height="160%"
       colorInterpolationFilters="sRGB"
     >
       <feImage
@@ -190,9 +121,10 @@ function PaneFilter({
         y="0"
         width="100%"
         height="100%"
-        preserveAspectRatio="none"
         result="map"
+        preserveAspectRatio="none"
       />
+
       <feDisplacementMap
         in="SourceGraphic"
         in2="map"
@@ -207,10 +139,11 @@ function PaneFilter({
         values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
         result="red"
       />
+
       <feDisplacementMap
         in="SourceGraphic"
         in2="map"
-        scale={s}
+        scale={gScale}
         xChannelSelector="R"
         yChannelSelector="G"
         result="dispG"
@@ -221,6 +154,7 @@ function PaneFilter({
         values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
         result="green"
       />
+
       <feDisplacementMap
         in="SourceGraphic"
         in2="map"
@@ -235,6 +169,7 @@ function PaneFilter({
         values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
         result="blue"
       />
+
       <feBlend in="red" in2="green" mode="screen" result="rg" />
       <feBlend in="rg" in2="blue" mode="screen" />
     </filter>

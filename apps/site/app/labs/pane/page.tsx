@@ -93,9 +93,9 @@ export default function PaneLabPage() {
         <section className="doctrine-section fade-up" id="demo">
           <h2 className="doctrine-heading">Live artifact</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Scroll the page and watch the topbar sheet. On Chromium, the rim
-            should slightly refract the field behind it. On Safari and Firefox,
-            expect honest frost — not a broken filter.
+            On Chromium (tier 2): the lens rim must bend the grid and split
+            color slightly (dispersion). If you only see fog, it failed. On
+            Safari/Firefox (tier 1): honest frost — no fake broken refraction.
           </p>
 
           <div className="pane-stage">
@@ -119,8 +119,8 @@ export default function PaneLabPage() {
                 <div className="pane-demo-float pane-lens pane-refract">
                   <p className="pane-demo-float-title">Pane lens</p>
                   <p className="pane-demo-float-body">
-                    Squircle bezel · optics map · restrained scale. Content
-                    stays sharp; only the backdrop bends.
+                    Rim refraction + chromatic split. Labels stay sharp; only
+                    the backdrop bends. Look at the grid lines under the edge.
                   </p>
                 </div>
               </div>
