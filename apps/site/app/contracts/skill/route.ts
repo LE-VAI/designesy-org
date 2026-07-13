@@ -187,11 +187,11 @@ ${c.cadence.verification.map((v) => `- ${v}`).join('\n')}
 
 ### External ingests
 
-${c.provenance.external_ingests.map((e) => `- [${e.name}](${e.url}) by ${e.author} — ${e.role}${e.license ? ` (${e.license})` : ''}`).join('\n')}
+${c.provenance.external_ingests.map((e) => `- [${e.name}](${e.url}) by ${e.author} — ${e.role}${'license' in e ? ` (${e.license})` : ''}`).join('\n')}
 
 ### Adoption history
 
-${c.adoption_history.map((h) => `- **v${h.version}** (${h.date}): ${h.summary}${h.from_lab ? ` — from Lab ${h.from_lab}` : ''}${h.evidence ? `\n  Evidence: ${h.evidence.join(', ')}` : ''}`).join('\n')}
+${c.adoption_history.map((h) => `- **v${h.version}** (${h.date}): ${h.summary}${'from_lab' in h ? ` — from Lab ${h.from_lab}` : ''}${'evidence' in h ? `\n  Evidence: ${h.evidence.join(', ')}` : ''}`).join('\n')}
 `;
 
   return new Response(body, {
