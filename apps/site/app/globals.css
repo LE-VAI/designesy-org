@@ -47,18 +47,6 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-
-  /* Pane — progressive true-glass (layered backdrop + content) */
-  --pane-fill: rgba(12, 12, 16, 0.28);
-  --pane-fill-raised: rgba(14, 14, 18, 0.32);
-  --pane-fill-solid: rgba(10, 10, 10, 0.96);
-  --pane-blur: 12px;
-  --pane-blur-soft: 8px;
-  --pane-saturate: 155%;
-  --pane-edge: rgba(255, 255, 255, 0.12);
-  --pane-edge-strong: rgba(255, 255, 255, 0.18);
-  --pane-highlight: rgba(255, 255, 255, 0.07);
-  --pane-inset: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* --- Reset --- */
@@ -245,7 +233,6 @@ p {
 }
 
 .topbar.scrolled {
-  /* Restrained frost chrome — true glass lives on Lab PaneSurface */
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -3193,261 +3180,35 @@ a.check-cell:hover .check-cell-title {
 }
 
 /* ==========================================================================
-   Pane — progressive true-glass material
-   Architecture: layered surface
-     .pane-surface > .pane-backdrop  (filters only this layer)
-                 > .pane-content     (labels stay sharp)
-   Tier 2 uses CSS filter:url() on the backdrop layer (warps its backdrop-filter
-   result) — the path that actually produces geometric rim bend in Chromium.
+   Field panel — quiet high-structure grid in a rounded frame
+   Kept from the Pane lab visual pass (not the glass experiment).
    ========================================================================== */
 
-.pane-local-filter {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Shell — transparent; glass is the backdrop child */
-.pane-surface,
-.pane-sheet,
-.pane-card,
-.pane-chip,
-.pane-lens {
+.field-panel {
   position: relative;
-  isolation: isolate;
-  border: 1px solid var(--pane-edge);
-  box-shadow: var(--pane-inset);
-  background: transparent;
-  overflow: hidden;
-}
-
-.pane-card {
-  border-radius: 14px;
-}
-
-.pane-chip {
-  border-radius: 999px;
-  border-color: var(--pane-edge-strong);
-  overflow: hidden;
-}
-
-.pane-lens {
-  border-radius: 28px;
-}
-
-/* Backdrop layer — frost by default; live refract overrides via inline style */
-.pane-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: var(--pane-fill);
-  backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-}
-
-.pane-backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    var(--pane-highlight) 0%,
-    transparent 42%
-  );
-}
-
-/* When live refraction is active, drop fog fill so bend can read */
-.pane-refract-live > .pane-backdrop {
-  background: rgba(255, 255, 255, 0.035);
-}
-
-.pane-refract-live > .pane-backdrop::after {
-  /* keep a hair of specular */
-  opacity: 0.85;
-}
-
-/* Content sits above glass, never filtered */
-.pane-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Tier 0 / reduced transparency — solid */
-html[data-pane-tier="0"] .pane-backdrop,
-html[data-pane-tier="0"] .topbar.scrolled {
-  background: var(--pane-fill-solid);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  filter: none;
-  box-shadow: none;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .pane-backdrop,
-  .topbar.scrolled {
-    background: var(--pane-fill-solid);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    filter: none;
-    box-shadow: none;
-  }
-}
-
-/* Lab Three · Pane demo stage */
-.pane-stage {
-  display: grid;
-  gap: 1.25rem;
-}
-
-.pane-stage-block {
-  display: grid;
-  gap: 0.65rem;
-}
-
-.pane-stage-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-}
-
-.pane-stage-note {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-/* Quiet high-structure field — grid + soft signal wash, no slogan */
-.pane-demo-field {
-  position: relative;
-  min-height: 300px;
+  min-height: 220px;
   border-radius: 14px;
   border: 1px solid var(--line);
   overflow: hidden;
   background:
-    radial-gradient(ellipse 55% 45% at 22% 30%, rgba(1, 51, 203, 0.32), transparent 60%),
-    radial-gradient(ellipse 40% 35% at 78% 70%, rgba(51, 88, 232, 0.14), transparent 55%),
+    radial-gradient(ellipse 55% 45% at 22% 30%, rgba(1, 51, 203, 0.28), transparent 60%),
+    radial-gradient(ellipse 40% 35% at 78% 70%, rgba(51, 88, 232, 0.12), transparent 55%),
     #050508;
 }
 
-.pane-demo-field-grid {
+.field-panel-grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
   mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 85%);
   pointer-events: none;
-  z-index: 0;
 }
 
-/* Fine type strip under the lens so dispersion is checkable without shouting */
-.pane-demo-field-type {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  gap: 0.35rem;
-  text-align: center;
-  pointer-events: none;
-  z-index: 0;
-  padding: 1rem;
-}
-
-.pane-demo-field-type span {
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
-  font-weight: 500;
-}
-
-.pane-demo-field-type strong {
-  font-size: clamp(1.35rem, 3.5vw, 1.85rem);
-  font-weight: 560;
-  letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.pane-demo-float {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(78%, 280px);
-}
-
-.pane-demo-float .pane-content {
-  padding: 1.15rem 1.25rem;
-}
-
-.pane-demo-float-title {
-  font-size: 1rem;
-  font-weight: 560;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.35rem;
-}
-
-.pane-demo-float-body {
-  font-size: 0.88rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.pane-tier-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  color: var(--ink);
-}
-
-.pane-tier-chip .pane-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-}
-
-.pane-tier-chip strong {
-  font-weight: 560;
-  color: var(--signal-light);
-}
-
-.pane-compare {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-@media (max-width: 720px) {
-  .pane-compare {
-    grid-template-columns: 1fr;
-  }
-}
-
-.pane-compare-cell {
-  min-height: 120px;
-}
-
-.pane-compare-cell .pane-content {
-  min-height: 120px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.35rem;
-}
-
-.pane-compare-cell span {
-  font-size: 0.78rem;
-  color: var(--muted);
+.field-panel-body {
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem;
 }

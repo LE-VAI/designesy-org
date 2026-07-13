@@ -22,8 +22,7 @@ function isActiveRoute(pathname: string, href: string) {
 
 /**
  * Shared topbar — wordmark, primary routes, sense toggles, scroll progress.
- * Scrolled state uses restrained frost (not theatrical glass) for chrome.
- * True-glass experimentation lives on Lab surfaces via PaneSurface.
+ * Scrolled state uses restrained frost for chrome.
  */
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const pathname = usePathname() || '/';
