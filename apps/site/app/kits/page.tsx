@@ -139,7 +139,7 @@ export default function KitsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Portable values and verification · v0.1.3
+                  Portable values and verification · v0.1.4
                 </span>
               </span>
             </Link>
