@@ -70,7 +70,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
         <Link
           className="wordmark"
           href="/"
-          data-cuelume-hover="tick"
+          data-cuelume-hover="sparkle"
           aria-current={pathname === '/' ? 'page' : undefined}
         >
           designesy<span className="dot">.</span>

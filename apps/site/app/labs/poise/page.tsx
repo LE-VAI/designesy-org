@@ -112,7 +112,12 @@ export default function PoiseLabPage() {
           <div className="poise-stage">
             <div className="poise-stage-block">
               <p className="poise-stage-label">Wordmark</p>
-              <p className="wordmark-hero poise-wordmark" aria-label="designesy">
+              <p
+                className="wordmark-hero poise-wordmark"
+                aria-label="designesy"
+                data-cuelume-hover="sparkle"
+                data-cuelume-press="sparkle"
+              >
                 designesy<span className="dot">.</span>
               </p>
               <p className="poise-stage-note">

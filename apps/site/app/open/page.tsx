@@ -72,13 +72,13 @@ export default function OpenPage() {
             <span className="status-badge">Public</span>
             <span className="lab-meta-item">
               Machine ·{' '}
-              <Link href="/open.json" data-cuelume-hover="tick">
+              <Link href="/open.json" data-cuelume-hover="chime">
                 /open.json
               </Link>
             </span>
             <span className="lab-meta-item">
               Agents ·{' '}
-              <Link href="/llms.txt" data-cuelume-hover="tick">
+              <Link href="/llms.txt" data-cuelume-hover="chime">
                 /llms.txt
               </Link>
             </span>
@@ -140,7 +140,7 @@ export default function OpenPage() {
                         <span className="open-path-sep" aria-hidden="true">
                           ·
                         </span>
-                        <Link href={pkg.machine_path} data-cuelume-hover="tick">
+                        <Link href={pkg.machine_path} data-cuelume-hover="chime">
                           {pkg.machine_path}
                         </Link>
                       </>

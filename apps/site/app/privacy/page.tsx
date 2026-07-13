@@ -103,7 +103,7 @@ export default function PrivacyPage() {
             information: what is collected, what is not, and how open design
             intelligence stays fetchable without turning visitors into product.
             Operator: Designesy LLC. Contact:{' '}
-            <a href="mailto:le@designesy.org" data-cuelume-hover="tick">
+            <a href="mailto:le@designesy.org" data-cuelume-hover="droplet">
               le@designesy.org
             </a>
             .
@@ -225,7 +225,7 @@ export default function PrivacyPage() {
           <p className="surface-note">
             For privacy questions, correction requests about correspondence you
             sent, or operational concerns, write to{' '}
-            <a href="mailto:le@designesy.org" data-cuelume-hover="tick">
+            <a href="mailto:le@designesy.org" data-cuelume-hover="droplet">
               le@designesy.org
             </a>
             . Include enough context to locate the request. We respond as an
