@@ -35,13 +35,13 @@ const LAYERS = [
     num: '03',
     name: 'Contracts',
     desc: 'portable design agreements',
-    state: 'Public · design system v0.1.2',
+    state: 'Public · design system v0.1.3',
   },
   {
     num: '04',
     name: 'Labs',
     desc: 'experiments that compile into contracts',
-    state: 'Public · Poise + Takt',
+    state: 'Public · Poise + Takt + Cadence',
   },
   {
     num: '05',
@@ -83,7 +83,7 @@ const START_HERE = [
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
-    meta: 'Portable values, roles, verification · v0.1.2 · Poise + Takt adopted',
+    meta: 'Portable values, roles, verification · v0.1.3 · Poise + Takt + Cadence adopted',
   },
   {
     href: '/labs/poise',
@@ -96,6 +96,11 @@ const START_HERE = [
     meta: 'How an interface feels under your hands',
   },
   {
+    href: '/labs/cadence',
+    title: 'Lab Three · Cadence',
+    meta: 'The rhythm of text on a page',
+  },
+  {
     href: '/review/poise',
     title: 'Field check · Poise',
     meta: 'Kit One applied to Lab One · pass with notes',
@@ -104,6 +109,11 @@ const START_HERE = [
     href: '/review/takt',
     title: 'Field check · Takt',
     meta: 'Kit One applied to Lab Two · pass with notes',
+  },
+  {
+    href: '/review/cadence',
+    title: 'Field check · Cadence',
+    meta: 'Kit One applied to Lab Three · pass with notes',
   },
   {
     href: '/review/designesy-org',
