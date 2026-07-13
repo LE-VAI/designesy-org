@@ -335,6 +335,7 @@ p {
   pointer-events: none;
   z-index: 0;
   display: none;
+  perspective: 640px;
 }
 
 @media (min-width: 860px) {
@@ -364,6 +365,7 @@ p {
   top: 50%;
   transform: translateY(-50%);
   width: calc(100% - 1.25rem);
+  transform-style: preserve-3d;
 }
 
 .hero-seam-mark {
@@ -371,6 +373,8 @@ p {
   height: auto;
   display: block;
   overflow: visible;
+  pointer-events: auto;
+  transform-style: preserve-3d;
 }
 
 /*
@@ -389,7 +393,12 @@ p {
   fill: var(--ink);
 }
 
-/* Playful settle onto the seam — once, not looping */
+/*
+  Per-piece personality
+  ---------------------
+  Each modular element has its own hover/press language.
+  Fine pointer only. Short settle. No looping showmanship.
+*/
 .hero-seam-mark .seam-dot,
 .hero-seam-mark .seam-orbit,
 .hero-seam-mark .seam-square,
@@ -397,7 +406,10 @@ p {
 .hero-seam-mark .seam-block {
   transform-box: fill-box;
   transform-origin: center;
+  transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
   animation: seamDock 0.9s var(--ease-out) both;
+  transition: transform 180ms var(--ease-out), fill 180ms var(--ease);
+  cursor: default;
 }
 
 .hero-seam-mark .seam-dot {
@@ -423,11 +435,72 @@ p {
 @keyframes seamDock {
   0% {
     opacity: 0;
-    transform: translateX(18px) scale(0.92);
+    transform: translateX(18px) translateZ(-12px) scale(0.92);
   }
   100% {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0) translateZ(0) scale(1);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* Dot — origin signal: soft pop toward you */
+  .hero-seam-mark .seam-dot:hover {
+    transform: translateZ(18px) scale(1.08);
+  }
+
+  /* Orbit — living curve: slight yaw as if rolling on the seam */
+  .hero-seam-mark .seam-orbit:hover {
+    transform: translateZ(12px) rotateY(-14deg) rotateX(6deg) scale(1.03);
+  }
+
+  /* Square — structure: crisp lift, least flourish */
+  .hero-seam-mark .seam-square:hover {
+    transform: translateZ(14px) rotateX(-8deg) scale(1.04);
+  }
+
+  /* Triangle — motion: tip-forward thrust */
+  .hero-seam-mark .seam-triangle:hover {
+    transform: translateZ(16px) rotateX(10deg) rotateZ(-4deg) scale(1.05);
+  }
+
+  /* Block — stability: heavier, slower-feeling settle up */
+  .hero-seam-mark .seam-block:hover {
+    transform: translateZ(10px) rotateX(-5deg) rotateY(8deg) scale(1.03);
+  }
+
+  .hero-seam-mark .seam-dot:active,
+  .hero-seam-mark .seam-orbit:active,
+  .hero-seam-mark .seam-square:active,
+  .hero-seam-mark .seam-triangle:active,
+  .hero-seam-mark .seam-block:active {
+    transform: translateZ(4px) scale(0.97);
+    transition-duration: 100ms;
+  }
+
+  /* Sibling dim — the touched piece leads */
+  .hero-seam-mark:has(.seam-dot:hover) .seam-orbit,
+  .hero-seam-mark:has(.seam-dot:hover) .seam-square,
+  .hero-seam-mark:has(.seam-dot:hover) .seam-triangle,
+  .hero-seam-mark:has(.seam-dot:hover) .seam-block,
+  .hero-seam-mark:has(.seam-orbit:hover) .seam-dot,
+  .hero-seam-mark:has(.seam-orbit:hover) .seam-square,
+  .hero-seam-mark:has(.seam-orbit:hover) .seam-triangle,
+  .hero-seam-mark:has(.seam-orbit:hover) .seam-block,
+  .hero-seam-mark:has(.seam-square:hover) .seam-dot,
+  .hero-seam-mark:has(.seam-square:hover) .seam-orbit,
+  .hero-seam-mark:has(.seam-square:hover) .seam-triangle,
+  .hero-seam-mark:has(.seam-square:hover) .seam-block,
+  .hero-seam-mark:has(.seam-triangle:hover) .seam-dot,
+  .hero-seam-mark:has(.seam-triangle:hover) .seam-orbit,
+  .hero-seam-mark:has(.seam-triangle:hover) .seam-square,
+  .hero-seam-mark:has(.seam-triangle:hover) .seam-block,
+  .hero-seam-mark:has(.seam-block:hover) .seam-dot,
+  .hero-seam-mark:has(.seam-block:hover) .seam-orbit,
+  .hero-seam-mark:has(.seam-block:hover) .seam-square,
+  .hero-seam-mark:has(.seam-block:hover) .seam-triangle {
+    opacity: 0.55;
+    transition: opacity 180ms var(--ease), transform 180ms var(--ease-out);
   }
 }
 
@@ -2566,22 +2639,35 @@ a.check-cell:hover .check-cell-title {
 /*
   Field marks = dispersed modular elements.
   Same five-element grammar as the hero seam mark:
+    open     → signal dot (origin)
     contract → square (structure)
     lab      → orbit / circle (living)
     kit      → rounded block (usable package)
-    open     → signal dot (origin)
+
+  Each piece keeps its own 3D personality when the card is engaged.
 */
 .mark-glyph {
   position: relative;
   width: 28px;
   height: 28px;
   flex-shrink: 0;
+  perspective: 120px;
+  transform-style: preserve-3d;
+}
+
+.mark-glyph-core,
+.mark-glyph-ring {
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease),
+    background 180ms var(--ease), opacity 180ms var(--ease);
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .mark-glyph-core {
   position: absolute;
   inset: 9px;
   background: var(--signal);
+  transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
 }
 
 .mark-glyph-ring {
@@ -2589,6 +2675,7 @@ a.check-cell:hover .check-cell-title {
   inset: 2px;
   border: 1px solid var(--signal-dim);
   opacity: 0.9;
+  transform: translateZ(0);
 }
 
 /* Contract = infrastructure square */
@@ -2615,10 +2702,9 @@ a.check-cell:hover .check-cell-title {
 .mark-glyph--lab .mark-glyph-ring {
   border-radius: 50%;
   border-color: rgba(51, 88, 232, 0.4);
-  /* orbit-quarter hint: open arc feel via partial border */
   border-top-color: transparent;
   border-right-color: transparent;
-  transform: rotate(-18deg);
+  transform: rotate(-18deg) translateZ(0);
 }
 
 /* Kit = stability rounded block */
@@ -2634,7 +2720,7 @@ a.check-cell:hover .check-cell-title {
   border-color: rgba(51, 88, 232, 0.4);
 }
 
-/* Open = origin signal dot (the mark that starts the system) */
+/* Open = origin signal dot */
 .mark-glyph--open .mark-glyph-core {
   border-radius: 50%;
   inset: 9px;
@@ -2645,6 +2731,56 @@ a.check-cell:hover .check-cell-title {
 .mark-glyph--open .mark-glyph-ring {
   border-radius: 50%;
   border-color: var(--signal-dim);
+}
+
+/* Per-piece 3D on card engagement — fine pointer only */
+@media (hover: hover) and (pointer: fine) {
+  .field-card:hover .mark-glyph--open .mark-glyph-core,
+  .field-card:focus-visible .mark-glyph--open .mark-glyph-core {
+    transform: translateZ(10px) scale(1.12);
+  }
+
+  .field-card:hover .mark-glyph--open .mark-glyph-ring,
+  .field-card:focus-visible .mark-glyph--open .mark-glyph-ring {
+    transform: translateZ(4px) scale(1.06);
+    border-color: var(--signal-light);
+  }
+
+  .field-card:hover .mark-glyph--contract .mark-glyph-core,
+  .field-card:focus-visible .mark-glyph--contract .mark-glyph-core {
+    transform: translateZ(8px) rotateX(-10deg) scale(1.06);
+  }
+
+  .field-card:hover .mark-glyph--contract .mark-glyph-ring,
+  .field-card:focus-visible .mark-glyph--contract .mark-glyph-ring {
+    transform: translateZ(2px);
+  }
+
+  .field-card:hover .mark-glyph--lab .mark-glyph-core,
+  .field-card:focus-visible .mark-glyph--lab .mark-glyph-core {
+    transform: translateZ(10px) rotateY(-12deg) scale(1.08);
+  }
+
+  .field-card:hover .mark-glyph--lab .mark-glyph-ring,
+  .field-card:focus-visible .mark-glyph--lab .mark-glyph-ring {
+    transform: rotate(-18deg) translateZ(5px) rotateY(-8deg) scale(1.05);
+    border-color: var(--signal-light);
+  }
+
+  .field-card:hover .mark-glyph--kit .mark-glyph-core,
+  .field-card:focus-visible .mark-glyph--kit .mark-glyph-core {
+    transform: translateZ(8px) rotateX(-6deg) rotateY(8deg) scale(1.05);
+  }
+
+  .field-card:hover .mark-glyph--kit .mark-glyph-ring,
+  .field-card:focus-visible .mark-glyph--kit .mark-glyph-ring {
+    transform: translateZ(2px) rotateY(4deg);
+  }
+
+  .field-card:active .mark-glyph-core {
+    transform: translateZ(2px) scale(0.96) !important;
+    transition-duration: 100ms;
+  }
 }
 
 /* Agent prompt block on kit pages */
@@ -2762,7 +2898,8 @@ a.check-cell:hover .check-cell-title {
   .hero-seam-mark .seam-block {
     animation: none !important;
     opacity: 1;
-    transform: none;
+    transform: none !important;
+    transition: none !important;
   }
 
   .field-card-status.is-live,
@@ -2774,6 +2911,17 @@ a.check-cell:hover .check-cell-title {
   .mark-glyph--kit .mark-glyph-core {
     animation: none !important;
     opacity: 1;
+  }
+
+  .mark-glyph-core,
+  .mark-glyph-ring,
+  .field-card:hover .mark-glyph-core,
+  .field-card:hover .mark-glyph-ring,
+  .field-card:focus-visible .mark-glyph-core,
+  .field-card:focus-visible .mark-glyph-ring,
+  .field-card:active .mark-glyph-core {
+    transform: none !important;
+    transition: none !important;
   }
 
   .scroll-progress-fill {
