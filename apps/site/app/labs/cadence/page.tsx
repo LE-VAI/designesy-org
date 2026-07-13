@@ -144,11 +144,16 @@ Rules (exact values, not preferences):
   9. user-select: none on UI chrome, text stays selectable
   10. 16px input floor on mobile
 
-Open tensions (not yet verified on designesy.org):
-  - font-synthesis: none not set — browser may fake weights
-  - text-underline-position: from-font not set
-  - text-decoration-skip-ink: auto not set
-  - No logical properties — direction-ready is blocked
+Open tensions (not yet fully verified on designesy.org):
+  - Block-axis logical properties not yet migrated (margin-block-start/end)
+  - border-inline-start not yet used — decorative borders still physical
+  - inset-inline not yet used — absolute positioning still left/right
+
+Resolved tensions (v0.1.3 CSS fixes applied):
+  - font-synthesis: none now set on :root
+  - text-underline-position: from-font now set on :root
+  - text-decoration-skip-ink: auto now set on :root
+  - Inline-axis logical properties (margin-inline, padding-inline) applied
 
 Output format:
   For each rule, provide a Before/After table:
@@ -329,9 +334,12 @@ export default function CadenceLabPage() {
               { title: 'tabular-nums — 8 instances across the live CSS', status: 'pass' },
               { title: '::selection — styled with var(--signal), not browser default', status: 'pass' },
               { title: 'user-select: none — present on UI chrome', status: 'pass' },
-              { title: 'font-synthesis: none — not yet set (open tension)', status: 'fail' },
-              { title: 'Logical properties — not yet used (open tension)', status: 'fail' },
-              { title: 'text-underline-position: from-font — not yet set (open tension)', status: 'fail' },
+              { title: 'font-synthesis: none — set on :root', status: 'pass' },
+              { title: 'text-underline-position: from-font — set on :root', status: 'pass' },
+              { title: 'text-decoration-skip-ink: auto — set on :root', status: 'pass' },
+              { title: 'Logical inline properties — margin-inline and padding-inline applied', status: 'pass' },
+              { title: 'Block-axis logical properties — not yet migrated (open tension)', status: 'fail' },
+              { title: 'border-inline-start — decorative borders still physical (open tension)', status: 'fail' },
               {
                 title: 'Field check with Kit One · Design Review',
                 status: 'pass',
