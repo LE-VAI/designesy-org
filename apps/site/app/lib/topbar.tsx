@@ -62,7 +62,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
   return (
     <header
-      className={`topbar${isScrolled ? ' scrolled' : ''}`}
+      className={`topbar${isScrolled ? ' scrolled pane-sheet pane-refract' : ''}`}
       id="topbar"
     >
       <a className="skip-link" href="#main-content">
