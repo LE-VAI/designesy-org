@@ -279,7 +279,7 @@ export default function DocsPage() {
                   <Toggle
                     className="layer-item"
                     key={layer.num}
-                    data-cuelume-hover="whisper"
+                    data-cuelume-hover="bloom"
                     data-cuelume-press
                     data-cuelume-release
                   >
