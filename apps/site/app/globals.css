@@ -627,7 +627,7 @@ p {
 
 .hero-body {
   max-width: 520px;
-  font-size: 0.95rem;
+  font-size: clamp(0.875rem, 1.8vw, 0.95rem);
   color: var(--muted);
   line-height: 1.6;
   margin-bottom: 2.25rem;
@@ -1289,6 +1289,7 @@ p {
 
 .definition:hover {
   background: var(--surface-raised);
+  border-color: color-mix(in srgb, var(--signal-dim) 60%, var(--line));
 }
 
 .definition p {
@@ -3048,6 +3049,44 @@ a.check-cell:hover .check-cell-title {
   outline: 2px solid var(--signal-light);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Card focus-visible — match hover state so keyboard focus is not second-class */
+a.field-card:focus-visible {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+a.surface-card:focus-visible {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+a.surface-card:focus-visible .surface-card-arrow {
+  color: var(--ink);
+}
+
+a.lab-card:focus-visible {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+a.lab-card:focus-visible .lab-card-arrow {
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.field-card:focus-visible {
+    transform: translateY(-2px);
+  }
+
+  a.surface-card:focus-visible {
+    transform: translateY(-1px);
+  }
+
+  a.lab-card:focus-visible {
+    transform: translateY(-2px);
+  }
 }
 
 /* Skip link — first focusable control in shared chrome */
