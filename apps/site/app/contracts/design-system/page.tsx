@@ -175,7 +175,7 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/contracts/design-system.skill.md"
+              href="/contracts/skill"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -185,7 +185,7 @@ export default function DesignSystemContractPage() {
               <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Agent skill</span>
-                <span className="row-meta">/contracts/design-system.skill.md — SKILL.md format for AI coding agents</span>
+                <span className="row-meta">/contracts/skill — SKILL.md format for AI coding agents</span>
               </span>
             </Link>
             <Link
