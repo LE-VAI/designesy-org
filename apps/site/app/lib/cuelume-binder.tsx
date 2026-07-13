@@ -70,6 +70,23 @@ export function CuelumeBinder() {
     let middleDown = false;
     let activeTouchPress: Element | null = null;
     let lastTouchLikeAt = -Infinity;
+    let audioUnlocked = false;
+
+    /**
+     * Mobile audio unlock: on the very first pointerdown, call play()
+     * to force Cuelume's internal AudioContext.resume() within the
+     * user gesture. Without this, the first tap's cue fires resume()
+     * but the recipe renders too late (after the gesture window closes
+     * on some mobile browsers). This silent unlock ensures the context
+     * is already running by the time real cues fire.
+     */
+    const unlockAudio = () => {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      // play() calls context.resume() internally; the returned promise
+      // resolves async, but the resume() call itself is within the gesture.
+      play('tick');
+    };
 
     const isSyntheticMouseAfterTouch = (e: PointerEvent | MouseEvent) => {
       const pointerType = 'pointerType' in e ? e.pointerType : 'mouse';
@@ -96,6 +113,7 @@ export function CuelumeBinder() {
     };
 
     const onPointerDownCapture = (e: PointerEvent) => {
+      unlockAudio();
       if (guardButton(e)) return;
       markTouchLike(e);
 
