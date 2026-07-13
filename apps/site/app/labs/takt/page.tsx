@@ -100,7 +100,7 @@ const PROVENANCE = [
   'Stagger ~100ms — Krehel better-ui principle 5',
   'No transition: all — Krehel better-ui principle 11',
   'Spare will-change — Krehel better-ui principle 12',
-  'Cross-referenced against Designesy design system contract v0.1.1',
+  'Cross-referenced against Designesy design system contract v0.1.1; adopted into v0.1.2',
 ];
 
 const ANTI = [
@@ -163,8 +163,8 @@ Output format:
   Express all fixes in the target project's styling system.
 
 Provenance: rules compiled from external design intelligence
-(Amicro, Jakub Krehel /better-ui) and cross-referenced against
-the Designesy design system contract v0.1.1.
+(Amicro, Jakub Krehel /better-ui), cross-referenced against
+contract v0.1.1, and adopted into design system contract v0.1.2.
 
 Primary lab page: https://www.designesy.org/labs/takt
 Design system contract: https://www.designesy.org/contracts/design-system
@@ -203,7 +203,7 @@ export default function TaktLabPage() {
             <span className="lab-meta-item">
               Contract ·{' '}
               <Link href="/contracts/design-system" data-cuelume-hover="tick">
-                v0.1.1
+                v0.1.2
               </Link>
             </span>
             <span className="lab-meta-item">
@@ -386,7 +386,7 @@ export default function TaktLabPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.1.1 · tokens, interaction, verification</span>
+                <span className="row-meta">v0.1.2 · tokens, interaction, verification</span>
               </span>
             </Link>
             <Link
@@ -423,8 +423,8 @@ export default function TaktLabPage() {
         <div className="status-note">
           Lab Two · Takt studies interface feel as portable rules. Rules compiled
           from external design intelligence (Amicro, Jakub Krehel /better-ui) and
-          cross-referenced against the Designesy design system contract v0.1.1.
-          Field check pending — review with Kit One once ready.
+          adopted into design system contract v0.1.2. Field check lives at
+          /review/takt.
         </div>
       </main>
 

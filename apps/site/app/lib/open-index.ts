@@ -9,14 +9,14 @@
 
 export const openIndex = {
   id: 'designesy.open',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'public' as const,
   name: 'Open design intelligence',
   lede: 'Designesy publishes portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, and remix.',
   path: '/open',
   public_url: 'https://www.designesy.org/open',
   machine_url: 'https://www.designesy.org/open.json',
-  updated: '2026-07-12',
+  updated: '2026-07-13',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
     'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
@@ -165,7 +165,7 @@ export const openIndex = {
       title: 'Takt',
       version: '0.1',
       status: 'live',
-      lede: 'Interface feel — concentric radii, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and cross-referenced against contract v0.1.1.',
+      lede: 'Interface feel — concentric radii, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and adopted into contract v0.1.2.',
       human_url: 'https://www.designesy.org/labs/takt',
       machine_url: null,
       path: '/labs/takt',

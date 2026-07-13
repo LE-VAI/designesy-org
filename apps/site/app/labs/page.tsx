@@ -122,7 +122,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Where lab behavior is measured — Poise rules adopted in v0.1.1
+                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2
                 </span>
               </span>
             </Link>
@@ -143,7 +143,7 @@ export default function LabsPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/review/takt"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -152,9 +152,25 @@ export default function LabsPage() {
             >
               <span className="row-index">03</span>
               <span className="row-body">
+                <span className="row-title">Field check · Takt</span>
+                <span className="row-meta">
+                  Kit One review of Lab Two · pass with notes
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  designesy.org checked against contract v0.1.1
+                  designesy.org checked against contract v0.1.2
                 </span>
               </span>
             </Link>
@@ -166,7 +182,7 @@ export default function LabsPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">04</span>
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
