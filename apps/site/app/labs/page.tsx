@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
-    'Designesy Labs — experiments that compile into contracts. Lab One is Poise: restrained interaction made inspectable.',
+    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel).',
   path: '/labs',
   ogDescription:
-    'Experiments that compile into contracts. Lab One · Poise is live.',
+    'Experiments that compile into contracts. Lab One · Poise and Lab Two · Takt are live.',
   twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
 });
 
@@ -83,11 +83,28 @@ export default function LabsPage() {
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
-          <p className="surface-note" style={{ marginTop: '1.25rem' }}>
-            One live lab is intentional. The lane stays empty until the next
-            experiment earns a thesis, demo, and portable rules — not a filler
-            card.
-          </p>
+          <Link
+            href="/labs/takt"
+            className="lab-card"
+            data-cuelume-hover="tick"
+            data-cuelume-press
+            data-cuelume-release
+          >
+            <div className="lab-card-top">
+              <span className="status-badge status-badge--lab">Lab Two</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Takt</h3>
+            <p className="lab-card-lede">
+              How an interface feels under your hands.
+            </p>
+            <p className="lab-card-desc">
+              Concentric radii, press scale, image outlines, hit areas, stagger
+              rhythm — portable rules with exact values, compiled from external
+              design intelligence and verified on designesy.org.
+            </p>
+            <span className="lab-card-arrow">Open lab →</span>
+          </Link>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -141,6 +158,22 @@ export default function LabsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/kits/design-review"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Use Kit One · Design Review</span>
+                <span className="row-meta">
+                  Eight-dimension inspection method for any artifact
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
@@ -186,9 +219,9 @@ export default function LabsPage() {
 
         <div className="status-note">
           Labs ship as named experiments with thesis, review status, and
-          promotion readiness. Poise is Lab One. Future labs follow the same
-          anatomy and the site drift rule: every public UI change cites a
-          contract token or an open tension.
+          promotion readiness. Poise is Lab One. Takt is Lab Two. Future labs
+          follow the same anatomy and the site drift rule: every public UI
+          change cites a contract token or an open tension.
         </div>
       </main>
 
