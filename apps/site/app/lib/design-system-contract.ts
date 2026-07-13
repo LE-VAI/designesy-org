@@ -1,15 +1,16 @@
 /**
- * Designesy design system contract v0.1.3 — machine + human source.
+ * Designesy design system contract v0.1.4 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
  * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
  * v0.1.3 adopts Lab Three · Cadence typography rules (2026-07-13).
+ * v0.1.4 adopts duration scale + verification from Tier 1 ingest (2026-07-13).
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.1.3',
+  version: '0.1.4',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
@@ -25,6 +26,7 @@ export const designSystemContract = {
     interaction: 'Poise-adopted contact rules',
     takt: 'Takt-adopted interface-feel rules',
     cadence: 'Cadence-adopted typography rules',
+    duration: 'duration scale cross-referenced against transitions.dev',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -69,6 +71,26 @@ export const designSystemContract = {
         url: 'https://github.com/jakubkrehel/skills',
         role: '18 typography principles — source for font smoothing, scale, leading, tracking, measure, wrapping, numbers, selection',
         license: 'MIT',
+      },
+      {
+        name: 'agent-skills',
+        author: 'Addy Osmani (@addyosmani)',
+        url: 'https://github.com/addyosmani/agent-skills',
+        role: 'Anti-rationalization table pattern + verification checklist methodology — informed Design Review kit rationalization section',
+        license: 'MIT',
+      },
+      {
+        name: 'Taste Skill',
+        author: 'Leon (@Leonxlnx)',
+        url: 'https://github.com/Leonxlnx/taste-skill',
+        role: 'Pre-flight checklist methodology — gap audit against our 8-dimension review; Core Web Vitals and button contrast checks adopted',
+        license: 'MIT',
+      },
+      {
+        name: 'transitions.dev',
+        author: 'Jakub Antalik (@Jakubantalik)',
+        url: 'https://transitions.dev',
+        role: 'Motion token library — duration scale cross-referenced; press scale values validated (0.96/0.97 match); easing curves confirmed compatible',
       },
     ],
     adoption: {
@@ -180,6 +202,10 @@ export const designSystemContract = {
   },
   motion: {
     duration: { token: '--duration', value: '0.6s', role: 'Primary entrance duration' },
+    duration_quick: { token: '--duration-quick', value: '150ms', role: 'Close, swap, tooltip (transitions.dev cross-ref)' },
+    duration_fast: { token: '--duration-fast', value: '250ms', role: 'Open, hover transition, icon swap' },
+    duration_medium: { token: '--duration-medium', value: '350ms', role: 'Panel close, toast' },
+    duration_slow: { token: '--duration-slow', value: '400ms', role: 'Panel open, skeleton reveal' },
     ease: {
       token: '--ease',
       value: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
@@ -379,6 +405,9 @@ export const designSystemContract = {
     'text-wrap: balance + pretty both present in live CSS',
     'tabular-nums: 8 instances across the live CSS',
     '::selection styled with var(--signal) — not browser default',
+    'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1 (Taste Skill pre-flight)',
+    'Primary button text passes WCAG AA 4.5:1 contrast against --signal fill (Taste Skill pre-flight)',
+    'Duration tokens --duration-quick through --duration-slow present in :root (transitions.dev cross-ref)',
   ],
   open_tensions: [
     'Light theme is not contracted — dark technical foundation is provisional',
@@ -429,6 +458,17 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/labs/cadence',
         'https://www.designesy.org/review/cadence',
+      ],
+    },
+    {
+      version: '0.1.4',
+      date: '2026-07-13',
+      summary:
+        'Adopted duration scale (transitions.dev cross-ref), Core Web Vitals + button contrast verification (Taste Skill gap audit), anti-rationalization methodology (agent-skills pattern). Duration tokens --duration-quick (150ms) through --duration-slow (400ms) added to :root. Three external ingests added to provenance: agent-skills (Osmani), Taste Skill (Leon), transitions.dev (Antalik). No lab source — this is a direct contract refinement from Tier 1 ingest adoption.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/contracts/skill',
+        'D:/1ATLAS/outputs/docs/TIER1_INGEST_ADOPTION_2026-07-13.md',
       ],
     },
   ],
