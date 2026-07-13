@@ -139,7 +139,7 @@ export default function KitsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Portable values and verification · v0.1.1
+                  Portable values and verification · v0.1.2
                 </span>
               </span>
             </Link>
@@ -156,6 +156,22 @@ export default function KitsPage() {
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
                   Source lab · rules adopted into contract v0.1.1
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/takt"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Lab Two · Takt</span>
+                <span className="row-meta">
+                  Source lab · rules adopted into contract v0.1.2
                 </span>
               </span>
             </Link>

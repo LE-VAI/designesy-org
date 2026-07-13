@@ -121,6 +121,27 @@ export default function ReviewPage() {
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
             <Link
+              href="/review/takt"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <div className="lab-card-top">
+                <span className="status-badge status-badge--lab">Lab Two</span>
+                <span className="lab-card-status">Pass with notes</span>
+              </div>
+              <h3 className="lab-card-title">Takt</h3>
+              <p className="lab-card-lede">
+                Kit One output format on the interface-feel lab.
+              </p>
+              <p className="lab-card-desc">
+                Radii, press scale, outlines, hit areas, stagger — six takt rules
+                adopted into contract v0.1.2.
+              </p>
+              <span className="lab-card-arrow">Open field check →</span>
+            </Link>
+            <Link
               href="/review/designesy-org"
               className="lab-card"
               data-cuelume-hover="tick"
@@ -133,11 +154,11 @@ export default function ReviewPage() {
               </div>
               <h3 className="lab-card-title">designesy.org</h3>
               <p className="lab-card-lede">
-                Public review against design system contract v0.1.1.
+                Public review against design system contract v0.1.2.
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including
-                Lab One, Poise.
+                Poise and Takt.
               </p>
               <span className="lab-card-arrow">Open review →</span>
             </Link>
@@ -207,8 +228,8 @@ export default function ReviewPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.1.1</span>
-                <span className="row-meta">Human home and machine export</span>
+                <span className="row-title">Design system contract v0.1.2</span>
+                <span className="row-meta">Human home and machine export · Poise + Takt</span>
               </span>
             </Link>
             <Link
@@ -223,7 +244,23 @@ export default function ReviewPage() {
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Interaction behaviors under review for adoption
+                  Restrained interaction · adopted in v0.1.1
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/takt"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Lab Two · Takt</span>
+                <span className="row-meta">
+                  Interface feel · adopted in v0.1.2
                 </span>
               </span>
             </Link>
@@ -235,7 +272,7 @@ export default function ReviewPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">03</span>
+              <span className="row-index">04</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -248,8 +285,8 @@ export default function ReviewPage() {
 
         <div className="status-note">
           Review language and quality discipline for public artifacts. Published
-          reviews live under /review. The first is the public surface review of
-          designesy.org itself — judged against contract v0.1.1, not against taste.
+          reviews live under /review. Field checks for Poise, Takt, the public
+          surface, and keyboard paths judge against the live contract — not taste.
         </div>
       </main>
 

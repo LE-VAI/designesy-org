@@ -52,7 +52,7 @@ const SURFACES = [
     href: '/labs',
     label: 'Labs',
     desc: 'Experiments that compile into contracts',
-    meta: 'Poise live',
+    meta: 'Poise + Takt live',
   },
   {
     href: '/kits',
@@ -64,13 +64,13 @@ const SURFACES = [
     href: '/review',
     label: 'Review',
     desc: 'Eight dimensions and field checks',
-    meta: '2 field checks',
+    meta: '4 field checks',
   },
   {
     href: '/contracts',
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
-    meta: 'v0.1.1 public',
+    meta: 'v0.1.2 public',
   },
 ];
 
@@ -88,10 +88,10 @@ const FIELD = [
   {
     href: '/contracts/design-system',
     badge: 'Contract',
-    status: 'v0.1.1',
+    status: 'v0.1.2',
     title: 'Design system',
     lede: 'The rules behind this site — portable and versioned.',
-    desc: 'Tokens, motion, components, interaction rules. Human overview plus a machine export agents can cite directly.',
+    desc: 'Tokens, motion, components, Poise + Takt interaction rules. Human overview plus a machine export agents can cite directly.',
     arrow: 'Read the contract →',
     kind: 'contract' as const,
   },
@@ -102,6 +102,16 @@ const FIELD = [
     title: 'Poise',
     lede: 'How this site responds when you touch it.',
     desc: 'Wordmark breath, press settle, sound preference, reduced motion. Lab rules that compiled into the contract.',
+    arrow: 'See the lab →',
+    kind: 'lab' as const,
+  },
+  {
+    href: '/labs/takt',
+    badge: 'Lab Two',
+    status: 'Live',
+    title: 'Takt',
+    lede: 'How an interface feels under your hands.',
+    desc: 'Concentric radii, press scale, image outlines, hit areas, stagger rhythm — rules adopted into contract v0.1.2.',
     arrow: 'See the lab →',
     kind: 'lab' as const,
   },
@@ -292,7 +302,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="field-title">
           <p className="section-eyebrow">Now live</p>
           <h2 className="section-title" id="field-title">
-            Open stack, contract, lab, and kit.
+            Open stack, contract, labs, and kit.
           </h2>
           <div className="field-grid">
             {FIELD.map((item) => (
@@ -388,24 +398,28 @@ export default function HomePage() {
                 meta: 'Human index /open and machine feed /open.json',
               },
               {
-                title: 'Design system contract v0.1.1',
-                meta: 'Human home, full tables, machine export · Poise adopted',
+                title: 'Design system contract v0.1.2',
+                meta: 'Human home, full tables, machine export · Poise + Takt adopted',
               },
               {
                 title: 'Lab One · Poise',
                 meta: 'Restrained interaction — rules adopted into v0.1.1',
               },
               {
+                title: 'Lab Two · Takt',
+                meta: 'Interface feel — rules adopted into v0.1.2',
+              },
+              {
                 title: 'Use Kit One · Design Review',
                 meta: 'Portable review package · human + machine export',
               },
               {
-                title: 'Field check · Poise',
-                meta: 'Lab One reviewed with Kit One · pass with notes',
+                title: 'Field checks · Poise and Takt',
+                meta: 'Labs reviewed with Kit One · pass with notes',
               },
               {
-                title: 'Keyboard path · Poise',
-                meta: 'Published tab order and focus-visible proof for Lab One',
+                title: 'Keyboard path',
+                meta: 'Site-wide and Lab One tab order / focus-visible proof',
               },
               {
                 title: 'Public surface review',

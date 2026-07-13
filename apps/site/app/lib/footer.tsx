@@ -7,9 +7,13 @@ const SURFACE_LINKS = [
   { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
   { href: '/contracts', label: 'Contracts' },
+  { href: '/labs/takt', label: 'Takt lab' },
   { href: '/kits/design-review', label: 'Design Review' },
   { href: '/review/poise', label: 'Poise review' },
+  { href: '/review/takt', label: 'Takt review' },
+  { href: '/review/designesy-org', label: 'Site review' },
   { href: '/contracts/design-system', label: 'Design system' },
+  { href: '/open/handoff', label: 'Open handoff' },
   { href: '/privacy', label: 'Privacy' },
 ];
 
@@ -18,7 +22,8 @@ const MACHINE_LINKS = [
   { href: '/llms.txt', label: 'llms.txt' },
   { href: '/llms-full.txt', label: 'llms-full.txt' },
   { href: '/.well-known/agent.json', label: 'agent.json' },
-  { href: '/open/handoff', label: 'Open handoff' },
+  { href: '/contracts/design-system.json', label: 'design-system.json' },
+  { href: '/kits/design-review.json', label: 'design-review.json' },
   { href: '/review/keyboard', label: 'Keyboard' },
 ];
 

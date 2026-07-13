@@ -11,6 +11,6 @@ export default function OpenGraphImage() {
     lede: 'A workbench where a thesis becomes a live artifact, review checklist, and portable rules.',
     path: 'designesy.org/labs',
     kind: 'lab',
-    badge: 'Poise live',
+    badge: 'Poise + Takt',
   });
 }
