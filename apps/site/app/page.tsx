@@ -175,7 +175,12 @@ export default function HomePage() {
             </div>
           </div>
           <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
-          <h1 className="wordmark-hero hero-title fade-up fade-up-delay-1" id="hero-title">
+          <h1
+            className="wordmark-hero hero-title fade-up fade-up-delay-1"
+            id="hero-title"
+            data-cuelume-hover="sparkle"
+            data-cuelume-press="sparkle"
+          >
             <span className="wordmark-shimmer">designesy</span>
             <span className="dot">.</span>
           </h1>
@@ -190,14 +195,16 @@ export default function HomePage() {
             <Link
               className="button primary"
               href="/open"
+              data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
+              data-cuelume-release="success"
             >
               Open design intelligence
             </Link>
             <Link
               className="button ghost"
               href="/kits/design-review"
+              data-cuelume-hover="tick"
               data-cuelume-press
               data-cuelume-release
             >
@@ -293,9 +300,19 @@ export default function HomePage() {
                 className={`field-card field-card--${item.kind}`}
                 href={item.href}
                 key={item.href}
-                data-cuelume-hover="tick"
+                data-cuelume-hover={
+                  item.kind === 'open'
+                    ? 'sparkle'
+                    : item.kind === 'lab'
+                      ? 'bloom'
+                      : item.kind === 'kit'
+                        ? 'chime'
+                        : 'tick'
+                }
                 data-cuelume-press
-                data-cuelume-release
+                data-cuelume-release={
+                  item.kind === 'open' || item.kind === 'kit' ? 'success' : ''
+                }
               >
                 <div className="field-card-top">
                   <span className={`status-badge status-badge--${item.kind}`}>
