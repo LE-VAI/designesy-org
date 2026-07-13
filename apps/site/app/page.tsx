@@ -176,7 +176,8 @@ export default function HomePage() {
           </div>
           <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
           <h1 className="wordmark-hero hero-title fade-up fade-up-delay-1" id="hero-title">
-            designesy<span className="dot">.</span>
+            <span className="wordmark-shimmer">designesy</span>
+            <span className="dot">.</span>
           </h1>
           <p className="hero-lede fade-up fade-up-delay-2">
             Design intelligence infrastructure for a humane creative civilization.
