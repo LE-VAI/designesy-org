@@ -340,9 +340,16 @@ p {
   outline-offset: 2px;
 }
 
-/* --- Sound toggle --- */
+/* --- Sense toggles (sound + haptics) --- */
 
-.sound-toggle {
+.sense-toggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.sense-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -358,24 +365,29 @@ p {
   padding: 0;
 }
 
-.sound-toggle:active {
+.sense-toggle:active {
   transform: scale(0.95);
 }
 
-.sound-toggle:hover {
+.sense-toggle:hover {
   color: var(--ink);
   border-color: var(--line-strong);
   background: var(--surface-hover);
 }
 
-.sound-toggle[aria-pressed="true"] {
+.sense-toggle[aria-pressed="true"] {
   color: var(--signal-light);
   border-color: var(--signal-dim);
 }
 
-.sound-toggle-icon {
+.sense-toggle-icon {
   font-size: 0.95rem;
   line-height: 1;
+}
+
+.haptics-toggle .sense-toggle-icon {
+  font-size: 0.82rem;
+  letter-spacing: 0;
 }
 
 /* --- Hero --- */
@@ -2048,7 +2060,9 @@ a.check-cell:hover .check-cell-title {
     font-size: 1rem;
   }
 
-  .sound-toggle {
+  .sense-toggles,
+  .sound-toggle,
+  .haptics-toggle {
     flex: 0 0 auto;
   }
 

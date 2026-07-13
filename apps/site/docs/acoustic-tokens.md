@@ -61,3 +61,4 @@ This document locks the Cuelume sound palette into Designesy doctrine. No sound 
 - Visual token system: `DESIGN.md` §7
 - Design intelligence gate (Interaction Design section): `DESIGN_INTELLIGENCE_GATE.md` (hardened 2026-07-11)
 - v0.1.1: brand sparkle, invite chime, complete success, contact droplet variety pass
+- Haptic sibling: `docs/haptic-tokens.md` (web-haptics, press/tap only, default on when supported)
