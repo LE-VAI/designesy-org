@@ -117,29 +117,38 @@ p {
 }
 
 /*
-  Quiet text shimmer (jh3yy / AliGrids technique).
-  background-clip + wide gradient sweep — brand tokens only,
-  slow enough to read as life, not chrome. Dot stays signal breath.
+  Hero text shimmer (jh3yy / AliGrids technique, polished).
+  background-clip + multi-stop signal sweep — brand blue family only,
+  dual highlight for depth, seamless linear loop. Dot stays signal breath.
 */
 .wordmark-hero .wordmark-shimmer {
   background-image: linear-gradient(
-    105deg,
-    var(--ink) 0%,
-    var(--ink) 38%,
-    var(--signal-light) 48%,
-    #7a93f0 52%,
-    var(--signal-light) 56%,
-    var(--ink) 66%,
-    var(--ink) 100%
+    100deg,
+    #f4f6ff 0%,
+    #e8ecff 12%,
+    var(--ink) 22%,
+    var(--ink) 34%,
+    #5b78f0 42%,
+    #9eb0ff 46.5%,
+    #dce4ff 49%,
+    #ffffff 50.5%,
+    #dce4ff 52%,
+    #9eb0ff 54.5%,
+    #5b78f0 58%,
+    var(--signal) 64%,
+    var(--ink) 72%,
+    var(--ink) 84%,
+    #e8ecff 92%,
+    #f4f6ff 100%
   );
-  background-size: 280% 100%;
-  background-position: 100% 0;
+  background-size: 320% 100%;
+  background-position: 100% 50%;
   background-repeat: no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: textShimmer 5.6s linear infinite;
+  animation: textShimmer 4.2s linear infinite;
 }
 
 .wordmark-hero .dot {
@@ -156,26 +165,28 @@ p {
   background-image: linear-gradient(
     105deg,
     var(--ink) 0%,
-    var(--ink) 40%,
-    var(--signal-light) 50%,
-    var(--ink) 60%,
+    var(--ink) 38%,
+    var(--signal-light) 48%,
+    #a8b8ff 52%,
+    var(--signal-light) 56%,
+    var(--ink) 66%,
     var(--ink) 100%
   );
-  background-size: 260% 100%;
+  background-size: 280% 100%;
   background-position: 100% 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: textShimmer 6.4s linear infinite;
+  animation: textShimmer 6s linear infinite;
 }
 
 @keyframes textShimmer {
   0% {
-    background-position: 100% 0;
+    background-position: 100% 50%;
   }
   100% {
-    background-position: 0% 0;
+    background-position: 0% 50%;
   }
 }
 
