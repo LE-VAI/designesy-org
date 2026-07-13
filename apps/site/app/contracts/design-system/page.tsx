@@ -175,7 +175,7 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/open"
+              href="/contracts/design-system.skill.md"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
@@ -183,6 +183,20 @@ export default function DesignSystemContractPage() {
               data-cuelume-release
             >
               <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Agent skill</span>
+                <span className="row-meta">/contracts/design-system.skill.md — SKILL.md format for AI coding agents</span>
+              </span>
+            </Link>
+            <Link
+              href="/open"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
               <span className="row-body">
                 <span className="row-title">Open design intelligence</span>
                 <span className="row-meta">
@@ -198,7 +212,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">04</span>
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
@@ -214,7 +228,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">05</span>
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Lab Two · Takt</span>
                 <span className="row-meta">
@@ -230,7 +244,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">06</span>
+              <span className="row-index">07</span>
               <span className="row-body">
                 <span className="row-title">Lab Three · Cadence</span>
                 <span className="row-meta">
@@ -246,7 +260,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">07</span>
+              <span className="row-index">08</span>
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
                 <span className="row-meta">
@@ -262,7 +276,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">08</span>
+              <span className="row-index">09</span>
               <span className="row-body">
                 <span className="row-title">Field check · Takt</span>
                 <span className="row-meta">
@@ -278,7 +292,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">09</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Field check · Cadence</span>
                 <span className="row-meta">
@@ -294,7 +308,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">10</span>
+              <span className="row-index">11</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
