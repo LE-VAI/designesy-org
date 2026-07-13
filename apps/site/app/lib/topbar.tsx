@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
 
 const NAV_ROUTES = [
@@ -20,8 +21,9 @@ function isActiveRoute(pathname: string, href: string) {
 }
 
 /**
- * Shared topbar — wordmark, primary routes, sound, scroll progress.
+ * Shared topbar — wordmark, primary routes, sense toggles, scroll progress.
  * Mobile: single-row sticky chrome; nav scrolls horizontally instead of wrapping.
+ * Haptics toggle only appears when Vibration API is available.
  * Active route is marked with aria-current and a quiet signal underline.
  */
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
@@ -93,7 +95,10 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
               );
             })}
           </nav>
-          <SoundToggle />
+          <div className="sense-toggles" role="group" aria-label="Sensory feedback">
+            <SoundToggle />
+            <HapticsToggle />
+          </div>
         </div>
       </div>
       <div

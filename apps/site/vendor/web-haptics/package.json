@@ -1,0 +1,56 @@
+{
+  "name": "web-haptics",
+  "version": "0.0.6",
+  "description": "Haptic feedback for the mobile web.",
+  "homepage": "https://haptics.lochie.me",
+  "sideEffects": false,
+  "author": "Lochie Axon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lochie/web-haptics.git",
+    "directory": "packages/web-haptics"
+  },
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    }
+  },
+  "keywords": [
+    "haptics",
+    "vibration",
+    "feedback",
+    "web",
+    "mobile",
+    "react",
+    "typescript"
+  ],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.mjs",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.mts",
+    "LICENSE",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { bind, play } from 'cuelume';
+import { triggerHapticForCue, warmHaptics } from './haptics-engine';
 
 type CueName =
   | 'chime'
@@ -43,6 +44,11 @@ function isFinePointerMedia() {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+function playSense(cue: CueName, withHaptic = true) {
+  play(cue);
+  if (withHaptic) triggerHapticForCue(cue);
+}
+
 /**
  * Mounts once in the root layout. Calls bind() on the document
  * to delegate all data-cuelume-* attributes. Idempotent —
@@ -54,11 +60,13 @@ function isFinePointerMedia() {
  * 3. Middle-click / auto-scroll can spam hover cues.
  * 4. Post-touch synthetic mouse must not double-fire (hybrid devices).
  *
- * AudioContext unlock: first real play() during a user gesture resumes
- * the shared engine (press, tap-hover, or sound toggle).
+ * Haptics (web-haptics): paired with press / tap / release only — never
+ * fine-pointer hover. Preference and support live in haptics-engine.
  */
 export function CuelumeBinder() {
   useEffect(() => {
+    warmHaptics();
+
     let middleDown = false;
     let activeTouchPress: Element | null = null;
     let lastTouchLikeAt = -Infinity;
@@ -91,7 +99,6 @@ export function CuelumeBinder() {
       if (guardButton(e)) return;
       markTouchLike(e);
 
-      // Block Cuelume (and further handlers) for compatibility mouse after touch.
       if (isSyntheticMouseAfterTouch(e)) {
         e.stopImmediatePropagation();
         return;
@@ -99,14 +106,24 @@ export function CuelumeBinder() {
 
       if (!(e.target instanceof Element)) return;
 
-      // Desktop fine mouse: Cuelume owns press/release.
-      if (e.pointerType === 'mouse' && isFinePointerMedia()) return;
+      // Desktop fine mouse: Cuelume owns press sound; add light haptic only
+      // if the device still supports vibration (rare hybrids).
+      if (e.pointerType === 'mouse' && isFinePointerMedia()) {
+        const pressEl = e.target.closest('[data-cuelume-press]');
+        if (pressEl && document.contains(pressEl)) {
+          const cue = resolveCue(pressEl, 'data-cuelume-press', 'press');
+          // Sound via Cuelume mouse path; haptic only (no second sound).
+          triggerHapticForCue(cue);
+        }
+        return;
+      }
 
       const pressEl = e.target.closest('[data-cuelume-press]');
       if (!pressEl || !document.contains(pressEl)) return;
 
       activeTouchPress = pressEl;
-      play(resolveCue(pressEl, 'data-cuelume-press', 'press'));
+      const cue = resolveCue(pressEl, 'data-cuelume-press', 'press');
+      playSense(cue, true);
     };
 
     const onPointerUpCapture = (e: PointerEvent) => {
@@ -118,20 +135,27 @@ export function CuelumeBinder() {
         return;
       }
 
-      const pressHost = activeTouchPress;
-      if (!pressHost) return;
-
-      // Fine mouse release is Cuelume's job; clear any stale host.
+      // Fine mouse release: Cuelume plays sound; pair haptic for success/release.
       if (e.pointerType === 'mouse' && isFinePointerMedia()) {
+        if (!(e.target instanceof Element)) return;
+        const releaseEl = e.target.closest('[data-cuelume-release]');
+        if (releaseEl && document.contains(releaseEl)) {
+          const cue = resolveCue(releaseEl, 'data-cuelume-release', 'release');
+          triggerHapticForCue(cue);
+        }
         activeTouchPress = null;
         return;
       }
+
+      const pressHost = activeTouchPress;
+      if (!pressHost) return;
 
       activeTouchPress = null;
       if (!document.contains(pressHost)) return;
 
       if (pressHost.hasAttribute('data-cuelume-release')) {
-        play(resolveCue(pressHost, 'data-cuelume-release', 'release'));
+        const cue = resolveCue(pressHost, 'data-cuelume-release', 'release');
+        playSense(cue, true);
       }
     };
 
@@ -147,9 +171,8 @@ export function CuelumeBinder() {
     };
 
     /**
-     * Coarse-pointer tap feedback for hover-only targets (nav, footer).
-     * Fine-pointer keeps Cuelume's pointerenter path only.
-     * Skip if the target already has press (handled on pointerdown).
+     * Coarse-pointer tap feedback for hover-only targets (nav, brand, footer).
+     * Fine-pointer keeps Cuelume's pointerenter path only (sound, no haptic).
      */
     const onClickCapture = (e: MouseEvent) => {
       if (typeof e.button === 'number' && e.button !== 0) return;
@@ -160,11 +183,10 @@ export function CuelumeBinder() {
       const hoverEl = e.target.closest('[data-cuelume-hover]');
       if (!hoverEl || !document.contains(hoverEl)) return;
 
-      play(resolveCue(hoverEl, 'data-cuelume-hover', 'tick'));
+      const cue = resolveCue(hoverEl, 'data-cuelume-hover', 'tick');
+      playSense(cue, true);
     };
 
-    // Register guards/extensions BEFORE bind() so capture-phase order is
-    // our listeners first, then Cuelume's.
     document.addEventListener('pointerdown', onPointerDownCapture, true);
     document.addEventListener('pointerup', onPointerUpCapture, true);
     document.addEventListener('pointercancel', onPointerCancel, true);
