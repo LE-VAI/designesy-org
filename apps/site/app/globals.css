@@ -245,19 +245,11 @@ p {
 }
 
 .topbar.scrolled {
-  /* Glass lives on .pane-backdrop child; shell stays transparent */
-  background: transparent;
-  border-bottom-color: var(--pane-edge);
-  box-shadow: var(--pane-inset);
-}
-
-.topbar.scrolled > .pane-backdrop {
-  inset: 0;
-}
-
-.topbar.scrolled > :not(.pane-backdrop) {
-  position: relative;
-  z-index: 1;
+  /* Restrained frost chrome — true glass lives on Lab PaneSurface */
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom-color: var(--line);
 }
 
 .topbar-inner {
@@ -3209,19 +3201,15 @@ a.check-cell:hover .check-cell-title {
    result) — the path that actually produces geometric rim bend in Chromium.
    ========================================================================== */
 
-.pane-filter-root {
-  /* Keep in tree so url(#pane-*) resolves. Off-screen, not visibility:hidden. */
-  position: fixed;
-  left: 0;
-  top: 0;
+.pane-local-filter {
+  position: absolute;
   width: 0;
   height: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: -1;
 }
 
-/* Shell */
+/* Shell — transparent; glass is the backdrop child */
 .pane-surface,
 .pane-sheet,
 .pane-card,
@@ -3232,31 +3220,24 @@ a.check-cell:hover .check-cell-title {
   border: 1px solid var(--pane-edge);
   box-shadow: var(--pane-inset);
   background: transparent;
-}
-
-.pane-sheet {
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  border-radius: 0;
+  overflow: hidden;
 }
 
 .pane-card {
   border-radius: 14px;
-  overflow: hidden;
 }
 
 .pane-chip {
   border-radius: 999px;
   border-color: var(--pane-edge-strong);
+  overflow: hidden;
 }
 
 .pane-lens {
   border-radius: 28px;
-  overflow: hidden;
 }
 
-/* Backdrop layer — only this receives frost / refraction */
+/* Backdrop layer — frost by default; live refract overrides via inline style */
 .pane-backdrop {
   position: absolute;
   inset: 0;
@@ -3264,12 +3245,10 @@ a.check-cell:hover .check-cell-title {
   border-radius: inherit;
   pointer-events: none;
   background: var(--pane-fill);
-  /* Tier 1 default: honest frost */
   backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
   -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
 }
 
-/* Soft top specular on backdrop, not a glow */
 .pane-backdrop::after {
   content: "";
   position: absolute;
@@ -3279,8 +3258,18 @@ a.check-cell:hover .check-cell-title {
   background: linear-gradient(
     180deg,
     var(--pane-highlight) 0%,
-    transparent 40%
+    transparent 42%
   );
+}
+
+/* When live refraction is active, drop fog fill so bend can read */
+.pane-refract-live > .pane-backdrop {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.pane-refract-live > .pane-backdrop::after {
+  /* keep a hair of specular */
+  opacity: 0.85;
 }
 
 /* Content sits above glass, never filtered */
@@ -3289,50 +3278,8 @@ a.check-cell:hover .check-cell-title {
   z-index: 1;
 }
 
-/*
- * Tier 2 — true glass on the backdrop layer:
- * 1) light frost samples the live page (backdrop-filter)
- * 2) SVG displacement warps that result (filter:url) → rim bend + chroma
- * Labels stay on .pane-content and remain sharp.
- */
-html[data-pane-tier="2"] .pane-refract > .pane-backdrop,
-html[data-pane-tier="2"] .pane-surface.pane-refract > .pane-backdrop {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(2px) saturate(var(--pane-saturate)) brightness(1.04);
-  -webkit-backdrop-filter: blur(2px) saturate(var(--pane-saturate)) brightness(1.04);
-}
-
-html[data-pane-tier="2"] .pane-sheet.pane-refract > .pane-backdrop,
-html[data-pane-tier="2"] .topbar.scrolled.pane-refract > .pane-backdrop {
-  filter: url(#pane-sheet);
-}
-
-html[data-pane-tier="2"] .pane-card.pane-refract > .pane-backdrop {
-  filter: url(#pane-card);
-}
-
-html[data-pane-tier="2"] .pane-chip.pane-refract > .pane-backdrop {
-  filter: url(#pane-chip);
-}
-
-html[data-pane-tier="2"] .pane-lens.pane-refract > .pane-backdrop {
-  filter: url(#pane-lens);
-}
-
-/* Legacy single-node surfaces without .pane-backdrop (topbar fallback path) */
-html[data-pane-tier="2"] .topbar.scrolled.pane-refract:not(:has(> .pane-backdrop)) {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(2px) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: blur(2px) saturate(var(--pane-saturate));
-  filter: url(#pane-sheet);
-}
-
 /* Tier 0 / reduced transparency — solid */
 html[data-pane-tier="0"] .pane-backdrop,
-html[data-pane-tier="0"] .pane-sheet,
-html[data-pane-tier="0"] .pane-card,
-html[data-pane-tier="0"] .pane-chip,
-html[data-pane-tier="0"] .pane-lens,
 html[data-pane-tier="0"] .topbar.scrolled {
   background: var(--pane-fill-solid);
   backdrop-filter: none;
@@ -3343,10 +3290,6 @@ html[data-pane-tier="0"] .topbar.scrolled {
 
 @media (prefers-reduced-transparency: reduce) {
   .pane-backdrop,
-  .pane-sheet,
-  .pane-card,
-  .pane-chip,
-  .pane-lens,
   .topbar.scrolled {
     background: var(--pane-fill-solid);
     backdrop-filter: none;

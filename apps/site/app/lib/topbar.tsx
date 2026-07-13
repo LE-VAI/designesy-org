@@ -22,9 +22,8 @@ function isActiveRoute(pathname: string, href: string) {
 
 /**
  * Shared topbar — wordmark, primary routes, sense toggles, scroll progress.
- * Mobile: single-row sticky chrome; nav scrolls horizontally instead of wrapping.
- * Haptics toggle only appears when Vibration API is available.
- * Active route is marked with aria-current and a quiet signal underline.
+ * Scrolled state uses restrained frost (not theatrical glass) for chrome.
+ * True-glass experimentation lives on Lab surfaces via PaneSurface.
  */
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const pathname = usePathname() || '/';
@@ -61,15 +60,11 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   }, [pathname]);
 
   return (
-    <header
-      className={`topbar${isScrolled ? ' scrolled pane-sheet pane-refract' : ''}`}
-      id="topbar"
-    >
-      {isScrolled ? <div className="pane-backdrop" aria-hidden="true" /> : null}
+    <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar">
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <div className="topbar-inner pane-content">
+      <div className="topbar-inner">
         <Link
           className="wordmark"
           href="/"
@@ -102,10 +97,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           </div>
         </div>
       </div>
-      <div
-        className="scroll-progress"
-        aria-hidden="true"
-      >
+      <div className="scroll-progress" aria-hidden="true">
         <span
           className="scroll-progress-fill"
           style={{ transform: `scaleX(${progress})` }}
