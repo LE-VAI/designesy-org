@@ -161,5 +161,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    {
+      url: `${BASE}/contracts/design-system.skill.md`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
   ];
 }
