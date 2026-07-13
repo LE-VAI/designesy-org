@@ -61,6 +61,7 @@ export default function LabsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Live labs</h2>
+          <div className="lab-grid">
           <Link
             href="/labs/poise"
             className="lab-card"
@@ -128,6 +129,7 @@ export default function LabsPage() {
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
