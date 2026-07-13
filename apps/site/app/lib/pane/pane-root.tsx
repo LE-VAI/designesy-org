@@ -16,13 +16,20 @@ type FilterState = {
 };
 
 /**
- * Mounts once near document root.
- * - Detects Pane capability tier → data-pane-tier on <html>
- * - Builds cached displacement maps (blob: URLs)
- * - Injects SVG filter defs for Chromium refraction + chromatic rim
+ * SVG filter defs for true-glass refraction.
  *
- * True glass = displacement of the backdrop. Blur alone is frost.
- * Tier 2 CSS must NOT stack a heavy blur over these filters.
+ * Live diagnosis (designesy.org/labs/pane):
+ * - data-pane-tier=2, blob maps, url(#pane-lens) all mounted
+ * - Card still looked like soft frost: displacement coordinate space wrong
+ *   + filter applied to whole node instead of a backdrop-only layer
+ *
+ * Correct path (rdev / liquid-glass pattern):
+ * - .pane-backdrop gets light backdrop-filter (sample page)
+ * - same layer gets filter:url(#pane-*) so feDisplacementMap warps that sample
+ * - labels live in .pane-content above, unfiltered
+ *
+ * Filter units: objectBoundingBox region + userSpaceOnUse primitives with
+ * pixel displacement scale (not object-fraction scale).
  */
 export function PaneRoot() {
   const [tier, setTier] = useState<PaneTier>(0);
@@ -33,9 +40,7 @@ export function PaneRoot() {
     setTier(t);
     document.documentElement.dataset.paneTier = String(t);
 
-    if (t < 2) {
-      return;
-    }
+    if (t < 2) return;
 
     const sheet = buildPaneMap({ ...PANE_PRESETS.sheet });
     const card = buildPaneMap({ ...PANE_PRESETS.card });
@@ -61,64 +66,61 @@ export function PaneRoot() {
     };
   }, []);
 
-  if (tier < 2 || !maps) {
-    return null;
-  }
+  if (tier < 2 || !maps) return null;
 
   return (
     <svg
       className="pane-filter-root"
       aria-hidden="true"
       focusable="false"
+      xmlns="http://www.w3.org/2000/svg"
       width="0"
       height="0"
-      style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
     >
       <defs>
-        <PaneFilter id="pane-sheet" mapUrl={maps.sheetUrl} scale={maps.sheetScale} chroma />
-        <PaneFilter id="pane-card" mapUrl={maps.cardUrl} scale={maps.cardScale} chroma />
-        <PaneFilter id="pane-chip" mapUrl={maps.chipUrl} scale={maps.chipScale} chroma />
-        <PaneFilter id="pane-lens" mapUrl={maps.lensUrl} scale={maps.lensScale} chroma />
+        <GlassFilter id="pane-sheet" mapUrl={maps.sheetUrl} scale={maps.sheetScale} />
+        <GlassFilter id="pane-card" mapUrl={maps.cardUrl} scale={maps.cardScale} />
+        <GlassFilter id="pane-chip" mapUrl={maps.chipUrl} scale={maps.chipScale} />
+        <GlassFilter id="pane-lens" mapUrl={maps.lensUrl} scale={maps.lensScale} />
       </defs>
     </svg>
   );
 }
 
-function PaneFilter({
+function GlassFilter({
   id,
   mapUrl,
   scale,
-  chroma,
 }: {
   id: string;
   mapUrl: string;
   scale: number;
-  chroma: boolean;
 }) {
-  // Visible institutional bend — not theatrical OS clone, but not invisible
-  const s = Math.max(32, Math.min(scale, 80));
-  // Chromatic dispersion: R/B split at the rim (the glass tell)
-  const rScale = s * 1.28;
+  // Pixel displacement — strong enough to read geometric rim bend
+  const s = Math.max(48, Math.min(Math.round(scale), 110));
+  const rScale = Math.round(s * 1.3);
   const gScale = s;
-  const bScale = s * 0.72;
+  const bScale = Math.round(s * 0.7);
 
-  // Chromatic glass: three displaced channels at different scales.
-  // The R/B split at the rim is the dispersion tell — glass, not frost.
-  // (mono path removed: every refract surface gets chroma so the effect reads)
-  void chroma;
   return (
     <filter
       id={id}
-      x="-30%"
-      y="-30%"
-      width="160%"
-      height="160%"
+      x="-50%"
+      y="-50%"
+      width="200%"
+      height="200%"
+      filterUnits="objectBoundingBox"
+      primitiveUnits="userSpaceOnUse"
       colorInterpolationFilters="sRGB"
     >
+      {/*
+        Stretch map across the filter subregion. preserveAspectRatio=none is required
+        so RG channels align to the surface, not letterboxed.
+      */}
       <feImage
         href={mapUrl}
-        x="0"
-        y="0"
+        x="0%"
+        y="0%"
         width="100%"
         height="100%"
         result="map"

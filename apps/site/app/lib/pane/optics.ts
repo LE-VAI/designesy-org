@@ -1,28 +1,26 @@
 /**
- * Pane optics — true-glass displacement field.
+ * Pane optics — displacement field for true rim refraction.
  *
- * The map encodes rim refraction: center stays near-neutral (128,128),
- * edges carry strong RG offsets so feDisplacementMap bends the backdrop.
- * Without visible bend at the rim, this is frost — not glass.
+ * Map convention (SVG feDisplacementMap):
+ *   R = X offset, G = Y offset, 128 = neutral, full swing ±127.
+ * Edge-weighted field: center clear, rim bends hard (real glass tell).
  */
 
-export type PaneProfile = 'convex' | 'squircle' | 'lip' | 'rim';
+export type PaneProfile = 'convex' | 'squircle' | 'rim';
 
 export type PaneMapOptions = {
   width: number;
   height: number;
   radius: number;
-  /** Bezel width as fraction of min(side). Wider = more visible rim glass. */
+  /** Bezel as fraction of min side (0.18–0.40). */
   bezel: number;
   profile?: PaneProfile;
-  ior?: number;
-  /** Amplifies encoded vector magnitudes before normalize (visual gain). */
+  /** Multiplier on encoded vectors before normalize. */
   gain?: number;
 };
 
 export type PaneMapResult = {
   url: string;
-  /** Suggested feDisplacementMap scale in px */
   scale: number;
   width: number;
   height: number;
@@ -40,41 +38,7 @@ function smootherstep(t: number) {
   return x * x * x * (x * (x * 6 - 15) + 10);
 }
 
-/** Height profile: 0 at outer edge, 1 at flat center. */
-function surfaceHeight(x: number, profile: PaneProfile): number {
-  const t = clamp(x, 0, 1);
-  const convex = Math.sqrt(Math.max(0, 1 - (1 - t) ** 2));
-  const squircle = (1 - (1 - t) ** 4) ** 0.25;
-  if (profile === 'convex') return convex;
-  if (profile === 'lip') {
-    const concave = 1 - squircle;
-    return convex * (1 - smootherstep(t)) + concave * smootherstep(t);
-  }
-  if (profile === 'rim') {
-    // Steep near edge, flat center — maximum readable rim bend
-    return 1 - (1 - t) ** 2.4;
-  }
-  return squircle;
-}
-
-/**
- * Snell bend magnitude from surface slope.
- * kube simplification: view ray orthogonal to background plane.
- */
-function bendFromDistance(distNorm: number, profile: PaneProfile, ior: number): number {
-  if (distNorm >= 1) return 0;
-  const delta = 0.0015;
-  const y1 = surfaceHeight(distNorm - delta, profile);
-  const y2 = surfaceHeight(distNorm + delta, profile);
-  const slope = Math.abs((y2 - y1) / (2 * delta));
-  const thetaI = Math.atan(slope);
-  const sinT = Math.sin(thetaI) / ior;
-  if (sinT >= 1) return Math.sin(thetaI); // cap near TIR
-  const thetaT = Math.asin(sinT);
-  return Math.sin(thetaI - thetaT);
-}
-
-/** Inward depth from rounded-rect edge (0 on edge, >0 inside, <0 outside). */
+/** Inward depth from rounded-rect edge. */
 function distToOuterEdge(
   px: number,
   py: number,
@@ -82,7 +46,7 @@ function distToOuterEdge(
   h: number,
   r: number,
 ): number {
-  const rr = Math.min(r, w / 2, h / 2);
+  const rr = Math.max(0.001, Math.min(r, w / 2, h / 2));
   const cx = clamp(px, rr, w - rr);
   const cy = clamp(py, rr, h - rr);
   const insideX = px > rr && px < w - rr;
@@ -90,50 +54,61 @@ function distToOuterEdge(
   if (insideX && insideY) {
     return Math.min(px, py, w - px, h - py);
   }
-  const dx = px - cx;
-  const dy = py - cy;
-  const d = Math.hypot(dx, dy);
+  const d = Math.hypot(px - cx, py - cy);
   if (d <= rr) return rr - d;
   return -(d - rr);
 }
 
+/**
+ * Rim displacement magnitude.
+ * Uses a glass-like falloff: max at outer lip, zero in flat center.
+ * Shape inspired by Snell rim concentration, tuned to read on screen.
+ */
+function rimMagnitude(distNorm: number, profile: PaneProfile): number {
+  if (distNorm >= 1) return 0;
+  // distNorm 0 = edge, 1 = past bezel (flat)
+  const t = clamp(distNorm, 0, 1);
+  // Power curves put energy in the outer band
+  if (profile === 'convex') {
+    // smooth dome: stronger mid-bezel
+    return Math.sin((1 - t) * Math.PI * 0.5) ** 1.2 * (1 - smootherstep(t));
+  }
+  if (profile === 'squircle') {
+    return (1 - t) ** 1.6 * (1 - t * t);
+  }
+  // rim: sharp lip, clear center
+  return (1 - t) ** 1.15 * (1 - smootherstep(t * 0.92));
+}
+
 function cacheKey(opts: PaneMapOptions): string {
-  const p = opts.profile ?? 'rim';
-  const ior = opts.ior ?? 1.5;
-  const gain = opts.gain ?? 1;
   return [
     Math.round(opts.width),
     Math.round(opts.height),
     Math.round(opts.radius),
     (opts.bezel * 1000).toFixed(0),
-    p,
-    ior.toFixed(2),
-    gain.toFixed(2),
+    opts.profile ?? 'rim',
+    (opts.gain ?? 1).toFixed(2),
   ].join('x');
 }
 
-/**
- * Build RG displacement map.
- * R = X, G = Y, 128 = neutral. B = rim energy (debug / specular helper).
- */
 export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
   const key = cacheKey(options);
   const hit = mapCache.get(key);
   if (hit) return hit;
 
-  const width = Math.max(16, Math.round(options.width));
-  const height = Math.max(16, Math.round(options.height));
+  const width = Math.max(32, Math.round(options.width));
+  const height = Math.max(32, Math.round(options.height));
   const radius = Math.max(0, options.radius);
   const profile = options.profile ?? 'rim';
-  const ior = options.ior ?? 1.5;
-  const gain = options.gain ?? 1.35;
+  const gain = options.gain ?? 1.75;
   const minSide = Math.min(width, height);
-  const bezelPx = clamp(options.bezel, 0.06, 0.42) * minSide;
+  // Bezel must be wide enough for a visible lip on small surfaces
+  const bezelPx = clamp(options.bezel, 0.14, 0.45) * minSide;
 
-  const htmlCanvas = document.createElement('canvas');
-  htmlCanvas.width = width;
-  htmlCanvas.height = height;
-  const ctx = htmlCanvas.getContext('2d', { willReadFrequently: true });
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
   if (!ctx) {
     const url = URL.createObjectURL(new Blob());
@@ -168,11 +143,9 @@ export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
       }
 
       const distNorm = clamp(depth / bezelPx, 0, 1);
-      // Peak bend just inside the edge, fall to zero at flat center
-      const edgeWeight = 1 - smootherstep(distNorm);
-      const bend = bendFromDistance(distNorm, profile, ior) * edgeWeight;
+      const mag = rimMagnitude(distNorm, profile) * bezelPx * gain;
 
-      // Gradient of depth field → inward normal
+      // Inward normal from depth gradient
       const e = 1;
       const ddx =
         distToOuterEdge(x + 0.5 + e, y + 0.5, width, height, radius) -
@@ -186,8 +159,7 @@ export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
       gx /= glen;
       gy /= glen;
 
-      // Convex glass: refract backdrop toward center along inward normal
-      const mag = bend * bezelPx * gain;
+      // Convex glass: backdrop pulls toward center along inward normal
       const vx = -gx * mag;
       const vy = -gy * mag;
       vectors[i] = vx;
@@ -197,9 +169,9 @@ export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
     }
   }
 
-  // Ensure the map uses full channel range so feDisplacementMap scale means something
   if (maxMag < 0.0001) maxMag = 1;
 
+  // Encode full channel range so feDisplacementMap scale is meaningful
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const vi = (y * width + x) * 2;
@@ -208,23 +180,27 @@ export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
       const vy = vectors[vi + 1] / maxMag;
       data[pi] = clamp(Math.round(128 + vx * 127), 0, 255);
       data[pi + 1] = clamp(Math.round(128 + vy * 127), 0, 255);
-      const edge = Math.hypot(vectors[vi], vectors[vi + 1]) / maxMag;
-      data[pi + 2] = clamp(Math.round(edge * 255), 0, 255);
+      // Blue = rim energy (debug / specular helper)
+      data[pi + 2] = clamp(
+        Math.round((Math.hypot(vectors[vi], vectors[vi + 1]) / maxMag) * 255),
+        0,
+        255,
+      );
       data[pi + 3] = 255;
     }
   }
 
   ctx.putImageData(image, 0, 0);
 
-  const dataUrl = htmlCanvas.toDataURL('image/png');
+  const dataUrl = canvas.toDataURL('image/png');
   const bin = atob(dataUrl.split(',')[1] ?? '');
   const arr = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
   const blob = new Blob([arr], { type: 'image/png' });
   const url = URL.createObjectURL(blob);
 
-  // Display scale: enough px of bend to read on real UI sizes
-  const displayScale = clamp(maxMag * 1.15, 28, 72);
+  // Display scale in px — strong enough to read on real UI
+  const displayScale = clamp(maxMag * 1.25, 40, 96);
 
   const result: PaneMapResult = {
     url,
@@ -240,39 +216,38 @@ export function buildPaneMap(options: PaneMapOptions): PaneMapResult {
   return result;
 }
 
-/** Presets — wide bezels + rim profile so bend is not a rumor. */
 export const PANE_PRESETS = {
   sheet: {
-    width: 640,
-    height: 120,
+    width: 720,
+    height: 128,
     radius: 0,
-    bezel: 0.28,
+    bezel: 0.3,
     profile: 'rim' as PaneProfile,
-    gain: 1.5,
+    gain: 1.8,
   },
   card: {
-    width: 360,
-    height: 220,
+    width: 400,
+    height: 240,
     radius: 16,
-    bezel: 0.26,
+    bezel: 0.3,
     profile: 'rim' as PaneProfile,
-    gain: 1.45,
+    gain: 1.85,
   },
   chip: {
-    width: 180,
-    height: 56,
-    radius: 28,
-    bezel: 0.34,
+    width: 200,
+    height: 64,
+    radius: 32,
+    bezel: 0.36,
     profile: 'rim' as PaneProfile,
-    gain: 1.4,
+    gain: 1.7,
   },
   lens: {
-    width: 320,
-    height: 160,
+    width: 360,
+    height: 180,
     radius: 32,
-    bezel: 0.32,
+    bezel: 0.34,
     profile: 'rim' as PaneProfile,
-    gain: 1.6,
+    gain: 2.0,
   },
 } as const;
 

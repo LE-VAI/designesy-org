@@ -65,10 +65,11 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
       className={`topbar${isScrolled ? ' scrolled pane-sheet pane-refract' : ''}`}
       id="topbar"
     >
+      {isScrolled ? <div className="pane-backdrop" aria-hidden="true" /> : null}
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <div className="topbar-inner">
+      <div className="topbar-inner pane-content">
         <Link
           className="wordmark"
           href="/"

@@ -6,7 +6,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
-import { detectPaneTier, type PaneTier } from '../../lib/pane';
+import { detectPaneTier, PaneSurface, type PaneTier } from '../../lib/pane';
 
 const ANATOMY_DONE = [
   'Thesis',
@@ -22,29 +22,27 @@ const ANATOMY_DONE = [
 ];
 
 const REVIEW_CHECKS = [
-  'Does the surface bend light at the rim, or only fog the background?',
-  'Is refraction quiet enough for institutional chrome (topbar, card)?',
-  'Does prefers-reduced-transparency force a solid, readable surface?',
-  'Does Safari/Firefox keep a clean frost path without broken filters?',
-  'Are displacement maps delivered as blob: URLs (WebKit-safe)?',
+  'Does the surface bend structure at the rim, or only fog the background?',
+  'Is the label layer sharp while only the backdrop warps?',
+  'Does Chromium show a slight R/B split at the lip?',
+  'Does prefers-reduced-transparency force a solid surface?',
+  'Does Safari/Firefox keep honest frost without a broken filter?',
   'Would removing Pane leave the interface fully usable?',
-  'Does every value cite a Pane token or an open tension?',
 ];
 
 const ANTI = [
-  'Cloudy blur sold as “liquid glass” without displacement',
+  'Cloudy blur sold as liquid glass without geometric bend',
+  'Filtering labels together with the backdrop',
   'Theatrical OS-clone glass on every surface',
   'data: URIs inside feImage (WebKit silent failure)',
-  'Refraction that folds content over itself at corners',
-  'Ignoring reduced-transparency system preference',
-  'WebGL screenshot glass that freezes the live page',
+  'Ignoring reduced-transparency',
 ];
 
 const PROVENANCE = [
-  'kube.io liquid glass — Snell–Descartes, squircle bezel, RG maps',
-  'Outpace Studios / Aave — blob: maps, sRGB filters, copy architecture',
-  'rdev liquid-glass-react — edge-weighted displacement + optional chroma',
-  'Designesy Pane — progressive tiers, institutional restraint, dark fill',
+  'kube.io — Snell / rim concentration',
+  'rdev liquid-glass — filter:url on backdrop layer + chromatic passes',
+  'Outpace / Aave — blob maps, sRGB, layered architecture',
+  'Designesy Pane — progressive tiers, institutional restraint',
 ];
 
 const TIER_LABEL: Record<PaneTier, string> = {
@@ -78,10 +76,9 @@ export default function PaneLabPage() {
             True glass for institutional surfaces — bend, not fog.
           </p>
           <p className="surface-note">
-            Pane is Designesy&apos;s progressive glass material. Optics compute
-            rim displacement from Snell&apos;s law and a squircle bezel. Frost
-            works everywhere; true refraction attaches only when the engine can
-            host an SVG filter on the backdrop. Subtle first. Never theatrical.
+            Pane is progressive glass. Optics drive rim displacement. Frost is
+            the honest fallback. Labels stay sharp on a content layer; only the
+            backdrop layer refracts.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Live</span>
@@ -93,60 +90,68 @@ export default function PaneLabPage() {
         <section className="doctrine-section fade-up" id="demo">
           <h2 className="doctrine-heading">Live artifact</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            On Chromium (tier 2): the lens rim must bend the grid and split
-            color slightly (dispersion). If you only see fog, it failed. On
-            Safari/Firefox (tier 1): honest frost — no fake broken refraction.
+            Chromium (tier 2): grid lines under the lens rim should warp, with a
+            slight color split at the lip. Labels on the card stay sharp. Safari
+            / Firefox: honest frost only.
           </p>
 
           <div className="pane-stage">
             <div className="pane-stage-block">
               <p className="pane-stage-label">Capability tier</p>
-              <div className="pane-tier-chip pane-chip">
+              <PaneSurface kind="chip" className="pane-tier-chip">
                 <span>This browser</span>
                 <strong>
-                  {tier === null ? 'detecting…' : `tier ${tier} · ${TIER_LABEL[tier]}`}
+                  {tier === null
+                    ? 'detecting…'
+                    : `tier ${tier} · ${TIER_LABEL[tier]}`}
                 </strong>
-              </div>
+              </PaneSurface>
               <p className="pane-stage-note">
-                Token: <code>data-pane-tier</code> on <code>&lt;html&gt;</code> ·
-                solid (0) / frost (1) / refract (2)
+                Token: <code>data-pane-tier</code> on <code>&lt;html&gt;</code>
               </p>
             </div>
 
             <div className="pane-stage-block">
               <p className="pane-stage-label">Lens over field</p>
               <div className="pane-demo-field" aria-hidden="true">
-                <div className="pane-demo-float pane-lens pane-refract">
+                <div className="pane-demo-field-grid" />
+                <div className="pane-demo-field-type">
+                  <span>field structure</span>
+                  <strong>designesy</strong>
+                </div>
+                <PaneSurface kind="lens" className="pane-demo-float">
                   <p className="pane-demo-float-title">Pane lens</p>
                   <p className="pane-demo-float-body">
-                    Rim refraction + chromatic split. Labels stay sharp; only
-                    the backdrop bends. Look at the grid lines under the edge.
+                    Backdrop layer refracts. This type stays sharp. Check the
+                    grid at the rim.
                   </p>
-                </div>
+                </PaneSurface>
               </div>
               <p className="pane-stage-note">
-                Classes: <code>pane-lens pane-refract</code> · filter{' '}
-                <code>#pane-lens</code> at tier 2
+                Stack: <code>.pane-backdrop</code> (filter + frost) ·{' '}
+                <code>.pane-content</code> (labels)
               </p>
             </div>
 
             <div className="pane-stage-block">
-              <p className="pane-stage-label">Compare · frost vs solid</p>
+              <p className="pane-stage-label">Compare · glass vs solid</p>
               <div className="pane-compare">
-                <div className="pane-compare-cell pane-card pane-refract">
+                <PaneSurface kind="card" className="pane-compare-cell">
                   <strong>Card · pane</strong>
-                  <span>Raised fill + optional refraction</span>
-                </div>
+                  <span>Layered refraction</span>
+                </PaneSurface>
                 <div
                   className="pane-compare-cell"
                   style={{
                     background: 'var(--pane-fill-solid)',
                     border: '1px solid var(--line)',
-                    borderRadius: 12,
+                    borderRadius: 14,
                   }}
                 >
-                  <strong>Card · solid</strong>
-                  <span>Reduced-transparency path</span>
+                  <div className="pane-content">
+                    <strong>Card · solid</strong>
+                    <span>Reduced-transparency path</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -158,9 +163,9 @@ export default function PaneLabPage() {
           <div className="definition">
             <p className="definition-label">Core claim</p>
             <p>
-              Glass is refraction at the rim. Blur alone is frost. Institutional
-              UI earns glass only when the bend stays quiet and every browser
-              keeps a readable fallback.
+              Glass is geometric bend at the rim plus optional chromatic split.
+              Blur alone is frost. Labels never share the filter with the
+              backdrop.
             </p>
           </div>
         </section>
@@ -169,13 +174,13 @@ export default function PaneLabPage() {
           <h2 className="doctrine-heading">Portable contract</h2>
           <CheckGrid
             items={checkItemsFromStrings([
-              'Tier 0 solid when reduced-transparency or no backdrop-filter',
-              'Tier 1 frost: blur + saturate + edge + inset highlight',
-              'Tier 2 refract: SVG displacement map via backdrop-filter',
-              'Maps are blob: URLs — never data: inside feImage',
+              'Layered surface: .pane-backdrop filters, .pane-content stays sharp',
+              'Tier 0 solid when reduced-transparency',
+              'Tier 1 frost: blur + edge only',
+              'Tier 2 refract: light frost sample + SVG displacement on backdrop layer',
+              'Maps are blob: URLs',
               'color-interpolation-filters = sRGB',
-              'Default scale is institutional (≤ ~28px), not demo-theatrical',
-              'Topbar uses pane-sheet; cards/chips opt in explicitly',
+              'Chromatic R/G/B multi-scale displacement for rim dispersion',
             ])}
           />
         </section>
@@ -201,9 +206,8 @@ export default function PaneLabPage() {
         </section>
 
         <div className="status-note">
-          Pane ships as Lab Three. Production first surface: scrolled topbar.
-          Tokens live in <code>docs/pane-tokens.md</code>. Promotion into the
-          design-system contract waits for multi-browser field verification.
+          Pane is Lab Three. Production first surface: scrolled topbar (layered).
+          Tokens: <code>docs/pane-tokens.md</code>.
         </div>
       </main>
 

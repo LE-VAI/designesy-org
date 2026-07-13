@@ -48,17 +48,17 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* Pane — progressive true-glass (refraction first; frost is fallback only) */
-  --pane-fill: rgba(255, 255, 255, 0.045);
-  --pane-fill-raised: rgba(255, 255, 255, 0.06);
+  /* Pane — progressive true-glass (layered backdrop + content) */
+  --pane-fill: rgba(12, 12, 16, 0.28);
+  --pane-fill-raised: rgba(14, 14, 18, 0.32);
   --pane-fill-solid: rgba(10, 10, 10, 0.96);
   --pane-blur: 12px;
   --pane-blur-soft: 8px;
-  --pane-saturate: 160%;
-  --pane-edge: rgba(255, 255, 255, 0.14);
-  --pane-edge-strong: rgba(255, 255, 255, 0.2);
-  --pane-highlight: rgba(255, 255, 255, 0.08);
-  --pane-inset: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --pane-saturate: 155%;
+  --pane-edge: rgba(255, 255, 255, 0.12);
+  --pane-edge-strong: rgba(255, 255, 255, 0.18);
+  --pane-highlight: rgba(255, 255, 255, 0.07);
+  --pane-inset: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* --- Reset --- */
@@ -245,12 +245,19 @@ p {
 }
 
 .topbar.scrolled {
-  /* Default = frost. Tier 2 overrides to true refraction below. */
-  background: var(--pane-fill);
-  backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+  /* Glass lives on .pane-backdrop child; shell stays transparent */
+  background: transparent;
   border-bottom-color: var(--pane-edge);
   box-shadow: var(--pane-inset);
+}
+
+.topbar.scrolled > .pane-backdrop {
+  inset: 0;
+}
+
+.topbar.scrolled > :not(.pane-backdrop) {
+  position: relative;
+  z-index: 1;
 }
 
 .topbar-inner {
@@ -3195,31 +3202,36 @@ a.check-cell:hover .check-cell-title {
 
 /* ==========================================================================
    Pane — progressive true-glass material
-   tier 0 solid · tier 1 frost · tier 2 refract (Chromium SVG backdrop)
+   Architecture: layered surface
+     .pane-surface > .pane-backdrop  (filters only this layer)
+                 > .pane-content     (labels stay sharp)
+   Tier 2 uses CSS filter:url() on the backdrop layer (warps its backdrop-filter
+   result) — the path that actually produces geometric rim bend in Chromium.
    ========================================================================== */
 
 .pane-filter-root {
-  /* Must stay in the render tree (not display:none) so url(#pane-*) resolves */
-  position: absolute;
+  /* Keep in tree so url(#pane-*) resolves. Off-screen, not visibility:hidden. */
+  position: fixed;
+  left: 0;
+  top: 0;
   width: 0;
   height: 0;
   overflow: hidden;
   pointer-events: none;
-  visibility: hidden;
+  z-index: -1;
 }
 
-/* Shared foundation — frost blur is the non-Chromium path */
+/* Shell */
+.pane-surface,
 .pane-sheet,
 .pane-card,
 .pane-chip,
 .pane-lens {
   position: relative;
   isolation: isolate;
-  background: var(--pane-fill);
   border: 1px solid var(--pane-edge);
   box-shadow: var(--pane-inset);
-  backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+  background: transparent;
 }
 
 .pane-sheet {
@@ -3230,13 +3242,11 @@ a.check-cell:hover .check-cell-title {
 }
 
 .pane-card {
-  background: var(--pane-fill-raised);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
 .pane-chip {
-  --pane-blur: var(--pane-blur-soft);
   border-radius: 999px;
   border-color: var(--pane-edge-strong);
 }
@@ -3246,10 +3256,21 @@ a.check-cell:hover .check-cell-title {
   overflow: hidden;
 }
 
-/* Soft top specular (paint, not glow) */
-.pane-card::before,
-.pane-chip::before,
-.pane-lens::before {
+/* Backdrop layer — only this receives frost / refraction */
+.pane-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--pane-fill);
+  /* Tier 1 default: honest frost */
+  backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+  -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+}
+
+/* Soft top specular on backdrop, not a glow */
+.pane-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -3258,49 +3279,56 @@ a.check-cell:hover .check-cell-title {
   background: linear-gradient(
     180deg,
     var(--pane-highlight) 0%,
-    transparent 42%
+    transparent 40%
   );
+}
+
+/* Content sits above glass, never filtered */
+.pane-content {
+  position: relative;
   z-index: 1;
 }
 
-.pane-card > *,
-.pane-chip > *,
-.pane-lens > * {
-  position: relative;
-  z-index: 2;
-}
-
 /*
- * Tier 2 — TRUE glass: SVG displacement only.
- * Do NOT stack heavy blur on top — blur erases the bend and leaves cloudy frost.
- * A hair of brightness/saturate keeps the sheet legible without fogging the rim.
+ * Tier 2 — true glass on the backdrop layer:
+ * 1) light frost samples the live page (backdrop-filter)
+ * 2) SVG displacement warps that result (filter:url) → rim bend + chroma
+ * Labels stay on .pane-content and remain sharp.
  */
-html[data-pane-tier="2"] .pane-sheet.pane-refract,
-html[data-pane-tier="2"] .topbar.scrolled.pane-refract {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: url(#pane-sheet) brightness(1.05) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: url(#pane-sheet) brightness(1.05) saturate(var(--pane-saturate));
-}
-
-html[data-pane-tier="2"] .pane-card.pane-refract {
+html[data-pane-tier="2"] .pane-refract > .pane-backdrop,
+html[data-pane-tier="2"] .pane-surface.pane-refract > .pane-backdrop {
   background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: url(#pane-card) brightness(1.06) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: url(#pane-card) brightness(1.06) saturate(var(--pane-saturate));
+  backdrop-filter: blur(2px) saturate(var(--pane-saturate)) brightness(1.04);
+  -webkit-backdrop-filter: blur(2px) saturate(var(--pane-saturate)) brightness(1.04);
 }
 
-html[data-pane-tier="2"] .pane-chip.pane-refract {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: url(#pane-chip) brightness(1.06) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: url(#pane-chip) brightness(1.06) saturate(var(--pane-saturate));
+html[data-pane-tier="2"] .pane-sheet.pane-refract > .pane-backdrop,
+html[data-pane-tier="2"] .topbar.scrolled.pane-refract > .pane-backdrop {
+  filter: url(#pane-sheet);
 }
 
-html[data-pane-tier="2"] .pane-lens.pane-refract {
-  background: rgba(255, 255, 255, 0.035);
-  backdrop-filter: url(#pane-lens) brightness(1.08) saturate(var(--pane-saturate));
-  -webkit-backdrop-filter: url(#pane-lens) brightness(1.08) saturate(var(--pane-saturate));
+html[data-pane-tier="2"] .pane-card.pane-refract > .pane-backdrop {
+  filter: url(#pane-card);
 }
 
-/* Tier 0 / reduced transparency — solid surfaces, no blur */
+html[data-pane-tier="2"] .pane-chip.pane-refract > .pane-backdrop {
+  filter: url(#pane-chip);
+}
+
+html[data-pane-tier="2"] .pane-lens.pane-refract > .pane-backdrop {
+  filter: url(#pane-lens);
+}
+
+/* Legacy single-node surfaces without .pane-backdrop (topbar fallback path) */
+html[data-pane-tier="2"] .topbar.scrolled.pane-refract:not(:has(> .pane-backdrop)) {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(2px) saturate(var(--pane-saturate));
+  -webkit-backdrop-filter: blur(2px) saturate(var(--pane-saturate));
+  filter: url(#pane-sheet);
+}
+
+/* Tier 0 / reduced transparency — solid */
+html[data-pane-tier="0"] .pane-backdrop,
 html[data-pane-tier="0"] .pane-sheet,
 html[data-pane-tier="0"] .pane-card,
 html[data-pane-tier="0"] .pane-chip,
@@ -3309,10 +3337,12 @@ html[data-pane-tier="0"] .topbar.scrolled {
   background: var(--pane-fill-solid);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  filter: none;
   box-shadow: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .pane-backdrop,
   .pane-sheet,
   .pane-card,
   .pane-chip,
@@ -3321,6 +3351,7 @@ html[data-pane-tier="0"] .topbar.scrolled {
     background: var(--pane-fill-solid);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    filter: none;
     box-shadow: none;
   }
 }
@@ -3349,52 +3380,57 @@ html[data-pane-tier="0"] .topbar.scrolled {
   line-height: 1.45;
 }
 
+/* Quiet high-structure field — grid + soft signal wash, no slogan */
 .pane-demo-field {
   position: relative;
-  min-height: 280px;
-  border-radius: 12px;
+  min-height: 300px;
+  border-radius: 14px;
   border: 1px solid var(--line);
   overflow: hidden;
-  /* High-contrast field so rim bend + chroma split are readable */
   background:
-    radial-gradient(circle at 18% 28%, rgba(1, 51, 203, 0.55), transparent 42%),
-    radial-gradient(circle at 82% 72%, rgba(254, 204, 52, 0.22), transparent 38%),
-    radial-gradient(circle at 55% 40%, rgba(255, 255, 255, 0.12), transparent 30%),
-    repeating-linear-gradient(
-      90deg,
-      #0a0a12 0 14px,
-      #12121c 14px 28px
-    ),
-    linear-gradient(160deg, #0c0c16 0%, #000 55%, #080812 100%);
+    radial-gradient(ellipse 55% 45% at 22% 30%, rgba(1, 51, 203, 0.32), transparent 60%),
+    radial-gradient(ellipse 40% 35% at 78% 70%, rgba(51, 88, 232, 0.14), transparent 55%),
+    #050508;
 }
 
-.pane-demo-field::before {
-  content: "designesy · pane · rim bend · chromatic split";
+.pane-demo-field-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 30%, transparent 85%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Fine type strip under the lens so dispersion is checkable without shouting */
+.pane-demo-field-type {
   position: absolute;
   inset: 0;
   display: grid;
   place-content: center;
-  font-size: clamp(1.1rem, 3.2vw, 1.65rem);
-  font-weight: 560;
-  letter-spacing: -0.03em;
-  color: rgba(255, 255, 255, 0.55);
+  gap: 0.35rem;
   text-align: center;
-  padding: 1rem;
   pointer-events: none;
   z-index: 0;
+  padding: 1rem;
 }
 
-.pane-demo-field::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-  background-size: 22px 22px;
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 0;
+.pane-demo-field-type span {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  font-weight: 500;
+}
+
+.pane-demo-field-type strong {
+  font-size: clamp(1.35rem, 3.5vw, 1.85rem);
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .pane-demo-float {
@@ -3403,8 +3439,10 @@ html[data-pane-tier="0"] .topbar.scrolled {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(86%, 300px);
-  min-height: 120px;
+  width: min(78%, 280px);
+}
+
+.pane-demo-float .pane-content {
   padding: 1.15rem 1.25rem;
 }
 
@@ -3425,9 +3463,15 @@ html[data-pane-tier="0"] .topbar.scrolled {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
   font-size: 0.78rem;
   color: var(--ink);
+}
+
+.pane-tier-chip .pane-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
 }
 
 .pane-tier-chip strong {
@@ -3448,6 +3492,10 @@ html[data-pane-tier="0"] .topbar.scrolled {
 }
 
 .pane-compare-cell {
+  min-height: 120px;
+}
+
+.pane-compare-cell .pane-content {
   min-height: 120px;
   padding: 1rem;
   display: flex;
