@@ -279,7 +279,7 @@ export default function TaktLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Implementation notes</h2>
-          <CopyPrompt prompt={BUILDER_PROMPT} />
+          <CopyPrompt>{BUILDER_PROMPT}</CopyPrompt>
         </section>
 
         <section className="doctrine-section fade-up">
