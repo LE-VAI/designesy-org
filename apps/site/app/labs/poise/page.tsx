@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
+import { HapticsToggle } from '../../lib/haptics-toggle';
 import { SoundToggle } from '../../lib/sound-toggle';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
@@ -12,7 +13,7 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Poise',
   description:
-    'How Designesy responds when someone touches it. A lab on restrained interaction: wordmark, press, sound preference, and reduced motion.',
+    'How Designesy responds when someone touches it. A lab on restrained interaction: wordmark, press, sound, haptics, and reduced motion.',
   path: '/labs/poise',
   ogTitle: 'Poise · Lab One',
   ogDescription:
@@ -159,6 +160,17 @@ export default function PoiseLabPage() {
                 <span className="poise-stage-note" style={{ margin: 0 }}>
                   Designesy owns preference; audio only applies it. Defaults off
                   under reduced motion.
+                </span>
+              </div>
+            </div>
+
+            <div className="poise-stage-block">
+              <p className="poise-stage-label">Haptics preference</p>
+              <div className="poise-sound-row">
+                <HapticsToggle />
+                <span className="poise-stage-note" style={{ margin: 0 }}>
+                  Default on when Vibration API is present. Toggle hides on
+                  unsupported devices. Press/tap only — never hover.
                 </span>
               </div>
             </div>

@@ -16,13 +16,13 @@ export function SoundToggle() {
   return (
     <button
       type="button"
-      className="sound-toggle"
+      className="sense-toggle sound-toggle"
       onClick={toggle}
       aria-label={enabled ? 'Mute interaction sounds' : 'Enable interaction sounds'}
       aria-pressed={enabled}
       title={enabled ? 'Sound on' : 'Sound off'}
     >
-      <span className="sound-toggle-icon" aria-hidden="true">
+      <span className="sense-toggle-icon" aria-hidden="true">
         {enabled ? '◐' : '○'}
       </span>
     </button>
