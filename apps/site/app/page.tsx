@@ -83,7 +83,7 @@ const FIELD = [
     lede: 'Portable design judgment — yours to fetch, run, and remix.',
     desc: 'Every contract, kit, lab, and field check. Human index and machine feed, kept in sync. Point your agent at open.json.',
     arrow: 'Browse the catalog →',
-    kind: 'contract' as const,
+    kind: 'open' as const,
   },
   {
     href: '/contracts/design-system',
@@ -133,12 +133,46 @@ export default function HomePage() {
       <main id="main-content" className="site-shell">
         {/* --- Hero --- */}
         <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-mark" aria-hidden="true">
-            <span className="hero-mark-orbit" />
-            <span className="hero-mark-square" />
-            <span className="hero-mark-triangle" />
-            <span className="hero-mark-block" />
-            <span className="hero-mark-core" />
+          <div className="hero-seam" aria-hidden="true">
+            <span className="hero-seam-line" />
+            <div className="hero-seam-constellation">
+              {/* Modular mark language — same 5 elements as the brand mark,
+                  docked on a vertical seam before dispersing into field icons. */}
+              <svg
+                className="hero-seam-mark"
+                viewBox="0 0 256 406"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                {/* Brand mark geometry — local space from asset builder (256×406) */}
+                {/* 1 Signal dot */}
+                <circle className="seam-dot" cx="200" cy="56" r="56" />
+                {/* 2 Orbit quarter — NW of (112,266) r112 · M0,266 A… 112,154 L112,266 Z */}
+                <path
+                  className="seam-orbit"
+                  d="M0 266 A112 112 0 0 1 112 154 L112 266 Z"
+                />
+                {/* 3 Infrastructure square */}
+                <rect
+                  className="seam-square"
+                  x="144"
+                  y="154"
+                  width="112"
+                  height="112"
+                />
+                {/* 4 Motion triangle */}
+                <path
+                  className="seam-triangle"
+                  d="M0 406 L112 406 L112 294 Z"
+                />
+                {/* 5 Stability quarter — SE of (144,294) r112 · M144,294 H256 A… 144,406 Z */}
+                <path
+                  className="seam-block"
+                  d="M144 294 H256 A112 112 0 0 1 144 406 Z"
+                />
+              </svg>
+            </div>
           </div>
           <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
           <h1 className="wordmark-hero hero-title fade-up fade-up-delay-1" id="hero-title">
@@ -270,11 +304,13 @@ export default function HomePage() {
                     className={`mark-glyph mark-glyph--${item.kind}`}
                     aria-hidden="true"
                     title={
-                      item.kind === 'contract'
-                        ? 'Contract mark · structure'
-                        : item.kind === 'kit'
-                          ? 'Kit mark · usable package'
-                          : 'Lab mark · living experiment'
+                      item.kind === 'open'
+                        ? 'Open mark · origin signal'
+                        : item.kind === 'contract'
+                          ? 'Contract mark · structure'
+                          : item.kind === 'kit'
+                            ? 'Kit mark · usable package'
+                            : 'Lab mark · living experiment'
                     }
                   >
                     <span className="mark-glyph-core" />
