@@ -93,6 +93,7 @@ export const openIndex = {
     llms_full_txt: 'https://www.designesy.org/llms-full.txt',
     agent_json: 'https://www.designesy.org/.well-known/agent.json',
     security_txt: 'https://www.designesy.org/.well-known/security.txt',
+    skill_md: 'https://www.designesy.org/contracts/design-system.skill.md',
     sitemap: 'https://www.designesy.org/sitemap.xml',
     robots: 'https://www.designesy.org/robots.txt',
   },
@@ -129,8 +130,10 @@ export const openIndex = {
       lede: 'Portable design judgment for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence rules.',
       human_url: 'https://www.designesy.org/contracts/design-system',
       machine_url: 'https://www.designesy.org/contracts/design-system.json',
+      skill_md_url: 'https://www.designesy.org/contracts/design-system.skill.md',
       path: '/contracts/design-system',
       machine_path: '/contracts/design-system.json',
+      skill_md_path: '/contracts/design-system.skill.md',
     },
     {
       id: 'design-review',
@@ -294,6 +297,12 @@ export const openIndex = {
       path: '/kits/design-review.json',
       url: 'https://www.designesy.org/kits/design-review.json',
       meta: 'Kit One prompt, dimensions, output format',
+    },
+    {
+      title: 'Design system SKILL.md',
+      path: '/contracts/design-system.skill.md',
+      url: 'https://www.designesy.org/contracts/design-system.skill.md',
+      meta: 'SKILL.md agent skill format — behavioral rules for AI coding agents',
     },
   ],
   anti_patterns: [
