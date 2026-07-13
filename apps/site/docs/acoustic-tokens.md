@@ -32,11 +32,13 @@ This document locks the Cuelume sound palette into Designesy doctrine. No sound 
 ## Mapping rules
 
 1. **One cue per interaction type.** Nav hover is always `tick`. Button press is always `press` + `release`. No per-page variation.
-2. **Hover sounds are fine-pointer only.** Cuelume's `data-cuelume-hover` fires on `pointerenter` with mouse type only. Touch users never hear hover sounds.
-3. **Toggle sounds fire on click.** This includes keyboard activation (Tab + Enter) and touch. Accessible by default.
-4. **No ambient audio.** Cuelume is interaction-only. No background music, no mood beds, no loading sounds.
-5. **Preference is user-owned.** Designesy stores the sound preference in `localStorage` under `designesy:sound`. Cuelume's `setEnabled()` applies it. Reduced-motion users default to sound off.
-6. **Every cue must trace to this document.** If a sound appears in the markup without a token here, it is a contract violation.
+2. **Hover sounds are fine-pointer only.** Cuelume's `data-cuelume-hover` fires on `pointerenter` with mouse type only. On coarse/touch pointers, Designesy's binder maps the same hover cue to a single tap (`click`) so nav and links still acknowledge contact without inventing new sounds.
+3. **Press/release on touch.** Upstream Cuelume marks press/release mouse-only. Designesy's binder plays the same cues on touch/pen `pointerdown` / `pointerup` so CTAs and cards feel complete on mobile.
+4. **Toggle sounds fire on click via preference hook.** The sound button does **not** use `data-cuelume-toggle` (capture-phase play ran before enable flipped). `useSoundPreference` calls `setEnabled` then `play('toggle')` so turn-on is audible. Keyboard and touch both work.
+5. **No ambient audio.** Cuelume is interaction-only. No background music, no mood beds, no loading sounds.
+6. **Preference is user-owned.** Designesy stores the sound preference in `localStorage` under `designesy:sound`. Cuelume's `setEnabled()` applies it. Reduced-motion users default to sound off.
+7. **Audio unlock on first real cue.** Mobile Safari keeps `AudioContext` suspended until a user gesture. The first `play()` during that gesture (toggle, press, or tap-mapped hover) resumes the engine — no synthetic unlock sound.
+8. **Every cue must trace to this document.** If a sound appears in the markup without a token here, it is a contract violation.
 
 ## Accessibility
 
