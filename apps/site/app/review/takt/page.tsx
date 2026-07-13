@@ -161,7 +161,7 @@ const VERIFICATION = [
   'Focus-visible: 2px solid var(--signal-light) outline, not border',
   'Hit area: nav links and controls ≥ 40×40px on desktop (mobile untested)',
   'Compared to Use Kit One · Design Review output format',
-  'Cross-referenced against design system contract v0.1.1 tokens',
+  'Cross-referenced against design system contract tokens; adopted into v0.1.2',
 ];
 
 const SOURCES = [
@@ -177,8 +177,8 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.1',
-    meta: 'Governing tokens · takt rules to be adopted in v0.1.2',
+    title: 'Design system contract v0.1.2',
+    meta: 'Governing tokens · takt rules adopted',
   },
   {
     href: '/labs/poise',
@@ -280,7 +280,7 @@ export default function TaktFieldCheckPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.1.1 · Kit One Design Review · takt lab
+                  Contract v0.1.2 · Kit One Design Review · takt lab
                   anti-patterns
                 </span>
               </span>

@@ -49,7 +49,7 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise interaction rules.',
+            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt rules.',
           url: c.public_url,
           version: c.version,
           related: [c.machine_url, 'https://www.designesy.org/open'],

@@ -1,7 +1,7 @@
 /**
  * Use Kit One · Design Review
  * Portable instruction package for humans and agents.
- * Source: public Review doctrine + design system contract v0.1.1.
+ * Source: public Review doctrine + design system contract v0.1.2.
  */
 
 export const designReviewKit = {
@@ -30,8 +30,8 @@ export const designReviewKit = {
     },
     {
       href: '/contracts/design-system',
-      title: 'Design system contract v0.1.1',
-      meta: 'Human home and machine export · Poise adopted',
+      title: 'Design system contract v0.1.2',
+      meta: 'Human home and machine export · Poise + Takt adopted',
     },
     {
       href: '/review/poise',
@@ -39,14 +39,24 @@ export const designReviewKit = {
       meta: 'Kit One applied to Lab One · pass with notes',
     },
     {
+      href: '/review/takt',
+      title: 'Field check · Takt',
+      meta: 'Kit One applied to Lab Two · pass with notes',
+    },
+    {
       href: '/review/designesy-org',
       title: 'Field check · designesy.org',
-      meta: 'Public surface review against contract v0.1.1',
+      meta: 'Public surface review against contract v0.1.2',
     },
     {
       href: '/labs/poise',
       title: 'Lab One · Poise',
       meta: 'Source lab · interaction rules adopted in v0.1.1',
+    },
+    {
+      href: '/labs/takt',
+      title: 'Lab Two · Takt',
+      meta: 'Source lab · interface-feel rules adopted in v0.1.2',
     },
   ],
   anatomy: [

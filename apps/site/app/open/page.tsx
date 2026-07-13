@@ -207,7 +207,7 @@ export default function OpenPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.1.1 · human + machine</span>
+                <span className="row-meta">v0.1.2 · human + machine</span>
               </span>
             </Link>
             <Link
