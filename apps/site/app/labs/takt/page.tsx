@@ -209,7 +209,7 @@ export default function TaktLabPage() {
             <span className="lab-meta-item">
               Field check ·{' '}
               <Link href="/review/takt" data-cuelume-hover="tick">
-                pending
+                pass with notes
               </Link>
             </span>
           </div>
@@ -328,7 +328,7 @@ export default function TaktLabPage() {
               { title: 'will-change only on check-pop and back-button animations', status: 'pass' },
               {
                 title: 'Field check with Kit One · Design Review',
-                status: 'open',
+                status: 'pass',
                 href: '/review/takt',
               },
             ]}
@@ -345,7 +345,7 @@ export default function TaktLabPage() {
             data-cuelume-release
           >
             <div className="lab-card-top">
-              <span className="status-badge">Pending</span>
+              <span className="status-badge">Pass with notes</span>
               <span className="status-badge-muted">Review</span>
             </div>
             <span className="lab-card-title">Field check · Takt</span>
