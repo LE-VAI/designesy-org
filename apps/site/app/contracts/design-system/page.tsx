@@ -202,7 +202,23 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Source labs · Poise adopted v0.1.1 · Takt adopted v0.1.2
+                  Source lab · interaction rules adopted in v0.1.1
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/takt"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Lab Two · Takt</span>
+                <span className="row-meta">
+                  Source lab · interface-feel rules adopted in v0.1.2
                 </span>
               </span>
             </Link>
@@ -214,9 +230,25 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">05</span>
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
+                <span className="row-meta">
+                  Kit One review that supported adoption
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/takt"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">07</span>
+              <span className="row-body">
+                <span className="row-title">Field check · Takt</span>
                 <span className="row-meta">
                   Kit One review that supported adoption
                 </span>
@@ -230,7 +262,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-press
               data-cuelume-release
             >
-              <span className="row-index">06</span>
+              <span className="row-index">08</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
@@ -245,16 +277,34 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Poise · adopted in v{c.version}
+              Poise · adopted in v0.1.1
             </p>
             <p>
               Lab One portable rules are contract material: wordmark breath,
               press settle, sound preference ownership, reduced motion, hover
               media discipline, and human public naming. Silence was not
-              adoption — this version is the explicit order.
+              adoption — that version was the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.interaction.rules)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Takt adoption</h2>
+          <div className="definition">
+            <p className="definition-label">
+              Takt · adopted in v0.1.2
+            </p>
+            <p>
+              Lab Two portable rules are contract material: concentric radii,
+              press scale (0.96 for cells, 0.985 for cards), image outlines,
+              hit area floor, stagger rhythm, no transition:all, and spare
+              will-change. Rules compiled from external design intelligence
+              (Amicro, Krehel /better-ui) and verified on live CSS. Silence
+              was not adoption — this version is the explicit order.
+            </p>
+          </div>
+          <CheckGrid items={checkItemsFromStrings(c.takt.rules)} />
         </section>
 
         <div className="status-note">
