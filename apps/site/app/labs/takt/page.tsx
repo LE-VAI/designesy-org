@@ -319,15 +319,15 @@ export default function TaktLabPage() {
           <h2 className="doctrine-heading">Verification</h2>
           <CheckGrid
             items={[
-              { label: 'Concentric radii — card padding 4px + image radius 2px = card 6px', status: 'pass' },
-              { label: 'Press scale 0.96 on check-grid cells', status: 'pass' },
-              { label: 'Press scale 0.985 on pillar cards (softer — longer surface)', status: 'pass' },
-              { label: 'Hit area — all nav links ≥ 40×40px', status: 'pass' },
-              { label: 'Stagger — fade-up sections enter ~100ms apart', status: 'pass' },
-              { label: 'No transition: all in globals.css', status: 'pass' },
-              { label: 'will-change only on check-pop and back-button animations', status: 'pass' },
+              { title: 'Concentric radii — card padding 4px + image radius 2px = card 6px', status: 'pass' },
+              { title: 'Press scale 0.96 on check-grid cells', status: 'pass' },
+              { title: 'Press scale 0.985 on pillar cards (softer — longer surface)', status: 'pass' },
+              { title: 'Hit area — all nav links ≥ 40×40px', status: 'pass' },
+              { title: 'Stagger — fade-up sections enter ~100ms apart', status: 'pass' },
+              { title: 'No transition: all in globals.css', status: 'pass' },
+              { title: 'will-change only on check-pop and back-button animations', status: 'pass' },
               {
-                label: 'Field check with Kit One · Design Review',
+                title: 'Field check with Kit One · Design Review',
                 status: 'open',
                 href: '/review/takt',
               },
