@@ -74,6 +74,9 @@ body {
   letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-underline-position: from-font;
+  text-decoration-skip-ink: auto;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
 }
@@ -163,7 +166,7 @@ p {
   color: var(--signal);
   -webkit-text-fill-color: var(--signal);
   display: inline-block;
-  margin-left: -0.055em;
+  margin-inline-start: -0.055em;
   transform: translateY(-0.02em);
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
@@ -1052,7 +1055,7 @@ p {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-right: 0.15rem;
+  margin-inline-end: 0.15rem;
 }
 
 .footer-nav a {
@@ -1216,7 +1219,7 @@ p {
 }
 
 .principle-list--rail .principle-num {
-  padding-left: 0.7rem;
+  padding-inline-start: 0.7rem;
 }
 
 .principle-list--rail .principle-num::before {
@@ -2520,7 +2523,7 @@ a.check-cell:hover .check-cell-title {
 
   .pipeline-note {
     max-width: none;
-    margin-left: auto;
+    margin-inline-start: auto;
     text-align: right;
     font-size: 0.72rem;
   }

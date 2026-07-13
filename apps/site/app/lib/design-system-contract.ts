@@ -265,16 +265,15 @@ export const designSystemContract = {
       '16px input floor on mobile — inputs never below 16px to avoid iOS auto-zoom',
       'No decorative display fonts: system stack is the contract for public UI',
     ],
-    verified_against: 'Live CSS audit (48,755 bytes) — font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale all parsed',
+    verified_against: 'Live CSS audit (48,755 bytes) — font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed',
     verification: [
       'https://www.designesy.org/labs/cadence',
       'https://www.designesy.org/review/cadence',
     ],
     unverified: [
-      'font-synthesis: none not yet set in CSS — browser may synthesize fake weights',
-      'text-underline-position: from-font not yet set — underlines do not align to font metrics',
-      'text-decoration-skip-ink: auto not yet set — underlinks do not skip descenders',
-      'Logical properties not yet used — direction-ready layouts are blocked',
+      'Block-axis logical properties (margin-block-start/end) not yet migrated — only inline-axis (margin-inline, padding-inline) done',
+      'border-left decorative accents not yet migrated to border-inline-start — visual regression risk needs testing',
+      'inset left/right positioning not yet migrated to inset-inline — absolute positioning needs case-by-case review',
     ],
   },
   typography: {
@@ -388,9 +387,9 @@ export const designSystemContract = {
     'Shadow tokens exist; elevation language is still light-touch (borders lead)',
     'Human contract page and machine export remain dual sources until a single generator owns both',
     'Keyboard-path verification packets are published for Poise only — not every public route',
-    'font-synthesis: none not yet set — browser may synthesize fake weights (Cadence correction)',
-    'Logical properties not yet used — direction-ready layouts are blocked (Cadence correction)',
-    'text-underline-position: from-font and text-decoration-skip-ink: auto not yet set (Cadence correction)',
+    'font-synthesis: none set on :root — prevents fake browser weights (Cadence v0.1.3 fix applied)',
+    'Inline-axis logical properties (margin-inline, padding-inline) applied — block-axis and border-inline remain physical (Cadence partial migration)',
+    'text-underline-position: from-font and text-decoration-skip-ink: auto set on :root (Cadence v0.1.3 fix applied)',
   ],
   adoption_history: [
     {
