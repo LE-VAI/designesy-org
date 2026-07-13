@@ -5,7 +5,7 @@
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
  * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
  * v0.1.3 adopts Lab Three · Cadence typography rules (2026-07-13).
- * v0.1.4 adopts duration scale + verification from Tier 1 ingest (2026-07-13).
+ * v0.1.4 adopts duration scale + verification from external source ingests (2026-07-13).
  */
 
 export const designSystemContract = {
@@ -464,11 +464,10 @@ export const designSystemContract = {
       version: '0.1.4',
       date: '2026-07-13',
       summary:
-        'Adopted duration scale (transitions.dev cross-ref), Core Web Vitals + button contrast verification (Taste Skill gap audit), anti-rationalization methodology (agent-skills pattern). Duration tokens --duration-quick (150ms) through --duration-slow (400ms) added to :root. Three external ingests added to provenance: agent-skills (Osmani), Taste Skill (Leon), transitions.dev (Antalik). No lab source — this is a direct contract refinement from Tier 1 ingest adoption.',
+        'Adopted duration scale (transitions.dev cross-ref), Core Web Vitals + button contrast verification (Taste Skill gap audit), anti-rationalization methodology (agent-skills pattern). Duration tokens --duration-quick (150ms) through --duration-slow (400ms) added to :root. Three external ingests added to provenance: agent-skills (Osmani), Taste Skill (Leon), transitions.dev (Antalik). No lab source — this is a direct contract refinement from external source ingests.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts/skill',
-        'D:/1ATLAS/outputs/docs/TIER1_INGEST_ADOPTION_2026-07-13.md',
       ],
     },
   ],
