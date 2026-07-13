@@ -11,11 +11,11 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
-    'Designesy design system contract v0.1.1 — human overview and machine export. Lab One · Poise interaction rules adopted.',
+    'Designesy design system contract v0.1.2 — human overview and machine export. Lab One · Poise interaction rules and Lab Two · Takt interface-feel rules adopted.',
   path: '/contracts/design-system',
-  ogTitle: 'Design system contract · v0.1.1',
+  ogTitle: 'Design system contract · v0.1.2',
   ogDescription:
-    'Portable design agreement for designesy.org. Poise interaction rules adopted. Human overview with machine export.',
+    'Portable design agreement for designesy.org. Poise interaction rules and Takt interface-feel rules adopted. Human overview with machine export.',
   twitterDescription:
     'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
 });
@@ -202,7 +202,7 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Source lab · interaction rules adopted in v0.1.1
+                  Source labs · Poise adopted v0.1.1 · Takt adopted v0.1.2
                 </span>
               </span>
             </Link>

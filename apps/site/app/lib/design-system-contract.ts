@@ -1,19 +1,20 @@
 /**
- * Designesy design system contract v0.1.1 — machine + human source.
+ * Designesy design system contract v0.1.2 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
+ * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-07-12',
+  updated: '2026-07-13',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -21,6 +22,7 @@ export const designSystemContract = {
     spacing: 'layout spacing and breakpoints',
     components: 'behavior and states',
     interaction: 'Poise-adopted contact rules',
+    takt: 'Takt-adopted interface-feel rules',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -35,6 +37,26 @@ export const designSystemContract = {
       url: 'https://www.designesy.org/labs/poise',
       role: 'Source lab for interaction rules adopted in v0.1.1',
     },
+    second_lab: {
+      name: 'Takt',
+      url: 'https://www.designesy.org/labs/takt',
+      role: 'Source lab for interface-feel rules adopted in v0.1.2',
+    },
+    external_ingests: [
+      {
+        name: 'Amicro',
+        author: 'Kiyotaka (@SubhanHQ)',
+        url: 'https://amicro.vercel.app',
+        role: 'Micro-transitions library — informed Takt stagger and press rules',
+      },
+      {
+        name: 'better-ui skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: '13 interface polish principles — source for concentric radii, press scale, image outlines, hit areas',
+        license: 'MIT',
+      },
+    ],
     adoption: {
       version: '0.1.1',
       date: '2026-07-12',
@@ -190,6 +212,29 @@ export const designSystemContract = {
       'https://www.designesy.org/review/poise/keyboard',
     ],
   },
+  takt: {
+    source_lab: 'Takt',
+    adopted_in: '0.1.2',
+    rules: [
+      'Concentric border radius: outerRadius = innerRadius + padding on every nested pair',
+      'Press scale 0.96 on cells and buttons; 0.985 on cards and rows — never below 0.95',
+      'Image outlines: 1px at 0.1 opacity, pure black in light mode, pure white in dark mode — never tinted neutrals',
+      'Minimum hit area: 44px for touch, 40px for desktop — extend with pseudo-element when needed',
+      'Stagger enter animations: ~80–100ms per semantic chunk; skip animation on page load',
+      'Soften exits: small fixed translateY, softer than enter — no full-height collapse',
+      'Never use transition: all — every transition names its specific properties',
+      'Spare will-change: only transform, opacity, or filter — only when a stutter was observed',
+    ],
+    verified_against: 'Live CSS audit (47,680 bytes) — all transitions, scales, will-change, radii, outlines parsed',
+    verification: [
+      'https://www.designesy.org/labs/takt',
+      'https://www.designesy.org/review/takt',
+    ],
+    unverified: [
+      'Image outline rule — no image surfaces on designesy.org yet',
+      'Mobile hit area 44px — desktop 40px confirmed only',
+    ],
+  },
   typography: {
     body: '16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
     headings: 'weight 700, line-height 1.08, letter-spacing -0.02em',
@@ -281,6 +326,10 @@ export const designSystemContract = {
     'No public surface displays internal control-plane naming',
     'Poise interaction rules match live /labs/poise and contract.interaction',
     'Poise keyboard-path verification remains published and current',
+    'Takt interface-feel rules match live CSS and contract.takt',
+    'No transition:all in the live stylesheet',
+    'will-change restricted to transform and opacity only',
+    'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
   ],
   open_tensions: [
     'Light theme is not contracted — dark technical foundation is provisional',
@@ -308,13 +357,24 @@ export const designSystemContract = {
         'https://www.designesy.org/review/poise/keyboard',
       ],
     },
+    {
+      version: '0.1.2',
+      date: '2026-07-13',
+      summary:
+        'Adopted Lab Two · Takt interface-feel rules: concentric radii, press scale (0.96/0.985), image outlines, hit area floor, stagger rhythm, no transition:all, spare will-change. Rules compiled from external design intelligence (Amicro, Krehel /better-ui) and verified on live CSS.',
+      from_lab: 'Takt',
+      evidence: [
+        'https://www.designesy.org/labs/takt',
+        'https://www.designesy.org/review/takt',
+      ],
+    },
   ],
   promotion_candidates: {
     from_lab: null,
     target_version: null,
     status: 'none',
     rules: [] as readonly string[],
-    note: 'No open promotion candidates. Poise rules were adopted in v0.1.1.',
+    note: 'No open promotion candidates. Poise rules adopted in v0.1.1. Takt rules adopted in v0.1.2.',
   },
 } as const;
 
