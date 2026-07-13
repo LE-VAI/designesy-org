@@ -31,7 +31,7 @@ export function Footer() {
     <footer className="footer">
       <div className="site-shell footer-inner">
         <div className="footer-meta">
-          <span className="wordmark">
+          <span className="wordmark" data-cuelume-hover="sparkle">
             designesy<span className="dot">.</span>
           </span>
           <span>
@@ -57,7 +57,7 @@ export function Footer() {
                 <Link
                   href={link.href}
                   key={link.href}
-                  data-cuelume-hover="tick"
+                  data-cuelume-hover="chime"
                 >
                   {link.label}
                 </Link>
@@ -68,7 +68,7 @@ export function Footer() {
         <a
           className="footer-link"
           href="mailto:le@designesy.org"
-          data-cuelume-hover="tick"
+          data-cuelume-hover="droplet"
         >
           le@designesy.org
         </a>
