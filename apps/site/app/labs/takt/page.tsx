@@ -57,7 +57,7 @@ const PRINCIPLES = [
   {
     num: '04',
     title: 'Minimum hit area',
-    body: '44×44px for touch, 40×40px for desktop. Extend with a pseudo-element when the visual target is smaller. Two elements' hit areas must never overlap.',
+    body: '44×44px for touch, 40×40px for desktop. Extend with a pseudo-element when the visual target is smaller. Two elements\u2019 hit areas must never overlap.',
   },
   {
     num: '05',
@@ -86,7 +86,7 @@ const REVIEW_CHECKS = [
   'Exit animations are softer than enters — small translateY, not full collapse',
   'No transition: all anywhere — every transition names its properties',
   'will-change is absent unless a first-frame stutter was observed and fixed',
-  'No two elements' hit areas overlap',
+  'No two elements\u2019 hit areas overlap',
   'Animation is skipped on initial page load (initial={false} or equivalent)',
 ];
 
