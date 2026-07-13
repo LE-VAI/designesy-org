@@ -159,7 +159,7 @@ export default function ReviewPage() {
               <p className="lab-card-desc">
                 Font smoothing, scale, leading, tracking, measure, text-wrap,
                 tabular numbers, selection — 10 cadence rules adopted into
-                contract v0.1.3.
+                contract v0.1.4.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
@@ -176,7 +176,7 @@ export default function ReviewPage() {
               </div>
               <h3 className="lab-card-title">designesy.org</h3>
               <p className="lab-card-lede">
-                Public review against design system contract v0.1.3.
+                Public review against design system contract v0.1.4.
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including
@@ -250,7 +250,7 @@ export default function ReviewPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.1.3</span>
+                <span className="row-title">Design system contract v0.1.4</span>
                 <span className="row-meta">Human home and machine export · Poise + Takt + Cadence</span>
               </span>
             </Link>

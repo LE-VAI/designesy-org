@@ -70,7 +70,7 @@ const SURFACES = [
     href: '/contracts',
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
-    meta: 'v0.1.3 public',
+    meta: 'v0.1.4 public',
   },
 ];
 
@@ -88,7 +88,7 @@ const FIELD = [
   {
     href: '/contracts/design-system',
     badge: 'Contract',
-    status: 'v0.1.3',
+    status: 'v0.1.4',
     title: 'Design system',
     lede: 'The rules behind this site — portable and versioned.',
     desc: 'Tokens, motion, components, Poise + Takt + Cadence rules. Human overview plus a machine export agents can cite directly.',
@@ -410,7 +410,7 @@ export default function HomePage() {
                 meta: 'Human index /open and machine feed /open.json',
               },
               {
-                title: 'Design system contract v0.1.3',
+                title: 'Design system contract v0.1.4',
                 meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
               },
               {

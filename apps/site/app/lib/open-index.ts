@@ -9,7 +9,7 @@
 
 export const openIndex = {
   id: 'designesy.open',
-  version: '0.1.3',
+  version: '0.1.4',
   status: 'public' as const,
   name: 'Open design intelligence',
   lede: 'Designesy publishes portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, and remix.',
@@ -125,7 +125,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Design system',
-      version: '0.1.3',
+      version: '0.1.4',
       status: 'public',
       lede: 'Portable design judgment for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence rules.',
       human_url: 'https://www.designesy.org/contracts/design-system',
@@ -290,7 +290,7 @@ export const openIndex = {
       title: 'Design system contract',
       path: '/contracts/design-system.json',
       url: 'https://www.designesy.org/contracts/design-system.json',
-      meta: 'v0.1.3 tokens, interaction, takt, cadence, verification',
+      meta: 'v0.1.4 tokens, interaction, takt, cadence, duration scale, verification',
     },
     {
       title: 'Design Review kit',

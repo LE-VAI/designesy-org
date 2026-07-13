@@ -1,7 +1,7 @@
 /**
  * Use Kit One · Design Review
  * Portable instruction package for humans and agents.
- * Source: public Review doctrine + design system contract v0.1.3.
+ * Source: public Review doctrine + design system contract v0.1.4.
  */
 
 export const designReviewKit = {
@@ -30,7 +30,7 @@ export const designReviewKit = {
     },
     {
       href: '/contracts/design-system',
-      title: 'Design system contract v0.1.3',
+      title: 'Design system contract v0.1.4',
       meta: 'Human home and machine export · Poise + Takt + Cadence adopted',
     },
     {
@@ -46,7 +46,7 @@ export const designReviewKit = {
     {
       href: '/review/designesy-org',
       title: 'Field check · designesy.org',
-      meta: 'Public surface review against contract v0.1.3',
+      meta: 'Public surface review against contract v0.1.4',
     },
     {
       href: '/labs/poise',
@@ -78,6 +78,7 @@ export const designReviewKit = {
     'Agent prompt',
     'Output format',
     'Verification checklist',
+    'Anti-rationalizations',
     'Anti-patterns',
     'Related contracts and surfaces',
   ],
@@ -250,6 +251,38 @@ Then return the Output format defined by the kit:
     'Check responsiveness, persistence, performance, and provenance when relevant',
     'Recommend concrete corrections, not vague polish language',
     'Cite a governing contract token or name an open tension before claiming done',
+    'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
+    'Primary action button text passes WCAG AA 4.5:1 contrast against its fill',
+  ],
+  rationalizations: [
+    {
+      excuse: 'It looks fine to me',
+      reality: 'Looking is not reviewing. Run all eight dimensions. A glance misses missing states, keyboard gaps, and hidden burdens.',
+    },
+    {
+      excuse: 'The CSS matches the contract',
+      reality: 'Token matching is one verification item, not the whole review. Layout, interaction, inclusion, and delight still need dimension passes.',
+    },
+    {
+      excuse: 'It is just a small change',
+      reality: 'Small changes still push files past healthy sizes, add untested states, or break responsive behavior. Judge the resulting structure, not the diff size.',
+    },
+    {
+      excuse: 'Accessibility can be added later',
+      reality: 'Retrofitting accessibility is 3x harder than building it from the start. Review it now, document gaps, and name them as tensions if they cannot be fixed today.',
+    },
+    {
+      excuse: 'It works on my machine',
+      reality: 'Manual testing does not persist. Check mobile (375px), tablet (720px), desktop (1080px+), keyboard, and reduced motion. Tomorrow\'s change might break what you did not verify.',
+    },
+    {
+      excuse: 'The design is not final, so I will skip styling review',
+      reality: 'Use the contract defaults. Unstyled or half-styled UI creates a broken first impression. Review against the system even when the design is provisional.',
+    },
+    {
+      excuse: 'AI generated it, so it is probably fine',
+      reality: 'AI output needs more scrutiny, not less. It is confident and plausible even when wrong. Run every dimension.',
+    },
   ],
   anti_patterns: [
     'Subjective taste with no consequence',
