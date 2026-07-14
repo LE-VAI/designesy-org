@@ -461,6 +461,7 @@ p {
   transform: translateY(-50%);
   width: calc(100% - 2rem);
   transform-style: preserve-3d;
+  z-index: 2;
 }
 
 .hero-seam-mark {
@@ -622,7 +623,7 @@ p {
 }
 
 .hero-lede {
-  max-width: min(100%, 680px);
+  max-width: min(100%, 780px);
   font-size: clamp(1.15rem, 2.5vw, 1.5rem);
   line-height: 1.35;
   font-weight: 500;
