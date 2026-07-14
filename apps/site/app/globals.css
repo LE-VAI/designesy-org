@@ -1794,6 +1794,12 @@ button.pillar:hover::before {
 
 /* Principle list — numbered entries with title + description */
 
+.principle-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .principle-list {
   display: flex;
   flex-direction: column;
@@ -1869,6 +1875,114 @@ button.pillar:hover::before {
 
 .section-more {
   margin-top: 2rem;
+}
+
+/*
+  Contract health radar — octagonal SVG chart showing 8 design review
+  dimensions. Sits beside the principle-list on desktop, filling the
+  right-side negative space. Pure SVG + CSS, no JS.
+*/
+.health-radar {
+  display: none;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.health-radar-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.health-radar-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.health-radar-sub {
+  font-size: 0.62rem;
+  color: var(--muted-dim);
+  opacity: 0.7;
+}
+
+.health-radar-svg {
+  width: 100%;
+  height: auto;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.health-radar-grid {
+  fill: none;
+  stroke: var(--line-faint);
+  stroke-width: 0.5;
+}
+
+.health-radar-axis {
+  stroke: var(--line-faint);
+  stroke-width: 0.5;
+}
+
+.health-radar-score {
+  fill: var(--signal-dim);
+  fill-opacity: 0.4;
+  stroke: var(--signal);
+  stroke-width: 1;
+  animation: health-radar-pulse 3s var(--ease-in-out) infinite;
+}
+
+@keyframes health-radar-pulse {
+  0%, 100% { fill-opacity: 0.35; }
+  50% { fill-opacity: 0.5; }
+}
+
+.health-radar-point {
+  fill: var(--signal-light);
+  stroke: var(--signal);
+  stroke-width: 0.5;
+}
+
+.health-radar-label {
+  font-size: 6px;
+  font-weight: 600;
+  fill: var(--muted-dim);
+  letter-spacing: 0.02em;
+  transition: fill 200ms var(--ease);
+}
+
+@media (min-width: 860px) {
+  .principle-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .principle-list {
+    width: 600px;
+    max-width: 600px;
+    flex-shrink: 0;
+  }
+
+  .health-radar {
+    display: flex;
+    align-self: flex-start;
+    /* Match principle-list content height (4 items × ~90px + gaps) */
+    height: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-radar-score {
+    animation: none;
+  }
 }
 
 .text-link {
@@ -2065,40 +2179,47 @@ button.pillar:hover::before {
   flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  position: relative;
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    #000 10%,
-    #000 90%,
+    #000 14%,
+    #000 86%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    #000 10%,
-    #000 90%,
+    #000 14%,
+    #000 86%,
     transparent 100%
   );
-  position: relative;
 }
 
-/* Match marquee height to row-stack content, not flex stretch */
-@media (min-width: 860px) {
-  .state-marquee {
-    align-self: flex-start;
-    height: 100%;
-    max-height: 100%;
-  }
+.state-marquee-header {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 0.85rem 1rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  background: linear-gradient(to bottom, var(--surface) 60%, transparent);
+  pointer-events: none;
 }
 
 .state-marquee-track {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.25rem;
+  gap: 0.55rem;
+  padding: 2.25rem 1rem 1rem;
   animation: state-marquee-scroll 30s linear infinite;
 }
 
@@ -2116,23 +2237,61 @@ button.pillar:hover::before {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
-  padding: 0.5rem 0.85rem;
-  font-size: 0.8rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--signal-light);
-  background: var(--signal-dim);
-  border: 1px solid color-mix(in srgb, var(--signal) 12%, transparent);
   border-radius: var(--radius-sm);
   white-space: nowrap;
   letter-spacing: 0.01em;
+  transition: transform 160ms var(--ease-out);
 }
 
-.state-marquee-pill::before {
+/* Live — bold signal pills with pulse dot */
+.state-marquee-pill--live {
+  color: var(--signal-light);
+  background: var(--signal-dim);
+  border: 1px solid color-mix(in srgb, var(--signal) 18%, transparent);
+}
+.state-marquee-pill--live::before {
   content: "";
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--signal-light);
+  flex-shrink: 0;
+  animation: marquee-pulse 2s var(--ease-in-out) infinite;
+}
+@keyframes marquee-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Adopted — filled with checkmark */
+.state-marquee-pill--adopted {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+.state-marquee-pill--adopted::before {
+  content: "✓";
+  color: var(--signal);
+  font-weight: 700;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+/* Info — outline only, muted */
+.state-marquee-pill--info {
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+.state-marquee-pill--info::before {
+  content: "·";
+  color: var(--signal);
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 0;
   flex-shrink: 0;
 }
 
@@ -2166,6 +2325,9 @@ button.pillar:hover::before {
     overflow: visible;
     mask-image: none;
     -webkit-mask-image: none;
+  }
+  .state-marquee-pill--live::before {
+    animation: none;
   }
 }
 
