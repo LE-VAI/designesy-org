@@ -118,13 +118,15 @@ export function EffectEnhancer() {
 
       shapes.forEach(shape => {
         if (shape === closest) {
-          // Highlight: full opacity, try fill color shift
+          // Highlight: full opacity + brightness boost
           shape.style.setProperty('opacity', '1', 'important');
           shape.style.setProperty('fill', '#3358e8', 'important');
+          shape.style.setProperty('filter', 'brightness(1.25)', 'important');
         } else {
           // Dim siblings
-          shape.style.setProperty('opacity', '0.45', 'important');
+          shape.style.setProperty('opacity', '0.4', 'important');
           shape.style.removeProperty('fill');
+          shape.style.removeProperty('filter');
         }
       });
     };
@@ -148,6 +150,7 @@ export function EffectEnhancer() {
           .forEach(s => {
             s.style.removeProperty('opacity');
             s.style.removeProperty('fill');
+            s.style.removeProperty('filter');
           });
         currentConstellation = null;
       }
