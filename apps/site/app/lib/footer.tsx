@@ -7,6 +7,7 @@ const SURFACE_LINKS = [
   { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
   { href: '/work', label: 'Work' },
+  { href: '/graph', label: 'Graph' },
   { href: '/contracts', label: 'Contracts' },
   { href: '/labs/takt', label: 'Takt lab' },
   { href: '/labs/cadence', label: 'Cadence lab' },
@@ -17,6 +18,7 @@ const SURFACE_LINKS = [
   { href: '/review/designesy-org', label: 'Site review' },
   { href: '/work/tile', label: 'Tile case study' },
   { href: '/work/continuity', label: 'Continuity case study' },
+  { href: '/acoustic-tokens', label: 'Acoustic tokens' },
   { href: '/contracts/design-system', label: 'Design system' },
   { href: '/open/handoff', label: 'Open handoff' },
   { href: '/privacy', label: 'Privacy' },
@@ -29,6 +31,11 @@ const MACHINE_LINKS = [
   { href: '/.well-known/agent.json', label: 'agent.json' },
   { href: '/contracts/design-system.json', label: 'design-system.json' },
   { href: '/kits/design-review.json', label: 'design-review.json' },
+  { href: '/acoustic-tokens.json', label: 'acoustic-tokens.json' },
+  { href: '/labs/poise.json', label: 'poise.json' },
+  { href: '/labs/takt.json', label: 'takt.json' },
+  { href: '/labs/cadence.json', label: 'cadence.json' },
+  { href: '/graph.json', label: 'graph.json' },
   { href: '/review/keyboard', label: 'Keyboard' },
 ];
 
