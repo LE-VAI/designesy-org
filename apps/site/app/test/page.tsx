@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
+import SceneClient from './scene-client';
 
 export const metadata: Metadata = {
   title: 'Test',
   robots: { index: false, follow: false },
 };
-
-const Scene = dynamic(() => import('./scene'), { ssr: false });
 
 export default function TestPage() {
   return (
@@ -98,7 +96,7 @@ export default function TestPage() {
           position: 'relative',
         }}
       >
-        <Scene />
+        <SceneClient />
       </div>
     </main>
   );
