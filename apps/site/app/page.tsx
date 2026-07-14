@@ -294,22 +294,133 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* --- Principles preview --- */}
+        {/* --- Principles preview + Contract health radar --- */}
         <section className="section" aria-labelledby="principles-title">
           <p className="section-eyebrow">Operating principles</p>
           <h2 className="section-title" id="principles-title">
             Nine principles. Four shown here.
           </h2>
-          <div className="principle-list principle-list--rail">
-            {PRINCIPLES_PREVIEW.map((p) => (
-              <div className="principle fade-in" key={p.num}>
-                <span className="principle-num">{p.num}</span>
-                <div className="principle-body">
-                  <h3>{p.title}</h3>
-                  <p>{p.desc}</p>
+          <div className="principle-layout">
+            <div className="principle-list principle-list--rail">
+              {PRINCIPLES_PREVIEW.map((p) => (
+                <div className="principle fade-in" key={p.num}>
+                  <span className="principle-num">{p.num}</span>
+                  <div className="principle-body">
+                    <h3>{p.title}</h3>
+                    <p>{p.desc}</p>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <aside className="health-radar" aria-label="Contract health radar">
+              <div className="health-radar-header">
+                <span className="health-radar-title">Contract health</span>
+                <span className="health-radar-sub">8 dimensions</span>
               </div>
-            ))}
+              <svg
+                className="health-radar-svg"
+                viewBox="0 0 200 200"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                {/* Grid rings — 3 concentric octagons */}
+                {[0.33, 0.66, 1].map((ring, ri) => {
+                  const r = 80 * ring;
+                  const pts = [];
+                  for (let i = 0; i < 8; i++) {
+                    const angle = (i * 45 - 90) * Math.PI / 180;
+                    pts.push(`${100 + r * Math.cos(angle)},${100 + r * Math.sin(angle)}`);
+                  }
+                  return (
+                    <polygon
+                      key={ri}
+                      className="health-radar-grid"
+                      points={pts.join(' ')}
+                    />
+                  );
+                })}
+
+                {/* Axis lines from center to outer ring */}
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+                  const angle = (i * 45 - 90) * Math.PI / 180;
+                  return (
+                    <line
+                      key={i}
+                      className="health-radar-axis"
+                      x1={100}
+                      y1={100}
+                      x2={100 + 80 * Math.cos(angle)}
+                      y2={100 + 80 * Math.sin(angle)}
+                    />
+                  );
+                })}
+
+                {/* Score polygon — 8 dimensions, all high */}
+                {(() => {
+                  const scores = [0.95, 0.90, 0.95, 0.88, 0.92, 0.95, 0.90, 1.0];
+                  const pts = scores.map((score, i) => {
+                    const angle = (i * 45 - 90) * Math.PI / 180;
+                    const r = 80 * score;
+                    return `${100 + r * Math.cos(angle)},${100 + r * Math.sin(angle)}`;
+                  });
+                  return (
+                    <polygon
+                      className="health-radar-score"
+                      points={pts.join(' ')}
+                    />
+                  );
+                })()}
+
+                {/* Score points */}
+                {(() => {
+                  const scores = [0.95, 0.90, 0.95, 0.88, 0.92, 0.95, 0.90, 1.0];
+                  return scores.map((score, i) => {
+                    const angle = (i * 45 - 90) * Math.PI / 180;
+                    const r = 80 * score;
+                    return (
+                      <circle
+                        key={i}
+                        className="health-radar-point"
+                        cx={100 + r * Math.cos(angle)}
+                        cy={100 + r * Math.sin(angle)}
+                        r={2.5}
+                      />
+                    );
+                  });
+                })()}
+
+                {/* Axis labels */}
+                {[
+                  { label: 'Type', i: 0 },
+                  { label: 'Motion', i: 1 },
+                  { label: 'Color', i: 2 },
+                  { label: 'A11y', i: 3 },
+                  { label: 'Space', i: 4 },
+                  { label: 'Hierarchy', i: 5 },
+                  { label: 'Interact', i: 6 },
+                  { label: 'Provenance', i: 7 },
+                ].map(({ label, i }) => {
+                  const angle = (i * 45 - 90) * Math.PI / 180;
+                  const labelR = 92;
+                  const x = 100 + labelR * Math.cos(angle);
+                  const y = 100 + labelR * Math.sin(angle);
+                  return (
+                    <text
+                      key={i}
+                      className="health-radar-label"
+                      x={x}
+                      y={y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {label}
+                    </text>
+                  );
+                })}
+              </svg>
+            </aside>
           </div>
           <div className="section-more">
             <Link
@@ -470,35 +581,36 @@ export default function HomePage() {
             </div>
 
             <aside className="state-marquee" aria-hidden="true">
+              <span className="state-marquee-header">System signals</span>
               <div className="state-marquee-track">
                 {[
-                  'v0.1.4 · LIVE',
-                  'Poise ✓ adopted',
-                  'Takt ✓ adopted',
-                  'Cadence ✓ adopted',
-                  'Review ✓ pass',
-                  'Keyboard ✓ verified',
-                  'Drift rule active',
-                  'SKILL.md published',
-                  'open.json · machine feed',
-                  'llms.txt · agent brief',
-                  'Cuelume · sound on',
-                  'reduced-motion safe',
-                  'v0.1.4 · LIVE',
-                  'Poise ✓ adopted',
-                  'Takt ✓ adopted',
-                  'Cadence ✓ adopted',
-                  'Review ✓ pass',
-                  'Keyboard ✓ verified',
-                  'Drift rule active',
-                  'SKILL.md published',
-                  'open.json · machine feed',
-                  'llms.txt · agent brief',
-                  'Cuelume · sound on',
-                  'reduced-motion safe',
-                ].map((token, i) => (
-                  <span className="state-marquee-pill" key={i}>
-                    {token}
+                  { t: 'v0.1.4 · LIVE', c: 'live' },
+                  { t: 'Poise ✓ adopted', c: 'adopted' },
+                  { t: 'Takt ✓ adopted', c: 'adopted' },
+                  { t: 'Cadence ✓ adopted', c: 'adopted' },
+                  { t: 'Review ✓ pass', c: 'adopted' },
+                  { t: 'Keyboard ✓ verified', c: 'adopted' },
+                  { t: 'Drift rule active', c: 'live' },
+                  { t: 'SKILL.md published', c: 'live' },
+                  { t: 'open.json · machine feed', c: 'info' },
+                  { t: 'llms.txt · agent brief', c: 'info' },
+                  { t: 'Cuelume · sound on', c: 'info' },
+                  { t: 'reduced-motion safe', c: 'info' },
+                  { t: 'v0.1.4 · LIVE', c: 'live' },
+                  { t: 'Poise ✓ adopted', c: 'adopted' },
+                  { t: 'Takt ✓ adopted', c: 'adopted' },
+                  { t: 'Cadence ✓ adopted', c: 'adopted' },
+                  { t: 'Review ✓ pass', c: 'adopted' },
+                  { t: 'Keyboard ✓ verified', c: 'adopted' },
+                  { t: 'Drift rule active', c: 'live' },
+                  { t: 'SKILL.md published', c: 'live' },
+                  { t: 'open.json · machine feed', c: 'info' },
+                  { t: 'llms.txt · agent brief', c: 'info' },
+                  { t: 'Cuelume · sound on', c: 'info' },
+                  { t: 'reduced-motion safe', c: 'info' },
+                ].map((item, i) => (
+                  <span className={`state-marquee-pill state-marquee-pill--${item.c}`} key={i}>
+                    {item.t}
                   </span>
                 ))}
               </div>
