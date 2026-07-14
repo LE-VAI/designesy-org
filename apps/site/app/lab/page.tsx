@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 
 export const metadata: Metadata = {
   title: 'Lab',
+  description: 'Private test canvas',
   robots: { index: false, follow: false },
 };
 
