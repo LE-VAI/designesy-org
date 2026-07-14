@@ -539,48 +539,29 @@ p {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  /*
-    Flip — each modular shape rotates 180° on Y, revealing its complementary
-    fill at the edge-on midpoint. Signal shapes flip to ink; ink shapes flip
-    to signal. The Z-lift is preserved so the shape still pops toward you.
-    Duration matches --duration-medium for a deliberate, readable coin flip.
-  */
-  .hero-seam-mark .seam-dot,
-  .hero-seam-mark .seam-orbit,
-  .hero-seam-mark .seam-square,
-  .hero-seam-mark .seam-triangle,
-  .hero-seam-mark .seam-block {
-    transition: transform 350ms var(--ease-out), fill 350ms var(--ease-in-out);
-  }
-
-  /* Dot — origin signal flips to ink */
+  /* Dot — origin signal: soft pop toward you */
   .hero-seam-mark .seam-dot:hover {
-    transform: translateZ(18px) rotateY(180deg) scale(1.08);
-    fill: var(--ink);
+    transform: translateZ(18px) scale(1.08);
   }
 
-  /* Orbit — living curve flips to ink */
+  /* Orbit — living curve: slight yaw as if rolling on the seam */
   .hero-seam-mark .seam-orbit:hover {
-    transform: translateZ(12px) rotateY(180deg) scale(1.03);
-    fill: var(--ink);
+    transform: translateZ(12px) rotateY(-14deg) rotateX(6deg) scale(1.03);
   }
 
-  /* Square — structure flips to signal */
+  /* Square — structure: crisp lift, least flourish */
   .hero-seam-mark .seam-square:hover {
-    transform: translateZ(14px) rotateY(180deg) scale(1.04);
-    fill: var(--signal);
+    transform: translateZ(14px) rotateX(-8deg) scale(1.04);
   }
 
-  /* Triangle — motion flips to signal */
+  /* Triangle — motion: tip-forward thrust */
   .hero-seam-mark .seam-triangle:hover {
-    transform: translateZ(16px) rotateY(180deg) scale(1.05);
-    fill: var(--signal);
+    transform: translateZ(16px) rotateX(10deg) rotateZ(-4deg) scale(1.05);
   }
 
-  /* Block — stability flips to signal */
+  /* Block — stability: heavier, slower-feeling settle up */
   .hero-seam-mark .seam-block:hover {
-    transform: translateZ(10px) rotateY(180deg) scale(1.03);
-    fill: var(--signal);
+    transform: translateZ(10px) rotateX(-5deg) rotateY(8deg) scale(1.03);
   }
 
   .hero-seam-mark .seam-dot:active,
@@ -588,7 +569,7 @@ p {
   .hero-seam-mark .seam-square:active,
   .hero-seam-mark .seam-triangle:active,
   .hero-seam-mark .seam-block:active {
-    transform: translateZ(4px) rotateY(90deg) scale(0.97);
+    transform: translateZ(4px) scale(0.97);
     transition-duration: 100ms;
   }
 
