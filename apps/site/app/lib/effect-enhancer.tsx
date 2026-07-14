@@ -102,8 +102,7 @@ export function EffectEnhancer() {
       mark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
         .forEach(sibling => {
           if (sibling !== shape) {
-            (sibling as HTMLElement).style.opacity = '0.55';
-            (sibling as HTMLElement).style.transition = 'opacity 180ms var(--ease)';
+            (sibling as HTMLElement).style.setProperty('opacity', '0.55', 'important');
           }
         });
     };
@@ -122,7 +121,7 @@ export function EffectEnhancer() {
       // Restore siblings
       mark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
         .forEach(sibling => {
-          (sibling as HTMLElement).style.opacity = '';
+          (sibling as HTMLElement).style.removeProperty('opacity');
         });
     };
 
