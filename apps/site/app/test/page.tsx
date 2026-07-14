@@ -12,28 +12,29 @@ export default function TestPage() {
       style={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--paper)',
         padding: '1.5rem',
+        gap: '1rem',
       }}
     >
+      {/* Hero cell */}
       <div
-        id="canvas"
         style={{
           width: '100%',
           maxWidth: 'var(--maxw)',
-          minHeight: 'calc(100vh - 3rem)',
+          minHeight: '320px',
           borderRadius: 'var(--radius)',
           border: '1px solid var(--line)',
           background: 'var(--surface)',
-          overflow: 'hidden',
-          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '1.35rem',
+          position: 'relative',
         }}
       >
         <p
@@ -63,15 +64,33 @@ export default function TestPage() {
         >
           designesy<span style={{ color: 'var(--signal)' }}>.</span>
         </h1>
-        <div
+      </div>
+
+      {/* Effect grid cell */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 'var(--maxw)',
+          flex: '1 1 auto',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--line)',
+          background: 'var(--surface)',
+          padding: '1.25rem',
+        }}
+      >
+        <p
           style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--muted-dim)',
+            marginBottom: '1rem',
           }}
         >
-          <SceneClient />
-        </div>
+          Hover · tap effects
+        </p>
+        <SceneClient />
       </div>
     </main>
   );

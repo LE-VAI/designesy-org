@@ -3267,3 +3267,291 @@ a.lab-card:focus-visible .lab-card-arrow {
   z-index: 1;
   padding: 1.25rem;
 }
+
+/* ==========================================================================
+   Test lab — effect cell grid (12 hover/tap animation demos)
+   All effects use contract tokens. Respects prefers-reduced-motion.
+   ========================================================================== */
+
+.effect-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.6rem;
+}
+
+.effect-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 100px;
+  padding: 1rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease),
+    background 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+
+.effect-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  z-index: 2;
+}
+
+.effect-desc {
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+  line-height: 1.4;
+  z-index: 2;
+  transition: color 200ms var(--ease);
+}
+
+/* --- Pulse --- */
+.effect-pulse:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--signal-dim), 0 0 24px var(--signal-dim);
+  border-color: var(--signal-dim);
+}
+.effect-pulse:active {
+  transform: scale(0.98);
+}
+
+/* --- Lift --- */
+.effect-lift:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+.effect-lift:active {
+  transform: translateY(-1px);
+}
+
+/* --- Signal bar (grows from bottom on hover) --- */
+.effect-signal-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  height: 0;
+  background: var(--signal);
+  transition: height 250ms var(--ease-out);
+  z-index: 1;
+}
+.effect-signal-bar:hover,
+.effect-cell:hover .effect-signal-bar {
+  height: 100%;
+}
+
+/* --- Fill (signal-dim sweeps in from bottom) --- */
+.effect-fill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--signal-dim);
+  transform: translateY(100%);
+  transition: transform 250ms var(--ease-out);
+  z-index: 0;
+}
+.effect-fill:hover::before {
+  transform: translateY(0);
+}
+.effect-fill:hover .effect-label {
+  color: var(--signal-light);
+}
+
+/* --- Glow text --- */
+.effect-glow-text:hover .effect-label {
+  color: var(--signal-light);
+  text-shadow: 0 0 12px var(--signal-dim);
+}
+.effect-glow-text:hover .effect-desc {
+  color: var(--muted);
+}
+
+/* --- Shake (on tap) --- */
+.effect-shake.is-tapped {
+  animation: effect-shake 400ms var(--ease-out);
+}
+@keyframes effect-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* --- Flip (card flips to reveal description) --- */
+.effect-flip {
+  perspective: 600px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.effect-flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: 100px;
+  transform-style: preserve-3d;
+  transition: transform 400ms var(--ease-out);
+}
+.effect-flip:hover .effect-flip-inner,
+.effect-flip.is-tapped .effect-flip-inner {
+  transform: rotateY(180deg);
+}
+.effect-flip-front,
+.effect-flip-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 1rem 0.75rem;
+}
+.effect-flip-front {
+  background: var(--paper);
+}
+.effect-flip-back {
+  background: var(--surface-raised);
+  border-color: var(--signal-dim);
+  transform: rotateY(180deg);
+}
+.effect-flip-back .effect-desc {
+  color: var(--signal-light);
+}
+
+/* --- Orbit (signal dot circles the cell) --- */
+.effect-orbit {
+  overflow: visible;
+}
+.effect-orbit-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-light);
+  top: 50%;
+  left: 50%;
+  margin: -3px 0 0 -3px;
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+}
+.effect-orbit:hover .effect-orbit-dot {
+  opacity: 1;
+  animation: effect-orbit 1.2s linear infinite;
+}
+@keyframes effect-orbit {
+  from { transform: rotate(0deg) translateX(50px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(50px) rotate(-360deg); }
+}
+
+/* --- Expand (border expands outward) --- */
+.effect-expand::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 1px solid var(--signal-dim);
+  border-radius: calc(var(--radius-sm) + 3px);
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  pointer-events: none;
+}
+.effect-expand:hover::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --- Ripple (from tap point) --- */
+.effect-ripple {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--signal-light);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  animation: effect-ripple 600ms var(--ease-out) forwards;
+  z-index: 3;
+}
+@keyframes effect-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(20);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* --- Scrim (dark scrim fades, signal shows through) --- */
+.effect-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  opacity: 1;
+  transition: opacity 250ms var(--ease-out);
+  z-index: 1;
+}
+.effect-scrim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, var(--signal-dim), transparent 70%);
+  opacity: 0;
+  transition: opacity 250ms var(--ease-out);
+  z-index: 0;
+}
+.effect-scrim:hover::before {
+  opacity: 0;
+}
+.effect-scrim:hover::after {
+  opacity: 1;
+}
+.effect-scrim:hover .effect-label {
+  color: var(--signal-light);
+}
+
+/* --- Breath (slow opacity pulse like wordmark) --- */
+.effect-breath:hover .effect-label {
+  animation: effect-breath 2s var(--ease-in-out) infinite;
+}
+@keyframes effect-breath {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* --- Grid responsive --- */
+@media (max-width: 560px) {
+  .effect-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .effect-cell,
+  .effect-cell::before,
+  .effect-cell::after,
+  .effect-flip-inner,
+  .effect-signal-bar,
+  .effect-orbit-dot,
+  .effect-ripple {
+    transition: none !important;
+    animation: none !important;
+  }
+  .effect-pulse:hover { transform: none; }
+  .effect-lift:hover { transform: none; }
+  .effect-shake.is-tapped { animation: none; }
+  .effect-flip:hover .effect-flip-inner { transform: none; }
+}
