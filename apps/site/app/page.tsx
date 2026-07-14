@@ -1,8 +1,22 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
 import { ToggleRow } from './lib/toggle-row';
+import { pageMeta } from './lib/site-meta';
+
+export const metadata: Metadata = pageMeta({
+  title: 'Designesy — Design intelligence infrastructure',
+  description:
+    'Design intelligence infrastructure for a humane creative civilization. Portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, cite, and remix.',
+  path: '/',
+  ogTitle: 'Designesy — Design intelligence infrastructure',
+  ogDescription:
+    'Sources into principles, principles into contracts, contracts into tools, tools into better designed work. Versioned contracts, machine exports, and a public provenance graph.',
+  twitterDescription:
+    'Design intelligence infrastructure — contracts, kits, labs, and field checks. designesy.org',
+});
 
 const PILLARS = [
   {

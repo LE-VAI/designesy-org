@@ -191,5 +191,47 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.75,
     },
+    {
+      url: `${BASE}/acoustic-tokens`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/acoustic-tokens.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/labs/poise.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/labs/takt.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/labs/cadence.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/graph`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/graph.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
   ];
 }

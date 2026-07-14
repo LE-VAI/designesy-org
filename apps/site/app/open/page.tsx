@@ -277,6 +277,98 @@ export default function OpenPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">External standards</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            Designesy builds on open standards and open-source libraries.
+            These are the external surfaces cited in the contract and labs.
+          </p>
+          <div className="row-stack" role="list">
+            <a
+              href="https://www.designtokens.org/"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">W3C Design Tokens Format Module 2025.10</span>
+                <span className="row-meta">Canonical token standard — color, dimension, motion (duration, cubicBezier, transition)</span>
+              </span>
+            </a>
+            <a
+              href="https://llmstxt.org"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">llms.txt</span>
+                <span className="row-meta">Agent-facing website context standard (Jeremy Howard, 2024)</span>
+              </span>
+            </a>
+            <a
+              href="https://agents.md"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">AGENTS.md</span>
+                <span className="row-meta">Repo-level agent guidance format (Linux Foundation, 60k+ projects)</span>
+              </span>
+            </a>
+            <a
+              href="https://github.com/Danilaa1/cuelume"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Cuelume v0.1.0</span>
+                <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi) — powers acoustic tokens</span>
+              </span>
+            </a>
+            <a
+              href="https://transitions.dev"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+              data-cuelume-release
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">transitions.dev</span>
+                <span className="row-meta">Motion reference — duration scale cross-referenced in contract</span>
+              </span>
+            </a>
+          </div>
+        </section>
+          </div>
+        </section>
+
         <div className="status-note">
           {o.handoff_line} Machine feed is CORS-open JSON. Packages without a
           machine URL are human-first evidence surfaces until a schema is
