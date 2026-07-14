@@ -1,249 +1,169 @@
 'use client';
 
-import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, Sparkles } from '@react-three/drei';
-import { Suspense, useRef, useState, useMemo, useCallback } from 'react';
-import * as THREE from 'three';
+import { useRef, useState, useCallback, useEffect } from 'react';
 
-/* ---------- Firework burst ---------- */
+/**
+ * Pure-canvas firework sparkle — no three.js dependency.
+ * Click anywhere in the canvas → burst of signal-blue particles
+ * radiate from the click point, with gravity decay.
+ * Uses contract tokens: --signal (#0133cb), --signal-light (#3358e8).
+ */
 
-type Burst = {
-  id: number;
-  position: [number, number, number];
-  count: number;
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  color: string;
 };
 
-function FireworkBurst({
-  position,
-  count,
-  onComplete,
-}: {
-  position: [number, number, number];
-  count: number;
-  onComplete: () => void;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-  const startTime = useRef(performance.now());
-  const duration = 1200;
-
-  const particles = useMemo(() => {
-    return Array.from({ length: count }, () => {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const speed = 2 + Math.random() * 3;
-      return {
-        velocity: new THREE.Vector3(
-          Math.sin(phi) * Math.cos(theta) * speed,
-          Math.sin(phi) * Math.sin(theta) * speed,
-          Math.cos(phi) * speed * 0.3,
-        ),
-        size: 0.02 + Math.random() * 0.05,
-      };
-    });
-  }, [count]);
-
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const elapsed = (performance.now() - startTime.current) / 1000;
-    const progress = elapsed / (duration / 1000);
-
-    if (progress >= 1) {
-      onComplete();
-      return;
-    }
-
-    groupRef.current.children.forEach((child, i) => {
-      const p = particles[i];
-      if (!p) return;
-      const decay = 1 - progress;
-      child.position.set(
-        p.velocity.x * elapsed * decay,
-        p.velocity.y * elapsed * decay - progress * progress * 2,
-        p.velocity.z * elapsed * decay,
-      );
-      child.scale.setScalar(decay);
-    });
-  });
-
-  return (
-    <group ref={groupRef} position={position}>
-      {particles.map((_, i) => (
-        <mesh key={i}>
-          <sphereGeometry args={[1, 8, 8]} />
-          <meshBasicMaterial
-            color={i % 3 === 0 ? '#3358e8' : '#0133cb'}
-            transparent
-            opacity={0.9}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/* ---------- Shockwave ring ---------- */
-
-function Shockwave({
-  position,
-  onComplete,
-}: {
-  position: [number, number, number];
-  onComplete: () => void;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const startTime = useRef(performance.now());
-  const duration = 800;
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-    const elapsed = (performance.now() - startTime.current) / 1000;
-    const progress = elapsed / (duration / 1000);
-
-    if (progress >= 1) {
-      onComplete();
-      return;
-    }
-
-    const scale = 0.3 + progress * 4;
-    meshRef.current.scale.set(scale, scale, 1);
-    const mat = meshRef.current.material as THREE.MeshBasicMaterial;
-    mat.opacity = (1 - progress) * 0.6;
-  });
-
-  return (
-    <mesh ref={meshRef} position={position} rotation={[0, 0, 0]}>
-      <ringGeometry args={[0.85, 1, 48]} />
-      <meshBasicMaterial
-        color="#3358e8"
-        transparent
-        opacity={0.6}
-        side={THREE.DoubleSide}
-        toneMapped={false}
-      />
-    </mesh>
-  );
-}
-
-/* ---------- Main orb ---------- */
-
-function SignalOrb({ pulseCount }: { pulseCount: number }) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const pulseStart = useRef(0);
-  const lastPulse = useRef(0);
-
-  useFrame(() => {
-    if (!meshRef.current) return;
-
-    if (pulseCount !== lastPulse.current) {
-      lastPulse.current = pulseCount;
-      pulseStart.current = performance.now();
-    }
-
-    if (pulseStart.current > 0) {
-      const elapsed = (performance.now() - pulseStart.current) / 1000;
-      const p = elapsed / 0.6;
-      if (p >= 1) {
-        pulseStart.current = 0;
-        meshRef.current.scale.setScalar(1);
-      } else {
-        const expansion = Math.sin(p * Math.PI) * 0.25;
-        meshRef.current.scale.setScalar(1 + expansion);
-      }
-    }
-  });
-
-  return (
-    <Float speed={1.2} rotationIntensity={0.4} floatIntensity={1.5}>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[1.4, 64, 64]} />
-        <MeshDistortMaterial
-          color="#0133cb"
-          emissive="#0133cb"
-          emissiveIntensity={0.15}
-          roughness={0.15}
-          metalness={0.85}
-          distort={0.25}
-          speed={1.5}
-        />
-      </mesh>
-    </Float>
-  );
-}
-
-/* ---------- Scene ---------- */
-
-function SceneContent() {
-  const { camera, raycaster } = useThree();
-  const [bursts, setBursts] = useState<Burst[]>([]);
-  const [shockwaves, setShockwaves] = useState<Burst[]>([]);
-  const [orbPulse, setOrbPulse] = useState(0);
-  const burstId = useRef(0);
-
-  const handlePointerDown = useCallback(
-    (event: ThreeEvent<PointerEvent>) => {
-      event.nativeEvent.preventDefault();
-      const x = (event.nativeEvent.offsetX / (event.nativeEvent.target as HTMLElement).clientWidth) * 2 - 1;
-      const y = -(event.nativeEvent.offsetY / (event.nativeEvent.target as HTMLElement).clientHeight) * 2 + 1;
-
-      raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-      const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-      const target = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, target);
-
-      if (!target) return;
-
-      const id = burstId.current++;
-      setBursts((prev) => [...prev, { id, position: [target.x, target.y, 0], count: 40 }]);
-      setShockwaves((prev) => [...prev, { id, position: [target.x, target.y, 0.1], count: 0 }]);
-      setOrbPulse((p) => p + 1);
-    },
-    [camera, raycaster],
-  );
-
-  return (
-    <>
-      <ambientLight intensity={0.3} />
-      <pointLight position={[5, 5, 5]} intensity={1.2} color="#3358e8" />
-      <pointLight position={[-5, -3, 2]} intensity={0.5} color="#ffffff" />
-
-      <group onPointerDown={handlePointerDown}>
-        <SignalOrb pulseCount={orbPulse} />
-      </group>
-
-      <Sparkles count={30} scale={6} size={2} speed={0.3} color="#3358e8" opacity={0.4} />
-
-      {bursts.map((burst) => (
-        <FireworkBurst
-          key={burst.id}
-          position={burst.position}
-          count={burst.count}
-          onComplete={() => setBursts((prev) => prev.filter((b) => b.id !== burst.id))}
-        />
-      ))}
-
-      {shockwaves.map((sw) => (
-        <Shockwave
-          key={sw.id}
-          position={sw.position}
-          onComplete={() => setShockwaves((prev) => prev.filter((s) => s.id !== sw.id))}
-        />
-      ))}
-    </>
-  );
-}
+type Ring = {
+  x: number;
+  y: number;
+  radius: number;
+  life: number;
+  maxLife: number;
+};
 
 export default function Scene() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const ringsRef = useRef<Ring[]>([]);
+  const animRef = useRef<number>(0);
+  const [pulse, setPulse] = useState(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const rect = parent.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const animate = () => {
+      const w = canvas.width / window.devicePixelRatio;
+      const h = canvas.height / window.devicePixelRatio;
+      ctx.clearRect(0, 0, w, h);
+
+      // Ambient floating dots
+      const time = performance.now() / 1000;
+      for (let i = 0; i < 25; i++) {
+        const x = (Math.sin(time * 0.2 + i * 1.7) * 0.5 + 0.5) * w;
+        const y = (Math.cos(time * 0.15 + i * 2.3) * 0.5 + 0.5) * h;
+        const alpha = 0.15 + Math.sin(time + i) * 0.1;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(51, 88, 232, ${alpha})`;
+        ctx.fill();
+      }
+
+      // Update + draw rings
+      ringsRef.current = ringsRef.current.filter((r) => {
+        r.life += 1;
+        if (r.life >= r.maxLife) return false;
+        const progress = r.life / r.maxLife;
+        r.radius += 3;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(51, 88, 232, ${(1 - progress) * 0.5})`;
+        ctx.lineWidth = 2 * (1 - progress);
+        ctx.stroke();
+        return true;
+      });
+
+      // Update + draw particles
+      particlesRef.current = particlesRef.current.filter((p) => {
+        p.life += 1;
+        if (p.life >= p.maxLife) return false;
+        const decay = 1 - p.life / p.maxLife;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.12; // gravity
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * decay, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = decay * 0.9;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return true;
+      });
+
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  const handleClick = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Burst particles
+      const count = 40;
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+        const speed = 2 + Math.random() * 4;
+        particlesRef.current.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          life: 0,
+          maxLife: 50 + Math.random() * 30,
+          size: 2 + Math.random() * 3,
+          color: i % 3 === 0 ? '#3358e8' : '#0133cb',
+        });
+      }
+
+      // Shockwave ring
+      ringsRef.current.push({
+        x,
+        y,
+        radius: 5,
+        life: 0,
+        maxLife: 30,
+      });
+
+      setPulse((p) => p + 1);
+    },
+    [],
+  );
+
   return (
-    <Canvas
-      camera={{ position: [0, 0, 4.5], fov: 45 }}
-      style={{ width: '100%', height: '100%', cursor: 'crosshair' }}
-      gl={{ antialias: true, alpha: true }}
-      onPointerMissed={() => {}}
-    >
-      <Suspense fallback={null}>
-        <SceneContent />
-      </Suspense>
-    </Canvas>
+    <canvas
+      ref={canvasRef}
+      onPointerDown={handleClick}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        cursor: 'crosshair',
+      }}
+    />
   );
 }
