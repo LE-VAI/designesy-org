@@ -65,11 +65,11 @@ export function EffectEnhancer() {
       }
     };
 
-    /* --- Hero seam: 3D tilt on mark + per-shape color + sibling dim --- */
-    // SVG child elements don't support CSS transforms, but the .hero-seam-mark
-    // container (an <svg> element) does. We tilt the whole mark toward the
-    // cursor AND shift color/dim on individual shapes.
-    let currentMark: HTMLElement | null = null;
+    /* --- Hero seam: 3D tilt on constellation + per-shape color + sibling dim --- */
+    // SVG elements don't support CSS transforms, but their parent .hero-seam-constellation
+    // is an HTML div that does. We tilt the constellation toward the cursor AND
+    // shift color/dim on individual shapes.
+    let currentConstellation: HTMLElement | null = null;
 
     const handleSeamMove = (e: PointerEvent) => {
       if (!finePointer.matches) return;
@@ -77,26 +77,29 @@ export function EffectEnhancer() {
       const mark = target.closest<HTMLElement>('.hero-seam-mark');
       if (!mark) return;
 
-      if (currentMark !== mark) {
+      const constellation = mark.closest<HTMLElement>('.hero-seam-constellation');
+      if (!constellation) return;
+
+      if (currentConstellation !== constellation) {
         // Reset previous
-        if (currentMark) {
-          currentMark.style.transform = '';
-          currentMark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+        if (currentConstellation) {
+          currentConstellation.style.transform = '';
+          currentConstellation.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
             .forEach(s => {
               (s as HTMLElement).style.removeProperty('opacity');
               (s as HTMLElement).style.removeProperty('fill');
             });
         }
-        currentMark = mark;
+        currentConstellation = constellation;
       }
 
-      // 3D tilt the whole mark toward cursor
+      // 3D tilt the constellation toward cursor
       const rect = mark.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width - 0.5;
       const py = (e.clientY - rect.top) / rect.height - 0.5;
       const tiltRx = py * -12;
       const tiltRy = px * 12;
-      mark.style.transform = `perspective(500px) rotateX(${tiltRx}deg) rotateY(${tiltRy}deg) translateZ(8px)`;
+      constellation.style.transform = `perspective(500px) rotateX(${tiltRx}deg) rotateY(${tiltRy}deg) translateZ(8px)`;
 
       // Per-shape color shift on the shape closest to cursor
       const shapes = mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block');
@@ -115,9 +118,9 @@ export function EffectEnhancer() {
 
       shapes.forEach(shape => {
         if (shape === closest) {
-          // Highlight: brighten to signal-light
-          shape.style.setProperty('fill', 'var(--signal-light)', 'important');
+          // Highlight: full opacity, try fill color shift
           shape.style.setProperty('opacity', '1', 'important');
+          shape.style.setProperty('fill', '#3358e8', 'important');
         } else {
           // Dim siblings
           shape.style.setProperty('opacity', '0.45', 'important');
@@ -131,19 +134,22 @@ export function EffectEnhancer() {
       const mark = target.closest<HTMLElement>('.hero-seam-mark');
       if (!mark) return;
 
+      const constellation = mark.closest<HTMLElement>('.hero-seam-constellation');
+      if (!constellation) return;
+
       const rect = mark.getBoundingClientRect();
       const outside =
         e.clientX < rect.left || e.clientX > rect.right ||
         e.clientY < rect.top || e.clientY > rect.bottom;
 
       if (outside) {
-        mark.style.transform = '';
-        mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+        constellation.style.transform = '';
+        constellation.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
           .forEach(s => {
             s.style.removeProperty('opacity');
             s.style.removeProperty('fill');
           });
-        currentMark = null;
+        currentConstellation = null;
       }
     };
 
