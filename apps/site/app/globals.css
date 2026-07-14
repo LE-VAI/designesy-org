@@ -476,6 +476,17 @@ p {
 }
 
 /*
+  Per-shape hover groups — each shape is wrapped in a <g class="seam-shape">
+  so it can receive CSS 3D transforms (SVG child elements can't, but <g> can).
+  JS (EffectEnhancer) applies transform + color on hover.
+*/
+.hero-seam-mark .seam-shape {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease);
+}
+
+/*
   Solid modular fills — true logo language.
   Signal blue only on the living elements (dot + orbit).
   Body forms in ink. No washed opacity ghosts.

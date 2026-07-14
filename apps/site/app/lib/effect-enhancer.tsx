@@ -4,16 +4,40 @@ import { useEffect } from 'react';
 
 /**
  * Effect enhancer — applies cursor-tracking CSS variables and
- * tap-triggered shake to site-wide elements:
+ * tap-triggered effects to site-wide elements:
  *
  * - .surface-card: sets --spot-x / --spot-y on pointermove
  * - .field-card: sets --tilt-rx / --tilt-ry on pointermove
- * - .hero-seam-mark: 3D tilt toward cursor + sibling dim on hover
+ * - .hero-seam-mark .seam-shape: per-shape 3D tilt + color shift on hover
  * - .principle, .pipeline-step: adds .is-shaking on pointerdown
  *
  * Respects prefers-reduced-motion (exits early).
  * Zero dependencies, passive listeners only.
  */
+
+/** Per-shape hover config: 3D transform + color swap */
+const SHAPE_CONFIG: Record<string, { transform: string; color: string }> = {
+  'seam-dot-group': {
+    transform: 'perspective(400px) translateZ(16px) scale(1.1)',
+    color: 'var(--signal-light)',
+  },
+  'seam-orbit-group': {
+    transform: 'perspective(400px) translateZ(12px) rotateY(-12deg) scale(1.05)',
+    color: 'var(--signal-light)',
+  },
+  'seam-square-group': {
+    transform: 'perspective(400px) translateZ(14px) rotateX(-8deg) scale(1.05)',
+    color: 'var(--signal-light)',
+  },
+  'seam-triangle-group': {
+    transform: 'perspective(400px) translateZ(16px) rotateX(8deg) rotateZ(-3deg) scale(1.06)',
+    color: 'var(--signal-light)',
+  },
+  'seam-block-group': {
+    transform: 'perspective(400px) translateZ(10px) rotateX(-4deg) rotateY(6deg) scale(1.04)',
+    color: 'var(--signal-light)',
+  },
+};
 
 export function EffectEnhancer() {
   useEffect(() => {
@@ -65,70 +89,89 @@ export function EffectEnhancer() {
       }
     };
 
-    /* --- 3D tilt for hero seam mark --- */
-    // The SVG child elements don't support CSS transforms, but the
-    // .hero-seam-mark container does. We tilt the whole mark toward
-    // the cursor and dim siblings via opacity.
-    let currentMark: HTMLElement | null = null;
+    /* --- Per-shape 3D hover for hero seam --- */
+    // <g> elements support CSS transforms (unlike SVG child shapes).
+    // Each shape group gets a unique 3D lift + color shift on hover.
+    let hoveredShape: HTMLElement | null = null;
 
-    const handleSeamMove = (e: PointerEvent) => {
+    const handleSeamEnter = (e: PointerEvent) => {
       if (!finePointer.matches) return;
       const target = e.target as Element;
-      const mark = target.closest<HTMLElement>('.hero-seam-mark');
-      if (!mark) return;
+      const shape = target.closest('.hero-seam-mark .seam-shape') as HTMLElement | null;
+      if (!shape) return;
 
-      if (currentMark !== mark) {
-        // Reset previous mark
-        if (currentMark) {
-          currentMark.style.transform = '';
-          currentMark
-            .querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
-            .forEach(s => (s as HTMLElement).style.removeProperty('opacity'));
-        }
-        currentMark = mark;
+      // Find which shape group
+      const groupClass = ['seam-dot-group', 'seam-orbit-group', 'seam-square-group',
+        'seam-triangle-group', 'seam-block-group']
+        .find(c => shape.classList.contains(c));
+      if (!groupClass) return;
+
+      const config = SHAPE_CONFIG[groupClass];
+      hoveredShape = shape;
+
+      // Apply 3D transform to the <g> group
+      shape.style.transform = config.transform;
+      shape.style.transformOrigin = 'center';
+      shape.style.transition = 'transform 200ms var(--ease-out)';
+
+      // Color shift: change the fill of the child shape
+      const child = shape.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
+      if (child) {
+        child.style.transition = 'fill 200ms var(--ease)';
+        child.style.fill = config.color;
       }
 
-      const rect = mark.getBoundingClientRect();
-      const px = (e.clientX - rect.left) / rect.width - 0.5;
-      const py = (e.clientY - rect.top) / rect.height - 0.5;
-      const tiltRx = py * -14;
-      const tiltRy = px * 14;
-      mark.style.transform = `perspective(500px) rotateX(${tiltRx}deg) rotateY(${tiltRy}deg) translateZ(10px)`;
-
-      // Dim the shape closest to cursor? No — dim all shapes slightly
-      // since the whole mark lifts. Actually, just let the tilt speak.
-      // No sibling dim needed — the whole mark tilts as one piece.
+      // Dim sibling shapes
+      const mark = shape.closest('.hero-seam-mark');
+      if (mark) {
+        mark.querySelectorAll('.seam-shape').forEach(sibling => {
+          if (sibling !== shape) {
+            (sibling as HTMLElement).style.setProperty('opacity', '0.5', 'important');
+            (sibling as HTMLElement).style.transition = 'opacity 200ms var(--ease)';
+          }
+        });
+      }
     };
 
     const handleSeamLeave = (e: PointerEvent) => {
       const target = e.target as Element;
-      const mark = target.closest<HTMLElement>('.hero-seam-mark');
-      if (!mark) return;
+      const shape = target.closest('.hero-seam-mark .seam-shape') as HTMLElement | null;
+      if (!shape || shape !== hoveredShape) return;
 
-      // Check if the pointer is leaving the mark entirely
-      const rect = mark.getBoundingClientRect();
-      const outside =
-        e.clientX < rect.left || e.clientX > rect.right ||
-        e.clientY < rect.top || e.clientY > rect.bottom;
-
-      if (outside) {
-        mark.style.transform = '';
-        currentMark = null;
+      // Reset transform
+      shape.style.transform = '';
+      // Reset color
+      const child = shape.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
+      if (child) {
+        child.style.fill = '';
       }
+
+      // Restore siblings
+      const mark = shape.closest('.hero-seam-mark');
+      if (mark) {
+        mark.querySelectorAll('.seam-shape').forEach(sibling => {
+          (sibling as HTMLElement).style.removeProperty('opacity');
+          (sibling as HTMLElement).style.transform = '';
+          const sibChild = sibling.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
+          if (sibChild) sibChild.style.fill = '';
+        });
+      }
+
+      hoveredShape = null;
     };
 
     document.addEventListener('pointermove', handleMove, { passive: true });
-    document.addEventListener('pointermove', handleSeamMove, { passive: true });
     document.addEventListener('pointerout', handleLeave, { passive: true });
-    document.addEventListener('pointerout', handleSeamLeave, { passive: true });
     document.addEventListener('pointerdown', handleShake, { passive: true });
+    document.addEventListener('pointerenter', handleSeamEnter, { passive: true, capture: true });
+    document.addEventListener('pointerleave', handleSeamLeave, { passive: true, capture: true });
 
     return () => {
       document.removeEventListener('pointermove', handleMove);
-      document.removeEventListener('pointermove', handleSeamMove);
       document.removeEventListener('pointerout', handleLeave);
-      document.removeEventListener('pointerout', handleSeamLeave);
       document.removeEventListener('pointerdown', handleShake);
+      document.removeEventListener('pointerenter', handleSeamEnter, true);
+      document.removeEventListener('pointerleave', handleSeamLeave, true);
     };
   }, []);
 
