@@ -3269,7 +3269,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* ==========================================================================
-   Test lab — effect cell grid (12 hover/tap animation demos)
+   Test lab — effect cell grid (20 hover/tap animation demos)
    All effects use contract tokens. Respects prefers-reduced-motion.
    ========================================================================== */
 
@@ -3531,6 +3531,179 @@ a.lab-card:focus-visible .lab-card-arrow {
   50% { opacity: 0.5; }
 }
 
+/* --- Sweep (signal line scans across horizontally) --- */
+.effect-sweep::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  transition: transform 400ms var(--ease-out);
+  z-index: 1;
+}
+.effect-sweep:hover::before {
+  transform: translateX(100%);
+}
+.effect-sweep:hover .effect-label {
+  color: var(--signal-light);
+}
+
+/* --- Tilt (3D tilt toward cursor position) --- */
+.effect-tilt {
+  transform-style: preserve-3d;
+  transition: transform 100ms var(--ease-out);
+}
+
+/* --- Underline (signal underline grows under label) --- */
+.effect-underline .effect-label {
+  position: relative;
+}
+.effect-underline .effect-label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: var(--signal);
+  transition: width 250ms var(--ease-out);
+}
+.effect-underline:hover .effect-label::after {
+  width: 100%;
+}
+
+/* --- Spotlight (radial glow follows cursor) --- */
+.effect-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 80px at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--signal-dim),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  z-index: 0;
+}
+.effect-spotlight:hover::before {
+  opacity: 1;
+}
+.effect-spotlight:hover .effect-label {
+  color: var(--signal-light);
+}
+
+/* --- Slide (label slides right, desc slides in from left) --- */
+.effect-slide .effect-label {
+  transition: transform 250ms var(--ease-out);
+}
+.effect-slide .effect-desc {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: transform 250ms var(--ease-out), opacity 250ms var(--ease);
+}
+.effect-slide:hover .effect-label {
+  transform: translateX(8px);
+  color: var(--signal-light);
+}
+.effect-slide:hover .effect-desc {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* --- Border trace (border draws itself sequentially) --- */
+.effect-border-trace {
+  border-color: transparent;
+}
+.effect-border-trace::before,
+.effect-border-trace::after {
+  content: "";
+  position: absolute;
+  background: var(--signal);
+  z-index: 1;
+}
+/* top + right */
+.effect-border-trace::before {
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  transition: width 150ms var(--ease-out) 0ms;
+}
+.effect-border-trace:hover::before {
+  width: 100%;
+}
+/* bottom + left via box-shadow trick */
+.effect-border-trace::after {
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 1px;
+  transition: width 150ms var(--ease-out) 150ms;
+}
+.effect-border-trace:hover::after {
+  width: 100%;
+}
+.effect-border-trace {
+  box-shadow: inset 0 0 0 0 var(--signal);
+  transition: box-shadow 1ms linear 300ms;
+}
+.effect-border-trace:hover {
+  box-shadow: inset 0 0 0 1px var(--signal-dim);
+}
+.effect-border-trace:hover .effect-label {
+  color: var(--signal-light);
+}
+
+/* --- Press (cell sinks down with shadow) --- */
+.effect-press {
+  transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out),
+    border-color 150ms var(--ease);
+}
+.effect-press:hover {
+  transform: translateY(2px);
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--line-strong);
+}
+.effect-press:active {
+  transform: translateY(4px);
+  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Glow ring (sonar ping rings outward on tap) --- */
+.effect-glow-ring-ping {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--signal-light);
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none;
+  animation: effect-glow-ring 800ms var(--ease-out) forwards;
+  z-index: 3;
+}
+@keyframes effect-glow-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    border-width: 2px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(6);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+.effect-glow-ring:hover {
+  border-color: var(--signal-dim);
+  background: var(--surface-raised);
+}
+
 /* --- Grid responsive --- */
 @media (max-width: 560px) {
   .effect-grid {
@@ -3546,7 +3719,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   .effect-flip-inner,
   .effect-signal-bar,
   .effect-orbit-dot,
-  .effect-ripple {
+  .effect-ripple,
+  .effect-glow-ring-ping {
     transition: none !important;
     animation: none !important;
   }
@@ -3554,4 +3728,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   .effect-lift:hover { transform: none; }
   .effect-shake.is-tapped { animation: none; }
   .effect-flip:hover .effect-flip-inner { transform: none; }
+  .effect-tilt { transform: none !important; }
+  .effect-slide:hover .effect-label { transform: none; }
+  .effect-slide:hover .effect-desc { transform: none; opacity: 1; }
+  .effect-border-trace:hover { box-shadow: inset 0 0 0 1px var(--line); }
+  .effect-sweep::before { transform: none; }
+  .effect-press:hover { transform: none; }
 }
