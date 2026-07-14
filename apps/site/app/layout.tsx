@@ -4,6 +4,7 @@ import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
+import { FireworkBurst } from './lib/firework-burst';
 import {
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
@@ -90,6 +91,7 @@ export default function RootLayout({
         <CuelumeBinder />
         <BackButton />
         <DefinitionCopyEnhancer />
+        <FireworkBurst />
         {children}
         <Analytics />
       </body>
