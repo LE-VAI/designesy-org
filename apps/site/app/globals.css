@@ -504,7 +504,7 @@ p {
   transform-origin: center;
   transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
   animation: seamDock 0.9s var(--ease-out) both;
-  transition: transform 180ms var(--ease-out), fill 180ms var(--ease);
+  transition: filter 180ms var(--ease-out), fill 180ms var(--ease), opacity 180ms var(--ease);
   cursor: default;
 }
 
@@ -540,43 +540,35 @@ p {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  /* Dot — origin signal: soft pop toward you */
+  /*
+    Hover effects — SVG child elements don't support CSS 3D transforms
+    reliably across browsers, so we use filter + opacity instead.
+    Each shape brightens on hover; siblings dim to 0.55.
+    Filter uses drop-shadow to create a subtle lift glow.
+  */
   .hero-seam-mark .seam-dot:hover,
   .hero-seam-mark .seam-dot.is-hovered {
-    transform: translateZ(18px) scale(1.08);
+    filter: brightness(1.15) drop-shadow(0 0 6px var(--signal-dim));
   }
 
-  /* Orbit — living curve: slight yaw as if rolling on the seam */
   .hero-seam-mark .seam-orbit:hover,
   .hero-seam-mark .seam-orbit.is-hovered {
-    transform: translateZ(12px) rotateY(-14deg) rotateX(6deg) scale(1.03);
+    filter: brightness(1.12) drop-shadow(0 0 5px var(--signal-dim));
   }
 
-  /* Square — structure: crisp lift, least flourish */
   .hero-seam-mark .seam-square:hover,
   .hero-seam-mark .seam-square.is-hovered {
-    transform: translateZ(14px) rotateX(-8deg) scale(1.04);
+    filter: brightness(1.1) drop-shadow(0 0 4px var(--signal-dim));
   }
 
-  /* Triangle — motion: tip-forward thrust */
   .hero-seam-mark .seam-triangle:hover,
   .hero-seam-mark .seam-triangle.is-hovered {
-    transform: translateZ(16px) rotateX(10deg) rotateZ(-4deg) scale(1.05);
+    filter: brightness(1.13) drop-shadow(0 0 5px var(--signal-dim));
   }
 
-  /* Block — stability: heavier, slower-feeling settle up */
   .hero-seam-mark .seam-block:hover,
   .hero-seam-mark .seam-block.is-hovered {
-    transform: translateZ(10px) rotateX(-5deg) rotateY(8deg) scale(1.03);
-  }
-
-  .hero-seam-mark .seam-dot:active,
-  .hero-seam-mark .seam-orbit:active,
-  .hero-seam-mark .seam-square:active,
-  .hero-seam-mark .seam-triangle:active,
-  .hero-seam-mark .seam-block:active {
-    transform: translateZ(4px) scale(0.97);
-    transition-duration: 100ms;
+    filter: brightness(1.08) drop-shadow(0 0 4px var(--signal-dim));
   }
 
   /* Sibling dim — the touched piece leads */
@@ -607,7 +599,7 @@ p {
   .hero-seam-mark.has-hover .seam-triangle:not(.is-hovered),
   .hero-seam-mark.has-hover .seam-block:not(.is-hovered) {
     opacity: 0.55;
-    transition: opacity 180ms var(--ease), transform 180ms var(--ease-out);
+    transition: opacity 180ms var(--ease), filter 180ms var(--ease-out);
   }
 }
 
