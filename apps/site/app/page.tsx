@@ -166,9 +166,10 @@ export default function HomePage() {
                 aria-hidden="true"
               >
                 {/* Brand mark geometry — local space from asset builder (256×406) */}
-                {/* 1 Signal dot */}
+                {/* 1 Signal dot — emits a pulse ring on hover */}
                 <g className="seam-shape seam-dot-group">
                   <circle className="seam-dot" cx="200" cy="56" r="56" />
+                  <circle className="seam-dot-pulse" cx="200" cy="56" r="56" fill="none" stroke="var(--signal-light)" strokeWidth="2" opacity="0" />
                 </g>
                 {/* 2 Orbit quarter — NW of (112,266) r112 · M0,266 A… 112,154 L112,266 Z */}
                 <g className="seam-shape seam-orbit-group">

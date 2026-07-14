@@ -65,16 +65,57 @@ export function EffectEnhancer() {
       }
     };
 
-    /* --- Hero seam: per-shape opacity dim on hover --- */
-    // No 3D tilt (causes feedback loop jumpiness). Just dim siblings
-    // when hovering a shape — clean, stable, smooth.
+    /* --- Hero seam: per-shape color shift + dot pulse on hover --- */
     let activeMark: HTMLElement | null = null;
+    let pulseAnimating = false;
+
+    const triggerDotPulse = (mark: HTMLElement) => {
+      if (pulseAnimating) return;
+      const pulse = mark.querySelector<HTMLElement>('.seam-dot-pulse');
+      if (!pulse) return;
+      pulseAnimating = true;
+
+      // Use SVG attribute animation via rAF
+      let r = 56;
+      let opacity = 0.8;
+      const maxR = 90;
+      const start = performance.now();
+      const duration = 600;
+
+      const animate = (now: number) => {
+        const elapsed = now - start;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        r = 56 + (maxR - 56) * eased;
+        opacity = 0.8 * (1 - eased);
+
+        pulse.setAttribute('r', String(r));
+        pulse.style.setProperty('opacity', String(opacity), 'important');
+        pulse.style.setProperty('stroke-width', String(2 + eased * 2), 'important');
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          pulse.setAttribute('r', '56');
+          pulse.style.removeProperty('opacity');
+          pulse.style.removeProperty('stroke-width');
+          pulseAnimating = false;
+        }
+      };
+      requestAnimationFrame(animate);
+    };
 
     const resetMark = (mark: HTMLElement) => {
       mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
         .forEach(s => {
           s.style.removeProperty('fill');
         });
+      const pulse = mark.querySelector<HTMLElement>('.seam-dot-pulse');
+      if (pulse) {
+        pulse.setAttribute('r', '56');
+        pulse.style.removeProperty('opacity');
+        pulse.style.removeProperty('stroke-width');
+      }
     };
 
     const handleSeamMove = (e: PointerEvent) => {
@@ -92,6 +133,7 @@ export function EffectEnhancer() {
       const shapes = mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block');
       let closest: HTMLElement | null = null;
       let closestDist = Infinity;
+      let isDotClosest = false;
       shapes.forEach(shape => {
         const sr = shape.getBoundingClientRect();
         const sx = sr.x + sr.width / 2;
@@ -100,6 +142,7 @@ export function EffectEnhancer() {
         if (dist < closestDist) {
           closestDist = dist;
           closest = shape;
+          isDotClosest = shape.classList.contains('seam-dot');
         }
       });
 
@@ -111,6 +154,11 @@ export function EffectEnhancer() {
           shape.style.removeProperty('fill');
         }
       });
+
+      // Trigger pulse ring when dot is hovered
+      if (isDotClosest) {
+        triggerDotPulse(mark);
+      }
     };
 
     const handleSeamOut = (e: PointerEvent) => {
