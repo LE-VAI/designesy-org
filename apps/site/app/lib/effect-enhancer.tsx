@@ -8,36 +8,12 @@ import { useEffect } from 'react';
  *
  * - .surface-card: sets --spot-x / --spot-y on pointermove
  * - .field-card: sets --tilt-rx / --tilt-ry on pointermove
- * - .hero-seam-mark .seam-shape: per-shape 3D tilt + color shift on hover
+ * - .hero-seam-mark: 3D tilt toward cursor + per-shape color shift + sibling dim
  * - .principle, .pipeline-step: adds .is-shaking on pointerdown
  *
  * Respects prefers-reduced-motion (exits early).
  * Zero dependencies, passive listeners only.
  */
-
-/** Per-shape hover config: 3D transform + color swap */
-const SHAPE_CONFIG: Record<string, { transform: string; color: string }> = {
-  'seam-dot-group': {
-    transform: 'perspective(400px) translateZ(16px) scale(1.1)',
-    color: 'var(--signal-light)',
-  },
-  'seam-orbit-group': {
-    transform: 'perspective(400px) translateZ(12px) rotateY(-12deg) scale(1.05)',
-    color: 'var(--signal-light)',
-  },
-  'seam-square-group': {
-    transform: 'perspective(400px) translateZ(14px) rotateX(-8deg) scale(1.05)',
-    color: 'var(--signal-light)',
-  },
-  'seam-triangle-group': {
-    transform: 'perspective(400px) translateZ(16px) rotateX(8deg) rotateZ(-3deg) scale(1.06)',
-    color: 'var(--signal-light)',
-  },
-  'seam-block-group': {
-    transform: 'perspective(400px) translateZ(10px) rotateX(-4deg) rotateY(6deg) scale(1.04)',
-    color: 'var(--signal-light)',
-  },
-};
 
 export function EffectEnhancer() {
   useEffect(() => {
@@ -89,89 +65,100 @@ export function EffectEnhancer() {
       }
     };
 
-    /* --- Per-shape 3D hover for hero seam --- */
-    // <g> elements support CSS transforms (unlike SVG child shapes).
-    // Each shape group gets a unique 3D lift + color shift on hover.
-    let hoveredShape: HTMLElement | null = null;
+    /* --- Hero seam: 3D tilt on mark + per-shape color + sibling dim --- */
+    // SVG child elements don't support CSS transforms, but the .hero-seam-mark
+    // container (an <svg> element) does. We tilt the whole mark toward the
+    // cursor AND shift color/dim on individual shapes.
+    let currentMark: HTMLElement | null = null;
 
-    const handleSeamEnter = (e: PointerEvent) => {
+    const handleSeamMove = (e: PointerEvent) => {
       if (!finePointer.matches) return;
       const target = e.target as Element;
-      const shape = target.closest('.hero-seam-mark .seam-shape') as HTMLElement | null;
-      if (!shape) return;
+      const mark = target.closest<HTMLElement>('.hero-seam-mark');
+      if (!mark) return;
 
-      // Find which shape group
-      const groupClass = ['seam-dot-group', 'seam-orbit-group', 'seam-square-group',
-        'seam-triangle-group', 'seam-block-group']
-        .find(c => shape.classList.contains(c));
-      if (!groupClass) return;
-
-      const config = SHAPE_CONFIG[groupClass];
-      hoveredShape = shape;
-
-      // Apply 3D transform to the <g> group
-      shape.style.transform = config.transform;
-      shape.style.transformOrigin = 'center';
-      shape.style.transition = 'transform 200ms var(--ease-out)';
-
-      // Color shift: change the fill of the child shape
-      const child = shape.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
-      if (child) {
-        child.style.transition = 'fill 200ms var(--ease)';
-        child.style.fill = config.color;
+      if (currentMark !== mark) {
+        // Reset previous
+        if (currentMark) {
+          currentMark.style.transform = '';
+          currentMark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+            .forEach(s => {
+              (s as HTMLElement).style.removeProperty('opacity');
+              (s as HTMLElement).style.removeProperty('fill');
+            });
+        }
+        currentMark = mark;
       }
 
-      // Dim sibling shapes
-      const mark = shape.closest('.hero-seam-mark');
-      if (mark) {
-        mark.querySelectorAll('.seam-shape').forEach(sibling => {
-          if (sibling !== shape) {
-            (sibling as HTMLElement).style.setProperty('opacity', '0.5', 'important');
-            (sibling as HTMLElement).style.transition = 'opacity 200ms var(--ease)';
-          }
-        });
-      }
+      // 3D tilt the whole mark toward cursor
+      const rect = mark.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      const tiltRx = py * -12;
+      const tiltRy = px * 12;
+      mark.style.transform = `perspective(500px) rotateX(${tiltRx}deg) rotateY(${tiltRy}deg) translateZ(8px)`;
+
+      // Per-shape color shift on the shape closest to cursor
+      const shapes = mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block');
+      let closest: HTMLElement | null = null;
+      let closestDist = Infinity;
+      shapes.forEach(shape => {
+        const sr = shape.getBoundingClientRect();
+        const sx = sr.x + sr.width / 2;
+        const sy = sr.y + sr.height / 2;
+        const dist = Math.hypot(e.clientX - sx, e.clientY - sy);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = shape;
+        }
+      });
+
+      shapes.forEach(shape => {
+        if (shape === closest) {
+          // Highlight: brighten to signal-light
+          shape.style.setProperty('fill', 'var(--signal-light)', 'important');
+          shape.style.setProperty('opacity', '1', 'important');
+        } else {
+          // Dim siblings
+          shape.style.setProperty('opacity', '0.45', 'important');
+          shape.style.removeProperty('fill');
+        }
+      });
     };
 
-    const handleSeamLeave = (e: PointerEvent) => {
+    const handleSeamOut = (e: PointerEvent) => {
       const target = e.target as Element;
-      const shape = target.closest('.hero-seam-mark .seam-shape') as HTMLElement | null;
-      if (!shape || shape !== hoveredShape) return;
+      const mark = target.closest<HTMLElement>('.hero-seam-mark');
+      if (!mark) return;
 
-      // Reset transform
-      shape.style.transform = '';
-      // Reset color
-      const child = shape.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
-      if (child) {
-        child.style.fill = '';
+      const rect = mark.getBoundingClientRect();
+      const outside =
+        e.clientX < rect.left || e.clientX > rect.right ||
+        e.clientY < rect.top || e.clientY > rect.bottom;
+
+      if (outside) {
+        mark.style.transform = '';
+        mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+          .forEach(s => {
+            s.style.removeProperty('opacity');
+            s.style.removeProperty('fill');
+          });
+        currentMark = null;
       }
-
-      // Restore siblings
-      const mark = shape.closest('.hero-seam-mark');
-      if (mark) {
-        mark.querySelectorAll('.seam-shape').forEach(sibling => {
-          (sibling as HTMLElement).style.removeProperty('opacity');
-          (sibling as HTMLElement).style.transform = '';
-          const sibChild = sibling.querySelector('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block') as HTMLElement | null;
-          if (sibChild) sibChild.style.fill = '';
-        });
-      }
-
-      hoveredShape = null;
     };
 
     document.addEventListener('pointermove', handleMove, { passive: true });
+    document.addEventListener('pointermove', handleSeamMove, { passive: true });
     document.addEventListener('pointerout', handleLeave, { passive: true });
+    document.addEventListener('pointerout', handleSeamOut, { passive: true });
     document.addEventListener('pointerdown', handleShake, { passive: true });
-    document.addEventListener('pointerenter', handleSeamEnter, { passive: true, capture: true });
-    document.addEventListener('pointerleave', handleSeamLeave, { passive: true, capture: true });
 
     return () => {
       document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointermove', handleSeamMove);
       document.removeEventListener('pointerout', handleLeave);
+      document.removeEventListener('pointerout', handleSeamOut);
       document.removeEventListener('pointerdown', handleShake);
-      document.removeEventListener('pointerenter', handleSeamEnter, true);
-      document.removeEventListener('pointerleave', handleSeamLeave, true);
     };
   }, []);
 
