@@ -366,8 +366,6 @@ export default function OpenPage() {
             </a>
           </div>
         </section>
-          </div>
-        </section>
 
         <div className="status-note">
           {o.handoff_line} Machine feed is CORS-open JSON. Packages without a
