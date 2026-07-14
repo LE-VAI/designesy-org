@@ -471,6 +471,8 @@ p {
   overflow: visible;
   pointer-events: auto;
   transform-style: preserve-3d;
+  transition: transform 120ms var(--ease-out);
+  perspective: 500px;
 }
 
 /*
@@ -541,65 +543,13 @@ p {
 
 @media (hover: hover) and (pointer: fine) {
   /*
-    Hover effects — SVG child elements don't support CSS 3D transforms
-    reliably across browsers, so we use filter + opacity instead.
-    Each shape brightens on hover; siblings dim to 0.55.
-    Filter uses drop-shadow to create a subtle lift glow.
+    3D tilt is applied via JS (EffectEnhancer) on the .hero-seam-mark
+    container — the whole mark tilts toward the cursor like the field
+    cards. SVG child elements can't use CSS transforms individually,
+    so the container carries the effect.
   */
-  .hero-seam-mark .seam-dot:hover,
-  .hero-seam-mark .seam-dot.is-hovered {
-    filter: brightness(1.15) drop-shadow(0 0 6px var(--signal-dim));
-  }
-
-  .hero-seam-mark .seam-orbit:hover,
-  .hero-seam-mark .seam-orbit.is-hovered {
-    filter: brightness(1.12) drop-shadow(0 0 5px var(--signal-dim));
-  }
-
-  .hero-seam-mark .seam-square:hover,
-  .hero-seam-mark .seam-square.is-hovered {
-    filter: brightness(1.1) drop-shadow(0 0 4px var(--signal-dim));
-  }
-
-  .hero-seam-mark .seam-triangle:hover,
-  .hero-seam-mark .seam-triangle.is-hovered {
-    filter: brightness(1.13) drop-shadow(0 0 5px var(--signal-dim));
-  }
-
-  .hero-seam-mark .seam-block:hover,
-  .hero-seam-mark .seam-block.is-hovered {
-    filter: brightness(1.08) drop-shadow(0 0 4px var(--signal-dim));
-  }
-
-  /* Sibling dim — the touched piece leads */
-  .hero-seam-mark:has(.seam-dot:hover) .seam-orbit,
-  .hero-seam-mark:has(.seam-dot:hover) .seam-square,
-  .hero-seam-mark:has(.seam-dot:hover) .seam-triangle,
-  .hero-seam-mark:has(.seam-dot:hover) .seam-block,
-  .hero-seam-mark:has(.seam-orbit:hover) .seam-dot,
-  .hero-seam-mark:has(.seam-orbit:hover) .seam-square,
-  .hero-seam-mark:has(.seam-orbit:hover) .seam-triangle,
-  .hero-seam-mark:has(.seam-orbit:hover) .seam-block,
-  .hero-seam-mark:has(.seam-square:hover) .seam-dot,
-  .hero-seam-mark:has(.seam-square:hover) .seam-orbit,
-  .hero-seam-mark:has(.seam-square:hover) .seam-triangle,
-  .hero-seam-mark:has(.seam-square:hover) .seam-block,
-  .hero-seam-mark:has(.seam-triangle:hover) .seam-dot,
-  .hero-seam-mark:has(.seam-triangle:hover) .seam-orbit,
-  .hero-seam-mark:has(.seam-triangle:hover) .seam-square,
-  .hero-seam-mark:has(.seam-triangle:hover) .seam-block,
-  .hero-seam-mark:has(.seam-block:hover) .seam-dot,
-  .hero-seam-mark:has(.seam-block:hover) .seam-orbit,
-  .hero-seam-mark:has(.seam-block:hover) .seam-square,
-  .hero-seam-mark:has(.seam-block:hover) .seam-triangle,
-  /* JS-driven sibling dim via .has-hover + .is-hovered */
-  .hero-seam-mark.has-hover .seam-dot:not(.is-hovered),
-  .hero-seam-mark.has-hover .seam-orbit:not(.is-hovered),
-  .hero-seam-mark.has-hover .seam-square:not(.is-hovered),
-  .hero-seam-mark.has-hover .seam-triangle:not(.is-hovered),
-  .hero-seam-mark.has-hover .seam-block:not(.is-hovered) {
-    opacity: 0.55;
-    transition: opacity 180ms var(--ease), filter 180ms var(--ease-out);
+  .hero-seam-mark {
+    cursor: default;
   }
 }
 
