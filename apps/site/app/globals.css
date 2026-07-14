@@ -428,7 +428,7 @@ p {
   width: min(200px, 30vw);
   height: min(320px, 54vh);
   pointer-events: none;
-  z-index: 0;
+  z-index: 3;
   display: none;
   perspective: 640px;
 }
