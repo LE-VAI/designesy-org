@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Topbar } from '../../../lib/topbar';
-import { Footer } from '../../../lib/footer';
-import { CheckGrid } from '../../../lib/check-grid';
-import { checkItemsFromStrings } from '../../../lib/check-items';
-import { ToggleRow } from '../../../lib/toggle-row';
-import { pageMeta } from '../../../lib/site-meta';
+import { Topbar } from '../../lib/topbar';
+import { Footer } from '../../lib/footer';
+import { CheckGrid } from '../../lib/check-grid';
+import { checkItemsFromStrings } from '../../lib/check-items';
+import { ToggleRow } from '../../lib/toggle-row';
+import { pageMeta } from '../../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
   title: 'Continuity — case study',
