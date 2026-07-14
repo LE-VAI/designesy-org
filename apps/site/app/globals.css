@@ -456,10 +456,10 @@ p {
 
 .hero-seam-constellation {
   position: absolute;
-  left: 1.25rem;
+  left: 2rem;
   top: 50%;
   transform: translateY(-50%);
-  width: calc(100% - 1.25rem);
+  width: calc(100% - 2rem);
   transform-style: preserve-3d;
 }
 
@@ -622,7 +622,7 @@ p {
 }
 
 .hero-lede {
-  max-width: 560px;
+  max-width: min(100%, 680px);
   font-size: clamp(1.15rem, 2.5vw, 1.5rem);
   line-height: 1.35;
   font-weight: 500;
