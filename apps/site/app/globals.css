@@ -1161,6 +1161,457 @@ p {
   }
 }
 
+/*
+  ==========================================================================
+  Site-wide subtle enhancements — second pass
+  Extends lab-cards, rows, check-cells, definitions, buttons, toggles,
+  principles, footer links, lab-card children, surface-item cards,
+  token-table rows, and copy affordances. All token-driven, all
+  reduced-motion safe (guard at bottom).
+  ==========================================================================
+*/
+
+/* --- Lab cards: sweep on top edge + label slide on hover --- */
+.lab-card {
+  position: relative;
+  overflow: hidden;
+}
+.lab-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 400ms var(--ease-out);
+}
+.lab-card:hover::after {
+  transform: translateX(100%);
+}
+.lab-card-title,
+.lab-card-lede {
+  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lab-card:hover .lab-card-title {
+    transform: translateX(3px);
+  }
+  .lab-card:hover .lab-card-lede {
+    color: var(--ink);
+  }
+}
+
+/* --- Rows: row-index brighten on hover --- */
+.row-index {
+  transition: color 200ms var(--ease);
+}
+.row:hover .row-index {
+  color: var(--signal-light);
+}
+
+/* --- Check cells: fill sweep from bottom + arrow slide --- */
+.check-cell {
+  position: relative;
+  overflow: hidden;
+}
+.check-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--signal-dim);
+  transform: translateY(100%);
+  transition: transform 250ms var(--ease-out);
+  z-index: 0;
+  pointer-events: none;
+}
+.check-cell:hover::before {
+  transform: translateY(0);
+  opacity: 0.3;
+}
+.check-cell > * {
+  position: relative;
+  z-index: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  a.check-cell:hover .check-cell-title {
+    transform: translateX(2px);
+  }
+}
+
+/* --- Definitions: signal sweep across left border on hover --- */
+.definition {
+  position: relative;
+  overflow: hidden;
+}
+.definition::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 300ms var(--ease-out);
+  z-index: 0;
+}
+.definition:hover::after {
+  transform: scaleY(1);
+}
+
+/* --- Buttons: signal glow ring on hover (primary) --- */
+.button.primary {
+  position: relative;
+  overflow: visible;
+}
+.button.primary::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid var(--signal-light);
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  pointer-events: none;
+  z-index: -1;
+}
+.button.primary:hover::after {
+  opacity: 0.4;
+  transform: scale(1);
+}
+
+/* --- Ghost buttons: signal-dim underline sweep --- */
+.button.ghost {
+  position: relative;
+  overflow: hidden;
+}
+.button.ghost::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  transition: transform 300ms var(--ease-out);
+  pointer-events: none;
+}
+.button.ghost:hover::after {
+  transform: translateX(0);
+}
+
+/* --- Toggle (pillar): signal left-edge trace on hover --- */
+button.pillar {
+  position: relative;
+  overflow: hidden;
+}
+button.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out);
+  z-index: 0;
+}
+button.pillar:hover::before {
+  transform: scaleY(1);
+}
+
+/* --- Principles: signal-dot brighten + title slide on hover --- */
+.principle {
+  transition: transform 200ms var(--ease-out);
+}
+.principle:hover .principle-num::before {
+  background: var(--signal-light);
+  box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
+}
+.principle-body h3 {
+  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
+}
+.principle-body p {
+  transition: color 200ms var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .principle:hover .principle-body h3 {
+    transform: translateX(3px);
+  }
+  .principle:hover .principle-body p {
+    color: var(--ink);
+  }
+}
+
+/* --- Footer links: signal underline grow --- */
+.footer-nav a,
+.footer-link {
+  position: relative;
+}
+.footer-nav a::after,
+.footer-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.footer-nav a:hover::after,
+.footer-link:hover::after {
+  right: 0;
+}
+
+/* --- Lab meta links: signal underline grow --- */
+.lab-meta-item a {
+  position: relative;
+}
+.lab-meta-item a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.lab-meta-item a:hover::after {
+  right: 0;
+}
+
+/* --- Lab crumbs: signal underline grow --- */
+.lab-crumb {
+  position: relative;
+}
+.lab-crumb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.lab-crumb:hover::after {
+  right: 0;
+}
+
+/* --- Text links: signal underline grow (replaces static border) --- */
+.text-link {
+  position: relative;
+  border-bottom: 1px solid var(--line-strong);
+  overflow: visible;
+}
+.text-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.text-link:hover::after {
+  right: 0;
+}
+
+/* --- Scope path links: signal underline grow --- */
+.scope-path-link,
+.scope-line a {
+  position: relative;
+}
+.scope-path-link::after,
+.scope-line a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.scope-path-link:hover::after,
+.scope-line a:hover::after {
+  right: 0;
+}
+
+/* --- Sense toggles: signal ring on hover when active --- */
+.sense-toggle[aria-pressed="true"]:hover {
+  border-color: var(--signal-light);
+  box-shadow: 0 0 0 2px var(--signal-dim);
+}
+
+/* --- Copy prompt button: signal glow on hover --- */
+.copy-prompt-btn {
+  position: relative;
+  overflow: visible;
+}
+.copy-prompt-btn::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid var(--signal-dim);
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  pointer-events: none;
+}
+.copy-prompt-btn:hover::after {
+  opacity: 0.6;
+}
+
+/* --- Copy row: signal left trace on hover --- */
+/* CopyRow uses class="row", already covered by .row::above */
+
+/* --- Wordmark (nav): signal dot brighten on hover --- */
+.wordmark {
+  position: relative;
+}
+.wordmark:hover .dot {
+  animation: dot-brighten 400ms var(--ease-out);
+}
+@keyframes dot-brighten {
+  0% { color: var(--signal); }
+  50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
+  100% { color: var(--signal); }
+}
+
+/* --- Field card title + lede: slide on hover (parity with surface-card) --- */
+.field-card-title,
+.field-card-lede {
+  transition: transform 200ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .field-card:hover .field-card-title {
+    transform: translateX(2px);
+  }
+  .field-card:hover .field-card-lede {
+    transform: translateX(1px);
+  }
+}
+
+/* --- Open package path links: signal underline grow --- */
+.open-package-paths a {
+  position: relative;
+}
+.open-package-paths a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.open-package-paths a:hover::after {
+  right: 0;
+}
+
+/* --- Back button: signal glow ring on hover --- */
+.back-button {
+  position: relative;
+  overflow: visible;
+}
+.back-button::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--signal-dim);
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  pointer-events: none;
+}
+.back-button:hover::after {
+  opacity: 0.5;
+}
+
+/* --- Surface item: lift + border brighten (parity with surface-card) --- */
+.surface-item {
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+.surface-item:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+@media (hover: hover) and (pointer: fine) {
+  .surface-item:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* --- Token table rows: subtle background highlight on hover --- */
+.token-table-row {
+  transition: background 200ms var(--ease);
+}
+.token-table-row:hover {
+  background: var(--surface-soft);
+}
+
+/* --- Checkmark list items: glyph color shift on hover --- */
+.checkmark-list li,
+.avoid-list li {
+  transition: color 200ms var(--ease);
+}
+.checkmark-list li:hover {
+  color: var(--ink);
+}
+.avoid-list li:hover {
+  color: var(--muted);
+}
+
+/* --- Reduced motion: disable all second-pass effects --- */
+@media (prefers-reduced-motion: reduce) {
+  .lab-card::after,
+  .check-cell::before,
+  .definition::after,
+  .button.primary::after,
+  .button.ghost::after,
+  button.pillar::before,
+  .footer-nav a::after,
+  .footer-link::after,
+  .lab-meta-item a::after,
+  .lab-crumb::after,
+  .text-link::after,
+  .scope-path-link::after,
+  .scope-line a::after,
+  .open-package-paths a::after,
+  .back-button::after,
+  .copy-prompt-btn::after {
+    display: none;
+  }
+  .lab-card:hover .lab-card-title,
+  .lab-card:hover .lab-card-lede,
+  .principle:hover .principle-body h3,
+  .principle:hover .principle-body p,
+  a.check-cell:hover .check-cell-title,
+  .field-card:hover .field-card-title,
+  .field-card:hover .field-card-lede,
+  .surface-item:hover {
+    transform: none;
+  }
+  .wordmark:hover .dot {
+    animation: none;
+  }
+}
+
 /* --- Status bar --- */
 
 .status-bar {
