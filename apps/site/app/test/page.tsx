@@ -12,23 +12,28 @@ export default function TestPage() {
       style={{
         minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--paper)',
         padding: '1.5rem',
-        gap: '2rem',
       }}
     >
-      {/* Hero — the actual designesy wordmark + lede */}
-      <section
+      <div
+        id="canvas"
         style={{
+          width: '100%',
+          maxWidth: 'var(--maxw)',
+          minHeight: 'calc(100vh - 3rem)',
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--line)',
+          background: 'var(--surface)',
+          overflow: 'hidden',
+          position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '0.9rem',
-          zIndex: 2,
-          pointerEvents: 'none',
+          justifyContent: 'center',
+          gap: '1.35rem',
         }}
       >
         <p
@@ -38,6 +43,8 @@ export default function TestPage() {
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             color: 'var(--muted-dim)',
+            zIndex: 2,
+            pointerEvents: 'none',
           }}
         >
           Design intelligence infrastructure
@@ -50,53 +57,21 @@ export default function TestPage() {
             lineHeight: 1,
             color: 'var(--ink)',
             userSelect: 'none',
+            zIndex: 2,
+            pointerEvents: 'none',
           }}
         >
           designesy<span style={{ color: 'var(--signal)' }}>.</span>
         </h1>
-        <p
+        <div
           style={{
-            maxWidth: '560px',
-            fontSize: 'clamp(1.15rem, 2.5vw, 1.5rem)',
-            lineHeight: 1.35,
-            fontWeight: 500,
-            color: 'var(--ink)',
-            textAlign: 'center',
-            textWrap: 'balance' as never,
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
           }}
         >
-          Design intelligence infrastructure for a humane creative civilization.
-        </p>
-        <p
-          style={{
-            maxWidth: '520px',
-            fontSize: 'clamp(0.875rem, 1.8vw, 0.95rem)',
-            color: 'var(--muted)',
-            lineHeight: 1.6,
-            textAlign: 'center',
-          }}
-        >
-          Sources into principles. Principles into contracts. Contracts into
-          tools. Tools into better designed work.
-        </p>
-      </section>
-
-      {/* Canvas cell — click for fireworks */}
-      <div
-        id="canvas"
-        style={{
-          width: '100%',
-          maxWidth: 'var(--maxw)',
-          flex: '1 1 auto',
-          minHeight: '400px',
-          borderRadius: 'var(--radius)',
-          border: '1px solid var(--line)',
-          background: 'var(--surface)',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        <SceneClient />
+          <SceneClient />
+        </div>
       </div>
     </main>
   );
