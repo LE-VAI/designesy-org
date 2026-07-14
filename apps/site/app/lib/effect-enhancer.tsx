@@ -73,9 +73,7 @@ export function EffectEnhancer() {
     const resetMark = (mark: HTMLElement) => {
       mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
         .forEach(s => {
-          s.style.removeProperty('opacity');
           s.style.removeProperty('fill');
-          s.style.removeProperty('filter');
         });
     };
 
@@ -105,13 +103,11 @@ export function EffectEnhancer() {
         }
       });
 
-      // Apply: closest shape full, others dim
+      // Apply: closest shape gets color shift, no sibling dim
       shapes.forEach(shape => {
         if (shape === closest) {
-          shape.style.setProperty('opacity', '1', 'important');
           shape.style.setProperty('fill', '#3358e8', 'important');
         } else {
-          shape.style.setProperty('opacity', '0.4', 'important');
           shape.style.removeProperty('fill');
         }
       });
