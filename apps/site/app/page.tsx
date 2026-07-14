@@ -167,30 +167,40 @@ export default function HomePage() {
               >
                 {/* Brand mark geometry — local space from asset builder (256×406) */}
                 {/* 1 Signal dot */}
-                <circle className="seam-dot" cx="200" cy="56" r="56" />
+                <g className="seam-shape seam-dot-group">
+                  <circle className="seam-dot" cx="200" cy="56" r="56" />
+                </g>
                 {/* 2 Orbit quarter — NW of (112,266) r112 · M0,266 A… 112,154 L112,266 Z */}
-                <path
-                  className="seam-orbit"
-                  d="M0 266 A112 112 0 0 1 112 154 L112 266 Z"
-                />
+                <g className="seam-shape seam-orbit-group">
+                  <path
+                    className="seam-orbit"
+                    d="M0 266 A112 112 0 0 1 112 154 L112 266 Z"
+                  />
+                </g>
                 {/* 3 Infrastructure square */}
-                <rect
-                  className="seam-square"
-                  x="144"
-                  y="154"
-                  width="112"
-                  height="112"
-                />
+                <g className="seam-shape seam-square-group">
+                  <rect
+                    className="seam-square"
+                    x="144"
+                    y="154"
+                    width="112"
+                    height="112"
+                  />
+                </g>
                 {/* 4 Motion triangle */}
-                <path
-                  className="seam-triangle"
-                  d="M0 406 L112 406 L112 294 Z"
-                />
+                <g className="seam-shape seam-triangle-group">
+                  <path
+                    className="seam-triangle"
+                    d="M0 406 L112 406 L112 294 Z"
+                  />
+                </g>
                 {/* 5 Stability quarter — SE of (144,294) r112 · M144,294 H256 A… 144,406 Z */}
-                <path
-                  className="seam-block"
-                  d="M144 294 H256 A112 112 0 0 1 144 406 Z"
-                />
+                <g className="seam-shape seam-block-group">
+                  <path
+                    className="seam-block"
+                    d="M144 294 H256 A112 112 0 0 1 144 406 Z"
+                  />
+                </g>
               </svg>
             </div>
           </div>
