@@ -68,32 +68,62 @@ export function EffectEnhancer() {
     };
 
     /* --- JS-driven hover for hero seam shapes --- */
+    // SVG child elements don't support CSS 3D transforms and reduced-motion
+    // !important rules can block CSS hover. We apply effects via inline styles
+    // which bypass CSS cascade issues, and skip entirely if reduced-motion.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const SHAPE_FILTERS: Record<string, string> = {
+      'seam-dot': 'brightness(1.15) drop-shadow(0 0 6px var(--signal-dim))',
+      'seam-orbit': 'brightness(1.12) drop-shadow(0 0 5px var(--signal-dim))',
+      'seam-square': 'brightness(1.1) drop-shadow(0 0 4px var(--signal-dim))',
+      'seam-triangle': 'brightness(1.13) drop-shadow(0 0 5px var(--signal-dim))',
+      'seam-block': 'brightness(1.08) drop-shadow(0 0 4px var(--signal-dim))',
+    };
+
     const handleSeamEnter = (e: PointerEvent) => {
+      if (reducedMotion) return;
       const target = e.target as Element;
-      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block');
-      if (shape) {
-        shape.classList.add('is-hovered');
-        // Sibling dim
-        const mark = shape.closest('.hero-seam-mark');
-        if (mark) {
-          mark.querySelectorAll('.is-hovered').forEach(s => {
-            if (s !== shape) s.classList.remove('is-hovered');
-          });
-          mark.classList.add('has-hover');
-        }
-      }
+      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block') as Element | null;
+      if (!shape) return;
+
+      const shapeClass = ['seam-dot', 'seam-orbit', 'seam-square', 'seam-triangle', 'seam-block']
+        .find(c => shape.classList.contains(c) || (shape as Element).tagName.toLowerCase().includes(c.replace('seam-', '')));
+      if (!shapeClass) return;
+
+      const mark = shape.closest('.hero-seam-mark');
+      if (!mark) return;
+
+      // Apply filter to hovered shape
+      (shape as HTMLElement).style.filter = SHAPE_FILTERS[shapeClass] || '';
+      (shape as HTMLElement).style.transition = 'filter 180ms var(--ease-out)';
+
+      // Dim siblings
+      mark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+        .forEach(sibling => {
+          if (sibling !== shape) {
+            (sibling as HTMLElement).style.opacity = '0.55';
+            (sibling as HTMLElement).style.transition = 'opacity 180ms var(--ease)';
+          }
+        });
     };
 
     const handleSeamLeave = (e: PointerEvent) => {
+      if (reducedMotion) return;
       const target = e.target as Element;
-      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block');
-      if (shape) {
-        shape.classList.remove('is-hovered');
-        const mark = shape.closest('.hero-seam-mark');
-        if (mark) {
-          mark.classList.remove('has-hover');
-        }
-      }
+      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block') as Element | null;
+      if (!shape) return;
+
+      const mark = shape.closest('.hero-seam-mark');
+      if (!mark) return;
+
+      // Remove filter from hovered shape
+      (shape as HTMLElement).style.filter = '';
+      // Restore siblings
+      mark.querySelectorAll('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
+        .forEach(sibling => {
+          (sibling as HTMLElement).style.opacity = '';
+        });
     };
 
     document.addEventListener('pointermove', handleMove, { passive: true });
