@@ -635,6 +635,16 @@ p {
   text-wrap: balance;
 }
 
+/* Keep lede clear of the hero seam shapes on the right */
+@media (min-width: 860px) {
+  .hero-eyebrow,
+  .hero-lede,
+  .hero-body,
+  .hero-actions {
+    max-width: calc(100% - 220px);
+  }
+}
+
 .hero-body {
   max-width: 520px;
   font-size: clamp(0.875rem, 1.8vw, 0.95rem);
