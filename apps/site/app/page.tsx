@@ -200,6 +200,7 @@ export default function HomePage() {
             id="hero-title"
             data-cuelume-hover="sparkle"
             data-cuelume-press="sparkle"
+            data-firework
           >
             <span className="wordmark-shimmer">designesy</span>
             <span className="dot">.</span>
@@ -218,6 +219,7 @@ export default function HomePage() {
               data-cuelume-hover="chime"
               data-cuelume-press
               data-cuelume-release="success"
+              data-firework
             >
               Open design intelligence
             </Link>
