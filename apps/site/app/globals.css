@@ -979,6 +979,188 @@ p {
   }
 }
 
+/*
+  ==========================================================================
+  Site-wide effect enhancements — spotlight, sweep, tilt, fill,
+  underline, slide, shake. Applied to existing components using
+  contract tokens. Respects prefers-reduced-motion.
+  ==========================================================================
+*/
+
+/* --- Spotlight: ambient always-on glow on field cards --- */
+/* Subtle radial signal-dim glow emanating from the card center at all times.
+   Intensifies slightly on hover. No cursor tracking needed — ambient. */
+.field-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 30%,
+    var(--signal-dim),
+    transparent 75%
+  );
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 250ms var(--ease-out);
+}
+.field-card {
+  position: relative;
+  overflow: hidden;
+}
+.field-card:hover::before {
+  opacity: 0.6;
+}
+.field-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Spotlight: cursor-tracking glow on surface cards --- */
+.surface-card {
+  position: relative;
+  overflow: hidden;
+}
+.surface-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: radial-gradient(
+    circle 100px at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--signal-dim),
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 200ms var(--ease);
+}
+.surface-card:hover::before {
+  opacity: 0.5;
+}
+.surface-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Sweep: signal line scans across the top edge of surface cards --- */
+.surface-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 400ms var(--ease-out);
+}
+.surface-card:hover::after {
+  transform: translateX(100%);
+}
+
+/* --- Tilt: 3D tilt toward cursor on field cards (fine pointer only) --- */
+/* Tilt is merged into the .field-card:hover rule above to avoid
+   transform conflicts with the existing lift + active states. */
+@media (hover: hover) and (pointer: fine) {
+  .field-card {
+    transition: transform 120ms var(--ease-out),
+      border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+}
+
+/* --- Fill: signal-dim washes up into the pipeline node on hover --- */
+.pipeline-step:hover .pipeline-node {
+  background: var(--signal-dim);
+  border-color: var(--signal);
+}
+.pipeline-step:hover .pipeline-node-core {
+  background: var(--signal);
+  transform: scale(1.2);
+}
+
+/* --- Underline: signal underline grows under nav links on hover --- */
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: 0.2rem;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0;
+  transition: left 250ms var(--ease-out), right 250ms var(--ease-out),
+    opacity 200ms var(--ease);
+}
+.nav-links a:hover::after {
+  left: 0.65rem;
+  right: 0.65rem;
+  opacity: 0.7;
+}
+/* Active link keeps its static underline, overrides the hover animation */
+.nav-links a.is-active::after,
+.nav-links a[aria-current="page"]::after {
+  left: 0.65rem;
+  right: 0.65rem;
+  opacity: 0.9;
+  transition: none;
+}
+
+/* --- Slide: surface card label slides right, desc slides in on hover --- */
+.surface-card-label,
+.surface-card-desc,
+.surface-card-arrow {
+  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .surface-card:hover .surface-card-label {
+    transform: translateX(4px);
+  }
+  .surface-card:hover .surface-card-desc {
+    color: var(--ink);
+  }
+}
+
+/* --- Shake: non-link elements jitter on tap --- */
+.principle.is-shaking,
+.pipeline-step.is-shaking {
+  animation: site-shake 400ms var(--ease-out);
+}
+@keyframes site-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(1px); }
+}
+
+/* --- Reduced motion: disable all site-wide effects --- */
+@media (prefers-reduced-motion: reduce) {
+  .field-card::before,
+  .surface-card::before,
+  .surface-card::after {
+    display: none;
+  }
+  .field-card {
+    transform: none !important;
+  }
+  .nav-links a::after {
+    display: none;
+  }
+  .principle.is-shaking,
+  .pipeline-step.is-shaking {
+    animation: none;
+  }
+  .surface-card:hover .surface-card-label,
+  .surface-card:hover .surface-card-desc {
+    transform: none;
+  }
+}
+
 /* --- Status bar --- */
 
 .status-bar {
@@ -2643,7 +2825,10 @@ a.check-cell:hover .check-cell-title {
 
 @media (hover: hover) and (pointer: fine) {
   .field-card:hover {
-    transform: translateY(-2px);
+    transform: perspective(600px)
+      rotateX(var(--tilt-rx, 0deg))
+      rotateY(var(--tilt-ry, 0deg))
+      translateY(-2px);
   }
 }
 
