@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 
 export const metadata: Metadata = {
   title: 'Lab',
   robots: { index: false, follow: false },
 };
+
+const Scene = dynamic(() => import('./scene'), { ssr: false });
 
 export default function LabPage() {
   return (
@@ -26,8 +29,12 @@ export default function LabPage() {
           borderRadius: 'var(--radius)',
           border: '1px solid var(--line)',
           background: 'var(--surface)',
+          overflow: 'hidden',
+          position: 'relative',
         }}
-      />
+      >
+        <Scene />
+      </div>
     </main>
   );
 }
