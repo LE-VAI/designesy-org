@@ -12,6 +12,7 @@ const NAV_ROUTES = [
   { href: '/labs', label: 'Labs' },
   { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
+  { href: '/work', label: 'Work' },
   { href: '/contracts', label: 'Contracts' },
 ];
 
