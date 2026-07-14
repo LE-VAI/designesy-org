@@ -2,17 +2,13 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
 export const metadata: Metadata = {
-  title: 'Lab',
-  description: 'Private test canvas',
+  title: 'Test',
   robots: { index: false, follow: false },
 };
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
-
 const Scene = dynamic(() => import('./scene'), { ssr: false });
 
-export default function LabPage() {
+export default function TestPage() {
   return (
     <main
       style={{
@@ -87,7 +83,7 @@ export default function LabPage() {
         </p>
       </section>
 
-      {/* 3D canvas cell */}
+      {/* Canvas cell — click for fireworks */}
       <div
         id="canvas"
         style={{

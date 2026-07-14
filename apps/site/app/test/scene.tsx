@@ -4,8 +4,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 /**
  * Pure-canvas firework sparkle — no three.js dependency.
- * Click anywhere in the canvas → burst of signal-blue particles
- * radiate from the click point, with gravity decay.
+ * Click anywhere → burst of signal-blue particles + shockwave ring.
  * Uses contract tokens: --signal (#0133cb), --signal-light (#3358e8).
  */
 
@@ -33,7 +32,6 @@ export default function Scene() {
   const particlesRef = useRef<Particle[]>([]);
   const ringsRef = useRef<Ring[]>([]);
   const animRef = useRef<number>(0);
-  const [pulse, setPulse] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -45,18 +43,19 @@ export default function Scene() {
       const parent = canvas.parentElement;
       if (!parent) return;
       const rect = parent.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
 
     const animate = () => {
-      const w = canvas.width / window.devicePixelRatio;
-      const h = canvas.height / window.devicePixelRatio;
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
       ctx.clearRect(0, 0, w, h);
 
       // Ambient floating dots
@@ -67,11 +66,11 @@ export default function Scene() {
         const alpha = 0.15 + Math.sin(time + i) * 0.1;
         ctx.beginPath();
         ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(51, 88, 232, ${alpha})`;
+        ctx.fillStyle = `rgba(51, 88, 232, ${Math.max(0, alpha)})`;
         ctx.fill();
       }
 
-      // Update + draw rings
+      // Rings
       ringsRef.current = ringsRef.current.filter((r) => {
         r.life += 1;
         if (r.life >= r.maxLife) return false;
@@ -85,14 +84,14 @@ export default function Scene() {
         return true;
       });
 
-      // Update + draw particles
+      // Particles
       particlesRef.current = particlesRef.current.filter((p) => {
         p.life += 1;
         if (p.life >= p.maxLife) return false;
         const decay = 1 - p.life / p.maxLife;
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.12; // gravity
+        p.vy += 0.12;
         p.vx *= 0.98;
         p.vy *= 0.98;
 
@@ -115,44 +114,31 @@ export default function Scene() {
     };
   }, []);
 
-  const handleClick = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+  const handleClick = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-      // Burst particles
-      const count = 40;
-      for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
-        const speed = 2 + Math.random() * 4;
-        particlesRef.current.push({
-          x,
-          y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 1,
-          life: 0,
-          maxLife: 50 + Math.random() * 30,
-          size: 2 + Math.random() * 3,
-          color: i % 3 === 0 ? '#3358e8' : '#0133cb',
-        });
-      }
-
-      // Shockwave ring
-      ringsRef.current.push({
+    const count = 40;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+      const speed = 2 + Math.random() * 4;
+      particlesRef.current.push({
         x,
         y,
-        radius: 5,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1,
         life: 0,
-        maxLife: 30,
+        maxLife: 50 + Math.random() * 30,
+        size: 2 + Math.random() * 3,
+        color: i % 3 === 0 ? '#3358e8' : '#0133cb',
       });
+    }
 
-      setPulse((p) => p + 1);
-    },
-    [],
-  );
+    ringsRef.current.push({ x, y, radius: 5, life: 0, maxLife: 30 });
+  }, []);
 
   return (
     <canvas
