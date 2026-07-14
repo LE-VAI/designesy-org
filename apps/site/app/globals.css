@@ -607,7 +607,6 @@ p {
 }
 
 .hero-body {
-  max-width: calc(100% - 220px);
   font-size: clamp(0.875rem, 1.8vw, 0.95rem);
   color: var(--muted);
   line-height: 1.6;
