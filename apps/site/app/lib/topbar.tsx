@@ -82,6 +82,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                   key={route.href}
                   ref={active ? activeRef : undefined}
                   data-cuelume-hover="tick"
+                  data-firework={route.href === '/open' ? true : undefined}
                   className={active ? 'is-active' : undefined}
                   aria-current={active ? 'page' : undefined}
                 >
