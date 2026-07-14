@@ -416,56 +416,93 @@ export default function HomePage() {
           <h2 className="section-title" id="system-state-title">
             What is real on this site.
           </h2>
-          <div className="row-stack" role="list">
-            {[
-              {
-                title: 'Open design intelligence',
-                meta: 'Human index /open and machine feed /open.json',
-              },
-              {
-                title: 'Design system contract v0.1.4',
-                meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
-              },
-              {
-                title: 'Lab One · Poise',
-                meta: 'Restrained interaction — rules adopted into v0.1.1',
-              },
-              {
-                title: 'Lab Two · Takt',
-                meta: 'Interface feel — rules adopted into v0.1.2',
-              },
-              {
-                title: 'Lab Three · Cadence',
-                meta: 'Text rhythm — rules adopted into v0.1.3',
-              },
-              {
-                title: 'Use Kit One · Design Review',
-                meta: 'Portable review package · human + machine export',
-              },
-              {
-                title: 'Field checks · Poise, Takt, and Cadence',
-                meta: 'Labs reviewed with Kit One · pass with notes',
-              },
-              {
-                title: 'Keyboard path',
-                meta: 'Site-wide and Lab One tab order / focus-visible proof',
-              },
-              {
-                title: 'Public surface review',
-                meta: 'designesy.org checked against its own contract',
-              },
-              {
-                title: 'Drift rule',
-                meta: 'Every new public UI cites a contract token or open tension',
-              },
-            ].map((item, i) => (
-              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </ToggleRow>
-            ))}
+          <div className="state-layout">
+            <div className="row-stack" role="list">
+              {[
+                {
+                  title: 'Open design intelligence',
+                  meta: 'Human index /open and machine feed /open.json',
+                },
+                {
+                  title: 'Design system contract v0.1.4',
+                  meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
+                },
+                {
+                  title: 'Lab One · Poise',
+                  meta: 'Restrained interaction — rules adopted into v0.1.1',
+                },
+                {
+                  title: 'Lab Two · Takt',
+                  meta: 'Interface feel — rules adopted into v0.1.2',
+                },
+                {
+                  title: 'Lab Three · Cadence',
+                  meta: 'Text rhythm — rules adopted into v0.1.3',
+                },
+                {
+                  title: 'Use Kit One · Design Review',
+                  meta: 'Portable review package · human + machine export',
+                },
+                {
+                  title: 'Field checks · Poise, Takt, and Cadence',
+                  meta: 'Labs reviewed with Kit One · pass with notes',
+                },
+                {
+                  title: 'Keyboard path',
+                  meta: 'Site-wide and Lab One tab order / focus-visible proof',
+                },
+                {
+                  title: 'Public surface review',
+                  meta: 'designesy.org checked against its own contract',
+                },
+                {
+                  title: 'Drift rule',
+                  meta: 'Every new public UI cites a contract token or open tension',
+                },
+              ].map((item, i) => (
+                <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </ToggleRow>
+              ))}
+            </div>
+
+            <aside className="state-marquee" aria-hidden="true">
+              <div className="state-marquee-track">
+                {[
+                  'v0.1.4 · LIVE',
+                  'Poise ✓ adopted',
+                  'Takt ✓ adopted',
+                  'Cadence ✓ adopted',
+                  'Review ✓ pass',
+                  'Keyboard ✓ verified',
+                  'Drift rule active',
+                  'SKILL.md published',
+                  'open.json · machine feed',
+                  'llms.txt · agent brief',
+                  'Cuelume · sound on',
+                  'reduced-motion safe',
+                  'v0.1.4 · LIVE',
+                  'Poise ✓ adopted',
+                  'Takt ✓ adopted',
+                  'Cadence ✓ adopted',
+                  'Review ✓ pass',
+                  'Keyboard ✓ verified',
+                  'Drift rule active',
+                  'SKILL.md published',
+                  'open.json · machine feed',
+                  'llms.txt · agent brief',
+                  'Cuelume · sound on',
+                  'reduced-motion safe',
+                ].map((token, i) => (
+                  <span className="state-marquee-pill" key={i}>
+                    {token}
+                  </span>
+                ))}
+              </div>
+            </aside>
           </div>
         </section>
       </main>
