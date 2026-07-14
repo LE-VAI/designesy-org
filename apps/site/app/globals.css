@@ -541,27 +541,32 @@ p {
 
 @media (hover: hover) and (pointer: fine) {
   /* Dot — origin signal: soft pop toward you */
-  .hero-seam-mark .seam-dot:hover {
+  .hero-seam-mark .seam-dot:hover,
+  .hero-seam-mark .seam-dot.is-hovered {
     transform: translateZ(18px) scale(1.08);
   }
 
   /* Orbit — living curve: slight yaw as if rolling on the seam */
-  .hero-seam-mark .seam-orbit:hover {
+  .hero-seam-mark .seam-orbit:hover,
+  .hero-seam-mark .seam-orbit.is-hovered {
     transform: translateZ(12px) rotateY(-14deg) rotateX(6deg) scale(1.03);
   }
 
   /* Square — structure: crisp lift, least flourish */
-  .hero-seam-mark .seam-square:hover {
+  .hero-seam-mark .seam-square:hover,
+  .hero-seam-mark .seam-square.is-hovered {
     transform: translateZ(14px) rotateX(-8deg) scale(1.04);
   }
 
   /* Triangle — motion: tip-forward thrust */
-  .hero-seam-mark .seam-triangle:hover {
+  .hero-seam-mark .seam-triangle:hover,
+  .hero-seam-mark .seam-triangle.is-hovered {
     transform: translateZ(16px) rotateX(10deg) rotateZ(-4deg) scale(1.05);
   }
 
   /* Block — stability: heavier, slower-feeling settle up */
-  .hero-seam-mark .seam-block:hover {
+  .hero-seam-mark .seam-block:hover,
+  .hero-seam-mark .seam-block.is-hovered {
     transform: translateZ(10px) rotateX(-5deg) rotateY(8deg) scale(1.03);
   }
 
@@ -594,7 +599,13 @@ p {
   .hero-seam-mark:has(.seam-block:hover) .seam-dot,
   .hero-seam-mark:has(.seam-block:hover) .seam-orbit,
   .hero-seam-mark:has(.seam-block:hover) .seam-square,
-  .hero-seam-mark:has(.seam-block:hover) .seam-triangle {
+  .hero-seam-mark:has(.seam-block:hover) .seam-triangle,
+  /* JS-driven sibling dim via .has-hover + .is-hovered */
+  .hero-seam-mark.has-hover .seam-dot:not(.is-hovered),
+  .hero-seam-mark.has-hover .seam-orbit:not(.is-hovered),
+  .hero-seam-mark.has-hover .seam-square:not(.is-hovered),
+  .hero-seam-mark.has-hover .seam-triangle:not(.is-hovered),
+  .hero-seam-mark.has-hover .seam-block:not(.is-hovered) {
     opacity: 0.55;
     transition: opacity 180ms var(--ease), transform 180ms var(--ease-out);
   }

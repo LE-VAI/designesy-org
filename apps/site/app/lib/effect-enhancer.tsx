@@ -9,6 +9,9 @@ import { useEffect } from 'react';
  * - .surface-card: sets --spot-x / --spot-y on pointermove
  * - .field-card: sets --tilt-rx / --tilt-ry on pointermove
  * - .principle, .pipeline-step: adds .is-shaking on pointerdown
+ * - .hero-seam-mark [seam-*]: adds .is-hovered on pointerenter/leave
+ *   (CSS :hover on SVG children can be unreliable across browsers;
+ *   this JS-driven approach ensures consistent hover state)
  *
  * Respects prefers-reduced-motion (exits early).
  * Zero dependencies, passive listeners only.
@@ -64,14 +67,47 @@ export function EffectEnhancer() {
       }
     };
 
+    /* --- JS-driven hover for hero seam shapes --- */
+    const handleSeamEnter = (e: PointerEvent) => {
+      const target = e.target as Element;
+      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block');
+      if (shape) {
+        shape.classList.add('is-hovered');
+        // Sibling dim
+        const mark = shape.closest('.hero-seam-mark');
+        if (mark) {
+          mark.querySelectorAll('.is-hovered').forEach(s => {
+            if (s !== shape) s.classList.remove('is-hovered');
+          });
+          mark.classList.add('has-hover');
+        }
+      }
+    };
+
+    const handleSeamLeave = (e: PointerEvent) => {
+      const target = e.target as Element;
+      const shape = target.closest('.hero-seam-mark .seam-dot, .hero-seam-mark .seam-orbit, .hero-seam-mark .seam-square, .hero-seam-mark .seam-triangle, .hero-seam-mark .seam-block');
+      if (shape) {
+        shape.classList.remove('is-hovered');
+        const mark = shape.closest('.hero-seam-mark');
+        if (mark) {
+          mark.classList.remove('has-hover');
+        }
+      }
+    };
+
     document.addEventListener('pointermove', handleMove, { passive: true });
     document.addEventListener('pointerout', handleLeave, { passive: true });
     document.addEventListener('pointerdown', handleShake, { passive: true });
+    document.addEventListener('pointerenter', handleSeamEnter, { passive: true, capture: true });
+    document.addEventListener('pointerleave', handleSeamLeave, { passive: true, capture: true });
 
     return () => {
       document.removeEventListener('pointermove', handleMove);
       document.removeEventListener('pointerout', handleLeave);
       document.removeEventListener('pointerdown', handleShake);
+      document.removeEventListener('pointerenter', handleSeamEnter, true);
+      document.removeEventListener('pointerleave', handleSeamLeave, true);
     };
   }, []);
 
