@@ -60,31 +60,37 @@ function playSense(cue: CueName, withHaptic = true) {
  * effectively boosts all cuelume (and any other Web Audio) output
  * without modifying the cuelume package.
  */
-function installMobileVolumeBoost(boost: number) {
-  const originalConnect = AudioNode.prototype.connect;
+function installMobileVolumeBoost(boost: number): () => void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const originalConnect: any = AudioNode.prototype.connect;
   let boostGain: GainNode | null = null;
 
-  AudioNode.prototype.connect = function (destination: AudioNode, ...args: any[]) {
-    // If connecting to a destination node, check if it's the AudioContext.destination
-    if (destination && 'maxChannelCount' in destination && 'context' in destination) {
-      // It's an AudioDestinationNode — route through boost gain instead
-      const ctx = (this as any).context as AudioContext;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const patchedConnect = function (this: AudioNode, destination: any, ...args: any[]) {
+    // Detect AudioDestinationNode by checking for maxChannelCount
+    if (destination && typeof destination === 'object' && 'maxChannelCount' in destination) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ctx: any = (this as any).context;
       if (ctx && !boostGain) {
         boostGain = ctx.createGain();
         boostGain.gain.value = boost;
-        boostGain.connect(ctx.destination);
+        originalConnect.call(boostGain, ctx.destination);
       }
       if (boostGain) {
         return originalConnect.call(this, boostGain, ...args);
       }
     }
     return originalConnect.call(this, destination, ...args);
-  } as any;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (AudioNode.prototype as any).connect = patchedConnect;
 
   return () => {
-    AudioNode.prototype.connect = originalConnect;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (AudioNode.prototype as any).connect = originalConnect;
     if (boostGain) {
-      try { boostGain.disconnect(); } catch {}
+      try { boostGain.disconnect(); } catch { /* noop */ }
     }
   };
 }
