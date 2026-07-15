@@ -61,7 +61,7 @@ export default function OpenPage() {
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">Open · v{o.version}</p>
-          <h1 className="surface-title">{o.name}</h1>
+          <h1 className="surface-title" data-scramble>{o.name}</h1>
           <p className="surface-lede">{o.lede}</p>
           <p className="surface-note">
             Portable design rules, prompts, and verification people and agents

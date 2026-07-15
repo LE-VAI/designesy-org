@@ -61,8 +61,8 @@ export default function WorkPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Work</p>
-          <h1 className="surface-title">Case studies</h1>
+          <p className="surface-eyebrow" data-scramble>Work</p>
+          <h1 className="surface-title" data-scramble>Case studies</h1>
           <p className="surface-lede">
             Shipped artifacts reviewed against the design system contract.
           </p>

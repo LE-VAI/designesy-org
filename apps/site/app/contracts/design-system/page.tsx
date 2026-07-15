@@ -66,7 +66,7 @@ export default function DesignSystemContractPage() {
             <span aria-hidden="true"> · </span>
             Design system
           </p>
-          <h1 className="surface-title">{c.name}</h1>
+          <h1 className="surface-title" data-scramble>{c.name}</h1>
           <p className="surface-lede">
             Portable design judgment for designesy.org — version {c.version}.
           </p>

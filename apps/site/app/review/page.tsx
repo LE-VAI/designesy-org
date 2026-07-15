@@ -44,8 +44,8 @@ export default function ReviewPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Quality gate</p>
-          <h1 className="surface-title">Review</h1>
+          <p className="surface-eyebrow" data-scramble>Quality gate</p>
+          <h1 className="surface-title" data-scramble>Review</h1>
           <p className="surface-lede">
             Review leads with consequences, not personal taste.
           </p>

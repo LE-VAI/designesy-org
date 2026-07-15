@@ -6,6 +6,7 @@ import { BackButton } from './lib/back-button';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
+import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import {
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
@@ -94,6 +95,7 @@ export default function RootLayout({
         <DefinitionCopyEnhancer />
         <FireworkBurst />
         <EffectEnhancer />
+        <ScrambleEnhancer />
         {children}
         <Analytics />
       </body>

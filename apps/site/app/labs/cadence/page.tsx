@@ -182,7 +182,7 @@ export default function CadenceLabPage() {
             </Link>
             {' · Lab Three'}
           </p>
-          <h1 className="surface-title">Cadence</h1>
+          <h1 className="surface-title" data-scramble>Cadence</h1>
           <p className="surface-lede">
             Text rhythm — the flow of words across a surface. Font
             declaration, scale, leading, tracking, measure, wrapping,
