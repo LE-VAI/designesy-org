@@ -3117,6 +3117,11 @@ a.check-cell:hover .check-cell-arrow {
   will-change: transform, opacity;
 }
 
+/* avoid items show an X in the activation accent instead of a blue checkmark */
+.check-cell.is-avoid .check-cell-check {
+  color: var(--activation);
+}
+
 @keyframes check-pop {
   0% {
     opacity: 0;
