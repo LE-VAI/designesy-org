@@ -63,11 +63,15 @@ export function EffectEnhancer() {
       if (fieldCard) {
         fieldCard.style.removeProperty('--tilt-rx');
         fieldCard.style.removeProperty('--tilt-ry');
+        fieldCard.style.removeProperty('--spot-x');
+        fieldCard.style.removeProperty('--spot-y');
       }
       const surfaceCard = target.closest<HTMLElement>('.surface-card');
       if (surfaceCard) {
         surfaceCard.style.removeProperty('--tilt-rx');
         surfaceCard.style.removeProperty('--tilt-ry');
+        surfaceCard.style.removeProperty('--spot-x');
+        surfaceCard.style.removeProperty('--spot-y');
       }
     };
 
