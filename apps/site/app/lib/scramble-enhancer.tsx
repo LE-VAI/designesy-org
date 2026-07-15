@@ -245,6 +245,11 @@ export function ScrambleEnhancer() {
       }
       el.style.transitionDelay = `${delay}ms`;
       el.classList.add('is-revealed');
+      // Clear the stagger delay after the reveal transition completes
+      // so hover/tilt transforms respond immediately
+      setTimeout(() => {
+        el.style.transitionDelay = '';
+      }, delay + 700);
     }
 
     revealEls.forEach((el) => {
