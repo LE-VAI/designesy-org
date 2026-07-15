@@ -84,7 +84,16 @@ function isInViewport(el: HTMLElement): boolean {
 
 export function ScrambleEnhancer() {
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Even in reduced-motion mode, ensure js-ready is set so any CSS
+      // that depends on it (like [data-reveal] overrides) works.
+      document.documentElement.classList.add('js-ready');
+      return;
+    }
+
+    // Fallback: ensure js-ready is set (inline script in layout.tsx should
+    // have already done this, but this covers CSP-stripped or SSR edge cases).
+    document.documentElement.classList.add('js-ready');
 
     let allObservers: IntersectionObserver[] = [];
     let revealObserver: IntersectionObserver | null = null;
@@ -245,7 +254,10 @@ export function ScrambleEnhancer() {
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
-    if (revealObserver) revealElsToObserve.forEach((el) => revealObserver.observe(el));
+    if (revealObserver) {
+      const ro = revealObserver;
+      revealElsToObserve.forEach((el) => ro.observe(el));
+    }
 
     }); // end rAF
 
