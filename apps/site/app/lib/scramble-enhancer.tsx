@@ -117,6 +117,18 @@ export function ScrambleEnhancer() {
     // Track elements that still need force-resolving (safety net)
     const pendingResolvers: (() => void)[] = [];
 
+    /**
+     * Lock an element's height to its current rendered height before
+     * scrambling, so random glyphs with different metrics don't cause
+     * layout shift (page jump) during the decode animation.
+     * Released after decoding completes (or on safety-net resolve).
+     */
+    function lockHeight(el: HTMLElement): () => void {
+      const h = el.offsetHeight;
+      if (h > 0) el.style.minHeight = `${h}px`;
+      return () => { el.style.minHeight = ''; };
+    }
+
     scrambleEls.forEach((el) => {
       const hasChildElements = el.querySelector('span, svg, img, a');
 
@@ -129,41 +141,45 @@ export function ScrambleEnhancer() {
         const originalText = firstChild.textContent || '';
         if (!originalText.trim()) return;
 
-        // aria-label fallback: screen readers get the real text immediately
-        el.setAttribute('aria-label', originalText.trim());
+      // aria-label fallback: screen readers get the real text immediately
+      el.setAttribute('aria-label', originalText.trim());
 
-        firstChild.textContent = scrambleString(originalText);
+      const unlockHeight = lockHeight(el);
+      firstChild.textContent = scrambleString(originalText);
 
-        // If already in viewport, start decoding immediately
-        if (isInViewport(el)) {
-          decodeToString(originalText, charDelay, churnCount, (text) => {
-            firstChild.textContent = text;
-          });
-          return;
-        }
-
-        // Otherwise wait for intersection
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                decodeToString(originalText, charDelay, churnCount, (text) => {
-                  firstChild.textContent = text;
-                });
-                observer.disconnect();
-              }
-            });
-          },
-          { threshold: 0.3 }
-        );
-        observer.observe(el);
-        allObservers.push(observer);
-
-        // Safety net: force-resolve if observer never fires
-        pendingResolvers.push(() => {
-          firstChild.textContent = originalText;
+      // If already in viewport, start decoding immediately
+      if (isInViewport(el)) {
+        decodeToString(originalText, charDelay, churnCount, (text) => {
+          firstChild.textContent = text;
+          if (text === originalText) unlockHeight();
         });
         return;
+      }
+
+      // Otherwise wait for intersection
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              decodeToString(originalText, charDelay, churnCount, (text) => {
+                firstChild.textContent = text;
+                if (text === originalText) unlockHeight();
+              });
+              observer.disconnect();
+            }
+          });
+        },
+        { threshold: 0.3 }
+      );
+      observer.observe(el);
+      allObservers.push(observer);
+
+      // Safety net: force-resolve if observer never fires
+      pendingResolvers.push(() => {
+        firstChild.textContent = originalText;
+        unlockHeight();
+      });
+      return;
       }
 
       // Simple text-only element
@@ -173,12 +189,14 @@ export function ScrambleEnhancer() {
       // aria-label fallback: screen readers get the real text immediately
       el.setAttribute('aria-label', realText);
 
+      const unlockHeight = lockHeight(el);
       el.textContent = scrambleString(realText);
 
       // If already in viewport, start decoding immediately
       if (isInViewport(el)) {
         decodeToString(realText, charDelay, churnCount, (text) => {
           el.textContent = text;
+          if (text === realText) unlockHeight();
         });
         return;
       }
@@ -190,6 +208,7 @@ export function ScrambleEnhancer() {
             if (entry.isIntersecting) {
               decodeToString(realText, charDelay, churnCount, (text) => {
                 el.textContent = text;
+                if (text === realText) unlockHeight();
               });
               observer.disconnect();
             }
@@ -203,6 +222,7 @@ export function ScrambleEnhancer() {
       // Safety net: force-resolve if observer never fires
       pendingResolvers.push(() => {
         el.textContent = realText;
+        unlockHeight();
       });
     });
 
