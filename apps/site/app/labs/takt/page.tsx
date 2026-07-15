@@ -262,13 +262,13 @@ export default function TaktLabPage() {
             </DemoCell>
 
             <DemoCell label="Hit area floor" note="44×44px touch · pseudo-element extension">
-              <div className="demo-hit-area">
+              <div className="demo-hit-area" aria-hidden="true">
                 <div className="demo-hit-target">↗</div>
               </div>
             </DemoCell>
 
             <DemoCell label="Stagger rhythm" note="~100ms per chunk · skip on page load">
-              <div className="demo-stagger">
+              <div className="demo-stagger" data-reveal aria-hidden="true">
                 <div className="demo-stagger-bar" />
                 <div className="demo-stagger-bar" />
                 <div className="demo-stagger-bar" />

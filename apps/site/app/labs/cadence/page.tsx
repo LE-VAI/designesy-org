@@ -302,7 +302,7 @@ export default function CadenceLabPage() {
             </DemoCell>
 
             <DemoCell label="Selection" note="::selection styled with --signal">
-              <p className="demo-select-hint" style={{ marginBottom: '0.5rem' }}>Select the text below</p>
+              <p className="demo-select-hint">Select the text below</p>
               <p className="demo-select">
                 Designesy turns design knowledge into living systems.
               </p>
