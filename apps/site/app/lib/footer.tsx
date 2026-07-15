@@ -1,4 +1,8 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { initScrollPause } from './scroll-pause';
 
 const SURFACE_LINKS = [
   { href: '/open', label: 'Open' },
@@ -50,6 +54,22 @@ export function Footer() {
   const surfaceItems = [...SURFACE_LINKS, ...SURFACE_LINKS];
   const machineItems = [...MACHINE_LINKS, ...MACHINE_LINKS];
 
+  const surfaceClipRef = useRef<HTMLDivElement>(null);
+  const surfaceTrackRef = useRef<HTMLDivElement>(null);
+  const machineClipRef = useRef<HTMLDivElement>(null);
+  const machineTrackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const cleanups: (() => void)[] = [];
+    if (surfaceClipRef.current && surfaceTrackRef.current) {
+      cleanups.push(initScrollPause(surfaceClipRef.current, surfaceTrackRef.current, 'horizontal'));
+    }
+    if (machineClipRef.current && machineTrackRef.current) {
+      cleanups.push(initScrollPause(machineClipRef.current, machineTrackRef.current, 'horizontal'));
+    }
+    return () => cleanups.forEach((fn) => fn());
+  }, []);
+
   return (
     <footer className="footer">
       <div className="site-shell footer-inner">
@@ -64,8 +84,8 @@ export function Footer() {
           <nav className="footer-docks" aria-label="Site map">
             <div className="footer-dock">
               <span className="footer-dock-label">Surfaces</span>
-              <div className="footer-dock-clip">
-                <div className="footer-dock-track">
+              <div className="footer-dock-clip" ref={surfaceClipRef}>
+                <div className="footer-dock-track" ref={surfaceTrackRef}>
                   {surfaceItems.map((link, i) => (
                     <Link
                       href={link.href}
@@ -83,8 +103,8 @@ export function Footer() {
 
             <div className="footer-dock">
               <span className="footer-dock-label">Machine</span>
-              <div className="footer-dock-clip">
-                <div className="footer-dock-track">
+              <div className="footer-dock-clip" ref={machineClipRef}>
+                <div className="footer-dock-track" ref={machineTrackRef}>
                   {machineItems.map((link, i) => (
                     <Link
                       href={link.href}

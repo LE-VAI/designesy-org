@@ -1732,6 +1732,25 @@ button.pillar:hover::before {
   animation-play-state: paused;
 }
 
+/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
+.footer-dock-clip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.footer-dock-clip::-webkit-scrollbar {
+  height: 3px;
+}
+.footer-dock-clip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.footer-dock-clip::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.footer-dock:hover .footer-dock-clip {
+  cursor: grab;
+}
+
 @keyframes footer-dock-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -2635,6 +2654,25 @@ button.pillar:hover::before {
 
 .state-marquee:hover .state-marquee-track {
   animation-play-state: paused;
+}
+
+/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
+.state-marquee {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.state-marquee::-webkit-scrollbar {
+  width: 3px;
+}
+.state-marquee::-webkit-scrollbar-track {
+  background: transparent;
+}
+.state-marquee::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.state-marquee:hover {
+  cursor: grab;
 }
 
 @keyframes state-marquee-scroll {
