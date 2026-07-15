@@ -119,7 +119,6 @@ export default function GraphPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -133,7 +132,6 @@ export default function GraphPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -147,7 +145,6 @@ export default function GraphPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -161,7 +158,6 @@ export default function GraphPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -175,7 +171,6 @@ export default function GraphPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">

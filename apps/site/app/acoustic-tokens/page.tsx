@@ -143,7 +143,6 @@ export default function AcousticTokensPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -159,7 +158,6 @@ export default function AcousticTokensPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -175,7 +173,6 @@ export default function AcousticTokensPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -189,7 +186,6 @@ export default function AcousticTokensPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">

@@ -209,7 +209,6 @@ export default function ContractsPage() {
               className="button primary"
               href="/contracts/design-system"
               data-cuelume-press
-              data-cuelume-release
             >
               Contract home
             </Link>
@@ -217,7 +216,6 @@ export default function ContractsPage() {
               className="button ghost"
               href="/contracts/design-system.json"
               data-cuelume-press
-              data-cuelume-release
             >
               Machine export
             </Link>
@@ -233,7 +231,6 @@ export default function ContractsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -249,7 +246,6 @@ export default function ContractsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -265,7 +261,6 @@ export default function ContractsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -281,7 +276,6 @@ export default function ContractsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">

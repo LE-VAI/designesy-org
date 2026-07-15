@@ -337,7 +337,6 @@ export default function CompileCaseStudyPage() {
                 role="listitem"
                 data-cuelume-hover="whisper"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
