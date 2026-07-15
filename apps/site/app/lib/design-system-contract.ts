@@ -107,7 +107,7 @@ export const designSystemContract = {
     muted: { token: '--muted', value: '#a0a0a0', role: 'Secondary text' },
     muted_dim: {
       token: '--muted-dim',
-      value: '#6b6b6b',
+      value: '#7d7d7d',
       role: 'Tertiary / meta text',
     },
     paper: { token: '--paper', value: '#000000', role: 'Page background' },
