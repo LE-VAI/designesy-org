@@ -56,7 +56,7 @@ export default function DesignReviewKitPage() {
             <span aria-hidden="true"> · </span>
             Kit One
           </p>
-          <h1 className="surface-title">{k.title}</h1>
+          <h1 className="surface-title" data-scramble>{k.title}</h1>
           <p className="surface-lede">{k.lede}</p>
           <p className="surface-note">
             This kit packages the live Review surface into a runnable handoff:

@@ -87,7 +87,7 @@ export default function PoiseLabPage() {
             <span aria-hidden="true"> · </span>
             Lab One
           </p>
-          <h1 className="surface-title">Poise</h1>
+          <h1 className="surface-title" data-scramble>Poise</h1>
           <p className="surface-lede">
             How Designesy responds when someone touches it.
           </p>

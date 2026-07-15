@@ -201,14 +201,14 @@ export default function CadenceFieldCheckPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">
+          <p className="surface-eyebrow" data-scramble>
             <Link href="/review" className="lab-crumb">
               Review
             </Link>
             <span aria-hidden="true"> · </span>
             Field check
           </p>
-          <h1 className="surface-title">Cadence</h1>
+          <h1 className="surface-title" data-scramble>Cadence</h1>
           <p className="surface-lede">
             Lab Three reviewed with Use Kit One · Design Review.
           </p>

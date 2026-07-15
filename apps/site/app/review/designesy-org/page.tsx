@@ -136,14 +136,14 @@ export default function PublicSurfaceReviewPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">
+          <p className="surface-eyebrow" data-scramble>
             <Link href="/review" className="lab-crumb">
               Review
             </Link>
             <span aria-hidden="true"> · </span>
             Public surface
           </p>
-          <h1 className="surface-title">designesy.org</h1>
+          <h1 className="surface-title" data-scramble>designesy.org</h1>
           <p className="surface-lede">
             A public review against design system contract v0.1.4.
           </p>

@@ -183,7 +183,7 @@ export default function TaktLabPage() {
             </Link>
             {' · Lab Two'}
           </p>
-          <h1 className="surface-title">Takt</h1>
+          <h1 className="surface-title" data-scramble>Takt</h1>
           <p className="surface-lede">
             Interface feel — the physical sense of surfaces under your hands.
             Radius nesting, press feedback, image outlines, hit areas, stagger

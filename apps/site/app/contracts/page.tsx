@@ -192,8 +192,8 @@ export default function ContractsPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Operating rules</p>
-          <h1 className="surface-title">Contracts</h1>
+          <p className="surface-eyebrow" data-scramble>Operating rules</p>
+          <h1 className="surface-title" data-scramble>Contracts</h1>
           <p className="surface-lede">
             Design contracts turn principles into reusable operating rules for
             artifacts, interfaces, and review.

@@ -23,8 +23,8 @@ export default function AcousticTokensPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Standards contribution</p>
-          <h1 className="surface-title">Acoustic tokens</h1>
+          <p className="surface-eyebrow" data-scramble>Standards contribution</p>
+          <h1 className="surface-title" data-scramble>Acoustic tokens</h1>
           <p className="surface-lede">
             The sound parallel to the visual token system.
           </p>

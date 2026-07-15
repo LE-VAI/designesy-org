@@ -45,8 +45,8 @@ export default function LabsPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Experiment lane</p>
-          <h1 className="surface-title">Labs</h1>
+          <p className="surface-eyebrow" data-scramble>Experiment lane</p>
+          <h1 className="surface-title" data-scramble>Labs</h1>
           <p className="surface-lede">
             Experiments that compile into contracts.
           </p>

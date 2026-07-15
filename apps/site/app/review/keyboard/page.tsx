@@ -217,14 +217,14 @@ export default function SiteKeyboardPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">
+          <p className="surface-eyebrow" data-scramble>
             <Link href="/review" className="lab-crumb">
               Review
             </Link>
             <span aria-hidden="true"> · </span>
             Verification
           </p>
-          <h1 className="surface-title">Keyboard path</h1>
+          <h1 className="surface-title" data-scramble>Keyboard path</h1>
           <p className="surface-lede">
             Public proof that shared chrome and default surface routes stay
             operable without a pointer.
