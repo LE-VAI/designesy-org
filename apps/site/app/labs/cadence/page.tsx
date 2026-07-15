@@ -434,7 +434,6 @@ export default function CadenceLabPage() {
             href="/review/cadence"
             data-cuelume-hover="whisper"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge">Pass with notes</span>
@@ -459,7 +458,6 @@ export default function CadenceLabPage() {
               href="/labs/poise"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -473,7 +471,6 @@ export default function CadenceLabPage() {
               href="/labs/takt"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -487,7 +484,6 @@ export default function CadenceLabPage() {
               href="/contracts/design-system"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -501,7 +497,6 @@ export default function CadenceLabPage() {
               href="/kits/design-review"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">

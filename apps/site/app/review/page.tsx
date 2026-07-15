@@ -104,7 +104,6 @@ export default function ReviewPage() {
               className="lab-card"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               <div className="lab-card-top">
                 <span className="status-badge status-badge--lab">Lab One</span>
@@ -125,7 +124,6 @@ export default function ReviewPage() {
               className="lab-card"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               <div className="lab-card-top">
                 <span className="status-badge status-badge--lab">Lab Two</span>
@@ -146,7 +144,6 @@ export default function ReviewPage() {
               className="lab-card"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               <div className="lab-card-top">
                 <span className="status-badge status-badge--lab">Lab Three</span>
@@ -168,7 +165,6 @@ export default function ReviewPage() {
               className="lab-card"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               <div className="lab-card-top">
                 <span className="status-badge">Public surface</span>
@@ -189,7 +185,6 @@ export default function ReviewPage() {
               className="lab-card"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               <div className="lab-card-top">
                 <span className="status-badge">Verification</span>
@@ -219,7 +214,6 @@ export default function ReviewPage() {
             className="lab-card"
             data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--kit">Kit One</span>
@@ -246,7 +240,6 @@ export default function ReviewPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -260,7 +253,6 @@ export default function ReviewPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -276,7 +268,6 @@ export default function ReviewPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -292,7 +283,6 @@ export default function ReviewPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -308,7 +298,6 @@ export default function ReviewPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">

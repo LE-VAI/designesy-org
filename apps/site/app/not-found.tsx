@@ -20,16 +20,16 @@ export default function NotFound() {
             <Link
               className="button primary"
               href="/open"
+              data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               Open design intelligence
             </Link>
             <Link
               className="button ghost"
               href="/"
+              data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               Home
             </Link>

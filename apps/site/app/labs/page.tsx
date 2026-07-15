@@ -67,7 +67,6 @@ export default function LabsPage() {
             className="lab-card"
             data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab One</span>
@@ -89,7 +88,6 @@ export default function LabsPage() {
             className="lab-card"
             data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Two</span>
@@ -111,7 +109,6 @@ export default function LabsPage() {
             className="lab-card"
             data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Three</span>
@@ -141,7 +138,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -157,7 +153,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -173,7 +168,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -189,7 +183,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -205,7 +198,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">
@@ -221,7 +213,6 @@ export default function LabsPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">06</span>
               <span className="row-body">

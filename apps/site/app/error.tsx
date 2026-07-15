@@ -37,16 +37,16 @@ export default function Error({
             type="button"
             className="button primary"
             onClick={() => reset()}
+            data-cuelume-hover="chime"
             data-cuelume-press
-            data-cuelume-release
           >
             Try again
           </button>
           <Link
             className="button ghost"
             href="/"
+            data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             Home
           </Link>

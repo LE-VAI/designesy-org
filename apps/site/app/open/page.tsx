@@ -165,7 +165,6 @@ export default function OpenPage() {
                 key={item.path}
                 data-cuelume-hover="whisper"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
@@ -202,7 +201,6 @@ export default function OpenPage() {
               href="/contracts/design-system"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -216,7 +214,6 @@ export default function OpenPage() {
               href="/kits/design-review"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -232,7 +229,6 @@ export default function OpenPage() {
               href="/open/handoff"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -248,7 +244,6 @@ export default function OpenPage() {
               href="/review/keyboard"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -264,7 +259,6 @@ export default function OpenPage() {
               href="/docs"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">
@@ -292,7 +286,6 @@ export default function OpenPage() {
               rel="noopener noreferrer"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -308,7 +301,6 @@ export default function OpenPage() {
               rel="noopener noreferrer"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -324,7 +316,6 @@ export default function OpenPage() {
               rel="noopener noreferrer"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -340,7 +331,6 @@ export default function OpenPage() {
               rel="noopener noreferrer"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -356,7 +346,6 @@ export default function OpenPage() {
               rel="noopener noreferrer"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">

@@ -347,7 +347,6 @@ export default function CadenceFieldCheckPage() {
                 role="listitem"
                 data-cuelume-hover="whisper"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
@@ -370,7 +369,6 @@ export default function CadenceFieldCheckPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -384,7 +382,6 @@ export default function CadenceFieldCheckPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -398,7 +395,6 @@ export default function CadenceFieldCheckPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
