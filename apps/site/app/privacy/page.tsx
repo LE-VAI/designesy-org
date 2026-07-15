@@ -231,13 +231,13 @@ export default function PrivacyPage() {
             organization, not as an automated dark pattern.
           </p>
           <div className="lab-meta" style={{ marginTop: '1.25rem' }}>
-            <Link href="/docs" data-cuelume-hover="tick">
+            <Link href="/docs" data-cuelume-hover="tick" data-cuelume-press="tick">
               Docs →
             </Link>
-            <Link href="/open" data-cuelume-hover="tick">
+            <Link href="/open" data-cuelume-hover="tick" data-cuelume-press="tick">
               Open →
             </Link>
-            <Link href="/contracts/design-system" data-cuelume-hover="tick">
+            <Link href="/contracts/design-system" data-cuelume-hover="tick" data-cuelume-press="tick">
               Design system →
             </Link>
           </div>

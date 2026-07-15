@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef, type ReactNode } from 'react';
+import { play } from 'cuelume';
+import { playExtended } from './cuelume-extend';
 
 /**
  * Definition block with click-to-copy the canonical text.
@@ -55,9 +57,11 @@ export function Copyable({
         document.body.removeChild(ta);
       }
       setCopied(true);
+      play('success');
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      /* clipboard unavailable — silent fail */
+      /* clipboard unavailable — play error sound as feedback */
+      playExtended('error');
     }
   }, [text]);
 
@@ -68,6 +72,7 @@ export function Copyable({
       onClick={copy}
       role="button"
       tabIndex={0}
+      data-cuelume-hover="tick"
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

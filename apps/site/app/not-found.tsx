@@ -20,8 +20,8 @@ export default function NotFound() {
             <Link
               className="button primary"
               href="/open"
-              data-cuelume-hover="chime"
-              data-cuelume-press
+              data-cuelume-hover="error"
+              data-cuelume-press="tick"
             >
               Open design intelligence
             </Link>
@@ -29,19 +29,19 @@ export default function NotFound() {
               className="button ghost"
               href="/"
               data-cuelume-hover="tick"
-              data-cuelume-press
+              data-cuelume-press="tick"
             >
               Home
             </Link>
           </div>
           <div className="lab-meta" style={{ marginTop: '2.5rem' }}>
-            <Link href="/docs" data-cuelume-hover="tick">
+            <Link href="/docs" data-cuelume-hover="tick" data-cuelume-press="tick">
               Docs →
             </Link>
-            <Link href="/kits/design-review" data-cuelume-hover="tick">
+            <Link href="/kits/design-review" data-cuelume-hover="tick" data-cuelume-press="tick">
               Design Review →
             </Link>
-            <Link href="/contracts/design-system" data-cuelume-hover="tick">
+            <Link href="/contracts/design-system" data-cuelume-hover="tick" data-cuelume-press="tick">
               Design system →
             </Link>
           </div>

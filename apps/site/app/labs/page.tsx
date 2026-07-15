@@ -65,8 +65,7 @@ export default function LabsPage() {
           <Link
             href="/labs/poise"
             className="lab-card"
-            data-cuelume-hover="tick"
-            data-cuelume-press
+            data-cuelume-hover="tick" data-cuelume-press="tick"
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab One</span>
@@ -86,8 +85,7 @@ export default function LabsPage() {
           <Link
             href="/labs/takt"
             className="lab-card"
-            data-cuelume-hover="tick"
-            data-cuelume-press
+            data-cuelume-hover="tick" data-cuelume-press="tick"
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Two</span>
@@ -107,8 +105,7 @@ export default function LabsPage() {
           <Link
             href="/labs/cadence"
             className="lab-card"
-            data-cuelume-hover="tick"
-            data-cuelume-press
+            data-cuelume-hover="tick" data-cuelume-press="tick"
           >
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Three</span>

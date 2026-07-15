@@ -28,7 +28,7 @@ export function ToggleRow({
       type="button"
       role="listitem"
       data-cuelume-hover="whisper"
-      data-cuelume-press
+      data-cuelume-toggle="toggle"
       onClick={toggle}
       aria-pressed={checked}
     >

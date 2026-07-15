@@ -72,6 +72,7 @@ export function Footer() {
                       key={`s-${link.href}-${i}`}
                       className="footer-dock-pill footer-dock-pill--surface"
                       data-cuelume-hover="tick"
+                      data-cuelume-press="tick"
                     >
                       {link.label}
                     </Link>
@@ -90,6 +91,7 @@ export function Footer() {
                       key={`m-${link.href}-${i}`}
                       className="footer-dock-pill footer-dock-pill--machine"
                       data-cuelume-hover="chime"
+                      data-cuelume-press="tick"
                     >
                       {link.label}
                     </Link>
@@ -103,6 +105,7 @@ export function Footer() {
           className="footer-link"
           href="mailto:le@designesy.org"
           data-cuelume-hover="droplet"
+          data-cuelume-press="droplet"
         >
           le@designesy.org
         </a>

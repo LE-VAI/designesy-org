@@ -279,7 +279,7 @@ export default function DocsPage() {
                     className="layer-item"
                     key={layer.num}
                     data-cuelume-hover="bloom"
-                    data-cuelume-press
+                    data-cuelume-toggle="toggle"
                   >
                     <span className="layer-num">{layer.num}</span>
                     <div className="layer-body">
