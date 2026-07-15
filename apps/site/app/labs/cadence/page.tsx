@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
+import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -230,6 +231,83 @@ export default function CadenceLabPage() {
               blue. Select any text on this page to see it.
             </p>
           </div>
+
+          <DemoGrid>
+            <DemoCell label="Rem scale" note="Every size is a rem multiple of 16px">
+              <div className="demo-scale">
+                <div className="demo-scale-row">
+                  <span>0.75rem</span>
+                  <span className="demo-scale-spec s1">Aa</span>
+                </div>
+                <div className="demo-scale-row">
+                  <span>1rem</span>
+                  <span className="demo-scale-spec s2">Aa</span>
+                </div>
+                <div className="demo-scale-row">
+                  <span>1.5rem</span>
+                  <span className="demo-scale-spec s3">Aa</span>
+                </div>
+                <div className="demo-scale-row">
+                  <span>2rem</span>
+                  <span className="demo-scale-spec s4">Aa</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Tracking by size" note="Negative headings · zero body · positive labels">
+              <div className="demo-tracking">
+                <div className="demo-tracking-row">
+                  <span>-0.03em</span>
+                  <span className="demo-tracking-heading">Heading</span>
+                </div>
+                <div className="demo-tracking-row">
+                  <span>0</span>
+                  <span className="demo-tracking-body">Body text at rest</span>
+                </div>
+                <div className="demo-tracking-row">
+                  <span>+0.12em</span>
+                  <span className="demo-tracking-label">Label</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Line-height by role" note="Headings 1.05–1.1 · body 1.5–1.6">
+              <div className="demo-leading">
+                <div className="demo-leading-block">
+                  <span className="demo-leading-tag">1.08 · heading</span>
+                  <p className="demo-heading-lh">The rhythm of text composed with intent</p>
+                </div>
+                <div className="demo-leading-block">
+                  <span className="demo-leading-tag">1.55 · body</span>
+                  <p className="demo-body-lh">Cadence is what separates a page that reads from one that merely contains words. Every line-height is chosen by role.</p>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Tabular numbers" note="font-variant-numeric: tabular-nums">
+              <div className="demo-numbers">
+                <div className="demo-num-table demo-num-tabular">
+                  <span className="demo-num-table-title">Tabular</span>
+                  <div className="demo-num-row"><span className="label">Jan</span><span>1,240</span></div>
+                  <div className="demo-num-row"><span className="label">Feb</span><span>83</span></div>
+                  <div className="demo-num-row"><span className="label">Mar</span><span>10,902</span></div>
+                </div>
+                <div className="demo-num-table demo-num-proportional">
+                  <span className="demo-num-table-title">Proportional</span>
+                  <div className="demo-num-row"><span className="label">Jan</span><span>1,240</span></div>
+                  <div className="demo-num-row"><span className="label">Feb</span><span>83</span></div>
+                  <div className="demo-num-row"><span className="label">Mar</span><span>10,902</span></div>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Selection" note="::selection styled with --signal">
+              <p className="demo-select-hint" style={{ marginBottom: '0.5rem' }}>Select the text below</p>
+              <p className="demo-select">
+                Designesy turns design knowledge into living systems.
+              </p>
+            </DemoCell>
+          </DemoGrid>
         </section>
 
         <section className="doctrine-section fade-up">

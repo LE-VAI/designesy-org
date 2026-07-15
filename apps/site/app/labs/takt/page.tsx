@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
+import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -227,6 +228,54 @@ export default function TaktLabPage() {
               and watch the section rhythm — that is takt.
             </p>
           </div>
+
+          <DemoGrid>
+            <DemoCell label="Concentric radii" note="outerRadius = innerRadius + padding">
+              <div className="demo-radius-outer">
+                <div className="demo-radius-inner">
+                  <span>2px radius</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Press scale" note="scale(0.96) · 160ms --ease-out">
+              <button type="button" className="demo-press-btn" data-cuelume-press data-cuelume-release>
+                Press me
+              </button>
+            </DemoCell>
+
+            <DemoCell label="Image outline" note="1px · 0.1 opacity · pure white">
+              <div className="demo-img-pair">
+                <div>
+                  <div className="demo-img-outline">
+                    <span>outline</span>
+                  </div>
+                  <p className="demo-img-label">Correct</p>
+                </div>
+                <div>
+                  <div className="demo-img-bad">
+                    <span>border</span>
+                  </div>
+                  <p className="demo-img-label">Tinted</p>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Hit area floor" note="44×44px touch · pseudo-element extension">
+              <div className="demo-hit-area">
+                <div className="demo-hit-target">↗</div>
+              </div>
+            </DemoCell>
+
+            <DemoCell label="Stagger rhythm" note="~100ms per chunk · skip on page load">
+              <div className="demo-stagger">
+                <div className="demo-stagger-bar" />
+                <div className="demo-stagger-bar" />
+                <div className="demo-stagger-bar" />
+                <div className="demo-stagger-bar" />
+              </div>
+            </DemoCell>
+          </DemoGrid>
         </section>
 
         <section className="doctrine-section fade-up">
