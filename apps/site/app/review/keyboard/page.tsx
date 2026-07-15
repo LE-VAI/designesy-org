@@ -217,7 +217,7 @@ export default function SiteKeyboardPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>
+          <p className="surface-eyebrow">
             <Link href="/review" className="lab-crumb">
               Review
             </Link>

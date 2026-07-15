@@ -69,7 +69,7 @@ export default function OpenHandoffPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>
+          <p className="surface-eyebrow">
             <Link href="/open" className="lab-crumb">
               Open
             </Link>
