@@ -1632,6 +1632,8 @@ button.pillar:hover::before {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .footer-meta {
@@ -1640,6 +1642,8 @@ button.pillar:hover::before {
   gap: 0.35rem;
   font-size: 0.8rem;
   color: var(--muted-dim);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .footer-meta strong {
@@ -1664,6 +1668,7 @@ button.pillar:hover::before {
   flex-direction: column;
   gap: 0.6rem;
   max-width: 100%;
+  min-width: 0;
 }
 
 .footer-dock {
@@ -1673,6 +1678,8 @@ button.pillar:hover::before {
   border: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .footer-dock-label {
@@ -1689,6 +1696,7 @@ button.pillar:hover::before {
 /* Visible window — clips the scrolling track */
 .footer-dock-clip {
   width: 100%;
+  min-width: 0;
   overflow: hidden;
   padding: 0.15rem 0 0.55rem;
   mask-image: linear-gradient(
