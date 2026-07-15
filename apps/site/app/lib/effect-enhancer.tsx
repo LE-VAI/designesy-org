@@ -41,11 +41,14 @@ export function EffectEnhancer() {
         }
       }
 
-      // Field card tilt
-      if (finePointer.matches) {
-        const fieldCard = target.closest<HTMLElement>('.field-card');
-        if (fieldCard) {
-          const rect = fieldCard.getBoundingClientRect();
+      // Field card spotlight + tilt
+      const fieldCard = target.closest<HTMLElement>('.field-card');
+      if (fieldCard) {
+        const rect = fieldCard.getBoundingClientRect();
+        fieldCard.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+        fieldCard.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
+
+        if (finePointer.matches) {
           const px = (e.clientX - rect.left) / rect.width - 0.5;
           const py = (e.clientY - rect.top) / rect.height - 0.5;
           fieldCard.style.setProperty('--tilt-rx', `${py * -6}deg`);

@@ -964,18 +964,16 @@ a.surface-card:active {
   ==========================================================================
 */
 
-/* --- Spotlight: ambient always-on glow on field cards --- */
-/* Subtle radial signal-dim glow emanating from the card center at all times.
-   Intensifies slightly on hover. No cursor tracking needed — ambient. */
+/* --- Spotlight: cursor-tracking glow on field cards --- */
 .field-card::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: var(--radius);
   background: radial-gradient(
-    ellipse 90% 70% at 50% 30%,
+    circle 120px at var(--spot-x, 50%) var(--spot-y, 30%),
     var(--signal-dim),
-    transparent 75%
+    transparent 70%
   );
   opacity: 0.35;
   pointer-events: none;
