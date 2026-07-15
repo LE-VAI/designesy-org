@@ -54,23 +54,24 @@ function playSense(cue: CueName, withHaptic = true) {
 }
 
 /**
- * Mobile audio boost: monkey-patch AudioNode.prototype.connect so that
- * any connection to AudioContext.destination is intercepted and routed
- * through a shared GainNode with 1.8x gain on mobile devices. This
- * effectively boosts all cuelume (and any other Web Audio) output
- * without modifying the cuelume package.
+ * Mobile audio boost: intercepts AudioContext.destination connections and
+ * routes them through a shared GainNode at 1.8x on coarse-pointer devices.
  */
-function installMobileVolumeBoost(boost: number): () => void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const originalConnect: any = AudioNode.prototype.connect;
+function installMobileVolumeBoost(boost: number): (() => void) | null {
+  if (typeof AudioNode === 'undefined') return null;
+
+  const proto = AudioNode.prototype as Record<string, unknown>;
+  const originalConnect = proto.connect as (...args: unknown[]) => AudioNode;
   let boostGain: GainNode | null = null;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const patchedConnect = function (this: AudioNode, destination: any, ...args: any[]) {
-    // Detect AudioDestinationNode by checking for maxChannelCount
-    if (destination && typeof destination === 'object' && 'maxChannelCount' in destination) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ctx: any = (this as any).context;
+  const patched = function (this: AudioNode, destination: unknown, ...args: unknown[]) {
+    // Detect AudioDestinationNode by duck-typing maxChannelCount
+    if (
+      destination &&
+      typeof destination === 'object' &&
+      'maxChannelCount' in (destination as Record<string, unknown>)
+    ) {
+      const ctx = (this as unknown as { context: AudioContext }).context;
       if (ctx && !boostGain) {
         boostGain = ctx.createGain();
         boostGain.gain.value = boost;
@@ -83,14 +84,16 @@ function installMobileVolumeBoost(boost: number): () => void {
     return originalConnect.call(this, destination, ...args);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (AudioNode.prototype as any).connect = patchedConnect;
+  proto.connect = patched as unknown as (...args: unknown[]) => AudioNode;
 
   return () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (AudioNode.prototype as any).connect = originalConnect;
+    proto.connect = originalConnect;
     if (boostGain) {
-      try { boostGain.disconnect(); } catch { /* noop */ }
+      try {
+        boostGain.disconnect();
+      } catch {
+        // noop
+      }
     }
   };
 }
@@ -134,8 +137,6 @@ export function CuelumeBinder() {
     const unlockAudio = () => {
       if (audioUnlocked) return;
       audioUnlocked = true;
-      // play() calls context.resume() internally; the returned promise
-      // resolves async, but the resume() call itself is within the gesture.
       play('tick');
     };
 
@@ -176,7 +177,6 @@ export function CuelumeBinder() {
       if (!(e.target instanceof Element)) return;
 
       // Desktop fine mouse: Cuelume owns press sound; add light haptic only
-      // if the device still supports vibration (rare hybrids).
       if (e.pointerType === 'mouse' && isFinePointerMedia()) {
         const pressEl = e.target.closest('[data-cuelume-press]');
         if (pressEl && document.contains(pressEl)) {
@@ -203,7 +203,6 @@ export function CuelumeBinder() {
         return;
       }
 
-      // Fine mouse release: Cuelume plays sound; pair haptic for success/release.
       if (e.pointerType === 'mouse' && isFinePointerMedia()) {
         if (!(e.target instanceof Element)) return;
         const releaseEl = e.target.closest('[data-cuelume-release]');
@@ -240,7 +239,6 @@ export function CuelumeBinder() {
 
     /**
      * Coarse-pointer tap feedback for hover-only targets (nav, brand, footer).
-     * Fine-pointer keeps Cuelume's pointerenter path only (sound, no haptic).
      */
     const onClickCapture = (e: MouseEvent) => {
       if (typeof e.button === 'number' && e.button !== 0) return;
