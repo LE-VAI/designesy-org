@@ -45,29 +45,42 @@ export default function GraphPage() {
             Ten stages from source to shipped work. Each stage has public
             examples — real evidence, not abstract theory.
           </p>
-          <div className="principle-list">
-            {graph.chain.map((stage, i) => (
-              <div className="principle" key={stage.stage}>
-                <span className="principle-num">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="principle-body">
-                  <h3>{stage.stage}</h3>
-                  <p>
-                    <strong style={{ color: 'var(--muted)' }}>Definition.</strong>{' '}
-                    {stage.description}
-                  </p>
-                  <div style={{ marginTop: '0.45rem' }}>
-                    <strong style={{ color: 'var(--muted-dim)' }}>Examples:</strong>
-                    <ul style={{ marginTop: '0.35rem', paddingLeft: '1.25rem', color: 'var(--muted-dim)' }}>
+          <div className="chain-rail">
+            {graph.chain.map((stage, i) => {
+              const count = stage.public_examples.length;
+              const maxCount = 4;
+              const fillPct = Math.round((count / maxCount) * 100);
+              const num = String(i + 1).padStart(2, '0');
+              const isLast = i === graph.chain.length - 1;
+
+              return (
+                <div className="chain-cell" key={stage.stage}>
+                  <span className="chain-rail-node" aria-hidden="true" />
+                  <div className="chain-cell-main">
+                    <div className="chain-cell-header">
+                      <span className="chain-cell-num">{num}</span>
+                      <h3 className="chain-cell-title">{stage.stage}</h3>
+                      <div className="chain-cell-meter" aria-label={`${count} examples`}>
+                        <div className="chain-cell-meter-bar">
+                          <span
+                            className="chain-cell-meter-fill"
+                            style={{ width: `${fillPct}%` }}
+                          />
+                        </div>
+                        <span className="chain-cell-meter-label">{count}</span>
+                      </div>
+                    </div>
+                    <p className="chain-cell-definition">{stage.description}</p>
+                    <ul className="chain-cell-examples">
                       {stage.public_examples.map((ex, j) => (
                         <li key={j}>{ex}</li>
                       ))}
                     </ul>
+                    {isLast && <span className="chain-cell-badge">LIVE</span>}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
