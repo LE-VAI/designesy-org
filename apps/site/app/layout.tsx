@@ -88,6 +88,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Set js-ready before CSS paints so [data-reveal] hidden state
+            only applies when JS is active — prevents invisible content
+            during hydration gap. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: 'document.documentElement.classList.add("js-ready");',
+          }}
+        />
+      </head>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <CuelumeBinder />
