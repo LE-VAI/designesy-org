@@ -3807,6 +3807,14 @@ a.check-cell:hover .check-cell-title {
   justify-content: center;
   width: 100%;
 }
+.demo-img-pair > div {
+  flex: 1 1 5.5rem;
+  min-width: 0;
+}
+.demo-img-pair .demo-img-outline,
+.demo-img-pair .demo-img-bad {
+  max-width: none;
+}
 .demo-img-label {
   font-size: 0.62rem;
   color: var(--muted-dim);
