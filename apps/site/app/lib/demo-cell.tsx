@@ -1,6 +1,6 @@
 type DemoCellProps = {
   label: string;
-  note?: string;
+  note?: React.ReactNode;
   children: React.ReactNode;
 };
 

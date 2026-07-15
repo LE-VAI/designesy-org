@@ -8,6 +8,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
+import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -110,9 +111,11 @@ export default function PoiseLabPage() {
             no unsolicited sound.
           </p>
 
-          <div className="poise-stage">
-            <div className="poise-stage-block">
-              <p className="poise-stage-label">Wordmark</p>
+          <DemoGrid>
+            <DemoCell
+              label="Wordmark breath"
+              note={<>{`Token: `}<code>--signal</code>{` · motion: `}<code>3.2s --ease-in-out</code>{` opacity only`}</>}
+            >
               <p
                 className="wordmark-hero poise-wordmark"
                 aria-label="designesy"
@@ -121,14 +124,12 @@ export default function PoiseLabPage() {
               >
                 designesy<span className="dot">.</span>
               </p>
-              <p className="poise-stage-note">
-                Token: <code>--signal</code> · motion:{' '}
-                <code>3.2s --ease-in-out</code> opacity only
-              </p>
-            </div>
+            </DemoCell>
 
-            <div className="poise-stage-block">
-              <p className="poise-stage-label">Press</p>
+            <DemoCell
+              label="Press settle"
+              note={<>{`Token: `}<code>scale(0.97)</code>{` · `}<code>160ms --ease-out</code></>}
+            >
               <div className="hero-actions poise-actions">
                 <button
                   type="button"
@@ -145,46 +146,36 @@ export default function PoiseLabPage() {
                   Ghost
                 </button>
               </div>
-              <p className="poise-stage-note">
-                Token: <code>scale(0.97)</code> ·{' '}
-                <code>160ms --ease-out</code>
-              </p>
-            </div>
+            </DemoCell>
 
-            <div className="poise-stage-block">
-              <p className="poise-stage-label">Sound preference</p>
-              <div className="poise-sound-row">
-                <SoundToggle />
-                <span className="poise-stage-note" style={{ margin: 0 }}>
-                  Designesy owns preference; audio only applies it. Defaults off
-                  under reduced motion.
-                </span>
-              </div>
-            </div>
+            <DemoCell
+              label="Sound preference"
+              note="Designesy owns preference; audio only applies it. Defaults off under reduced motion."
+            >
+              <SoundToggle />
+            </DemoCell>
 
-            <div className="poise-stage-block">
-              <p className="poise-stage-label">Haptics preference</p>
-              <div className="poise-sound-row">
-                <HapticsToggle />
-                <span className="poise-stage-note" style={{ margin: 0 }}>
-                  Default on when Vibration API is present. Toggle hides on
-                  unsupported devices. Press/tap only — never hover.
-                </span>
-              </div>
-            </div>
+            <DemoCell
+              label="Haptics preference"
+              note="Default on when Vibration API is present. Toggle hides on unsupported devices. Press/tap only — never hover."
+            >
+              <HapticsToggle />
+            </DemoCell>
 
-            <div className="poise-stage-block">
-              <p className="poise-stage-label">Reduced motion</p>
-              <div className="definition" style={{ marginBottom: 0 }}>
-                <p className="definition-label">Contract requirement</p>
-                <p>
-                  When <code>prefers-reduced-motion: reduce</code> is set,
-                  non-essential animation collapses. The interface remains
-                  complete without the breath or entrance choreography.
-                </p>
+            <DemoCell
+              label="Reduced motion"
+              note={<>{`When `}<code>prefers-reduced-motion: reduce</code>{` is set, non-essential animation collapses. The interface remains complete without the breath or entrance choreography.`}</>}
+            >
+              <div className="poise-reduced-demo">
+                <div className="poise-reduced-bar poise-reduced-bar--on" />
+                <div className="poise-reduced-bar poise-reduced-bar--off" />
+                <div className="poise-reduced-labels">
+                  <span className="poise-reduced-tag">Motion on</span>
+                  <span className="poise-reduced-tag">Reduced motion</span>
+                </div>
               </div>
-            </div>
-          </div>
+            </DemoCell>
+          </DemoGrid>
         </section>
 
         <section className="doctrine-section fade-up">
