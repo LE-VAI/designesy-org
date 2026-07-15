@@ -40,18 +40,14 @@ const MACHINE_LINKS = [
 ];
 
 /**
- * Shared footer — wordmark, legal line, dock-marquee sitemap, contact.
- * Surfaces and machine links share a single horizontal auto-scrolling dock
- * of pill cells. Pure CSS animation, pause on hover/touch, reduced-motion safe.
+ * Shared footer — wordmark, legal line, dock sitemap, contact.
+ * Two separate dock rows: Surfaces (human links) and Machine (agent links).
+ * Each dock auto-scrolls horizontally, pauses on hover/focus.
+ * Pure CSS, no JS. Respects prefers-reduced-motion.
  */
 export function Footer() {
-  // Duplicate the full set so the marquee loops seamlessly
-  const allPills = [
-    ...SURFACE_LINKS.map((l) => ({ ...l, type: 'surface' as const })),
-    { href: '', label: '', type: 'sep' as const },
-    ...MACHINE_LINKS.map((l) => ({ ...l, type: 'machine' as const })),
-  ];
-  const trackItems = [...allPills, ...allPills];
+  const surfaceItems = [...SURFACE_LINKS, ...SURFACE_LINKS];
+  const machineItems = [...MACHINE_LINKS, ...MACHINE_LINKS];
 
   return (
     <footer className="footer">
@@ -64,30 +60,37 @@ export function Footer() {
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>
 
-          <nav className="footer-dock" aria-label="Site map">
-            <span className="footer-dock-label">Sitemap</span>
-            <div className="footer-dock-track">
-              {trackItems.map((item, i) => {
-                if (item.type === 'sep') {
-                  return (
-                    <span
-                      className="footer-dock-sep"
-                      aria-hidden="true"
-                      key={`sep-${i}`}
-                    />
-                  );
-                }
-                return (
+          <nav className="footer-docks" aria-label="Site map">
+            <div className="footer-dock">
+              <span className="footer-dock-label">Surfaces</span>
+              <div className="footer-dock-track">
+                {surfaceItems.map((link, i) => (
                   <Link
-                    href={item.href}
-                    key={`${item.href}-${i}`}
-                    className={`footer-dock-pill footer-dock-pill--${item.type}`}
-                    data-cuelume-hover={item.type === 'surface' ? 'tick' : 'chime'}
+                    href={link.href}
+                    key={`s-${link.href}-${i}`}
+                    className="footer-dock-pill footer-dock-pill--surface"
+                    data-cuelume-hover="tick"
                   >
-                    {item.label}
+                    {link.label}
                   </Link>
-                );
-              })}
+                ))}
+              </div>
+            </div>
+
+            <div className="footer-dock">
+              <span className="footer-dock-label">Machine</span>
+              <div className="footer-dock-track">
+                {machineItems.map((link, i) => (
+                  <Link
+                    href={link.href}
+                    key={`m-${link.href}-${i}`}
+                    className="footer-dock-pill footer-dock-pill--machine"
+                    data-cuelume-hover="chime"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </nav>
         </div>
