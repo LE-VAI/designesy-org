@@ -4,6 +4,7 @@ import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
 import { ToggleRow } from './lib/toggle-row';
+import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -589,41 +590,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <aside className="state-marquee" aria-hidden="true">
-              <span className="state-marquee-header">System signals</span>
-              <div className="state-marquee-track">
-                {[
-                  { t: 'v0.1.4 · LIVE', c: 'live' },
-                  { t: 'Poise ✓ adopted', c: 'adopted' },
-                  { t: 'Takt ✓ adopted', c: 'adopted' },
-                  { t: 'Cadence ✓ adopted', c: 'adopted' },
-                  { t: 'Review ✓ pass', c: 'adopted' },
-                  { t: 'Keyboard ✓ verified', c: 'adopted' },
-                  { t: 'Drift rule active', c: 'live' },
-                  { t: 'SKILL.md published', c: 'live' },
-                  { t: 'open.json · machine feed', c: 'info' },
-                  { t: 'llms.txt · agent brief', c: 'info' },
-                  { t: 'Cuelume · sound on', c: 'info' },
-                  { t: 'reduced-motion safe', c: 'info' },
-                  { t: 'v0.1.4 · LIVE', c: 'live' },
-                  { t: 'Poise ✓ adopted', c: 'adopted' },
-                  { t: 'Takt ✓ adopted', c: 'adopted' },
-                  { t: 'Cadence ✓ adopted', c: 'adopted' },
-                  { t: 'Review ✓ pass', c: 'adopted' },
-                  { t: 'Keyboard ✓ verified', c: 'adopted' },
-                  { t: 'Drift rule active', c: 'live' },
-                  { t: 'SKILL.md published', c: 'live' },
-                  { t: 'open.json · machine feed', c: 'info' },
-                  { t: 'llms.txt · agent brief', c: 'info' },
-                  { t: 'Cuelume · sound on', c: 'info' },
-                  { t: 'reduced-motion safe', c: 'info' },
-                ].map((item, i) => (
-                  <span className={`state-marquee-pill state-marquee-pill--${item.c}`} key={i}>
-                    {item.t}
-                  </span>
-                ))}
-              </div>
-            </aside>
+            <StateMarquee />
           </div>
         </section>
       </main>
