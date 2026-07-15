@@ -3634,30 +3634,27 @@ a.check-cell:hover .check-cell-title {
 
 /*
   Scroll-reveal — elements with [data-reveal] start hidden and
-  animate in when they enter the viewport (via ScrambleEnhancer
-  IntersectionObserver adding .is-revealed). Staggered by index
-  within a [data-reveal-group] parent.
+  animate in when they enter the viewport. Only applies when JS
+  is active (.js-ready on <html>) to prevent invisible content
+  if JS is slow to hydrate.
 */
-[data-reveal] {
+.js-ready [data-reveal] {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity var(--duration) var(--ease-out),
     transform var(--duration) var(--ease-out);
 }
 
-[data-reveal].is-revealed {
+.js-ready [data-reveal].is-revealed {
   opacity: 1;
   transform: translateY(0);
-  /* After the reveal completes, clear the transition so it doesn't
-     interfere with the element's own hover transitions. */
   transition-delay: 0s;
 }
 
-/* Once revealed, let the element's own transitions take over */
-[data-reveal].is-revealed.field-card,
-[data-reveal].is-revealed.surface-card,
-[data-reveal].is-revealed.chain-cell,
-[data-reveal].is-revealed.principle {
+.js-ready [data-reveal].is-revealed.field-card,
+.js-ready [data-reveal].is-revealed.surface-card,
+.js-ready [data-reveal].is-revealed.chain-cell,
+.js-ready [data-reveal].is-revealed.principle {
   transition: transform 160ms var(--ease-out),
     border-color 0.2s var(--ease),
     background 0.2s var(--ease),
@@ -3665,7 +3662,7 @@ a.check-cell:hover .check-cell-title {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] {
+  .js-ready [data-reveal] {
     opacity: 1;
     transform: none;
     transition: none;
