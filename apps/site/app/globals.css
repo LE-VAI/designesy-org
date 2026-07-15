@@ -903,12 +903,12 @@ p {
   background: var(--surface-raised);
 }
 
-.surface-card:active {
+.js-ready [data-reveal].is-revealed.surface-card:active {
   transform: scale(0.985);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .surface-card:hover {
+  .js-ready [data-reveal].is-revealed.surface-card:hover {
     transform: perspective(600px)
       rotateX(var(--tilt-rx, 0deg))
       rotateY(var(--tilt-ry, 0deg))
@@ -3980,12 +3980,12 @@ a.check-cell:hover .check-cell-title {
   border-color: var(--line-strong);
 }
 
-.field-card:active {
+.js-ready [data-reveal].is-revealed.field-card:active {
   transform: scale(0.985);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .field-card:hover {
+  .js-ready [data-reveal].is-revealed.field-card:hover {
     transform: perspective(600px)
       rotateX(var(--tilt-rx, 0deg))
       rotateY(var(--tilt-ry, 0deg))
@@ -4428,11 +4428,11 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  a.field-card:focus-visible {
+  a.js-ready [data-reveal].is-revealed.field-card:focus-visible {
     transform: translateY(-2px);
   }
 
-  a.surface-card:focus-visible {
+  a.js-ready [data-reveal].is-revealed.surface-card:focus-visible {
     transform: translateY(-1px);
   }
 

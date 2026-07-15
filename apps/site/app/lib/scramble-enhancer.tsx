@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
  * ScrambleEnhancer — text scramble + scroll reveal.
  *
  * data-scramble: text churns random chars then decodes when in viewport.
+ *   - aria-label set to real text before scrambling (screen reader safety).
+ *   - 8s safety timer force-resolves any element the observer never fires on.
  * data-reveal: elements fade up when scrolled into view (staggered by group).
  *
  * Re-runs on every route change (usePathname dependency) so that new page
@@ -112,6 +114,9 @@ export function ScrambleEnhancer() {
 
     const allObservers: IntersectionObserver[] = [];
 
+    // Track elements that still need force-resolving (safety net)
+    const pendingResolvers: (() => void)[] = [];
+
     scrambleEls.forEach((el) => {
       const hasChildElements = el.querySelector('span, svg, img, a');
 
@@ -123,6 +128,9 @@ export function ScrambleEnhancer() {
 
         const originalText = firstChild.textContent || '';
         if (!originalText.trim()) return;
+
+        // aria-label fallback: screen readers get the real text immediately
+        el.setAttribute('aria-label', originalText.trim());
 
         firstChild.textContent = scrambleString(originalText);
 
@@ -150,12 +158,20 @@ export function ScrambleEnhancer() {
         );
         observer.observe(el);
         allObservers.push(observer);
+
+        // Safety net: force-resolve if observer never fires
+        pendingResolvers.push(() => {
+          firstChild.textContent = originalText;
+        });
         return;
       }
 
       // Simple text-only element
       const realText = (el.textContent || '').trim();
       if (!realText) return;
+
+      // aria-label fallback: screen readers get the real text immediately
+      el.setAttribute('aria-label', realText);
 
       el.textContent = scrambleString(realText);
 
@@ -183,7 +199,20 @@ export function ScrambleEnhancer() {
       );
       observer.observe(el);
       allObservers.push(observer);
+
+      // Safety net: force-resolve if observer never fires
+      pendingResolvers.push(() => {
+        el.textContent = realText;
+      });
     });
+
+    // Max-timeout safety net: force-resolve all pending scramble elements
+    // after 8 seconds, regardless of observer state. Catches edge cases
+    // where IntersectionObserver never fires (background tab, zero-height
+    // elements, instant scroll past threshold).
+    const safetyTimer = setTimeout(() => {
+      pendingResolvers.forEach((resolve) => resolve());
+    }, 8000);
 
     /* --- Scroll Reveal --- */
     const revealEls = Array.from(
@@ -268,6 +297,7 @@ export function ScrambleEnhancer() {
       revealObserver.disconnect();
       window.removeEventListener('scroll', onScroll);
       clearTimeout(fallbackTimer);
+      clearTimeout(safetyTimer);
     };
   }, [pathname]); // Re-run on route change so new page elements get observers
 
