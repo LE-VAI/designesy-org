@@ -3,31 +3,68 @@
 import { useEffect } from 'react';
 
 /**
- * ScrambleEnhancer — two animation layers powered by IntersectionObserver:
+ * ScrambleEnhancer — text scramble + scroll reveal via IntersectionObserver.
  *
- * 1. Text Scramble (data-scramble): elements churn random characters
- *    then decode into their real text when they enter the viewport.
- *    Fires once per element. Opt-in via data-scramble attribute.
- *
- * 2. Scroll Reveal (data-reveal): elements start hidden and animate
- *    in when they scroll into view. Staggered by index within a
- *    shared parent (data-reveal-group). Opt-in via data-reveal.
+ * - data-scramble: text churns random chars then decodes when in viewport
+ * - data-reveal: elements fade up when scrolled into view (staggered by group)
  *
  * Respects prefers-reduced-motion (exits early).
- * Zero dependencies, passive observers only.
  */
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789·─│▌+-=*';
 
-function randomChar() {
+function randomChar(): string {
   return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
 }
 
-function scrambleText(text: string): string {
+function scrambleString(text: string): string {
   return text
     .split('')
     .map((ch) => (ch === ' ' || ch === '.' || ch === '\n' ? ch : randomChar()))
     .join('');
+}
+
+function decodeToString(
+  realText: string,
+  charDelay: number,
+  churnCount: number,
+  onUpdate: (text: string) => void
+): void {
+  let revealed = 0;
+  const total = realText.length;
+
+  const revealStep = () => {
+    if (revealed >= total) {
+      onUpdate(realText);
+      return;
+    }
+    let result = '';
+    for (let i = 0; i < total; i++) {
+      if (i < revealed) {
+        result += realText[i];
+      } else if (realText[i] === ' ' || realText[i] === '.' || realText[i] === '\n') {
+        result += realText[i];
+      } else {
+        result += randomChar();
+      }
+    }
+    onUpdate(result);
+    revealed++;
+    setTimeout(revealStep, charDelay);
+  };
+
+  let churn = 0;
+  const churnStep = () => {
+    if (churn >= churnCount) {
+      revealStep();
+      return;
+    }
+    onUpdate(scrambleString(realText));
+    churn++;
+    setTimeout(churnStep, 40);
+  };
+
+  churnStep();
 }
 
 export function ScrambleEnhancer() {
@@ -39,51 +76,57 @@ export function ScrambleEnhancer() {
     const churnCount = isMobile ? 2 : 4;
 
     /* --- Text Scramble --- */
-    const scrambleEls = Array.from(document.querySelectorAll<HTMLElement>('[data-scramble]'));
+    const scrambleEls = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-scramble]')
+    );
 
-    const scrambleObservers: IntersectionObserver[] = [];
+    const observers: IntersectionObserver[] = [];
 
     scrambleEls.forEach((el) => {
-      // Get real text — prefer data-scramble-text, fall back to textContent
-      const realText = (el.dataset.scrambleText || el.textContent || '').trim();
-      if (!realText) return;
+      // Check for child elements (like spans or links)
+      const hasChildElements = el.querySelector('span, svg, img, a');
 
-      // Don't scramble if element already has child elements (like the dot span)
-      const hasChildElements = el.querySelector('span, svg, img');
       if (hasChildElements) {
-        // For elements with children (like wordmark with .dot span),
-        // scramble only the first text node
-        const firstText = el.firstChild;
-        if (firstText && firstText.nodeType === Node.TEXT_NODE) {
-          const textNode = firstText as globalThis.Text;
-          const originalText = textNode.textContent || '';
-          textNode.textContent = scrambleText(originalText);
+        // For elements with children, scramble only the first text node
+        const firstChild = el.firstChild;
+        if (!firstChild || firstChild.nodeType !== 3) return; // 3 = TEXT_NODE
 
-          const observer = new IntersectionObserver(
-            (entries) => {
-              entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                  decodeText(textNode, originalText, charDelay, churnCount);
-                  observer.disconnect();
-                }
-              });
-            },
-            { threshold: 0.3 }
-          );
-          observer.observe(el);
-          scrambleObservers.push(observer);
-        }
+        const originalText = firstChild.textContent || '';
+        if (!originalText.trim()) return;
+
+        firstChild.textContent = scrambleString(originalText);
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                decodeToString(originalText, charDelay, churnCount, (text) => {
+                  firstChild.textContent = text;
+                });
+                observer.disconnect();
+              }
+            });
+          },
+          { threshold: 0.3 }
+        );
+        observer.observe(el);
+        observers.push(observer);
         return;
       }
 
       // Simple text-only element
-      el.textContent = scrambleText(realText);
+      const realText = (el.textContent || '').trim();
+      if (!realText) return;
+
+      el.textContent = scrambleString(realText);
 
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              decodeElement(el, realText, charDelay, churnCount);
+              decodeToString(realText, charDelay, churnCount, (text) => {
+                el.textContent = text;
+              });
               observer.disconnect();
             }
           });
@@ -91,19 +134,22 @@ export function ScrambleEnhancer() {
         { threshold: 0.3 }
       );
       observer.observe(el);
-      scrambleObservers.push(observer);
+      observers.push(observer);
     });
 
     /* --- Scroll Reveal --- */
-    const revealEls = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
+    const revealEls = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-reveal]')
+    );
 
     // Group by parent for stagger
-    const groups = new Map<HTMLElement, HTMLElement[]>();
+    const groupMap = new Map<HTMLElement, HTMLElement[]>();
     revealEls.forEach((el) => {
-      const parent = el.closest('[data-reveal-group]') || el.parentElement;
-      if (!parent) return;
-      if (!groups.has(parent)) groups.set(parent, []);
-      groups.get(parent)!.push(el);
+      const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
+      const key = parent || (el.parentElement as HTMLElement);
+      if (!key) return;
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(el);
     });
 
     const revealObserver = new IntersectionObserver(
@@ -111,8 +157,9 @@ export function ScrambleEnhancer() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const el = entry.target as HTMLElement;
-            const parent = el.closest('[data-reveal-group]') || el.parentElement;
-            const siblings = parent ? groups.get(parent as HTMLElement) : null;
+            const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
+            const key = parent || (el.parentElement as HTMLElement);
+            const siblings = key ? groupMap.get(key) : null;
             let delay = 0;
             if (siblings) {
               const idx = siblings.indexOf(el);
@@ -130,104 +177,10 @@ export function ScrambleEnhancer() {
     revealEls.forEach((el) => revealObserver.observe(el));
 
     return () => {
-      scrambleObservers.forEach((o) => o.disconnect());
+      observers.forEach((o) => o.disconnect());
       revealObserver.disconnect();
     };
   }, []);
 
   return null;
-}
-
-/** Decode a Text node from scrambled to real text, left to right */
-function decodeText(
-  textNode: globalThis.Text,
-  realText: string,
-  charDelay: number,
-  churnCount: number
-) {
-  let revealed = 0;
-  const total = realText.length;
-
-  const step = () => {
-    if (revealed >= total) {
-      textNode.textContent = realText;
-      return;
-    }
-
-    // Build the current state: revealed chars + scrambled rest
-    let result = '';
-    for (let i = 0; i < total; i++) {
-      if (i < revealed) {
-        result += realText[i];
-      } else if (realText[i] === ' ' || realText[i] === '.' || realText[i] === '\n') {
-        result += realText[i];
-      } else {
-        result += randomChar();
-      }
-    }
-    textNode.textContent = result;
-
-    revealed++;
-    setTimeout(step, charDelay);
-  };
-
-  // Run a few churn frames before starting the reveal
-  let churn = 0;
-  const churnStep = () => {
-    if (churn >= churnCount) {
-      step();
-      return;
-    }
-    textNode.textContent = scrambleText(realText);
-    churn++;
-    setTimeout(churnStep, 40);
-  };
-
-  churnStep();
-}
-
-/** Decode a simple element (no child elements) */
-function decodeElement(
-  el: HTMLElement,
-  realText: string,
-  charDelay: number,
-  churnCount: number
-) {
-  let revealed = 0;
-  const total = realText.length;
-
-  const step = () => {
-    if (revealed >= total) {
-      el.textContent = realText;
-      return;
-    }
-
-    let result = '';
-    for (let i = 0; i < total; i++) {
-      if (i < revealed) {
-        result += realText[i];
-      } else if (realText[i] === ' ' || realText[i] === '.' || realText[i] === '\n') {
-        result += realText[i];
-      } else {
-        result += randomChar();
-      }
-    }
-    el.textContent = result;
-
-    revealed++;
-    setTimeout(step, charDelay);
-  };
-
-  let churn = 0;
-  const churnStep = () => {
-    if (churn >= churnCount) {
-      step();
-      return;
-    }
-    el.textContent = scrambleText(realText);
-    churn++;
-    setTimeout(churnStep, 40);
-  };
-
-  churnStep();
 }
