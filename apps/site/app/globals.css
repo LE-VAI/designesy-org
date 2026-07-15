@@ -3632,6 +3632,32 @@ a.check-cell:hover .check-cell-title {
   }
 }
 
+/*
+  Scroll-reveal — elements with [data-reveal] start hidden and
+  animate in when they enter the viewport (via ScrambleEnhancer
+  IntersectionObserver adding .is-revealed). Staggered by index
+  within a [data-reveal-group] parent.
+*/
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* --- Responsive --- */
 
 @media (max-width: 860px) {

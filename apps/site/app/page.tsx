@@ -219,18 +219,19 @@ export default function HomePage() {
               </svg>
             </div>
           </div>
-          <p className="hero-eyebrow fade-up">Design intelligence infrastructure</p>
+          <p className="hero-eyebrow fade-up" data-scramble>Design intelligence infrastructure</p>
           <h1
             className="wordmark-hero hero-title fade-up fade-up-delay-1"
             id="hero-title"
             data-cuelume-hover="sparkle"
             data-cuelume-press="sparkle"
             data-firework
+            data-scramble
           >
             <span className="wordmark-shimmer">designesy</span>
             <span className="dot">.</span>
           </h1>
-          <p className="hero-lede fade-up fade-up-delay-2">
+          <p className="hero-lede fade-up fade-up-delay-2" data-scramble>
             Design intelligence infrastructure for a humane creative civilization.
           </p>
           <p className="hero-body fade-up fade-up-delay-3">
@@ -288,7 +289,7 @@ export default function HomePage() {
         {/* --- Pillars --- */}
         <section className="section" aria-labelledby="pillars-title">
           <p className="section-eyebrow">What Designesy does</p>
-          <h2 className="section-title" id="pillars-title">
+          <h2 className="section-title" id="pillars-title" data-scramble>
             A compact system for design work.
           </h2>
           <div className="pillar-grid">
@@ -311,13 +312,13 @@ export default function HomePage() {
         {/* --- Principles preview + Contract health radar --- */}
         <section className="section" aria-labelledby="principles-title">
           <p className="section-eyebrow">Operating principles</p>
-          <h2 className="section-title" id="principles-title">
+          <h2 className="section-title" id="principles-title" data-scramble>
             Nine principles. Four shown here.
           </h2>
-          <div className="principle-layout">
+          <div className="principle-layout" data-reveal-group>
             <div className="principle-list principle-list--rail">
               {PRINCIPLES_PREVIEW.map((p) => (
-                <div className="principle fade-in" key={p.num}>
+                <div className="principle fade-in" key={p.num} data-reveal>
                   <span className="principle-num">{p.num}</span>
                   <div className="principle-body">
                     <h3>{p.title}</h3>
@@ -451,14 +452,15 @@ export default function HomePage() {
         {/* --- Field cards --- */}
         <section className="section" aria-labelledby="field-title">
           <p className="section-eyebrow">Now live</p>
-          <h2 className="section-title" id="field-title">
+          <h2 className="section-title" id="field-title" data-scramble>
             Open stack, contract, labs, and kit.
           </h2>
-          <div className="field-grid">
+          <div className="field-grid" data-reveal-group>
             {FIELD.map((item) => (
               <Link
                 className={`field-card field-card--${item.kind}`}
                 href={item.href}
+                data-reveal
                 key={item.href}
                 data-cuelume-hover={
                   item.kind === 'open'
@@ -514,14 +516,15 @@ export default function HomePage() {
         {/* --- Surfaces --- */}
         <section className="section" aria-labelledby="surfaces-title">
           <p className="section-eyebrow">Surfaces</p>
-          <h2 className="section-title" id="surfaces-title">
+          <h2 className="section-title" id="surfaces-title" data-scramble>
             Public lanes with live cargo.
           </h2>
-          <div className="surface-list">
+          <div className="surface-list" data-reveal-group>
             {SURFACES.map((surface) => (
               <Link
                 className="surface-card"
                 href={surface.href}
+                data-reveal
                 key={surface.href}
                 data-cuelume-hover="whisper"
                 data-cuelume-press
@@ -538,7 +541,7 @@ export default function HomePage() {
 
         <section className="section" aria-labelledby="system-state-title">
           <p className="section-eyebrow">System state</p>
-          <h2 className="section-title" id="system-state-title">
+          <h2 className="section-title" id="system-state-title" data-scramble>
             What is real on this site.
           </h2>
           <div className="state-layout">

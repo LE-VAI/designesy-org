@@ -161,8 +161,8 @@ export default function DocsPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Context surface</p>
-          <h1 className="surface-title">Docs</h1>
+          <p className="surface-eyebrow" data-scramble>Context surface</p>
+          <h1 className="surface-title" data-scramble>Docs</h1>
           <p className="surface-lede">
             Designesy is design intelligence infrastructure for a humane creative
             civilization.

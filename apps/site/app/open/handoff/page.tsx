@@ -69,14 +69,14 @@ export default function OpenHandoffPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">
+          <p className="surface-eyebrow" data-scramble>
             <Link href="/open" className="lab-crumb">
               Open
             </Link>
             <span aria-hidden="true"> · </span>
             Handoff
           </p>
-          <h1 className="surface-title">Open handoff</h1>
+          <h1 className="surface-title" data-scramble>Open handoff</h1>
           <p className="surface-lede">
             First public share pack for open design intelligence.
           </p>

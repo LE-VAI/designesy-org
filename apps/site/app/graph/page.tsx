@@ -23,9 +23,9 @@ export default function GraphPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Graph</p>
-          <h1 className="surface-title">Provenance chain</h1>
-          <p className="surface-lede">
+          <p className="surface-eyebrow" data-scramble>Graph</p>
+          <h1 className="surface-title" data-scramble>Provenance chain</h1>
+          <p className="surface-lede" data-scramble>
             How sources become shipped work.
           </p>
           <p className="surface-note">
@@ -40,12 +40,12 @@ export default function GraphPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="chain">
-          <h2 className="doctrine-heading">The chain</h2>
+          <h2 className="doctrine-heading" data-scramble>The chain</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Ten stages from source to shipped work. Each stage has public
             examples — real evidence, not abstract theory.
           </p>
-          <div className="chain-rail">
+          <div className="chain-rail" data-reveal-group>
             {graph.chain.map((stage, i) => {
               const count = stage.public_examples.length;
               const maxCount = 4;
@@ -54,12 +54,12 @@ export default function GraphPage() {
               const isLast = i === graph.chain.length - 1;
 
               return (
-                <div className="chain-cell" key={stage.stage}>
+                <div className="chain-cell" key={stage.stage} data-reveal>
                   <span className="chain-rail-node" aria-hidden="true" />
                   <div className="chain-cell-main">
                     <div className="chain-cell-header">
                       <span className="chain-cell-num">{num}</span>
-                      <h3 className="chain-cell-title">{stage.stage}</h3>
+                      <h3 className="chain-cell-title" data-scramble>{stage.stage}</h3>
                       <div className="chain-cell-meter" aria-label={`${count} examples`}>
                         <div className="chain-cell-meter-bar">
                           <span
@@ -85,7 +85,7 @@ export default function GraphPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="what-this-is">
-          <h2 className="doctrine-heading">What this is</h2>
+          <h2 className="doctrine-heading" data-scramble>What this is</h2>
           <div className="definition">
             <p className="definition-label">Public read-only surface</p>
             <p>
@@ -101,7 +101,7 @@ export default function GraphPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="what-this-is-not">
-          <h2 className="doctrine-heading">What this is not</h2>
+          <h2 className="doctrine-heading" data-scramble>What this is not</h2>
           <ul className="checkmark-list">
             <li>Not a dependency graph or build-system diagram.</li>
             <li>Not a live data feed — examples are curated and versioned.</li>
@@ -111,7 +111,7 @@ export default function GraphPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="sources">
-          <h2 className="doctrine-heading">Related</h2>
+          <h2 className="doctrine-heading" data-scramble>Related</h2>
           <div className="row-stack" role="list">
             <Link
               href="/contracts/design-system"

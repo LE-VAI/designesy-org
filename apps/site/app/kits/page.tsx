@@ -46,8 +46,8 @@ export default function KitsPage() {
 
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Use lane</p>
-          <h1 className="surface-title">Kits</h1>
+          <p className="surface-eyebrow" data-scramble>Use lane</p>
+          <h1 className="surface-title" data-scramble>Kits</h1>
           <p className="surface-lede">
             Portable instruction packages for people and agents.
           </p>
