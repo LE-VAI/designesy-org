@@ -55,14 +55,15 @@ export function ScrambleEnhancer() {
         // scramble only the first text node
         const firstText = el.firstChild;
         if (firstText && firstText.nodeType === Node.TEXT_NODE) {
-          const originalText = firstText.textContent || '';
-          firstText.textContent = scrambleText(originalText);
+          const textNode = firstText as Text;
+          const originalText = textNode.textContent || '';
+          textNode.textContent = scrambleText(originalText);
 
           const observer = new IntersectionObserver(
             (entries) => {
               entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                  decodeText(firstText as Text, originalText, charDelay, churnCount);
+                  decodeText(textNode, originalText, charDelay, churnCount);
                   observer.disconnect();
                 }
               });
