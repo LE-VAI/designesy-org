@@ -603,7 +603,7 @@ p {
   .hero-lede,
   .hero-body,
   .hero-actions {
-    max-width: calc(100% - 220px);
+    max-width: calc(100% - 248px);
   }
 }
 
