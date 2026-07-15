@@ -909,7 +909,10 @@ p {
 
 @media (hover: hover) and (pointer: fine) {
   .surface-card:hover {
-    transform: translateY(-1px);
+    transform: perspective(600px)
+      rotateX(var(--tilt-rx, 0deg))
+      rotateY(var(--tilt-ry, 0deg))
+      translateY(-1px);
   }
 }
 

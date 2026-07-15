@@ -44,9 +44,49 @@ function isFinePointerMedia() {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+function isCoarsePointer() {
+  return window.matchMedia('(pointer: coarse)').matches;
+}
+
 function playSense(cue: CueName, withHaptic = true) {
   play(cue);
   if (withHaptic) triggerHapticForCue(cue);
+}
+
+/**
+ * Mobile audio boost: monkey-patch AudioNode.prototype.connect so that
+ * any connection to AudioContext.destination is intercepted and routed
+ * through a shared GainNode with 1.8x gain on mobile devices. This
+ * effectively boosts all cuelume (and any other Web Audio) output
+ * without modifying the cuelume package.
+ */
+function installMobileVolumeBoost(boost: number) {
+  const originalConnect = AudioNode.prototype.connect;
+  let boostGain: GainNode | null = null;
+
+  AudioNode.prototype.connect = function (destination: AudioNode, ...args: any[]) {
+    // If connecting to a destination node, check if it's the AudioContext.destination
+    if (destination && 'maxChannelCount' in destination && 'context' in destination) {
+      // It's an AudioDestinationNode — route through boost gain instead
+      const ctx = (this as any).context as AudioContext;
+      if (ctx && !boostGain) {
+        boostGain = ctx.createGain();
+        boostGain.gain.value = boost;
+        boostGain.connect(ctx.destination);
+      }
+      if (boostGain) {
+        return originalConnect.call(this, boostGain, ...args);
+      }
+    }
+    return originalConnect.call(this, destination, ...args);
+  } as any;
+
+  return () => {
+    AudioNode.prototype.connect = originalConnect;
+    if (boostGain) {
+      try { boostGain.disconnect(); } catch {}
+    }
+  };
 }
 
 /**
@@ -54,14 +94,13 @@ function playSense(cue: CueName, withHaptic = true) {
  * to delegate all data-cuelume-* attributes. Idempotent —
  * safe across route transitions in the Next.js app router.
  *
- * Cuelume v0.1.0 gaps closed here:
- * 1. press/release are mouse-only — touch/pen get no action cues.
- * 2. Hover-only targets are silent on coarse pointers; map to one tap.
- * 3. Middle-click / auto-scroll can spam hover cues.
- * 4. Post-touch synthetic mouse must not double-fire (hybrid devices).
- *
- * Haptics (web-haptics): paired with press / tap / release only — never
- * fine-pointer hover. Preference and support live in haptics-engine.
+ * Mobile fixes:
+ * 1. Audio unlock on first pointerdown within user gesture
+ * 2. Volume boost on mobile (1.8x via GainNode intercept)
+ * 3. Touch/pen get press/release cues (Cuelume v0.1.0 gap)
+ * 4. Hover-only targets map to one tap on coarse pointers
+ * 5. Middle-click / auto-scroll spam guard
+ * 6. Post-touch synthetic mouse guard
  */
 export function CuelumeBinder() {
   useEffect(() => {
@@ -71,6 +110,12 @@ export function CuelumeBinder() {
     let activeTouchPress: Element | null = null;
     let lastTouchLikeAt = -Infinity;
     let audioUnlocked = false;
+
+    // Install mobile volume boost on coarse-pointer devices
+    let uninstallBoost: (() => void) | null = null;
+    if (isCoarsePointer()) {
+      uninstallBoost = installMobileVolumeBoost(1.8);
+    }
 
     /**
      * Mobile audio unlock: on the very first pointerdown, call play()
@@ -130,7 +175,6 @@ export function CuelumeBinder() {
         const pressEl = e.target.closest('[data-cuelume-press]');
         if (pressEl && document.contains(pressEl)) {
           const cue = resolveCue(pressEl, 'data-cuelume-press', 'press');
-          // Sound via Cuelume mouse path; haptic only (no second sound).
           triggerHapticForCue(cue);
         }
         return;
@@ -219,6 +263,7 @@ export function CuelumeBinder() {
       document.removeEventListener('pointercancel', onPointerCancel, true);
       document.removeEventListener('pointerenter', onPointerEnterCapture, true);
       document.removeEventListener('click', onClickCapture, true);
+      if (uninstallBoost) uninstallBoost();
     };
   }, []);
 
