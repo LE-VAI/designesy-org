@@ -55,7 +55,7 @@ function playSense(cue: CueName, withHaptic = true) {
   if (isExtendedSound(cue)) {
     playExtended(cue);
   } else {
-    play(cue);
+    play(cue as Parameters<typeof play>[0]);
   }
   if (withHaptic) triggerHapticForCue(cue);
 }

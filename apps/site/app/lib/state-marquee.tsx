@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { Ref } from 'react';
 import { initScrollPause } from './scroll-pause';
 
 const SIGNALS = [
@@ -25,8 +26,8 @@ const ITEMS = [...SIGNALS, ...SIGNALS];
  * and lets the user manually scroll while hovered.
  */
 export function StateMarquee() {
-  const clipRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const clipRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const clip = clipRef.current;
@@ -36,7 +37,11 @@ export function StateMarquee() {
   }, []);
 
   return (
-    <aside className="state-marquee" aria-hidden="true" ref={clipRef as React.Ref<HTMLElement>}>
+    <aside
+      className="state-marquee"
+      aria-hidden="true"
+      ref={clipRef as Ref<HTMLElement>}
+    >
       <span className="state-marquee-header">System signals</span>
       <div className="state-marquee-track" ref={trackRef}>
         {ITEMS.map((item, i) => (
