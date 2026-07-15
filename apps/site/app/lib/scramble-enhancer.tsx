@@ -55,7 +55,7 @@ export function ScrambleEnhancer() {
         // scramble only the first text node
         const firstText = el.firstChild;
         if (firstText && firstText.nodeType === Node.TEXT_NODE) {
-          const textNode = firstText as Text;
+          const textNode = firstText as globalThis.Text;
           const originalText = textNode.textContent || '';
           textNode.textContent = scrambleText(originalText);
 
@@ -140,7 +140,7 @@ export function ScrambleEnhancer() {
 
 /** Decode a Text node from scrambled to real text, left to right */
 function decodeText(
-  textNode: Text,
+  textNode: globalThis.Text,
   realText: string,
   charDelay: number,
   churnCount: number
