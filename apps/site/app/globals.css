@@ -1648,52 +1648,74 @@ button.pillar:hover::before {
 }
 
 /*
-  Footer dock — horizontal auto-scrolling marquee of pill-shaped link cells.
-  Surfaces and machine links share a single track. Duplicated content for
-  seamless loop. Pauses on hover/touch. Edge-faded with mask. Pure CSS,
-  no JS. Respects prefers-reduced-motion.
+  Footer docks — two separate horizontal auto-scrolling rows of pill cells.
+  Surfaces dock (human links) and Machine dock (agent links) are visually
+  distinct sections, each with its own label and track. Content duplicated
+  for seamless loop. Pauses on hover/focus. Edge fade on track only (not
+  label). Pure CSS, no JS. Respects prefers-reduced-motion.
 */
+.footer-docks {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  /* Contain: prevent any child width from leaking to the page */
+  overflow: hidden;
+  max-width: 100%;
+}
+
 .footer-dock {
   position: relative;
-  margin-top: 1rem;
-  padding: 0.5rem 0;
   overflow: hidden;
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    #000 6%,
-    #000 94%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    #000 6%,
-    #000 94%,
-    transparent 100%
-  );
+  display: flex;
+  flex-direction: column;
 }
 
 .footer-dock-label {
   display: block;
-  padding: 0.35rem 1rem 0.35rem;
+  padding: 0.4rem 0.75rem 0.3rem;
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  background: linear-gradient(to bottom, var(--surface) 70%, transparent);
+  flex-shrink: 0;
+  z-index: 1;
 }
 
+/* Track scrolls — mask fades only the pill area, not the label */
 .footer-dock-track {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.2rem 1rem 0.65rem;
-  width: max-content;
+  padding: 0.15rem 0.75rem 0.55rem;
+  flex-shrink: 0;
+  /* Key fix: track width is clamped to parent, not max-content.
+     The animation moves content via translateX, not by overflowing. */
+  width: 100%;
+  overflow: hidden;
+  /* Edge fade on the track only */
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+}
+
+/* Inner wrapper that actually scrolls — this is what gets animated */
+.footer-dock-track {
   animation: footer-dock-scroll 50s linear infinite;
 }
 
@@ -1712,7 +1734,7 @@ button.pillar:hover::before {
   align-items: center;
   gap: 0.35rem;
   flex-shrink: 0;
-  padding: 0.32rem 0.65rem;
+  padding: 0.3rem 0.6rem;
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--muted);
@@ -1736,17 +1758,6 @@ button.pillar:hover::before {
   background: var(--signal);
   opacity: 0.5;
   transition: opacity 0.18s var(--ease);
-}
-
-.footer-dock-pill--surface::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: 0;
-  height: 1px;
-  background: var(--signal);
-  transition: right 0.2s var(--ease-out);
 }
 
 .footer-dock-pill--surface:hover {
@@ -1790,27 +1801,13 @@ button.pillar:hover::before {
   opacity: 0.8;
 }
 
-.footer-dock-sep {
-  flex-shrink: 0;
-  width: 1px;
-  height: 18px;
-  background: var(--line);
-  margin: 0 0.25rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .footer-dock-track {
     animation: none;
-    width: auto;
-  }
-
-  .footer-dock {
+    transform: none;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
-  }
-
-  .footer-dock-track {
     flex-wrap: nowrap;
   }
 }
