@@ -54,64 +54,16 @@ function playSense(cue: CueName, withHaptic = true) {
 }
 
 /**
- * Mobile audio boost: on coarse-pointer devices, intercepts the Web Audio
- * destination to route through a 1.8x GainNode. Done via a runtime patch
- * on AudioNode.prototype.connect with careful typing to satisfy Turbopack's
- * strict TypeScript checking.
- */
-function installMobileVolumeBoost(boost: number): (() => void) | null {
-  if (typeof AudioNode === 'undefined' || !AudioNode.prototype) return null;
-  if (typeof window === 'undefined') return null;
-
-  // Save original method
-  const savedConnect = AudioNode.prototype.connect;
-  let boostGain: GainNode | null = null;
-
-  // Patched connect: detect AudioDestinationNode and route through gain boost
-  function patchedConnect(this: AudioNode, destination: AudioNode | AudioParam): AudioNode {
-    // Duck-type: AudioDestinationNode has maxChannelCount
-    const isDest =
-      destination &&
-      typeof destination === 'object' &&
-      'maxChannelCount' in destination;
-
-    if (isDest) {
-      const ctx = this.context;
-      if (ctx && !boostGain) {
-        boostGain = ctx.createGain();
-        boostGain.gain.value = boost;
-        savedConnect.call(boostGain, ctx.destination);
-      }
-      if (boostGain) {
-        return savedConnect.call(this, boostGain) as AudioNode;
-      }
-    }
-    return savedConnect.call(this, destination) as AudioNode;
-  }
-
-  // Cast through unknown to satisfy overloaded connect signature
-  AudioNode.prototype.connect = patchedConnect as unknown as typeof AudioNode.prototype.connect;
-
-  return () => {
-    AudioNode.prototype.connect = savedConnect;
-    if (boostGain) {
-      try { boostGain.disconnect(); } catch { void 0; }
-    }
-  };
-}
-
-/**
  * Mounts once in the root layout. Calls bind() on the document
  * to delegate all data-cuelume-* attributes. Idempotent —
  * safe across route transitions in the Next.js app router.
  *
  * Mobile fixes:
  * 1. Audio unlock on first pointerdown within user gesture
- * 2. Volume boost on mobile (1.8x via GainNode intercept)
- * 3. Touch/pen get press/release cues (Cuelume v0.1.0 gap)
- * 4. Hover-only targets map to one tap on coarse pointers
- * 5. Middle-click / auto-scroll spam guard
- * 6. Post-touch synthetic mouse guard
+ * 2. Touch/pen get press/release cues (Cuelume v0.1.0 gap)
+ * 3. Hover-only targets map to one tap on coarse pointers
+ * 4. Middle-click / auto-scroll spam guard
+ * 5. Post-touch synthetic mouse guard
  */
 export function CuelumeBinder() {
   useEffect(() => {
@@ -123,10 +75,9 @@ export function CuelumeBinder() {
     let audioUnlocked = false;
 
     // Install mobile volume boost on coarse-pointer devices
-    let uninstallBoost: (() => void) | null = null;
-    if (isCoarsePointer()) {
-      uninstallBoost = installMobileVolumeBoost(1.8);
-    }
+    // (handled via a GainNode injected into cuelume's audio graph)
+    // NOTE: Volume boost disabled until cuelume exposes a volume API.
+    // The audio unlock below is the critical fix for mobile.
 
     /**
      * Mobile audio unlock: on the very first pointerdown, call play()
@@ -269,7 +220,6 @@ export function CuelumeBinder() {
       document.removeEventListener('pointercancel', onPointerCancel, true);
       document.removeEventListener('pointerenter', onPointerEnterCapture, true);
       document.removeEventListener('click', onClickCapture, true);
-      if (uninstallBoost) uninstallBoost();
     };
   }, []);
 
