@@ -3770,7 +3770,10 @@ a.check-cell:hover .check-cell-title {
 */
 .js-ready [data-reveal] {
   opacity: 0;
-  transition: opacity var(--duration) var(--ease-out);
+  transition: opacity var(--duration) var(--ease-out),
+    transform 160ms var(--ease-out),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
 }
 
 .js-ready [data-reveal].is-revealed {
@@ -3792,7 +3795,10 @@ a.check-cell:hover .check-cell-title {
   animation: none;
 }
 
-/* No transform on revealed cards — :hover tilt owns the transform property */
+/* No transform on revealed cards — :hover tilt owns the transform property.
+   Also clear the stagger transition-delay set inline by ScrambleEnhancer
+   so hover transform responds immediately without waiting for the reveal
+   stagger delay to expire. */
 .js-ready [data-reveal].is-revealed.field-card,
 .js-ready [data-reveal].is-revealed.surface-card,
 .js-ready [data-reveal].is-revealed.chain-cell,
@@ -3801,6 +3807,7 @@ a.check-cell:hover .check-cell-title {
     border-color 0.2s var(--ease),
     background 0.2s var(--ease),
     opacity 0.4s var(--ease-out);
+  transition-delay: 0s !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
