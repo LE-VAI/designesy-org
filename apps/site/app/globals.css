@@ -66,7 +66,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scroll-padding-top: 4.5rem;
   -webkit-text-size-adjust: 100%;
 }
@@ -4784,10 +4784,6 @@ a.field-card:active {
 /* --- Reduced motion --- */
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {
