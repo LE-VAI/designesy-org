@@ -40,10 +40,19 @@ const MACHINE_LINKS = [
 ];
 
 /**
- * Shared footer — wordmark, legal line, grouped wayfinding, contact.
- * Surfaces vs machine links stay separated for scan clarity.
+ * Shared footer — wordmark, legal line, dock-marquee sitemap, contact.
+ * Surfaces and machine links share a single horizontal auto-scrolling dock
+ * of pill cells. Pure CSS animation, pause on hover/touch, reduced-motion safe.
  */
 export function Footer() {
+  // Duplicate the full set so the marquee loops seamlessly
+  const allPills = [
+    ...SURFACE_LINKS.map((l) => ({ ...l, type: 'surface' as const })),
+    { href: '', label: '', type: 'sep' as const },
+    ...MACHINE_LINKS.map((l) => ({ ...l, type: 'machine' as const })),
+  ];
+  const trackItems = [...allPills, ...allPills];
+
   return (
     <footer className="footer">
       <div className="site-shell footer-inner">
@@ -55,32 +64,32 @@ export function Footer() {
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>
 
-          <div className="footer-groups">
-            <nav className="footer-nav" aria-label="Surfaces">
-              <span className="footer-group-label">Surfaces</span>
-              {SURFACE_LINKS.map((link) => (
-                <Link
-                  href={link.href}
-                  key={link.href}
-                  data-cuelume-hover="tick"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <nav className="footer-nav footer-nav--machine" aria-label="Machine">
-              <span className="footer-group-label">Machine</span>
-              {MACHINE_LINKS.map((link) => (
-                <Link
-                  href={link.href}
-                  key={link.href}
-                  data-cuelume-hover="chime"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          <nav className="footer-dock" aria-label="Site map">
+            <span className="footer-dock-label">Sitemap</span>
+            <div className="footer-dock-track">
+              {trackItems.map((item, i) => {
+                if (item.type === 'sep') {
+                  return (
+                    <span
+                      className="footer-dock-sep"
+                      aria-hidden="true"
+                      key={`sep-${i}`}
+                    />
+                  );
+                }
+                return (
+                  <Link
+                    href={item.href}
+                    key={`${item.href}-${i}`}
+                    className={`footer-dock-pill footer-dock-pill--${item.type}`}
+                    data-cuelume-hover={item.type === 'surface' ? 'tick' : 'chime'}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
         </div>
         <a
           className="footer-link"
