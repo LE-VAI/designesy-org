@@ -86,16 +86,25 @@ export function ScrambleEnhancer() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const isMobile = window.innerWidth < 720;
-    const charDelay = isMobile ? 20 : 32;
-    const churnCount = isMobile ? 2 : 4;
+    let allObservers: IntersectionObserver[] = [];
+    let revealObserver: IntersectionObserver | null = null;
+    let didRun = false;
+
+    // Wait for layout to settle before checking viewport positions
+    const rafId = requestAnimationFrame(() => {
+      if (didRun) return;
+      didRun = true;
+
+      const isMobile = window.innerWidth < 720;
+      const charDelay = isMobile ? 20 : 32;
+      const churnCount = isMobile ? 2 : 4;
 
     /* --- Text Scramble --- */
     const scrambleEls = Array.from(
       document.querySelectorAll<HTMLElement>('[data-scramble]')
     );
 
-    const observers: IntersectionObserver[] = [];
+    allObservers = [];
 
     scrambleEls.forEach((el) => {
       const hasChildElements = el.querySelector('span, svg, img, a');
@@ -136,7 +145,7 @@ export function ScrambleEnhancer() {
           { threshold: 0.3 }
         );
         observer.observe(el);
-        observers.push(observer);
+        allObservers.push(observer);
         return;
       }
 
@@ -171,7 +180,7 @@ export function ScrambleEnhancer() {
         { threshold: 0.3 }
       );
       observer.observe(el);
-      observers.push(observer);
+      allObservers.push(observer);
     });
 
     /* --- Scroll Reveal --- */
@@ -214,7 +223,7 @@ export function ScrambleEnhancer() {
       revealElsToObserve.push(el);
     });
 
-    const revealObserver = new IntersectionObserver(
+    revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -229,18 +238,21 @@ export function ScrambleEnhancer() {
             }
             el.style.transitionDelay = `${delay}ms`;
             el.classList.add('is-revealed');
-            revealObserver.unobserve(el);
+            if (revealObserver) revealObserver.unobserve(el);
           }
         });
       },
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
-    revealElsToObserve.forEach((el) => revealObserver.observe(el));
+    if (revealObserver) revealElsToObserve.forEach((el) => revealObserver.observe(el));
+
+    }); // end rAF
 
     return () => {
-      observers.forEach((o) => o.disconnect());
-      revealObserver.disconnect();
+      cancelAnimationFrame(rafId);
+      allObservers.forEach((o) => o.disconnect());
+      if (revealObserver) revealObserver.disconnect();
     };
   }, []);
 
