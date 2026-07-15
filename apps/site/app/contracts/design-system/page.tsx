@@ -85,7 +85,6 @@ export default function DesignSystemContractPage() {
               className="button primary"
               href="/contracts/design-system.json"
               data-cuelume-press
-              data-cuelume-release
             >
               Open machine export
             </Link>
@@ -93,7 +92,6 @@ export default function DesignSystemContractPage() {
               className="button ghost"
               href="/contracts#design-system-contract"
               data-cuelume-press
-              data-cuelume-release
             >
               Full contract
             </Link>
@@ -150,7 +148,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -166,7 +163,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -180,7 +176,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -194,7 +189,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
@@ -210,7 +204,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">05</span>
               <span className="row-body">
@@ -226,7 +219,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">06</span>
               <span className="row-body">
@@ -242,7 +234,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">07</span>
               <span className="row-body">
@@ -258,7 +249,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">08</span>
               <span className="row-body">
@@ -274,7 +264,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">09</span>
               <span className="row-body">
@@ -290,7 +279,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">10</span>
               <span className="row-body">
@@ -306,7 +294,6 @@ export default function DesignSystemContractPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">11</span>
               <span className="row-body">

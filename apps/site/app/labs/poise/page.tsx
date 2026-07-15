@@ -116,7 +116,7 @@ export default function PoiseLabPage() {
               <p
                 className="wordmark-hero poise-wordmark"
                 aria-label="designesy"
-                data-cuelume-hover="sparkle"
+                data-cuelume-hover="droplet"
                 data-cuelume-press="sparkle"
               >
                 designesy<span className="dot">.</span>
@@ -134,7 +134,6 @@ export default function PoiseLabPage() {
                   type="button"
                   className="button primary"
                   data-cuelume-press
-                  data-cuelume-release
                 >
                   Primary
                 </button>
@@ -142,7 +141,6 @@ export default function PoiseLabPage() {
                   type="button"
                   className="button ghost"
                   data-cuelume-press
-                  data-cuelume-release
                 >
                   Ghost
                 </button>
@@ -366,7 +364,6 @@ export default function PoiseLabPage() {
             className="lab-card"
             data-cuelume-hover="tick"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge">Pass with notes</span>
@@ -389,7 +386,6 @@ export default function PoiseLabPage() {
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">

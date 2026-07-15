@@ -191,7 +191,6 @@ export default function DocsPage() {
                 role="listitem"
                 data-cuelume-hover="whisper"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
@@ -281,7 +280,6 @@ export default function DocsPage() {
                     key={layer.num}
                     data-cuelume-hover="bloom"
                     data-cuelume-press
-                    data-cuelume-release
                   >
                     <span className="layer-num">{layer.num}</span>
                     <div className="layer-body">

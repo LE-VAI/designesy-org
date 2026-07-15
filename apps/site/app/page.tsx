@@ -223,7 +223,7 @@ export default function HomePage() {
           <h1
             className="wordmark-hero hero-title fade-up fade-up-delay-1"
             id="hero-title"
-            data-cuelume-hover="sparkle"
+            data-cuelume-hover="droplet"
             data-cuelume-press="sparkle"
             data-firework
           >
@@ -243,7 +243,6 @@ export default function HomePage() {
               href="/open"
               data-cuelume-hover="chime"
               data-cuelume-press
-              data-cuelume-release="success"
               data-firework
             >
               Open design intelligence
@@ -253,7 +252,6 @@ export default function HomePage() {
               href="/kits/design-review"
               data-cuelume-hover="tick"
               data-cuelume-press
-              data-cuelume-release
             >
               Use Design Review
             </Link>
@@ -272,7 +270,6 @@ export default function HomePage() {
                 className={`pipeline-step${i === PIPELINE.length - 1 ? ' is-end' : ''}`}
                 key={step.label}
                 data-cuelume-hover="tick"
-                data-cuelume-press
               >
                 <span className="pipeline-node" aria-hidden="true">
                   <span className="pipeline-node-core" />
@@ -298,7 +295,6 @@ export default function HomePage() {
                 key={pillar.number}
                 data-cuelume-hover="bloom"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
@@ -471,9 +467,6 @@ export default function HomePage() {
                         : 'tick'
                 }
                 data-cuelume-press
-                data-cuelume-release={
-                  item.kind === 'open' || item.kind === 'kit' ? 'success' : ''
-                }
               >
                 <div className="field-card-top">
                   <span className={`status-badge status-badge--${item.kind}`}>
@@ -527,7 +520,6 @@ export default function HomePage() {
                 key={surface.href}
                 data-cuelume-hover="whisper"
                 data-cuelume-press
-                data-cuelume-release
               >
                 <span className="surface-card-meta">{surface.meta}</span>
                 <span className="surface-card-label">{surface.label}</span>

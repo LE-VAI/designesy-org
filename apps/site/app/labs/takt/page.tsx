@@ -239,7 +239,7 @@ export default function TaktLabPage() {
             </DemoCell>
 
             <DemoCell label="Press scale" note="scale(0.96) · 160ms --ease-out">
-              <button type="button" className="demo-press-btn" data-cuelume-press data-cuelume-release>
+              <button type="button" className="demo-press-btn" data-cuelume-press>
                 Press me
               </button>
             </DemoCell>
@@ -391,7 +391,6 @@ export default function TaktLabPage() {
             href="/review/takt"
             data-cuelume-hover="whisper"
             data-cuelume-press
-            data-cuelume-release
           >
             <div className="lab-card-top">
               <span className="status-badge">Pass with notes</span>
@@ -416,7 +415,6 @@ export default function TaktLabPage() {
               href="/labs/poise"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">01</span>
               <span className="row-body">
@@ -430,7 +428,6 @@ export default function TaktLabPage() {
               href="/contracts/design-system"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">02</span>
               <span className="row-body">
@@ -444,7 +441,6 @@ export default function TaktLabPage() {
               href="/kits/design-review"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">03</span>
               <span className="row-body">
@@ -458,7 +454,6 @@ export default function TaktLabPage() {
               href="/review/poise"
               data-cuelume-hover="whisper"
               data-cuelume-press
-              data-cuelume-release
             >
               <span className="row-index">04</span>
               <span className="row-body">
