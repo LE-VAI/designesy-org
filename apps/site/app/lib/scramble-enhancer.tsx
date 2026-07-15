@@ -107,6 +107,20 @@ export function ScrambleEnhancer() {
     const charDelay = isMobile ? 20 : 32;
     const churnCount = isMobile ? 2 : 4;
 
+    /**
+     * Scale decode speed by text length — long sentences shouldn't
+     * take 10+ seconds. Cap total decode time around 2.5s.
+     */
+    function scaledDelays(text: string): { charDelay: number; churnCount: number } {
+      const len = text.length;
+      if (len <= 30) return { charDelay, churnCount };
+      // Scale: longer text gets faster per-char delay and fewer churns
+      const targetTotal = 2500; // ms target for decode phase
+      const cd = Math.max(8, Math.min(charDelay, Math.floor(targetTotal / len)));
+      const cc = Math.max(1, Math.min(churnCount, Math.floor(1200 / (len * 40))));
+      return { charDelay: cd, churnCount: cc };
+    }
+
     /* --- Text Scramble --- */
     const scrambleEls = Array.from(
       document.querySelectorAll<HTMLElement>('[data-scramble]')
@@ -118,15 +132,22 @@ export function ScrambleEnhancer() {
     const pendingResolvers: (() => void)[] = [];
 
     /**
-     * Lock an element's height to its current rendered height before
-     * scrambling, so random glyphs with different metrics don't cause
-     * layout shift (page jump) during the decode animation.
+     * Lock an element's height and white-space to its current rendered
+     * state before scrambling, so random glyphs with different metrics
+     * don't cause layout shift (page jump) or line-count changes during
+     * the decode animation.
      * Released after decoding completes (or on safety-net resolve).
      */
     function lockHeight(el: HTMLElement): () => void {
       const h = el.offsetHeight;
+      const prevWhiteSpace = el.style.whiteSpace;
       if (h > 0) el.style.minHeight = `${h}px`;
-      return () => { el.style.minHeight = ''; };
+      // Prevent scramble glyphs from wrapping to a new line count
+      el.style.whiteSpace = 'nowrap';
+      return () => {
+        el.style.minHeight = '';
+        el.style.whiteSpace = prevWhiteSpace;
+      };
     }
 
     scrambleEls.forEach((el) => {
@@ -144,12 +165,13 @@ export function ScrambleEnhancer() {
       // aria-label fallback: screen readers get the real text immediately
       el.setAttribute('aria-label', originalText.trim());
 
+      const sd = scaledDelays(originalText);
       const unlockHeight = lockHeight(el);
       firstChild.textContent = scrambleString(originalText);
 
       // If already in viewport, start decoding immediately
       if (isInViewport(el)) {
-        decodeToString(originalText, charDelay, churnCount, (text) => {
+        decodeToString(originalText, sd.charDelay, sd.churnCount, (text) => {
           firstChild.textContent = text;
           if (text === originalText) unlockHeight();
         });
@@ -161,7 +183,7 @@ export function ScrambleEnhancer() {
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              decodeToString(originalText, charDelay, churnCount, (text) => {
+              decodeToString(originalText, sd.charDelay, sd.churnCount, (text) => {
                 firstChild.textContent = text;
                 if (text === originalText) unlockHeight();
               });
@@ -190,11 +212,12 @@ export function ScrambleEnhancer() {
       el.setAttribute('aria-label', realText);
 
       const unlockHeight = lockHeight(el);
+      const sd = scaledDelays(realText);
       el.textContent = scrambleString(realText);
 
       // If already in viewport, start decoding immediately
       if (isInViewport(el)) {
-        decodeToString(realText, charDelay, churnCount, (text) => {
+        decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
           el.textContent = text;
           if (text === realText) unlockHeight();
         });
@@ -206,7 +229,7 @@ export function ScrambleEnhancer() {
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              decodeToString(realText, charDelay, churnCount, (text) => {
+              decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
                 el.textContent = text;
                 if (text === realText) unlockHeight();
               });
