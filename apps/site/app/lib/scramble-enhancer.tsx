@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * ScrambleEnhancer — text scramble + scroll reveal.
@@ -8,10 +9,12 @@ import { useEffect } from 'react';
  * data-scramble: text churns random chars then decodes when in viewport.
  * data-reveal: elements fade up when scrolled into view (staggered by group).
  *
- * Respects prefers-reduced-motion (exits early, shows everything).
+ * Re-runs on every route change (usePathname dependency) so that new page
+ * content gets observers wired up. Without this, client-side navigations
+ * leave [data-reveal] elements stuck invisible because the enhancer only
+ * ran once on the initial mount.
  *
- * Robustness: no rAF wrapper (avoids cleanup race on hydration remount),
- * scroll listener fallback catches elements the IntersectionObserver misses.
+ * Respects prefers-reduced-motion (exits early, shows everything).
  */
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789·─│▌+-=*';
@@ -86,6 +89,8 @@ function isInViewport(el: HTMLElement): boolean {
 }
 
 export function ScrambleEnhancer() {
+  const pathname = usePathname();
+
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.documentElement.classList.add('js-ready');
@@ -264,7 +269,7 @@ export function ScrambleEnhancer() {
       window.removeEventListener('scroll', onScroll);
       clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [pathname]); // Re-run on route change so new page elements get observers
 
   return null;
 }

@@ -36,8 +36,8 @@ export function EffectEnhancer() {
         if (finePointer.matches) {
           const px = (e.clientX - rect.left) / rect.width - 0.5;
           const py = (e.clientY - rect.top) / rect.height - 0.5;
-          surfaceCard.style.setProperty('--tilt-rx', `${py * -5}deg`);
-          surfaceCard.style.setProperty('--tilt-ry', `${px * 5}deg`);
+          surfaceCard.style.setProperty('--tilt-rx', `${py * -8}deg`);
+          surfaceCard.style.setProperty('--tilt-ry', `${px * 8}deg`);
         }
       }
 
