@@ -25,12 +25,20 @@ export function EffectEnhancer() {
     const handleMove = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
 
-      // Surface card spotlight
+      // Surface card spotlight + 3D tilt
       const surfaceCard = target.closest<HTMLElement>('.surface-card');
       if (surfaceCard) {
         const rect = surfaceCard.getBoundingClientRect();
         surfaceCard.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
         surfaceCard.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
+
+        // 3D tilt on fine pointers (same as field cards)
+        if (finePointer.matches) {
+          const px = (e.clientX - rect.left) / rect.width - 0.5;
+          const py = (e.clientY - rect.top) / rect.height - 0.5;
+          surfaceCard.style.setProperty('--tilt-rx', `${py * -5}deg`);
+          surfaceCard.style.setProperty('--tilt-ry', `${px * 5}deg`);
+        }
       }
 
       // Field card tilt
@@ -52,6 +60,11 @@ export function EffectEnhancer() {
       if (fieldCard) {
         fieldCard.style.removeProperty('--tilt-rx');
         fieldCard.style.removeProperty('--tilt-ry');
+      }
+      const surfaceCard = target.closest<HTMLElement>('.surface-card');
+      if (surfaceCard) {
+        surfaceCard.style.removeProperty('--tilt-rx');
+        surfaceCard.style.removeProperty('--tilt-ry');
       }
     };
 
