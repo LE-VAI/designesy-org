@@ -8,11 +8,10 @@ import { useEffect } from 'react';
  * data-scramble: text churns random chars then decodes when in viewport.
  * data-reveal: elements fade up when scrolled into view (staggered by group).
  *
- * Key timing fix: elements already in the viewport on mount are triggered
- * immediately via requestAnimationFrame — no waiting for IntersectionObserver
- * to fire asynchronously (which caused stuck invisible/ scrambled content).
+ * Respects prefers-reduced-motion (exits early, shows everything).
  *
- * Respects prefers-reduced-motion (exits early).
+ * Robustness: no rAF wrapper (avoids cleanup race on hydration remount),
+ * scroll listener fallback catches elements the IntersectionObserver misses.
  */
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789·─│▌+-=*';
@@ -36,10 +35,11 @@ function decodeToString(
 ): void {
   let revealed = 0;
   const total = realText.length;
+  let cancelled = false;
 
   const revealStep = () => {
-    if (revealed >= total) {
-      onUpdate(realText);
+    if (cancelled || revealed >= total) {
+      if (!cancelled) onUpdate(realText);
       return;
     }
     let result = '';
@@ -59,8 +59,8 @@ function decodeToString(
 
   let churn = 0;
   const churnStep = () => {
-    if (churn >= churnCount) {
-      revealStep();
+    if (cancelled || churn >= churnCount) {
+      if (!cancelled) revealStep();
       return;
     }
     onUpdate(scrambleString(realText));
@@ -69,6 +69,9 @@ function decodeToString(
   };
 
   churnStep();
+
+  // Return cancel function so caller can abort if needed
+  return void (undefined as never);
 }
 
 /** Check if an element is currently in the viewport */
@@ -85,35 +88,24 @@ function isInViewport(el: HTMLElement): boolean {
 export function ScrambleEnhancer() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      // Even in reduced-motion mode, ensure js-ready is set so any CSS
-      // that depends on it (like [data-reveal] overrides) works.
       document.documentElement.classList.add('js-ready');
       return;
     }
 
-    // Fallback: ensure js-ready is set (inline script in layout.tsx should
-    // have already done this, but this covers CSP-stripped or SSR edge cases).
+    // Ensure js-ready is set (inline script in layout.tsx should have
+    // already done this, but this covers CSP/SSR edge cases).
     document.documentElement.classList.add('js-ready');
 
-    let allObservers: IntersectionObserver[] = [];
-    let revealObserver: IntersectionObserver | null = null;
-    let didRun = false;
-
-    // Wait for layout to settle before checking viewport positions
-    const rafId = requestAnimationFrame(() => {
-      if (didRun) return;
-      didRun = true;
-
-      const isMobile = window.innerWidth < 720;
-      const charDelay = isMobile ? 20 : 32;
-      const churnCount = isMobile ? 2 : 4;
+    const isMobile = window.innerWidth < 720;
+    const charDelay = isMobile ? 20 : 32;
+    const churnCount = isMobile ? 2 : 4;
 
     /* --- Text Scramble --- */
     const scrambleEls = Array.from(
       document.querySelectorAll<HTMLElement>('[data-scramble]')
     );
 
-    allObservers = [];
+    const allObservers: IntersectionObserver[] = [];
 
     scrambleEls.forEach((el) => {
       const hasChildElements = el.querySelector('span, svg, img, a');
@@ -131,10 +123,8 @@ export function ScrambleEnhancer() {
 
         // If already in viewport, start decoding immediately
         if (isInViewport(el)) {
-          requestAnimationFrame(() => {
-            decodeToString(originalText, charDelay, churnCount, (text) => {
-              firstChild.textContent = text;
-            });
+          decodeToString(originalText, charDelay, churnCount, (text) => {
+            firstChild.textContent = text;
           });
           return;
         }
@@ -166,10 +156,8 @@ export function ScrambleEnhancer() {
 
       // If already in viewport, start decoding immediately
       if (isInViewport(el)) {
-        requestAnimationFrame(() => {
-          decodeToString(realText, charDelay, churnCount, (text) => {
-            el.textContent = text;
-          });
+        decodeToString(realText, charDelay, churnCount, (text) => {
+          el.textContent = text;
         });
         return;
       }
@@ -208,63 +196,73 @@ export function ScrambleEnhancer() {
     });
 
     const revealElsToObserve: HTMLElement[] = [];
+    const revealedSet = new Set<HTMLElement>();
+
+    function revealEl(el: HTMLElement) {
+      if (revealedSet.has(el)) return;
+      revealedSet.add(el);
+      const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
+      const key = parent || (el.parentElement as HTMLElement);
+      const siblings = key ? groupMap.get(key) : null;
+      let delay = 0;
+      if (siblings) {
+        const idx = siblings.indexOf(el);
+        delay = idx * 80;
+      }
+      el.style.transitionDelay = `${delay}ms`;
+      el.classList.add('is-revealed');
+    }
 
     revealEls.forEach((el) => {
       // If already in viewport, reveal immediately
       if (isInViewport(el)) {
-        const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
-        const key = parent || (el.parentElement as HTMLElement);
-        const siblings = key ? groupMap.get(key) : null;
-        let delay = 0;
-        if (siblings) {
-          const idx = siblings.indexOf(el);
-          delay = idx * 80;
-        }
-        el.style.transitionDelay = `${delay}ms`;
-        // Use rAF to ensure the initial hidden state is painted first
-        requestAnimationFrame(() => {
-          el.classList.add('is-revealed');
-        });
+        revealEl(el);
         return;
       }
-
       // Otherwise observe for intersection
       revealElsToObserve.push(el);
     });
 
-    revealObserver = new IntersectionObserver(
+    const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
-            const key = parent || (el.parentElement as HTMLElement);
-            const siblings = key ? groupMap.get(key) : null;
-            let delay = 0;
-            if (siblings) {
-              const idx = siblings.indexOf(el);
-              delay = idx * 80;
-            }
-            el.style.transitionDelay = `${delay}ms`;
-            el.classList.add('is-revealed');
-            if (revealObserver) revealObserver.unobserve(el);
+            revealEl(entry.target as HTMLElement);
+            revealObserver.unobserve(entry.target as HTMLElement);
           }
         });
       },
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
-    if (revealObserver) {
-      const ro = revealObserver;
-      revealElsToObserve.forEach((el) => ro.observe(el));
-    }
+    revealElsToObserve.forEach((el) => revealObserver.observe(el));
 
-    }); // end rAF
+    // Fallback: scroll listener catches elements the observer might miss
+    // (instant scroll jumps, timing edge cases during hydration)
+    let scrollTicking = false;
+    function onScroll() {
+      if (scrollTicking) return;
+      scrollTicking = true;
+      requestAnimationFrame(() => {
+        scrollTicking = false;
+        revealElsToObserve.forEach((el) => {
+          if (!revealedSet.has(el) && isInViewport(el)) {
+            revealEl(el);
+            revealObserver.unobserve(el);
+          }
+        });
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Also fire once after a short delay to catch any elements that
+    // became visible during hydration/layout
+    const fallbackTimer = setTimeout(onScroll, 200);
 
     return () => {
-      cancelAnimationFrame(rafId);
       allObservers.forEach((o) => o.disconnect());
-      if (revealObserver) revealObserver.disconnect();
+      revealObserver.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
