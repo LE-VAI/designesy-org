@@ -1651,22 +1651,23 @@ button.pillar:hover::before {
   Footer docks — two separate horizontal auto-scrolling rows of pill cells.
   Surfaces dock (human links) and Machine dock (agent links) are visually
   distinct sections, each with its own label and track. Content duplicated
-  for seamless loop. Pauses on hover/focus. Edge fade on track only (not
-  label). Pure CSS, no JS. Respects prefers-reduced-motion.
+  for seamless loop. Pauses on hover/focus. Edge fade on clip only.
+  Pure CSS, no JS. Respects prefers-reduced-motion.
+
+  Structure: .footer-dock > label + .footer-dock-clip > .footer-dock-track > pills
+  - .footer-dock-clip: width:100%, overflow:hidden, mask gradient (visible window)
+  - .footer-dock-track: width:max-content, animated translateX (the scroller)
 */
 .footer-docks {
   margin-top: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  /* Contain: prevent any child width from leaking to the page */
-  overflow: hidden;
   max-width: 100%;
 }
 
 .footer-dock {
   position: relative;
-  overflow: hidden;
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1683,21 +1684,13 @@ button.pillar:hover::before {
   text-transform: uppercase;
   color: var(--muted-dim);
   flex-shrink: 0;
-  z-index: 1;
 }
 
-/* Track scrolls — mask fades only the pill area, not the label */
-.footer-dock-track {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.15rem 0.75rem 0.55rem;
-  flex-shrink: 0;
-  /* Key fix: track width is clamped to parent, not max-content.
-     The animation moves content via translateX, not by overflowing. */
+/* Visible window — clips the scrolling track */
+.footer-dock-clip {
   width: 100%;
   overflow: hidden;
-  /* Edge fade on the track only */
+  padding: 0.15rem 0 0.55rem;
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -1714,8 +1707,13 @@ button.pillar:hover::before {
   );
 }
 
-/* Inner wrapper that actually scrolls — this is what gets animated */
+/* Inner scroller — as wide as content, animated */
 .footer-dock-track {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  width: max-content;
   animation: footer-dock-scroll 50s linear infinite;
 }
 
