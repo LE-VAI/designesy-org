@@ -3656,16 +3656,22 @@ a.check-cell:hover .check-cell-title {
 
 .demo-grid {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(min(100%, 16rem), 1fr)
-  );
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1px;
   max-width: 100%;
   border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--paper);
+  background: var(--line-faint);
+}
+
+.demo-grid > .demo-cell {
+  grid-column: span 2;
+}
+
+.demo-grid > .demo-cell:nth-child(4):nth-last-child(2),
+.demo-grid > .demo-cell:nth-child(5):last-child {
+  grid-column: span 3;
 }
 
 .demo-cell {
@@ -3674,13 +3680,14 @@ a.check-cell:hover .check-cell-title {
   gap: 0.75rem;
   padding: 1.5rem;
   background: var(--paper);
-  box-shadow: 1px 0 0 0 var(--line-faint), 0 1px 0 0 var(--line-faint);
   min-height: 100%;
+  min-width: 0;
 }
 
 .demo-cell-label {
   font-size: 0.7rem;
   font-weight: 600;
+  line-height: 1.35;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -3690,16 +3697,20 @@ a.check-cell:hover .check-cell-title {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   gap: 0.75rem;
   min-height: 5rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .demo-cell-note {
   font-size: 0.78rem;
   color: var(--muted-dim);
   line-height: 1.5;
+  border-top: 1px solid var(--line-faint);
+  padding-top: 0.75rem;
 }
 
 .demo-cell-note code {
@@ -3714,6 +3725,8 @@ a.check-cell:hover .check-cell-title {
   background: var(--surface);
   border: 1px solid var(--line);
   max-width: 11rem;
+  width: 100%;
+  margin-inline: auto;
 }
 .demo-radius-inner {
   border-radius: 2px;
@@ -3791,6 +3804,8 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
 }
 .demo-img-label {
   font-size: 0.62rem;
@@ -3812,6 +3827,7 @@ a.check-cell:hover .check-cell-title {
   align-items: center;
   justify-content: center;
   align-self: center;
+  margin-block-end: 1.25rem;
 }
 .demo-hit-target {
   width: 24px;
@@ -3828,7 +3844,7 @@ a.check-cell:hover .check-cell-title {
 .demo-hit-area::after {
   content: '44px';
   position: absolute;
-  bottom: -1.4rem;
+  bottom: -1.25rem;
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.6rem;
@@ -3849,8 +3865,10 @@ a.check-cell:hover .check-cell-title {
   width: 0.75rem;
   border-radius: 1px;
   background: var(--signal-light);
-  opacity: 0;
-  transform: translateY(8px);
+  opacity: 0.18;
+  transform: translateY(6px);
+}
+.demo-stagger.is-revealed .demo-stagger-bar {
   animation: demo-stagger-in 400ms var(--ease-out) forwards;
 }
 .demo-stagger-bar:nth-child(1) { height: 2rem; animation-delay: 0ms; }
@@ -3862,8 +3880,13 @@ a.check-cell:hover .check-cell-title {
   to { opacity: 0.8; transform: translateY(0); }
 }
 
+html:not(.js-ready) .demo-stagger-bar {
+  opacity: 0.8;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .demo-stagger-bar {
+  .demo-stagger.is-revealed .demo-stagger-bar {
     animation: none;
     opacity: 0.8;
     transform: none;
@@ -3876,20 +3899,21 @@ a.check-cell:hover .check-cell-title {
   flex-direction: column;
   gap: 0.3rem;
   align-items: flex-start;
+  width: 100%;
 }
 .demo-scale-row {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
 }
-.demo-scale-row span {
+.demo-scale-row > span:first-child {
   font-size: 0.65rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   min-width: 3.5rem;
 }
-.demo-scale-spec {
+.demo-scale-row > .demo-scale-spec {
   color: var(--ink);
   font-weight: 600;
   line-height: 1.1;
@@ -3904,31 +3928,32 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  width: 100%;
 }
 .demo-tracking-row {
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
 }
-.demo-tracking-row span {
+.demo-tracking-row > span:first-child {
   font-size: 0.62rem;
   color: var(--muted-dim);
   white-space: nowrap;
   min-width: 3.5rem;
   font-variant-numeric: tabular-nums;
 }
-.demo-tracking-heading {
+.demo-tracking-row > .demo-tracking-heading {
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ink);
 }
-.demo-tracking-body {
+.demo-tracking-row > .demo-tracking-body {
   font-size: 0.9rem;
   letter-spacing: 0;
   color: var(--ink);
 }
-.demo-tracking-label {
+.demo-tracking-row > .demo-tracking-label {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -3941,10 +3966,11 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
 }
 .demo-leading-block {
-  border-left: 2px solid var(--line);
-  padding-left: 0.75rem;
+  border-inline-start: 2px solid var(--line);
+  padding-inline-start: 0.75rem;
 }
 .demo-heading-lh {
   font-size: 1rem;
@@ -3970,14 +3996,16 @@ a.check-cell:hover .check-cell-title {
 
 /* --- Cadence demo 04: tabular vs proportional numbers --- */
 .demo-numbers {
-  display: flex;
-  gap: 1.25rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  width: 100%;
 }
 .demo-num-table {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 .demo-num-table-title {
   font-size: 0.6rem;
@@ -3987,14 +4015,17 @@ a.check-cell:hover .check-cell-title {
   margin-bottom: 0.3rem;
 }
 .demo-num-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(3.5rem, 1fr);
   gap: 0.75rem;
   font-size: 0.82rem;
   color: var(--ink);
 }
 .demo-num-row .label {
   color: var(--muted-dim);
-  min-width: 2.5rem;
+}
+.demo-num-row > span:last-child {
+  text-align: end;
 }
 .demo-num-tabular .demo-num-row {
   font-variant-numeric: tabular-nums;
@@ -4017,12 +4048,40 @@ a.check-cell:hover .check-cell-title {
   color: var(--muted-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  width: 100%;
 }
 
-/* --- Responsive: collapse to single column on narrow screens --- */
+/* --- Responsive: two columns at medium widths, one on narrow screens --- */
+@media (min-width: 561px) and (max-width: 860px) {
+  .demo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .demo-grid > .demo-cell,
+  .demo-grid > .demo-cell:nth-child(4):nth-last-child(2),
+  .demo-grid > .demo-cell:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .demo-grid > .demo-cell:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 560px) {
   .demo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .demo-grid > .demo-cell,
+  .demo-grid > .demo-cell:nth-child(4):nth-last-child(2),
+  .demo-grid > .demo-cell:nth-child(5):last-child {
+    grid-column: auto;
+  }
+
+  .demo-cell {
+    padding: 1.25rem;
   }
 }
 
