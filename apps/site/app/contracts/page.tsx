@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
+import { DemoCell, DemoGrid } from '../lib/demo-cell';
 import { pageMeta } from '../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -421,6 +422,92 @@ export default function ContractsPage() {
             <code style={{ color: 'var(--ink)' }}>--shadow-lg</code> 0 24px 80px
             rgba(0,0,0,0.5)
           </p>
+
+          <DemoGrid>
+            <DemoCell
+              label="Color roles"
+              note={<>Each chip renders the exact token value. Dark roles on dark surfaces — contrast is the product.</>}
+            >
+              <div className="demo-swatch-grid">
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#ffffff' }} />
+                  <span className="demo-swatch-name">--ink</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#a0a0a0' }} />
+                  <span className="demo-swatch-name">--muted</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#6b6b6b' }} />
+                  <span className="demo-swatch-name">--muted-dim</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#0133cb' }} />
+                  <span className="demo-swatch-name">--signal</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#3358e8' }} />
+                  <span className="demo-swatch-name">--signal-light</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#fecc34' }} />
+                  <span className="demo-swatch-name">--activation</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell
+              label="Surface depth"
+              note={<>Near-black surfaces, not gray. Depth from opacity layers, not heavy shadows.</>}
+            >
+              <div className="demo-swatch-grid">
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#000000', borderColor: 'var(--line)' }} />
+                  <span className="demo-swatch-name">--paper</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#0a0a0a' }} />
+                  <span className="demo-swatch-name">--surface</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#111111' }} />
+                  <span className="demo-swatch-name">--raised</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: 'rgba(255,255,255,0.03)' }} />
+                  <span className="demo-swatch-name">--soft</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  <span className="demo-swatch-name">--hover</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: 'rgba(1,51,203,0.14)' }} />
+                  <span className="demo-swatch-name">--signal-dim</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell
+              label="Radius scale"
+              note={<>6px default · 4px compact — no pill inflation.</>}
+            >
+              <div className="demo-radius-pair">
+                <div className="demo-radius-card">
+                  <div className="demo-radius-box r-default" />
+                  <span className="demo-radius-tag">6px</span>
+                </div>
+                <div className="demo-radius-card">
+                  <div className="demo-radius-box r-sm" />
+                  <span className="demo-radius-tag">4px</span>
+                </div>
+                <div className="demo-radius-card">
+                  <div className="demo-radius-box r-none" />
+                  <span className="demo-radius-tag">none</span>
+                </div>
+              </div>
+            </DemoCell>
+          </DemoGrid>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -518,6 +605,80 @@ export default function ContractsPage() {
               </div>
             ))}
           </div>
+
+          <DemoGrid>
+            <DemoCell
+              label="Primary button states"
+              note={<>default → hover (signal-light) → active (scale 0.97) → focus-visible (2px ring)</>}
+            >
+              <div className="demo-state-grid">
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Default</span>
+                  <span className="demo-state-btn s-default">Primary</span>
+                </div>
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Hover</span>
+                  <span className="demo-state-btn s-hover">Primary</span>
+                </div>
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Active</span>
+                  <span className="demo-state-btn s-active">Primary</span>
+                </div>
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Focus</span>
+                  <span className="demo-state-btn s-focus">Primary</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell
+              label="Ghost button"
+              note={<>transparent + line-strong · hover surface-hover · active scale(0.97)</>}
+            >
+              <div className="demo-state-grid">
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Default</span>
+                  <span className="demo-state-btn s-ghost">Ghost</span>
+                </div>
+                <div className="demo-state-row">
+                  <span className="demo-state-tag">Active</span>
+                  <span className="demo-state-btn s-ghost" style={{ transform: 'scale(0.97)', background: 'var(--surface-hover)' }}>Ghost</span>
+                </div>
+              </div>
+            </DemoCell>
+
+            <DemoCell
+              label="Easing curves"
+              note={<>Four timing functions. Watch the dot travel — same distance, different feel.</>}
+            >
+              <div className="demo-easing">
+                <div className="demo-easing-row" data-ease="default">
+                  <span>--ease</span>
+                  <div className="demo-easing-track">
+                    <div className="demo-easing-dot" />
+                  </div>
+                </div>
+                <div className="demo-easing-row" data-ease="out">
+                  <span>--ease-out</span>
+                  <div className="demo-easing-track">
+                    <div className="demo-easing-dot" />
+                  </div>
+                </div>
+                <div className="demo-easing-row" data-ease="in-out">
+                  <span>--ease-in-out</span>
+                  <div className="demo-easing-track">
+                    <div className="demo-easing-dot" />
+                  </div>
+                </div>
+                <div className="demo-easing-row" data-ease="drawer">
+                  <span>--ease-drawer</span>
+                  <div className="demo-easing-track">
+                    <div className="demo-easing-dot" />
+                  </div>
+                </div>
+              </div>
+            </DemoCell>
+          </DemoGrid>
         </section>
 
         <section className="doctrine-section fade-up">
