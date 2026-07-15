@@ -32,6 +32,7 @@ export function BackButton() {
       className={`back-button${leaving ? ' is-leaving' : ''}`}
       type="button"
       onClick={goBack}
+      data-cuelume-press="tick"
       aria-label="Go back"
       title="Back"
     >

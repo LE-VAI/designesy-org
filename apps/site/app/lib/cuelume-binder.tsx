@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { bind, play } from 'cuelume';
 import { triggerHapticForCue, warmHaptics } from './haptics-engine';
+import { playExtended, isExtendedSound } from './cuelume-extend';
 
 type CueName =
   | 'chime'
@@ -14,7 +15,8 @@ type CueName =
   | 'press'
   | 'release'
   | 'toggle'
-  | 'success';
+  | 'success'
+  | 'error';
 
 const SOUND_NAMES = new Set<string>([
   'chime',
@@ -27,6 +29,7 @@ const SOUND_NAMES = new Set<string>([
   'release',
   'toggle',
   'success',
+  'error',
 ]);
 
 /** Ignore post-touch synthetic mouse events (iOS/Android compatibility mouse). */
@@ -49,7 +52,11 @@ function isCoarsePointer() {
 }
 
 function playSense(cue: CueName, withHaptic = true) {
-  play(cue);
+  if (isExtendedSound(cue)) {
+    playExtended(cue);
+  } else {
+    play(cue);
+  }
   if (withHaptic) triggerHapticForCue(cue);
 }
 
@@ -129,11 +136,16 @@ export function CuelumeBinder() {
 
       if (!(e.target instanceof Element)) return;
 
-      // Desktop fine mouse: Cuelume owns press sound; add light haptic only
+      // Desktop fine mouse: Cuelume owns press sound; add light haptic only.
+      // Extended sounds (error) are not in cuelume's recipe set, so the
+      // binder must play them itself on desktop too.
       if (e.pointerType === 'mouse' && isFinePointerMedia()) {
         const pressEl = e.target.closest('[data-cuelume-press]');
         if (pressEl && document.contains(pressEl)) {
           const cue = resolveCue(pressEl, 'data-cuelume-press', 'press');
+          if (isExtendedSound(cue)) {
+            playExtended(cue);
+          }
           triggerHapticForCue(cue);
         }
         return;
@@ -187,6 +199,19 @@ export function CuelumeBinder() {
     const onPointerEnterCapture = (e: PointerEvent) => {
       if (middleDown || isSyntheticMouseAfterTouch(e)) {
         e.stopImmediatePropagation();
+        return;
+      }
+
+      // Desktop: play extended hover sounds (error) that cuelume can't handle
+      if (e.pointerType === 'mouse' && isFinePointerMedia()) {
+        if (!(e.target instanceof Element)) return;
+        const hoverEl = e.target.closest('[data-cuelume-hover]');
+        if (hoverEl && document.contains(hoverEl)) {
+          const cue = resolveCue(hoverEl, 'data-cuelume-hover', 'chime');
+          if (isExtendedSound(cue)) {
+            playExtended(cue);
+          }
+        }
       }
     };
 
