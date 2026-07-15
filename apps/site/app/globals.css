@@ -594,6 +594,7 @@ p {
   color: var(--ink);
   margin-bottom: 0.9rem;
   text-wrap: balance;
+  overflow: hidden;
 }
 
 /* Keep lede clear of the hero seam shapes on the right */
