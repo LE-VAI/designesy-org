@@ -132,21 +132,33 @@ export function ScrambleEnhancer() {
     const pendingResolvers: (() => void)[] = [];
 
     /**
-     * Lock an element's height and white-space to its current rendered
-     * state before scrambling, so random glyphs with different metrics
-     * don't cause layout shift (page jump) or line-count changes during
-     * the decode animation.
+     * Lock an element's dimensions to its current rendered state before
+     * scrambling, so random glyphs with different metrics don't cause
+     * layout shift (page jump) or overflow during the decode animation.
+     *
+     * Strategy: measure the real text's height, lock it via min-height.
+     * Keep white-space: nowrap to prevent line-count changes, but add
+     * overflow: hidden so scramble glyphs that are wider than the real
+     * text are clipped instead of pushing past the container border.
+     * The text stays exactly where the real text would naturally sit.
      * Released after decoding completes (or on safety-net resolve).
      */
     function lockHeight(el: HTMLElement): () => void {
       const h = el.offsetHeight;
+      const prevMinHeight = el.style.minHeight;
       const prevWhiteSpace = el.style.whiteSpace;
+      const prevOverflow = el.style.overflow;
+      const prevTextOverflow = el.style.textOverflow;
       if (h > 0) el.style.minHeight = `${h}px`;
-      // Prevent scramble glyphs from wrapping to a new line count
+      // Prevent line-count changes from scramble glyphs wrapping
       el.style.whiteSpace = 'nowrap';
+      // Clip any overflow so wider scramble glyphs don't push past borders
+      el.style.overflow = 'hidden';
       return () => {
-        el.style.minHeight = '';
+        el.style.minHeight = prevMinHeight;
         el.style.whiteSpace = prevWhiteSpace;
+        el.style.overflow = prevOverflow;
+        el.style.textOverflow = prevTextOverflow;
       };
     }
 
