@@ -42,8 +42,9 @@ const MACHINE_LINKS = [
 /**
  * Shared footer — wordmark, legal line, dock sitemap, contact.
  * Two separate dock rows: Surfaces (human links) and Machine (agent links).
- * Each dock auto-scrolls horizontally, pauses on hover/focus.
- * Pure CSS, no JS. Respects prefers-reduced-motion.
+ * Each dock has a label (always visible) and a clipped track with an inner
+ * scroller that auto-translates for the marquee effect. Pure CSS, no JS.
+ * Respects prefers-reduced-motion.
  */
 export function Footer() {
   const surfaceItems = [...SURFACE_LINKS, ...SURFACE_LINKS];
@@ -63,33 +64,37 @@ export function Footer() {
           <nav className="footer-docks" aria-label="Site map">
             <div className="footer-dock">
               <span className="footer-dock-label">Surfaces</span>
-              <div className="footer-dock-track">
-                {surfaceItems.map((link, i) => (
-                  <Link
-                    href={link.href}
-                    key={`s-${link.href}-${i}`}
-                    className="footer-dock-pill footer-dock-pill--surface"
-                    data-cuelume-hover="tick"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="footer-dock-clip">
+                <div className="footer-dock-track">
+                  {surfaceItems.map((link, i) => (
+                    <Link
+                      href={link.href}
+                      key={`s-${link.href}-${i}`}
+                      className="footer-dock-pill footer-dock-pill--surface"
+                      data-cuelume-hover="tick"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="footer-dock">
               <span className="footer-dock-label">Machine</span>
-              <div className="footer-dock-track">
-                {machineItems.map((link, i) => (
-                  <Link
-                    href={link.href}
-                    key={`m-${link.href}-${i}`}
-                    className="footer-dock-pill footer-dock-pill--machine"
-                    data-cuelume-hover="chime"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="footer-dock-clip">
+                <div className="footer-dock-track">
+                  {machineItems.map((link, i) => (
+                    <Link
+                      href={link.href}
+                      key={`m-${link.href}-${i}`}
+                      className="footer-dock-pill footer-dock-pill--machine"
+                      data-cuelume-hover="chime"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </nav>
