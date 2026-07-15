@@ -294,7 +294,7 @@ export default function HomePage() {
                 className="pillar fade-in"
                 key={pillar.number}
                 data-cuelume-hover="bloom"
-                data-cuelume-press
+                data-cuelume-toggle="toggle"
               >
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
@@ -437,6 +437,7 @@ export default function HomePage() {
               className="text-link"
               href="/docs"
               data-cuelume-hover="tick"
+              data-cuelume-press="tick"
             >
               Read all nine principles
               <span aria-hidden="true"> →</span>

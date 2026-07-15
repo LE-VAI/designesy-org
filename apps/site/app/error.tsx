@@ -37,8 +37,8 @@ export default function Error({
             type="button"
             className="button primary"
             onClick={() => reset()}
-            data-cuelume-hover="chime"
-            data-cuelume-press
+            data-cuelume-hover="error"
+            data-cuelume-press="error"
           >
             Try again
           </button>

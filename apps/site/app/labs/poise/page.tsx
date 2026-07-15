@@ -363,7 +363,7 @@ export default function PoiseLabPage() {
             href="/review/poise"
             className="lab-card"
             data-cuelume-hover="tick"
-            data-cuelume-press
+            data-cuelume-press="tick"
           >
             <div className="lab-card-top">
               <span className="status-badge">Pass with notes</span>

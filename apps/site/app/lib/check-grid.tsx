@@ -143,7 +143,7 @@ export function CheckGrid({
             role="listitem"
             type="button"
             data-cuelume-hover="whisper"
-            data-cuelume-press
+            data-cuelume-toggle="toggle"
             onClick={() => toggle(i)}
             aria-pressed={isChecked}
           >

@@ -70,6 +70,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           className="wordmark"
           href="/"
           data-cuelume-hover="sparkle"
+          data-cuelume-press="tick"
           aria-current={pathname === '/' ? 'page' : undefined}
         >
           designesy<span className="dot">.</span>
@@ -84,6 +85,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                   key={route.href}
                   ref={active ? activeRef : undefined}
                   data-cuelume-hover="tick"
+                  data-cuelume-press="tick"
                   data-firework={route.href === '/open' ? true : undefined}
                   className={active ? 'is-active' : undefined}
                   aria-current={active ? 'page' : undefined}

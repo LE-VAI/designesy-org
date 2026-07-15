@@ -179,7 +179,7 @@ export default function TaktLabPage() {
       <main id="main-content" className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">
-            <Link href="/labs" data-cuelume-hover="tick">
+            <Link href="/labs" data-cuelume-hover="tick" data-cuelume-press="tick">
               Labs
             </Link>
             {' · Lab Two'}
@@ -203,13 +203,13 @@ export default function TaktLabPage() {
             </span>
             <span className="lab-meta-item">
               Contract ·{' '}
-              <Link href="/contracts/design-system" data-cuelume-hover="tick">
+              <Link href="/contracts/design-system" data-cuelume-hover="tick" data-cuelume-press="tick">
                 v0.1.2
               </Link>
             </span>
             <span className="lab-meta-item">
               Field check ·{' '}
-              <Link href="/review/takt" data-cuelume-hover="tick">
+              <Link href="/review/takt" data-cuelume-hover="tick" data-cuelume-press="tick">
                 pass with notes
               </Link>
             </span>

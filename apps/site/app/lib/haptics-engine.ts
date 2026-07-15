@@ -13,6 +13,7 @@ export type HapticRole =
   | 'press'
   | 'release'
   | 'success'
+  | 'error'
   | 'brand'
   | 'nav'
   | 'invite'
@@ -38,6 +39,7 @@ const ROLE_PRESET: Record<HapticRole, PresetName> = {
   press: 'light',
   release: 'soft',
   success: 'success',
+  error: 'error',
   brand: 'selection',
   nav: 'selection',
   invite: 'soft',
@@ -58,6 +60,8 @@ export function cueToHapticRole(cue: string | null | undefined): HapticRole {
       return 'invite';
     case 'success':
       return 'success';
+    case 'error':
+      return 'error';
     case 'toggle':
       return 'toggle';
     case 'droplet':
