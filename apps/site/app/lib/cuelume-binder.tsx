@@ -56,44 +56,39 @@ function playSense(cue: CueName, withHaptic = true) {
 /**
  * Mobile audio boost: intercepts AudioContext.destination connections and
  * routes them through a shared GainNode at 1.8x on coarse-pointer devices.
+ * Uses minimal typing to avoid TypeScript strict mode issues.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function installMobileVolumeBoost(boost: number): (() => void) | null {
-  if (typeof AudioNode === 'undefined') return null;
+  if (typeof AudioNode === 'undefined' || !AudioNode.prototype) return null;
 
-  const proto = AudioNode.prototype as Record<string, unknown>;
-  const originalConnect = proto.connect as (...args: unknown[]) => AudioNode;
+  // Store original connect method
+  const origConnect = AudioNode.prototype.connect;
   let boostGain: GainNode | null = null;
 
-  const patched = function (this: AudioNode, destination: unknown, ...args: unknown[]) {
-    // Detect AudioDestinationNode by duck-typing maxChannelCount
-    if (
-      destination &&
-      typeof destination === 'object' &&
-      'maxChannelCount' in (destination as Record<string, unknown>)
-    ) {
-      const ctx = (this as unknown as { context: AudioContext }).context;
+  // Create a patched connect that routes destination connections through a gain boost
+  const patchedConnect = function (this: AudioNode, destination: AudioNode | AudioParam, ...rest: unknown[]) {
+    // Duck-type AudioDestinationNode: has maxChannelCount property
+    if (destination && typeof destination === 'object' && 'maxChannelCount' in destination) {
+      const ctx = this.context;
       if (ctx && !boostGain) {
         boostGain = ctx.createGain();
         boostGain.gain.value = boost;
-        originalConnect.call(boostGain, ctx.destination);
+        origConnect.call(boostGain, ctx.destination);
       }
       if (boostGain) {
-        return originalConnect.call(this, boostGain, ...args);
+        return (origConnect as Function).call(this, boostGain, ...rest);
       }
     }
-    return originalConnect.call(this, destination, ...args);
+    return (origConnect as Function).call(this, destination, ...rest);
   };
 
-  proto.connect = patched as unknown as (...args: unknown[]) => AudioNode;
+  AudioNode.prototype.connect = patchedConnect as AudioNode['connect'];
 
   return () => {
-    proto.connect = originalConnect;
+    AudioNode.prototype.connect = origConnect;
     if (boostGain) {
-      try {
-        boostGain.disconnect();
-      } catch {
-        // noop
-      }
+      try { boostGain.disconnect(); } catch { void 0; }
     }
   };
 }
