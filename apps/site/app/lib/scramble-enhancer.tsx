@@ -3,10 +3,14 @@
 import { useEffect } from 'react';
 
 /**
- * ScrambleEnhancer — text scramble + scroll reveal via IntersectionObserver.
+ * ScrambleEnhancer — text scramble + scroll reveal.
  *
- * - data-scramble: text churns random chars then decodes when in viewport
- * - data-reveal: elements fade up when scrolled into view (staggered by group)
+ * data-scramble: text churns random chars then decodes when in viewport.
+ * data-reveal: elements fade up when scrolled into view (staggered by group).
+ *
+ * Key timing fix: elements already in the viewport on mount are triggered
+ * immediately via requestAnimationFrame — no waiting for IntersectionObserver
+ * to fire asynchronously (which caused stuck invisible/ scrambled content).
  *
  * Respects prefers-reduced-motion (exits early).
  */
@@ -67,6 +71,17 @@ function decodeToString(
   churnStep();
 }
 
+/** Check if an element is currently in the viewport */
+function isInViewport(el: HTMLElement): boolean {
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.top < window.innerHeight &&
+    rect.bottom > 0 &&
+    rect.left < window.innerWidth &&
+    rect.right > 0
+  );
+}
+
 export function ScrambleEnhancer() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -83,19 +98,30 @@ export function ScrambleEnhancer() {
     const observers: IntersectionObserver[] = [];
 
     scrambleEls.forEach((el) => {
-      // Check for child elements (like spans or links)
       const hasChildElements = el.querySelector('span, svg, img, a');
 
       if (hasChildElements) {
-        // For elements with children, scramble only the first text node
+        // For elements with children (like wordmark with .dot span),
+        // scramble only the first text node
         const firstChild = el.firstChild;
-        if (!firstChild || firstChild.nodeType !== 3) return; // 3 = TEXT_NODE
+        if (!firstChild || firstChild.nodeType !== 3) return;
 
         const originalText = firstChild.textContent || '';
         if (!originalText.trim()) return;
 
         firstChild.textContent = scrambleString(originalText);
 
+        // If already in viewport, start decoding immediately
+        if (isInViewport(el)) {
+          requestAnimationFrame(() => {
+            decodeToString(originalText, charDelay, churnCount, (text) => {
+              firstChild.textContent = text;
+            });
+          });
+          return;
+        }
+
+        // Otherwise wait for intersection
         const observer = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
@@ -120,6 +146,17 @@ export function ScrambleEnhancer() {
 
       el.textContent = scrambleString(realText);
 
+      // If already in viewport, start decoding immediately
+      if (isInViewport(el)) {
+        requestAnimationFrame(() => {
+          decodeToString(realText, charDelay, churnCount, (text) => {
+            el.textContent = text;
+          });
+        });
+        return;
+      }
+
+      // Otherwise wait for intersection
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -152,6 +189,31 @@ export function ScrambleEnhancer() {
       groupMap.get(key)!.push(el);
     });
 
+    const revealElsToObserve: HTMLElement[] = [];
+
+    revealEls.forEach((el) => {
+      // If already in viewport, reveal immediately
+      if (isInViewport(el)) {
+        const parent = el.closest('[data-reveal-group]') as HTMLElement | null;
+        const key = parent || (el.parentElement as HTMLElement);
+        const siblings = key ? groupMap.get(key) : null;
+        let delay = 0;
+        if (siblings) {
+          const idx = siblings.indexOf(el);
+          delay = idx * 80;
+        }
+        el.style.transitionDelay = `${delay}ms`;
+        // Use rAF to ensure the initial hidden state is painted first
+        requestAnimationFrame(() => {
+          el.classList.add('is-revealed');
+        });
+        return;
+      }
+
+      // Otherwise observe for intersection
+      revealElsToObserve.push(el);
+    });
+
     const revealObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -174,7 +236,7 @@ export function ScrambleEnhancer() {
       { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
     );
 
-    revealEls.forEach((el) => revealObserver.observe(el));
+    revealElsToObserve.forEach((el) => revealObserver.observe(el));
 
     return () => {
       observers.forEach((o) => o.disconnect());

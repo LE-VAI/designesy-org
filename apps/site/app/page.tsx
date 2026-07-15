@@ -226,9 +226,8 @@ export default function HomePage() {
             data-cuelume-hover="sparkle"
             data-cuelume-press="sparkle"
             data-firework
-            data-scramble
           >
-            <span className="wordmark-shimmer">designesy</span>
+            <span className="wordmark-shimmer" data-scramble>designesy</span>
             <span className="dot">.</span>
           </h1>
           <p className="hero-lede fade-up fade-up-delay-2" data-scramble>
@@ -318,7 +317,7 @@ export default function HomePage() {
           <div className="principle-layout" data-reveal-group>
             <div className="principle-list principle-list--rail">
               {PRINCIPLES_PREVIEW.map((p) => (
-                <div className="principle fade-in" key={p.num} data-reveal>
+                <div className="principle" key={p.num} data-reveal>
                   <span className="principle-num">{p.num}</span>
                   <div className="principle-body">
                     <h3>{p.title}</h3>
