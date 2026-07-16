@@ -5,7 +5,7 @@ import type { Ref } from 'react';
 import { initScrollPause } from './scroll-pause';
 
 const SIGNALS = [
-  { t: 'v0.1.4 · LIVE', c: 'live' },
+  { t: 'v0.3.0 · LIVE', c: 'live' },
   { t: 'Poise ✓ adopted', c: 'adopted' },
   { t: 'Takt ✓ adopted', c: 'adopted' },
   { t: 'Cadence ✓ adopted', c: 'adopted' },

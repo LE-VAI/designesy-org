@@ -151,7 +151,7 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.4',
+    title: 'Design system contract v0.3.0',
     meta: 'Governing tokens',
   },
   {

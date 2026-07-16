@@ -432,7 +432,7 @@ export default function TaktLabPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.1.4 · tokens, interaction, takt, cadence, verification</span>
+                <span className="row-meta">v0.3.0 · tokens, interaction, takt, cadence, verification</span>
               </span>
             </Link>
             <Link
