@@ -25,7 +25,7 @@ const SHARE_POSTS = [
   },
   {
     role: 'Reply 1',
-    text: 'What ships in the catalog:\n\n• Design system contract v0.1.4\n• Use Kit One · Design Review\n• Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence\n• Field checks, site review, and keyboard path\n\nHuman page and machine export stay synchronized.',
+    text: 'What ships in the catalog:\n\n• Design system contract v0.3.0\n• Use Kit One · Design Review\n• Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence\n• Field checks, site review, and keyboard path\n\nHuman page and machine export stay synchronized.',
   },
   {
     role: 'Reply 2',
@@ -52,7 +52,7 @@ const VERIFY = [
   },
   {
     title: 'Contract export resolves',
-    meta: 'GET /contracts/design-system.json returns v0.1.4 rules',
+    meta: 'GET /contracts/design-system.json returns v0.3.0 rules',
   },
   {
     title: 'Handoff stays short',
@@ -168,7 +168,7 @@ export default function OpenHandoffPage() {
             >
               <span className="row-index">04</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.1.4</span>
+                <span className="row-title">Design system contract v0.3.0</span>
                 <span className="row-meta">Portable judgment · human + machine</span>
               </span>
             </Link>

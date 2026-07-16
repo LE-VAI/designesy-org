@@ -303,7 +303,7 @@ export const openIndex = {
       title: 'Design system contract',
       path: '/contracts/design-system.json',
       url: 'https://www.designesy.org/contracts/design-system.json',
-      meta: 'v0.1.4 tokens, interaction, takt, cadence, duration scale, verification',
+      meta: 'v0.3.0 tokens, interaction, takt, cadence, duration scale, verification',
     },
     {
       title: 'Design Review kit',
