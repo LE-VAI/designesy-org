@@ -9,13 +9,13 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
   description:
-    'Public review of the Designesy site against design system contract v0.1.4, Lab One: Poise, Lab Two: Takt, and Lab Three: Cadence.',
+    'Public review of the Designesy site against design system contract v0.3.0, Lab One: Poise, Lab Two: Takt, and Lab Three: Cadence.',
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
     'A public surface checked against its own contract — holds, tensions, and standing rules.',
   twitterDescription:
-    'Field check against design system contract v0.1.4 — designesy.org/review/designesy-org',
+    'Field check against design system contract v0.3.0 — designesy.org/review/designesy-org',
 });
 
 const HOLDS = [
@@ -32,7 +32,7 @@ const HOLDS = [
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract v0.1.4, the machine export, Poise, Takt, and Cadence reference the same values — including adopted interaction, interface-feel, and typography rules. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract v0.3.0, the machine export, Poise, Takt, and Cadence reference the same values — including adopted interaction, interface-feel, and typography rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -145,7 +145,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <h1 className="surface-title" data-scramble>designesy.org</h1>
           <p className="surface-lede">
-            A public review against design system contract v0.1.4.
+            A public review against design system contract v0.3.0.
           </p>
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
@@ -155,7 +155,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
-            <span className="lab-meta-item">Baseline · contract v0.1.4</span>
+            <span className="lab-meta-item">Baseline · contract v0.3.0</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
         </section>
@@ -247,7 +247,7 @@ export default function PublicSurfaceReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition">
-            <p className="definition-label">Poise, Takt, Cadence, and contract v0.1.4</p>
+            <p className="definition-label">Poise, Takt, Cadence, and contract v0.3.0</p>
             <p>
               Poise is Lab One; its portable interaction rules were adopted into
               contract v0.1.1. Takt is Lab Two; its interface-feel rules were
@@ -260,7 +260,7 @@ export default function PublicSurfaceReviewPage() {
 
         <div className="status-note">
           Public review of the live designesy.org surface against contract
-          v0.1.4. This is institutional quality discipline, not a client report
+          v0.3.0. This is institutional quality discipline, not a client report
           or legal audit. Poise, Takt, and Cadence rules are adopted; the labs remain the
           inspectable source demos.
         </div>

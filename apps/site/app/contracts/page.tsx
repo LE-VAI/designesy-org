@@ -10,10 +10,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.1.4 is public (Poise + Takt + Cadence adopted).',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.3.0 is public (Poise + Takt + Cadence adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract v0.1.4 is live — Poise, Takt, and Cadence rules adopted.',
+    'Portable design agreements for people and agents. Design system contract v0.3.0 is live — Poise, Takt, and Cadence rules adopted.',
   twitterDescription:
     'Portable design judgment — designesy.org/contracts/design-system',
 });
@@ -120,6 +120,50 @@ const MOTION_RULES = [
   'Hover lift only under (hover: hover) and (pointer: fine) — no fake hover on touch',
   'Wordmark signal pulse: opacity heartbeat only; no blur glow, no gradient blobs',
   'prefers-reduced-motion: reduce → disable non-essential motion; sound defaults off as acoustic proxy',
+];
+
+const TEN_MOTION_STANDARDS = [
+  'Easing is deliberate — use contract cubicBezier tokens, not bare CSS keywords',
+  'Properties are explicit — never transition:all; name the exact properties',
+  'Entrances have opacity — animate from scale(0.9–0.97) + opacity, never scale(0)',
+  'Keyboard is still — no motion on keyboard-initiated or 100+/day actions',
+  'Layout is not animated — never animate width, height, margin, padding, top, left',
+  'Touch is gated — :hover motion on touch-visible surfaces requires explicit gating',
+  'Duration is bounded — UI animation stays ≤ 300ms unless justified',
+  'Reduced-motion is handled — every movement has a prefers-reduced-motion path',
+  'Press is asymmetric — press and release use asymmetric timing',
+  'Easing is never ease-in — deceleration (ease-out) or custom curves only',
+];
+
+const MOTION_BLOCK_ON_SIGHT = [
+  'Using ease-in on any UI interaction',
+  'Using transition: all instead of explicit properties',
+  'Animating from scale(0) instead of scale(0.9–0.97) + opacity',
+  'Animating on keyboard-initiated or 100+/day actions',
+  'Animating layout properties: width, height, margin, padding, top, left',
+  'Ungated :hover motion on touch-visible surfaces',
+];
+
+const MOTION_CAUTION = [
+  'UI animation duration exceeding 300ms without stated justification',
+  'Using bare CSS easing keywords (ease, ease-in, linear) on deliberate animation',
+  'Missing prefers-reduced-motion handling on movement animations',
+  'Symmetric enter/exit timing on press-and-release or hold interactions',
+];
+
+const ACOUSTIC_TOKENS_REF = [
+  'Engine: Cuelume v0.1.0 (MIT) — interaction sound synthesis via Web Audio API',
+  'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
+  '10 cues mapped to 10 interaction roles — see /acoustic-tokens for the full table',
+  'Preference key: designesy:sound in localStorage; engine follows Designesy',
+  'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
+  'No focus sounds — sounds fire on pointer/click, not on focus',
+  'No ambient audio — Cuelume is interaction-only; no background music or mood beds',
+];
+
+const SPRING_TOKENS = [
+  { token: 'spring.default', value: 'damping 1.0 · response 0.4', role: 'Default spring physics for natural motion' },
+  { token: 'spring.momentum', value: 'damping 0.8 · response 0.3', role: 'Momentum spring for continued motion' },
 ];
 
 const ANTI_PATTERNS = [
@@ -235,7 +279,7 @@ export default function ContractsPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system · v0.1.4</span>
+                <span className="row-title">Design system · v0.3.0</span>
                 <span className="row-meta">
                   Human overview, full tables below, machine JSON export
                 </span>
@@ -345,7 +389,7 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="design-system-contract">
           <h2 className="doctrine-heading">Published contract</h2>
           <div className="definition">
-            <p className="definition-label">Designesy design system · v0.1.4</p>
+            <p className="definition-label">Designesy design system · v0.3.0</p>
             <p>
               Public design contract for designesy.org. Derived from the live
               site token foundation, with Lab One · Poise, Lab Two · Takt, and
@@ -395,7 +439,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.1.4 — Poise, Takt, and Cadence rules adopted',
+                meta: 'Public v0.3.0 — Poise, Takt, and Cadence rules adopted',
               },
             ]} />
         </section>
@@ -692,6 +736,73 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">09a · Ten non-negotiable motion standards</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            The positive form of the motion anti-patterns below. Every
+            motion-bearing artifact must pass all ten.
+          </p>
+          <div className="principle-list">
+            {TEN_MOTION_STANDARDS.map((standard, i) => (
+              <div className="principle" key={standard}>
+                <span className="principle-num">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="principle-body">
+                  <p>{standard}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">09b · Motion anti-patterns</h2>
+          <h3
+            style={{
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              marginBottom: '0.75rem',
+            }}
+          >
+            Block on sight
+          </h3>
+          <CheckGrid items={checkItemsFromStrings(MOTION_BLOCK_ON_SIGHT, { avoid: true })} />
+          <h3
+            style={{
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              margin: '1.5rem 0 0.75rem',
+            }}
+          >
+            Caution
+          </h3>
+          <CheckGrid items={checkItemsFromStrings(MOTION_CAUTION, { avoid: true })} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">09c · Spring physics</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Custom <code style={{ color: 'var(--ink)' }}>$type: spring</code> via{' '}
+            <code style={{ color: 'var(--ink)' }}>$extensions.designesy</code>.
+            Net-new relative to W3C DTCG 2025.10.
+          </p>
+          <TokenTable rows={SPRING_TOKENS} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">09d · Acoustic tokens</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Custom <code style={{ color: 'var(--ink)' }}>$type: sound</code> via{' '}
+            <code style={{ color: 'var(--ink)' }}>$extensions.designesy</code>.
+            Net-new relative to W3C DTCG 2025.10. Full cue table at{' '}
+            <Link href="/acoustic-tokens">/acoustic-tokens</Link>.
+          </p>
+          <CheckGrid items={checkItemsFromStrings(ACOUSTIC_TOKENS_REF)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">10 · Anti-patterns</h2>
           <CheckGrid items={checkItemsFromStrings(ANTI_PATTERNS, { avoid: true })} />
         </section>
@@ -712,7 +823,7 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract v0.1.4 — public artifact discipline,
+          Designesy design system contract v0.3.0 — public artifact discipline,
           not legal advice or a client service agreement. Values are taken from
           the live site tokens. Poise, Takt, and Cadence rules are adopted. Contract
           home:{' '}

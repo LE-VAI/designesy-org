@@ -155,7 +155,7 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.4',
+    title: 'Design system contract v0.3.0',
     meta: 'Governing tokens',
   },
   {
@@ -267,7 +267,7 @@ export default function ContinuityCaseStudyPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.1.4 · Kit One Design Review · VAI brand boundary
+                  Contract v0.3.0 · Kit One Design Review · VAI brand boundary
                 </span>
               </span>
             </ToggleRow>

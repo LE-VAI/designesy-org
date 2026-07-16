@@ -51,11 +51,11 @@ const DIMENSIONS = [
     num: '04',
     title: 'Inclusion',
     observation:
-      'Rem-based scale respects user font-size preferences. 16px input floor prevents iOS auto-zoom. text-wrap: pretty improves readability across viewports. font-synthesis: none is not yet set — a gap that affects users on browsers that synthesize fake weights.',
+      'Rem-based scale respects user font-size preferences. 16px input floor prevents iOS auto-zoom. text-wrap: pretty improves readability across viewports. font-synthesis: none is now set on :root — prevents fake browser weights. text-underline-position: from-font and text-decoration-skip-ink: auto are set — underlines align to font metrics and skip descenders.',
     judgment:
-      'Structural inclusion is strong for scale and input sizing. The font-synthesis gap is a real inclusion tension — fake weights reduce readability for users without the named faces.',
+      'Structural inclusion is strong. The font-synthesis and underline-position gaps identified in the initial field check have been resolved in globals.css. Remaining inclusion work is block-axis logical property migration.',
     action:
-      'Add font-synthesis: none to :root in globals.css. Document as a correction, not a future note.',
+      'Document the fixes. Keep font-synthesis: none and text-underline-position: from-font in :root. Migrate block-axis logical properties when safe.',
   },
   {
     num: '05',
@@ -90,9 +90,9 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in typography. Rem-based scale respects user preferences. 16px input floor is a real accessibility protection. Open tensions are documented honestly: font-synthesis, logical properties, and underline-from-font are named as gaps, not hidden.',
+      'No dark pattern in typography. Rem-based scale respects user preferences. 16px input floor is a real accessibility protection. Open tensions are documented honestly: block-axis logical properties remain physical. font-synthesis: none and text-underline-position: from-font have been resolved in globals.css and removed from open tensions.',
     judgment:
-      'Honest about status: live experiment whose rules are now contract material, with three named open tensions. That honesty is a responsibility hold.',
+      'Honest about status: live experiment whose rules are now contract material. Two of three original tensions are resolved; one remains (logical properties). That honesty is a responsibility hold.',
     action:
       'Keep status language accurate. Future rule changes require a new contract version, not silent edits.',
   },
@@ -105,21 +105,13 @@ const HOLDS = [
   'Full lab anatomy shipped (thesis through verification)',
   'Public name is human and premium — Cadence, not "typography-system-v1"',
   'Typography rules adopted into design system contract v0.1.3',
-  'Open tensions named honestly — font-synthesis, logical properties, underline-from-font',
+  'Open tensions named honestly — logical properties remain; font-synthesis and underline-from-font resolved',
 ];
 
 const TENSIONS = [
   {
-    title: 'font-synthesis: none not set',
-    meta: 'Browser may synthesize fake weights when the named face is unavailable — reduces readability',
-  },
-  {
-    title: 'No logical properties',
-    meta: 'margin-left, padding-right used instead of margin-inline, padding-inline — direction-ready is blocked',
-  },
-  {
-    title: 'text-underline-position and skip-ink not set',
-    meta: 'Underlines do not align to font metrics or skip descenders — affects link readability',
+    title: 'Block-axis logical properties not migrated',
+    meta: 'margin-block-start/end and border-inline-start still physical — direction-ready is partial (inline-axis only)',
   },
   {
     title: 'Inter not self-hosted',
@@ -127,22 +119,33 @@ const TENSIONS = [
   },
 ];
 
+const RESOLVED_TENSIONS = [
+  {
+    title: 'font-synthesis: none — RESOLVED',
+    meta: 'Added to :root in globals.css — prevents browser from synthesizing fake weights (fixed 2026-07-15)',
+  },
+  {
+    title: 'text-underline-position and skip-ink — RESOLVED',
+    meta: 'text-underline-position: from-font and text-decoration-skip-ink: auto added to :root — underlines align to font metrics and skip descenders (fixed 2026-07-15)',
+  },
+];
+
 const CORRECTIONS = [
   {
-    title: 'Add font-synthesis: none to :root',
-    meta: 'Prevents the browser from synthesizing fake weights — one line in globals.css',
+    title: 'font-synthesis: none added to :root — APPLIED',
+    meta: 'Prevents the browser from synthesizing fake weights — one line in globals.css (fixed 2026-07-15)',
   },
   {
-    title: 'Add text-underline-position: from-font and text-decoration-skip-ink: auto',
-    meta: 'Aligns underlines to font metrics and skips descenders — improves link readability',
+    title: 'text-underline-position: from-font and text-decoration-skip-ink: auto added to :root — APPLIED',
+    meta: 'Aligns underlines to font metrics and skips descenders — improves link readability (fixed 2026-07-15)',
   },
   {
-    title: 'Migrate physical properties to logical ones',
-    meta: 'Replace margin-left/padding-right with margin-inline/padding-inline for direction-ready layouts',
+    title: 'Migrate block-axis physical properties to logical ones',
+    meta: 'Replace margin-block-start/end and border-inline-start with logical equivalents for direction-ready layouts',
   },
   {
     title: 'Version future typography changes',
-    meta: 'New type rules require a contract bump after v0.1.3 — not silent edits',
+    meta: 'New type rules require a contract bump after v0.3.0 — not silent edits',
   },
   {
     title: 'Keep machine export and human tables aligned',
@@ -230,17 +233,18 @@ export default function CadenceFieldCheckPage() {
           <div className="definition">
             <p className="definition-label">Outcome · pass with notes</p>
             <p>
-              Cadence is a considered lab. The live CSS audit confirms 10 of 13
+              Cadence is a considered lab. The live CSS audit confirms 12 of 13
               verifiable typography rules: font smoothing on root, rem-based
               scale, line-height by role, tracking by size, measure cap,
               text-wrap balance and pretty, tabular numbers, ::selection with
-              signal blue, user-select on UI chrome, and 16px input floor.
-              Three rules are not yet set in CSS: font-synthesis: none,
-              text-underline-position: from-font, and logical properties.
-              These are documented as open tensions and corrections — not
-              hidden. Full anatomy is present. Typography rules are adopted
-              into design system contract v0.1.3. Remaining work is three CSS
-              additions and synchronization — not re-arguing adoption.
+              signal blue, user-select on UI chrome, 16px input floor,
+              font-synthesis: none, and text-underline-position: from-font.
+              Two rules identified in the initial field check have been resolved
+              in globals.css. One rule remains open: block-axis logical
+              properties are not yet migrated (inline-axis is done). Typography
+              rules are adopted into design system contract v0.3.0. Remaining
+              work is block-axis migration and synchronization — not re-arguing
+              adoption.
             </p>
           </div>
         </section>
@@ -324,6 +328,11 @@ export default function CadenceFieldCheckPage() {
         <section className="doctrine-section fade-up" id="tensions">
           <h2 className="doctrine-heading">Tensions</h2>
           <CheckGrid items={TENSIONS} />
+        </section>
+
+        <section className="doctrine-section fade-up" id="resolved-tensions">
+          <h2 className="doctrine-heading">Resolved tensions</h2>
+          <CheckGrid items={RESOLVED_TENSIONS} />
         </section>
 
         <section className="doctrine-section fade-up" id="corrections">

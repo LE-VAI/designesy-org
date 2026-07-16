@@ -1,22 +1,25 @@
 /**
- * Designesy design system contract v0.1.4 — machine + human source.
+ * Designesy design system contract v0.3.0 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
  * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
  * v0.1.3 adopts Lab Three · Cadence typography rules (2026-07-13).
- * v0.1.4 adopts duration scale + verification from external source ingests (2026-07-13).
+ * v0.3.0 adopts duration scale + verification from external source ingests (2026-07-13).
+ * v0.3.0 reconciles with on-disk core contract v0.3.0: W3C DTCG token format,
+ *   spring physics, full acoustic cue enumeration, 10 non-negotiable motion
+ *   standards, motion anti-patterns, entrance scale tokens (2026-07-15).
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.1.4',
+  version: '0.3.0',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-07-13',
+  updated: '2026-07-15',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -27,6 +30,9 @@ export const designSystemContract = {
     takt: 'Takt-adopted interface-feel rules',
     cadence: 'Cadence-adopted typography rules',
     duration: 'duration scale cross-referenced against transitions.dev',
+    motion_standards: 'Ten non-negotiable motion standards (§16)',
+    springs: 'Spring physics tokens via custom $type: spring',
+    acoustic: 'Acoustic cue tokens via custom $type: sound (net-new vs W3C DTCG)',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -233,6 +239,43 @@ export const designSystemContract = {
       'Wordmark mark: opacity breath only (~3.2s --ease-in-out); no blur, glow, or gradient decoration (Poise · adopted v0.1.1)',
       'prefers-reduced-motion: reduce collapses non-essential motion; sound defaults off (Poise · adopted v0.1.1)',
     ],
+    entrance: {
+      min_scale: { value: 0.9, description: 'Minimum entrance scale — never animate from scale(0)' },
+      default_scale: { value: 0.95, description: 'Default entrance scale — scale + opacity, not scale(0)' },
+    },
+    stagger: {
+      interval: { value: '30-80ms', description: 'Stagger between sequential items — lower bound 30ms' },
+    },
+    springs: {
+      default: { damping: 1.0, response: 0.4, description: 'Default spring physics for natural motion' },
+      momentum: { damping: 0.8, response: 0.3, description: 'Momentum spring for continued motion' },
+    },
+    ten_standards: [
+      'Easing is deliberate — use contract cubicBezier tokens, not bare CSS keywords',
+      'Properties are explicit — never transition:all; name exact properties',
+      'Entrances have opacity — animate from scale(0.9-0.97) + opacity, never scale(0)',
+      'Keyboard is still — no motion on keyboard-initiated or 100+/day actions',
+      'Layout is not animated — never animate width, height, margin, padding, top, left; use transform and opacity',
+      'Touch is gated — :hover motion on touch-visible surfaces requires explicit gating',
+      'Duration is bounded — UI animation stays at or below 300ms unless justified',
+      'Reduced-motion is handled — every movement animation has a prefers-reduced-motion path',
+      'Press is asymmetric — press and release use asymmetric timing',
+      'Easing is never ease-in — no ease-in on any UI interaction; deceleration or custom curves only',
+    ],
+    anti_patterns_block: [
+      'Using ease-in on any UI interaction',
+      'Using transition: all instead of explicit properties',
+      'Animating from scale(0) instead of scale(0.9-0.97) + opacity',
+      'Animating on keyboard-initiated or 100+/day actions',
+      'Animating layout properties: width, height, margin, padding, top, left',
+      'Ungated :hover motion on touch-visible surfaces',
+    ],
+    anti_patterns_caution: [
+      'UI animation duration exceeding 300ms without stated justification',
+      'Using bare CSS easing keywords on deliberate animation',
+      'Missing prefers-reduced-motion handling on movement animations',
+      'Symmetric enter/exit timing on press-and-release or hold interactions',
+    ],
   },
   interaction: {
     source_lab: 'Poise',
@@ -312,6 +355,35 @@ export const designSystemContract = {
     supporting_note: '0.85–0.95rem, muted, max-width ~520–580px',
     rule: 'Never invent decorative display fonts for public UI; system stack is the contract',
     cadence_adopted: 'v0.1.3 — font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
+    font_synthesis: 'none set on :root — prevents fake browser weights (fixed 2026-07-15)',
+    text_underline_position: 'from-font set on :root — aligns underlines to font metrics (fixed 2026-07-15)',
+    text_decoration_skip_ink: 'auto set on :root — skips descenders for readability (fixed 2026-07-15)',
+  },
+  acoustic: {
+    engine: 'Cuelume v0.1.0 (MIT)',
+    preference_key: 'designesy:sound',
+    reduced_motion_proxy: true,
+    token_type: 'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
+    cues: [
+      { token: '--cue:brand', cue: 'sparkle', role: 'Brand wordmark contact' },
+      { token: '--cue:nav', cue: 'tick', role: 'Navigation and wayfinding' },
+      { token: '--cue:invite', cue: 'chime', role: 'Primary invitation / machine surfaces' },
+      { token: '--cue:action', cue: 'press', role: 'Pointer-down on actionable surfaces' },
+      { token: '--cue:resolve', cue: 'release', role: 'Pointer-up default resolve' },
+      { token: '--cue:complete', cue: 'success', role: 'High-value resolve' },
+      { token: '--cue:reveal', cue: 'bloom', role: 'Content / experiment reveal' },
+      { token: '--cue:list', cue: 'whisper', role: 'Dense list / surface scan' },
+      { token: '--cue:switch', cue: 'toggle', role: 'State toggle' },
+      { token: '--cue:contact', cue: 'droplet', role: 'Contact / outbound mail' },
+    ],
+    mapping_rules: [
+      'Brand marks earn sparkle — hero wordmark, topbar logo, footer mark',
+      'One primary cue family per role — do not randomize per page',
+      'Hover sounds are fine-pointer only; touch maps hover cue to single tap',
+      'No ambient audio — Cuelume is interaction-only',
+      'No focus sounds — sounds fire on pointer and click, not on focus',
+      'Every cue must trace to the acoustic token document',
+    ],
   },
   semantic: {
     surface_roles:
@@ -416,9 +488,9 @@ export const designSystemContract = {
     'Shadow tokens exist; elevation language is still light-touch (borders lead)',
     'Human contract page and machine export remain dual sources until a single generator owns both',
     'Keyboard-path verification packets are published for Poise only — not every public route',
-    'font-synthesis: none set on :root — prevents fake browser weights (Cadence v0.1.3 fix applied)',
     'Inline-axis logical properties (margin-inline, padding-inline) applied — block-axis and border-inline remain physical (Cadence partial migration)',
-    'text-underline-position: from-font and text-decoration-skip-ink: auto set on :root (Cadence v0.1.3 fix applied)',
+    'Block-axis logical properties (margin-block-start/end) not yet migrated — only inline-axis done',
+    'border-left decorative accents not yet migrated to border-inline-start — visual regression risk needs testing',
   ],
   adoption_history: [
     {
@@ -468,6 +540,16 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts/skill',
+      ],
+    },
+    {
+      version: '0.3.0',
+      date: '2026-07-15',
+      summary:
+        'Reconciled with on-disk core contract v0.3.0. Spring physics tokens added (default + momentum). Full acoustic cue enumeration added (10 cues via custom $type: sound). Ten Non-Negotiable Motion Standards added as §16. Motion anti-patterns formalized (6 block-on-sight + 4 caution). Entrance scale tokens added (min 0.9, default 0.95). Stagger interval token added (30ms lower bound). font-synthesis: none and text-underline-position: from-font confirmed fixed and removed from open tensions. W3C DTCG 2025.10 token format alignment documented.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/contracts#design-system-contract',
       ],
     },
   ],
