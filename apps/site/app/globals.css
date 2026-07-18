@@ -33,6 +33,11 @@
   --signal-dim: rgba(1, 51, 203, 0.14);
   --activation: #fecc34;
 
+  /* Interaction color semantics — explicit state roles */
+  --hover-fill: var(--surface-hover);
+  --press-fill: var(--surface-soft);
+  --focus-ring: var(--signal-light);
+
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.5);
@@ -75,7 +80,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
-  font-size: 16px;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
   line-height: 1.55;
   letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
@@ -653,6 +658,11 @@ p {
   border-color: var(--signal-light);
 }
 
+.button.primary:active {
+  background: var(--signal);
+  filter: brightness(0.92);
+}
+
 .button.ghost {
   background: transparent;
   color: var(--ink);
@@ -884,7 +894,7 @@ p {
 .surface-list {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .surface-card {
@@ -1878,14 +1888,14 @@ button.pillar:hover::before {
 }
 
 .surface-lede {
-  font-size: 1.1rem;
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
   color: var(--ink);
   line-height: 1.4;
   margin-bottom: 1rem;
 }
 
 .surface-note {
-  font-size: 0.9rem;
+  font-size: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
   color: var(--muted);
   line-height: 1.6;
   max-width: 580px;
@@ -2194,7 +2204,7 @@ button.pillar:hover::before {
 }
 
 .definition p {
-  font-size: 1rem;
+  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
   color: var(--ink);
   line-height: 1.5;
 }
@@ -3541,7 +3551,7 @@ a.check-cell:hover .check-cell-title {
 .lab-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1rem;
   max-width: 980px;
 }
 
@@ -3577,14 +3587,14 @@ a.check-cell:hover .check-cell-title {
 }
 
 .lab-card-title {
-  font-size: 1.5rem;
+  font-size: clamp(1.3rem, 1.15rem + 0.75vw, 1.55rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
 
 .lab-card-lede {
-  font-size: 1rem;
+  font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
@@ -4660,7 +4670,7 @@ html:not(.js-ready) .demo-stagger-bar {
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 /*
@@ -4756,14 +4766,14 @@ a.field-card:active {
 }
 
 .field-card-title {
-  font-size: 1.35rem;
+  font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
 
 .field-card-lede {
-  font-size: 0.98rem;
+  font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
@@ -5241,7 +5251,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .back-button:active {
-  transform: translateY(-50%) scale(0.92);
+  transform: translateY(-50%) scale(0.95);
 }
 
 .back-button:focus-visible {
@@ -5277,7 +5287,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .back-button:active {
-    transform: scale(0.92);
+    transform: scale(0.95);
   }
 
   .back-button.is-leaving {
