@@ -313,7 +313,7 @@ export default function DocsPage() {
                   'Contracts that agents and teams can use',
                   'Artifacts that can be inspected, copied, tested, remixed',
                   'Creative infrastructure for people building better worlds',
-                  'A declarative interface — the computer, not the changelog',
+                  'A declarative interface — finished, restrained, factual',
                 ])} />
             </div>
             <div>
@@ -327,9 +327,9 @@ export default function DocsPage() {
                   'Pretending Designesy is already a massive institution',
                   'Reducing the mission to templates or a design blog',
                   'Corporate care language that feels unearned',
-                  'Journal, diary, or internal-process log voice',
-                  'Narrating the review process as a virtue',
-                  'Confessional or defensive framing of outcomes',
+                  'Process narration presented as substance',
+                  'Discipline announced rather than demonstrated',
+                  'Defensive or confessional framing of outcomes',
                 ], { avoid: true })} />
             </div>
           </div>
@@ -347,10 +347,9 @@ export default function DocsPage() {
             </p>
           </div>
           <p className="surface-note">
-            A visitor should feel they are looking at an interface —
-            restrained, declarative, finished — not reading a build diary.
-            Internal review worksheets belong in machine exports and process
-            lanes, not in public case-study prose.
+            A visitor should feel they are looking at a finished interface —
+            restrained, declarative, complete. Process narration belongs in
+            machine exports, not public prose.
           </p>
         </section>
 
