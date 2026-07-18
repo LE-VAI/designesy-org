@@ -662,6 +662,7 @@ p {
 .button.primary:active {
   background: var(--signal);
   filter: brightness(0.92);
+  transform: scale(0.97);
 }
 
 .button.ghost {
