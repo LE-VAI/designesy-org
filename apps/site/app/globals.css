@@ -128,7 +128,6 @@ p {
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.06;
-  padding-bottom: 0.2em;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
@@ -178,7 +177,7 @@ p {
   color: var(--signal);
   -webkit-text-fill-color: var(--signal);
   display: inline-block;
-  margin-inline-start: -0.055em;
+  margin-inline-start: -0.01em;
   transform: translateY(-0.02em);
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
