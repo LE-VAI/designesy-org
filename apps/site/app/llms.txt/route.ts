@@ -60,7 +60,7 @@ ${o.standing_rules.map((r) => `- ${r}`).join('\n')}
 
 ## Contact
 
-- Email: le@designesy.org
+- Email: hello@designesy.org
 - Privacy: https://www.designesy.org/privacy
 - Security: ${o.discovery.security_txt}
 - Full brief: ${o.discovery.llms_full_txt}
