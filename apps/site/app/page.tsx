@@ -150,6 +150,16 @@ const FIELD = [
     arrow: 'Open the kit →',
     kind: 'kit' as const,
   },
+  {
+    href: 'https://designesy.ai.studio/',
+    badge: 'Conversational',
+    status: 'Live',
+    title: 'Talk to the Director',
+    lede: 'The contract, conversational. Ask about type, motion, spacing — or score any site.',
+    desc: 'A conversational instance of the Designesy Director. Answers from the designesy.org contract — tokens, principles, and open tensions, not vibes.',
+    arrow: 'Open the chat →',
+    kind: 'kit' as const,
+  },
 ];
 
 const PRINCIPLES_PREVIEW = [
@@ -453,57 +463,65 @@ export default function HomePage() {
             Open stack, contract, labs, and kit.
           </h2>
           <div className="field-grid" data-reveal-group>
-            {FIELD.map((item) => (
-              <Link
-                className={`field-card field-card--${item.kind}`}
-                href={item.href}
-                data-reveal
-                key={item.href}
-                data-cuelume-hover={
-                  item.kind === 'open'
-                    ? 'sparkle'
-                    : item.kind === 'lab'
-                      ? 'bloom'
-                      : item.kind === 'kit'
-                        ? 'chime'
-                        : 'tick'
-                }
-                data-cuelume-press
-              >
-                <div className="field-card-top">
-                  <span className={`status-badge status-badge--${item.kind}`}>
-                    {item.badge}
-                  </span>
-                  <span
-                    className={`mark-glyph mark-glyph--${item.kind}`}
-                    aria-hidden="true"
-                    title={
-                      item.kind === 'open'
-                        ? 'Open mark · origin signal'
-                        : item.kind === 'contract'
-                          ? 'Contract mark · structure'
-                          : item.kind === 'kit'
-                            ? 'Kit mark · usable package'
-                            : 'Lab mark · living experiment'
-                    }
-                  >
-                    <span className="mark-glyph-core" />
-                    <span className="mark-glyph-ring" />
-                  </span>
-                </div>
-                <div
-                  className={`field-card-status${
-                    item.status === 'Live' ? ' is-live' : ''
-                  }`}
+            {FIELD.map((item) => {
+              const isExternal = item.href.startsWith('http');
+              const CardTag = isExternal ? 'a' : Link;
+              const externalProps = isExternal
+                ? { target: '_blank' as const, rel: 'noopener noreferrer' }
+                : {};
+              return (
+                <CardTag
+                  className={`field-card field-card--${item.kind}`}
+                  href={item.href}
+                  data-reveal
+                  key={item.href}
+                  data-cuelume-hover={
+                    item.kind === 'open'
+                      ? 'sparkle'
+                      : item.kind === 'lab'
+                        ? 'bloom'
+                        : item.kind === 'kit'
+                          ? 'chime'
+                          : 'tick'
+                  }
+                  data-cuelume-press
+                  {...externalProps}
                 >
-                  {item.status}
-                </div>
-                <h3 className="field-card-title">{item.title}</h3>
-                <p className="field-card-lede">{item.lede}</p>
-                <p className="field-card-desc">{item.desc}</p>
-                <span className="field-card-arrow">{item.arrow}</span>
-              </Link>
-            ))}
+                  <div className="field-card-top">
+                    <span className={`status-badge status-badge--${item.kind}`}>
+                      {item.badge}
+                    </span>
+                    <span
+                      className={`mark-glyph mark-glyph--${item.kind}`}
+                      aria-hidden="true"
+                      title={
+                        item.kind === 'open'
+                          ? 'Open mark · origin signal'
+                          : item.kind === 'contract'
+                            ? 'Contract mark · structure'
+                            : item.kind === 'kit'
+                              ? 'Kit mark · usable package'
+                              : 'Lab mark · living experiment'
+                      }
+                    >
+                      <span className="mark-glyph-core" />
+                      <span className="mark-glyph-ring" />
+                    </span>
+                  </div>
+                  <div
+                    className={`field-card-status${
+                      item.status === 'Live' ? ' is-live' : ''
+                    }`}
+                  >
+                    {item.status}
+                  </div>
+                  <h3 className="field-card-title">{item.title}</h3>
+                  <p className="field-card-lede">{item.lede}</p>
+                  <p className="field-card-desc">{item.desc}</p>
+                  <span className="field-card-arrow">{item.arrow}</span>
+                </CardTag>
+              );
+            })}
           </div>
         </section>
 
