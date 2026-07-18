@@ -87,10 +87,10 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'The tool includes a substitute test: four things you might do instead (ChatGPT, Figma tokens, Lighthouse, eslint) and why each fails to substitute. The security fix (local path leak in compiled output, found and fixed 2026-07-13) is part of the story — the verification gate caught a real problem.',
+      'The tool includes a substitute test: four things you might do instead (ChatGPT, Figma tokens, Lighthouse, eslint) and why each fails to substitute. A local path leak in compiled output was found and fixed 2026-07-13.',
     judgment:
-      'Responsibility is demonstrated, not claimed. The substitute test is honest about what the tool is not. The security fix shows the review process working.',
-    action: 'Keep the substitute test visible. Document the security fix as a verification-gate success story.',
+      'Responsibility is demonstrated, not claimed. The substitute test is honest about what the tool is not. The path leak is documented as a fixed issue.',
+    action: 'Keep the substitute test visible. Document the security fix as a resolved issue.',
   },
 ];
 
@@ -100,7 +100,7 @@ const HOLDS = [
   'Self-documenting: output satisfies the 10-cell Lab anatomy',
   'Nine verification tests passed across seven domains',
   'Zero-dependency deployment pattern — same as Tile and Continuity',
-  'Security fix documented: local path leak found and fixed via the verification gate',
+  'Security fix documented: local path leak in compiled output, found and fixed 2026-07-13',
 ];
 
 const TENSIONS = [
@@ -215,10 +215,10 @@ export default function CompileCaseStudyPage() {
               into verifiable design contracts. The seven-domain engine
               covers motion, color, typography, spacing, shape, interaction,
               and acoustic. The output self-documents to the 10-cell Lab
-              anatomy. Nine verification tests passed. A security fix (local
-              path leak in compiled output) was found and fixed through the
-              verification gate. The only remaining work is hosting,
-              packaging, and publication — no technical barrier remains.
+              anatomy. Nine verification tests passed. A local path leak in
+              compiled output was found and fixed 2026-07-13. The only
+              remaining work is hosting, packaging, and publication — no
+              technical barrier remains.
             </p>
           </div>
         </section>
