@@ -1332,7 +1332,6 @@ button.pillar:hover::before {
 }
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
-  text-wrap: balance;
 }
 .principle-body p {
   transition: color 200ms var(--ease);
