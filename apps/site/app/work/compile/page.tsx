@@ -89,7 +89,7 @@ const DIMENSIONS = [
     observation:
       'The tool includes a substitute test: four things you might do instead (ChatGPT, Figma tokens, Lighthouse, eslint) and why each fails to substitute. A local path leak in compiled output was found and fixed 2026-07-13.',
     judgment:
-      'Responsibility is demonstrated, not claimed. The substitute test is honest about what the tool is not. The path leak is documented as a fixed issue.',
+      'The substitute test names what the tool does not cover. The path leak is documented as a fixed issue.',
     action: 'Keep the substitute test visible. Document the security fix as a resolved issue.',
   },
 ];

@@ -24,9 +24,9 @@ const DIMENSIONS = [
     num: '01',
     title: 'Purpose',
     observation:
-      'Tile states a single job: compose a series grid that stays related without Canva-clone energy or multi-post AI copy. The tool, the spine, the roles, and the export all serve that job.',
+      'Tile states a single job: compose a series grid that stays related without template repetition or multi-post filler. The tool, the spine, the roles, and the export all serve that job.',
     judgment:
-      'Purpose is sharp and earns the form. The tool is not a template gallery — it is a composition instrument with a shared spine.',
+      'Purpose is sharp and earns the form. The tool is a composition instrument with a shared spine.',
     action: 'Keep. Do not add template presets that dilute the spine model.',
   },
   {
@@ -87,10 +87,10 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in the tool. Export is honest — ordered PNGs, set.json, README.txt, no watermark or lock-in. Publication on X used a one-word root post with a screen recording, not engagement-bait copy.',
+      'No dark pattern in the tool. Export is plain — ordered PNGs, set.json, README.txt, no watermark or lock-in. Publication on X used a one-word root post with a screen recording.',
     judgment:
-      'Honest about what it is and what it produces. The publication format was chosen to show the tool, not to manipulate reach.',
-    action: 'Keep the honest publication format. Do not add engagement hooks to the tool or the post copy.',
+      'Export format shows the tool as it is. The publication format was chosen to show the tool, not to manipulate reach.',
+    action: 'Keep the publication format. Do not add engagement hooks to the tool or the post copy.',
   },
 ];
 

@@ -30,13 +30,13 @@ const KIT_ANATOMY = [
   'Related contracts and surfaces',
 ];
 
-const NOT_KITS = [
-  'Not a prompt dump',
-  'Not a generic AI template marketplace',
-  'Not a replacement for contracts',
-  'Not an unbounded agent permission grant',
-  'Not a blog of tips',
-  'Not filler cards for future ideas',
+const KIT_BOUNDARIES = [
+  'Portable instruction packages, not loose prompt sets',
+  'Named methods with verification, not template commerce',
+  'Contract-cited, not contract replacements',
+  'Permission-scoped, not open agent authorizations',
+  'Reusable methods, not opinion posts',
+  'Published kits, not placeholder cards',
 ];
 
 export default function KitsPage() {
@@ -86,8 +86,7 @@ export default function KitsPage() {
             <Link href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
             </Link>
-            . The lane stays empty until the next package earns full anatomy —
-            not a teaser card.
+            . The lane stays empty until the next package earns full anatomy.
           </p>
         </section>
 
@@ -182,9 +181,9 @@ export default function KitsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">What Kits are not</h2>
+          <h2 className="doctrine-heading">Kit boundaries</h2>
           <CheckGrid
-            items={checkItemsFromStrings(NOT_KITS, { avoid: true })}
+            items={checkItemsFromStrings(KIT_BOUNDARIES)}
           />
         </section>
 

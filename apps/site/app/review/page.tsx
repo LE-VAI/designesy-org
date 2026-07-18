@@ -76,7 +76,7 @@ export default function ReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Agent review stance</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Peer checks for agents and reviewers — not a story path.
+            Peer checks for agents and reviewers.
           </p>
           <CheckGrid items={checkItemsFromStrings(REVIEW_CHECKS)} />
         </section>
