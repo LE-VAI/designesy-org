@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
-    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Cadence (text rhythm).',
+    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Cadence (text rhythm). Lab Four is Acoustics (interaction sound).',
   path: '/labs',
   ogDescription:
-    'Experiments that compile into contracts. Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence are live.',
+    'Experiments that compile into contracts. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics are live.',
   twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
 });
 
@@ -120,6 +120,26 @@ export default function LabsPage() {
               size, measure, text-wrap, tabular numbers, and selection —
               portable rules with exact values, compiled from external
               typography intelligence and verified on designesy.org.
+            </p>
+            <span className="lab-card-arrow">Open lab →</span>
+          </Link>
+          <Link
+            href="/labs/acoustics"
+            className="lab-card"
+            data-cuelume-hover="tick" data-cuelume-press="tick"
+          >
+            <div className="lab-card-top">
+              <span className="status-badge status-badge--lab">Lab Four</span>
+              <span className="lab-card-status">Live</span>
+            </div>
+            <h3 className="lab-card-title">Acoustics</h3>
+            <p className="lab-card-lede">
+              Interaction sound as a token system.
+            </p>
+            <p className="lab-card-desc">
+              Ten cues, ten interaction roles, one documented engine. The sound
+              parallel to the visual token system — no sound without a token
+              name and rationale. Cuelume v0.1.0, adopted in contract v0.3.0.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
@@ -282,9 +302,9 @@ export default function LabsPage() {
         <div className="status-note">
           Labs ship as named experiments with thesis, review status, and
           promotion readiness. Poise is Lab One. Takt is Lab Two. Cadence is
-          Lab Three. Future labs follow the same anatomy and the site drift
-          rule: every public UI change cites a contract token or an open
-          tension.
+          Lab Three. Acoustics is Lab Four. Future labs follow the same anatomy
+          and the site drift rule: every public UI change cites a contract token
+          or an open tension.
         </div>
       </main>
 
