@@ -82,7 +82,7 @@ const DIMENSIONS = [
     observation:
       'Initial thread format withdrawn; single-post revision published 2026-07-12. Underperformance documented.',
     judgment: 'Outcome reported with the same rigor as a pass.',
-    action: 'Retain the case study as evidence that the review method applies to mismatches, not only successes.',
+    action: 'Retain the case study. Mismatches are as documented as successes.',
   },
 ];
 
