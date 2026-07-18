@@ -128,7 +128,7 @@ export default function ContinuityCaseStudyPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" className="surface-page">
+      <main id="main-content" className="surface-page continuity-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">
             <Link href="/work" className="lab-crumb">
