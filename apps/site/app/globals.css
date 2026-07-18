@@ -939,6 +939,7 @@ a.surface-card:active {
   text-transform: uppercase;
   color: var(--muted-dim);
   margin-bottom: 0.45rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .surface-card-label {
@@ -1629,6 +1630,7 @@ button.pillar:hover::before {
   border-radius: 3px;
   background: var(--signal-dim);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .status-text {
@@ -3506,6 +3508,7 @@ a.check-cell:hover .check-cell-title {
 .lab-meta-item {
   font-size: 0.8rem;
   color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .lab-meta-item a {
@@ -3600,6 +3603,7 @@ a.check-cell:hover .check-cell-title {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .lab-card-title {

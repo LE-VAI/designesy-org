@@ -288,13 +288,13 @@ export default function CompileCaseStudyPage() {
                     <strong style={{ color: 'var(--muted)' }}>Observation.</strong>{' '}
                     {d.observation}
                   </p>
-                  <p style={{ marginTop: '0.45rem' }}>
+                  <p style={{ marginTop: '0.5rem' }}>
                     <strong style={{ color: 'var(--muted)' }}>Judgment.</strong>{' '}
                     {d.judgment}
                   </p>
                   <p
                     style={{
-                      marginTop: '0.45rem',
+                      marginTop: '0.5rem',
                       color: 'var(--muted-dim)',
                     }}
                   >
