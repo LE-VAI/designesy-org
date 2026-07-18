@@ -150,8 +150,8 @@ export default function PublicSurfaceReviewPage() {
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
             live public site — including Lab One · Poise, Lab Two · Takt, and
-            Lab Three · Cadence — for purpose, clarity, coherence, and honesty
-            about what is still open.
+            Lab Three · Cadence — for purpose, clarity, coherence, and what
+            remains open.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>

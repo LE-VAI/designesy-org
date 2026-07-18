@@ -33,7 +33,7 @@ const SHARE_POSTS = [
   },
   {
     role: 'Reply 3',
-    text: 'Open is not a blog index.\n\nIt is portable design judgment with verification paths.\nSilence is not adoption.\n\ndesignesy.org/open',
+    text: 'Open is portable design judgment with verification paths.\n\nContracts, kits, labs, and field checks people and agents can fetch and run.\n\ndesignesy.org/open',
   },
 ];
 
@@ -90,7 +90,7 @@ export default function OpenHandoffPage() {
             <Link href="/open.json" data-cuelume-hover="tick">
               /open.json
             </Link>
-            — not a private control plane.
+            .
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Public</span>

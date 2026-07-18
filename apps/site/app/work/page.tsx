@@ -7,7 +7,7 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Work — case studies',
   description:
-    'Shipped artifacts reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, with engagement metrics, review findings, and corrections.',
+    'Shipped artifacts reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, with engagement metrics and documented outcomes.',
   path: '/work',
   ogTitle: 'Work · Designesy',
   ogDescription:
@@ -43,14 +43,14 @@ const CASE_STUDIES = [
   {
     slug: 'continuity',
     title: 'Continuity',
-    lede: 'Founder narrative — the same idea, finally built.',
+    lede: 'Founder narrative article — published as a single X post.',
     status: 'Shipped · live',
     badge: 'Needs revision',
     artifact: 'le-vai.github.io/continuity',
     date: '2026-07-12',
     metrics: 'Underperformed relative to Tile',
     summary:
-      'A founder-narrative article published as a single X post with preview URL. The multi-post thread was deleted as overwhelming and overly AI. Even the single-post version underperformed a one-word product demo. The review process caught the problem and corrected it.',
+      'A founder-narrative article published as a single X post with preview URL. The multi-post thread was withdrawn; a single-post revision was published 2026-07-12. The single-post version underperformed a one-word product demo in the same period.',
   },
 ];
 
@@ -78,8 +78,8 @@ export default function WorkPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Each case study follows the field-check anatomy: summary, inputs,
             eight dimension findings (observation, judgment, action),
-            verification, corrections, and sources. Outcome is reported
-            honestly — including what did not work.
+            verification, corrections, and sources. Outcomes include what
+            did not work.
           </p>
           <div className="row-stack" role="list">
             {CASE_STUDIES.map((cs, i) => (
@@ -113,20 +113,10 @@ export default function WorkPage() {
               Sources become principles. Principles become contracts. Contracts
               become tools. Tools become better designed work. These case
               studies are the evidence for that last step — shipped artifacts,
-              reviewed against the contract, with honest outcomes including
-              engagement metrics and what the review process caught.
+              reviewed against the contract, with engagement metrics and
+              documented outcomes.
             </p>
           </div>
-        </section>
-
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">What this is not</h2>
-          <ul className="checkmark-list">
-            <li>Not generic case studies or portfolio decoration.</li>
-            <li>Not a claim that every artifact succeeded.</li>
-            <li>Not a marketing surface — outcomes are reported honestly.</li>
-            <li>Not a replacement for the Labs or Review surfaces.</li>
-          </ul>
         </section>
 
         <div className="status-note">

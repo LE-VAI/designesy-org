@@ -25,7 +25,7 @@ const DIMENSIONS = [
     observation:
       'Cadence states a single job: make text feel composed, not placed. The live artifact (this page), thesis, principles, portable rules, builder prompt, checklist, provenance, and anti-patterns all serve that job.',
     judgment:
-      'Purpose is clear and earns the form. The lab is not a typography essay; it is an inspectable set of rules with exact values verified on live CSS.',
+      'Purpose is clear and earns the form. The lab is an inspectable set of rules with exact values verified on live CSS.',
     action: 'Keep. Do not add decorative typography demos that dilute the rules.',
   },
   {
@@ -90,9 +90,9 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in typography. Rem-based scale respects user preferences. 16px input floor is a real accessibility protection. Open tensions are documented honestly: block-axis logical properties remain physical. font-synthesis: none and text-underline-position: from-font have been resolved in globals.css and removed from open tensions.',
+      'No dark pattern in typography. Rem-based scale respects user preferences. 16px input floor is a real accessibility protection. Open tensions are documented: block-axis logical properties remain physical. font-synthesis: none and text-underline-position: from-font have been resolved in globals.css and removed from open tensions.',
     judgment:
-      'Honest about status: live experiment whose rules are now contract material. Two of three original tensions are resolved; one remains (logical properties). That honesty is a responsibility hold.',
+      'Status is explicit: live experiment whose rules are now contract material. Two of three original tensions are resolved; one remains (logical properties). Status accuracy is a standing hold.',
     action:
       'Keep status language accurate. Future rule changes require a new contract version, not silent edits.',
   },
@@ -103,9 +103,9 @@ const HOLDS = [
   'Live artifact is the page itself — every rule is visible as you read',
   '10 verified rules with exact values — not preferences',
   'Full lab anatomy shipped (thesis through verification)',
-  'Public name is human and premium — Cadence, not "typography-system-v1"',
+  'Public name is human and premium — Cadence',
   'Typography rules adopted into design system contract v0.1.3',
-  'Open tensions named honestly — logical properties remain; font-synthesis and underline-from-font resolved',
+  'Open tensions named — logical properties remain; font-synthesis and underline-from-font resolved',
 ];
 
 const TENSIONS = [

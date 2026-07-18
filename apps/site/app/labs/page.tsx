@@ -29,13 +29,13 @@ const LAB_ANATOMY = [
   'Verification artifact',
 ];
 
-const NOT_LABS = [
-  'Not a blog',
-  'Not a gallery',
-  'Not a moodboard',
-  'Not generic case studies',
-  'Not a collection of decorative demos',
-  'Not a landing page for AI software',
+const LAB_BOUNDARIES = [
+  'Controlled experiments, not editorial posts',
+  'Inspectable artifacts, not showcases',
+  'Principle tests, not visual studies',
+  'Contracted observations, not loose case notes',
+  'Working demos, not decorative samples',
+  'A workbench for design principles, not a software pitch',
 ];
 
 export default function LabsPage() {
@@ -256,9 +256,9 @@ export default function LabsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">What Labs are not</h2>
+          <h2 className="doctrine-heading">Lab boundaries</h2>
           <CheckGrid
-            items={checkItemsFromStrings(NOT_LABS, { avoid: true })}
+            items={checkItemsFromStrings(LAB_BOUNDARIES)}
           />
         </section>
 

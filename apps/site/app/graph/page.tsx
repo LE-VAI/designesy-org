@@ -100,13 +100,13 @@ export default function GraphPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up" id="what-this-is-not">
-          <h2 className="doctrine-heading" data-scramble>What this is not</h2>
+        <section className="doctrine-section fade-up" id="boundaries">
+          <h2 className="doctrine-heading" data-scramble>Boundaries</h2>
           <ul className="checkmark-list">
-            <li>Not a dependency graph or build-system diagram.</li>
-            <li>Not a live data feed — examples are curated and versioned.</li>
-            <li>Not a replacement for the contract or review surfaces.</li>
-            <li>Not internal doctrine — no source paths or control-plane naming.</li>
+            <li>A knowledge graph of design concepts — curated, versioned, and read-only.</li>
+            <li>Examples are selected, not live-streamed from production.</li>
+            <li>Companion to the contract and review surfaces, not a substitute.</li>
+            <li>Internal paths and control-plane naming stay private.</li>
           </ul>
         </section>
 

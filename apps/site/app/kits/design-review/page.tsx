@@ -185,8 +185,8 @@ export default function DesignReviewKitPage() {
         <section className="doctrine-section fade-up" id="verification">
           <h2 className="doctrine-heading">Verification checklist</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Peer checks, not a scroll essay. Work the grid; leave no cell
-            unexamined when the artifact is UI-bearing.
+            Work the grid; leave no cell unexamined when the artifact is
+            UI-bearing.
           </p>
           <CheckGrid items={checkItemsFromStrings(k.verification)} />
         </section>

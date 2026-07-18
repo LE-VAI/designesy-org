@@ -25,7 +25,7 @@ const DIMENSIONS = [
     observation:
       'Poise states a single job: make contact feel intentional. Live demo, thesis, principle, portable rules, prompt, checklist, provenance, and anti-patterns all serve that job.',
     judgment:
-      'Purpose is clear and earns the form. The page is not a gallery of effects; it is an inspectable experiment.',
+      'Purpose is clear and earns the form. The page is an inspectable experiment.',
     action: 'Keep. Do not add decorative demos that dilute the thesis.',
   },
   {
@@ -92,7 +92,7 @@ const DIMENSIONS = [
     observation:
       'No dark pattern in sound or motion. Preference and reduced motion are first-class. Public naming stays human (Poise), not research-demo jargon. Adoption into v0.1.1 is explicit and public.',
     judgment:
-      'Honest about status: live experiment whose rules are now contract material. That honesty is a responsibility hold.',
+      'Status is explicit: live experiment whose rules are now contract material. Status accuracy is a standing hold.',
     action:
       'Keep status language accurate. Future rule changes require a new contract version, not silent edits.',
   },
@@ -103,7 +103,7 @@ const HOLDS = [
   'Live artifact demonstrates wordmark, press, sound preference, reduced motion',
   'Token-cited behaviors — no anonymous taste motion',
   'Full lab anatomy shipped (thesis through verification)',
-  'Public name is human and premium — not lab-jargon product naming',
+  'Public name is human and premium — Poise',
   'Interaction rules adopted into design system contract v0.1.1',
 ];
 
@@ -397,9 +397,9 @@ export default function PoiseFieldCheckPage() {
 
         <div className="status-note">
           Field check of Lab One · Poise using Use Kit One · Design Review.
-          Outcome: pass with notes. Institutional quality discipline — not a
-          client report. Interaction rules are adopted into contract v0.1.1;
-          remaining notes are synchronization and site-wide proof expansion.
+          Outcome: pass with notes. Interaction rules are adopted into
+          contract v0.1.1; remaining notes are synchronization and site-wide
+          proof expansion.
         </div>
       </main>
 
