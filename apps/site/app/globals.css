@@ -5327,6 +5327,142 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* ==========================================================================
+   Director dock — persistent conversational entry point.
+   Mirrors the BackButton language: fixed circle, opacity-gated,
+   lead-border, surface-raised fill. Right edge (desktop) /
+   bottom-right (mobile), paired with BackButton on the left.
+   Bridges to designesy.ai.studio — the conversational Director.
+   ========================================================================== */
+
+.director-dock {
+  position: fixed;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--muted-dim);
+  text-decoration: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease), border-color 0.2s var(--ease),
+    color 0.2s var(--ease), transform 0.3s var(--ease-out);
+  animation: director-dock-in 0.4s var(--ease-out) 0.4s forwards;
+}
+
+.director-dock:hover {
+  opacity: 1;
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.director-dock:focus-visible {
+  opacity: 1;
+  border-color: var(--line-strong);
+  color: var(--ink);
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.director-dock:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.director-dock-label {
+  position: absolute;
+  right: calc(100% + 0.75rem);
+  top: 50%;
+  transform: translateY(-50%) translateX(0.5rem);
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease-out);
+}
+
+.director-dock:hover .director-dock-label,
+.director-dock:focus-visible .director-dock-label {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@keyframes director-dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(0.5rem);
+  }
+  to {
+    opacity: 0.32;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .director-dock {
+    right: 0.6rem;
+    left: auto;
+    top: auto;
+    bottom: 1.5rem;
+    width: 2rem;
+    height: 2rem;
+    transform: none;
+  }
+
+  .director-dock:active {
+    transform: scale(0.97);
+  }
+
+  .director-dock-label {
+    display: none;
+  }
+
+  @keyframes director-dock-in {
+    from {
+      opacity: 0;
+      transform: translateX(0.5rem);
+    }
+    to {
+      opacity: 0.32;
+      transform: translateX(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .director-dock {
+    animation: none;
+    opacity: 0.32;
+    transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .director-dock:active {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 720px) {
+  .director-dock:active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
    Field panel — quiet high-structure grid in a rounded frame
    Kept from the Pane lab visual pass (not the glass experiment).
    ========================================================================== */
