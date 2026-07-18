@@ -65,7 +65,7 @@ export const graph = {
       public_examples: [
         'Labs compile into contracts: experiment, review, adopt, version',
         'Field checks verify live CSS against contract rules',
-        'Case studies document shipped work with honest outcomes',
+        'Case studies document shipped work with outcomes, including underperformance',
       ],
     },
     {
@@ -103,7 +103,7 @@ export const graph = {
         'designesy.org (live, v0.3.0, 12 packages, 5 machine exports)',
         'Tile — interactive series composer (617 views on X)',
         'Compile — principle compiler (built, pending hosting)',
-        'Continuity — founder narrative (shipped, underperformed, honest failure documented)',
+        'Continuity — founder narrative (shipped, underperformed, failure documented)',
       ],
     },
   ],

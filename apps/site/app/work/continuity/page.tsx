@@ -32,7 +32,7 @@ const DIMENSIONS = [
     num: '02',
     title: 'Clarity',
     observation:
-      'Clean structure, honest voice, clear sections. Yellow-field addressing with black rounded cards — a distinct mode from the dark default.',
+      'Clean structure, clear sections. Yellow-field addressing with black rounded cards — a distinct mode from the dark default.',
     judgment: 'Clarity is strong in the artifact. The publication format was the constraint, not the writing.',
     action: 'Retain at the hosted URL. Reference, not feed post.',
   },
@@ -196,7 +196,7 @@ export default function ContinuityCaseStudyPage() {
               <span className="row-body">
                 <span className="row-title">Purpose claim</span>
                 <span className="row-meta">
-                  Founder narrative — the same idea, finally built
+                  Founder narrative article
                 </span>
               </span>
             </ToggleRow>

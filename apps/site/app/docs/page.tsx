@@ -300,7 +300,7 @@ export default function DocsPage() {
             Designesy public language should feel intelligent, precise, useful,
             soulful but not vague, technical but not cold, ambitious but not
             delusional, artist-centered, systems-aware, deeply humane,
-            anti-generic, anti-corporate-slop, and anti-empty-AI-branding.
+            anti-generic, and anti-corporate-slop.
           </p>
           <div className="doctrine-cols">
             <div>
@@ -341,9 +341,9 @@ export default function DocsPage() {
             <p className="definition-label">Contract rule · public voice</p>
             <p>
               Public surfaces state what the artifact is, what happened, and what
-              the findings are. They do not narrate the review process, name
-              their own AI-slop, or frame discipline as a virtue. The structure
-              is the evidence; naming it negates it.
+              the findings are. They do not narrate the review process or frame
+              discipline as a virtue. The structure is the evidence; naming it
+              negates it.
             </p>
           </div>
           <p className="surface-note">
@@ -356,8 +356,7 @@ export default function DocsPage() {
         <div className="status-note">
           Designesy is a live operating model. Graph and logs remain internal by
           design. What is public here — principles, architecture, voice,
-          contracts, labs, kits, and review — is the real system, not a preview
-          of a larger empty product.
+          contracts, labs, kits, and review — is the real system.
         </div>
       </main>
 

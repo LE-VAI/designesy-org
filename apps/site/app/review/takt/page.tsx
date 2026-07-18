@@ -25,7 +25,7 @@ const DIMENSIONS = [
     observation:
       'Takt states a single job: make interfaces feel built rather than rendered. Five principles with exact values (concentric radii, press scale, image outlines, hit areas, stagger rhythm) all serve that job. The live artifact is the page itself — every interactive surface demonstrates the rules.',
     judgment:
-      'Purpose is clear and self-demonstrating. The lab is not a showcase of effects; it is an inspectable compilation of interface-feel rules with provenance.',
+      'Purpose is clear and self-demonstrating. The lab is an inspectable compilation of interface-feel rules with provenance.',
     action: 'Keep. Do not add decorative demos that dilute the exact-value thesis.',
   },
   {
@@ -63,7 +63,7 @@ const DIMENSIONS = [
     observation:
       'Live CSS confirms: --radius (6px) and --radius-sm (4px) are the only radius tokens. Concentric rule holds — card padding (4px) + inner radius (2px) = outer (6px). Press scales match: scale(0.96) on check-cells, scale(0.985) on pillars and rows (softer for longer surfaces). No transition:all anywhere in the stylesheet. will-change appears only as transform and transform,opacity. Fade-up stagger uses 80ms increments (delay-1 through delay-5). All transitions name specific properties.',
     judgment:
-      'Strong coherence. Takt rules describe what the live site already does — the lab codifies existing practice, not aspirational behavior. Press scale variants (0.96 for tight controls, 0.985 for larger surfaces) are a deliberate calibration, not inconsistency.',
+      'Strong coherence. Takt rules describe what the live site already does — the lab codifies existing practice. Press scale variants (0.96 for tight controls, 0.985 for larger surfaces) are a deliberate calibration, not inconsistency.',
     action:
       'Promote both press-scale variants into contract v0.1.2: 0.96 for cells/buttons, 0.985 for cards/rows.',
   },
@@ -81,7 +81,7 @@ const DIMENSIONS = [
     num: '07',
     title: 'Delight',
     observation:
-      'The page itself is the demonstration — staggered fade-up sections, press feedback on every toggle, check-grid cells that respond. No glow, bounce, or particle effects. Emotional quality comes from precision: exact values, visible numbers, honest provenance.',
+      'The page itself is the demonstration — staggered fade-up sections, press feedback on every toggle, check-grid cells that respond. No glow, bounce, or particle effects. Emotional quality comes from precision: exact values, visible numbers, credited provenance.',
     judgment:
       'Delight is earned through precision, not decoration. The interface-feel rules produce a surface that feels assembled because the numbers are right.',
     action: 'Keep exact-value framing. Reject proposals that add spectacle to substitute for wrong numbers.',
@@ -90,9 +90,9 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'Provenance is explicit: rules compiled from external sources (Amicro @SubhanHQ, Krehel /better-ui MIT) and cross-referenced against contract v0.1.1. No rule is claimed as original when it is compiled. The lab is honest about its sources. Anti-patterns section prevents the rules from becoming hidden doctrine.',
+      'Provenance is explicit: rules compiled from external sources (Amicro @SubhanHQ, Krehel /better-ui MIT) and cross-referenced against contract v0.1.1. No rule is claimed as original when it is compiled. External sources are credited. Anti-patterns section prevents the rules from becoming hidden doctrine.',
     judgment:
-      'Honest about provenance and status: a compilation lab whose rules are now contract material. External sources are credited. The adoption path is public.',
+      'Provenance and status are explicit: a compilation lab whose rules are now contract material. External sources are credited. The adoption path is public.',
     action:
       'Keep provenance current. If new rules are added from external sources, credit them. Future rule changes require a contract bump.',
   },
@@ -238,11 +238,10 @@ export default function TaktFieldCheckPage() {
               transition:all, will-change restricted to transform/opacity, press
               scale 0.96 on cells and 0.985 on larger surfaces, concentric
               radii holding, stagger at 80ms increments. The lab codifies what
-              the site already does — it is not aspirational. Two rules remain
-              unverified (image outlines — no image surfaces yet; mobile hit
-              area — desktop only). Six rules are promoted into contract
-              v0.1.2. Remaining work is verification and synchronization, not
-              re-argument.
+              the site already does. Two rules remain unverified (image
+              outlines — no image surfaces yet; mobile hit area — desktop
+              only). Six rules are promoted into contract v0.1.2. Remaining
+              work is verification and synchronization, not re-argument.
             </p>
           </div>
         </section>
