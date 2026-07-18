@@ -905,6 +905,7 @@ p {
   min-height: 120px;
   padding: 1.25rem;
   border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
@@ -912,6 +913,7 @@ p {
 }
 
 .surface-card:hover {
+  border-left-color: var(--signal);
   border-color: var(--line-strong);
   background: var(--surface-raised);
 }
@@ -1896,6 +1898,7 @@ button.pillar:hover::before {
   color: var(--ink);
   line-height: 1.4;
   margin-bottom: 1rem;
+  text-wrap: pretty;
 }
 
 .surface-note {
@@ -1903,6 +1906,7 @@ button.pillar:hover::before {
   color: var(--muted);
   line-height: 1.6;
   max-width: 580px;
+  text-wrap: pretty;
 }
 
 .surface-grid {
@@ -3475,6 +3479,7 @@ a.check-cell:hover .check-cell-title {
   font-size: 0.82rem;
   color: var(--muted-dim);
   line-height: 1.55;
+  text-wrap: pretty;
 }
 
 /* --- Labs: index card + Poise stage --- */
@@ -3549,6 +3554,7 @@ a.check-cell:hover .check-cell-title {
   gap: 0.5rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
@@ -3563,6 +3569,7 @@ a.check-cell:hover .check-cell-title {
 }
 
 .lab-card:hover {
+  border-left-color: var(--signal);
   border-color: var(--line-strong);
   background: var(--surface-raised);
 }
@@ -3606,6 +3613,7 @@ a.check-cell:hover .check-cell-title {
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
+  text-wrap: pretty;
 }
 
 .lab-card-desc {
@@ -3613,6 +3621,7 @@ a.check-cell:hover .check-cell-title {
   color: var(--muted);
   line-height: 1.55;
   max-width: 420px;
+  text-wrap: pretty;
 }
 
 .lab-card-arrow {
