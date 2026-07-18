@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
+import { DirectorDock } from './lib/director-dock';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
@@ -102,6 +103,7 @@ export default function RootLayout({
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <CuelumeBinder />
         <BackButton />
+        <DirectorDock />
         <DefinitionCopyEnhancer />
         <FireworkBurst />
         <EffectEnhancer />
