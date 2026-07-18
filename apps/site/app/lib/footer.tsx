@@ -123,11 +123,11 @@ export function Footer() {
         </div>
         <a
           className="footer-link"
-          href="mailto:le@designesy.org"
+          href="mailto:hello@designesy.org"
           data-cuelume-hover="droplet"
           data-cuelume-press="droplet"
         >
-          le@designesy.org
+          hello@designesy.org
         </a>
       </div>
     </footer>

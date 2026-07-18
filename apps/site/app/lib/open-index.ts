@@ -42,7 +42,7 @@ export const openIndex = {
     human_index: 'https://www.designesy.org/open',
     site: 'https://www.designesy.org',
     license: 'https://creativecommons.org/licenses/by/4.0/',
-    contact: 'le@designesy.org',
+    contact: 'hello@designesy.org',
   },
   /**
    * Terms agents (and people) use when searching for exactly what this is.

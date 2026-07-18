@@ -89,7 +89,7 @@ ${o.agent_prompt}
 
 ## Contact
 
-- Email: le@designesy.org
+- Email: hello@designesy.org
 - Privacy: https://www.designesy.org/privacy
 - Security: https://www.designesy.org/.well-known/security.txt
 - Human index: ${o.public_url}

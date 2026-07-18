@@ -313,6 +313,7 @@ export default function DocsPage() {
                   'Contracts that agents and teams can use',
                   'Artifacts that can be inspected, copied, tested, remixed',
                   'Creative infrastructure for people building better worlds',
+                  'A declarative interface — the computer, not the changelog',
                 ])} />
             </div>
             <div>
@@ -326,9 +327,31 @@ export default function DocsPage() {
                   'Pretending Designesy is already a massive institution',
                   'Reducing the mission to templates or a design blog',
                   'Corporate care language that feels unearned',
+                  'Journal, diary, or internal-process log voice',
+                  'Narrating the review process as a virtue',
+                  'Confessional or defensive framing of outcomes',
                 ], { avoid: true })} />
             </div>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Declarative voice rule</h2>
+          <div className="definition">
+            <p className="definition-label">Contract rule · public voice</p>
+            <p>
+              Public surfaces state what the artifact is, what happened, and what
+              the findings are. They do not narrate the review process, name
+              their own AI-slop, or frame discipline as a virtue. The structure
+              is the evidence; naming it negates it.
+            </p>
+          </div>
+          <p className="surface-note">
+            A visitor should feel they are looking at an interface —
+            restrained, declarative, finished — not reading a build diary.
+            Internal review worksheets belong in machine exports and process
+            lanes, not in public case-study prose.
+          </p>
         </section>
 
         <div className="status-note">

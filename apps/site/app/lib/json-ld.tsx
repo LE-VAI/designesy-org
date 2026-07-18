@@ -21,7 +21,7 @@ export function organizationJsonLd() {
     name: 'Designesy',
     legalName: 'Designesy LLC',
     url: 'https://www.designesy.org',
-    email: 'le@designesy.org',
+    email: 'hello@designesy.org',
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
     logo: 'https://www.designesy.org/icon',

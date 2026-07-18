@@ -43,7 +43,7 @@ const PRINCIPLES = [
 const COLLECT = [
   {
     title: 'What you send us',
-    meta: 'Email you choose to write to le@designesy.org, and any files or context you attach. Used to reply and run Designesy LLC work.',
+    meta: 'Email you choose to write to hello@designesy.org, and any files or context you attach. Used to reply and run Designesy LLC work.',
   },
   {
     title: 'What the host may log',
@@ -103,8 +103,8 @@ export default function PrivacyPage() {
             information: what is collected, what is not, and how open design
             intelligence stays fetchable without turning visitors into product.
             Operator: Designesy LLC. Contact:{' '}
-            <a href="mailto:le@designesy.org" data-cuelume-hover="droplet">
-              le@designesy.org
+            <a href="mailto:hello@designesy.org" data-cuelume-hover="droplet">
+              hello@designesy.org
             </a>
             .
           </p>
@@ -224,8 +224,8 @@ export default function PrivacyPage() {
           <p className="surface-note">
             For privacy questions, correction requests about correspondence you
             sent, or operational concerns, write to{' '}
-            <a href="mailto:le@designesy.org" data-cuelume-hover="droplet">
-              le@designesy.org
+            <a href="mailto:hello@designesy.org" data-cuelume-hover="droplet">
+              hello@designesy.org
             </a>
             . Include enough context to locate the request. We respond as an
             organization, not as an automated dark pattern.
