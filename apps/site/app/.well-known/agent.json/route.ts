@@ -31,7 +31,7 @@ export function GET() {
     })),
     machine_exports: o.machine_exports,
     contact: {
-      email: 'le@designesy.org',
+      email: 'hello@designesy.org',
       privacy: 'https://www.designesy.org/privacy',
       security: o.discovery.security_txt,
     },

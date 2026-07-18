@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
  */
 export function GET() {
   // Expires ~1 year from ship (2026-07-12)
-  const body = `Contact: mailto:le@designesy.org
+  const body = `Contact: mailto:hello@designesy.org
 Preferred-Languages: en
 Canonical: https://www.designesy.org/.well-known/security.txt
 Expires: 2027-07-12T00:00:00.000Z

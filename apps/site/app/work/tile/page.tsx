@@ -94,53 +94,16 @@ const DIMENSIONS = [
   },
 ];
 
-const HOLDS = [
+const FINDINGS = [
   'Purpose is sharp: compose a series grid that stays related without template energy',
   'Zero-dependency deployment — single index.html, no framework, no CDN',
   'Human-language labels lead, not grammar jargon',
   'Full documentation: BRIEF, STATUS, HOST — intent through hosting',
-  'Publication format proven: one word + screen recording = 617 views (breakout)',
+  'Publication format: one word + screen recording = 617 views (breakout)',
   'Designesy graduation path documented and gated',
-];
-
-const TENSIONS = [
-  {
-    title: 'VAI surface, not Designesy surface',
-    meta: 'Tile uses VAI yellow #FFC400, not Designesy signal #0133CB. Graduation to /labs requires token reconciliation',
-  },
-  {
-    title: 'No machine export yet',
-    meta: 'Tile has no JSON export — the tool itself is not yet a machine-readable package',
-  },
-  {
-    title: 'Single engagement data point',
-    meta: '617 views is one post on one day — not a statistically robust sample',
-  },
-];
-
-const CORRECTIONS = [
-  {
-    title: 'Plan the Designesy graduation path',
-    meta: 'When Tile moves to /labs, swap VAI tokens for Designesy contract tokens',
-  },
-  {
-    title: 'Add a machine export',
-    meta: 'A tile.json package export would make the tool machine-consumable',
-  },
-  {
-    title: 'Test the format again',
-    meta: 'Republish with the one-word + screen-recording format to confirm the breakout was not a fluke',
-  },
-];
-
-const VERIFICATION = [
-  'Live artifact inspected: le-vai.github.io/tile — tool builds, composes, downloads',
-  'Engagement metrics verified via CDP 2026-07-13: 617 views, 3 likes, 1 reply',
-  'Compared to design system contract tokens and VAI brand boundary rules',
-  'Compared to Use Kit One Design Review output format',
-  'Checked anti-patterns: no glow, no template chrome, no engagement bait',
-  'Deployment verified: single index.html on GitHub Pages, repo LE-VAI/tile',
-  'Documentation verified: BRIEF.md, STATUS.md, HOST.md all present and current',
+  'VAI surface, not Designesy surface — graduation requires token reconciliation',
+  'No machine export yet — tile.json would make the tool machine-consumable',
+  'Single engagement data point — 617 views is one post on one day',
 ];
 
 const SOURCES = [
@@ -212,24 +175,21 @@ export default function TileCaseStudyPage() {
               model — one spine, many tiles, human-language roles, zero
               dependencies. Published with a one-word root post and screen
               recording, it earned 617 views on X — the only post in 24 hours
-              to break out of the 20 to 60 view noise floor. The format is
-              proven: shipped, visible product reaches beyond the immediate
-              circle. Remaining work is Designesy graduation, machine export,
-              and format re-testing — not re-arguing the tool.
+              to break out of the 20 to 60 view noise floor. Remaining work:
+              Designesy graduation, machine export, and format re-testing.
             </p>
           </div>
         </section>
 
         <section className="doctrine-section fade-up" id="engagement">
-          <h2 className="doctrine-heading">Engagement evidence</h2>
+          <h2 className="doctrine-heading">Engagement</h2>
           <div className="definition">
             <p className="definition-label">X post · 2026-07-13</p>
             <p>
               Root post: <strong>617 views, 3 likes, 1 reply</strong>. Try-it
               reply: 61 views, 1 like. The root post outperformed every other
               post type (quote-post, brand repost, founder narrative, text
-              build note) by a wide margin. The audience rewarded shipped,
-              visible product — not voice, narrative, or adjacency.
+              build note) in the same period.
             </p>
           </div>
         </section>
@@ -303,24 +263,9 @@ export default function TileCaseStudyPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up" id="holds">
-          <h2 className="doctrine-heading">Holds</h2>
-          <CheckGrid items={checkItemsFromStrings(HOLDS)} />
-        </section>
-
-        <section className="doctrine-section fade-up" id="tensions">
-          <h2 className="doctrine-heading">Tensions</h2>
-          <CheckGrid items={TENSIONS} />
-        </section>
-
-        <section className="doctrine-section fade-up" id="corrections">
-          <h2 className="doctrine-heading">Corrections</h2>
-          <CheckGrid items={CORRECTIONS} />
-        </section>
-
-        <section className="doctrine-section fade-up" id="verification">
-          <h2 className="doctrine-heading">Verification performed</h2>
-          <CheckGrid items={checkItemsFromStrings(VERIFICATION)} />
+        <section className="doctrine-section fade-up" id="findings">
+          <h2 className="doctrine-heading">Findings</h2>
+          <CheckGrid items={checkItemsFromStrings(FINDINGS)} />
         </section>
 
         <section className="doctrine-section fade-up" id="sources">
@@ -348,10 +293,9 @@ export default function TileCaseStudyPage() {
         </section>
 
         <div className="status-note">
-          Case study of Tile using Use Kit One · Design Review. Outcome: pass
-          with notes. Shipped tool with proven engagement — 617 views on a
-          one-word product demo. Remaining notes are Designesy graduation,
-          machine export, and format re-testing.
+          Case study · Tile. Outcome: pass with notes. Shipped tool with
+          617 views on a one-word product demo. Remaining: Designesy
+          graduation, machine export, format re-testing.
         </div>
       </main>
 
