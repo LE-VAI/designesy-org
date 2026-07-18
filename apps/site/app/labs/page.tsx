@@ -219,6 +219,23 @@ export default function LabsPage() {
                 </span>
               </span>
             </Link>
+            <a
+              href="https://designesy.ai.studio/"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">07</span>
+              <span className="row-body">
+                <span className="row-title">Talk to the Director</span>
+                <span className="row-meta">
+                  The contract, conversational — type, motion, spacing, or score any site
+                </span>
+              </span>
+            </a>
           </div>
         </section>
 
