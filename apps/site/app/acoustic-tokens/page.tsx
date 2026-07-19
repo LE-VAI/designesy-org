@@ -112,24 +112,34 @@ export default function AcousticTokensPage() {
           <h2 className="doctrine-heading">Accessibility</h2>
           <ul className="checkmark-list">
             <li>
-              <strong>Reduced motion → sound off.</strong>{' '}
-              {acousticTokens.accessibility.reduced_motion_sound_off}
+              <span>
+                <strong>Reduced motion → sound off.</strong>{' '}
+                {acousticTokens.accessibility.reduced_motion_sound_off}
+              </span>
             </li>
             <li>
-              <strong>No focus sounds.</strong>{' '}
-              {acousticTokens.accessibility.no_focus_sounds}
+              <span>
+                <strong>No focus sounds.</strong>{' '}
+                {acousticTokens.accessibility.no_focus_sounds}
+              </span>
             </li>
             <li>
-              <strong>Toggle is keyboard-accessible.</strong>{' '}
-              {acousticTokens.accessibility.toggle_keyboard_accessible}
+              <span>
+                <strong>Toggle is keyboard-accessible.</strong>{' '}
+                {acousticTokens.accessibility.toggle_keyboard_accessible}
+              </span>
             </li>
             <li>
-              <strong>Silent fallback.</strong>{' '}
-              {acousticTokens.accessibility.silent_fallback}
+              <span>
+                <strong>Silent fallback.</strong>{' '}
+                {acousticTokens.accessibility.silent_fallback}
+              </span>
             </li>
             <li>
-              <strong>Volume is not adjustable.</strong>{' '}
-              {acousticTokens.accessibility.volume_not_adjustable}
+              <span>
+                <strong>Volume is not adjustable.</strong>{' '}
+                {acousticTokens.accessibility.volume_not_adjustable}
+              </span>
             </li>
           </ul>
         </section>
