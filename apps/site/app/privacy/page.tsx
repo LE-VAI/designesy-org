@@ -46,6 +46,10 @@ const COLLECT = [
     meta: 'Email you choose to write to hello@designesy.org, and any files or context you attach. Used to reply and run Designesy LLC work.',
   },
   {
+    title: 'Continuity waitlist',
+    meta: 'If you join /continuity, we collect the work email and optional role, interest, site URL, and note you submit. Used only to operate the Continuity early-access list and related product access — not sold, not ad profiles.',
+  },
+  {
     title: 'What the host may log',
     meta: 'Standard web-host logs for reliability and abuse defense: request path, approximate time, user-agent, and network address as retained by the hosting provider. Not used for advertising profiles on this surface.',
   },
@@ -111,7 +115,7 @@ export default function PrivacyPage() {
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Public</span>
             <span className="lab-meta-item">Plain language · not a cookie wall</span>
-            <span className="lab-meta-item">Updated 2026-07-12</span>
+            <span className="lab-meta-item">Updated 2026-07-19</span>
           </div>
         </section>
 

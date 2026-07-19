@@ -160,6 +160,16 @@ const FIELD = [
     arrow: 'Open the chat →',
     kind: 'kit' as const,
   },
+  {
+    href: '/continuity',
+    badge: 'Early access',
+    status: 'Waitlist',
+    title: 'Continuity',
+    lede: 'Design judgment that stays current.',
+    desc: 'Score, contract, verify — and keep the receipt. Open core stays free. Continuity adds history and drift for work that continues.',
+    arrow: 'Join the waitlist →',
+    kind: 'kit' as const,
+  },
 ];
 
 const PRINCIPLES_PREVIEW = [
