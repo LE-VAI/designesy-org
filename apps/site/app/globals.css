@@ -2503,25 +2503,39 @@ button.pillar:hover::before {
   list-style: none;
 }
 
+/*
+  Dash marker is out-of-flow so <strong> + bare text (and other multi-node
+  children) stay normal inline flow. A 2-col grid treated each node as its
+  own cell, so body copy after <strong> dropped into the 1.25rem dash column
+  and stacked one word per line (Acoustics / Acoustic tokens Accessibility).
+*/
 .checkmark-list li {
-  display: grid;
-  grid-template-columns: 1.25rem minmax(0, 1fr);
-  gap: 0.5rem;
-  align-items: baseline;
+  position: relative;
+  display: block;
+  padding-left: 1.75rem;
   font-size: 0.9rem;
   color: var(--muted);
   line-height: 1.5;
+  min-width: 0;
 }
 
-/* Guard: any direct multi-node content must live in one cell */
-.checkmark-list li > :not(.scope-line):not(a):not(span):not(code):not(strong) {
+.checkmark-list li > .scope-line,
+.checkmark-list li > a,
+.checkmark-list li > span,
+.checkmark-list li > code,
+.checkmark-list li > strong {
   min-width: 0;
 }
 
 .checkmark-list li::before {
   content: "—";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.25rem;
   color: var(--signal);
   font-weight: 600;
+  line-height: 1.5;
 }
 
 /* Scope lines — single grid cell so path never wraps under the dash */
