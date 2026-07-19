@@ -60,6 +60,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.55,
     },
     {
+      url: `${BASE}/continuity`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
       url: `${BASE}/labs`,
       lastModified: NOW,
       changeFrequency: 'weekly',

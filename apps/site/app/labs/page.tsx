@@ -256,6 +256,21 @@ export default function LabsPage() {
                 </span>
               </span>
             </a>
+            <Link
+              href="/continuity"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">08</span>
+              <span className="row-body">
+                <span className="row-title">Continuity waitlist</span>
+                <span className="row-meta">
+                  Design judgment that stays current — early access, no charge to join
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
