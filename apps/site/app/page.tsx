@@ -242,7 +242,7 @@ export default function HomePage() {
           </div>
           <p className="hero-eyebrow fade-up" data-scramble>Design intelligence infrastructure</p>
           <h1
-            className="wordmark-hero hero-title fade-up fade-up-delay-1"
+            className="wordmark-hero hero-title"
             id="hero-title"
             data-cuelume-hover="droplet"
             data-cuelume-press="sparkle"
