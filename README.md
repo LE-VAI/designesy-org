@@ -33,7 +33,7 @@ npx @designesy/mcp designesy_score --url https://www.designesy.org/
 - **Spring physics** — default + momentum tokens via custom `$type: spring`
 - **Machine-readable** — W3C DTCG 2025.10 format + custom extensions
 
-See the [v0.3.0 release](https://github.com/LE-VAI/designesy-org/releases/tag/v0.3.0) for the full adoption history.
+See the [contract page](https://www.designesy.org/contracts/design-system) for the full adoption history.
 
 ## Repository
 
