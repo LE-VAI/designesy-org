@@ -5215,17 +5215,18 @@ a.field-card:active {
   }
 }
 
-/* --- Reduced motion --- */
+/* --- Reduced motion (tiered, not a kill switch) ---
+   Contract: "collapse non-essential motion" — NOT "disable all motion."
+   Tier 1 (removed): decorative loops, ambient pulses, text shimmers, seam entrance.
+   Tier 2 (softened): entrance reveals snap to final state but content stays visible.
+   Tier 3 (kept): hover tilt, spotlight, color shifts, border-color, opacity transitions
+   on interactive elements — these are feedback, not motion.
+   Per-component @media blocks earlier in this file handle their own elements;
+   this block handles only the global overrides.
+*/
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001s !important;
-    animation-delay: 0s !important;
-    transition-duration: 0.001s !important;
-  }
-
+  /* Tier 1: Remove decorative looping animations and ambient motion */
   .hero-seam-mark .seam-dot,
   .hero-seam-mark .seam-orbit,
   .hero-seam-mark .seam-square,
@@ -5233,8 +5234,6 @@ a.field-card:active {
   .hero-seam-mark .seam-block {
     animation: none !important;
     opacity: 1;
-    transform: none !important;
-    transition: none !important;
   }
 
   .field-card-status.is-live,
@@ -5256,16 +5255,14 @@ a.field-card:active {
     -webkit-text-fill-color: var(--ink) !important;
   }
 
-  .mark-glyph-core,
-  .mark-glyph-ring,
-  .field-card:hover .mark-glyph-core,
-  .field-card:hover .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph-ring,
-  .field-card:active .mark-glyph-core {
-    transform: none !important;
-    transition: none !important;
+  /* Tier 2: Soften entrance animations — snap to final state instantly */
+  .js-ready [data-reveal] {
+    animation: none !important;
   }
+
+  /* Tier 3: Keep interactive feedback — hover tilt, spotlight, color shifts
+     are NOT motion, they are state feedback. Per-component blocks above
+     handle their own reduced-motion cases. No blanket duration override. */
 
   .scroll-progress-fill {
     transition: none;

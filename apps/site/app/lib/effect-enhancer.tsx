@@ -17,8 +17,7 @@ import { useEffect } from 'react';
 
 export function EffectEnhancer() {
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 
     /* --- Cursor tracking for spotlight + tilt --- */
@@ -175,8 +174,9 @@ export function EffectEnhancer() {
         }
       });
 
-      // Trigger pulse ring when dot is hovered
-      if (isDotClosest) {
+      // Trigger pulse ring when dot is hovered (skip under reduced-motion —
+      // the pulse is a decorative animation, not interaction feedback)
+      if (isDotClosest && !reducedMotion) {
         triggerDotPulse(mark);
       }
     };
