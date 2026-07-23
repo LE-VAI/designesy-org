@@ -6322,3 +6322,82 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-color: rgba(239, 68, 68, 0.45);
   color: #fecaca;
 }
+
+/* ===========================================================================
+   MASTER REDUCED-MOTION OVERRIDE (final word)
+   ---------------------------------------------------------------------------
+   The contract says: "collapse non-essential motion" = reduce intensity,
+   not zero. The per-component @media blocks above were written as kill
+   switches (animation: none). This override restores ambient and demo
+   animations with slowed durations so the site stays alive under
+   prefers-reduced-motion: reduce.
+
+   This block is last in the file so it wins the cascade over all earlier
+   per-component blocks. It uses !important to override the !important
+   blocks above.
+
+   What stays killed (correctly): text shimmer, seam entrance, back-button
+   slide-in, director-dock slide-in, lab effect demos (shake/flip/pulse/lift).
+   What is restored (slowed): easing dots, stagger bars, marquee scroll,
+   dock scroll, ambient pulses, health radar, poise bar, row/check anims.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Contracts page: easing curve demo dots — slow to 10s, keep sliding */
+  .demo-easing-dot {
+    animation: demo-easing-slide 10s var(--ease) infinite !important;
+  }
+  .demo-easing-row[data-ease="out"] .demo-easing-dot {
+    animation-timing-function: var(--ease-out) !important;
+  }
+  .demo-easing-row[data-ease="in-out"] .demo-easing-dot {
+    animation-timing-function: var(--ease-in-out) !important;
+  }
+  .demo-easing-row[data-ease="drawer"] .demo-easing-dot {
+    animation-timing-function: var(--ease-drawer) !important;
+  }
+
+  /* Contracts page: stagger bar demo — slow to 2s, keep staggered entrance */
+  .demo-stagger.is-revealed .demo-stagger-bar {
+    animation: demo-stagger-in 2s var(--ease-out) forwards !important;
+    opacity: 0.8 !important;
+    transform: none !important;
+  }
+
+  /* Health radar score — slow rotation */
+  .health-radar-score {
+    animation-duration: 20s !important;
+  }
+
+  /* Poise reduced-motion indicator bar — keep the subtle pulse, slowed */
+  .poise-reduced-bar--on {
+    animation-duration: 8s !important;
+    opacity: 0.35 !important;
+  }
+
+  /* Row check animation — slowed */
+  .row-check {
+    animation-duration: 2s !important;
+  }
+
+  /* Check cell check — slowed */
+  .check-cell-check {
+    animation-duration: 2s !important;
+  }
+
+  /* State marquee live pill pulse — slow to 4s */
+  .state-marquee-pill--live::before {
+    animation-duration: 4s !important;
+  }
+
+  /* Topbar wordmark dot — keep the breath, slowed */
+  .wordmark .dot {
+    animation-duration: 12s !important;
+  }
+
+  /* Pipeline shake on tap — keep but make it very subtle */
+  .pipeline-step.is-shaking,
+  .principle.is-shaking {
+    animation-duration: 0.3s !important;
+  }
+}
