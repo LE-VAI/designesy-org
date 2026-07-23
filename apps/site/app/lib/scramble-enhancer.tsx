@@ -106,14 +106,14 @@ export function ScrambleEnhancer() {
       // A fast decode with minimal churn is less motion than a full scramble
       // but still gives the site its identity.
       const isMobile = window.innerWidth < 720;
-      const charDelay = isMobile ? 8 : 12; // ~3x faster than normal
-      const churnCount = 1; // single churn frame instead of 4
+      const charDelay = isMobile ? 15 : 22; // ~1.5x faster than normal (visible but quick)
+      const churnCount = 2; // 2 churn frames (was 4 normal, was 1 before)
 
       function scaledDelays(text: string): { charDelay: number; churnCount: number } {
         const len = text.length;
         if (len <= 30) return { charDelay, churnCount };
-        const targetTotal = 800; // 0.8s max for reduced-motion decode
-        const cd = Math.max(4, Math.min(charDelay, Math.floor(targetTotal / len)));
+        const targetTotal = 1500; // 1.5s max for reduced-motion decode
+        const cd = Math.max(8, Math.min(charDelay, Math.floor(targetTotal / len)));
         const cc = 1;
         return { charDelay: cd, churnCount: cc };
       }
