@@ -1593,18 +1593,9 @@ button.pillar:hover::before {
   .copy-prompt-btn::after {
     display: none;
   }
-  .lab-card:hover .lab-card-title,
-  .lab-card:hover .lab-card-lede,
-  .principle:hover .principle-body h3,
-  .principle:hover .principle-body p,
-  a.check-cell:hover .check-cell-title,
-  .field-card:hover .field-card-title,
-  .field-card:hover .field-card-lede,
-  .surface-item:hover {
-    transform: none;
-  }
+  /* Keep hover text lifts — subtle transform on hover is interaction feedback */
   .wordmark:hover .dot {
-    animation: none;
+    animation-duration: 12s;
   }
 }
 
@@ -1851,12 +1842,7 @@ button.pillar:hover::before {
 
 @media (prefers-reduced-motion: reduce) {
   .footer-dock-track {
-    animation: none;
-    transform: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    flex-wrap: nowrap;
+    animation-duration: 200s;
   }
 }
 
@@ -2813,12 +2799,7 @@ button.pillar:hover::before {
 
 @media (prefers-reduced-motion: reduce) {
   .state-marquee-track {
-    animation: none;
-  }
-  .state-marquee {
-    overflow: visible;
-    mask-image: none;
-    -webkit-mask-image: none;
+    animation-duration: 120s;
   }
   .state-marquee-pill--live::before {
     animation: none;
@@ -5225,7 +5206,8 @@ a.field-card:active {
 */
 
 @media (prefers-reduced-motion: reduce) {
-  /* Tier 1: Remove decorative looping animations and ambient motion */
+  /* Tier 1: Soften decorative loops — slow them, don't kill them.
+     Contract: "collapse non-essential motion" = reduce intensity, not zero. */
   .hero-seam-mark .seam-dot,
   .hero-seam-mark .seam-orbit,
   .hero-seam-mark .seam-square,
@@ -5235,6 +5217,7 @@ a.field-card:active {
     opacity: 1;
   }
 
+  /* Ambient pulses: slow to 4x duration, keep the heartbeat */
   .field-card-status.is-live,
   .pipeline-step.is-end .pipeline-node-core,
   .wordmark-hero .dot,
@@ -5242,7 +5225,7 @@ a.field-card:active {
   .mark-glyph--contract .mark-glyph-core,
   .mark-glyph--lab .mark-glyph-core,
   .mark-glyph--kit .mark-glyph-core {
-    animation: none !important;
+    animation-duration: 12s !important;
     opacity: 1;
   }
 
