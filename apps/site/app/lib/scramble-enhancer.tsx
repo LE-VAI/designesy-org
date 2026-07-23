@@ -94,14 +94,23 @@ export function ScrambleEnhancer() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      document.documentElement.classList.add('js-ready');
-      return;
-    }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Ensure js-ready is set (inline script in layout.tsx should have
     // already done this, but this covers CSP/SSR edge cases).
     document.documentElement.classList.add('js-ready');
+
+    if (reducedMotion) {
+      // Under reduced-motion: skip text scramble (decorative), but still
+      // run the scroll-reveal logic so [data-reveal] elements become visible.
+      // The CSS reduced-motion block sets animation: none on [data-reveal],
+      // but we still need to add .is-revealed so opacity goes to 1.
+      const revealEls = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-reveal]')
+      );
+      revealEls.forEach((el) => el.classList.add('is-revealed'));
+      return;
+    }
 
     const isMobile = window.innerWidth < 720;
     const charDelay = isMobile ? 20 : 32;
