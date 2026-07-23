@@ -1141,9 +1141,8 @@ a.surface-card:active {
   .surface-card::after {
     display: none;
   }
-  .field-card {
-    transform: none !important;
-  }
+  /* Keep field-card hover tilt — it's interaction feedback, not motion.
+     The --tilt-rx/--tilt-ry vars are set by EffectEnhancer on pointermove. */
   .nav-links a::after {
     display: none;
   }
@@ -6090,7 +6089,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .effect-lift:hover { transform: none; }
   .effect-shake.is-tapped { animation: none; }
   .effect-flip:hover .effect-flip-inner { transform: none; }
-  .effect-tilt { transform: none !important; }
+  /* Keep effect-tilt — 3D tilt is interaction feedback, not motion */
   .effect-slide:hover .effect-label { transform: none; }
   .effect-slide:hover .effect-desc { transform: none; opacity: 1; }
   .effect-border-trace:hover { box-shadow: inset 0 0 0 1px var(--line); }
