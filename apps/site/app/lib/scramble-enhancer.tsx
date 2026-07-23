@@ -101,15 +101,139 @@ export function ScrambleEnhancer() {
     document.documentElement.classList.add('js-ready');
 
     if (reducedMotion) {
-      // Under reduced-motion: skip text scramble (decorative), but still
-      // run the scroll-reveal logic so [data-reveal] elements become visible.
-      // The CSS reduced-motion block sets animation: none on [data-reveal],
-      // but we still need to add .is-revealed so opacity goes to 1.
+      // Under reduced-motion: soften the scramble (don't skip it entirely).
+      // The contract says "collapse non-essential motion" = reduce intensity.
+      // A fast decode with minimal churn is less motion than a full scramble
+      // but still gives the site its identity.
+      const isMobile = window.innerWidth < 720;
+      const charDelay = isMobile ? 8 : 12; // ~3x faster than normal
+      const churnCount = 1; // single churn frame instead of 4
+
+      function scaledDelays(text: string): { charDelay: number; churnCount: number } {
+        const len = text.length;
+        if (len <= 30) return { charDelay, churnCount };
+        const targetTotal = 800; // 0.8s max for reduced-motion decode
+        const cd = Math.max(4, Math.min(charDelay, Math.floor(targetTotal / len)));
+        const cc = 1;
+        return { charDelay: cd, churnCount: cc };
+      }
+
+      /* --- Text Scramble (softened) --- */
+      const scrambleEls = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-scramble]')
+      );
+      const allObservers: IntersectionObserver[] = [];
+
+      function lockHeight(el: HTMLElement): () => void {
+        const h = el.offsetHeight;
+        const prevMinHeight = el.style.minHeight;
+        const prevWhiteSpace = el.style.whiteSpace;
+        const prevOverflow = el.style.overflow;
+        const prevTextOverflow = el.style.textOverflow;
+        if (h > 0) el.style.minHeight = `${h}px`;
+        el.style.whiteSpace = 'nowrap';
+        el.style.overflow = 'hidden';
+        return () => {
+          el.style.minHeight = prevMinHeight;
+          el.style.whiteSpace = prevWhiteSpace;
+          el.style.overflow = prevOverflow;
+          el.style.textOverflow = prevTextOverflow;
+        };
+      }
+
+      scrambleEls.forEach((el) => {
+        const hasChildElements = el.querySelector('span, svg, img, a');
+        if (hasChildElements) {
+          const firstChild = el.firstChild;
+          if (!firstChild || firstChild.nodeType !== 3) return;
+          const originalText = firstChild.textContent || '';
+          if (!originalText.trim()) return;
+          el.setAttribute('aria-label', originalText.trim());
+          const sd = scaledDelays(originalText);
+          const unlockHeight = lockHeight(el);
+          firstChild.textContent = scrambleString(originalText);
+          if (isInViewport(el)) {
+            decodeToString(originalText, sd.charDelay, sd.churnCount, (text) => {
+              firstChild.textContent = text;
+              if (text === originalText) unlockHeight();
+            });
+            return;
+          }
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  decodeToString(originalText, sd.charDelay, sd.churnCount, (text) => {
+                    firstChild.textContent = text;
+                    if (text === originalText) unlockHeight();
+                  });
+                  observer.disconnect();
+                }
+              });
+            },
+            { threshold: 0.3 }
+          );
+          observer.observe(el);
+          allObservers.push(observer);
+          return;
+        }
+        const realText = (el.textContent || '').trim();
+        if (!realText) return;
+        el.setAttribute('aria-label', realText);
+        const unlockHeight = lockHeight(el);
+        const sd = scaledDelays(realText);
+        el.textContent = scrambleString(realText);
+        if (isInViewport(el)) {
+          decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
+            el.textContent = text;
+            if (text === realText) unlockHeight();
+          });
+          return;
+        }
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
+                  el.textContent = text;
+                  if (text === realText) unlockHeight();
+                });
+                observer.disconnect();
+              }
+            });
+          },
+          { threshold: 0.3 }
+        );
+        observer.observe(el);
+        allObservers.push(observer);
+      });
+
+      // Safety net: force-resolve all scramble elements after 3s
+      setTimeout(() => {
+        scrambleEls.forEach((el) => {
+          if (el.getAttribute('aria-label')) {
+            const hasChildElements = el.querySelector('span, svg, img, a');
+            if (hasChildElements) {
+              const firstChild = el.firstChild;
+              if (firstChild && firstChild.nodeType === 3) {
+                firstChild.textContent = el.getAttribute('aria-label');
+              }
+            } else {
+              el.textContent = el.getAttribute('aria-label');
+            }
+          }
+        });
+      }, 3000);
+
+      /* --- Scroll Reveal (keep — content must be visible) --- */
       const revealEls = Array.from(
         document.querySelectorAll<HTMLElement>('[data-reveal]')
       );
       revealEls.forEach((el) => el.classList.add('is-revealed'));
-      return;
+
+      return () => {
+        allObservers.forEach((o) => o.disconnect());
+      };
     }
 
     const isMobile = window.innerWidth < 720;
