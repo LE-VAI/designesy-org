@@ -7,6 +7,7 @@ import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
 
 const NAV_ROUTES = [
+  { href: '/score', label: 'Score' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { initScrollPause } from './scroll-pause';
 
 const SURFACE_LINKS = [
+  { href: '/score', label: 'Score' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },
