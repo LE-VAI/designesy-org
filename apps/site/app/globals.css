@@ -6667,4 +6667,301 @@ a.lab-card:focus-visible .lab-card-arrow {
     grid-column: 2;
   }
 }
+
+/* ── Mobile optimization (homepage score-as-home reframe) ──────────────── */
+
+@media (max-width: 720px) {
+  /* Nav: tighter, fewer visible items, scrollable but with visible hint */
+  .topbar-right {
+    gap: 0.25rem;
+  }
+
+  .nav-links {
+    gap: 0;
+  }
+
+  .nav-links a {
+    padding: 0.35rem 0.4rem;
+    font-size: 0.72rem;
+  }
+
+  .sense-toggles {
+    gap: 0.15rem;
+  }
+
+  .sound-toggle,
+  .haptics-toggle {
+    padding: 0.3rem;
+  }
+
+  /* Score hero section: tighten padding */
+  .score-hero-section {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .score-hero-section .score-form {
+    margin-top: 1rem;
+  }
+
+  .score-contract-note {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+  }
+
+  /* Score results: make grade + meta stack cleanly */
+  .score-grade {
+    font-size: 2.5rem;
+  }
+
+  /* Hero: reduce title size on tablet */
+  .wordmark-hero {
+    font-size: 2.75rem;
+  }
+
+  .hero-lede {
+    font-size: 1.05rem;
+  }
+
+  .hero-body {
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Nav: hide less-critical routes, keep the essentials visible */
+  .nav-links a {
+    padding: 0.3rem 0.35rem;
+    font-size: 0.68rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* Hero: shrink title for small phones */
+  .wordmark-hero {
+    font-size: 2.1rem;
+    letter-spacing: -0.04em;
+  }
+
+  .hero {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+
+  .hero-lede {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .hero-body {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .hero-actions {
+    gap: 0.5rem;
+  }
+
+  /* Score form: full-width submit, tighter input */
+  .score-input-row {
+    gap: 0.5rem;
+  }
+
+  .score-url-input {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .score-submit {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .score-hint {
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
+  }
+
+  /* Score results: compact */
+  .score-grade {
+    font-size: 2rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .score-percent {
+    font-size: 0.9rem;
+  }
+
+  .score-counts {
+    font-size: 0.72rem;
+  }
+
+  .score-check {
+    grid-template-columns: 40px 1fr;
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  .score-check-item {
+    font-size: 0.78rem;
+  }
+
+  .score-check-detail {
+    font-size: 0.72rem;
+  }
+
+  /* Section spacing: tighten for mobile density */
+  .section {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+  }
+
+  .section-eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .surface-lede {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  /* Pillars: tighten padding */
+  .pillar {
+    padding: 1.25rem;
+  }
+
+  .pillar-number {
+    font-size: 0.72rem;
+  }
+
+  .pillar h3 {
+    font-size: 0.95rem;
+  }
+
+  .pillar p {
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  /* Field cards: tighten */
+  .field-card {
+    padding: 1.1rem;
+  }
+
+  .field-card-title {
+    font-size: 0.95rem;
+  }
+
+  .field-card-lede {
+    font-size: 0.82rem;
+  }
+
+  .field-card-desc {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  /* Surface cards: tighten */
+  .surface-card {
+    padding: 1.1rem;
+  }
+
+  .surface-card-label {
+    font-size: 0.95rem;
+  }
+
+  .surface-card-desc {
+    font-size: 0.78rem;
+  }
+
+  /* Principles: tighter */
+  .principle {
+    gap: 0.5rem;
+  }
+
+  .principle-num {
+    font-size: 0.78rem;
+  }
+
+  .principle-body h3 {
+    font-size: 0.88rem;
+  }
+
+  .principle-body p {
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  /* Health radar: shrink */
+  .health-radar-svg {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Row stack: tighter */
+  .row-stack {
+    gap: 0.5rem;
+  }
+
+  .row-title {
+    font-size: 0.85rem;
+  }
+
+  .row-meta {
+    font-size: 0.72rem;
+  }
+
+  /* Score hero section: extra tight on small phones */
+  .score-hero-section {
+    padding-top: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .score-hero-section .score-form {
+    margin-top: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Extra-small phones (iPhone SE, older Androids) */
+  .nav-links a {
+    padding: 0.25rem 0.28rem;
+    font-size: 0.62rem;
+  }
+
+  .wordmark {
+    font-size: 0.88rem;
+  }
+
+  .wordmark-hero {
+    font-size: 1.85rem;
+  }
+
+  .hero-lede {
+    font-size: 0.88rem;
+  }
+
+  .site-shell {
+    padding: 0 0.75rem;
+  }
+
+  .section {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .score-url-input {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+  }
 }
