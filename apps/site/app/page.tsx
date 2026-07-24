@@ -6,48 +6,41 @@ import { Toggle } from './lib/toggle';
 import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
+import { ScoreForm } from './score/score-form';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Designesy — Design intelligence infrastructure',
+  title: 'Designesy — Score any site against the design contract',
   description:
-    'Design intelligence infrastructure for a humane creative civilization. Portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, cite, and remix.',
+    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 26 checks, one grade, real-time. The design legitimacy standard.',
   path: '/',
-  ogTitle: 'Designesy — Design intelligence infrastructure',
+  ogTitle: 'Designesy — The design legitimacy standard',
   ogDescription:
-    'Sources into principles, principles into contracts, contracts into tools, tools into better designed work. Versioned contracts, machine exports, and a public provenance graph.',
+    '26 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
   twitterDescription:
-    'Design intelligence infrastructure — contracts, kits, labs, and field checks. designesy.org',
+    'Score any site against the Designesy design contract. 26 checks. One grade. designesy.org',
 });
 
 const PILLARS = [
   {
     number: '01',
-    title: 'Design systems',
-    text: 'Reusable rules for artifacts, interfaces, and reviewable decisions.',
+    title: 'Taste codified',
+    text: 'The contract encodes design judgment — tokens, motion, acoustic, takt, cadence — so taste survives any tool, any team, any AI.',
   },
   {
     number: '02',
-    title: 'Review discipline',
-    text: 'Clear checkpoints for quality, accessibility, provenance, and platform fit.',
+    title: 'Verification as proof',
+    text: '26 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
   },
   {
     number: '03',
-    title: 'Public artifacts',
-    text: 'A controlled surface for docs, experiments, and publishing-ready work.',
+    title: 'Anti-generic by design',
+    text: 'Fifteen anti-generic tells detect when a surface has defaulted to the mean. No generator has this. The contract is the structural defense against AI sameness.',
   },
   {
     number: '04',
-    title: 'Intelligence infrastructure',
-    text: 'A practical bridge between source material, design contracts, and shipped outputs.',
+    title: 'Multi-surface hardening',
+    text: 'Every new surface that ingests the contract stress-tests it. Each failure closes a gap. The contract gets stronger with every tool that touches it.',
   },
-];
-
-const PIPELINE = [
-  { num: '01', label: 'Sources', note: 'Provenance' },
-  { num: '02', label: 'Principles', note: 'Judgment' },
-  { num: '03', label: 'Contracts', note: 'Rules' },
-  { num: '04', label: 'Tools', note: 'Practice' },
-  { num: '05', label: 'Artifacts', note: 'Shipped' },
 ];
 
 const SURFACES = [
@@ -91,54 +84,14 @@ const SURFACES = [
 
 const FIELD = [
   {
-    href: '/open',
-    badge: 'Open',
-    status: 'v0.1',
-    title: 'Open design intelligence',
-    lede: 'Portable design judgment — yours to fetch, run, and remix.',
-    desc: 'Every contract, kit, lab, and field check. Human index and machine feed, kept in sync. Point your agent at open.json.',
-    arrow: 'Browse the catalog →',
-    kind: 'open' as const,
-  },
-  {
     href: '/contracts/design-system',
     badge: 'Contract',
     status: 'v0.3.0',
-    title: 'Design system',
+    title: 'Design system contract',
     lede: 'The rules behind this site — portable and versioned.',
     desc: 'Tokens, motion, components, Poise + Takt + Cadence rules. Human overview plus a machine export agents can cite directly.',
     arrow: 'Read the contract →',
     kind: 'contract' as const,
-  },
-  {
-    href: '/labs/poise',
-    badge: 'Lab One',
-    status: 'Live',
-    title: 'Poise',
-    lede: 'How this site responds when you touch it.',
-    desc: 'Wordmark breath, press settle, sound preference, reduced motion. Lab rules that compiled into the contract.',
-    arrow: 'See the lab →',
-    kind: 'lab' as const,
-  },
-  {
-    href: '/labs/takt',
-    badge: 'Lab Two',
-    status: 'Live',
-    title: 'Takt',
-    lede: 'How an interface feels under your hands.',
-    desc: 'Concentric radii, press scale, image outlines, hit areas, stagger rhythm — rules adopted into contract v0.1.2.',
-    arrow: 'See the lab →',
-    kind: 'lab' as const,
-  },
-  {
-    href: '/labs/cadence',
-    badge: 'Lab Three',
-    status: 'Live',
-    title: 'Cadence',
-    lede: 'The rhythm of text on a page.',
-    desc: 'Font smoothing, rem-based scale, line-height by role, tracking by size, measure, text-wrap, tabular numbers, selection — rules adopted into contract v0.1.3.',
-    arrow: 'See the lab →',
-    kind: 'lab' as const,
   },
   {
     href: '/kits/design-review',
@@ -182,65 +135,14 @@ const PRINCIPLES_PREVIEW = [
 export default function HomePage() {
   return (
     <>
-      {/* --- Topbar --- */}
-      <Topbar />
+      <Topbar scrolled />
 
       <main id="main-content" className="site-shell">
-        {/* --- Hero --- */}
+        {/* --- Score hero --- */}
         <section className="hero" aria-labelledby="hero-title">
-          <div className="hero-seam" aria-hidden="true">
-            <span className="hero-seam-line" />
-            <div className="hero-seam-constellation">
-              {/* Modular mark language — same 5 elements as the brand mark,
-                  docked on a vertical seam before dispersing into field icons. */}
-              <svg
-                className="hero-seam-mark"
-                viewBox="0 0 256 406"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                {/* Brand mark geometry — local space from asset builder (256×406) */}
-                {/* 1 Signal dot — emits a pulse ring on hover */}
-                <g className="seam-shape seam-dot-group">
-                  <circle className="seam-dot" cx="200" cy="56" r="56" />
-                  <circle className="seam-dot-pulse" cx="200" cy="56" r="56" fill="none" stroke="var(--signal-light)" strokeWidth="2" opacity="0" />
-                </g>
-                {/* 2 Orbit quarter — NW of (112,266) r112 · M0,266 A… 112,154 L112,266 Z */}
-                <g className="seam-shape seam-orbit-group">
-                  <path
-                    className="seam-orbit"
-                    d="M0 266 A112 112 0 0 1 112 154 L112 266 Z"
-                  />
-                </g>
-                {/* 3 Infrastructure square */}
-                <g className="seam-shape seam-square-group">
-                  <rect
-                    className="seam-square"
-                    x="144"
-                    y="154"
-                    width="112"
-                    height="112"
-                  />
-                </g>
-                {/* 4 Motion triangle */}
-                <g className="seam-shape seam-triangle-group">
-                  <path
-                    className="seam-triangle"
-                    d="M0 406 L112 406 L112 294 Z"
-                  />
-                </g>
-                {/* 5 Stability quarter — SE of (144,294) r112 · M144,294 H256 A… 144,406 Z */}
-                <g className="seam-shape seam-block-group">
-                  <path
-                    className="seam-block"
-                    d="M144 294 H256 A112 112 0 0 1 144 406 Z"
-                  />
-                </g>
-              </svg>
-            </div>
-          </div>
-          <p className="hero-eyebrow fade-up" data-scramble>Design intelligence infrastructure</p>
+          <p className="hero-eyebrow fade-up" data-scramble>
+            The design legitimacy standard
+          </p>
           <h1
             className="wordmark-hero hero-title"
             id="hero-title"
@@ -248,67 +150,78 @@ export default function HomePage() {
             data-cuelume-press="sparkle"
             data-firework
           >
-            <span className="wordmark-shimmer" data-scramble>designesy</span>
+            <span className="wordmark-shimmer" data-scramble>
+              designesy
+            </span>
             <span className="dot">.</span>
           </h1>
           <p className="hero-lede fade-up fade-up-delay-2" data-scramble>
-            Design intelligence infrastructure for a humane creative civilization.
+            AI makes execution free. We make execution yours.
           </p>
           <p className="hero-body fade-up fade-up-delay-3">
-            Sources into principles. Principles into contracts. Contracts into
-            tools. Tools into better designed work.
+            Score any site against the Designesy design system contract. 26 checks.
+            One grade. The contract encodes taste; the score proves it; the
+            verification engine is the moat that survives AI commoditization.
           </p>
           <div className="hero-actions fade-up fade-up-delay-4">
             <Link
               className="button primary"
-              href="/open"
+              href="#score"
               data-cuelume-hover="chime"
               data-cuelume-press
               data-firework
             >
-              Open design intelligence
+              Score your site
             </Link>
             <Link
               className="button ghost"
-              href="/kits/design-review"
+              href="/contracts/design-system"
               data-cuelume-hover="tick"
               data-cuelume-press
             >
-              Use Design Review
+              Read the contract
             </Link>
           </div>
         </section>
 
-        {/* --- Pipeline diagram --- */}
+        {/* --- Score form (the product, front and center) --- */}
         <section
-          className="pipeline fade-up fade-up-delay-5"
-          aria-label="Designesy system flow"
+          id="score"
+          className="section score-hero-section"
+          aria-labelledby="score-title"
         >
-          <p className="pipeline-eyebrow">System flow</p>
-          <ol className="pipeline-track">
-            {PIPELINE.map((step, i) => (
-              <li
-                className={`pipeline-step${i === PIPELINE.length - 1 ? ' is-end' : ''}`}
-                key={step.label}
-                data-cuelume-hover="tick"
-              >
-                <span className="pipeline-node" aria-hidden="true">
-                  <span className="pipeline-node-core" />
-                </span>
-                <span className="pipeline-num">{step.num}</span>
-                <span className="pipeline-label">{step.label}</span>
-                <span className="pipeline-note">{step.note}</span>
-              </li>
-            ))}
-          </ol>
+          <p className="section-eyebrow">Score any site</p>
+          <h2 className="section-title" id="score-title" data-scramble>
+            26 checks. One grade.
+          </h2>
+          <p className="surface-lede">
+            Enter any URL. Get a verified score against the Designesy design
+            system contract — real-time, no login. Nobody passes it yet. Find
+            out how close you are.
+          </p>
+          <ScoreForm />
+          <p className="score-contract-note">
+            Every check traces back to a specific token or rule in the{' '}
+            <a href="/contracts/design-system" className="text-link">
+              design system contract
+            </a>
+            . The score is the output metric: not whether you read the contract,
+            but whether your design actually passes it.
+          </p>
         </section>
 
-        {/* --- Pillars --- */}
+        {/* --- Pillars: reframed as brand-legitimacy infrastructure --- */}
         <section className="section" aria-labelledby="pillars-title">
-          <p className="section-eyebrow">What Designesy does</p>
+          <p className="section-eyebrow">Why it matters</p>
           <h2 className="section-title" id="pillars-title" data-scramble>
-            A compact system for design work.
+            Brand legitimacy infrastructure.
           </h2>
+          <p className="surface-lede">
+            When execution is free, design coherence becomes the new legitimacy
+            signal. A site that is visually consistent, motion-coherent, and
+            takt-disciplined reads as real. The contract is what makes that
+            verifiable.
+          </p>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
               <Toggle
@@ -356,7 +269,6 @@ export default function HomePage() {
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
               >
-                {/* Grid rings — 3 concentric octagons */}
                 {[0.33, 0.66, 1].map((ring, ri) => {
                   const r = 80 * ring;
                   const pts = [];
@@ -373,7 +285,6 @@ export default function HomePage() {
                   );
                 })}
 
-                {/* Axis lines from center to outer ring */}
                 {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
                   const angle = (i * 45 - 90) * Math.PI / 180;
                   return (
@@ -388,7 +299,6 @@ export default function HomePage() {
                   );
                 })}
 
-                {/* Score polygon — 8 dimensions, all high */}
                 {(() => {
                   const scores = [0.95, 0.90, 0.95, 0.88, 0.92, 0.95, 0.90, 1.0];
                   const pts = scores.map((score, i) => {
@@ -404,7 +314,6 @@ export default function HomePage() {
                   );
                 })()}
 
-                {/* Score points */}
                 {(() => {
                   const scores = [0.95, 0.90, 0.95, 0.88, 0.92, 0.95, 0.90, 1.0];
                   return scores.map((score, i) => {
@@ -422,7 +331,6 @@ export default function HomePage() {
                   });
                 })()}
 
-                {/* Axis labels */}
                 {[
                   { label: 'Type', i: 0 },
                   { label: 'Motion', i: 1 },
@@ -470,7 +378,7 @@ export default function HomePage() {
         <section className="section" aria-labelledby="field-title">
           <p className="section-eyebrow">Now live</p>
           <h2 className="section-title" id="field-title" data-scramble>
-            Open stack, contract, labs, and kit.
+            Contract, labs, and kit.
           </h2>
           <div className="field-grid" data-reveal-group>
             {FIELD.map((item) => {
@@ -486,13 +394,7 @@ export default function HomePage() {
                   data-reveal
                   key={item.href}
                   data-cuelume-hover={
-                    item.kind === 'open'
-                      ? 'sparkle'
-                      : item.kind === 'lab'
-                        ? 'bloom'
-                        : item.kind === 'kit'
-                          ? 'chime'
-                          : 'tick'
+                    item.kind === 'kit' ? 'chime' : 'tick'
                   }
                   data-cuelume-press
                   {...externalProps}
@@ -505,13 +407,9 @@ export default function HomePage() {
                       className={`mark-glyph mark-glyph--${item.kind}`}
                       aria-hidden="true"
                       title={
-                        item.kind === 'open'
-                          ? 'Open mark · origin signal'
-                          : item.kind === 'contract'
-                            ? 'Contract mark · structure'
-                            : item.kind === 'kit'
-                              ? 'Kit mark · usable package'
-                              : 'Lab mark · living experiment'
+                        item.kind === 'contract'
+                          ? 'Contract mark · structure'
+                          : 'Kit mark · usable package'
                       }
                     >
                       <span className="mark-glyph-core" />
@@ -569,12 +467,12 @@ export default function HomePage() {
             <div className="row-stack" role="list">
               {[
                 {
-                  title: 'Open design intelligence',
-                  meta: 'Human index /open and machine feed /open.json',
-                },
-                {
                   title: 'Design system contract v0.3.0',
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
+                },
+                {
+                  title: 'Verification engine · 26 checks',
+                  meta: 'Live on /score · scores any URL against the contract in real-time',
                 },
                 {
                   title: 'Lab One · Poise',
@@ -593,8 +491,8 @@ export default function HomePage() {
                   meta: 'Portable review package · human + machine export',
                 },
                 {
-                  title: 'Field checks · Poise, Takt, and Cadence',
-                  meta: 'Labs reviewed with Kit One · pass with notes',
+                  title: 'Multi-surface stress log',
+                  meta: 'v0.dev, Lovable, Bolt, Framer, Stripe scored against the contract',
                 },
                 {
                   title: 'Keyboard path',
@@ -623,7 +521,6 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* --- Footer --- */}
       <Footer />
     </>
   );
