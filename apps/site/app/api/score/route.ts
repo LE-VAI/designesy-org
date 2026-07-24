@@ -394,9 +394,9 @@ function checkFontSmoothing(css: string): CheckResult {
 
 function checkRemScale(css: string): CheckResult {
   const cleaned = css
-    .replace(/(?:html|:root|body)\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}/gis, '')
-    .replace(/[\w.-]*(?:radar|chart|svg|marker|node|dot|arc|ring|halo|beam)[\w.-]*\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}/gis, '')
-    .replace(/\.?[\w-]+\s*\{[^}]*(?:fill|stroke)[^}]*font-size\s*:\s*\d+px[^}]*\}/gis, '');
+    .replace(/(?:html|:root|body)\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}/gi, '')
+    .replace(/[\w.-]*(?:radar|chart|svg|marker|node|dot|arc|ring|halo|beam)[\w.-]*\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}/gi, '')
+    .replace(/\.?[\w-]+\s*\{[^}]*(?:fill|stroke)[^}]*font-size\s*:\s*\d+px[^}]*\}/gi, '');
   const pxFonts = cleaned.match(/font-size\s*:\s*(\d+)px/gi) || [];
   const sizes = pxFonts.map((s) => s.match(/(\d+)/)?.[1]).filter(Boolean);
   if (sizes.length > 0) return { status: 'FAIL', detail: `non-root px font-sizes found: ${sizes.slice(0, 5)}` };
