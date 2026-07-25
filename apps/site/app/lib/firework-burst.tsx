@@ -123,10 +123,19 @@ export function FireworkBurst() {
     };
 
     const handleTrigger = (e: MouseEvent | PointerEvent) => {
-      const cx = e.clientX;
-      const cy = e.clientY;
-      if (typeof cx !== 'number' || typeof cy !== 'number') return;
-      if (cx === 0 && cy === 0) return;
+      let cx = typeof e.clientX === 'number' && e.clientX !== 0 ? e.clientX : (e as MouseEvent).pageX;
+      let cy = typeof e.clientY === 'number' && e.clientY !== 0 ? e.clientY : (e as MouseEvent).pageY;
+      if (!cx && !cy) {
+        const target = e.target as Element | null;
+        if (target && target.getBoundingClientRect) {
+          const rect = target.getBoundingClientRect();
+          cx = rect.left + rect.width / 2;
+          cy = rect.top + rect.height / 2;
+        } else {
+          cx = window.innerWidth / 2;
+          cy = window.innerHeight / 2;
+        }
+      }
       burst(cx, cy);
     };
 
