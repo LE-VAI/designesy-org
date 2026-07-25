@@ -67,9 +67,9 @@ function normalizeInput(input: string): string {
   return clean;
 }
 
-export function ScoreForm() {
+export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [status, setStatus] = useState<Status>('idle');
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(initialUrl);
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');

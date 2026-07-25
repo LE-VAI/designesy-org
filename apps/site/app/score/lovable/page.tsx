@@ -1,0 +1,35 @@
+import type { Metadata } from 'next';
+import { pageMeta } from '../../lib/site-meta';
+import { TargetLanding } from '../target-landing';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export const metadata: Metadata = pageMeta({
+  title: 'Score your Lovable site',
+  description:
+    'Score any Lovable-built site against the Designesy design system contract. 26 checks, one grade, no login. lovable.dev currently scores A · 93.2.',
+  path: '/score/lovable',
+  ogTitle: 'Score your Lovable site · Designesy',
+  ogDescription:
+    '26 automated verification checks against a real design contract. Built on Lovable? Score your site.',
+  twitterDescription: 'Score your Lovable site — designesy.org/score/lovable',
+});
+
+export default function ScoreLovablePage() {
+  return (
+    <TargetLanding
+      platform="Lovable"
+      slug="lovable"
+      eyebrow="Score · Lovable"
+      headline="Score your Lovable site"
+      lede="26 checks. One grade. Built on Lovable? See how close you are to a published design contract."
+      body="Lovable ships good defaults. The Designesy engine runs the same 26 checks against any Lovable-built URL and returns an honest grade — pass, fail, warn, or skip — against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with lovable.dev, which already scores A."
+      exampleUrl="lovable.dev"
+      exampleScore="A · 93.2"
+      caseStudyHref="/work/lovable-dev"
+      caseStudyTitle="lovable.dev · A on arrival"
+      caseStudyMeta="Case study — an AI-built site that passes the contract without citing it"
+    />
+  );
+}
