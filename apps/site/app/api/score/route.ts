@@ -262,7 +262,11 @@ function checkWillChange(css: string): CheckResult {
   const matches = css.match(/will-change\s*:\s*([^;}]+)/gi) || [];
   for (const m of matches) {
     const val = m.replace(/will-change\s*:\s*/i, '').trim().toLowerCase();
-    if (val !== 'transform' && val !== 'opacity' && val !== 'transform, opacity' && val !== 'opacity, transform') {
+    // Per-token subset test — accepts minified/reordered forms (e.g. "transform,opacity")
+    // while still rejecting scroll-position, contents, or any non-transform/opacity value.
+    const tokens = val.split(',').map(s => s.trim()).filter(Boolean);
+    const ok = tokens.length > 0 && tokens.every(t => t === 'transform' || t === 'opacity');
+    if (!ok) {
       return { id: 'v12', item: 'will-change restricted to transform and opacity only', category: 'motion', status: 'WARN', detail: `found will-change: ${val}` };
     }
   }
@@ -272,6 +276,38 @@ function checkWillChange(css: string): CheckResult {
 function checkFocusVisible(css: string): CheckResult {
   if (/:focus-visible/i.test(css)) return { id: 'v03', item: 'Primary interactive elements show focus-visible rings', category: 'interaction', status: 'PASS', detail: ':focus-visible declared' };
   return { id: 'v03', item: 'Primary interactive elements show focus-visible rings', category: 'interaction', status: 'FAIL', detail: 'missing :focus-visible rules' };
+}
+
+function checkTextWrap(css: string): CheckResult {
+  const balance = /text-wrap\s*:\s*balance/i.test(css);
+  const pretty = /text-wrap\s*:\s*pretty/i.test(css);
+  if (balance && pretty) return { id: 'v18', item: 'text-wrap: balance + pretty both present in live CSS', category: 'cadence', status: 'PASS', detail: 'both text-wrap values present' };
+  return { id: 'v18', item: 'text-wrap: balance + pretty both present in live CSS', category: 'cadence', status: 'WARN', detail: `balance=${balance} pretty=${pretty}` };
+}
+
+function checkCadenceRules(css: string): CheckResult {
+  // v14 — umbrella Cadence contract-diff. Verifies the key Cadence rules from
+  // contract.cadence are present in the live CSS. This is strictly weaker than
+  // the individual checks (v15 font-smoothing, v16 rem-scale, v17 line-height,
+  // v18 text-wrap, x01/x02/x03 resolved tensions, v19 tabular-nums) — it confirms
+  // the Cadence section as a whole is represented, not individual rules.
+  const rules = [
+    { name: 'font-smoothing', re: /font-smoothing\s*:\s*(antialiased|grayscale)/i },
+    { name: 'rem-based sizes', re: /font-size\s*:\s*[\d.]+rem/i },
+    { name: 'line-height', re: /line-height\s*:\s*[\d.]+/i },
+    { name: 'text-wrap', re: /text-wrap\s*:\s*(balance|pretty)/i },
+    { name: 'tabular-nums', re: /tabular-nums/i },
+  ];
+  const missing = rules.filter(r => !r.re.test(css)).map(r => r.name);
+  if (missing.length === 0) return { id: 'v14', item: 'Cadence typography rules match live CSS and contract.cadence', category: 'cadence', status: 'PASS', detail: 'all Cadence rules present' };
+  return { id: 'v14', item: 'Cadence typography rules match live CSS and contract.cadence', category: 'cadence', status: 'WARN', detail: `missing: ${missing.join(', ')}` };
+}
+
+function checkTabularNums(css: string): CheckResult {
+  // v19 — count of tabular-nums instances. Contract threshold is 8.
+  const count = (css.match(/tabular-nums/gi) || []).length;
+  if (count >= 8) return { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', status: 'PASS', detail: `${count} instances found` };
+  return { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', status: 'WARN', detail: `only ${count} instances (threshold: 8)` };
 }
 
 function checkReducedMotion(css: string): CheckResult {
@@ -326,12 +362,12 @@ async function scoreUrl(targetUrl: string) {
     checkTransitionAll(css),
     checkWillChange(css),
     { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: 'press scale compliant' },
-    { id: 'v14', item: 'Cadence typography rules match live CSS and contract.cadence', category: 'cadence', status: 'SKIP', detail: 'requires Cadence check' },
+    checkCadenceRules(css),
     checkFontSmoothing(css),
     checkRemScale(css),
     { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'PASS', detail: 'line-height verified' },
-    { id: 'v18', item: 'text-wrap: balance + pretty both present in live CSS', category: 'cadence', status: 'WARN', detail: 'text-wrap rule evaluated' },
-    { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', status: 'SKIP', detail: 'tabular-nums check' },
+    checkTextWrap(css),
+    checkTabularNums(css),
     { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: 'selection style verified' },
     { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'SKIP', detail: 'requires CDP trace' },
     checkContrastSignal(tokens),
