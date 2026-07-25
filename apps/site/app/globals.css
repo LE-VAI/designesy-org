@@ -144,22 +144,25 @@ p {
   background-clip + multi-stop signal sweep — brand blue family only,
   dual highlight for depth, seamless linear loop. Dot stays signal breath.
 */
-.wordmark-hero .wordmark-shimmer {
+.wordmark-hero .wordmark-shimmer,
+.wordmark-hero .wordmark-shimmer *,
+.wordmark-shimmer,
+.wordmark-shimmer * {
   background-image: linear-gradient(
     100deg,
     #f4f6ff 0%,
     #e8ecff 12%,
-    var(--ink) 22%,
+    #ffffff 22%,
     var(--ink) 34%,
     #5b78f0 42%,
     #9eb0ff 46.5%,
-    #dce4ff 49%,
+    #fecc34 49%,
     #ffffff 50.5%,
-    #dce4ff 52%,
+    #fecc34 52%,
     #9eb0ff 54.5%,
     #5b78f0 58%,
     var(--signal) 64%,
-    var(--ink) 72%,
+    #ffffff 72%,
     var(--ink) 84%,
     #e8ecff 92%,
     #f4f6ff 100%
@@ -167,11 +170,11 @@ p {
   background-size: 320% 100%;
   background-position: 100% 50%;
   background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: textShimmer 4.2s linear infinite;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: textShimmer 3.8s linear infinite !important;
 }
 
 .wordmark-hero .dot {
@@ -5370,10 +5373,7 @@ a.field-card:active {
 
   .wordmark-hero .wordmark-shimmer,
   .text-shimmer {
-    animation: none !important;
-    background-image: none !important;
-    color: var(--ink) !important;
-    -webkit-text-fill-color: var(--ink) !important;
+    animation-duration: 12s !important;
   }
 
   /* Tier 2: Soften entrance animations — snap to final state instantly */
