@@ -135,7 +135,7 @@ export function ScoreForm() {
   }
 
   return (
-    <div className="score-form" style={{ width: '100%', maxWidth: '760px', marginLeft: 0, marginRight: 'auto' }}>
+    <div className="score-form" style={{ width: '100%', maxWidth: '680px', marginLeft: 0, marginRight: 'auto' }}>
       {/* Left-Aligned Input Card */}
       <form
         ref={formRef}
