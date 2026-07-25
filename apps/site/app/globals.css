@@ -6667,6 +6667,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     grid-column: 2;
   }
 }
+} /* close @media (prefers-reduced-motion: reduce) — mobile CSS below is top-level */
 
 /* ── Mobile optimization (homepage score-as-home reframe) ──────────────── */
 
