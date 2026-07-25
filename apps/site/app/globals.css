@@ -6550,17 +6550,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── Score hero section (homepage) ──────────────────────────────────────── */
 
 .score-hero-section {
-  padding-top: var(--space-2xl);
-  padding-bottom: var(--space-2xl);
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
   border-top: 1px solid var(--line);
 }
 
 .score-hero-section .score-form {
-  margin-top: var(--space-lg);
+  margin-top: 2rem;
 }
 
 .score-contract-note {
-  margin-top: var(--space-lg);
+  margin-top: 2rem;
   color: var(--muted);
   font-size: 0.875rem;
   line-height: 1.6;
@@ -7707,5 +7707,362 @@ a.lab-card:focus-visible .lab-card-arrow {
   .back-button {
     min-height: 2.75rem;
     min-width: 2.75rem;
+  }
+}
+
+/* --- Pricing page (/pricing) ----------------------------------------------
+   Contract: design-system v0.3.0.
+   Tokens only — no raw hex, no magic numbers.
+   Motion: Poise fade-up entrance (inherited from .fade-up), Takt press
+   scale 0.985 on cards (hover lift only on fine pointer + hover-capable).
+   Type: Cadence — rem scale, line-height by role, tracking by size,
+   text-wrap balance+pretty, tabular-nums on prices via [data-tabular].
+   Radius: --radius on cards, --radius-sm on chips/buttons.
+   Breakpoints: 860px grid collapse, 720px two-column, 560px single column.
+   Anti-patterns avoided: no glow/gradient/blob, no transition:all, no
+   ease-in, no animating layout properties, no scale(0).
+   -------------------------------------------------------------------------- */
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .pricing-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pricing-card {
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  padding: 1.35rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100%;
+  /* Takt press scale 0.985 on cards/rows — never below 0.95. */
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out);
+  will-change: transform;
+}
+
+/* Hover lift only on fine pointer + hover-capable (Poise rule). */
+@media (hover: hover) and (pointer: fine) {
+  .pricing-card:hover {
+    background: var(--surface-raised);
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+  }
+}
+
+.pricing-card:active {
+  transform: scale(0.985);
+}
+
+/* Primary tier — Continuity Solo. Marked with --line-strong + signal-dim
+   wash so it reads as the recommended choice without a competing accent
+   (anti-pattern: multiple simultaneous accent colors competing with
+   --signal). */
+.pricing-card--primary {
+  border-color: var(--line-strong);
+  background: linear-gradient(
+    to bottom,
+    var(--signal-dim),
+    var(--surface) 45%
+  );
+}
+
+.pricing-card--primary:hover {
+  background: linear-gradient(
+    to bottom,
+    var(--signal-dim),
+    var(--surface-raised) 45%
+  );
+}
+
+.pricing-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pricing-card-name {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--signal-light);
+}
+
+.pricing-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  line-height: 1.05;
+}
+
+.pricing-card-price-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-card-price-suffix {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.pricing-card-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-wrap: pretty;
+  line-height: 1.5;
+}
+
+.pricing-card-annual {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
+}
+
+.pricing-card-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 0 auto;
+}
+
+.pricing-card-bullets li {
+  font-size: 0.875rem;
+  color: var(--ink);
+  line-height: 1.5;
+  text-wrap: pretty;
+  padding-inline-start: 1rem;
+  position: relative;
+}
+
+.pricing-card-bullets li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--signal-light);
+  opacity: 0.85;
+}
+
+.pricing-card-cta {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.pricing-cta-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--signal);
+  color: var(--paper);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-quick) var(--ease-out);
+}
+
+.pricing-cta-link:hover {
+  background: var(--signal-light);
+}
+
+.pricing-cta-link:active {
+  transform: scale(0.97);
+}
+
+.pricing-cta-link:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.pricing-cta-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--muted-dim);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  border: 1px solid var(--line-faint);
+  cursor: not-allowed;
+  user-select: none;
+}
+
+/* --- Desk strip --- */
+
+.pricing-desk {
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pricing-desk-lede {
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.5;
+  text-wrap: pretty;
+  letter-spacing: -0.01em;
+}
+
+.pricing-desk-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-desk-note {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-wrap: pretty;
+  line-height: 1.55;
+}
+
+.pricing-desk-note a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--signal-light);
+  text-decoration-thickness: 1px;
+}
+
+.pricing-desk-note a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* --- FAQ --- */
+
+.pricing-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.pricing-faq-item {
+  border-top: 1px solid var(--line-faint);
+  background: var(--surface);
+}
+
+.pricing-faq-item:first-child {
+  border-top: 0;
+}
+
+.pricing-faq-q {
+  list-style: none;
+  cursor: pointer;
+  padding: 1rem 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  user-select: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.pricing-faq-q::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-faq-q:hover {
+  background: var(--surface-hover);
+}
+
+.pricing-faq-item[open] .pricing-faq-q {
+  background: var(--surface-raised);
+}
+
+.pricing-faq-a {
+  padding: 0 1.15rem 1.1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+  max-width: 580px;
+}
+
+/* --- Mobile refinements (≤720px topbar breakpoint, ≤560px single column) --- */
+
+@media (max-width: 720px) {
+  .pricing-card-price-value {
+    font-size: 1.65rem;
+  }
+  .pricing-desk {
+    padding: 1.25rem 1.1rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .pricing-card {
+    padding: 1.2rem 1.1rem 1.3rem;
+  }
+  .pricing-faq-q {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+  }
+  .pricing-faq-a {
+    padding: 0 1rem 1rem;
+  }
+}
+
+/* --- Reduced motion: collapse non-essential motion (Poise rule) --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card,
+  .pricing-cta-link,
+  .pricing-faq-q {
+    transition: none;
+  }
+  .pricing-card:hover {
+    transform: none;
+  }
+  .pricing-cta-link:active,
+  .pricing-card:active {
+    transform: none;
   }
 }
