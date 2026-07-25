@@ -142,12 +142,36 @@ export function ScoreForm() {
         className="score-input-card"
       >
         <div className="score-input-col">
-          <div className="score-input-wrapper">
-            <span className="score-input-icon">
+          {/* Flawless Flex Box Container — Icon and Input are separate flex siblings */}
+          <div
+            className="score-input-flex-box"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              height: '52px',
+              background: '#0a0a0e',
+              border: '1px solid #22222e',
+              borderRadius: '10px',
+              padding: '0 16px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <span
+              style={{
+                color: '#3358e8',
+                display: 'flex',
+                alignItems: 'center',
+                justify-content: 'center',
+                marginRight: '12px',
+                flexShrink: 0,
+                pointerEvents: 'none',
+              }}
+            >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4 10z" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z" />
               </svg>
             </span>
             <input
@@ -161,18 +185,19 @@ export function ScoreForm() {
               disabled={status === 'loading'}
               aria-label="Site URL to score"
               data-cuelume-hover="tick"
-              className="score-url-input"
+              className="score-url-input-inner"
               style={{
+                flex: 1,
                 width: '100%',
-                height: '52px',
-                padding: '0 16px 0 64px',
-                background: '#0a0a0e',
-                border: '1px solid #22222e',
-                borderRadius: '10px',
+                height: '100%',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
                 color: '#ffffff',
                 fontSize: '15px',
                 fontFamily: 'inherit',
-                outline: 'none',
+                padding: 0,
+                margin: 0,
                 boxSizing: 'border-box',
               }}
             />
@@ -488,8 +513,8 @@ export function ScoreForm() {
               </button>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '12px', color: '#888899', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '42px', background: '#0a0a0e', border: '1px solid #22222e', borderRadius: '8px', padding: '0 12px', boxSizing: 'border-box' }}>
+              <span style={{ color: '#888899', display: 'flex', alignItems: 'center', marginRight: '10px', flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -501,16 +526,15 @@ export function ScoreForm() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
+                  flex: 1,
                   width: '100%',
-                  height: '42px',
-                  paddingLeft: '38px',
-                  paddingRight: '16px',
-                  background: '#0a0a0e',
-                  border: '1px solid #22222e',
-                  borderRadius: '8px',
+                  height: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
                   color: '#ffffff',
                   fontSize: '13px',
-                  outline: 'none',
+                  padding: 0,
                   boxSizing: 'border-box',
                 }}
               />
