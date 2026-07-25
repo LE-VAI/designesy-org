@@ -151,7 +151,7 @@ export function ScoreForm() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              placeholder="designesy.org or nike.com"
+              placeholder="Enter any website URL…"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={status === 'loading'}
@@ -432,7 +432,7 @@ export function ScoreForm() {
         <div className="score-welcome-card">
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
-            Enter any public website URL above (e.g. designesy.org or nike.com). We fetch its CSS,
+            Enter any public website URL above — no https:// needed. We fetch its CSS,
             extract design tokens, and evaluate 26 verification checks against the Designesy
             contract v0.3.0. Real-time. No login required.
           </p>
