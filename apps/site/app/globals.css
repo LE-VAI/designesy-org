@@ -6669,10 +6669,43 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 } /* close @media (prefers-reduced-motion: reduce) — mobile CSS below is top-level */
 
-/* ── Mobile optimization (homepage score-as-home reframe) ──────────────── */
+/* ── Mobile hardening (score-as-homepage, full responsive) ────────────────
+   Breakpoints: 860px (tablet), 720px (large phone), 560px (phone), 380px (SE)
+   Goals: no horizontal overflow at any width, ≥40px touch targets, beautiful
+   typographic rhythm, density without cramping, graceful degradation.
+   ────────────────────────────────────────────────────────────────────────── */
 
+/* ── 860px: Tablet — 2-col grids stay, tighten spacing ──────────────────── */
+@media (max-width: 860px) {
+  /* Hero: remove the 280px sidebar reservation, let content breathe full-width */
+  .hero-eyebrow,
+  .hero-lede,
+  .hero-body,
+  .hero-actions {
+    max-width: 100%;
+  }
+
+  /* Wordmark: scale between desktop and phone */
+  .wordmark-hero {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+  }
+
+  /* Principle layout: stack the rail and radar vertically */
+  .principle-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* State layout: stack rows and marquee */
+  .state-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}
+
+/* ── 720px: Large phone — single column, tighten nav ────────────────────── */
 @media (max-width: 720px) {
-  /* Nav: tighter, fewer visible items, scrollable but with visible hint */
+  /* Nav: tighter spacing, scrollable with hidden scrollbar */
   .topbar-right {
     gap: 0.25rem;
   }
@@ -6682,23 +6715,23 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .nav-links a {
-    padding: 0.35rem 0.4rem;
+    padding: 0.4rem 0.45rem;
     font-size: 0.72rem;
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
   }
 
-  .sense-toggles {
-    gap: 0.15rem;
+  /* Sense toggles: bump to 36px for better touch */
+  .sense-toggle {
+    width: 36px;
+    height: 36px;
   }
 
-  .sound-toggle,
-  .haptics-toggle {
-    padding: 0.3rem;
-  }
-
-  /* Score hero section: tighten padding */
+  /* Score hero: tighten */
   .score-hero-section {
     padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    padding-bottom: 1.75rem;
   }
 
   .score-hero-section .score-form {
@@ -6708,14 +6741,15 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-contract-note {
     margin-top: 1rem;
     font-size: 0.78rem;
+    line-height: 1.5;
   }
 
-  /* Score results: make grade + meta stack cleanly */
+  /* Score results: stack grade + meta */
   .score-grade {
     font-size: 2.5rem;
   }
 
-  /* Hero: reduce title size on tablet */
+  /* Hero: tablet-scale title */
   .wordmark-hero {
     font-size: 2.75rem;
   }
@@ -6728,17 +6762,143 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.85rem;
     margin-bottom: 1.5rem;
   }
-}
 
-@media (max-width: 560px) {
-  /* Nav: hide less-critical routes, keep the essentials visible */
-  .nav-links a {
-    padding: 0.3rem 0.35rem;
-    font-size: 0.68rem;
-    letter-spacing: -0.01em;
+  /* Section spacing: comfortable but tighter than desktop */
+  .section {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
   }
 
-  /* Hero: shrink title for small phones */
+  /* Section titles: scale down */
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .surface-lede {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  /* Pillars: tighten */
+  .pillar {
+    padding: 1.25rem;
+  }
+
+  .pillar h3 {
+    font-size: 1rem;
+  }
+
+  .pillar p {
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  /* Field cards: tighten */
+  .field-card {
+    padding: 1.1rem;
+  }
+
+  .field-card-title {
+    font-size: 1rem;
+  }
+
+  .field-card-lede {
+    font-size: 0.85rem;
+  }
+
+  .field-card-desc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  /* Surface cards: tighten */
+  .surface-card {
+    padding: 1.1rem;
+  }
+
+  .surface-card-label {
+    font-size: 1rem;
+  }
+
+  .surface-card-desc {
+    font-size: 0.8rem;
+  }
+
+  /* Principles: tighter */
+  .principle {
+    gap: 0.5rem;
+  }
+
+  .principle-body h3 {
+    font-size: 0.9rem;
+  }
+
+  .principle-body p {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  /* Row stack: tighten */
+  .row-stack {
+    gap: 0.5rem;
+  }
+
+  .row-title {
+    font-size: 0.88rem;
+  }
+
+  .row-meta {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  /* Footer: tighten padding */
+  .footer-inner {
+    gap: 1rem;
+  }
+
+  /* Footer dock: make the marquee track scrollable on touch instead of overflowing */
+  .footer-dock {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .footer-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Director dock: smaller, closer to edge on phones */
+  .director-dock {
+    width: 2rem;
+    height: 2rem;
+    right: 0.5rem;
+  }
+
+  /* Back button: closer to bottom edge */
+  .back-button {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+/* ── 560px: Phone — full single column, stacked CTAs, full-width inputs ─── */
+@media (max-width: 560px) {
+  /* Nav: denser links for small screens */
+  .nav-links a {
+    padding: 0.35rem 0.35rem;
+    font-size: 0.68rem;
+    letter-spacing: -0.01em;
+    min-height: 2.25rem;
+  }
+
+  /* Site shell: less side padding */
+  .site-shell {
+    padding: 0 1rem;
+  }
+
+  /* Hero: phone-scale title */
   .wordmark-hero {
     font-size: 2.1rem;
     letter-spacing: -0.04em;
@@ -6761,25 +6921,26 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .hero-body {
     font-size: 0.8rem;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   .hero-actions {
     gap: 0.5rem;
   }
 
-  /* Score form: full-width submit, tighter input */
+  /* Score form: full-width submit, comfortable input */
   .score-input-row {
     gap: 0.5rem;
   }
 
   .score-url-input {
-    padding: 0.7rem 0.85rem;
-    font-size: 0.9rem;
+    padding: 0.75rem 0.85rem;
+    font-size: 16px; /* iOS auto-zoom prevention: ≥16px */
   }
 
   .score-submit {
     width: 100%;
+    min-height: 44px;
     padding: 0.7rem 1rem;
     font-size: 0.85rem;
   }
@@ -6815,9 +6976,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-check-detail {
     font-size: 0.72rem;
+    line-height: 1.4;
   }
 
-  /* Section spacing: tighten for mobile density */
+  /* Section spacing: mobile density */
   .section {
     padding-top: 2rem;
     padding-bottom: 2rem;
@@ -6833,10 +6995,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .surface-lede {
     font-size: 0.85rem;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
-  /* Pillars: tighten padding */
+  /* Pillars: comfortable padding */
   .pillar {
     padding: 1.25rem;
   }
@@ -6851,7 +7013,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .pillar p {
     font-size: 0.82rem;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   /* Field cards: tighten */
@@ -6869,7 +7031,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .field-card-desc {
     font-size: 0.78rem;
-    line-height: 1.45;
+    line-height: 1.5;
   }
 
   /* Surface cards: tighten */
@@ -6900,13 +7062,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .principle-body p {
     font-size: 0.78rem;
-    line-height: 1.45;
-  }
-
-  /* Health radar: shrink */
-  .health-radar-svg {
-    width: 150px;
-    height: 150px;
+    line-height: 1.5;
   }
 
   /* Row stack: tighter */
@@ -6920,9 +7076,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .row-meta {
     font-size: 0.72rem;
+    line-height: 1.4;
   }
 
-  /* Score hero section: extra tight on small phones */
+  /* Score hero: extra tight on small phones */
   .score-hero-section {
     padding-top: 1rem;
     padding-bottom: 1.25rem;
@@ -6931,13 +7088,31 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-hero-section .score-form {
     margin-top: 0.75rem;
   }
+
+  /* Footer: tighten */
+  .footer-inner {
+    gap: 0.75rem;
+  }
+
+  /* Buttons: minimum 44px touch target */
+  .button {
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+  }
+
+  /* Skip link: ensure visible touch target */
+  .skip-link {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+  }
 }
 
+/* ── 380px: iPhone SE / older Androids — extreme density ────────────────── */
 @media (max-width: 380px) {
-  /* Extra-small phones (iPhone SE, older Androids) */
   .nav-links a {
-    padding: 0.25rem 0.28rem;
+    padding: 0.3rem 0.28rem;
     font-size: 0.62rem;
+    min-height: 2rem;
   }
 
   .wordmark {
@@ -6952,6 +7127,10 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.88rem;
   }
 
+  .hero-body {
+    font-size: 0.76rem;
+  }
+
   .site-shell {
     padding: 0 0.75rem;
   }
@@ -6961,8 +7140,60 @@ a.lab-card:focus-visible .lab-card-arrow {
     padding-bottom: 1.75rem;
   }
 
+  .section-title {
+    font-size: 1.15rem;
+  }
+
+  .surface-lede {
+    font-size: 0.8rem;
+  }
+
   .score-url-input {
     padding: 0.65rem 0.75rem;
-    font-size: 0.85rem;
+    font-size: 16px; /* iOS auto-zoom prevention */
+  }
+
+  .score-submit {
+    min-height: 42px;
+    font-size: 0.82rem;
+  }
+
+  .pillar {
+    padding: 1rem;
+  }
+
+  .field-card {
+    padding: 1rem;
+  }
+
+  .surface-card {
+    padding: 1rem;
+  }
+}
+
+/* ── Landscape phone: short height — reduce hero, keep score visible ─────── */
+@media (max-width: 860px) and (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+    min-height: auto;
+  }
+
+  .wordmark-hero {
+    font-size: 2rem;
+  }
+
+  .hero-body {
+    margin-bottom: 0.75rem;
+  }
+
+  .score-hero-section {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .section {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 }
