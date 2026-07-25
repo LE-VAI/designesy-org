@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// Vercel Hobby plan caps function duration at 10s; Pro allows up to 60s.
-// The PSI API round-trip is ~3-8s, so 10s is sufficient for v21.
-// v02/v04 (Playwright) will need a Pro plan + higher maxDuration when enabled.
-export const maxDuration = 10;
+// Vercel Hobby caps at 10s (too short — PSI round-trip is 10-25s with a full
+// Lighthouse run). Pro allows up to 60s. We set 60s; on Hobby the function
+// will be killed at 10s and return a 504, which the client surfaces as an
+// audit error. Upgrade to Pro for the browser-audit path to fully work.
+// The PSI-only path (v21) can succeed on Hobby if CrUX field data is
+// available (fast ~2-3s response, no Lighthouse lab run needed).
+export const maxDuration = 60;
 
 // ── Rate limiting (in-memory, shared shape with /api/score) ────────────────
 // Browser audits are heavier than static scores — tighter limit.
@@ -106,13 +109,20 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
   const psiUrl = new URL('https://www.googleapis.com/pagespeedonline/v5/runPagespeed');
   psiUrl.searchParams.set('url', targetUrl);
   psiUrl.searchParams.set('strategy', 'mobile');
+  // Only request the performance category — without this, PSI runs all 5
+  // Lighthouse categories (performance + accessibility + best-practices + SEO
+  // + PWA), which takes 30-60s and blows past the function timeout.
+  // category=performance still returns CrUX field data + Lighthouse perf lab.
+  psiUrl.searchParams.set('category', 'performance');
   // LCP + CLS come from the loadingExperience (field data, CrUX).
   // INP is reported under FIRST_INPUT_DELAY_MS (field) when available; falls
   // back to lab diagnostics when field data is absent (new/small sites).
   if (apiKey) psiUrl.searchParams.set('key', apiKey);
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  // PSI with category=performance takes 10-25s (Lighthouse lab run on Google's
+  // infra). 45s gives margin for slow sites and Google backend latency.
+  const timeout = setTimeout(() => controller.abort(), 45000);
   try {
     const resp = await fetch(psiUrl.href, {
       signal: controller.signal,
