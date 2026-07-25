@@ -6943,7 +6943,9 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   color: var(--ink);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
 }
 
 .score-action-btn:hover {
@@ -6999,7 +7001,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
 }
 
 .score-filter-tab:hover {
@@ -7083,7 +7086,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
 }
 
 .score-category-chip:hover {
@@ -8064,5 +8068,184 @@ a.lab-card:focus-visible .lab-card-arrow {
   .pricing-cta-link:active,
   .pricing-card:active {
     transform: none;
+  }
+}
+/* ── Score History (free-tier local storage) ────────────────────────────── */
+
+.score-history-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.score-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.score-history-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin: 0;
+}
+
+.score-history-clear {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-clear:hover {
+  color: var(--text);
+}
+
+.score-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-item:hover {
+  border-color: var(--line-strong);
+}
+
+.score-history-emblem {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--surface-soft);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* Grade tints reuse the existing is-a/is-b/is-c/is-d/is-f grade palette
+   defined for score-hero-card. Same tokens, no new colors. */
+.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal)); border-color: var(--grade-a-line, var(--line-strong)); }
+.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal)); border-color: var(--grade-b-line, var(--line)); }
+.score-history-emblem.is-c { color: var(--grade-c-text, var(--muted)); border-color: var(--grade-c-line, var(--line)); }
+.score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
+.score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
+
+.score-history-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+}
+
+.score-history-url {
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-history-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-history-rerun {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--motion-short) var(--ease-quiet),
+              color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-rerun:hover {
+  border-color: var(--line-strong);
+}
+
+.score-history-foot {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.score-history-foot .text-link {
+  color: var(--signal);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: border-color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-foot .text-link:hover {
+  border-color: var(--signal);
+}
+
+/* Mobile: collapse the history item to two rows so the URL has room. */
+@media (max-width: 720px) {
+  .score-history-panel {
+    padding: 1rem;
+  }
+  .score-history-item {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.65rem;
+    padding: 0.55rem 0.65rem;
+  }
+  .score-history-body {
+    order: 2;
+    flex-basis: calc(100% - 3rem);
+  }
+  .score-history-rerun {
+    order: 3;
+    margin-left: auto;
+  }
+}
+
+/* Reduced motion: drop transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .score-history-clear,
+  .score-history-item,
+  .score-history-rerun,
+  .score-history-foot .text-link {
+    transition: none;
   }
 }
