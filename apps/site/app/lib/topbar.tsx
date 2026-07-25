@@ -32,6 +32,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const pathname = usePathname() || '/';
   const [isScrolled, setIsScrolled] = useState(scrolled);
   const [progress, setProgress] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const activeRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
@@ -52,6 +53,31 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
       window.removeEventListener('resize', onScroll);
     };
   }, [scrolled]);
+
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  // Close drawer on Escape
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
+  // Lock body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [drawerOpen]);
 
   useEffect(() => {
     if (!activeRef.current) return;
@@ -101,6 +127,16 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             <SoundToggle />
             <HapticsToggle />
           </div>
+          <button
+            className="nav-trigger"
+            aria-label="Toggle navigation"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen((o) => !o)}
+          >
+            <span className="nav-trigger-bar" />
+            <span className="nav-trigger-bar" />
+            <span className="nav-trigger-bar" />
+          </button>
         </div>
       </div>
       <div className="scroll-progress" aria-hidden="true">
@@ -109,6 +145,31 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
+      {drawerOpen && (
+        <div
+          className="nav-scrim open"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <nav
+        className={`nav-drawer${drawerOpen ? ' open' : ''}`}
+        aria-label="Mobile navigation"
+      >
+        {NAV_ROUTES.map((route) => {
+          const active = isActiveRoute(pathname, route.href);
+          return (
+            <Link
+              href={route.href}
+              key={route.href}
+              className={active ? 'is-active' : undefined}
+              aria-current={active ? 'page' : undefined}
+            >
+              {route.label}
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }
