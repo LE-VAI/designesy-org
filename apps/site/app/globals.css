@@ -7401,3 +7401,58 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.8rem;
   }
 }
+
+/* ── Mobile touch-target certification (≥44px) ───────────────────────────
+   Audit: CDP 390×844 empirical pass 2026-07-24 — 99/100 elements failed
+   the WCAG 2.1 / Apple HIG / Material 44px touch-target floor.
+   Patch: expand hit areas inside the mobile breakpoint without changing
+   the visual editorial typography. Inline links get an invisible ::before
+   expander; structural elements get min-height + inline-flex centering.
+   Provenance: ATLAS VWP audit → Antigravity CDP touch-target report.
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  /* 1. Header navigation links — 40px → 44px */
+  .nav-links a {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 2. Sensory feedback toggles — 36px → 44px */
+  .sense-toggle {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /* 3. In-text links — invisible hit-area expander preserves inline visual */
+  .text-link {
+    position: relative;
+    display: inline-block;
+  }
+
+  .text-link::before {
+    content: '';
+    position: absolute;
+    top: -0.625rem;
+    bottom: -0.625rem;
+    left: -0.25rem;
+    right: -0.25rem;
+    min-height: 2.75rem;
+  }
+
+  /* 4. Footer dock pills — 28-29px → 44px */
+  .footer-dock-pill {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.85rem;
+  }
+
+  /* 5. Footer contact link — 19.83px → 44px */
+  .footer-link {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+}
