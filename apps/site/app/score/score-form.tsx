@@ -41,6 +41,15 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'performance', label: 'Performance' },
 ];
 
+function normalizeInput(input: string): string {
+  let clean = input.trim();
+  if (!clean) return '';
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = `https://${clean}`;
+  }
+  return clean;
+}
+
 export function ScoreForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState('');
@@ -57,11 +66,8 @@ export function ScoreForm() {
     e.preventDefault();
     if (status === 'loading') return;
 
-    let cleanUrl = url.trim();
-    if (cleanUrl && !cleanUrl.startsWith('http')) {
-      cleanUrl = `https://${cleanUrl}`;
-    }
-    if (!cleanUrl) return;
+    const targetUrl = normalizeInput(url);
+    if (!targetUrl) return;
 
     setStatus('loading');
     setResult(null);
@@ -74,7 +80,7 @@ export function ScoreForm() {
       const resp = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: cleanUrl }),
+        body: JSON.stringify({ url: targetUrl }),
       });
       const data: ScoreResponse = await resp.json();
       if (!data.ok) {
@@ -83,7 +89,7 @@ export function ScoreForm() {
         return;
       }
       setStatus('ok');
-      setScoredUrl(cleanUrl);
+      setScoredUrl(targetUrl);
       setResult(data);
     } catch {
       setStatus('error');
@@ -128,39 +134,16 @@ export function ScoreForm() {
   }
 
   return (
-    <div className="score-form" style={{ width: '100%', maxWidth: '760px', margin: '0 auto', boxSizing: 'border-box' }}>
-      {/* Search/Input Form Card */}
+    <div className="score-form">
+      {/* Left-Aligned Input Card */}
       <form
         ref={formRef}
         onSubmit={handleSubmit}
         className="score-input-card"
-        style={{
-          width: '100%',
-          background: '#111116',
-          border: '1px solid #22222e',
-          borderRadius: '16px',
-          padding: '14px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-          boxSizing: 'border-box',
-        }}
       >
-        <div className="score-input-col" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-          <div className="score-input-wrapper" style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-            <span
-              className="score-input-icon"
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#3358e8',
-                display: 'flex',
-                alignItems: 'center',
-                justify-content: 'center',
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            >
+        <div className="score-input-col">
+          <div className="score-input-wrapper">
+            <span className="score-input-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="2" y1="12" x2="22" y2="12" />
@@ -168,29 +151,17 @@ export function ScoreForm() {
               </svg>
             </span>
             <input
-              type="url"
-              inputMode="url"
-              placeholder="https://your-site.com"
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder="designesy.org or nike.com"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={status === 'loading'}
               aria-label="Site URL to score"
               data-cuelume-hover="tick"
               className="score-url-input"
-              style={{
-                width: '100%',
-                height: '52px',
-                paddingLeft: '44px',
-                paddingRight: '16px',
-                background: '#0a0a0e',
-                border: '1px solid #22222e',
-                borderRadius: '10px',
-                color: '#ffffff',
-                fontSize: '15px',
-                fontFamily: 'inherit',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
             />
           </div>
 
@@ -200,22 +171,10 @@ export function ScoreForm() {
             data-cuelume-press="sparkle"
             data-firework="true"
             className="button primary score-submit"
-            style={{
-              width: '100%',
-              height: '52px',
-              fontWeight: 600,
-              fontSize: '15px',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justify-content: 'center',
-              boxSizing: 'border-box',
-              cursor: status === 'loading' || !url.trim() ? 'not-allowed' : 'pointer',
-            }}
           >
             {status === 'loading' ? (
-              <span className="score-loading-state" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <span className="score-spinner" style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
+              <span className="score-loading-state">
+                <span className="score-spinner" />
                 Evaluating 26 Contract Checks…
               </span>
             ) : (
@@ -228,10 +187,10 @@ export function ScoreForm() {
       {status === 'error' && result?.error && (
         <div className="score-error-card" style={{ marginTop: '20px', padding: '16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <span style={{ color: '#f87171' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </span>
           <div>
-            <p style={{ fontWeight: 600, color: '#f87171', margin: '0 0 4px 0', fontSize: '14px' }}>Verification Error</p>
+            <p style={{ fontWeight: 600, color: '#f87171', margin: '0 0 4px 0', fontSize: '14px' }}>Verification Notice</p>
             <p style={{ fontSize: '13px', color: '#aaaabb', margin: 0 }}>{result.error}</p>
           </div>
         </div>
@@ -239,7 +198,7 @@ export function ScoreForm() {
 
       {status === 'ok' && result && result.ok && (
         <div className="score-results fade-up" style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Executive Score Hero Dashboard Cell */}
+          {/* Score Dashboard Card */}
           <div
             className="score-hero-card"
             style={{
@@ -294,11 +253,10 @@ export function ScoreForm() {
                     {result.score}%
                   </span>
                   <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888899', fontWeight: 700 }}>
-                    Design Legitimacy Score
+                    Legitimacy Score
                   </span>
                 </div>
 
-                {/* Progress bar graphic */}
                 <div style={{ width: '100%', height: '6px', background: '#1c1c28', borderRadius: '99px', overflow: 'hidden', margin: '2px 0' }}>
                   <div
                     style={{
@@ -334,7 +292,7 @@ export function ScoreForm() {
               </div>
             </div>
 
-            {/* 4 Cell Cards Grid */}
+            {/* 4 Metrics Cell Grid */}
             <div className="score-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
               <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '12px', padding: '14px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <span style={{ fontSize: '24px', fontWeight: 800, color: '#4ade80', lineHeight: 1 }}>{result.pass}</span>
@@ -393,9 +351,8 @@ export function ScoreForm() {
             </div>
           </div>
 
-          {/* Interactive Filter & Search Controls Cell */}
+          {/* Interactive Filter & Search Controls */}
           <div className="score-controls-card" style={{ background: '#111116', border: '1px solid #22222e', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Status Segmented Tabs */}
             <div className="score-filter-segmented" style={{ display: 'flex', background: '#0a0a0e', padding: '4px', borderRadius: '10px', border: '1px solid #22222e', gap: '4px', overflowX: 'auto' }}>
               <button
                 type="button"
@@ -518,7 +475,6 @@ export function ScoreForm() {
               </button>
             </div>
 
-            {/* Integrated Full-Width Vector Search Bar */}
             <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '12px', color: '#888899', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -547,7 +503,6 @@ export function ScoreForm() {
               />
             </div>
 
-            {/* Category Chips */}
             <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
               <button
                 type="button"
@@ -600,7 +555,6 @@ export function ScoreForm() {
             </div>
           </div>
 
-          {/* Structured Verification Cell Grid */}
           <div className="score-cards-feed" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {filteredChecks.length === 0 ? (
               <div style={{ padding: '36px 16px', textAlign: 'center', background: '#111116', border: '1px solid #22222e', borderRadius: '16px' }}>
@@ -705,17 +659,17 @@ export function ScoreForm() {
             )}
           </div>
 
-          <p className="score-note" style={{ fontSize: '12px', color: '#666677', textAlign: 'center', marginTop: '12px' }}>
+          <p className="score-note" style={{ fontSize: '12px', color: '#666677', textAlign: 'left', marginTop: '12px' }}>
             {result.total} checks evaluated against Designesy design system contract v0.3.0.
           </p>
         </div>
       )}
 
       {status === 'idle' && (
-        <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #22222e', borderRadius: '14px', textAlign: 'center' }}>
+        <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #22222e', borderRadius: '14px', textAlign: 'left' }}>
           <p style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3358e8', margin: '0 0 6px 0' }}>Legitimacy Audit Engine</p>
           <p style={{ fontSize: '13.5px', color: '#888899', lineHeight: 1.55, margin: 0 }}>
-            Enter any public website URL above. We fetch its CSS, extract design tokens, and evaluate 26 verification checks against the Designesy contract v0.3.0. Real-time. No login required.
+            Enter any public website URL above (e.g. designesy.org or nike.com). We fetch its CSS, extract design tokens, and evaluate 26 verification checks against the Designesy contract v0.3.0. Real-time. No login required.
           </p>
         </div>
       )}
