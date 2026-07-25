@@ -346,10 +346,15 @@ async function scoreUrl(targetUrl: string) {
   const warn = checks.filter((c) => c.status === 'WARN').length;
   const skip = checks.filter((c) => c.status === 'SKIP').length;
   const total = checks.length;
-  const score = Math.round(((pass + warn * 0.5) / total) * 1000) / 10;
+  // Score over checks that were actually evaluated — SKIPs require a live browser
+  // and are excluded from the denominator (Lighthouse precedent: manual/not-applicable
+  // audits are excluded from the score). This prevents the tool from penalizing sites
+  // for the tool's own static-fetch limitations.
+  const scored = total - skip;
+  const score = scored === 0 ? 0 : Math.round(((pass + warn * 0.5) / scored) * 1000) / 10;
   const grade = computeGrade(score);
 
-  return { score, grade, pass, fail, warn, skip, total, checks, tokensExtracted: Object.keys(rawTokens).length };
+  return { score, grade, pass, fail, warn, skip, total, scored, checks, tokensExtracted: Object.keys(rawTokens).length };
 }
 
 // ── POST Handler ───────────────────────────────────────────────────────────
