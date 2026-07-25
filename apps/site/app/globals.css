@@ -6935,7 +6935,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-url-input {
     padding: 0.75rem 0.85rem;
-    font-size: 16px; /* iOS auto-zoom prevention: ≥16px */
+    font-size: 1rem; /* iOS auto-zoom prevention: 1rem = 16px at root */
   }
 
   .score-submit {
@@ -7150,7 +7150,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-url-input {
     padding: 0.65rem 0.75rem;
-    font-size: 16px; /* iOS auto-zoom prevention */
+    font-size: 1rem; /* iOS auto-zoom prevention: 1rem = 16px at root */
   }
 
   .score-submit {
