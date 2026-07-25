@@ -8,6 +8,9 @@ import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — Score any site against the design contract',
   description:
