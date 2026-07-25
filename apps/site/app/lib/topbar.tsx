@@ -99,6 +99,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           href="/"
           data-cuelume-hover="sparkle"
           data-cuelume-press="tick"
+          data-firework="true"
           aria-current={pathname === '/' ? 'page' : undefined}
         >
           designesy<span className="dot">.</span>

@@ -101,23 +101,24 @@ export function FireworkBurst() {
       }
     };
 
-    const burst = (clientX: number, clientY: number) => {
-      const count = 40;
-      for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
-        const speed = 2 + Math.random() * 4;
+    const burst = (clientX: number, clientY: number, intensity = 40) => {
+      const colors = ['#0133CB', '#3358E8', '#FECC34', '#FFFFFF', '#9EB0FF'];
+      for (let i = 0; i < intensity; i++) {
+        const angle = (Math.PI * 2 * i) / intensity + Math.random() * 0.4;
+        const speed = 1.5 + Math.random() * 4.5;
         particlesRef.current.push({
           x: clientX,
           y: clientY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 1,
+          vy: Math.sin(angle) * speed - 0.8,
           life: 0,
-          maxLife: 50 + Math.random() * 30,
-          size: 2 + Math.random() * 3,
-          color: i % 3 === 0 ? '#3358e8' : '#0133cb',
+          maxLife: 40 + Math.random() * 35,
+          size: 2 + Math.random() * 3.5,
+          color: colors[i % colors.length],
         });
       }
-      ringsRef.current.push({ x: clientX, y: clientY, radius: 5, life: 0, maxLife: 30 });
+      ringsRef.current.push({ x: clientX, y: clientY, radius: 4, life: 0, maxLife: 28 });
+      ringsRef.current.push({ x: clientX, y: clientY, radius: 2, life: 0, maxLife: 42 });
 
       if (animRef.current === 0) {
         animRef.current = requestAnimationFrame(animate);
@@ -125,15 +126,32 @@ export function FireworkBurst() {
     };
 
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-firework]')) return;
-      burst(e.clientX, e.clientY);
+      const target = e.target as Element | null;
+      if (!target) return;
+      const el = target.closest('[data-firework], [data-cuelume-hover="sparkle"], .wordmark, .wordmark-hero, [href="/open"]');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const cx = e.clientX || rect.left + rect.width / 2;
+      const cy = e.clientY || rect.top + rect.height / 2;
+      burst(cx, cy, 45);
+    };
+
+    const handlePointerEnter = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      const el = target.closest('[data-firework], [data-cuelume-hover="sparkle"], .wordmark');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 18);
     };
 
     document.addEventListener('click', handleClick, true);
+    document.addEventListener('pointerenter', handlePointerEnter, true);
 
     return () => {
       document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('pointerenter', handlePointerEnter, true);
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
     };
