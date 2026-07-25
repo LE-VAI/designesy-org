@@ -21,7 +21,7 @@ const VARIANTS = [
     desc: 'For light-background sites (most common).',
     bg: '#ffffff',
     file: 'badge.svg',
-    w: 140,
+    w: 156,
     h: 32,
   },
   {
@@ -30,7 +30,7 @@ const VARIANTS = [
     desc: 'For dark-background sites.',
     bg: '#0a0a0a',
     file: 'badge-light.svg',
-    w: 140,
+    w: 156,
     h: 32,
   },
   {

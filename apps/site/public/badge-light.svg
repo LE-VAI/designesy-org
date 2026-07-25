@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="140" height="32" viewBox="0 0 140 32" role="img" aria-label="Verified by Designesy">
-  <rect width="140" height="32" rx="6" fill="#ffffff" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="156" height="32" viewBox="0 0 156 32" role="img" aria-label="Verified by Designesy">
+  <rect width="156" height="32" rx="6" fill="#ffffff" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
   <svg x="5" y="5" width="22" height="22" viewBox="0 0 512 512">
     <g fill="#000000">
       <path d="M96 320 A128 128 0 0 1 224 192 L224 320 Z"/>
@@ -9,5 +9,5 @@
     </g>
     <circle cx="320" cy="96" r="64" fill="#0133CB"/>
   </svg>
-  <text x="32" y="21" font-family="-apple-system,BlinkMacSystemFont,&quot;Inter&quot;,&quot;Segoe UI&quot;,Arial,Helvetica,sans-serif" font-size="9.5" font-weight="600" letter-spacing="0.4" fill="#000000" text-anchor="start">VERIFIED BY DESIGNESY</text>
+  <text x="31" y="20.5" font-family="-apple-system,BlinkMacSystemFont,&quot;Inter&quot;,&quot;Segoe UI&quot;,Arial,Helvetica,sans-serif" font-size="8.5" font-weight="600" letter-spacing="0.2" fill="#000000" text-anchor="start">VERIFIED BY DESIGNESY</text>
 </svg>
