@@ -6937,10 +6937,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-hero-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);
   gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.score-tokens-badge {
+  margin-left: auto;
 }
 
 .score-action-btn {
@@ -6961,6 +6965,31 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-action-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--signal);
+}
+
+/* The browser-audit button is the primary affordance in the action bar —
+   give it the signal fill so it reads as the next action, not a peer of
+   "Copy Receipt". Disabled + loading states soften to muted. */
+.score-audit-btn {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--paper);
+}
+.score-audit-btn:hover:not(:disabled) {
+  background: var(--signal);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.score-audit-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.score-audit-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--warn, #f59e0b);
+  font-weight: 500;
 }
 
 .score-tokens-badge {
