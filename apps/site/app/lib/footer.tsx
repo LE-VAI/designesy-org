@@ -11,6 +11,7 @@ const SURFACE_LINKS = [
   { href: '/labs', label: 'Labs' },
   { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
+  { href: '/badge', label: 'Badge' },
   { href: '/work', label: 'Work' },
   { href: '/continuity', label: 'Continuity' },
   { href: '/graph', label: 'Graph' },

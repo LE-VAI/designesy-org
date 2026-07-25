@@ -13,6 +13,7 @@ const NAV_ROUTES = [
   { href: '/labs', label: 'Labs' },
   { href: '/kits', label: 'Kits' },
   { href: '/review', label: 'Review' },
+  { href: '/badge', label: 'Badge' },
   { href: '/work', label: 'Work' },
   { href: '/graph', label: 'Graph' },
   { href: '/contracts', label: 'Contracts' },
