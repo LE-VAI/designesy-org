@@ -7425,20 +7425,15 @@ a.lab-card:focus-visible .lab-card-arrow {
     height: 2.75rem;
   }
 
-  /* 3. In-text links — invisible hit-area expander preserves inline visual */
+  /* 3. In-text links — vertical padding + negative margin keeps inline flow
+     while making the element's own box ≥44px (measurable + hit-testable) */
   .text-link {
-    position: relative;
     display: inline-block;
-  }
-
-  .text-link::before {
-    content: '';
-    position: absolute;
-    top: -0.625rem;
-    bottom: -0.625rem;
-    left: -0.25rem;
-    right: -0.25rem;
     min-height: 2.75rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    margin-top: -0.625rem;
+    margin-bottom: -0.625rem;
   }
 
   /* 4. Footer dock pills — 28-29px → 44px */
@@ -7454,5 +7449,22 @@ a.lab-card:focus-visible .lab-card-arrow {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
+  }
+
+  /* 6. Director dock — 32px → 44px */
+  .director-dock {
+    min-height: 2.75rem;
+  }
+
+  /* 7. Wordmark — 24.8px → 44px */
+  .wordmark {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 8. Back button — 32px → 44px */
+  .back-button {
+    min-height: 2.75rem;
   }
 }
