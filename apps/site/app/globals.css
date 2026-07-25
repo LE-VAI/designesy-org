@@ -7197,3 +7197,207 @@ a.lab-card:focus-visible .lab-card-arrow {
     padding-bottom: 1.5rem;
   }
 }
+
+/* ── /badge page ────────────────────────────────────────────────────────── */
+
+.badge-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.badge-variant {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.badge-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.badge-variant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.badge-variant-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badge-variant-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.badge-variant-dim {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-snippets {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.badge-snippet-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.badge-snippet .definition-code {
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.badge-snippet code,
+.badge-snippet pre code {
+  font-family: var(--mono, ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", monospace);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.inline-code {
+  font-family: var(--mono, ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", monospace);
+  font-size: 0.8em;
+  padding: 0.1rem 0.3rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+
+.badge-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  counter-reset: badge-step;
+}
+
+.badge-steps li {
+  position: relative;
+  padding-left: 2rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+  counter-increment: badge-step;
+}
+
+.badge-steps li::before {
+  content: counter(badge-step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--signal-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-steps strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.badge-grade-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.badge-grade-row {
+  display: grid;
+  grid-template-columns: 32px 64px 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.badge-grade-row.is-qualifying {
+  border-color: rgba(74, 222, 128, 0.25);
+  background: rgba(34, 197, 94, 0.04);
+}
+
+.badge-grade-letter {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.badge-grade-min {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-grade-status {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+}
+
+.badge-grade-row.is-qualifying .badge-grade-status {
+  color: #4ade80;
+}
+
+.definition-note {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+  line-height: 1.5;
+  margin-top: 0.75rem;
+}
+
+/* ── /badge mobile responsive ───────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .badge-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .badge-grade-row {
+    grid-template-columns: 28px 56px 1fr;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .badge-steps li {
+    font-size: 0.85rem;
+    padding-left: 1.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .badge-preview {
+    padding: 1rem 0.75rem;
+    min-height: 64px;
+  }
+
+  .badge-steps li {
+    font-size: 0.8rem;
+  }
+}
