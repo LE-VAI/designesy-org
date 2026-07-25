@@ -6563,10 +6563,13 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── Score Tool Redesign (Executive Report Card & Mobile Hardening) ──────── */
 
 .score-form {
-  width: 100%;
-  max-width: 760px;
-  margin: 0;
-  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 760px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
 }
 
 .score-input-card {
