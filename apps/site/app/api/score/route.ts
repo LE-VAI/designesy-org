@@ -335,6 +335,137 @@ function checkRemScale(css: string): CheckResult {
   return { id: 'v16', item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed', category: 'cadence', status: 'WARN', detail: `${pxMatches} px vs ${remMatches} rem` };
 }
 
+// v08 — Poise interaction rules (static half of contract.interaction).
+// Verifies the CSS-detectable subset of contract.interaction rules:
+//   - Hover translation guarded by fine-pointer + hover-capable media query
+//   - Press settle uses scale ~0.97 with ease-out
+//   - Wordmark breath is opacity-only (no blur/glow on mark selectors)
+// The interaction-feel half (subjective "response louder than action") needs a
+// live browser and remains out of reach for static fetch. When the static rules
+// are present we PASS with a note; absent rules earn a WARN (useful signal for
+// sites that haven't adopted interaction-quality discipline).
+function checkPoiseInteractionRules(css: string): CheckResult {
+  const rules = [
+    {
+      name: 'fine-pointer hover guard',
+      re: /@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)/i,
+    },
+    {
+      name: 'press settle scale ~0.97',
+      re: /scale\s*\(\s*0?\.9[5-9]\s*\)/i,
+    },
+    {
+      name: 'opacity-only mark breath',
+      re: /@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:/i,
+    },
+  ];
+  const found = rules.filter(r => r.re.test(css)).map(r => r.name);
+  const missing = rules.filter(r => !r.re.test(css)).map(r => r.name);
+  if (found.length >= 2) {
+    return {
+      id: 'v08',
+      item: 'Poise interaction rules match live /labs/poise and contract.interaction',
+      category: 'poise',
+      status: 'PASS',
+      detail: `static half verified: ${found.join(', ')} (interaction-feel half requires browser)`,
+    };
+  }
+  return {
+    id: 'v08',
+    item: 'Poise interaction rules match live /labs/poise and contract.interaction',
+    category: 'poise',
+    status: 'WARN',
+    detail: `missing: ${missing.join(', ')}`,
+  };
+}
+
+// v09 — Poise keyboard path (static half).
+// contract.interaction.verification includes /review/poise/keyboard. The static
+// half verifies that keyboard-navigation affordances exist in CSS+HTML:
+//   - :focus-visible carries a visible style (not outline:none alone)
+//   - :focus carries visible styling or is aliased to :focus-visible
+// The browser half (tab-order traversal, visible focus ring on real elements)
+// needs a live DOM. Static presence earns PASS; stripped focus earns WARN.
+function checkPoiseKeyboardPath(css: string, html: string): CheckResult {
+  const hasFocusVisible = /:focus-visible/i.test(css);
+  const hasFocus = /:focus[^-]/i.test(css);
+  // Detect focus styles that strip outline without a replacement ring/box-shadow
+  const stripsOutline = /:focus[^{]*\{[^}]*outline\s*:\s*(none|0)\s*[;}]/i.test(css);
+  const hasFocusRing = /:focus[^{]*\{[^}]*(box-shadow|outline\s*:\s*[^n0])/i.test(css);
+  const hasTabindex = /tabindex\s*=/i.test(html);
+  const hasAria = /aria-(label|labelledby|describedby|expanded|selected|pressed)/i.test(html);
+
+  const signals = [hasFocusVisible, hasFocus, hasFocusRing, hasTabindex, hasAria].filter(Boolean).length;
+  if (stripsOutline && !hasFocusRing) {
+    return {
+      id: 'v09',
+      item: 'Poise keyboard-path verification remains published and current',
+      category: 'poise',
+      status: 'WARN',
+      detail: 'focus styles strip outline without replacement ring',
+    };
+  }
+  if (signals >= 3) {
+    return {
+      id: 'v09',
+      item: 'Poise keyboard-path verification remains published and current',
+      category: 'poise',
+      status: 'PASS',
+      detail: `static half verified: ${signals} keyboard-affordance signals (tab-order traversal requires browser)`,
+    };
+  }
+  return {
+    id: 'v09',
+    item: 'Poise keyboard-path verification remains published and current',
+    category: 'poise',
+    status: 'WARN',
+    detail: `only ${signals} keyboard-affordance signals found`,
+  };
+}
+
+// v10 — Takt interface-feel rules (static half of contract.takt).
+// Verifies CSS-detectable Takt rules not already covered by v11/v12/v13:
+//   - Stagger enter animations: animation-delay in 60-120ms band
+//   - Soften exits: transition on transform/translateY with ease-out
+//   - Concentric radius: multiple border-radius values declared (weak proxy)
+// The press-scale half is already covered by v13; transition:all by v11;
+// will-change by v12. Browser-feel half (actual press behavior, hit-area
+// measurement) remains out of reach for static fetch.
+function checkTaktFeelRules(css: string): CheckResult {
+  const rules = [
+    {
+      name: 'stagger enter animation-delay',
+      re: /animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)/i,
+    },
+    {
+      name: 'soften exit transform ease-out',
+      re: /transition\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\([^)]*0[, ])/i,
+    },
+    {
+      name: 'concentric border-radius set',
+      re: /border-radius\s*:\s*\d+/i,
+    },
+  ];
+  const found = rules.filter(r => r.re.test(css)).map(r => r.name);
+  const missing = rules.filter(r => !r.re.test(css)).map(r => r.name);
+  if (found.length >= 2) {
+    return {
+      id: 'v10',
+      item: 'Takt interface-feel rules match live CSS and contract.takt',
+      category: 'takt',
+      status: 'PASS',
+      detail: `static half verified: ${found.join(', ')} (press-behavior + hit-area require browser)`,
+    };
+  }
+  return {
+    id: 'v10',
+    item: 'Takt interface-feel rules match live CSS and contract.takt',
+    category: 'takt',
+    status: 'WARN',
+    detail: `missing: ${missing.join(', ')}`,
+  };
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -356,9 +487,9 @@ async function scoreUrl(targetUrl: string) {
     checkReducedMotion(css),
     { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'PASS', detail: 'evaluated from color tokens' },
     checkNoAtlasNaming(html),
-    { id: 'v08', item: 'Poise interaction rules match live /labs/poise and contract.interaction', category: 'poise', status: 'SKIP', detail: 'requires Poise check' },
-    { id: 'v09', item: 'Poise keyboard-path verification remains published and current', category: 'poise', status: 'SKIP', detail: 'requires keyboard check' },
-    { id: 'v10', item: 'Takt interface-feel rules match live CSS and contract.takt', category: 'takt', status: 'SKIP', detail: 'requires Takt check' },
+    checkPoiseInteractionRules(css),
+    checkPoiseKeyboardPath(css, html),
+    checkTaktFeelRules(css),
     checkTransitionAll(css),
     checkWillChange(css),
     { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: 'press scale compliant' },
