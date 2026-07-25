@@ -34,6 +34,9 @@ export function FireworkBurst() {
     if (!ctx) return;
 
     let dpr = window.devicePixelRatio || 1;
+    let lastTime = 0;
+    let lastX = -999;
+    let lastY = -999;
 
     const resize = () => {
       dpr = window.devicePixelRatio || 1;
@@ -46,49 +49,43 @@ export function FireworkBurst() {
     window.addEventListener('resize', resize);
 
     const animate = () => {
-      ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      ctx.save();
-      ctx.scale(dpr, dpr);
-
-      // Rings
+      // Shockwave Rings
       ringsRef.current = ringsRef.current.filter((r) => {
         r.life += 1;
         if (r.life >= r.maxLife) return false;
         const progress = r.life / r.maxLife;
-        r.radius += 3.5;
+        r.radius += 2.8;
         ctx.beginPath();
         ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(51, 88, 232, ${(1 - progress) * 0.7})`;
-        ctx.lineWidth = 2.5 * (1 - progress);
+        ctx.strokeStyle = `rgba(51, 88, 232, ${(1 - progress) * 0.6})`;
+        ctx.lineWidth = 2 * (1 - progress);
         ctx.stroke();
         return true;
       });
 
-      // Particles
+      // Pure Signal-Blue Particles
       particlesRef.current = particlesRef.current.filter((p) => {
         p.life += 1;
         if (p.life >= p.maxLife) return false;
         const decay = 1 - p.life / p.maxLife;
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.14;
-        p.vx *= 0.97;
-        p.vy *= 0.97;
+        p.vy += 0.09;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(0.5, p.size * decay), 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, Math.max(0.4, p.size * decay), 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.globalAlpha = decay;
         ctx.fill();
         ctx.globalAlpha = 1;
         return true;
       });
-
-      ctx.restore();
 
       if (particlesRef.current.length > 0 || ringsRef.current.length > 0) {
         animRef.current = requestAnimationFrame(animate);
@@ -98,24 +95,24 @@ export function FireworkBurst() {
     };
 
     const burst = (clientX: number, clientY: number) => {
-      const colors = ['#0133CB', '#3358E8', '#5B78F0', '#9EB0FF', '#FFFFFF'];
-      const count = 36;
+      // Pure Signal Blue Palette — 100% blue tones, ZERO white
+      const colors = ['#0133CB', '#3358E8', '#5B78F0', '#7E9DFF'];
+      const count = 30;
       for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.4 - 0.2);
-        const speed = 2 + Math.random() * 5;
+        const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.3 - 0.15);
+        const speed = 1.8 + Math.random() * 3.8;
         particlesRef.current.push({
           x: clientX,
           y: clientY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 1.2,
+          vy: Math.sin(angle) * speed - 0.8,
           life: 0,
-          maxLife: 35 + Math.random() * 25,
-          size: 2.5 + Math.random() * 3,
+          maxLife: 32 + Math.random() * 20,
+          size: 2.2 + Math.random() * 2.5,
           color: colors[i % colors.length],
         });
       }
-      ringsRef.current.push({ x: clientX, y: clientY, radius: 4, life: 0, maxLife: 24 });
-      ringsRef.current.push({ x: clientX, y: clientY, radius: 2, life: 0, maxLife: 36 });
+      ringsRef.current.push({ x: clientX, y: clientY, radius: 3, life: 0, maxLife: 22 });
 
       if (animRef.current === 0) {
         animRef.current = requestAnimationFrame(animate);
@@ -123,28 +120,34 @@ export function FireworkBurst() {
     };
 
     const handleTrigger = (e: MouseEvent | PointerEvent) => {
-      let cx = typeof e.clientX === 'number' && e.clientX !== 0 ? e.clientX : (e as MouseEvent).pageX;
-      let cy = typeof e.clientY === 'number' && e.clientY !== 0 ? e.clientY : (e as MouseEvent).pageY;
-      if (!cx && !cy) {
-        const target = e.target as Element | null;
-        if (target && target.getBoundingClientRect) {
-          const rect = target.getBoundingClientRect();
-          cx = rect.left + rect.width / 2;
-          cy = rect.top + rect.height / 2;
-        } else {
-          cx = window.innerWidth / 2;
-          cy = window.innerHeight / 2;
-        }
+      const target = e.target as Element | null;
+      if (!target) return;
+
+      // TARGETED FILTER: Fire ONLY on brand wordmark, hero title, open link, score button, or elements with explicit data-firework attribute
+      const matched = target.closest(
+        '[data-firework="true"], [data-firework], [data-cuelume-press="sparkle"], .wordmark, .wordmark-hero, a[href="/open"], a[href="/score"], .director-dock'
+      );
+      if (!matched) return;
+
+      const now = performance.now();
+      const cx = typeof e.clientX === 'number' && e.clientX !== 0 ? e.clientX : (e as MouseEvent).pageX;
+      const cy = typeof e.clientY === 'number' && e.clientY !== 0 ? e.clientY : (e as MouseEvent).pageY;
+
+      // Throttle double-firing from pointerdown + click on same target (300ms window)
+      if (now - lastTime < 300 && Math.hypot(cx - lastX, cy - lastY) < 25) {
+        return;
       }
+      lastTime = now;
+      lastX = cx;
+      lastY = cy;
+
       burst(cx, cy);
     };
 
     window.addEventListener('pointerdown', handleTrigger, { capture: true, passive: true });
-    window.addEventListener('click', handleTrigger, { capture: true, passive: true });
 
     return () => {
       window.removeEventListener('pointerdown', handleTrigger, { capture: true });
-      window.removeEventListener('click', handleTrigger, { capture: true });
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
     };
