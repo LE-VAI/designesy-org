@@ -20,7 +20,7 @@ function rateLimited(ip: string): boolean {
 
 // ── URL Normalization & Validation ─────────────────────────────────────────
 
-export function normalizeInputUrl(raw: string): string {
+function normalizeInputUrl(raw: string): string {
   let clean = raw.trim();
   if (!clean) return '';
   if (!/^https?:\/\//i.test(clean)) {
