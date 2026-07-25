@@ -131,16 +131,17 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
     if (!resp.ok) {
       const body = await resp.text().catch(() => '');
       const reason = `PSI ${resp.status}: ${body.slice(0, 80) || 'no body'}`;
-      // Fall back to Chromium CDP lab trace if browser audit is enabled.
-      if (browserAuditEnabled()) {
-        return await checkCoreWebVitalsLab(targetUrl, reason);
-      }
+      // No Chromium lab fallback on Hobby plan — @sparticuz/chromium's 130MB
+      // binary exceeds the 50MB Lambda zip limit and the launch hangs, blowing
+      // the 60s function timeout. PSI-only is the supported path on Hobby.
+      // Upgrade to Vercel Pro + ENABLE_BROWSER_AUDIT=1 for the Chromium lab
+      // fallback (LCP/CLS via CDP performance trace when CrUX is absent).
       return {
         id: 'v21',
         item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
         category: 'performance',
         status: 'SKIP',
-        detail: `${reason} (set ENABLE_BROWSER_AUDIT=1 for Chromium lab fallback)`,
+        detail: `${reason} (PSI is the primary path; Chromium lab fallback requires Vercel Pro)`,
       };
     }
     const data = await resp.json();
@@ -193,10 +194,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    // Fall back to Chromium CDP lab trace if browser audit is enabled.
-    if (browserAuditEnabled()) {
-      return await checkCoreWebVitalsLab(targetUrl, `PSI unreachable: ${msg}`);
-    }
+    // No Chromium lab fallback on Hobby — see note above.
     return {
       id: 'v21',
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
