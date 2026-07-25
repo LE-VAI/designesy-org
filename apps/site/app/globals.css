@@ -7569,6 +7569,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .text-link {
     display: inline-block;
     min-height: 2.75rem;
+    min-width: 2.75rem;
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
     margin-top: -0.625rem;
@@ -7590,9 +7591,10 @@ a.lab-card:focus-visible .lab-card-arrow {
     align-items: center;
   }
 
-  /* 6. Director dock — 32px → 44px */
+  /* 6. Director dock — 32px → 44px (min-width + min-height) */
   .director-dock {
     min-height: 2.75rem;
+    min-width: 2.75rem;
   }
 
   /* 7. Wordmark — 24.8px → 44px */
