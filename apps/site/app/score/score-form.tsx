@@ -1,3 +1,4 @@
+// v2026-07-25-0219-force-left-align-desktop
 'use client';
 
 import { useState, useRef, useMemo } from 'react';
