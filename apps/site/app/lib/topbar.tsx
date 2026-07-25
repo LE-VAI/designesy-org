@@ -8,6 +8,7 @@ import { SoundToggle } from './sound-toggle';
 
 const NAV_ROUTES = [
   { href: '/score', label: 'Score' },
+  { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },
