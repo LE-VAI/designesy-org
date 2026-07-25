@@ -7604,8 +7604,9 @@ a.lab-card:focus-visible .lab-card-arrow {
     align-items: center;
   }
 
-  /* 8. Back button — 32px → 44px */
+  /* 8. Back button — 32px → 44px (min-width + min-height) */
   .back-button {
     min-height: 2.75rem;
+    min-width: 2.75rem;
   }
 }
