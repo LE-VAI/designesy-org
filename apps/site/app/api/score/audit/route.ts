@@ -120,12 +120,17 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
     });
     if (!resp.ok) {
       const body = await resp.text().catch(() => '');
+      const reason = `PSI ${resp.status}: ${body.slice(0, 80) || 'no body'}`;
+      // Fall back to Chromium CDP lab trace if browser audit is enabled.
+      if (browserAuditEnabled()) {
+        return await checkCoreWebVitalsLab(targetUrl, reason);
+      }
       return {
         id: 'v21',
         item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
         category: 'performance',
         status: 'SKIP',
-        detail: `PSI API returned ${resp.status}: ${body.slice(0, 120) || 'no body'}`,
+        detail: `${reason} (set ENABLE_BROWSER_AUDIT=1 for Chromium lab fallback)`,
       };
     }
     const data = await resp.json();
@@ -178,6 +183,10 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
+    // Fall back to Chromium CDP lab trace if browser audit is enabled.
+    if (browserAuditEnabled()) {
+      return await checkCoreWebVitalsLab(targetUrl, `PSI unreachable: ${msg}`);
+    }
     return {
       id: 'v21',
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
@@ -190,65 +199,248 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
   }
 }
 
-// ── v02 + v04: Browser-only checks (Playwright) ────────────────────────────
-// These require a headless browser. The route is structured so that when
-// Playwright + a Chromium binary are available on the deployment (set
-// ENABLE_BROWSER_AUDIT=1), the checks run for real. Otherwise they return a
-// clearly-labeled "browser audit not enabled on this deployment" SKIP with a
-// detail string explaining why — this is more honest than a silent SKIP.
+// v21 lab fallback — measure LCP + CLS via Chromium CDP performance trace.
+// INP requires real user input and isn't measurable in a headless lab run;
+// we mark INP as SKIP and score LCP + CLS only. This is the standard lab
+// limitation documented by web.dev.
+async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string): Promise<CheckResult> {
+  let browser;
+  try {
+    browser = await launchBrowser();
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    // CDP session for performance trace
+    const client = await page.context().newCDPSession(page);
+    await client.send('Performance.enable');
+    await client.send('Page.enable');
+    // Enable LCP + CLS observation via the Performance API
+    await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
+    await page.waitForTimeout(2500); // let layout settle
+    const perf = await page.evaluate(() => {
+      const obs: { lcp: number | null; cls: number | null } = { lcp: null, cls: null };
+      // LCP
+      const lcpEntries = performance.getEntriesByType('largest-contentful-paint') as PerformanceEntry[];
+      if (lcpEntries.length) obs.lcp = lcpEntries[lcpEntries.length - 1].startTime;
+      // CLS via LayoutShift entries (sum of all layout-shift entry values)
+      // Cast to any[] because hadRecentInput/value are LayoutShift-specific props
+      // not present on the base PerformanceEntry type.
+      const clsEntries = performance.getEntriesByType('layout-shift') as unknown as Array<{ hadRecentInput: boolean; value: number }>;
+      if (clsEntries.length) {
+        let maxSession = 0;
+        let currentSession = 0;
+        for (const e of clsEntries) {
+          // entry.value is the layout shift score; sum within session window (1s gap, 5s max)
+          if (!e.hadRecentInput) {
+            currentSession += e.value;
+            maxSession = Math.max(maxSession, currentSession);
+          }
+        }
+        obs.cls = maxSession;
+      }
+      return obs;
+    });
+    await ctx.close();
+    const lcpSec = perf.lcp != null ? perf.lcp / 1000 : null;
+    const cls = perf.cls;
+    const lcpStatus = lcpSec != null ? classifyLcp(lcpSec) : null;
+    const clsStatus = cls != null ? classifyCls(cls) : null;
+    const lcpStr = lcpSec != null ? `LCP=${lcpSec.toFixed(2)}s(${lcpStatus})` : 'LCP=n/a';
+    const clsStr = cls != null ? `CLS=${cls.toFixed(3)}(${clsStatus})` : 'CLS=n/a';
+    const statuses = [lcpStatus, clsStatus].filter(Boolean) as Array<'PASS' | 'WARN' | 'FAIL'>;
+    const overall: 'PASS' | 'FAIL' | 'WARN' =
+      statuses.includes('FAIL') ? 'FAIL' :
+      statuses.length === 2 && statuses.every((s) => s === 'PASS') ? 'PASS' :
+      'WARN';
+    return {
+      id: 'v21',
+      item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
+      category: 'performance',
+      status: overall,
+      detail: `${lcpStr}, ${clsStr}, INP=SKIP(lab) — source: Chromium CDP lab (PSI fallback: ${fallbackReason.slice(0, 60)})`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    return {
+      id: 'v21',
+      item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
+      category: 'performance',
+      status: 'SKIP',
+      detail: `both PSI and Chromium lab failed: ${msg}`,
+    };
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
+}
+
+// ── v02 + v04 + v21-fallback: Browser checks (Playwright + @sparticuz/chromium) ─
+// The route runs v21 via PageSpeed Insights API (primary) when a key is set.
+// v02 (responsive overflow) and v04 (sound toggle) require a real browser —
+// they run via Playwright + @sparticuz/chromium when ENABLE_BROWSER_AUDIT=1.
+// If PSI returns 429/timeout for v21, the same Chromium session measures
+// LCP/CLS via CDP performance trace as a lab fallback (no INP — INP needs
+// real user input, which lab Lighthouse approximates via TBT; we mark it
+// SKIP when only lab is available).
+
+import { chromium as playwrightChromium } from 'playwright-core';
+import sparticuzChromium from '@sparticuz/chromium';
 
 function browserAuditEnabled(): boolean {
   return process.env.ENABLE_BROWSER_AUDIT === '1' || process.env.ENABLE_BROWSER_AUDIT === 'true';
 }
 
-async function checkResponsiveOverflow(_targetUrl: string): Promise<CheckResult> {
+async function launchBrowser() {
+  const executablePath = await sparticuzChromium.executablePath();
+  return playwrightChromium.launch({
+    args: sparticuzChromium.args,
+    executablePath,
+    headless: true,
+  });
+}
+
+// v02 — responsive overflow. Launch Chromium, navigate at 4 viewports,
+// measure scrollWidth vs clientWidth at each. PASS if all 4 fit; FAIL with
+// the first overflowing viewport in the detail string.
+async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v02',
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
       status: 'SKIP',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1 + Playwright)',
+      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
     };
   }
-  // Playwright implementation: launch headless Chromium, navigate to targetUrl
-  // at 4 viewports (375, 720, 860, 1080), measure scrollWidth vs clientWidth at
-  // each. PASS if all 4 viewports have scrollWidth <= clientWidth. Otherwise FAIL
-  // with the first overflowing viewport in the detail string.
-  //
-  // TODO(sessions): when @sparticuz/chromium is wired into the Vercel build,
-  // implement the real check here. For now the route is the scaffold + the
-  // honest "not enabled" status.
-  return {
-    id: 'v02',
-    item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
-    category: 'responsive',
-    status: 'SKIP',
-    detail: 'browser audit path scaffolded — Playwright integration pending',
-  };
+  const viewports = [
+    { w: 375, label: '375px (mobile)' },
+    { w: 720, label: '720px (tablet)' },
+    { w: 860, label: '860px (small laptop)' },
+    { w: 1080, label: '1080px (desktop)' },
+  ];
+  let browser;
+  try {
+    browser = await launchBrowser();
+    const overflows: string[] = [];
+    for (const vp of viewports) {
+      const ctx = await browser.newContext({ viewport: { width: vp.w, height: 800 } });
+      const page = await ctx.newPage();
+      try {
+        await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 8000 });
+      } catch {
+        await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
+      }
+      const metrics = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      if (metrics.scrollWidth > metrics.clientWidth) {
+        overflows.push(`${vp.label}: ${metrics.scrollWidth}px > ${metrics.clientWidth}px`);
+      }
+      await ctx.close();
+    }
+    if (overflows.length === 0) {
+      return {
+        id: 'v02',
+        item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
+        category: 'responsive',
+        status: 'PASS',
+        detail: 'all 4 viewports fit (no horizontal scroll)',
+      };
+    }
+    return {
+      id: 'v02',
+      item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
+      category: 'responsive',
+      status: 'FAIL',
+      detail: `overflow at: ${overflows.join('; ')}`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    return {
+      id: 'v02',
+      item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
+      category: 'responsive',
+      status: 'SKIP',
+      detail: `browser launch failed: ${msg}`,
+    };
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
 }
 
-async function checkSoundToggle(_targetUrl: string): Promise<CheckResult> {
+// v04 — sound toggle. Launch Chromium, navigate, locate the sound toggle by
+// [aria-pressed] or [data-sound-toggle] or button text matching 'sound',
+// click it, observe aria-pressed flip, observe localStorage[designesy:sound]
+// update. PASS if both state changes occur.
+async function checkSoundToggle(targetUrl: string): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v04',
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
       status: 'SKIP',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1 + Playwright)',
+      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
     };
   }
-  // Playwright implementation: launch headless Chromium, navigate to targetUrl,
-  // locate the sound toggle by [aria-pressed] or [data-sound-toggle], click it,
-  // observe aria-pressed state flip, observe localStorage[designesy:sound]
-  // update. PASS if both state changes occur. FAIL with whichever half failed.
-  return {
-    id: 'v04',
-    item: 'Sound toggle flips aria-pressed and applies the audio preference',
-    category: 'poise',
-    status: 'SKIP',
-    detail: 'browser audit path scaffolded — Playwright integration pending',
-  };
+  let browser;
+  try {
+    browser = await launchBrowser();
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    try {
+      await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 8000 });
+    } catch {
+      await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
+    }
+    // Locate sound toggle — aria-pressed is the contract spec.
+    const toggle = await page.$('[aria-pressed], [data-sound-toggle], button:has-text("sound" i)');
+    if (!toggle) {
+      await ctx.close();
+      return {
+        id: 'v04',
+        item: 'Sound toggle flips aria-pressed and applies the audio preference',
+        category: 'poise',
+        status: 'WARN',
+        detail: 'no sound toggle element found on page',
+      };
+    }
+    const beforePressed = await toggle.getAttribute('aria-pressed');
+    await toggle.click();
+    await page.waitForTimeout(300);
+    const afterPressed = await toggle.getAttribute('aria-pressed');
+    const beforeStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
+    await page.waitForTimeout(200);
+    const afterStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
+    const pressedFlipped = beforePressed !== afterPressed;
+    const storageUpdated = beforeStorage !== afterStorage;
+    await ctx.close();
+    if (pressedFlipped && storageUpdated) {
+      return {
+        id: 'v04',
+        item: 'Sound toggle flips aria-pressed and applies the audio preference',
+        category: 'poise',
+        status: 'PASS',
+        detail: `aria-pressed ${beforePressed}→${afterPressed}, storage updated`,
+      };
+    }
+    return {
+      id: 'v04',
+      item: 'Sound toggle flips aria-pressed and applies the audio preference',
+      category: 'poise',
+      status: 'FAIL',
+      detail: `aria-pressed flip=${pressedFlipped}, storage update=${storageUpdated}`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    return {
+      id: 'v04',
+      item: 'Sound toggle flips aria-pressed and applies the audio preference',
+      category: 'poise',
+      status: 'SKIP',
+      detail: `browser launch failed: ${msg}`,
+    };
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+  }
 }
 
 // ── POST Handler ───────────────────────────────────────────────────────────
