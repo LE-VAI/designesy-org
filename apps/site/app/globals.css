@@ -3475,118 +3475,6 @@ a.check-cell:hover .check-cell-title {
   .status-note {
     margin-bottom: 2rem;
   }
-}
-
-/* Status note — honest positioning at bottom of route pages */
-
-.status-note {
-  margin-top: 2.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-soft);
-  font-size: 0.82rem;
-  color: var(--muted-dim);
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
-/* --- Labs: index card + Poise stage --- */
-
-.lab-crumb {
-  color: var(--muted);
-  transition: color 0.2s var(--ease);
-}
-
-.lab-crumb:hover {
-  color: var(--ink);
-}
-
-.lab-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.25rem;
-  margin-top: 1.75rem;
-}
-
-.lab-meta-item {
-  font-size: 0.8rem;
-  color: var(--muted-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.lab-meta-item a {
-  color: var(--muted);
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 0.15em;
-  transition: color 0.2s var(--ease), text-decoration-color 0.2s var(--ease);
-}
-
-.lab-meta-item a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--line-strong);
-}
-
-.open-package-paths {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.4rem;
-  margin-top: 0.4rem;
-}
-
-.open-package-paths a {
-  color: var(--muted);
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 0.15em;
-  word-break: break-all;
-}
-
-.open-package-paths a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--line-strong);
-}
-
-.open-path-sep {
-  color: var(--muted-dim);
-}
-
-.open-path-note {
-  color: var(--muted-dim);
-}
-
-.lab-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
-}
-
-.lab-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  max-width: 980px;
-}
-
-.lab-card:hover {
-  border-left-color: var(--signal);
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-}
-
-  .lab-card:active {
-    transform: scale(0.985);
-  }
 
   /* Mobile body padding — clear bottom-anchored FABs */
   body {
@@ -3719,6 +3607,117 @@ a.check-cell:hover .check-cell-title {
   .nav-trigger-bar {
     transition: none;
   }
+}
+
+/* Status note — honest positioning at bottom of route pages */
+
+.status-note {
+  margin-top: 2.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  font-size: 0.82rem;
+  color: var(--muted-dim);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* --- Labs: index card + Poise stage --- */
+
+.lab-crumb {
+  color: var(--muted);
+  transition: color 0.2s var(--ease);
+}
+
+.lab-crumb:hover {
+  color: var(--ink);
+}
+
+.lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.lab-meta-item {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-meta-item a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.15em;
+  transition: color 0.2s var(--ease), text-decoration-color 0.2s var(--ease);
+}
+
+.lab-meta-item a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--line-strong);
+}
+
+.open-package-paths {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.open-package-paths a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 0.15em;
+  word-break: break-all;
+}
+
+.open-package-paths a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--line-strong);
+}
+
+.open-path-sep {
+  color: var(--muted-dim);
+}
+
+.open-path-note {
+  color: var(--muted-dim);
+}
+
+.lab-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.lab-card:hover {
+  border-left-color: var(--signal);
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.lab-card:active {
+  transform: scale(0.985);
 }
 
 @media (hover: hover) and (pointer: fine) {
