@@ -162,6 +162,20 @@ export function ScoreForm() {
               aria-label="Site URL to score"
               data-cuelume-hover="tick"
               className="score-url-input"
+              style={{
+                width: '100%',
+                height: '52px',
+                paddingLeft: '48px',
+                paddingRight: '16px',
+                background: '#0a0a0e',
+                border: '1px solid #22222e',
+                borderRadius: '10px',
+                color: '#ffffff',
+                fontSize: '15px',
+                fontFamily: 'inherit',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
 
