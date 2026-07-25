@@ -54,6 +54,36 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${BASE}/score`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.95,
+    },
+    {
+      url: `${BASE}/learn`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${BASE}/learn/what-is-design-verification`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/learn/design-verification-vs-linting-vs-visual-regression`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/learn/why-we-built-a-public-design-score`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
       url: `${BASE}/privacy`,
       lastModified: NOW,
       changeFrequency: 'monthly',
