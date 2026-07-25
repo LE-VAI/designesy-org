@@ -95,11 +95,8 @@ export function ScoreForm() {
 
   const filteredChecks = useMemo(() => {
     return checks.filter((c) => {
-      // Status filter
       if (filterStatus !== 'ALL' && c.status !== filterStatus) return false;
-      // Category filter
       if (selectedCategory !== 'ALL' && c.category !== selectedCategory) return false;
-      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchId = c.id.toLowerCase().includes(q);
@@ -131,11 +128,22 @@ export function ScoreForm() {
   }
 
   return (
-    <div className="score-form">
-      <form ref={formRef} onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-row">
-          <div className="score-input-wrapper">
-            <span className="score-input-icon" aria-hidden="true">🌐</span>
+    <div className="score-form" style={{ width: '100%', maxWidth: '760px', margin: '0 auto' }}>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="score-input-card"
+        style={{
+          background: '#111116',
+          border: '1px solid #22222e',
+          borderRadius: '16px',
+          padding: '12px',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+        }}
+      >
+        <div className="score-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="score-input-wrapper" style={{ position: 'relative', flex: '1 1 240px', display: 'flex', alignItems: 'center' }}>
+            <span className="score-input-icon" style={{ position: 'absolute', left: '14px', fontSize: '16px', opacity: 0.7, pointerEvents: 'none' }}>🌐</span>
             <input
               type="url"
               inputMode="url"
@@ -146,6 +154,18 @@ export function ScoreForm() {
               aria-label="Site URL to score"
               data-cuelume-hover="tick"
               className="score-url-input"
+              style={{
+                width: '100%',
+                height: '52px',
+                paddingLeft: '44px',
+                paddingRight: '16px',
+                background: '#0a0a0e',
+                border: '1px solid #22222e',
+                borderRadius: '10px',
+                color: '#ffffff',
+                fontSize: '15px',
+                outline: 'none',
+              }}
             />
           </div>
           <button
@@ -154,10 +174,19 @@ export function ScoreForm() {
             data-cuelume-press="sparkle"
             data-firework="true"
             className="button primary score-submit"
+            style={{
+              height: '52px',
+              padding: '0 24px',
+              fontWeight: 600,
+              fontSize: '15px',
+              borderRadius: '10px',
+              whiteSpace: 'nowrap',
+              flex: '0 0 auto',
+            }}
           >
             {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" aria-hidden="true" />
+              <span className="score-loading-state" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <span className="score-spinner" style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
                 Scoring…
               </span>
             ) : (
@@ -168,84 +197,146 @@ export function ScoreForm() {
       </form>
 
       {status === 'error' && result?.error && (
-        <div className="score-error-card" role="alert">
-          <span className="score-error-icon">⚠️</span>
+        <div className="score-error-card" style={{ marginTop: '20px', padding: '16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '12px', display: 'flex', gap: '12px' }}>
+          <span style={{ fontSize: '18px' }}>⚠️</span>
           <div>
-            <p className="score-error-title">Verification Failed</p>
-            <p className="score-error-msg">{result.error}</p>
+            <p style={{ fontWeight: 600, color: '#f87171', margin: '0 0 4px 0' }}>Verification Failed</p>
+            <p style={{ fontSize: '13px', color: '#aaaabb', margin: 0 }}>{result.error}</p>
           </div>
         </div>
       )}
 
       {status === 'ok' && result && result.ok && (
-        <div className="score-results fade-up">
+        <div className="score-results fade-up" style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Executive Score Hero Header */}
-          <div className="score-hero-card">
-            <div className="score-hero-top">
-              <div className={`score-grade-emblem is-${result.grade?.toLowerCase()}`}>
-                <span className="score-grade-letter">{result.grade}</span>
-                <span className="score-grade-glow" aria-hidden="true" />
+          <div
+            className="score-hero-card"
+            style={{
+              background: 'linear-gradient(135deg, rgba(20,20,26,0.95) 0%, rgba(10,10,14,0.98) 100%)',
+              border: '1px solid #22222e',
+              borderRadius: '18px',
+              padding: '24px',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+            }}
+          >
+            <div className="score-hero-top" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <div
+                className={`score-grade-emblem is-${result.grade?.toLowerCase()}`}
+                style={{
+                  width: '84px',
+                  height: '84px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify-content: 'center',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  flexShrink: 0,
+                  position: 'relative',
+                }}
+              >
+                <span className="score-grade-letter" style={{ fontSize: '44px', fontWeight: 900, lineHeight: 1 }}>
+                  {result.grade}
+                </span>
               </div>
-              <div className="score-hero-meta">
-                <div className="score-percent-badge">
-                  <span className="score-percent-value">{result.score}%</span>
-                  <span className="score-percent-label">Legitimacy Score</span>
+              <div className="score-hero-meta" style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1 1 200px' }}>
+                <div className="score-percent-badge" style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                  <span className="score-percent-value" style={{ fontSize: '36px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                    {result.score}%
+                  </span>
+                  <span className="score-percent-label" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888899', fontWeight: 700 }}>
+                    Legitimacy Score
+                  </span>
                 </div>
-                <div className="score-site-url" title={scoredUrl}>
-                  <span className="score-url-dot" />
-                  <span className="score-url-text">{scoredUrl}</span>
+                <div
+                  className="score-site-url"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(0,0,0,0.4)',
+                    border: '1px solid #22222e',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    width: 'fit-content',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: '#aaaabb', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {scoredUrl}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Metric Breakdown Grid */}
-            <div className="score-metrics-grid">
-              <div className="score-metric-tile is-pass">
-                <span className="score-metric-val">{result.pass}</span>
-                <span className="score-metric-lbl">Passed</span>
+            {/* 4 Metric Tiles */}
+            <div className="score-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+              <div className="score-metric-tile is-pass" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '10px', padding: '12px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="score-metric-val" style={{ fontSize: '22px', fontWeight: 700, color: '#4ade80', lineHeight: 1 }}>{result.pass}</span>
+                <span className="score-metric-lbl" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, color: '#4ade80', marginTop: '4px' }}>Passed</span>
               </div>
-              <div className="score-metric-tile is-fail">
-                <span className="score-metric-val">{result.fail}</span>
-                <span className="score-metric-lbl">Failed</span>
+              <div className="score-metric-tile is-fail" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '12px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="score-metric-val" style={{ fontSize: '22px', fontWeight: 700, color: '#f87171', lineHeight: 1 }}>{result.fail}</span>
+                <span className="score-metric-lbl" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, color: '#f87171', marginTop: '4px' }}>Failed</span>
               </div>
-              <div className="score-metric-tile is-warn">
-                <span className="score-metric-val">{result.warn}</span>
-                <span className="score-metric-lbl">Warnings</span>
+              <div className="score-metric-tile is-warn" style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: '10px', padding: '12px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="score-metric-val" style={{ fontSize: '22px', fontWeight: 700, color: '#facc15', lineHeight: 1 }}>{result.warn}</span>
+                <span className="score-metric-lbl" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, color: '#facc15', marginTop: '4px' }}>Warnings</span>
               </div>
-              <div className="score-metric-tile is-skip">
-                <span className="score-metric-val">{result.skip}</span>
-                <span className="score-metric-lbl">Skipped</span>
+              <div className="score-metric-tile is-skip" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #22222e', borderRadius: '10px', padding: '12px 8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span className="score-metric-val" style={{ fontSize: '22px', fontWeight: 700, color: '#888899', lineHeight: 1 }}>{result.skip}</span>
+                <span className="score-metric-lbl" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, color: '#666677', marginTop: '4px' }}>Skipped</span>
               </div>
             </div>
 
             {/* Action Bar */}
-            <div className="score-hero-actions">
+            <div className="score-hero-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '1px solid #22222e', gap: '12px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={copyReceipt}
                 className="score-action-btn secondary"
                 data-cuelume-press="tick"
+                style={{ height: '36px', padding: '0 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px', background: '#181822', border: '1px solid #28283a', color: '#ffffff', cursor: 'pointer' }}
               >
                 {copied ? '✓ Receipt Copied' : '📋 Copy Receipt'}
               </button>
-              <span className="score-tokens-badge">
+              <span className="score-tokens-badge" style={{ fontSize: '12px', color: '#888899', fontWeight: 500 }}>
                 ⚡ {result.tokensExtracted || 0} tokens extracted
               </span>
             </div>
           </div>
 
           {/* Interactive Filter & Search Controls */}
-          <div className="score-controls-card">
+          <div className="score-controls-card" style={{ background: '#111116', border: '1px solid #22222e', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Status Filter Segmented Bar */}
-            <div className="score-filter-segmented" role="tablist" aria-label="Filter by status">
+            <div className="score-filter-segmented" style={{ display: 'flex', background: 'rgba(0,0,0,0.5)', padding: '4px', borderRadius: '10px', border: '1px solid #22222e', gap: '4px', overflowX: 'auto' }}>
               <button
                 type="button"
                 role="tab"
                 aria-selected={filterStatus === 'ALL'}
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('ALL')}
+                style={{
+                  flex: 1,
+                  minWidth: '60px',
+                  height: '36px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justify-content: 'center',
+                  gap: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: filterStatus === 'ALL' ? '#ffffff' : '#888899',
+                  background: filterStatus === 'ALL' ? '#1c1c28' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
               >
-                All <span className="score-tab-count">{checks.length}</span>
+                All <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '99px', background: 'rgba(255,255,255,0.1)' }}>{checks.length}</span>
               </button>
               <button
                 type="button"
@@ -253,8 +344,24 @@ export function ScoreForm() {
                 aria-selected={filterStatus === 'PASS'}
                 className={`score-filter-tab is-pass ${filterStatus === 'PASS' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('PASS')}
+                style={{
+                  flex: 1,
+                  minWidth: '60px',
+                  height: '36px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justify-content: 'center',
+                  gap: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: filterStatus === 'PASS' ? '#4ade80' : '#888899',
+                  background: filterStatus === 'PASS' ? 'rgba(34,197,94,0.15)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
               >
-                Pass <span className="score-tab-count">{result.pass}</span>
+                Pass <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '99px', background: 'rgba(34,197,94,0.2)' }}>{result.pass}</span>
               </button>
               {result.fail! > 0 && (
                 <button
@@ -263,8 +370,24 @@ export function ScoreForm() {
                   aria-selected={filterStatus === 'FAIL'}
                   className={`score-filter-tab is-fail ${filterStatus === 'FAIL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('FAIL')}
+                  style={{
+                    flex: 1,
+                    minWidth: '60px',
+                    height: '36px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justify-content: 'center',
+                    gap: '6px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: filterStatus === 'FAIL' ? '#f87171' : '#888899',
+                    background: filterStatus === 'FAIL' ? 'rgba(239,68,68,0.15)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
                 >
-                  Fail <span className="score-tab-count">{result.fail}</span>
+                  Fail <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '99px', background: 'rgba(239,68,68,0.2)' }}>{result.fail}</span>
                 </button>
               )}
               {result.warn! > 0 && (
@@ -274,8 +397,24 @@ export function ScoreForm() {
                   aria-selected={filterStatus === 'WARN'}
                   className={`score-filter-tab is-warn ${filterStatus === 'WARN' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('WARN')}
+                  style={{
+                    flex: 1,
+                    minWidth: '60px',
+                    height: '36px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justify-content: 'center',
+                    gap: '6px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: filterStatus === 'WARN' ? '#facc15' : '#888899',
+                    background: filterStatus === 'WARN' ? 'rgba(234,179,8,0.15)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
                 >
-                  Warn <span className="score-tab-count">{result.warn}</span>
+                  Warn <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '99px', background: 'rgba(234,179,8,0.2)' }}>{result.warn}</span>
                 </button>
               )}
               <button
@@ -284,54 +423,101 @@ export function ScoreForm() {
                 aria-selected={filterStatus === 'SKIP'}
                 className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('SKIP')}
+                style={{
+                  flex: 1,
+                  minWidth: '60px',
+                  height: '36px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justify-content: 'center',
+                  gap: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: filterStatus === 'SKIP' ? '#cccccc' : '#888899',
+                  background: filterStatus === 'SKIP' ? '#1c1c28' : 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
               >
-                Skip <span className="score-tab-count">{result.skip}</span>
+                Skip <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '99px', background: 'rgba(255,255,255,0.1)' }}>{result.skip}</span>
               </button>
             </div>
 
             {/* Secondary Controls: Search & Category Pills */}
-            <div className="score-controls-secondary">
-              <div className="score-search-wrapper">
-                <span className="score-search-icon">🔍</span>
+            <div className="score-controls-secondary" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="score-search-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <span className="score-search-icon" style={{ position: 'absolute', left: '12px', fontSize: '13px', opacity: 0.5, pointerEvents: 'none' }}>🔍</span>
                 <input
                   type="text"
-                  placeholder="Search checks..."
+                  placeholder="Search 26 verification checks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="score-search-input"
                   aria-label="Search checks"
+                  style={{
+                    width: '100%',
+                    height: '38px',
+                    paddingLeft: '34px',
+                    paddingRight: '16px',
+                    background: '#0a0a0e',
+                    border: '1px solid #22222e',
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    outline: 'none',
+                  }}
                 />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="score-search-clear"
-                    aria-label="Clear search"
-                  >
-                    ×
-                  </button>
-                )}
               </div>
 
-              <div className="score-category-chips">
+              <div className="score-category-chips" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
                 <button
                   type="button"
                   className={`score-category-chip ${selectedCategory === 'ALL' ? 'is-active' : ''}`}
                   onClick={() => setSelectedCategory('ALL')}
+                  style={{
+                    height: '28px',
+                    padding: '0 12px',
+                    borderRadius: '99px',
+                    background: selectedCategory === 'ALL' ? 'rgba(1,51,203,0.2)' : 'rgba(255,255,255,0.03)',
+                    border: selectedCategory === 'ALL' ? '1px solid #0133cb' : '1px solid #22222e',
+                    color: selectedCategory === 'ALL' ? '#ffffff' : '#888899',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
                 >
                   All Categories
                 </button>
                 {CATEGORIES.map((cat) => {
                   const count = checks.filter((c) => c.category === cat.key).length;
                   if (count === 0) return null;
+                  const isActive = selectedCategory === cat.key;
                   return (
                     <button
                       key={cat.key}
                       type="button"
-                      className={`score-category-chip ${selectedCategory === cat.key ? 'is-active' : ''}`}
+                      className={`score-category-chip ${isActive ? 'is-active' : ''}`}
                       onClick={() => setSelectedCategory(cat.key)}
+                      style={{
+                        height: '28px',
+                        padding: '0 10px',
+                        borderRadius: '99px',
+                        background: isActive ? 'rgba(1,51,203,0.2)' : 'rgba(255,255,255,0.03)',
+                        border: isActive ? '1px solid #0133cb' : '1px solid #22222e',
+                        color: isActive ? '#ffffff' : '#888899',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
                     >
-                      {cat.label} <span className="score-chip-num">{count}</span>
+                      <span>{cat.label}</span>
+                      <span style={{ opacity: 0.6, fontSize: '10px' }}>{count}</span>
                     </button>
                   );
                 })}
@@ -340,11 +526,11 @@ export function ScoreForm() {
           </div>
 
           {/* Verification Cards Feed */}
-          <div className="score-cards-feed">
+          <div className="score-cards-feed" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredChecks.length === 0 ? (
-              <div className="score-empty-feed">
-                <p className="score-empty-title">No matching verification checks</p>
-                <p className="score-empty-desc">Try adjusting your status filter or search term.</p>
+              <div className="score-empty-feed" style={{ padding: '36px 16px', textAlign: 'center', background: '#111116', border: '1px solid #22222e', borderRadius: '16px' }}>
+                <p className="score-empty-title" style={{ fontWeight: 600, color: '#ffffff', margin: '0 0 4px 0' }}>No matching verification checks</p>
+                <p className="score-empty-desc" style={{ fontSize: '13px', color: '#888899', margin: '0 0 16px 0' }}>Try adjusting your status filter or search query.</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -353,6 +539,7 @@ export function ScoreForm() {
                     setSearchQuery('');
                   }}
                   className="score-action-btn secondary"
+                  style={{ height: '36px', padding: '0 16px', fontSize: '13px', borderRadius: '8px', background: '#181822', border: '1px solid #28283a', color: '#fff' }}
                 >
                   Reset filters
                 </button>
@@ -361,6 +548,31 @@ export function ScoreForm() {
               filteredChecks.map((check) => {
                 const isExpanded = expandedId === check.id;
                 const statusClass = check.status.toLowerCase();
+                const badgeBg =
+                  check.status === 'PASS'
+                    ? 'rgba(34,197,94,0.15)'
+                    : check.status === 'FAIL'
+                    ? 'rgba(239,68,68,0.15)'
+                    : check.status === 'WARN'
+                    ? 'rgba(234,179,8,0.15)'
+                    : 'rgba(255,255,255,0.06)';
+                const badgeColor =
+                  check.status === 'PASS'
+                    ? '#4ade80'
+                    : check.status === 'FAIL'
+                    ? '#f87171'
+                    : check.status === 'WARN'
+                    ? '#facc15'
+                    : '#888899';
+                const badgeBorder =
+                  check.status === 'PASS'
+                    ? '1px solid rgba(34,197,94,0.3)'
+                    : check.status === 'FAIL'
+                    ? '1px solid rgba(239,68,68,0.3)'
+                    : check.status === 'WARN'
+                    ? '1px solid rgba(234,179,8,0.3)'
+                    : '1px solid #22222e';
+
                 return (
                   <div
                     key={check.id}
@@ -368,34 +580,51 @@ export function ScoreForm() {
                     onClick={() => setExpandedId(isExpanded ? null : check.id)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setExpandedId(isExpanded ? null : check.id);
-                      }
+                    style={{
+                      background: '#111116',
+                      border: isExpanded ? '1px solid #0133cb' : '1px solid #1c1c26',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      position: 'relative',
                     }}
                   >
-                    <div className="score-card-main">
-                      <div className="score-card-badge-group">
-                        <span className={`score-card-status-pill is-${statusClass}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span
+                          className={`score-card-status-pill is-${statusClass}`}
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            background: badgeBg,
+                            color: badgeColor,
+                            border: badgeBorder,
+                            display: 'inline-block',
+                          }}
+                        >
                           {check.status}
                         </span>
-                        <span className="score-card-id">{check.id}</span>
-                        <span className="score-card-cat">{check.category}</span>
+                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#888899', fontWeight: 600 }}>{check.id}</span>
+                        <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#666677', background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px' }}>
+                          {check.category}
+                        </span>
                       </div>
-                      <h4 className="score-card-title">{check.item}</h4>
+                      <span style={{ fontSize: '11px', color: '#666677' }}>{isExpanded ? '▲' : '▼'}</span>
                     </div>
 
-                    <div className="score-card-right">
-                      <span className="score-card-arrow" aria-hidden="true">
-                        {isExpanded ? '▲' : '▼'}
-                      </span>
-                    </div>
+                    <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', margin: 0, lineHeight: 1.4 }}>{check.item}</h4>
 
                     {isExpanded && (
-                      <div className="score-card-drawer">
-                        <p className="score-drawer-heading">Technical Finding & Rule Context</p>
-                        <p className="score-drawer-detail">{check.detail}</p>
+                      <div style={{ marginTop: '6px', paddingTop: '10px', borderTop: '1px dashed #22222e' }}>
+                        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#3358e8', fontWeight: 700, margin: '0 0 4px 0' }}>Technical Finding & Rule Context</p>
+                        <p style={{ fontSize: '13px', color: '#aaaabb', margin: 0, lineHeight: 1.5 }}>{check.detail}</p>
                       </div>
                     )}
                   </div>
@@ -404,20 +633,17 @@ export function ScoreForm() {
             )}
           </div>
 
-          <p className="score-note">
-            {result.total} checks evaluated against the Designesy design system contract v0.3.0.
-            Full live browser telemetry (viewports, INP, LCP) available via the{' '}
-            <a href="/open" className="text-link">MCP verification engine</a>.
+          <p className="score-note" style={{ fontSize: '12px', color: '#666677', textAlign: 'center', marginTop: '12px' }}>
+            {result.total} checks evaluated against Designesy design system contract v0.3.0.
           </p>
         </div>
       )}
 
       {status === 'idle' && (
-        <div className="score-welcome-card">
-          <p className="score-welcome-title">Legitimacy Audit Engine</p>
-          <p className="score-hint">
-            Enter any public website URL above. We fetch its CSS, extract design tokens, and evaluate 26 verification
-            checks against the Designesy contract v0.3.0. No login. Real-time.
+        <div className="score-welcome-card" style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid #22222e', borderRadius: '14px', textAlign: 'center' }}>
+          <p className="score-welcome-title" style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3358e8', margin: '0 0 6px 0' }}>Legitimacy Audit Engine</p>
+          <p className="score-hint" style={{ fontSize: '13.5px', color: '#888899', lineHeight: 1.55, margin: 0 }}>
+            Enter any public website URL above. We fetch its CSS, extract design tokens, and evaluate 26 verification checks against the Designesy contract v0.3.0. Real-time. No login required.
           </p>
         </div>
       )}
