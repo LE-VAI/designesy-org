@@ -152,17 +152,17 @@ p {
     100deg,
     #f4f6ff 0%,
     #e8ecff 12%,
-    #ffffff 22%,
+    var(--ink) 22%,
     var(--ink) 34%,
     #5b78f0 42%,
     #9eb0ff 46.5%,
-    #fecc34 49%,
+    #dce4ff 49%,
     #ffffff 50.5%,
-    #fecc34 52%,
+    #dce4ff 52%,
     #9eb0ff 54.5%,
     #5b78f0 58%,
     var(--signal) 64%,
-    #ffffff 72%,
+    var(--ink) 72%,
     var(--ink) 84%,
     #e8ecff 92%,
     #f4f6ff 100%
@@ -174,7 +174,7 @@ p {
   background-clip: text !important;
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
-  animation: textShimmer 3.8s linear infinite !important;
+  animation: textShimmer 4.2s linear infinite !important;
 }
 
 .wordmark-hero .dot {

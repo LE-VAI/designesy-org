@@ -102,56 +102,46 @@ export function FireworkBurst() {
     };
 
     const burst = (clientX: number, clientY: number, intensity = 40) => {
-      const colors = ['#0133CB', '#3358E8', '#FECC34', '#FFFFFF', '#9EB0FF'];
+      const colors = ['#0133CB', '#3358E8', '#5B78F0', '#9EB0FF', '#FFFFFF'];
       for (let i = 0; i < intensity; i++) {
         const angle = (Math.PI * 2 * i) / intensity + Math.random() * 0.4;
-        const speed = 1.5 + Math.random() * 4.5;
+        const speed = 2 + Math.random() * 4.5;
         particlesRef.current.push({
           x: clientX,
           y: clientY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 0.8,
+          vy: Math.sin(angle) * speed - 1.2,
           life: 0,
-          maxLife: 40 + Math.random() * 35,
+          maxLife: 45 + Math.random() * 30,
           size: 2 + Math.random() * 3.5,
           color: colors[i % colors.length],
         });
       }
       ringsRef.current.push({ x: clientX, y: clientY, radius: 4, life: 0, maxLife: 28 });
-      ringsRef.current.push({ x: clientX, y: clientY, radius: 2, life: 0, maxLife: 42 });
+      ringsRef.current.push({ x: clientX, y: clientY, radius: 2, life: 0, maxLife: 40 });
 
       if (animRef.current === 0) {
         animRef.current = requestAnimationFrame(animate);
       }
     };
 
-    const handleClick = (e: MouseEvent) => {
+    const handleTrigger = (e: MouseEvent | PointerEvent) => {
       const target = e.target as Element | null;
       if (!target) return;
-      const el = target.closest('[data-firework], [data-cuelume-hover="sparkle"], .wordmark, .wordmark-hero, [href="/open"]');
+      const el = target.closest('[data-firework], [data-cuelume-hover], [data-cuelume-press], .wordmark, .wordmark-hero, nav a, .nav-links a, button');
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const cx = e.clientX || rect.left + rect.width / 2;
       const cy = e.clientY || rect.top + rect.height / 2;
-      burst(cx, cy, 45);
+      burst(cx, cy, 40);
     };
 
-    const handlePointerEnter = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
-      const target = e.target as Element | null;
-      if (!target) return;
-      const el = target.closest('[data-firework], [data-cuelume-hover="sparkle"], .wordmark');
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 18);
-    };
-
-    document.addEventListener('click', handleClick, true);
-    document.addEventListener('pointerenter', handlePointerEnter, true);
+    document.addEventListener('pointerdown', handleTrigger, true);
+    document.addEventListener('click', handleTrigger, true);
 
     return () => {
-      document.removeEventListener('click', handleClick, true);
-      document.removeEventListener('pointerenter', handlePointerEnter, true);
+      document.removeEventListener('pointerdown', handleTrigger, true);
+      document.removeEventListener('click', handleTrigger, true);
       if (animRef.current) cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
     };
