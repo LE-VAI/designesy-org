@@ -165,8 +165,7 @@ export function ScoreForm() {
               style={{
                 width: '100%',
                 height: '52px',
-                paddingLeft: '56px',
-                paddingRight: '16px',
+                padding: '0 16px 0 56px',
                 background: '#0a0a0e',
                 border: '1px solid #22222e',
                 borderRadius: '10px',
