@@ -3,56 +3,28 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { CASE_STUDIES, type CaseStudy } from '../lib/case-studies';
 
 export const metadata: Metadata = pageMeta({
   title: 'Work — case studies',
   description:
-    'Shipped artifacts reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, with engagement metrics and documented outcomes.',
+    'Shipped artifacts and before/after scores reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, including the publisher scoring itself.',
   path: '/work',
   ogTitle: 'Work · Designesy',
   ogDescription:
-    'Case studies — shipped artifacts reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
+    'Case studies — shipped artifacts and before/after scores reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
   twitterDescription: 'Case studies — designesy.org/work',
 });
 
-const CASE_STUDIES = [
-  {
-    slug: 'tile',
-    title: 'Tile',
-    lede: 'Interactive series composer — one story, many tiles, shared spine.',
-    status: 'Shipped · live',
-    badge: 'Pass with notes',
-    artifact: 'le-vai.github.io/tile',
-    date: '2026-07-13',
-    metrics: '617 views · 3 likes · 1 reply',
-    summary:
-      'A self-contained tool that lets you compose a series of visual tiles from one spine. Published on X with a one-word root post and screen recording. The only post in 24 hours to break out of the noise floor — by a wide margin.',
-  },
-  {
-    slug: 'compile',
-    title: 'Compile',
-    lede: 'Principle compiler — turns plain language into verifiable design contracts.',
-    status: 'Built · pending hosting',
-    badge: 'Ready for review',
-    artifact: 'Local build · pending deploy',
-    date: '2026-07-13',
-    metrics: '9 verification tests passed · 7 design domains',
-    summary:
-      'A tool that takes any plain-language design principle and compiles it into tokens, anti-patterns, a review checklist, and a portable verification script. Self-documents to the 10-cell Lab anatomy. Built and locally verified; pending hosting and publication.',
-  },
-  {
-    slug: 'continuity',
-    title: 'Continuity',
-    lede: 'Founder narrative article — published as a single X post.',
-    status: 'Shipped · live',
-    badge: 'Needs revision',
-    artifact: 'le-vai.github.io/continuity',
-    date: '2026-07-12',
-    metrics: 'Underperformed relative to Tile',
-    summary:
-      'A founder-narrative article published as a single X post with preview URL. The multi-post thread was withdrawn; a single-post revision was published 2026-07-12. The single-post version underperformed a one-word product demo in the same period.',
-  },
-];
+function scoreLine(cs: CaseStudy): string {
+  if (cs.beforeScore != null && cs.afterScore != null) {
+    return `${cs.gradeBefore} ${cs.beforeScore} → ${cs.gradeAfter} ${cs.afterScore}`;
+  }
+  if (cs.beforeScore != null) {
+    return `${cs.gradeBefore} ${cs.beforeScore}`;
+  }
+  return cs.metrics;
+}
 
 export default function WorkPage() {
   return (
@@ -64,13 +36,16 @@ export default function WorkPage() {
           <p className="surface-eyebrow" data-scramble>Work</p>
           <h1 className="surface-title" data-scramble>Case studies</h1>
           <p className="surface-lede">
-            Shipped artifacts reviewed against the design system contract.
+            Shipped artifacts and before/after scores reviewed against the
+            contract.
           </p>
           <p className="surface-note">
             The pipeline promises tools into better designed work. These are
             the artifacts — real tools, real publication, real engagement,
             reviewed with Use Kit One. The review format is the same
             eight-dimension method used on Labs and the public surface itself.
+            Before/after scores are real values from the live /api/score
+            endpoint, captured on the date each case study lists.
           </p>
         </section>
 
@@ -78,8 +53,9 @@ export default function WorkPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Each case study follows the field-check anatomy: summary, inputs,
             eight dimension findings (observation, judgment, action),
-            verification, corrections, and sources. Outcomes include what
-            did not work.
+            verification, corrections, and sources. Before/after case
+            studies add a score-delta table showing which checks moved and
+            why. Outcomes include what did not work.
           </p>
           <div className="row-stack" role="list">
             {CASE_STUDIES.map((cs, i) => (
@@ -97,7 +73,7 @@ export default function WorkPage() {
                 <span className="row-body">
                   <span className="row-title">{cs.title}</span>
                   <span className="row-meta">
-                    {cs.lede} · {cs.status}
+                    {cs.lede} · {cs.status} · {scoreLine(cs)}
                   </span>
                 </span>
               </Link>
@@ -114,14 +90,17 @@ export default function WorkPage() {
               become tools. Tools become better designed work. These case
               studies are the evidence for that last step — shipped artifacts,
               reviewed against the contract, with engagement metrics and
-              documented outcomes.
+              documented outcomes. The before/after pattern is newer: it
+              scores a real URL, fixes the gaps, and scores again — on the
+              same engine, with the same thresholds, as every other site.
             </p>
           </div>
         </section>
 
         <div className="status-note">
-          Case studies publish when an artifact is shipped and reviewed. Empty
-          slots are not advertised as upcoming work.
+          Case studies publish when an artifact is shipped and reviewed, or
+          when a real URL has a real score. Empty slots are not advertised as
+          upcoming work.
         </div>
       </main>
 
