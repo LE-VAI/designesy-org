@@ -45,8 +45,14 @@
   --maxw: 1080px;
   --radius: 6px;
   --radius-sm: 4px;
+  --radius-lg: 12px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --duration: 0.6s;
+
+  /* Semantic state colors for verification status */
+  --ok: #4ade80;
+  --error: #f87171;
+  --warn: #facc15;
 
   /* Motion contract tokens (Emil Kowalski / Apple WWDC) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -6539,6 +6545,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .principle.is-shaking {
     animation-duration: 0.3s !important;
   }
+} /* close @media (prefers-reduced-motion: reduce) */
 
 /* ── Score hero section (homepage) ──────────────────────────────────────── */
 
@@ -6560,21 +6567,19 @@ a.lab-card:focus-visible .lab-card-arrow {
   max-width: 640px;
 }
 
-/* ── Score Tool Redesign (Executive Report Card & Mobile Hardening) ──────── */
+/* ── Score Form ─────────────────────────────────────────────────────────── */
 
 .score-form {
-  width: 100% !important;
-  max-width: 680px !important;
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-  box-sizing: border-box !important;
+  width: 100%;
+  max-width: 680px;
+  margin-left: 0;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .score-input-card {
-  background: #111116;
-  border: 1px solid #22222e;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: 1rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -6589,55 +6594,57 @@ a.lab-card:focus-visible .lab-card-arrow {
   width: 100%;
 }
 
-.score-input-wrapper {
-  position: relative;
-  width: 100%;
+.score-input-flex-box {
   display: flex;
   align-items: center;
-}
-
-.score-input-flex-box {
-  display: flex !important;
-  align-items: center !important;
-  width: 100% !important;
-  height: 3.25rem !important;
-  background: #0a0a0e !important;
-  border: 1px solid #22222e !important;
-  border-radius: var(--radius) !important;
-  padding: 0 16px !important;
-  box-sizing: border-box !important;
-  transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+  width: 100%;
+  height: 3.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 1rem;
+  box-sizing: border-box;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .score-input-flex-box:focus-within {
-  border-color: var(--signal, #3358e8) !important;
-  box-shadow: 0 0 0 3px rgba(1, 51, 203, 0.25) !important;
-}
-
-.score-url-input-inner {
-  flex: 1 1 auto !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  color: var(--ink, #ffffff) !important;
-  font-size: 0.95rem !important;
-  font-family: inherit !important;
-  padding: 0 0 0 12px !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
-}
-
-.score-url-input:focus {
-  outline: none;
   border-color: var(--signal);
   box-shadow: 0 0 0 3px rgba(1, 51, 203, 0.25);
 }
 
+.score-input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  color: var(--signal);
+  pointer-events: none;
+}
+
+.score-url-input-inner {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-family: inherit;
+  padding: 0 0 0 0.75rem;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.score-url-input-inner::placeholder {
+  color: var(--muted-dim);
+}
+
 .score-submit {
   width: 100%;
-  height: 3.25rem;
+  min-height: 3.25rem;
   font-weight: 600;
   font-size: 0.95rem;
   border-radius: var(--radius);
@@ -6657,7 +6664,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   width: 1rem;
   height: 1rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
+  border-top-color: var(--ink);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -6666,20 +6673,30 @@ a.lab-card:focus-visible .lab-card-arrow {
   to { transform: rotate(360deg); }
 }
 
+/* ── Score Error Card ──────────────────────────────────────────────────── */
+
 .score-error-card {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   margin-top: 1.25rem;
   padding: 1rem 1.25rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.25);
   border-radius: var(--radius);
+}
+
+.score-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--error);
 }
 
 .score-error-title {
   font-weight: 600;
-  color: #f87171;
+  color: var(--error);
   margin-bottom: 0.2rem;
 }
 
@@ -6688,11 +6705,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
 }
 
+/* ── Score Welcome / Idle State ─────────────────────────────────────────── */
+
 .score-welcome-card {
   margin-top: 1.5rem;
   padding: 1.25rem 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--line-faint);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   text-align: center;
 }
@@ -6713,7 +6732,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0;
 }
 
-/* ── Score Results Hero & Metric Grid ─────────────────────────────────── */
+/* ── Score Results ─────────────────────────────────────────────────────── */
 
 .score-results {
   margin-top: 2rem;
@@ -6761,11 +6780,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   z-index: 2;
 }
 
-.score-grade-emblem.is-a { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); color: #4ade80; }
+.score-grade-emblem.is-a { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); color: var(--ok); }
 .score-grade-emblem.is-b { background: rgba(132, 204, 22, 0.12); border-color: rgba(132, 204, 22, 0.3); color: #a3e635; }
-.score-grade-emblem.is-c { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.3); color: #facc15; }
+.score-grade-emblem.is-c { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.3); color: var(--warn); }
 .score-grade-emblem.is-d { background: rgba(249, 115, 22, 0.12); border-color: rgba(249, 115, 22, 0.3); color: #fb923c; }
-.score-grade-emblem.is-f { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: #f87171; }
+.score-grade-emblem.is-f { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: var(--error); }
 
 .score-grade-glow {
   position: absolute;
@@ -6811,12 +6830,29 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 600;
 }
 
+.score-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.score-progress-fill {
+  height: 100%;
+  background: var(--signal);
+  border-radius: 999px;
+  transition: width 0.6s var(--ease-out);
+}
+
 .score-site-url {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--line-faint);
+  border: 1px solid var(--line);
   padding: 0.3rem 0.6rem;
   border-radius: var(--radius-sm);
   width: fit-content;
@@ -6827,15 +6863,15 @@ a.lab-card:focus-visible .lab-card-arrow {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px #4ade80;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
   flex-shrink: 0;
 }
 
 .score-url-text {
   font-size: 0.8rem;
   color: var(--muted);
-  font-family: monospace;
+  font-family: var(--mono, ui-monospace, monospace);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6848,8 +6884,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-tile {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line-faint);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0.75rem 0.5rem;
   text-align: center;
@@ -6873,18 +6909,18 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-tile.is-pass { border-color: rgba(34, 197, 94, 0.2); }
-.score-metric-tile.is-pass .score-metric-val { color: #4ade80; }
+.score-metric-tile.is-pass .score-metric-val { color: var(--ok); }
 .score-metric-tile.is-pass .score-metric-lbl { color: rgba(74, 222, 128, 0.8); }
 
 .score-metric-tile.is-fail { border-color: rgba(239, 68, 68, 0.2); }
-.score-metric-tile.is-fail .score-metric-val { color: #f87171; }
+.score-metric-tile.is-fail .score-metric-val { color: var(--error); }
 .score-metric-tile.is-fail .score-metric-lbl { color: rgba(248, 113, 113, 0.8); }
 
 .score-metric-tile.is-warn { border-color: rgba(234, 179, 8, 0.2); }
-.score-metric-tile.is-warn .score-metric-val { color: #facc15; }
+.score-metric-tile.is-warn .score-metric-val { color: var(--warn); }
 .score-metric-tile.is-warn .score-metric-lbl { color: rgba(250, 204, 21, 0.8); }
 
-.score-metric-tile.is-skip { border-color: var(--line-faint); }
+.score-metric-tile.is-skip { border-color: var(--line); }
 .score-metric-tile.is-skip .score-metric-val { color: var(--muted); }
 .score-metric-tile.is-skip .score-metric-lbl { color: var(--muted-dim); }
 
@@ -6893,7 +6929,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   justify-content: space-between;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--line-faint);
+  border-top: 1px solid var(--line);
   gap: 0.75rem;
 }
 
@@ -6907,7 +6943,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.15s var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .score-action-btn:hover {
@@ -6921,7 +6957,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 500;
 }
 
-/* ── Filter Controls & Feed ───────────────────────────────────────────── */
+.score-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Filter Controls & Feed ────────────────────────────────────────────── */
 
 .score-controls-card {
   background: var(--surface-raised);
@@ -6938,7 +6981,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: rgba(0, 0, 0, 0.4);
   padding: 3px;
   border-radius: var(--radius);
-  border: 1px solid var(--line-faint);
+  border: 1px solid var(--line);
   gap: 2px;
 }
 
@@ -6956,7 +6999,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .score-filter-tab:hover {
@@ -6982,12 +7025,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
 }
 
-.score-controls-secondary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .score-search-wrapper {
   position: relative;
   display: flex;
@@ -7000,6 +7037,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.8rem;
   opacity: 0.6;
   pointer-events: none;
+  color: var(--muted);
 }
 
 .score-search-input {
@@ -7014,15 +7052,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-family: inherit;
 }
 
-.score-search-clear {
-  position: absolute;
-  right: 0.5rem;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0 0.4rem;
+.score-search-input:focus {
+  outline: none;
+  border-color: var(--signal);
+}
+
+.score-search-input::placeholder {
+  color: var(--muted-dim);
 }
 
 .score-category-chips {
@@ -7037,8 +7073,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   height: 1.85rem;
   padding: 0 0.7rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line-faint);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.75rem;
   font-weight: 500;
@@ -7047,18 +7083,18 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  transition: all 0.15s var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .score-category-chip:hover {
-  border-color: var(--line);
+  border-color: var(--line-strong);
   color: var(--ink);
 }
 
 .score-category-chip.is-active {
   background: rgba(1, 51, 203, 0.15);
   border-color: var(--signal);
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .score-chip-num {
@@ -7066,7 +7102,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   opacity: 0.7;
 }
 
-/* ── Verification Cards Feed ───────────────────────────────────────────── */
+/* ── Verification Cards Feed ────────────────────────────────────────────── */
 
 .score-cards-feed {
   display: flex;
@@ -7078,13 +7114,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: 2.5rem 1rem;
   text-align: center;
   background: var(--surface-raised);
-  border: 1px solid var(--line-faint);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
 
 .score-empty-title {
   font-weight: 600;
   margin-bottom: 0.25rem;
+  color: var(--ink);
 }
 
 .score-empty-desc {
@@ -7095,20 +7132,21 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-card-item {
   background: var(--surface-raised);
-  border: 1px solid var(--line-faint);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   cursor: pointer;
-  transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
   position: relative;
 }
 
 .score-card-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--line);
+  background: var(--surface-soft);
+  border-color: var(--line-strong);
 }
 
 .score-card-item.is-expanded {
@@ -7133,18 +7171,18 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
 }
 
-.score-card-status-pill.is-pass { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-.score-card-status-pill.is-fail { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-.score-card-status-pill.is-warn { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
-.score-card-status-pill.is-skip { background: rgba(255, 255, 255, 0.05); color: var(--muted-dim); border: 1px solid var(--line-faint); }
+.score-card-status-pill.is-pass { background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.3); }
+.score-card-status-pill.is-fail { background: rgba(239, 68, 68, 0.15); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
+.score-card-status-pill.is-warn { background: rgba(234, 179, 8, 0.15); color: var(--warn); border: 1px solid rgba(234, 179, 8, 0.3); }
+.score-card-status-pill.is-skip { background: var(--surface-soft); color: var(--muted-dim); border: 1px solid var(--line); }
 
 .score-card-id {
   font-size: 0.725rem;
-  font-family: monospace;
+  font-family: var(--mono, ui-monospace, monospace);
   color: var(--muted);
   font-weight: 600;
 }
@@ -7154,7 +7192,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted-dim);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-soft);
   padding: 1px 5px;
   border-radius: 3px;
 }
@@ -7178,7 +7216,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-card-drawer {
   margin-top: 0.35rem;
   padding-top: 0.65rem;
-  border-top: 1px dashed var(--line-faint);
+  border-top: 1px dashed var(--line);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -7200,16 +7238,28 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0;
 }
 
-/* ── Mobile Hardening for Score Tool (max-width: 720px) ────────────────── */
+/* ── Score Responsive (single consolidated block) ──────────────────────── */
 
 @media (max-width: 720px) {
-  .score-input-row {
-    flex-direction: column;
-    gap: 0.65rem;
+  .score-input-card {
+    padding: 0.85rem;
+  }
+
+  .score-input-flex-box {
+    height: 3rem;
+  }
+
+  .score-url-input-inner {
+    font-size: 1rem; /* iOS auto-zoom prevention */
   }
 
   .score-submit {
-    width: 100%;
+    min-height: 3rem;
+    font-size: 0.9rem;
+  }
+
+  .score-hero-card {
+    padding: 1.25rem;
   }
 
   .score-hero-top {
@@ -7222,6 +7272,23 @@ a.lab-card:focus-visible .lab-card-arrow {
     align-items: center;
   }
 
+  .score-grade-emblem {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .score-grade-letter {
+    font-size: 2.5rem;
+  }
+
+  .score-percent-value {
+    font-size: 1.75rem;
+  }
+
+  .score-progress-bar {
+    width: 100%;
+  }
+
   .score-site-url {
     max-width: 100%;
   }
@@ -7231,84 +7298,31 @@ a.lab-card:focus-visible .lab-card-arrow {
     gap: 0.5rem;
   }
 
-  .score-filter-segmented {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .score-filter-tab {
-    padding: 0 0.6rem;
-    font-size: 0.75rem;
-  }
-
   .score-hero-actions {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
-}
-} /* close @media (prefers-reduced-motion: reduce) — mobile CSS below is top-level */
 
-/* ── Mobile hardening (score-as-homepage, full responsive) ────────────────
-   Breakpoints: 860px (tablet), 720px (large phone), 560px (phone), 380px (SE)
-   Goals: no horizontal overflow at any width, ≥40px touch targets, beautiful
-   typographic rhythm, density without cramping, graceful degradation.
-   ────────────────────────────────────────────────────────────────────────── */
-
-/* ── 860px: Tablet — 2-col grids stay, tighten spacing ──────────────────── */
-@media (max-width: 860px) {
-  /* Hero: remove the 280px sidebar reservation, let content breathe full-width */
-  .hero-eyebrow,
-  .hero-lede,
-  .hero-body,
-  .hero-actions {
-    max-width: 100%;
+  .score-filter-segmented {
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  /* Wordmark: scale between desktop and phone */
-  .wordmark-hero {
-    font-size: clamp(2.5rem, 8vw, 4rem);
+  .score-filter-segmented::-webkit-scrollbar {
+    display: none;
   }
 
-  /* Principle layout: stack the rail and radar vertically */
-  .principle-layout {
-    flex-direction: column;
-    gap: 1.5rem;
+  .score-filter-tab {
+    padding: 0 0.6rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 
-  /* State layout: stack rows and marquee */
-  .state-layout {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-}
-
-/* ── 720px: Large phone — single column, tighten nav ────────────────────── */
-@media (max-width: 720px) {
-  /* Nav: tighter spacing, scrollable with hidden scrollbar */
-  .topbar-right {
-    gap: 0.25rem;
+  .score-controls-card {
+    padding: 0.85rem;
   }
 
-  .nav-links {
-    gap: 0;
-  }
-
-  .nav-links a {
-    padding: 0.4rem 0.45rem;
-    font-size: 0.72rem;
-    min-height: 2.5rem;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  /* Sense toggles: bump to 36px for better touch */
-  .sense-toggle {
-    width: 36px;
-    height: 36px;
-  }
-
-  /* Score hero: tighten */
   .score-hero-section {
     padding-top: 1.5rem;
     padding-bottom: 1.75rem;
@@ -7323,343 +7337,18 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.78rem;
     line-height: 1.5;
   }
-
-  /* Score results: stack grade + meta */
-  .score-grade {
-    font-size: 2.5rem;
-  }
-
-  /* Hero: tablet-scale title */
-  .wordmark-hero {
-    font-size: 2.75rem;
-  }
-
-  .hero-lede {
-    font-size: 1.05rem;
-  }
-
-  .hero-body {
-    font-size: 0.85rem;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Section spacing: comfortable but tighter than desktop */
-  .section {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-
-  /* Section titles: scale down */
-  .section-title {
-    font-size: 1.5rem;
-  }
-
-  .surface-lede {
-    font-size: 0.9rem;
-    line-height: 1.55;
-  }
-
-  /* Pillars: tighten */
-  .pillar {
-    padding: 1.25rem;
-  }
-
-  .pillar h3 {
-    font-size: 1rem;
-  }
-
-  .pillar p {
-    font-size: 0.85rem;
-    line-height: 1.55;
-  }
-
-  /* Field cards: tighten */
-  .field-card {
-    padding: 1.1rem;
-  }
-
-  .field-card-title {
-    font-size: 1rem;
-  }
-
-  .field-card-lede {
-    font-size: 0.85rem;
-  }
-
-  .field-card-desc {
-    font-size: 0.8rem;
-    line-height: 1.5;
-  }
-
-  /* Surface cards: tighten */
-  .surface-card {
-    padding: 1.1rem;
-  }
-
-  .surface-card-label {
-    font-size: 1rem;
-  }
-
-  .surface-card-desc {
-    font-size: 0.8rem;
-  }
-
-  /* Principles: tighter */
-  .principle {
-    gap: 0.5rem;
-  }
-
-  .principle-body h3 {
-    font-size: 0.9rem;
-  }
-
-  .principle-body p {
-    font-size: 0.8rem;
-    line-height: 1.5;
-  }
-
-  /* Row stack: tighten */
-  .row-stack {
-    gap: 0.5rem;
-  }
-
-  .row-title {
-    font-size: 0.88rem;
-  }
-
-  .row-meta {
-    font-size: 0.75rem;
-    line-height: 1.4;
-  }
-
-  /* Footer: tighten padding */
-  .footer-inner {
-    gap: 1rem;
-  }
-
-  /* Footer dock: make the marquee track scrollable on touch instead of overflowing */
-  .footer-dock {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .footer-dock::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Director dock: smaller, closer to edge on phones */
-  .director-dock {
-    width: 2rem;
-    height: 2rem;
-    right: 0.5rem;
-  }
-
-  /* Back button: closer to bottom edge */
-  .back-button {
-    width: 2rem;
-    height: 2rem;
-  }
 }
 
-/* ── 560px: Phone — full single column, stacked CTAs, full-width inputs ─── */
 @media (max-width: 560px) {
-  /* Nav: denser links for small screens */
-  .nav-links a {
-    padding: 0.35rem 0.35rem;
-    font-size: 0.68rem;
-    letter-spacing: -0.01em;
-    min-height: 2.25rem;
-  }
-
-  /* Site shell: less side padding */
-  .site-shell {
-    padding: 0 1rem;
-  }
-
-  /* Hero: phone-scale title */
-  .wordmark-hero {
-    font-size: 2.1rem;
-    letter-spacing: -0.04em;
-  }
-
-  .hero {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-  }
-
-  .hero-eyebrow {
-    font-size: 0.62rem;
-    letter-spacing: 0.12em;
-  }
-
-  .hero-lede {
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
-
-  .hero-body {
-    font-size: 0.8rem;
-    line-height: 1.55;
-  }
-
-  .hero-actions {
-    gap: 0.5rem;
-  }
-
-  /* Score form: full-width submit, comfortable input */
-  .score-input-row {
-    gap: 0.5rem;
-  }
-
-  .score-url-input {
-    padding: 0.75rem 0.85rem;
-    font-size: 1rem; /* iOS auto-zoom prevention: 1rem = 16px at root */
-  }
-
   .score-submit {
-    width: 100%;
     min-height: 44px;
-    padding: 0.7rem 1rem;
     font-size: 0.85rem;
   }
 
-  .score-hint {
-    font-size: 0.78rem;
-    margin-top: 0.75rem;
+  .score-input-flex-box {
+    height: 2.75rem;
   }
 
-  /* Score results: compact */
-  .score-grade {
-    font-size: 2rem;
-    padding: 0.4rem 0.75rem;
-  }
-
-  .score-percent {
-    font-size: 0.9rem;
-  }
-
-  .score-counts {
-    font-size: 0.72rem;
-  }
-
-  .score-check {
-    grid-template-columns: 40px 1fr;
-    gap: 0.4rem;
-    padding: 0.5rem 0.6rem;
-  }
-
-  .score-check-item {
-    font-size: 0.78rem;
-  }
-
-  .score-check-detail {
-    font-size: 0.72rem;
-    line-height: 1.4;
-  }
-
-  /* Section spacing: mobile density */
-  .section {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-  }
-
-  .section-title {
-    font-size: 1.3rem;
-  }
-
-  .section-eyebrow {
-    font-size: 0.62rem;
-  }
-
-  .surface-lede {
-    font-size: 0.85rem;
-    line-height: 1.55;
-  }
-
-  /* Pillars: comfortable padding */
-  .pillar {
-    padding: 1.25rem;
-  }
-
-  .pillar-number {
-    font-size: 0.72rem;
-  }
-
-  .pillar h3 {
-    font-size: 0.95rem;
-  }
-
-  .pillar p {
-    font-size: 0.82rem;
-    line-height: 1.55;
-  }
-
-  /* Field cards: tighten */
-  .field-card {
-    padding: 1.1rem;
-  }
-
-  .field-card-title {
-    font-size: 0.95rem;
-  }
-
-  .field-card-lede {
-    font-size: 0.82rem;
-  }
-
-  .field-card-desc {
-    font-size: 0.78rem;
-    line-height: 1.5;
-  }
-
-  /* Surface cards: tighten */
-  .surface-card {
-    padding: 1.1rem;
-  }
-
-  .surface-card-label {
-    font-size: 0.95rem;
-  }
-
-  .surface-card-desc {
-    font-size: 0.78rem;
-  }
-
-  /* Principles: tighter */
-  .principle {
-    gap: 0.5rem;
-  }
-
-  .principle-num {
-    font-size: 0.78rem;
-  }
-
-  .principle-body h3 {
-    font-size: 0.88rem;
-  }
-
-  .principle-body p {
-    font-size: 0.78rem;
-    line-height: 1.5;
-  }
-
-  /* Row stack: tighter */
-  .row-stack {
-    gap: 0.5rem;
-  }
-
-  .row-title {
-    font-size: 0.85rem;
-  }
-
-  .row-meta {
-    font-size: 0.72rem;
-    line-height: 1.4;
-  }
-
-  /* Score hero: extra tight on small phones */
   .score-hero-section {
     padding-top: 1rem;
     padding-bottom: 1.25rem;
@@ -7669,68 +7358,44 @@ a.lab-card:focus-visible .lab-card-arrow {
     margin-top: 0.75rem;
   }
 
-  /* Footer: tighten */
-  .footer-inner {
-    gap: 0.75rem;
+  .score-hint {
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
   }
 
-  /* Buttons: minimum 44px touch target */
-  .button {
-    min-height: 44px;
-    padding: 0.7rem 1rem;
+  .score-hero-card {
+    padding: 1rem;
   }
 
-  /* Skip link: ensure visible touch target */
-  .skip-link {
-    min-height: 44px;
-    padding: 0.6rem 1rem;
+  .score-grade-emblem {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .score-grade-letter {
+    font-size: 2.25rem;
+  }
+
+  .score-percent-value {
+    font-size: 1.5rem;
+  }
+
+  .score-metric-val {
+    font-size: 1.1rem;
+  }
+
+  .score-controls-card {
+    padding: 0.75rem;
+  }
+
+  .score-card-item {
+    padding: 0.75rem 0.85rem;
   }
 }
 
-/* ── 380px: iPhone SE / older Androids — extreme density ────────────────── */
 @media (max-width: 380px) {
-  .nav-links a {
-    padding: 0.3rem 0.28rem;
-    font-size: 0.62rem;
-    min-height: 2rem;
-  }
-
-  .wordmark {
-    font-size: 0.88rem;
-  }
-
-  .wordmark-hero {
-    font-size: 1.85rem;
-  }
-
-  .hero-lede {
-    font-size: 0.88rem;
-  }
-
-  .hero-body {
-    font-size: 0.76rem;
-  }
-
-  .site-shell {
-    padding: 0 0.75rem;
-  }
-
-  .section {
-    padding-top: 1.75rem;
-    padding-bottom: 1.75rem;
-  }
-
-  .section-title {
-    font-size: 1.15rem;
-  }
-
-  .surface-lede {
-    font-size: 0.8rem;
-  }
-
-  .score-url-input {
-    padding: 0.65rem 0.75rem;
-    font-size: 1rem; /* iOS auto-zoom prevention: 1rem = 16px at root */
+  .score-input-card {
+    padding: 0.75rem;
   }
 
   .score-submit {
@@ -7738,43 +7403,36 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.82rem;
   }
 
-  .pillar {
-    padding: 1rem;
+  .score-grade-emblem {
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
-  .field-card {
-    padding: 1rem;
-  }
-
-  .surface-card {
-    padding: 1rem;
-  }
-}
-
-/* ── Landscape phone: short height — reduce hero, keep score visible ─────── */
-@media (max-width: 860px) and (max-height: 500px) and (orientation: landscape) {
-  .hero {
-    padding-top: 1rem;
-    padding-bottom: 0.75rem;
-    min-height: auto;
-  }
-
-  .wordmark-hero {
+  .score-grade-letter {
     font-size: 2rem;
   }
 
-  .hero-body {
-    margin-bottom: 0.75rem;
+  .score-metrics-grid {
+    gap: 0.4rem;
   }
 
+  .score-metric-tile {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .score-metric-val {
+    font-size: 0.95rem;
+  }
+
+  .score-metric-lbl {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 860px) and (max-height: 500px) and (orientation: landscape) {
   .score-hero-section {
     padding-top: 1rem;
     padding-bottom: 1rem;
-  }
-
-  .section {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
   }
 }
 
