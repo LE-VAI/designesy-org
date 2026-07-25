@@ -72,6 +72,12 @@ const agentLinkHeaders = {
 };
 
 const nextConfig: NextConfig = {
+  // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
+  // under bin/. Next's server bundler (esbuild/webpack) relocates node_modules
+  // and drops these assets, producing "input directory .../bin does not exist"
+  // at Lambda runtime. Externalizing both packages keeps them on disk as-is.
+  // playwright-core is the Lambda-safe driver (no bundled browser download).
+  serverExternalPackages: ['@sparticuz/chromium', 'playwright-core'],
   async headers() {
     return [
       {
