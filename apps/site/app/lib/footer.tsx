@@ -84,6 +84,22 @@ export function Footer() {
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>
 
+          <Link
+            href="/score?url=designesy.org"
+            className="footer-badge"
+            data-cuelume-hover="droplet"
+            data-cuelume-press="tick"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/badge-light.svg"
+              alt="Verified by Designesy — see our live score"
+              width={156}
+              height={32}
+              style={{ display: 'block' }}
+            />
+          </Link>
+
           <nav className="footer-docks" aria-label="Site map">
             <div className="footer-dock">
               <span className="footer-dock-label">Surfaces</span>

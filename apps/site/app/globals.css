@@ -1688,6 +1688,16 @@ button.pillar:hover::before {
   font-weight: 500;
 }
 
+.footer-badge {
+  margin-top: 0.5rem;
+  opacity: 0.85;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.footer-badge:hover {
+  opacity: 1;
+}
+
 /*
   Footer docks — two separate horizontal auto-scrolling rows of pill cells.
   Surfaces dock (human links) and Machine dock (agent links) are visually
