@@ -3477,6 +3477,11 @@ a.check-cell:hover .check-cell-title {
   }
 
   /* Mobile body padding — clear bottom-anchored FABs */
+  /* overflow-x on html (not body) — documentElement.scrollWidth is what the contract v02 check measures; the fixed nav-drawer with translateX(100%) inflates it otherwise */
+  html {
+    overflow-x: hidden;
+  }
+
   body {
     padding-bottom: 4rem;
     overflow-x: hidden;
