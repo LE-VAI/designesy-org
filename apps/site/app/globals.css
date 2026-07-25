@@ -3479,6 +3479,7 @@ a.check-cell:hover .check-cell-title {
   /* Mobile body padding — clear bottom-anchored FABs */
   body {
     padding-bottom: 4rem;
+    overflow-x: hidden;
   }
 
   /* Mobile hamburger trigger */
