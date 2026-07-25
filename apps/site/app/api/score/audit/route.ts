@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Vercel: allow up to 60s for the audit round-trip
+// Vercel Hobby plan caps function duration at 10s; Pro allows up to 60s.
+// The PSI API round-trip is ~3-8s, so 10s is sufficient for v21.
+// v02/v04 (Playwright) will need a Pro plan + higher maxDuration when enabled.
+export const maxDuration = 10;
 
 // ── Rate limiting (in-memory, shared shape with /api/score) ────────────────
 // Browser audits are heavier than static scores — tighter limit.
@@ -109,7 +112,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
   if (apiKey) psiUrl.searchParams.set('key', apiKey);
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const resp = await fetch(psiUrl.href, {
       signal: controller.signal,
