@@ -78,6 +78,16 @@ const nextConfig: NextConfig = {
   // at Lambda runtime. Externalizing both packages keeps them on disk as-is.
   // playwright-core is the Lambda-safe driver (no bundled browser download).
   serverExternalPackages: ['@sparticuz/chromium', 'playwright-core'],
+  // Force Vercel's Node File Trace to include the @sparticuz/chromium
+  // brotli-compressed binaries in the Lambda zip. Without this, NFT misses
+  // the .br files (they're loaded dynamically at runtime, not statically
+  // imported), and the /var/task/.../bin directory is empty at runtime.
+  outputFileTracingIncludes: {
+    '/api/score/audit': [
+      './node_modules/@sparticuz/chromium/bin/**/*',
+      './node_modules/@sparticuz/chromium/build/**/*',
+    ],
+  },
   async headers() {
     return [
       {
