@@ -1,7 +1,16 @@
 // v2026-07-25-clean-rewrite — no inline styles, CSS-class driven
+// v2026-07-25-history — free-tier local score history (5 most-recent per browser)
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
+import {
+  readScoreHistory,
+  saveScore,
+  clearScoreHistory,
+  relativeTime,
+  truncateUrl,
+  type ScoreHistoryEntry,
+} from '../lib/score-history';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -24,6 +33,13 @@ type ScoreResponse = {
   total?: number;
   checks?: CheckResult[];
   tokensExtracted?: number;
+  error?: string;
+};
+
+type AuditResponse = {
+  ok: boolean;
+  url?: string;
+  checks?: CheckResult[];
   error?: string;
 };
 
@@ -61,7 +77,17 @@ export function ScoreForm() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<ScoreHistoryEntry[]>([]);
+  const [historyCleared, setHistoryCleared] = useState(false);
+  const [auditStatus, setAuditStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const [auditError, setAuditError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Load history on mount (client-only). SSR-safe via the guards inside
+  // readScoreHistory.
+  useEffect(() => {
+    setHistory(readScoreHistory());
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,6 +102,8 @@ export function ScoreForm() {
     setFilterStatus('ALL');
     setSelectedCategory('ALL');
     setSearchQuery('');
+    setAuditStatus('idle');
+    setAuditError(null);
 
     try {
       const resp = await fetch('/api/score', {
@@ -92,6 +120,13 @@ export function ScoreForm() {
       setStatus('ok');
       setScoredUrl(targetUrl);
       setResult(data);
+      // Persist to free-tier local history. saveScore is SSR-safe and
+      // dedupes by URL (most-recent wins), caps at 5 entries.
+      if (typeof data.score === 'number' && typeof data.grade === 'string') {
+        const next = saveScore(targetUrl, data);
+        setHistory(next);
+        setHistoryCleared(false);
+      }
     } catch {
       setStatus('error');
       setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
@@ -132,6 +167,56 @@ export function ScoreForm() {
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  }
+
+  function handleClearHistory() {
+    clearScoreHistory();
+    setHistory([]);
+    setHistoryCleared(true);
+    setTimeout(() => setHistoryCleared(false), 2500);
+  }
+
+  // Run the full browser audit: calls /api/score/audit which hits PageSpeed
+  // Insights for Core Web Vitals (v21) and — when Playwright is enabled on
+  // the deployment — viewport overflow (v02) + sound toggle (v04). Results
+  // merge into the existing checks array, replacing the SKIP entries.
+  async function handleRunAudit() {
+    if (auditStatus === 'loading' || !scoredUrl) return;
+    setAuditStatus('loading');
+    setAuditError(null);
+    try {
+      const resp = await fetch('/api/score/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scoredUrl }),
+      });
+      const data: AuditResponse = await resp.json();
+      if (!data.ok || !data.checks) {
+        setAuditStatus('error');
+        setAuditError(data.error || 'Audit failed.');
+        return;
+      }
+      // Merge audit checks into result.checks, replacing by id.
+      setResult((prev) => {
+        if (!prev) return prev;
+        const auditById = new Map(data.checks!.map((c) => [c.id, c]));
+        const merged = (prev.checks || []).map((c) => auditById.get(c.id) || c);
+        const pass = merged.filter((c) => c.status === 'PASS').length;
+        const fail = merged.filter((c) => c.status === 'FAIL').length;
+        const warn = merged.filter((c) => c.status === 'WARN').length;
+        const skip = merged.filter((c) => c.status === 'SKIP').length;
+        const total = merged.length;
+        const scored = total - skip;
+        const score = scored === 0 ? 0 : Math.round(((pass + warn * 0.5) / scored) * 1000) / 10;
+        const grade =
+          score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade };
+      });
+      setAuditStatus('ok');
+    } catch {
+      setAuditStatus('error');
+      setAuditError('Network error — could not reach the audit server.');
+    }
   }
 
   return (
@@ -261,6 +346,28 @@ export function ScoreForm() {
                 {copied ? 'Receipt Copied!' : 'Copy Verification Receipt'}
               </button>
 
+              <button
+                type="button"
+                onClick={handleRunAudit}
+                disabled={auditStatus === 'loading' || !scoredUrl}
+                className="score-action-btn score-audit-btn"
+                data-cuelume-press="tick"
+                title="Run the full browser audit: Core Web Vitals (LCP/INP/CLS) via PageSpeed Insights, plus responsive overflow + sound toggle when browser audit is enabled."
+              >
+                {auditStatus === 'loading' ? (
+                  <span className="score-loading-state">
+                    <span className="score-spinner" />
+                    Running browser audit…
+                  </span>
+                ) : auditStatus === 'ok' ? (
+                  'Audit complete ✓'
+                ) : auditStatus === 'error' ? (
+                  'Audit failed — retry'
+                ) : (
+                  'Run full browser audit'
+                )}
+              </button>
+
               <span className="score-tokens-badge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -268,6 +375,10 @@ export function ScoreForm() {
                 {result.tokensExtracted || 0} CSS tokens extracted
               </span>
             </div>
+
+            {auditStatus === 'error' && auditError && (
+              <p className="score-audit-error">{auditError}</p>
+            )}
           </div>
 
           {/* Interactive Filter & Search Controls */}
@@ -437,6 +548,59 @@ export function ScoreForm() {
             contract v0.3.0. Real-time. No login required.
           </p>
         </div>
+      )}
+
+      {history.length > 0 && (
+        <section className="score-history-panel fade-up" aria-label="Recent scores">
+          <div className="score-history-head">
+            <p className="score-history-title">Recent scores</p>
+            <button
+              type="button"
+              className="score-history-clear"
+              onClick={handleClearHistory}
+              data-cuelume-press="tick"
+              aria-label="Clear recent scores"
+            >
+              {historyCleared ? 'Cleared' : 'Clear'}
+            </button>
+          </div>
+          <ul className="score-history-list">
+            {history.map((entry) => (
+              <li
+                key={`${entry.url}-${entry.scoredAt}`}
+                className={`score-history-item is-${entry.grade.toLowerCase()}`}
+              >
+                <div className={`score-history-emblem is-${entry.grade.toLowerCase()}`}>
+                  {entry.grade}
+                </div>
+                <div className="score-history-body">
+                  <span className="score-history-url" title={entry.url}>
+                    {truncateUrl(entry.url)}
+                  </span>
+                  <span className="score-history-meta">
+                    {entry.score}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="score-history-rerun"
+                  onClick={() => {
+                    setUrl(entry.url);
+                    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  data-cuelume-hover="tick"
+                  aria-label={`Re-score ${truncateUrl(entry.url)}`}
+                >
+                  Re-score
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="score-history-foot">
+            Free tier keeps your last 5 scores in this browser.{' '}
+            <a href="/pricing" className="text-link">Score Pass</a> unlocks 90-day history + export.
+          </p>
+        </section>
       )}
     </div>
   );
