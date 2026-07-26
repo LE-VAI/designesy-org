@@ -89,11 +89,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     setHistory(readScoreHistory());
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status === 'loading') return;
+  // Auto-run the score once on mount when an initialUrl is provided via a
+  // deep link (e.g. /score?url=stripe.com). Normalizes and fires runScore.
+  // Runs once on mount only — intentional empty dependency array.
+  useEffect(() => {
+    const clean = normalizeInput(initialUrl);
+    if (clean) {
+      setUrl(initialUrl);
+      void runScore(clean);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const targetUrl = normalizeInput(url);
+  async function runScore(targetUrl: string) {
+    if (status === 'loading') return;
     if (!targetUrl) return;
 
     setStatus('loading');
@@ -131,6 +140,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setStatus('error');
       setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await runScore(normalizeInput(url));
   }
 
   const checks = useMemo(() => result?.checks || [], [result]);
@@ -367,6 +381,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   'Run full browser audit'
                 )}
               </button>
+
+              <a
+                href={`/score?url=${encodeURIComponent(scoredUrl)}`}
+                className="score-action-btn"
+                data-cuelume-press="tick"
+                title="Open the full report on the dedicated Score page — shareable URL."
+              >
+                View full report →
+              </a>
 
               <span className="score-tokens-badge">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
