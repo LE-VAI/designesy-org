@@ -7,6 +7,8 @@ import { ScoreForm } from './score-form';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// The opengraph-image.tsx in this segment is auto-wired by Next.js as the
+// OG image for /score — it reads searchParams.url and renders the grade card.
 export const metadata: Metadata = pageMeta({
   title: 'Score',
   description:

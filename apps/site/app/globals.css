@@ -7022,6 +7022,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-hero-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);
@@ -7051,6 +7052,19 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-action-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--signal);
+}
+
+/* Share buttons — icon + label, same height as other action buttons.
+   The action bar uses flex-wrap so these wrap naturally on narrow viewports. */
+.score-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+.score-share-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* The browser-audit button is the primary affordance in the action bar —
