@@ -141,75 +141,34 @@ export default function HomePage() {
       <Topbar scrolled />
 
       <main id="main-content" className="site-shell">
-        {/* --- Score hero --- */}
+        {/* --- Score hero — the input is the product, front and center --- */}
         <section className="hero" aria-labelledby="hero-title">
           <p className="hero-eyebrow fade-up" data-scramble>
             The design legitimacy standard
           </p>
-          <h1
-            className="wordmark-hero hero-title"
-            id="hero-title"
-            data-cuelume-hover="droplet"
-            data-cuelume-press="sparkle"
-            data-firework
-          >
-            <span className="wordmark-shimmer" data-scramble>
-              designesy
-            </span>
-            <span className="dot">.</span>
+          <h1 className="hero-title sr-only" id="hero-title">
+            designesy.
           </h1>
           <p className="hero-lede fade-up fade-up-delay-2" data-scramble>
             AI makes execution free. We make execution yours.
           </p>
-          <p className="hero-body fade-up fade-up-delay-3">
-            Score any site against the Designesy design system contract. 26 checks.
-            One grade. The contract encodes taste; the score proves it; the
-            verification engine is the moat that survives AI commoditization.
+          <p className="hero-sub fade-up fade-up-delay-3">
+            Score any site against the Designesy design system contract. 26
+            checks. One grade. Nobody passes it yet.
           </p>
-          <div className="hero-actions fade-up fade-up-delay-4">
+          <div id="score" className="score-hero-input fade-up fade-up-delay-4">
+            <ScoreForm />
+          </div>
+          <p className="hero-hint fade-up fade-up-delay-5">
+            No login. Real-time. 26 checks against contract v0.3.0.{' '}
             <Link
-              className="button primary"
-              href="#score"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-              data-firework
-            >
-              Score your site
-            </Link>
-            <Link
-              className="button ghost"
               href="/contracts/design-system"
+              className="text-link"
               data-cuelume-hover="tick"
               data-cuelume-press
             >
-              Read the contract
+              Read the contract →
             </Link>
-          </div>
-        </section>
-
-        {/* --- Score form (the product, front and center) --- */}
-        <section
-          id="score"
-          className="section score-hero-section"
-          aria-labelledby="score-title"
-        >
-          <p className="section-eyebrow">Score any site</p>
-          <h2 className="section-title" id="score-title" data-scramble>
-            26 checks. One grade.
-          </h2>
-          <p className="surface-lede">
-            Enter any URL. Get a verified score against the Designesy design
-            system contract — real-time, no login. Nobody passes it yet. Find
-            out how close you are.
-          </p>
-          <ScoreForm />
-          <p className="score-contract-note">
-            Every check traces back to a specific token or rule in the{' '}
-            <a href="/contracts/design-system" className="text-link">
-              design system contract
-            </a>
-            . The score is the output metric: not whether you read the contract,
-            but whether your design actually passes it.
           </p>
         </section>
 

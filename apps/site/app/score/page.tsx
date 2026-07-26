@@ -17,7 +17,13 @@ export const metadata: Metadata = pageMeta({
     '26 automated verification checks against a real design contract. Enter a URL, get a grade.',
 });
 
-export default function ScorePage() {
+export default async function ScorePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ url?: string }>;
+}) {
+  const params = await searchParams;
+  const initialUrl = typeof params?.url === 'string' ? params.url : '';
   return (
     <>
       <Topbar scrolled />
@@ -38,7 +44,7 @@ export default function ScorePage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <ScoreForm />
+          <ScoreForm initialUrl={initialUrl} />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
