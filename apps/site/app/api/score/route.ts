@@ -19,8 +19,9 @@ function rateLimited(ip: string): boolean {
 }
 
 // ── URL Normalization & Validation ─────────────────────────────────────────
+// Exported for reuse by app/score/opengraph-image.tsx (avoids an HTTP self-call).
 
-function normalizeInputUrl(raw: string): string {
+export function normalizeInputUrl(raw: string): string {
   let clean = raw.trim();
   if (!clean) return '';
   if (!/^https?:\/\//i.test(clean)) {
@@ -34,7 +35,7 @@ function normalizeInputUrl(raw: string): string {
   }
 }
 
-function isValidUrl(url: string): boolean {
+export function isValidUrl(url: string): boolean {
   try {
     const u = new URL(url);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
@@ -234,7 +235,7 @@ function inferTokensFromCss(
 
 // ── Check Implementations ──────────────────────────────────────────────────
 
-type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail: string };
+export type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail: string };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
   const val = tokens['--paper'];
@@ -474,7 +475,7 @@ function computeGrade(score: number): string {
   return 'F';
 }
 
-async function scoreUrl(targetUrl: string) {
+export async function scoreUrl(targetUrl: string) {
   const { html, css } = await fetchPageResilient(targetUrl);
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
