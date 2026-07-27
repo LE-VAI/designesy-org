@@ -261,6 +261,40 @@ function resolveColor(value: string, tokens: Record<string, string>): [number, n
   return null;
 }
 
+// ── APCA-W3 0.0.98G-4g — supplementary perceptual contrast ───────────────────
+// Ported from Myndex/apca-w3 canonical source (W3-licensed for WCAG 3
+// conformance tools). APCA is polarity-sensitive (unlike WCAG 2.1) and returns
+// a signed Lc value: positive = dark text on light bg, negative = light text
+// on dark bg. Use Math.abs(Lc) for threshold comparison. Attribution:
+// Andrew Somers / Myndex Research.
+// Thresholds (Bronze Simple Mode): Lc 75 body min, Lc 60 content, Lc 45 large.
+function sRGBtoY_APCA(rgb: [number, number, number]): number {
+  const r = Math.pow(rgb[0] / 255, 2.4);
+  const g = Math.pow(rgb[1] / 255, 2.4);
+  const b = Math.pow(rgb[2] / 255, 2.4);
+  let ys = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b;
+  // Soft black clamp
+  if (ys < 0.022) ys += Math.pow(0.022 - ys, 1.414);
+  return ys;
+}
+
+function apcaContrast(txtRgb: [number, number, number], bgRgb: [number, number, number]): number {
+  const txtYs = sRGBtoY_APCA(txtRgb);
+  const bgYs = sRGBtoY_APCA(bgRgb);
+  if (Math.abs(bgYs - txtYs) < 0.0005) return 0;
+  let sapc: number;
+  if (bgYs > txtYs) {
+    // Normal polarity (dark text on light bg)
+    sapc = (Math.pow(bgYs, 0.56) - Math.pow(txtYs, 0.57)) * 1.14;
+  } else {
+    // Reverse polarity (light text on dark bg)
+    sapc = (Math.pow(bgYs, 0.65) - Math.pow(txtYs, 0.62)) * 1.14;
+  }
+  if (Math.abs(sapc) < 0.0005) return 0;
+  sapc = sapc < 0 ? sapc + 0.027 : sapc - 0.027;
+  return sapc * 100; // signed Lc
+}
+
 function resolveVar(value: string, tokens: Record<string, string>, depth = 0): string {
   if (depth > 5) return value.trim();
   const m = value.match(/^\s*var\(\s*(--[\w-]+)/);
@@ -325,6 +359,12 @@ const REMEDIATION: Record<string, string> = {
   x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded — a common cause of blurry headlines on Windows.',
   x02: 'Add text-underline-position: from-font to links and underlined text. This uses the font designer\'s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
   x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
+  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.8 Target Size Minimum, AA in 2.2). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors — full verification needs a browser.',
+  v25: 'Use exactly one <h1> per page as the main heading, and don\'t skip heading levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline. Audit your heading order with a browser extension or Lighthouse.',
+  v26: 'Limit font-family declarations to 3 or fewer (1 body family, 1 heading family, 1 mono for code). More than 3 families signals inconsistency and hurts performance. Consolidate by removing unused families or using weight variations of a single family.',
+  v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
+  v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
+  v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -364,8 +404,9 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
 }
 
 // v06 — REAL contrast check for ink/muted/muted-dim on paper.
-// Resolves each text token against --paper and computes WCAG 2.1 ratio.
-// AA: 4.5:1 body, 3:1 large. --muted-dim is the usual offender.
+// Computes both WCAG 2.1 ratio (the scoring standard) AND APCA Lc (the
+// WCAG 3 candidate, polarity-aware). APCA is supplementary — it does not
+// change pass/fail, but surfaces dark-mode contrast issues WCAG 2.1 misses.
 function checkContrastReadable(tokens: Record<string, string>): CheckResult {
   const paperVal = tokens['--paper'];
   if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared — cannot test contrast' };
@@ -382,18 +423,20 @@ function checkContrastReadable(tokens: Record<string, string>): CheckResult {
     if (!rgb) { results.push(`${name}: unresolvable`); continue; }
     const ratio = contrastRatio(rgb, paperRgb);
     const r = ratio.toFixed(2);
+    // APCA supplementary signal (Lc 75 = body min, Lc 60 = content min)
+    const lc = apcaContrast(rgb, paperRgb);
+    const lcStr = `Lc${Math.abs(lc).toFixed(0)}`;
     let st: 'PASS' | 'WARN' | 'FAIL' = 'PASS';
     if (ratio < 3) st = 'FAIL';
     else if (ratio < 4.5) st = 'WARN';
-    results.push(`${name}=${r}:1(${st})`);
-    // Track the worst non-PASS result for the overall verdict.
+    results.push(`${name}=${r}:1 ${lcStr}(${st})`);
     if (st === 'FAIL') { if (worst.status !== 'FAIL' || ratio < worst.ratio) worst = { name, ratio, status: 'FAIL' }; }
     else if (st === 'WARN' && worst.status !== 'FAIL') { if (worst.status !== 'WARN' || ratio < worst.ratio) worst = { name, ratio, status: 'WARN' }; }
   }
   const detail = results.join(', ');
-  if (worst.status === 'FAIL') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'FAIL', detail: `${detail} — ${worst.name} below 3:1` };
-  if (worst.status === 'WARN') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'WARN', detail: `${detail} — ${worst.name} below 4.5:1 AA` };
-  return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'PASS', detail };
+  if (worst.status === 'FAIL') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'FAIL', detail: `${detail} — ${worst.name} below 3:1` };
+  if (worst.status === 'WARN') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'WARN', detail: `${detail} — ${worst.name} below 4.5:1 AA` };
+  return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'PASS', detail };
 }
 
 function checkTransitionAll(css: string): CheckResult {
@@ -593,6 +636,170 @@ function checkSkipInk(css: string): CheckResult {
   return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'no text-decoration-skip-ink rule — underlines may cross letterforms' };
 }
 
+// ── Tier 3 coverage checks (v24-v28) — high-impact gaps from the audit ──────
+
+// v24 — Touch target sizes ≥44px (WCAG 2.5.8 Target Size Minimum, AA in 2.2).
+// Static half: scans CSS for min-height/min-width ≥44px on interactive selectors.
+// Full verification needs a browser (getBoundingClientRect on rendered elements).
+function checkTouchTargets(css: string): CheckResult {
+  // Look for min-height/min-width ≥ 44px on button, a, input, [role=button] selectors.
+  const interactiveRe = /(?:^|[,}\s])\s*(?:button|a\b|input|textarea|select|\[role\s*=\s*["']?button["']?\]|\.btn|\.button|\.chip|\.tab|\.nav-link)\s*[^{]*\{[^}]*(?:min-height|min-width)\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gim;
+  const targets: number[] = [];
+  let m;
+  while ((m = interactiveRe.exec(css)) !== null) {
+    const val = parseFloat(m[1]);
+    const unit = m[2].toLowerCase();
+    const px = unit === 'rem' ? val * 16 : val;
+    targets.push(px);
+  }
+  if (targets.length === 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: 'no explicit min-height/min-width on interactive selectors — full verification needs browser' };
+  const below = targets.filter(t => t < 44);
+  if (below.length > 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: `${targets.length} target(s) found, ${below.length} below 44px floor (${below.join(', ')}px)` };
+  return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'PASS', detail: `${targets.length} interactive element(s) with min-height/width ≥44px` };
+}
+
+// v25 — Heading hierarchy: single h1, no skipped levels (h1→h3 jump = fail).
+// Scans HTML for heading order. design-auditor + Lighthouse heading-order check.
+function checkHeadingHierarchy(html: string): CheckResult {
+  const visibleHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+  const headings = [...visibleHtml.matchAll(/<h([1-6])\b/gi)];
+  if (headings.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: 'no heading elements found — page may lack structure' };
+  const levels = headings.map(h => parseInt(h[1]));
+  const h1Count = levels.filter(l => l === 1).length;
+  const h1Issue = h1Count === 0 ? 'no h1' : h1Count > 1 ? `${h1Count} h1s` : '';
+  // Check for skipped levels: h1→h3, h2→h4, etc. (a jump of >1 is a skip).
+  const skips: string[] = [];
+  for (let i = 1; i < levels.length; i++) {
+    if (levels[i] - levels[i - 1] > 1) {
+      skips.push(`h${levels[i - 1]}→h${levels[i]}`);
+    }
+  }
+  const issues = [h1Issue, ...skips].filter(Boolean);
+  if (issues.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'PASS', detail: `single h1, ${headings.length} headings, no skipped levels` };
+  if (issues.length === 1 && !h1Issue) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: `skipped level: ${skips.join(', ')}` };
+  if (h1Issue && skips.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: h1Issue };
+  return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'FAIL', detail: issues.join(', ') };
+}
+
+// v26 — Font family count ≤3 (design-auditor, Typography Master).
+// Counts distinct font-family declarations. >3 = inconsistency signal.
+function checkFontFamilyCount(css: string): CheckResult {
+  const families = new Set<string>();
+  const re = /font-family\s*:\s*([^;}]+)/gi;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    // Normalize: strip quotes, take first family in a stack, lowercase.
+    const stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    // Skip generic keywords that shouldn't count as "a family choice."
+    const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
+    if (generic.includes(stack)) continue;
+    families.add(stack);
+  }
+  const count = families.size;
+  const list = [...families].slice(0, 6).join(', ');
+  if (count <= 3) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'PASS', detail: `${count} family/families: ${list}` };
+  if (count <= 5) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'WARN', detail: `${count} families (recommended ≤3): ${list}` };
+  return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families — palette drift (recommended ≤3): ${list}` };
+}
+
+// v27 — Input font-size 16px floor (iOS Safari auto-zoom prevention).
+// Scans CSS for input/textarea/select font-size below 16px (1rem).
+function checkInputFontFloor(css: string): CheckResult {
+  // Find input/textarea/select rules with font-size < 16px or < 1rem.
+  const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
+  const below: string[] = [];
+  let m;
+  while ((m = inputRe.exec(css)) !== null) {
+    const val = parseFloat(m[1]);
+    const unit = m[2].toLowerCase();
+    const px = unit === 'rem' ? val * 16 : val;
+    if (px < 16) below.push(`${val}${unit} (${px}px)`);
+  }
+  if (below.length === 0) {
+    // Also check: is there a global input font-size ≥16px? (e.g. `input { font-size: 1rem }`)
+    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
+    if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
+    return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected — iOS Safari may auto-zoom on focus' };
+  }
+  return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
+}
+
+// v28 — Reading width 45-75ch (design-auditor Reading Width module).
+// Scans CSS for max-width in ch units on prose containers. 66ch ideal.
+function checkReadingWidth(css: string): CheckResult {
+  const chRe = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/gi;
+  const widths: number[] = [];
+  let m;
+  while ((m = chRe.exec(css)) !== null) {
+    widths.push(parseFloat(m[1]));
+  }
+  if (widths.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens' };
+  const inRange = widths.filter(w => w >= 45 && w <= 75);
+  const outOfRange = widths.filter(w => w < 45 || w > 75);
+  if (inRange.length > 0 && outOfRange.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} measure(s) in 45-75ch range: ${inRange.join(', ')}ch` };
+  if (inRange.length > 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} in range, ${outOfRange.length} out: ${widths.join(', ')}ch` };
+  return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: `${widths.length} ch-measure(s) found, all outside 45-75ch: ${widths.join(', ')}ch` };
+}
+
+// ── Tier 5: token-layer completeness (v29) — DSAF A1.1 wedge ────────────────
+// Detects primitive → semantic → component token architecture from :root.
+// Per AnySearch research: 3-layer is rare on live sites (DTCG spec v1 stable
+// Oct 2025), so 2-layer is the passing bar, 3-layer is a bonus maturity signal.
+// FAIL = zero var() references (everything hardcoded). PASS = ≥2 layers. BONUS
+// = 3 layers (reported in detail, no separate status).
+function checkTokenLayerDepth(tokens: Record<string, string>): CheckResult {
+  const RAW_RE = /^(#([0-9a-f]{3,8})$|rgba?\(|hsla?\(|oklch|lab|color|[-\d.]+(px|rem|em|ms|s|%|vh|vw|deg))/i;
+  const REF_RE = /^var\(\s*--([\w-]+)\s*(?:,\s*(.+))?\)\s*$/i;
+
+  let primitiveCount = 0;
+  let semanticCount = 0; // var() pointing to a raw value
+  let componentCount = 0; // var() pointing to another var()
+  let noRefCount = 0;
+
+  for (const [name, value] of Object.entries(tokens)) {
+    const refMatch = value.match(REF_RE);
+    if (!refMatch) {
+      // Not a var() reference — is it a raw value?
+      if (RAW_RE.test(value.trim())) primitiveCount++;
+      else noRefCount++;
+      continue;
+    }
+    // It's a var() reference — check what it points to.
+    const refName = `--${refMatch[1]}`;
+    const refValue = tokens[refName];
+    if (!refValue) {
+      // Points to an undefined token — count as semantic (can't verify depth).
+      semanticCount++;
+      continue;
+    }
+    const nestedRef = refValue.match(REF_RE);
+    if (nestedRef) {
+      // var() pointing to another var() → component layer (2+ hops)
+      componentCount++;
+    } else {
+      // var() pointing to a raw value → semantic layer (1 hop)
+      semanticCount++;
+    }
+  }
+
+  const hasVarRefs = semanticCount + componentCount > 0;
+  if (!hasVarRefs && primitiveCount === 0) {
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'SKIP', detail: 'no design tokens detected in :root' };
+  }
+  if (!hasVarRefs) {
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${primitiveCount} primitive token(s), zero var() references — no aliasing layer` };
+  }
+  const layers = (primitiveCount > 0 ? 1 : 0) + (semanticCount > 0 ? 1 : 0) + (componentCount > 0 ? 1 : 0);
+  const detail = `${layers} layer(s): ${primitiveCount} primitive, ${semanticCount} semantic, ${componentCount} component`;
+  if (layers >= 3) {
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail} — full 3-tier architecture (DSAF A1.1 maturity)` };
+  }
+  if (layers >= 2) {
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail} — 2-tier aliasing detected` };
+  }
+  return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${detail} — only 1 layer, no aliasing` };
+}
+
 function checkFontSmoothing(css: string): CheckResult {
   const hasAntialiased = /-webkit-font-smoothing\s*:\s*antialiased/i.test(css);
   const hasMoz = /-moz-osx-font-smoothing\s*:\s*grayscale/i.test(css);
@@ -778,6 +985,12 @@ async function scoreUrlUncached(targetUrl: string) {
     checkFontSynthesis(css),
     checkUnderlinePosition(css),
     checkSkipInk(css),
+    checkTouchTargets(css),
+    checkHeadingHierarchy(html),
+    checkFontFamilyCount(css),
+    checkInputFontFloor(css),
+    checkReadingWidth(css),
+    checkTokenLayerDepth(tokens),
   ];
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
@@ -785,12 +998,63 @@ async function scoreUrlUncached(targetUrl: string) {
   const warn = checks.filter((c) => c.status === 'WARN').length;
   const skip = checks.filter((c) => c.status === 'SKIP').length;
   const total = checks.length;
-  // Score over checks that were actually evaluated — SKIPs require a live browser
-  // and are excluded from the denominator (Lighthouse precedent: manual/not-applicable
-  // audits are excluded from the score). This prevents the tool from penalizing sites
-  // for the tool's own static-fetch limitations.
-  const scored = total - skip;
-  const score = scored === 0 ? 0 : Math.round(((pass + warn * 0.5) / scored) * 1000) / 10;
+
+  // ── Tier 2: per-category weighted scoring ──────────────────────────────────
+  // Weights follow the contract's section emphasis (the contract IS the scoring
+  // basis), with an accessibility floor so contract sections covering real-user
+  // harm cannot be drowned out by cadence's 8 checks. SKIPs fall out of BOTH
+  // numerator and denominator (Lighthouse precedent: manual/N/A audits excluded).
+  //
+  // Weight table (sums to 100%, derived from AnySearch research against
+  // Lighthouse axe user-impact, design-auditor category %, and DSAF 50/50):
+  //   cadence 18, accessibility 15, semantic 12, motion 10, tokens 9,
+  //   takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3
+  const CATEGORY_WEIGHTS: Record<string, number> = {
+    cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
+    takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
+  };
+
+  // Per-check weight = category weight / number of checks in that category
+  // (so each category contributes its full weight, split evenly among its checks).
+  const categoryCounts: Record<string, number> = {};
+  for (const c of checks) {
+    if (c.status === 'SKIP') continue;
+    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
+  }
+
+  let weightedPoints = 0;
+  let weightedTotal = 0;
+  for (const c of checks) {
+    if (c.status === 'SKIP') continue;
+    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
+    const checkWeight = catWeight / (categoryCounts[c.category] || 1);
+    weightedTotal += checkWeight;
+    if (c.status === 'PASS') weightedPoints += checkWeight;
+    else if (c.status === 'WARN') weightedPoints += checkWeight * 0.5;
+    // FAIL = 0 points
+  }
+
+  let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
+
+  // ── Tier 2: accessibility floor (DSAF enterprise-grade precedent) ──────────
+  // DSAF enforces A8 Accessibility ≥75% — a system can score 90% combined and
+  // still fail enterprise-grade if a11y is 73%. We apply a softer version: if
+  // the accessibility category scores below 60%, cap the overall grade at C.
+  // This prevents "perfect tokens, zero a11y = A" dishonesty.
+  const a11yChecks = checks.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP');
+  const a11yPass = a11yChecks.filter((c) => c.status === 'PASS').length;
+  const a11yWarn = a11yChecks.filter((c) => c.status === 'WARN').length;
+  const a11yScored = a11yChecks.length;
+  const a11yPct = a11yScored === 0 ? 100 : ((a11yPass + a11yWarn * 0.5) / a11yScored) * 100;
+  let a11yFloorApplied = false;
+  if (a11yScored > 0 && a11yPct < 60) {
+    // Cap at C (70). If the weighted score is already below 70, leave it.
+    if (score > 70) {
+      score = 70;
+      a11yFloorApplied = true;
+    }
+  }
+
   const grade = computeGrade(score);
 
   // Attach remediation guidance to each check from the lookup table. Every
@@ -801,7 +1065,7 @@ async function scoreUrlUncached(targetUrl: string) {
     remediation: REMEDIATION[c.id],
   }));
 
-  return { score, grade, pass, fail, warn, skip, total, scored, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length };
+  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the

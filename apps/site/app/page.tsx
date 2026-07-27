@@ -15,13 +15,13 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — Score any site against the design contract',
   description:
-    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 26 checks, one grade, real-time. The design legitimacy standard.',
+    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 32 checks, one grade, real-time. The design legitimacy standard.',
   path: '/',
   ogTitle: 'Designesy — The design legitimacy standard',
   ogDescription:
-    '26 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
+    '32 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
   twitterDescription:
-    'Score any site against the Designesy design contract. 26 checks. One grade. designesy.org',
+    'Score any site against the Designesy design contract. 32 checks. One grade. designesy.org',
 });
 
 const PILLARS = [
@@ -33,7 +33,7 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: '26 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
+    text: '32 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
   },
   {
     number: '03',
@@ -155,14 +155,14 @@ export default function HomePage() {
             AI makes execution free. We make execution yours.
           </p>
           <p className="hero-sub fade-up fade-up-delay-3">
-            Score any site against a real design contract. 26 checks. One grade.
+            Score any site against a real design contract. 32 checks. One grade.
             No vibe-tax.
           </p>
           <div id="score" className="score-hero-input fade-up fade-up-delay-4">
             <ScoreForm />
           </div>
           <p className="hero-hint fade-up fade-up-delay-5">
-            No login. Real-time. 26 checks against contract v0.3.0.{' '}
+            No login. Real-time. 32 checks against contract v0.3.0.{' '}
             <Link
               href="/contracts/design-system"
               className="text-link"
@@ -435,7 +435,7 @@ export default function HomePage() {
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
                 },
                 {
-                  title: 'Verification engine · 26 checks',
+                  title: 'Verification engine · 32 checks',
                   meta: 'Live on /score · scores any URL against the contract in real-time',
                 },
                 {
