@@ -84,6 +84,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [historyCleared, setHistoryCleared] = useState(false);
   const [auditStatus, setAuditStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [auditError, setAuditError] = useState<string | null>(null);
+  const [animatedScore, setAnimatedScore] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Load history on mount (client-only). SSR-safe via the guards inside
@@ -91,6 +92,38 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   useEffect(() => {
     setHistory(readScoreHistory());
   }, []);
+
+  // Animate the score gauge + progress bar when results arrive.
+  // The "snazzy" detail Lighthouse reviewers loved — an animated fill from 0
+  // to the final score turns a static verdict into a moment. Uses requestAnimationFrame
+  // with an ease-out curve over 800ms. Reduced-motion: jumps to final value instantly.
+  useEffect(() => {
+    if (!result?.score || result.score === 0) {
+      setAnimatedScore(0);
+      return;
+    }
+    // Respect reduced-motion: skip the animation, show final value
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setAnimatedScore(result.score);
+      return;
+    }
+    const target = result.score;
+    const duration = 800;
+    const start = performance.now();
+    let rafId: number;
+    const animate = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      setAnimatedScore(target * eased);
+      if (t < 1) {
+        rafId = requestAnimationFrame(animate);
+      } else {
+        setAnimatedScore(target);
+      }
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [result?.score]);
 
   // Auto-run the score once on mount when an initialUrl is provided via a
   // deep link (e.g. /score?url=stripe.com). Normalizes and fires runScore.
@@ -337,6 +370,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             <div className="score-hero-top">
               <div className={`score-grade-emblem is-${result.grade?.toLowerCase()}`}>
                 <span className="score-grade-glow" />
+                <svg className="score-grade-arc" viewBox="0 0 100 100" aria-hidden="true">
+                  <circle className="score-arc-track" cx="50" cy="50" r="44" fill="none" strokeWidth="2" />
+                  <circle
+                    className="score-arc-fill"
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(animatedScore / 100) * 276.46} 276.46`}
+                    transform="rotate(-90 50 50)"
+                  />
+                </svg>
                 <span className="score-grade-letter">{result.grade}</span>
               </div>
 
@@ -349,7 +396,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-progress-bar">
                   <div
                     className="score-progress-fill"
-                    style={{ width: `${result.score}%` }}
+                    style={{ width: `${animatedScore}%` }}
                   />
                 </div>
 
@@ -604,7 +651,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </button>
               </div>
             ) : (
-              filteredChecks.map((check) => {
+              filteredChecks.map((check, idx) => {
                 const isExpanded = expandedId === check.id;
                 return (
                   <div
@@ -613,6 +660,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     onClick={() => setExpandedId(isExpanded ? null : check.id)}
                     role="button"
                     tabIndex={0}
+                    style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
                   >
                     <div className="score-card-main">
                       <div className="score-card-badge-group">
