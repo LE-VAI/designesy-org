@@ -7092,6 +7092,73 @@ a.lab-card:focus-visible .lab-card-arrow {
   white-space: nowrap;
 }
 
+/* Score-scale legend — per Lighthouse PR #8121. Four bands with color dots
+   so users can verify what the gauge color means. Sits between the hero-top
+   and the metrics grid. */
+.score-scale-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.5rem 0 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.score-scale-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.score-scale-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.score-scale-band.is-fail .score-scale-dot { background: #ef4444; }
+.score-scale-band.is-warn .score-scale-dot { background: #f59e0b; }
+.score-scale-band.is-pass .score-scale-dot { background: #84cc16; }
+.score-scale-band.is-a .score-scale-dot { background: #22c55e; }
+
+/* Skeleton loading rows — replaces the bare spinner during the 26-check run.
+   Per AuditBuffet/CRAIG Four-State Contract: loading must match content shape,
+   not be a generic spinner. Shows 6 skeleton rows in the cards-feed shape. */
+.score-skeleton-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.score-skeleton-row {
+  height: 3.25rem;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 0%,
+    var(--surface) 50%,
+    var(--surface-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s var(--ease-in-out) infinite;
+  border: 1px solid var(--line);
+}
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-skeleton-row { animation: none; background: var(--surface-raised); }
+}
+
+.score-a11y-floor-notice {
+  color: var(--muted);
+  font-style: italic;
+}
+
 .score-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
