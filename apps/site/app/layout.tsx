@@ -8,6 +8,7 @@ import { DirectorDock } from './lib/director-dock';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
+import { MagneticCursor } from './lib/magnetic-cursor';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import {
   SITE_BASE,
@@ -108,6 +109,7 @@ export default function RootLayout({
         <DefinitionCopyEnhancer />
         <FireworkBurst />
         <EffectEnhancer />
+        <MagneticCursor />
         <ScrambleEnhancer />
         {children}
         <Analytics />

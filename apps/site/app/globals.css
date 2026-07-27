@@ -628,6 +628,55 @@ p {
   border: 0;
 }
 
+/* --- Magnetic cursor — the Linear/Arc/Vercel-tier micro-detail ---
+   A ring lags behind the native cursor (spring lerp in magnetic-cursor.tsx),
+   a tiny dot tracks instantly. Over interactive elements the ring grows
+   and brightens. Both are pointer-events:none so they never block clicks.
+   Hidden on touch + reduced-motion (component exits early). */
+.mag-cursor-ring,
+.mag-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 50%;
+  /* translate(-50%,-50%) centers the element on the transform-origin set
+     inline via translate(x,y). The ring uses margin to offset half its
+     size; the dot the same. */
+  margin: -12px 0 0 -12px;
+  will-change: transform;
+}
+
+.mag-cursor-ring {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  transition: width 0.2s var(--ease-out),
+              height 0.2s var(--ease-out),
+              margin 0.2s var(--ease-out),
+              border-color 0.2s var(--ease-out),
+              background 0.2s var(--ease-out),
+              opacity 0.2s var(--ease-out);
+}
+
+.mag-cursor-ring.is-hovering {
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-color: var(--signal-light);
+  background: rgba(51, 88, 232, 0.06);
+}
+
+.mag-cursor-dot {
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  background: var(--ink);
+  opacity: 0.7;
+}
+
 .hero-eyebrow {
   font-size: 0.75rem;
   font-weight: 600;
