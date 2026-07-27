@@ -32,6 +32,7 @@ type ScoreResponse = {
   warn?: number;
   skip?: number;
   total?: number;
+  a11yFloorApplied?: boolean;
   checks?: CheckResult[];
   tokensExtracted?: number;
   error?: string;
@@ -58,6 +59,11 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'cadence', label: 'Cadence' },
   { key: 'performance', label: 'Performance' },
 ];
+
+// Sort order for check cards — failures and warnings first, passes/skips last.
+// This surfaces "what to fix first" without a separate quick-wins block, per
+// the Lighthouse pattern (Opportunities/Diagnostics before Passed checks).
+const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, SKIP: 2, PASS: 3 };
 
 function normalizeInput(input: string): string {
   let clean = input.trim();
@@ -186,19 +192,29 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const checks = useMemo(() => result?.checks || [], [result]);
 
   const filteredChecks = useMemo(() => {
-    return checks.filter((c) => {
-      if (filterStatus !== 'ALL' && c.status !== filterStatus) return false;
-      if (selectedCategory !== 'ALL' && c.category !== selectedCategory) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchId = c.id.toLowerCase().includes(q);
-        const matchItem = c.item.toLowerCase().includes(q);
-        const matchDetail = c.detail.toLowerCase().includes(q);
-        const matchCategory = c.category.toLowerCase().includes(q);
-        if (!matchId && !matchItem && !matchDetail && !matchCategory) return false;
-      }
-      return true;
-    });
+    return checks
+      .filter((c) => {
+        if (filterStatus !== 'ALL' && c.status !== filterStatus) return false;
+        if (selectedCategory !== 'ALL' && c.category !== selectedCategory) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchId = c.id.toLowerCase().includes(q);
+          const matchItem = c.item.toLowerCase().includes(q);
+          const matchDetail = c.detail.toLowerCase().includes(q);
+          const matchCategory = c.category.toLowerCase().includes(q);
+          if (!matchId && !matchItem && !matchDetail && !matchCategory) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Fail-first sort: FAIL → WARN → SKIP → PASS. When the user picks a
+        // specific status filter the sort is stable within that status (preserves
+        // the engine's check order). Only "ALL" re-orders to surface failures.
+        if (filterStatus !== 'ALL') return 0;
+        const orderDiff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+        if (orderDiff !== 0) return orderDiff;
+        return 0;
+      });
   }, [checks, filterStatus, selectedCategory, searchQuery]);
 
   function copyReceipt() {
@@ -279,6 +295,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         return;
       }
       // Merge audit checks into result.checks, replacing by id.
+      // Re-scores using the same weighted formula + a11y floor as the server.
       setResult((prev) => {
         if (!prev) return prev;
         const auditById = new Map(data.checks!.map((c) => [c.id, c]));
@@ -288,11 +305,32 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const warn = merged.filter((c) => c.status === 'WARN').length;
         const skip = merged.filter((c) => c.status === 'SKIP').length;
         const total = merged.length;
-        const scored = total - skip;
-        const score = scored === 0 ? 0 : Math.round(((pass + warn * 0.5) / scored) * 1000) / 10;
-        const grade =
-          score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade };
+        // Weighted scoring (matches server-side CATEGORY_WEIGHTS)
+        const CATEGORY_WEIGHTS: Record<string, number> = {
+          cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
+          takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
+        };
+        const catCounts: Record<string, number> = {};
+        for (const c of merged) {
+          if (c.status === 'SKIP') continue;
+          catCounts[c.category] = (catCounts[c.category] || 0) + 1;
+        }
+        let wp = 0, wt = 0;
+        for (const c of merged) {
+          if (c.status === 'SKIP') continue;
+          const cw = (CATEGORY_WEIGHTS[c.category] || 5) / (catCounts[c.category] || 1);
+          wt += cw;
+          if (c.status === 'PASS') wp += cw;
+          else if (c.status === 'WARN') wp += cw * 0.5;
+        }
+        let score = wt === 0 ? 0 : Math.round((wp / wt) * 1000) / 10;
+        // a11y floor
+        const a11yChecks = merged.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP');
+        const a11yPct = a11yChecks.length === 0 ? 100 : ((a11yChecks.filter((c) => c.status === 'PASS').length + a11yChecks.filter((c) => c.status === 'WARN').length * 0.5) / a11yChecks.length) * 100;
+        let a11yFloorApplied = false;
+        if (a11yChecks.length > 0 && a11yPct < 60 && score > 70) { score = 70; a11yFloorApplied = true; }
+        const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied };
       });
       setAuditStatus('ok');
     } catch {
@@ -338,7 +376,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {status === 'loading' ? (
               <span className="score-loading-state">
                 <span className="score-spinner" />
-                Evaluating 26 Contract Checks…
+                Evaluating 32 Contract Checks…
               </span>
             ) : (
               'Score it'
@@ -360,6 +398,14 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             <p className="score-error-title">Verification Notice</p>
             <p className="score-error-msg">{result.error}</p>
           </div>
+        </div>
+      )}
+
+      {status === 'loading' && (
+        <div className="score-skeleton-feed" aria-label="Running verification checks">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="score-skeleton-row" />
+          ))}
         </div>
       )}
 
@@ -405,6 +451,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   <span className="score-url-text">{scoredUrl}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Score-scale legend — per Lighthouse PR #8121: never show a
+                colored gauge without a legend so users can verify the bands. */}
+            <div className="score-scale-legend" aria-hidden="true">
+              <span className="score-scale-band is-fail"><span className="score-scale-dot" />0–49 Fail</span>
+              <span className="score-scale-band is-warn"><span className="score-scale-dot" />50–69 Needs work</span>
+              <span className="score-scale-band is-pass"><span className="score-scale-dot" />70–89 Good</span>
+              <span className="score-scale-band is-a"><span className="score-scale-dot" />90–100 Excellent</span>
             </div>
 
             {/* 4 Metrics Cell Grid */}
@@ -600,7 +655,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <input
                 type="text"
                 className="score-search-input"
-                placeholder="Search 26 verification checks…"
+                placeholder="Search 32 verification checks…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -707,6 +762,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
           <p className="score-note">
             {result.total} checks evaluated against Designesy design system contract v0.3.0.
+            {result.a11yFloorApplied && (
+              <span className="score-a11y-floor-notice"> · Accessibility floor applied: score capped at C (70) because accessibility &lt; 60%.</span>
+            )}
           </p>
         </div>
       )}
@@ -716,7 +774,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
-            extract design tokens, and evaluate 26 verification checks against the Designesy
+            extract design tokens, and evaluate 32 verification checks against the Designesy
             contract v0.3.0. Real-time. No login required.
           </p>
         </div>
