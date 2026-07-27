@@ -20,6 +20,7 @@ type CheckResult = {
   category: string;
   status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
   detail: string;
+  remediation?: string;
 };
 
 type ScoreResponse = {
@@ -610,6 +611,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <div className="score-card-drawer">
                         <p className="score-drawer-heading">Technical Finding</p>
                         <p className="score-drawer-detail">{check.detail}</p>
+                        {check.remediation && (check.status === 'FAIL' || check.status === 'WARN') && (
+                          <>
+                            <p className="score-drawer-heading score-drawer-remediation-heading">How to fix this</p>
+                            <p className="score-drawer-detail score-drawer-remediation">{check.remediation}</p>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
