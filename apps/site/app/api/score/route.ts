@@ -365,6 +365,7 @@ const REMEDIATION: Record<string, string> = {
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
   v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
+  v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -945,6 +946,75 @@ function checkTaktFeelRules(css: string): CheckResult {
   };
 }
 
+// v34 — AI-Disclosure Readiness (EU AI Act Article 50, effective 2026-08-02).
+// Static-only v1: scans fetched HTML for AI-interactive surfaces (chatbots,
+// AI agents, AI-generated content) and disclosure signals (visible labels,
+// aria-label, C2PA meta, generator meta, JSON-LD, data-ai-disclosure).
+// Four conditions:
+//   A — no AI surface detected → PASS (disclosure not required)
+//   B — AI surface + disclosure signal → PASS
+//   C — AI surface + NO disclosure → FAIL (Art 50 violation)
+//   D — uncertain (possible AI surface) → WARN (manual review)
+// Green-field check: no competitor (Mozaika, Lighthouse, axe, WAVE, DESIGN.md)
+// has an AI-disclosure check. designesy can be first.
+function checkAiDisclosure(html: string): CheckResult {
+  const ITEM = 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)';
+  const CATEGORY = 'identity';
+
+  // Strip scripts/styles for visible-text checks but keep them for script-src
+  // and JSON-LD detection. We use both raw html and a visible-only variant.
+  const visibleHtml = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '');
+  // Text-only: strip all tags so attribute values like class="chatbot" don't
+  // false-positive as disclosure TEXT. Disclosure text must be human-readable
+  // content between tags, not class/id/aria attribute values.
+  const textOnly = visibleHtml.replace(/<[^>]+>/g, ' ');
+
+  // ── AI-surface detection ────────────────────────────────────────────────
+  const chatbotContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat|assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
+  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|assistant|ai-widget|gpt|claude|gemini|dialogflow|rasa|intercom|drift|tawk|crisp|livechat|chatbot\.ai|conversational)\b/i;
+  const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
+  const aiInputRe = /<(?:input|textarea|form)\b[^>]*(?:placeholder|aria-label)\s*=\s*["'][^"']*\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/i;
+
+  const surfaceSignals: string[] = [];
+  if (chatbotContainerRe.test(html)) surfaceSignals.push('chatbot container');
+  if (aiScriptRe.test(html)) surfaceSignals.push('AI widget script');
+  if (aiTextRe.test(textOnly)) surfaceSignals.push('AI prompt text');
+  if (aiInputRe.test(html)) surfaceSignals.push('AI input');
+
+  // ── Disclosure detection ────────────────────────────────────────────────
+  const disclosureTextRe = /\b(?:ai\s+assistant|ai\s+chatbot|ai-powered|powered\s+by\s+ai|automated\s+assistant|virtual\s+assistant|chatbot)\b/i;
+  const ariaDisclosureRe = /aria-(?:label|description)\s*=\s*["'][^"']*\b(?:ai|assistant|bot|automated|chatbot)\b/i;
+  const generatorMetaRe = /<meta\s+name\s*=\s*["']generator["'][^>]*content\s*=\s*["'][^"']*\b(?:ai|gpt|claude|gemini|llm|generated|artificial\s+intelligence)\b/i;
+  const c2paRe = /(?:<link\s+rel\s*=\s*["']c2pa-manifest["']|<meta\s+name\s*=\s*["']c2pa["'])/i;
+  const jsonldAiRe = /<script\s+type\s*=\s*["']application\/ld\+json["'][\s\S]*?"@type"\s*:\s*"[^"]*\b(?:ai|softwareapplication)\b[^"]*"[\s\S]*?(?:"applicationCategory"\s*:\s*"[^"]*ai[^"]*"|"[^"]*ai[^"]*")/i;
+  const dataAiRe = /data-ai-disclosure\s*=/i;
+
+  const disclosureSignals: string[] = [];
+  if (disclosureTextRe.test(textOnly)) disclosureSignals.push('visible AI text');
+  if (ariaDisclosureRe.test(html)) disclosureSignals.push('aria-label');
+  if (generatorMetaRe.test(html)) disclosureSignals.push('generator meta');
+  if (c2paRe.test(html)) disclosureSignals.push('C2PA manifest');
+  if (jsonldAiRe.test(html)) disclosureSignals.push('JSON-LD');
+  if (dataAiRe.test(html)) disclosureSignals.push('data-ai-disclosure');
+
+  // ── Condition evaluation ────────────────────────────────────────────────
+  if (surfaceSignals.length === 0) {
+    const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
+    if (ambiguousRe.test(html)) {
+      return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'possible AI-interactive surface (ambiguous widget) — manual review recommended for Art 50 compliance' };
+    }
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'no AI-interactive surface detected — disclosure not required' };
+  }
+
+  if (disclosureSignals.length > 0) {
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `AI surface detected (${surfaceSignals.join(', ')}); disclosure present (${disclosureSignals.join(', ')})` };
+  }
+
+  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found — EU AI Act Art 50(1) requires disclosure at first interaction` };
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -991,6 +1061,7 @@ async function scoreUrlUncached(targetUrl: string) {
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
+    checkAiDisclosure(html),
   ];
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
