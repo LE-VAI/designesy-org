@@ -153,8 +153,8 @@ export default function HomePage() {
             AI makes execution free. We make execution yours.
           </p>
           <p className="hero-sub fade-up fade-up-delay-3">
-            Score any site against the Designesy design system contract. 26
-            checks. One grade. Nobody passes it yet.
+            Score any site against a real design contract. 26 checks. One grade.
+            No vibe-tax.
           </p>
           <div id="score" className="score-hero-input fade-up fade-up-delay-4">
             <ScoreForm />
