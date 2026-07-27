@@ -6,18 +6,16 @@ import { useEffect, useRef, useState } from 'react';
 import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
 
+// Primary nav — kept to 4 items per SaaS IA best practice (3-4 is the
+// ceiling before nav bloat becomes an architectural problem, not a
+// cosmetic one). Secondary routes (Learn, Open, Labs, Review, Badge,
+// Work, Graph, Continuity, Privacy) live in the footer.
+// See: razegrowth.com SaaS navigation architecture guide.
 const NAV_ROUTES = [
   { href: '/score', label: 'Score' },
-  { href: '/learn', label: 'Learn' },
-  { href: '/open', label: 'Open' },
-  { href: '/docs', label: 'Docs' },
-  { href: '/labs', label: 'Labs' },
+  { href: '/contracts', label: 'Contract' },
   { href: '/kits', label: 'Kits' },
-  { href: '/review', label: 'Review' },
-  { href: '/badge', label: 'Badge' },
-  { href: '/work', label: 'Work' },
-  { href: '/graph', label: 'Graph' },
-  { href: '/contracts', label: 'Contracts' },
+  { href: '/docs', label: 'Docs' },
 ];
 
 function isActiveRoute(pathname: string, href: string) {

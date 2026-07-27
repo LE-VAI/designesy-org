@@ -6,6 +6,7 @@ import { initScrollPause } from './scroll-pause';
 
 const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
+  { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
   { href: '/labs', label: 'Labs' },
@@ -16,6 +17,7 @@ const SURFACE_LINKS = [
   { href: '/continuity', label: 'Continuity' },
   { href: '/graph', label: 'Graph' },
   { href: '/contracts', label: 'Contracts' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/labs/takt', label: 'Takt lab' },
   { href: '/labs/cadence', label: 'Cadence lab' },
   { href: '/kits/design-review', label: 'Design Review' },
