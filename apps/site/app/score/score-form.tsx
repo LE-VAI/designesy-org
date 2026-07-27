@@ -79,6 +79,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [badgeCopied, setBadgeCopied] = useState(false);
   const [history, setHistory] = useState<ScoreHistoryEntry[]>([]);
   const [historyCleared, setHistoryCleared] = useState(false);
   const [auditStatus, setAuditStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
@@ -198,6 +199,23 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     navigator.clipboard.writeText(shareUrl);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2500);
+  }
+
+  // Copy the embeddable badge snippet — an <a><img></a> block ready to paste
+  // into a README, docs page, or site footer. Each embed is a backlink to
+  // designesy.org and carries the live grade.
+  const badgeSrc = typeof window !== 'undefined' && scoredUrl
+    ? `${window.location.origin}/score/badge?url=${encodeURIComponent(scoredUrl)}`
+    : '';
+  const badgeEmbed = badgeSrc
+    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Designesy design legitimacy score" /></a>`
+    : '';
+
+  function copyBadgeEmbed() {
+    if (!badgeEmbed) return;
+    navigator.clipboard.writeText(badgeEmbed);
+    setBadgeCopied(true);
+    setTimeout(() => setBadgeCopied(false), 2500);
   }
 
   function handleClearHistory() {
@@ -451,6 +469,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     </svg>
                     Share on LinkedIn
                   </a>
+                  <button
+                    type="button"
+                    onClick={copyBadgeEmbed}
+                    className="score-action-btn score-share-btn"
+                    data-cuelume-press="tick"
+                    disabled={!badgeEmbed}
+                    title="Copy an embeddable <img> badge for your README or site footer"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="6" width="18" height="12" rx="2" />
+                      <path d="M9 10h6M9 14h4" />
+                    </svg>
+                    {badgeCopied ? 'Badge copied!' : 'Copy badge'}
+                  </button>
                 </>
               )}
 
