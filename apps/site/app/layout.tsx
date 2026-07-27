@@ -10,6 +10,7 @@ import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { MagneticCursor } from './lib/magnetic-cursor';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
+import { ScrollDepth } from './lib/scroll-depth';
 import {
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
@@ -111,6 +112,7 @@ export default function RootLayout({
         <EffectEnhancer />
         <MagneticCursor />
         <ScrambleEnhancer />
+        <ScrollDepth />
         {children}
         <Analytics />
       </body>
