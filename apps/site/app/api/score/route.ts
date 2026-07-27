@@ -366,6 +366,7 @@ const REMEDIATION: Record<string, string> = {
   v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
+  v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -1015,6 +1016,41 @@ function checkAiDisclosure(html: string): CheckResult {
   return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found — EU AI Act Art 50(1) requires disclosure at first interaction` };
 }
 
+// v35 — Forced-colors readiness (Windows High Contrast Mode / Chrome forced-colors).
+// Verifies the site has a @media (forced-colors: active) block, ideally with
+// forced-color-adjust: none on brand-critical elements. Without this, Windows
+// HCM users see a recolored page where logos, charts, and semantic-color
+// indicators become illegible. 2026 consensus: design-system score tools
+// should check forced-colors resilience (Cycle 9 + Cycle 13 research #1).
+function checkForcedColors(css: string): CheckResult {
+  const ITEM = 'Forced-colors readiness: @media (forced-colors: active) block present';
+  const CATEGORY = 'accessibility';
+
+  // Primary signal: @media (forced-colors: active) block exists
+  const hasForcedColorsMedia = /@media[^{]*forced-colors\s*:\s*active/i.test(css);
+  // Secondary signal: forced-color-adjust property used anywhere
+  const hasForcedColorAdjust = /forced-color-adjust\s*:/i.test(css);
+  // Tertiary signal: -ms-high-contrast (legacy Edge/IE) — still relevant
+  const hasHighContrast = /@media[^{]*-ms-high-contrast/i.test(css);
+
+  if (hasForcedColorsMedia && hasForcedColorAdjust) {
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'forced-colors media query + forced-color-adjust both present' };
+  }
+  if (hasForcedColorsMedia) {
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'forced-colors media query present (add forced-color-adjust: none on brand-critical elements for full resilience)' };
+  }
+  if (hasHighContrast && hasForcedColorAdjust) {
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'legacy -ms-high-contrast + forced-color-adjust present (modernize to forced-colors: active)' };
+  }
+  if (hasHighContrast) {
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'legacy -ms-high-contrast media query present — modernize to @media (forced-colors: active) and add forced-color-adjust: none on brand-critical elements' };
+  }
+  if (hasForcedColorAdjust) {
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'forced-color-adjust used but no @media (forced-colors: active) block — add the media query guard' };
+  }
+  return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'no forced-colors media query or forced-color-adjust detected — Windows HCM users may see illegible UI' };
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -1062,6 +1098,7 @@ async function scoreUrlUncached(targetUrl: string) {
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
     checkAiDisclosure(html),
+    checkForcedColors(css),
   ];
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
