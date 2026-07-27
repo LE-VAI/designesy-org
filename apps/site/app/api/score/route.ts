@@ -487,7 +487,11 @@ function checkNoAtlasNaming(html: string): CheckResult {
 // all above the 0.95 floor. We look for scale(0.9[5-9]|0.99[0-9]) and confirm
 // at least one press-scale exists; below-floor values (scale(0.8x-0.94)) FAIL.
 function checkPressScale(css: string): CheckResult {
-  const allScales = css.match(/scale\(\s*([0-9.]+)\s*\)/gi) || [];
+  // Strip @keyframes blocks — scale(0) inside a ripple/particle keyframe is a
+  // legitimate animation starting point, not a press scale. We only care about
+  // scale() in :active, transition, or component-rule contexts (the press feel).
+  const stripped = css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gis, '');
+  const allScales = stripped.match(/scale\(\s*([0-9.]+)\s*\)/gi) || [];
   const pressScales: number[] = [];
   let belowFloor = false;
   let belowVal = '';
@@ -496,14 +500,26 @@ function checkPressScale(css: string): CheckResult {
     if (isNaN(num)) continue;
     if (num < 1) {
       pressScales.push(num);
-      if (num < 0.95) { belowFloor = true; belowVal = num.toString(); }
+      if (num < 0.95 && num > 0) { belowFloor = true; belowVal = num.toString(); }
+      // scale(0) in a transition is suspicious but likely a hidden/initial state,
+      // not a press scale — treat as WARN signal, not FAIL.
+      if (num === 0) { belowFloor = true; belowVal = num.toString(); }
     }
   }
-  if (belowFloor) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${belowVal}) below 0.95 floor — reads as a glitch` };
-  if (pressScales.length > 0) {
-    const vals = pressScales.map(s => s.toFixed(3)).join(', ');
-    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${pressScales.length} press-scale(s) found: ${vals}` };
+  // scale(0) is only a FAIL if it's in an :active context (a real press scale
+  // below the floor). Otherwise it's a WARN (likely an animation initial state
+  // we couldn't fully strip, or a hidden element). Re-scan original CSS for
+  // :active + scale(0) specifically.
+  const activeScaleZero = /:active[^{]*\{[^}]*scale\(\s*0\s*\)/i.test(stripped);
+  if (activeScaleZero) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: 'found scale(0) in :active context — below 0.95 floor, reads as a glitch' };
+  if (pressScales.filter(s => s > 0 && s < 0.95).length > 0) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${belowVal}) below 0.95 floor` };
+  const realPressScales = pressScales.filter(s => s > 0);
+  if (realPressScales.length > 0) {
+    const vals = realPressScales.map(s => s.toFixed(3)).join(', ');
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}` };
   }
+  // Only scale(0) found (animation initial states) — not a press scale signal.
+  if (pressScales.length > 0) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: 'only scale(0) found (animation initial states) — no press scale detected' };
   return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: 'no press-scale (scale() < 1) found in CSS' };
 }
 
