@@ -7381,6 +7381,20 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0;
 }
 
+/* Remediation guidance — shown only for FAIL/WARN. Visually distinct from the
+   technical finding: amber heading (signal for action, not error), left-border
+   treatment to set the "how to fix" block apart from the "what's wrong" block. */
+.score-drawer-remediation-heading {
+  margin-top: 0.6rem;
+  color: #c9a227; /* amber — matches OG grade C/D color, contract-restrained */
+}
+
+.score-drawer-remediation {
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(201, 162, 39, 0.35);
+  color: var(--ink);
+}
+
 /* ── Score Responsive (single consolidated block) ──────────────────────── */
 
 @media (max-width: 720px) {
