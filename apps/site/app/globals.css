@@ -1823,6 +1823,9 @@ button.pillar:hover::before {
   margin-top: 0.5rem;
   opacity: 0.85;
   transition: opacity var(--duration-fast) var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .footer-badge:hover {
