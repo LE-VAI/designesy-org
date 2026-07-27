@@ -217,6 +217,50 @@ function hexToRgb(color: string): [number, number, number] | null {
   return [r, g, b];
 }
 
+// ── WCAG 2.1 contrast ratio ──────────────────────────────────────────────────
+// Per WCAG 2.1 §1.4.3: contrast = (L1 + 0.05) / (L2 + 0.05), where L1/L2 are
+// relative luminances of the lighter/darker colors. Relative luminance uses
+// the sRGB→linear transfer function. AA: 4.5:1 body, 3:1 large/UI.
+function srgbChannelToLinear(c: number): number {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(rgb: [number, number, number]): number {
+  return (
+    0.2126 * srgbChannelToLinear(rgb[0]) +
+    0.7152 * srgbChannelToLinear(rgb[1]) +
+    0.0722 * srgbChannelToLinear(rgb[2])
+  );
+}
+
+function contrastRatio(a: [number, number, number], b: [number, number, number]): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+// Helper: resolve any color value (hex, var()-ref, rgb()) to an RGB triple.
+// Falls back through the token map for var() references; returns null if the
+// value can't be resolved to a concrete hex color.
+function resolveColor(value: string, tokens: Record<string, string>): [number, number, number] | null {
+  const v = value.trim();
+  if (!v) return null;
+  if (v.startsWith('#')) return hexToRgb(v);
+  const varMatch = v.match(/^var\(\s*(--[\w-]+)/);
+  if (varMatch) {
+    const ref = tokens[varMatch[1]];
+    if (ref) return resolveColor(ref, tokens);
+    return null;
+  }
+  // rgb(r, g, b) / rgba(r, g, b, a)
+  const rgbMatch = v.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (rgbMatch) {
+    return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
+  }
+  return null;
+}
+
 function resolveVar(value: string, tokens: Record<string, string>, depth = 0): string {
   if (depth > 5) return value.trim();
   const m = value.match(/^\s*var\(\s*(--[\w-]+)/);
@@ -261,7 +305,7 @@ const REMEDIATION: Record<string, string> = {
   v04: 'Sound toggle should flip aria-pressed="true"/"false" on click and apply a [data-audio] attribute on <html> or <body> that the audio layer reads. Wire the state both ways — visual + accessibility tree.',
   v05: 'Add @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } } — disable entrance loops, parallax, and wordmark breath.',
   v06: 'Adjust your --ink, --muted, --muted-dim token values against --paper until contrast clears WCAG AA: 4.5:1 for body text, 3:1 for large text. Use oklch() or a contrast checker. --muted-dim is the usual offender.',
-  v07: 'Remove any internal control-plane naming (codenames, framework names, build-system terms) from user-visible surfaces: <title>, <h1>-<h6>, eyebrow labels, rendered body copy, meta description. The public site should speak the product voice, not the engineering voice.',
+  v07: 'Add semantic HTML landmarks: exactly one <h1> per page, a descriptive <title>, <meta name="description"> with a one-sentence summary, and at least one <main>/<header>/<nav> landmark element. These are Lighthouse a11y basics and the foundation of document structure.',
   v08: 'Wire the Poise interaction rules from contract.interaction into your component layer: hover lifts (translateY -1px), press scales (0.96 cells / 0.985 cards), focus rings, and the data-cuelume-press haptic attribute on every tappable element.',
   v09: 'Publish a keyboard-path page or section documenting the tab order, focus visibility, and key bindings. Every interactive element must be reachable by Tab, operable by Enter/Space, and dismissible by Esc.',
   v10: 'Apply the Takt feel rules: press scale 0.96 on cells (buttons, chips, toggles), 0.985 on cards/rows, 0.995 on large surfaces. All scales must stay above the 0.95 floor — anything lower reads as a glitch, not a press.',
@@ -290,14 +334,66 @@ function checkPaperToken(tokens: Record<string, string>): CheckResult {
 }
 
 function checkContrastSignal(tokens: Record<string, string>): CheckResult {
-  const signal = tokens['--signal'];
-  if (!signal) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: '--signal accent token not declared' };
-  const rgb = hexToRgb(signal);
-  if (!rgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--signal value ${signal} non-hex` };
-  const [r, g, b] = rgb;
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  if (lum < 0.6) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'PASS', detail: `--signal lum=${lum.toFixed(2)} (dark fill, white text passes)` };
-  return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: `--signal lum=${lum.toFixed(2)} (light fill)` };
+  // v22 — REAL WCAG 2.1 contrast between --signal (button fill) and the text
+  // on top of it. Contracts typically put --paper or --ink text on --signal.
+  // We test both --paper-on-signal and --ink-on-signal; the better ratio wins
+  // (designers choose the higher-contrast pairing). AA threshold: 4.5:1 for
+  // body text, 3:1 for large/UI — buttons are large text, but we hold the 4.5:1
+  // bar because button labels are often small (12-14px).
+  const signalVal = tokens['--signal'];
+  if (!signalVal) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: '--signal accent token not declared' };
+  const signalRgb = resolveColor(signalVal, tokens);
+  if (!signalRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--signal value ${signalVal} unresolvable to RGB` };
+
+  const candidates: Array<{ name: string; rgb: [number, number, number] | null }> = [
+    { name: '--paper', rgb: resolveColor(tokens['--paper'] || '', tokens) },
+    { name: '--ink', rgb: resolveColor(tokens['--ink'] || '', tokens) },
+  ];
+  let bestRatio = 0;
+  let bestName = '';
+  for (const c of candidates) {
+    if (!c.rgb) continue;
+    const r = contrastRatio(c.rgb, signalRgb);
+    if (r > bestRatio) { bestRatio = r; bestName = c.name; }
+  }
+  if (bestRatio === 0) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: 'no --paper/--ink token to test against --signal' };
+  const ratioStr = `${bestRatio.toFixed(2)}:1`;
+  if (bestRatio >= 4.5) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'PASS', detail: `${bestName} on --signal = ${ratioStr} (≥ 4.5:1 AA)` };
+  if (bestRatio >= 3) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: `${bestName} on --signal = ${ratioStr} (passes 3:1 large-text, fails 4.5:1 body)` };
+  return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'FAIL', detail: `${bestName} on --signal = ${ratioStr} (below 3:1 — illegible)` };
+}
+
+// v06 — REAL contrast check for ink/muted/muted-dim on paper.
+// Resolves each text token against --paper and computes WCAG 2.1 ratio.
+// AA: 4.5:1 body, 3:1 large. --muted-dim is the usual offender.
+function checkContrastReadable(tokens: Record<string, string>): CheckResult {
+  const paperVal = tokens['--paper'];
+  if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared — cannot test contrast' };
+  const paperRgb = resolveColor(paperVal, tokens);
+  if (!paperRgb) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: `--paper value ${paperVal} unresolvable to RGB` };
+
+  const textTokens = ['--ink', '--muted', '--muted-dim'];
+  const results: string[] = [];
+  let worst = { name: '', ratio: Infinity, status: 'PASS' as 'PASS' | 'WARN' | 'FAIL' };
+  for (const name of textTokens) {
+    const val = tokens[name];
+    if (!val) { results.push(`${name}: not declared`); continue; }
+    const rgb = resolveColor(val, tokens);
+    if (!rgb) { results.push(`${name}: unresolvable`); continue; }
+    const ratio = contrastRatio(rgb, paperRgb);
+    const r = ratio.toFixed(2);
+    let st: 'PASS' | 'WARN' | 'FAIL' = 'PASS';
+    if (ratio < 3) st = 'FAIL';
+    else if (ratio < 4.5) st = 'WARN';
+    results.push(`${name}=${r}:1(${st})`);
+    // Track the worst non-PASS result for the overall verdict.
+    if (st === 'FAIL') { if (worst.status !== 'FAIL' || ratio < worst.ratio) worst = { name, ratio, status: 'FAIL' }; }
+    else if (st === 'WARN' && worst.status !== 'FAIL') { if (worst.status !== 'WARN' || ratio < worst.ratio) worst = { name, ratio, status: 'WARN' }; }
+  }
+  const detail = results.join(', ');
+  if (worst.status === 'FAIL') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'FAIL', detail: `${detail} — ${worst.name} below 3:1` };
+  if (worst.status === 'WARN') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'WARN', detail: `${detail} — ${worst.name} below 4.5:1 AA` };
+  return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'PASS', detail };
 }
 
 function checkTransitionAll(css: string): CheckResult {
@@ -363,9 +459,122 @@ function checkReducedMotion(css: string): CheckResult {
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
+  // v07 — REPLACED. The old check grepped for the word "ATLAS" in the target
+  // site's HTML — a designesy self-audit that was meaningless for any external
+  // site (they all passed for the wrong reason). The new v07 is a general
+  // semantic-HTML check: verifies the page has a single <h1>, a <title>, a
+  // <meta name="description">, and a <main>/<header>/<nav> landmark. These are
+  // Lighthouse a11y basics (document-title weight 4.1, heading-order 0.8) and
+  // apply to every site. The check name/id stays v07 for continuity.
   const visibleHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
-  if (/ATLAS/i.test(visibleHtml)) return { id: 'v07', item: 'No public surface displays internal control-plane naming', category: 'identity', status: 'FAIL', detail: 'found internal naming on public surface' };
-  return { id: 'v07', item: 'No public surface displays internal control-plane naming', category: 'identity', status: 'PASS', detail: 'no internal naming detected' };
+  const h1Count = (visibleHtml.match(/<h1\b/gi) || []).length;
+  const hasTitle = /<title\b[^>]*>[^<]+<\/title>/i.test(html);
+  const hasMetaDesc = /<meta\s+name=["']description["']/i.test(html);
+  const hasLandmark = /<(main|header|nav)\b/i.test(visibleHtml);
+  const signals: string[] = [];
+  const failures: string[] = [];
+  if (h1Count === 1) signals.push('single h1'); else failures.push(h1Count === 0 ? 'no h1' : `${h1Count} h1s`);
+  if (hasTitle) signals.push('title'); else failures.push('no title');
+  if (hasMetaDesc) signals.push('meta description'); else failures.push('no meta description');
+  if (hasLandmark) signals.push('landmark'); else failures.push('no main/header/nav');
+  if (failures.length === 0) return { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', status: 'PASS', detail: signals.join(', ') };
+  if (failures.length <= 2) return { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', status: 'WARN', detail: `ok: ${signals.join(', ')} · missing: ${failures.join(', ')}` };
+  return { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', status: 'FAIL', detail: `missing: ${failures.join(', ')}` };
+}
+
+// v13 — REAL press-scale check. Scans CSS for scale() values in :active or
+// transition contexts. Contract: 0.96 cells, 0.985 cards, 0.995 large surfaces,
+// all above the 0.95 floor. We look for scale(0.9[5-9]|0.99[0-9]) and confirm
+// at least one press-scale exists; below-floor values (scale(0.8x-0.94)) FAIL.
+function checkPressScale(css: string): CheckResult {
+  const allScales = css.match(/scale\(\s*([0-9.]+)\s*\)/gi) || [];
+  const pressScales: number[] = [];
+  let belowFloor = false;
+  let belowVal = '';
+  for (const m of allScales) {
+    const num = parseFloat(m.replace(/scale\(\s*/i, '').replace(/\s*\)/, ''));
+    if (isNaN(num)) continue;
+    if (num < 1) {
+      pressScales.push(num);
+      if (num < 0.95) { belowFloor = true; belowVal = num.toString(); }
+    }
+  }
+  if (belowFloor) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${belowVal}) below 0.95 floor — reads as a glitch` };
+  if (pressScales.length > 0) {
+    const vals = pressScales.map(s => s.toFixed(3)).join(', ');
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${pressScales.length} press-scale(s) found: ${vals}` };
+  }
+  return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: 'no press-scale (scale() < 1) found in CSS' };
+}
+
+// v17 — REAL line-height by role check. Scans for heading-tight (1.0-1.15)
+// and body-relaxed (1.4-1.7) line-heights. Contract: headings 1.08, body 1.55.
+function checkLineHeightByRole(css: string): CheckResult {
+  const headingRe = /(?:h1|h2|h3|h4|h5|h6|\.h\d|heading|title)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi;
+  const bodyRe = /(?:body|p|article|\.body|\.prose|\.copy)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi;
+  const headingLhs: number[] = [];
+  const bodyLhs: number[] = [];
+  let m;
+  while ((m = headingRe.exec(css)) !== null) headingLhs.push(parseFloat(m[1]));
+  while ((m = bodyRe.exec(css)) !== null) bodyLhs.push(parseFloat(m[1]));
+  const headingOk = headingLhs.some(lh => lh >= 1.0 && lh <= 1.15);
+  const bodyOk = bodyLhs.some(lh => lh >= 1.4 && lh <= 1.7);
+  if (headingOk && bodyOk) return { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'PASS', detail: `headings ${headingLhs.join(',') || 'n/a'}, body ${bodyLhs.join(',') || 'n/a'}` };
+  if (headingLhs.length === 0 && bodyLhs.length === 0) return { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'WARN', detail: 'no role-scoped line-height declarations found' };
+  const missing: string[] = [];
+  if (!headingOk) missing.push('heading 1.0-1.15');
+  if (!bodyOk) missing.push('body 1.4-1.7');
+  return { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'WARN', detail: `missing: ${missing.join(', ')} (found headings ${headingLhs.join(',') || 'none'}, body ${bodyLhs.join(',') || 'none'})` };
+}
+
+// v20 — REAL ::selection check. Verifies ::selection is styled with a
+// var(--signal) reference (or any non-default color). Browser default is
+// #000/#fff text on #0000ff blue background — any custom rule beats that.
+function checkSelectionStyled(css: string): CheckResult {
+  const selMatch = css.match(/::selection\s*\{[^}]*\}/gi);
+  if (!selMatch || selMatch.length === 0) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'WARN', detail: 'no ::selection rule found — browser default will show' };
+  const usesSignal = selMatch.some(r => /var\(\s*--signal/i.test(r));
+  const hasColor = selMatch.some(r => /(background|color)\s*:/i.test(r));
+  if (usesSignal) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: '::selection uses --signal token' };
+  if (hasColor) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: '::selection styled with custom color (token reference recommended)' };
+  return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'WARN', detail: '::selection rule exists but no color/background set' };
+}
+
+// v23 — REAL duration-token check. Verifies the contract's 5 duration tokens
+// are present in :root (--duration, --duration-quick, --duration-fast,
+// --duration-medium, --duration-slow). Accepts aliases (see TOKEN_ALIASES).
+function checkDurationTokens(tokens: Record<string, string>): CheckResult {
+  const required = ['--duration', '--duration-quick', '--duration-fast', '--duration-medium', '--duration-slow'];
+  const present = required.filter(t => tokens[t]);
+  const missing = required.filter(t => !tokens[t]);
+  if (missing.length === 0) return { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', status: 'PASS', detail: `all 5 duration tokens present` };
+  if (present.length >= 3) return { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', status: 'WARN', detail: `${present.length}/5 present, missing: ${missing.join(', ')}` };
+  return { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', status: 'FAIL', detail: `only ${present.length}/5 duration tokens present, missing: ${missing.join(', ')}` };
+}
+
+// x01 — REAL font-synthesis check. Verifies font-synthesis: none is set
+// (prevents browser from synthesizing bold/italic when real weights aren't
+// loaded — a common cause of blurry headlines on Windows).
+function checkFontSynthesis(css: string): CheckResult {
+  if (/font-synthesis\s*:\s*none/i.test(css)) return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'font-synthesis: none declared' };
+  if (/font-synthesis\s*:/i.test(css)) return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'font-synthesis declared but not set to none' };
+  return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no font-synthesis rule found — browser may synthesize missing weights' };
+}
+
+// x02 — REAL text-underline-position check. Verifies from-font (or
+// under) is set so underlines use the font designer's position.
+function checkUnderlinePosition(css: string): CheckResult {
+  if (/text-underline-position\s*:\s*(from-font|under)/i.test(css)) return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'text-underline-position set to from-font/under' };
+  if (/text-underline-position\s*:/i.test(css)) return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'text-underline-position declared but not from-font/under' };
+  return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no text-underline-position rule — browser default may clip descenders' };
+}
+
+// x03 — REAL text-decoration-skip-ink check. Verifies auto (or none) is set
+// so underlines skip the rounded parts of letters (g, j, p, q, y).
+function checkSkipInk(css: string): CheckResult {
+  if (/text-decoration-skip-ink\s*:\s*(auto|none)/i.test(css)) return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'PASS', detail: 'text-decoration-skip-ink set to auto/none' };
+  if (/text-decoration-skip-ink\s*:/i.test(css)) return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'text-decoration-skip-ink declared but not auto/none' };
+  return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'no text-decoration-skip-ink rule — underlines may cross letterforms' };
 }
 
 function checkFontSmoothing(css: string): CheckResult {
@@ -532,27 +741,27 @@ async function scoreUrlUncached(targetUrl: string) {
     checkFocusVisible(css),
     { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'SKIP', detail: 'requires live DOM interaction' },
     checkReducedMotion(css),
-    { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'PASS', detail: 'evaluated from color tokens' },
+    checkContrastReadable(tokens),
     checkNoAtlasNaming(html),
     checkPoiseInteractionRules(css),
     checkPoiseKeyboardPath(css, html),
     checkTaktFeelRules(css),
     checkTransitionAll(css),
     checkWillChange(css),
-    { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: 'press scale compliant' },
+    checkPressScale(css),
     checkCadenceRules(css),
     checkFontSmoothing(css),
     checkRemScale(css),
-    { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'PASS', detail: 'line-height verified' },
+    checkLineHeightByRole(css),
     checkTextWrap(css),
     checkTabularNums(css),
-    { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: 'selection style verified' },
+    checkSelectionStyled(css),
     { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'SKIP', detail: 'requires CDP trace' },
     checkContrastSignal(tokens),
-    { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', status: 'PASS', detail: 'duration tokens verified' },
-    { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'font-synthesis rule verified' },
-    { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'underline-position verified' },
-    { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'PASS', detail: 'skip-ink verified' },
+    checkDurationTokens(tokens),
+    checkFontSynthesis(css),
+    checkUnderlinePosition(css),
+    checkSkipInk(css),
   ];
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
