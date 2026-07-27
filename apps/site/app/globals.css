@@ -503,6 +503,17 @@ p {
   z-index: 2;
 }
 
+/* Scroll-driven parallax — the constellation drifts up at 0.3x scroll
+   speed, creating depth without GSAP. --scroll-y is set by ScrollDepth
+   (rAF-throttled passive scroll listener). Reduced-motion users get
+   no parallax (ScrollDepth exits early, var is unset, calc falls back). */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-seam-mark {
+    transform: translateY(calc(var(--scroll-y, 0px) * -0.3));
+    will-change: transform;
+  }
+}
+
 .hero-seam-mark {
   width: min(148px, 22vw);
   height: auto;
@@ -949,6 +960,25 @@ p {
 
 .section {
   padding: 3.5rem 0;
+}
+
+/* Scroll-driven depth — sections drift up 8px as they enter the viewport,
+   purely via native CSS scroll-driven animations. Progressive enhancement:
+   browsers without animation-timeline support (Firefox, older Safari) skip
+   this and sections render statically. No JS, no layout shift, no jank.
+   Reduced-motion users get the static fallback via the media query. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .section > * {
+      animation: section-depth linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    @keyframes section-depth {
+      from { opacity: 0.55; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
 }
 
 .section-eyebrow {
