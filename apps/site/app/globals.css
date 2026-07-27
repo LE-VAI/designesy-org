@@ -738,7 +738,7 @@ p {
 
 /* Secondary line under the lede — the score value proposition, one breath */
 .hero-sub {
-  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  font-size: clamp(1rem, 2vw, 1.1rem);
   line-height: 1.45;
   color: var(--muted);
   margin-bottom: 1.75rem;
@@ -8390,7 +8390,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.75rem;
   color: var(--muted);
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   transition: color var(--motion-short) var(--ease-quiet);
 }
@@ -8477,7 +8478,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   color: var(--text);
   font-size: 0.75rem;
-  padding: 0.35rem 0.65rem;
+  padding: 0.5rem 0.85rem;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: border-color var(--motion-short) var(--ease-quiet),
