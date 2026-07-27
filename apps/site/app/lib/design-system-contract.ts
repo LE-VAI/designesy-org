@@ -109,18 +109,18 @@ export const designSystemContract = {
     },
   },
   colors: {
-    ink: { token: '--ink', value: '#ffffff', role: 'Primary text / foreground' },
+    ink: { token: '--ink', value: '#f5f5f7', role: 'Primary text / foreground' },
     muted: { token: '--muted', value: '#a0a0a0', role: 'Secondary text' },
     muted_dim: {
       token: '--muted-dim',
       value: '#7d7d7d',
       role: 'Tertiary / meta text',
     },
-    paper: { token: '--paper', value: '#000000', role: 'Page background' },
-    surface: { token: '--surface', value: '#0a0a0a', role: 'Card / panel base' },
+    paper: { token: '--paper', value: '#010102', role: 'Page background' },
+    surface: { token: '--surface', value: '#0a0a0c', role: 'Card / panel base' },
     surface_raised: {
       token: '--surface-raised',
-      value: '#111111',
+      value: '#121216',
       role: 'Elevated surface',
     },
     signal: {
