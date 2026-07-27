@@ -14,13 +14,22 @@
 :root {
   color-scheme: dark;
 
-  /* --- Doctrine tokens (DESIGN.md §7) --- */
-  --ink: #ffffff;
+  /* --- Doctrine tokens (DESIGN.md §7) ---
+     Paper is #010102, not #000 — a faint blue cast that eliminates halation
+     (light-text-bleed-into-black) and matches the Linear/Arc/Vercel premium
+     dark register. True #000 is the #1 "AI-slop tell" every craft source
+     flags. The difference is invisible in a screenshot but felt over a
+     5-minute reading session. */
+  --ink: #f5f5f7;
   --muted: #a0a0a0;
   --muted-dim: #7d7d7d;
-  --paper: #000000;
-  --surface: #0a0a0a;
-  --surface-raised: #111111;
+  --paper: #010102;
+  /* 3-step surface ladder — hierarchy via surface lift, not drop shadows.
+     Each step is a deliberate plane; cards lift off paper, raised lifts
+     off cards. Matches Linear's 4-step ladder philosophy. */
+  --surface: #0a0a0c;
+  --surface-raised: #121216;
+  --surface-lifted: #16161b;
   --surface-soft: rgba(255, 255, 255, 0.03);
   --surface-hover: rgba(255, 255, 255, 0.06);
 
