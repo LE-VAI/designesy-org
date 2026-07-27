@@ -7,6 +7,7 @@ import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
+import { HeroSeam } from './hero-seam';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -143,6 +144,7 @@ export default function HomePage() {
       <main id="main-content" className="site-shell">
         {/* --- Score hero — the input is the product, front and center --- */}
         <section className="hero" aria-labelledby="hero-title">
+          <HeroSeam />
           <p className="hero-eyebrow fade-up" data-scramble>
             The design legitimacy standard
           </p>
