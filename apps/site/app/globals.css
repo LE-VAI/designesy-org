@@ -6900,6 +6900,34 @@ a.lab-card:focus-visible .lab-card-arrow {
   z-index: 1;
 }
 
+/* Animated SVG arc gauge — fills clockwise from 12 o'clock to score%.
+   The "snazzy" detail Lighthouse reviewers loved. The arc grows with
+   animatedScore (rAF ease-out 800ms) so the gauge fills on reveal. */
+.score-grade-arc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.score-arc-track {
+  stroke: var(--line);
+  opacity: 0.5;
+}
+
+.score-arc-fill {
+  transition: stroke 0.3s var(--ease);
+}
+
+/* Grade-colored arc fills — match the emblem grade colors */
+.score-grade-emblem.is-a .score-arc-fill { stroke: #22c55e; }
+.score-grade-emblem.is-b .score-arc-fill { stroke: #84cc16; }
+.score-grade-emblem.is-c .score-arc-fill { stroke: #eab308; }
+.score-grade-emblem.is-d .score-arc-fill { stroke: #fb923c; }
+.score-grade-emblem.is-f .score-arc-fill { stroke: #ef4444; }
+
 .score-grade-emblem.is-a .score-grade-glow { background: #22c55e; }
 .score-grade-emblem.is-b .score-grade-glow { background: #84cc16; }
 .score-grade-emblem.is-c .score-grade-glow { background: #eab308; }
@@ -7294,6 +7322,23 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: border-color var(--duration-fast) var(--ease-out),
               background var(--duration-fast) var(--ease-out);
   position: relative;
+  /* Staggered entrance — each card fades up in sequence.
+     animationDelay set inline per-index (40ms step, capped at 600ms).
+     Reduced-motion users see the keyframe disabled below. */
+  animation: scoreCardReveal var(--duration) var(--ease-out) both;
+  opacity: 0;
+}
+
+@keyframes scoreCardReveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-card-item {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .score-card-item:hover {
