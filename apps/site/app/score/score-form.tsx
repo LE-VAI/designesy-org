@@ -758,7 +758,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   className="score-history-rerun"
                   onClick={() => {
                     setUrl(entry.url);
-                    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    void runScore(entry.url);
                   }}
                   data-cuelume-hover="tick"
                   aria-label={`Re-score ${truncateUrl(entry.url)}`}
