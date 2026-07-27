@@ -533,7 +533,7 @@ function checkPressScale(css: string): CheckResult {
   // Strip @keyframes blocks — scale(0) inside a ripple/particle keyframe is a
   // legitimate animation starting point, not a press scale. We only care about
   // scale() in :active, transition, or component-rule contexts (the press feel).
-  const stripped = css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gis, '');
+  const stripped = css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gi, '');
   const allScales = stripped.match(/scale\(\s*([0-9.]+)\s*\)/gi) || [];
   const pressScales: number[] = [];
   let belowFloor = false;
