@@ -6903,6 +6903,16 @@ a.lab-card:focus-visible .lab-card-arrow {
   text-align: center;
 }
 
+/* In the homepage hero, the welcome card is redundant — the hero-hint line
+   already says "No login. Real-time. 32 checks…" so the second explanatory
+   block adds noise. Per AnySearch research (shadcn hero-search pattern):
+   keep the hero minimal so the input is the only thing competing for
+   attention. The welcome card stays visible on /score where there's no
+   hero-hint. */
+.score-hero-input .score-welcome-card {
+  display: none;
+}
+
 .score-welcome-title {
   font-size: 0.875rem;
   font-weight: 600;
