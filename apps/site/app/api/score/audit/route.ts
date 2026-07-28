@@ -2,17 +2,15 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// Vercel Hobby caps at 10s (too short — PSI round-trip is 10-25s with a full
-// Lighthouse run). Pro allows up to 60s. We set 60s; on Hobby the function
-// will be killed at 10s and return a 504, which the client surfaces as an
-// audit error. Upgrade to Pro for the browser-audit path to fully work.
-// The PSI-only path (v21) can succeed on Hobby if CrUX field data is
+// Vercel Pro Plan: allows up to 800s. The PSI/Lighthouse audit round-trip
+// takes 10-25s. We set 300s to give ample headroom for slow sites.
+// The PSI-only path (v21) can succeed faster if CrUX field data is
 // available (fast ~2-3s response, no Lighthouse lab run needed).
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // ── Rate limiting (in-memory, shared shape with /api/score) ────────────────
 // Browser audits are heavier than static scores — tighter limit.
-const RATE_LIMIT = 5; // audits per hour per IP
+const RATE_LIMIT = 20; // Pro Plan: 20 audits per hour per IP (lifted from 5)
 const RATE_WINDOW = 60 * 60 * 1000;
 const hits = new Map<string, number[]>();
 
