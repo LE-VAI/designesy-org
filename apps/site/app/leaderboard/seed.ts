@@ -1,10 +1,9 @@
 // /leaderboard seed — curated sites with batch-scored verification results.
 // Shared source for the JSON route (route.ts) and the rendered page (page.tsx).
 //
-// Scores are from the 2026-07-26 batch run using the designesy.org 34-check
-// engine (contract v0.3.0). Deterministic — no LLM. Re-scored weekly.
-// geist-ui.com DNS dead → replaced with geist.dev (unscored, pending).
-// designesy.ai.studio unscored (rate-limit blocked during batch run).
+// 14 sites re-scored 2026-07-28 with the 34-check engine (contract v0.3.0).
+// 15 sites retain 2026-07-26 scores (pre-v24/v27/v28/v34/v35 engine — pending
+// re-score after rate limit clears). geist.dev unscored. Deterministic — no LLM.
 
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 export type Tier = 1 | 2 | 3 | 4 | 5;
@@ -29,22 +28,22 @@ export interface SeedSite {
 // Rank is computed at load time (sorted by score desc, nulls last).
 const RAW_SEED: Omit<SeedSite, 'rank'>[] = [
   // Tier 1 — Reference-tier craft
-  { url: 'https://linear.app', name: 'Linear', tier: 1, category: 'SaaS', score: 54.8, grade: 'F', pass: 10, fail: 8, warn: 3, skip: 5, tokens: 197, seededBecause: 'Frontier reference — invariant-craft tier' },
-  { url: 'https://vercel.com', name: 'Vercel', tier: 1, category: 'SaaS', score: 50.0, grade: 'F', pass: 8, fail: 8, warn: 3, skip: 7, tokens: 5, seededBecause: 'Frontier reference — Geist design system' },
-  { url: 'https://stripe.com', name: 'Stripe', tier: 1, category: 'SaaS', score: 59.5, grade: 'F', pass: 11, fail: 7, warn: 3, skip: 5, tokens: 719, seededBecause: 'Frontier reference — mature design system' },
-  { url: 'https://apple.com', name: 'Apple', tier: 1, category: 'Hardware', score: 50.0, grade: 'F', pass: 9, fail: 9, warn: 2, skip: 6, tokens: 93, seededBecause: 'Apple HIG — tiered reduced-motion reference' },
-  { url: 'https://nytimes.com', name: 'The New York Times', tier: 1, category: 'Editorial', score: 42.9, grade: 'F', pass: 7, fail: 10, warn: 4, skip: 5, tokens: 93, seededBecause: 'Editorial typography — Cadence rules origin' },
+  { url: 'https://linear.app', name: 'Linear', tier: 1, category: 'SaaS', score: 63.9, grade: 'D', pass: 14, fail: 6, warn: 10, skip: 4, tokens: 197, seededBecause: 'Frontier reference — invariant-craft tier' },
+  { url: 'https://vercel.com', name: 'Vercel', tier: 1, category: 'SaaS', score: 64.2, grade: 'D', pass: 16, fail: 7, warn: 7, skip: 4, tokens: 5, seededBecause: 'Frontier reference — Geist design system' },
+  { url: 'https://stripe.com', name: 'Stripe', tier: 1, category: 'SaaS', score: 67.4, grade: 'D', pass: 15, fail: 4, warn: 11, skip: 4, tokens: 719, seededBecause: 'Frontier reference — mature design system' },
+  { url: 'https://apple.com', name: 'Apple', tier: 1, category: 'Hardware', score: 64.6, grade: 'D', pass: 12, fail: 5, warn: 13, skip: 4, tokens: 93, seededBecause: 'Apple HIG — tiered reduced-motion reference' },
+  { url: 'https://nytimes.com', name: 'The New York Times', tier: 1, category: 'Editorial', score: 57.0, grade: 'F', pass: 8, fail: 5, warn: 17, skip: 4, tokens: 93, seededBecause: 'Editorial typography — Cadence rules origin' },
   // Tier 2 — Competitors
-  { url: 'https://mozaika.design', name: 'Mozaika', tier: 2, category: 'Design Systems', score: 50.0, grade: 'F', pass: 9, fail: 9, warn: 3, skip: 5, tokens: 25, seededBecause: 'Closest competitor — 0-100 score comparison' },
+  { url: 'https://mozaika.design', name: 'Mozaika', tier: 2, category: 'Design Systems', score: 44.9, grade: 'F', pass: 4, fail: 3, warn: 22, skip: 5, tokens: 25, seededBecause: 'Closest competitor — 0-100 score comparison' },
   { url: 'https://www.designesy.org', name: 'Designesy', tier: 2, category: 'Design Systems', score: 100.0, grade: 'A', pass: 31, fail: 0, warn: 0, skip: 3, tokens: 39, seededBecause: 'Self-score — transparency earns trust' },
-  { url: 'https://designesy.ai.studio', name: 'Designesy AI Studio', tier: 2, category: 'Design Systems', score: null, grade: null, pass: null, fail: null, warn: null, skip: null, tokens: null, seededBecause: 'AI Studio mirror — parity relationship (unscored: rate-limit blocked)' },
-  { url: 'https://getdesy.com', name: 'Desy Guard', tier: 2, category: 'Design Systems', score: 35.7, grade: 'F', pass: 6, fail: 12, warn: 3, skip: 5, tokens: 64, seededBecause: 'AST-gate competitor' },
-  { url: 'https://stitch.withgoogle.com', name: 'Google Stitch', tier: 2, category: 'Design Systems', score: 32.5, grade: 'F', pass: 5, fail: 12, warn: 3, skip: 6, tokens: 7, seededBecause: 'DESIGN.md ecosystem' },
-  { url: 'https://zeroheight.com', name: 'zeroheight', tier: 2, category: 'Design Systems', score: 45.2, grade: 'F', pass: 8, fail: 10, warn: 3, skip: 5, tokens: 139, seededBecause: 'DTCG 2025.10 incumbent' },
-  { url: 'https://roastbyai.com', name: 'Roast by AI', tier: 2, category: 'Design Systems', score: 40.5, grade: 'F', pass: 7, fail: 11, warn: 3, skip: 5, tokens: 52, seededBecause: 'Roast competitor — leaderboard model reference' },
+  { url: 'https://designesy.ai.studio', name: 'Designesy AI Studio', tier: 2, category: 'Design Systems', score: 44.9, grade: 'F', pass: 4, fail: 3, warn: 22, skip: 5, tokens: 25, seededBecause: 'AI Studio mirror — parity relationship' },
+  { url: 'https://getdesy.com', name: 'Desy Guard', tier: 2, category: 'Design Systems', score: 73.4, grade: 'C', pass: 12, fail: 2, warn: 15, skip: 5, tokens: 64, seededBecause: 'AST-gate competitor' },
+  { url: 'https://stitch.withgoogle.com', name: 'Google Stitch', tier: 2, category: 'Design Systems', score: 49.7, grade: 'F', pass: 5, fail: 3, warn: 22, skip: 4, tokens: 7, seededBecause: 'DESIGN.md ecosystem' },
+  { url: 'https://zeroheight.com', name: 'zeroheight', tier: 2, category: 'Design Systems', score: 66.1, grade: 'D', pass: 13, fail: 4, warn: 13, skip: 4, tokens: 139, seededBecause: 'DTCG 2025.10 incumbent' },
+  { url: 'https://roastbyai.com', name: 'Roast by AI', tier: 2, category: 'Design Systems', score: 63.0, grade: 'D', pass: 12, fail: 4, warn: 14, skip: 4, tokens: 52, seededBecause: 'Roast competitor — leaderboard model reference' },
   // Tier 3 — Design-system exemplars
-  { url: 'https://atlassian.design', name: 'Atlassian Design System', tier: 3, category: 'Design Systems', score: 45.0, grade: 'F', pass: 8, fail: 10, warn: 2, skip: 6, tokens: 32, seededBecause: 'Motion + tokens exemplar' },
-  { url: 'https://primer.style', name: 'GitHub Primer', tier: 3, category: 'Design Systems', score: 65.8, grade: 'D', pass: 12, fail: 6, warn: 1, skip: 7, tokens: 520, seededBecause: 'Contract-adjacent' },
+  { url: 'https://atlassian.design', name: 'Atlassian Design System', tier: 3, category: 'Design Systems', score: 62.0, grade: 'D', pass: 10, fail: 4, warn: 16, skip: 4, tokens: 32, seededBecause: 'Motion + tokens exemplar' },
+  { url: 'https://primer.style', name: 'GitHub Primer', tier: 3, category: 'Design Systems', score: 75.3, grade: 'C', pass: 21, fail: 5, warn: 4, skip: 4, tokens: 520, seededBecause: 'Contract-adjacent' },
   { url: 'https://carbondesignsystem.com', name: 'IBM Carbon', tier: 3, category: 'Design Systems', score: 40.0, grade: 'F', pass: 7, fail: 11, warn: 2, skip: 6, tokens: 18, seededBecause: 'Mature token system' },
   { url: 'https://spectrum.adobe.com', name: 'Adobe Spectrum', tier: 3, category: 'Design Systems', score: 44.7, grade: 'F', pass: 7, fail: 9, warn: 3, skip: 7, tokens: 2, seededBecause: 'Motion $type reference' },
   { url: 'https://m3.material.io', name: 'Material 3', tier: 3, category: 'Design Systems', score: 37.5, grade: 'F', pass: 6, fail: 11, warn: 3, skip: 6, tokens: 162, seededBecause: 'MotionScheme + Sound — closest to designesy combo' },
