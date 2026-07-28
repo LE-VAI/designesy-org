@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { SubmitForm } from './submit-form/submit-form';
 import {
   SEED,
   LEADERBOARD_POLICY,
@@ -209,6 +210,22 @@ export default function LeaderboardPage() {
           .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
           .lb-policy strong { color: var(--ink); font-weight: 600; }
           .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+          .lb-submit { max-width: 480px; }
+          .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
+          .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
+          .lb-field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; }
+          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 0.92rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
+          .lb-input:focus { border-color: var(--signal); }
+          .lb-input:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 2px var(--signal-dim); }
+          .lb-input:disabled { opacity: 0.5; cursor: not-allowed; }
+          .lb-submit-btn { margin-top: 0.25rem; align-self: flex-start; min-height: 44px; padding: 0.625rem 1.5rem; }
+          .lb-submit-result { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: 6px; border: 1px solid var(--line); }
+          .lb-result-ok { background: var(--signal-dim); border-color: var(--signal-light); }
+          .lb-result-err { background: var(--surface-soft); border-color: var(--line-strong); }
+          .lb-result-head { font-family: var(--mono, ui-monospace, monospace); font-size: 1.2rem; font-weight: 700; color: var(--ink); margin: 0 0 0.25rem; }
+          .lb-result-detail { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted); margin: 0 0 0.5rem; }
+          .lb-result-msg { font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.5; }
+          .lb-result-err-msg { font-size: 0.85rem; color: var(--ink); margin: 0; }
           @media (max-width: 720px) {
             .lb-th-breakdown, .lb-breakdown-cell { display: none; }
             .lb-th-action, .lb-action-cell { display: none; }
@@ -246,14 +263,17 @@ export default function LeaderboardPage() {
             >
               Score a site
             </Link>
-            <a
-              className="button ghost"
-              href="mailto:hello@designesy.org?subject=Leaderboard%20submission"
-              data-cuelume-press
-            >
-              Submit a site
-            </a>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Submit a site</h2>
+          <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
+            Enter a URL to score it against the same 34-check engine. Submissions
+            are scored instantly and curated into the seed list on the next weekly
+            batch. No paywall, no pay-to-remove.
+          </p>
+          <SubmitForm />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -346,10 +366,12 @@ export default function LeaderboardPage() {
 
         <div className="status-note">
           Leaderboard v0.2 · curated seed (30 sites) · last scored{' '}
-          {LEADERBOARD_LAST_SCORED} · open submission is a follow-up. Scores are
-          deterministic and re-run weekly. The JSON endpoint lives at{' '}
-          <Link href="/api/leaderboard">/api/leaderboard</Link>. Submit a site
-          via <a href="mailto:hello@designesy.org">hello@designesy.org</a>.
+          {LEADERBOARD_LAST_SCORED} · open submission is live — use the form
+          above. Scores are deterministic and re-run weekly. The JSON endpoint
+          lives at{' '}
+          <Link href="/api/leaderboard">/api/leaderboard</Link>. Submit via the
+          form above or POST to{' '}
+          <Link href="/api/leaderboard/submit">/api/leaderboard/submit</Link>.
         </div>
       </main>
 
