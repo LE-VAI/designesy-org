@@ -4,5 +4,16 @@
       "path": "/api/cron/rescore",
       "schedule": "0 9 * * 1"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/mcp/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/rescore/route.ts": {
+      "maxDuration": 800
+    },
+    "app/api/score/audit/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }

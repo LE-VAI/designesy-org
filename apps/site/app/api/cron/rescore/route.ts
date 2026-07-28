@@ -2,16 +2,17 @@
 // weekly (Mondays 09:00 UTC). This keeps the leaderboard fresh without manual
 // batch runs.
 //
-// Pro Plan: 300s function timeout is enough to score ~30 sites sequentially
-// (each takes 3-8s cold, <50ms cached). Results are cached via unstable_cache
-// on /api/score for 24h, so re-scoring the same URL within 24h is instant.
+// Pro Plan: 800s function timeout (Pro max). Scoring ~30 sites sequentially
+// takes 3-8s cold each (up to 240s worst case). 800s gives ample headroom.
+// Results are cached via unstable_cache on /api/score for 24h, so re-scoring
+// the same URL within 24h is instant.
 //
 // Security: Vercel Cron sends a CRON_SECRET header. We validate it against
 // the env var. Without the secret, the endpoint returns 401.
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-export const maxDuration = 300; // Pro Plan: 300s max
+export const maxDuration = 800; // Pro Plan: 800s max (upgraded from 300s)
 
 import { SEED } from '../../../leaderboard/seed';
 
