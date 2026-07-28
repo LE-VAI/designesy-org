@@ -78,53 +78,67 @@ const TOOLS = [
 
 const CLIENT_CONFIGS = [
   {
-    client: 'Claude Desktop',
+    client: 'Claude Code (CLI)',
+    file: '~/.claude.json or ~/.claude/settings.json',
+    config: `{
+  "mcpServers": {
+    "designesy": {
+      "type": "http",
+      "url": "${ENDPOINT}"
+    }
+  }
+}`,
+    note: 'Claude Code (the CLI agent) supports Streamable HTTP natively via type: "http". This is separate from Claude Desktop (below).',
+  },
+  {
+    client: 'Cursor',
+    file: '.cursor/mcp.json (project) or ~/.cursor/mcp.json (global)',
+    config: `{
+  "mcpServers": {
+    "designesy": {
+      "url": "${ENDPOINT}"
+    }
+  }
+}`,
+    note: 'Cursor supports Streamable HTTP directly — just provide url. It auto-detects HTTP vs SSE. No type field needed.',
+  },
+  {
+    client: 'ZCode',
+    file: '.zcode MCP config (User or Workspace scope)',
+    config: `{
+  "mcpServers": {
+    "designesy": {
+      "url": "${ENDPOINT}"
+    }
+  }
+}`,
+    note: 'ZCode supports HTTP, SSE, and stdio. Add via Settings → MCP Servers (type: HTTP), or paste this JSON in full config mode.',
+  },
+  {
+    client: 'VS Code + Copilot',
+    file: '.vscode/mcp.json',
+    config: `{
+  "servers": {
+    "designesy": {
+      "type": "http",
+      "url": "${ENDPOINT}"
+    }
+  }
+}`,
+    note: 'VS Code with GitHub Copilot supports HTTP MCP servers. Note: key is "servers", not "mcpServers". VS Code tries HTTP Stream first, falls back to SSE.',
+  },
+  {
+    client: 'Claude Desktop (stdio-only — needs mcp-remote bridge)',
     file: '~/Library/Application Support/Claude/claude_desktop_config.json (macOS)\n%APPDATA%\\Claude\\claude_desktop_config.json (Windows)',
     config: `{
   "mcpServers": {
     "designesy": {
-      "url": "${ENDPOINT}"
-    }
-  }
-}`,
-    note: 'Claude Desktop supports Streamable HTTP natively. No mcp-remote wrapper needed.',
-  },
-  {
-    client: 'Cursor',
-    file: '.cursor/mcp.json',
-    config: `{
-  "mcpServers": {
-    "designesy": {
-      "url": "${ENDPOINT}"
-    }
-  }
-}`,
-    note: 'Cursor supports Streamable HTTP servers in recent versions. If your version needs stdio, use the mcp-remote bridge below.',
-  },
-  {
-    client: 'ZCode',
-    file: '.zcode/mcp.json or workspace settings',
-    config: `{
-  "mcpServers": {
-    "designesy": {
-      "url": "${ENDPOINT}"
-    }
-  }
-}`,
-    note: 'ZCode supports Streamable HTTP MCP servers. This is the same server that powers the designesy-mcp tools in this project.',
-  },
-  {
-    client: 'Any stdio-only client (mcp-remote bridge)',
-    file: 'npx mcp-remote ${ENDPOINT}',
-    config: `{
-  "mcpServers": {
-    "designesy": {
       "command": "npx",
-      "args": ["mcp-remote", "${ENDPOINT}"]
+      "args": ["mcp-remote@latest", "${ENDPOINT}"]
     }
   }
 }`,
-    note: 'For clients that only speak stdio (older Claude Desktop builds, some IDEs). The mcp-remote npm package wraps a Streamable HTTP endpoint as a local stdio server.',
+    note: 'Claude Desktop\'s JSON config is stdio-only — a url field silently deletes the entire mcpServers block (bug #37286). Use the mcp-remote npm package as a stdio bridge. Alternatively, add the server via Settings → Connectors → Add custom connector (no JSON editing, supports public HTTPS directly).',
   },
 ];
 
