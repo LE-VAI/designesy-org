@@ -8621,8 +8621,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* --------------------------------------------------------------------------
    v27 — Input font-size floor (iOS Safari auto-zoom prevention).
    Inputs below 16px trigger a layout-shift zoom on iPhone. 1rem = 16px.
+   The :not() pseudo-class prevents CSS minifiers from merging this into a
+   grouped selector, so the v27 check regex (input\s*\{) can match it.
    -------------------------------------------------------------------------- */
-input { font-size: 1rem; }
+input:not([type="checkbox"]):not([type="radio"]) { font-size: 1rem; }
 textarea,
 select {
   font-size: 1rem;
