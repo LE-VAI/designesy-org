@@ -54,6 +54,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${BASE}/docs/mcp`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
       url: `${BASE}/score`,
       lastModified: NOW,
       changeFrequency: 'weekly',
