@@ -9,7 +9,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const SUBMIT_RATE_LIMIT = 5; // per hour per IP
+const SUBMIT_RATE_LIMIT = 20; // per hour per IP (Pro Plan)
 const submitLog: { ip: string; ts: number }[] = [];
 
 function isRateLimited(ip: string): boolean {
