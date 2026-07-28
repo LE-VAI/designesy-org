@@ -6,6 +6,7 @@ import { initScrollPause } from './scroll-pause';
 
 const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
+  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },

@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from 'react';
 import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
 
-// Primary nav — kept to 4 items per SaaS IA best practice (3-4 is the
-// ceiling before nav bloat becomes an architectural problem, not a
-// cosmetic one). Secondary routes (Learn, Open, Labs, Review, Badge,
-// Work, Graph, Continuity, Privacy) live in the footer.
+// Primary nav — 5 items. Score + Leaderboard pair as the public verification
+// surface; Contract, Kits, Docs cover the developer/designer path.
+// Secondary routes (Learn, Open, Labs, Review, Badge, Work, Graph, Continuity,
+// Privacy) live in the footer.
 // See: razegrowth.com SaaS navigation architecture guide.
 const NAV_ROUTES = [
   { href: '/score', label: 'Score' },
+  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/contracts', label: 'Contract' },
   { href: '/kits', label: 'Kits' },
   { href: '/docs', label: 'Docs' },
