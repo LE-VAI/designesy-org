@@ -7,11 +7,11 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
   description:
-    'Designesy design intelligence over MCP — Streamable HTTP at https://www.designesy.org/api/mcp. Eight tools: catalog, contract, review kit, SKILL.md, agent.json, llms.txt, llms-full.txt, and the live score engine. Connect Claude Desktop, Cursor, or ZCode.',
+    'Designesy design intelligence over MCP — Streamable HTTP at https://www.designesy.org/api/mcp. Eleven tools: catalog, contract, review kit, SKILL.md, agent.json, llms.txt, llms-full.txt, the live score engine, plus three living-systems validators (tokens, a11y, motion). Connect Claude Desktop, Cursor, or ZCode.',
   path: '/docs/mcp',
   ogTitle: 'MCP server · Designesy',
   ogDescription:
-    'Streamable HTTP endpoint with 8 design-intelligence tools. Copy-paste client configs for Claude Desktop, Cursor, and ZCode.',
+    'Streamable HTTP endpoint with 11 design-intelligence tools. Copy-paste client configs for Claude Desktop, Cursor, and ZCode.',
   twitterDescription: 'Designesy MCP server — designesy.org/docs/mcp',
 });
 
@@ -73,6 +73,27 @@ const TOOLS = [
     desc: 'The 34-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 23+ automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return SKIP.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/score',
+  },
+  {
+    name: 'designesy_tokens_score',
+    kind: 'Executable',
+    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown.',
+    args: 'url?: string, dtcg_file?: string',
+    source: '/contracts/tokens.json',
+  },
+  {
+    name: 'designesy_a11y_score',
+    kind: 'Framework',
+    desc: 'Accessibility verification framework for WCAG 2.2 AA via axe-core 4.12.1. Returns 11 conformance checks (a01-a11) + a Playwright script template (axe-core needs a real DOM, cannot run server-side). The agent runs the script locally with @axe-core/playwright. Optional config JSON enables brand customization via axe.configure().',
+    args: 'url: string, ruleset?: string, config?: string',
+    source: '/contracts/a11y.json',
+  },
+  {
+    name: 'designesy_motion_score',
+    kind: 'Executable',
+    desc: 'Validate a Lottie animation file against Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards. Fetches from a URL or accepts raw JSON. Runs 10 checks (m01-m10): required fields, version, frame rate, dimensions, layers, in/out points, markers for reduced-motion, deprecated layers, section 16 standards, JSON Schema conformance.',
+    args: 'url?: string, lottie_file?: string',
+    source: '/contracts/motion.json',
   },
 ];
 
