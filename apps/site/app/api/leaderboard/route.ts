@@ -1,6 +1,7 @@
-// /leaderboard — public leaderboard API
+// /api/leaderboard — public leaderboard API (JSON)
 // Serves the curated seed list (30 sites across 5 tiers) as JSON.
 // Scores from the 2026-07-26 batch run (34-check engine, contract v0.3.0).
+// The rendered HTML page lives at /leaderboard (app/leaderboard/page.tsx).
 // v2: open submission + weekly re-scoring is a follow-up.
 export const dynamic = 'force-static';
 
@@ -10,7 +11,7 @@ import {
   LEADERBOARD_VERSION,
   LEADERBOARD_SCORED_COUNT,
   LEADERBOARD_LAST_SCORED,
-} from './seed';
+} from '../../leaderboard/seed';
 
 export function GET() {
   return Response.json(
