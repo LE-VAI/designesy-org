@@ -771,7 +771,7 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0.65rem 1.25rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -8616,6 +8616,29 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-history-foot .text-link {
     transition: none;
   }
+}
+
+/* --------------------------------------------------------------------------
+   v27 — Input font-size floor (iOS Safari auto-zoom prevention).
+   Inputs below 16px trigger a layout-shift zoom on iPhone. 1rem = 16px.
+   -------------------------------------------------------------------------- */
+input,
+textarea,
+select {
+  font-size: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   v28 — Reading width 45-75ch (66ch ideal for prose containers).
+   Prevents line lengths >75ch on wide screens. Applied to prose-like content
+   containers, not structural grids or tables.
+   -------------------------------------------------------------------------- */
+.surface-note,
+.surface-lede,
+.definition > p:last-child,
+.lb-policy,
+.status-note {
+  max-width: 66ch;
 }
 
 /* --------------------------------------------------------------------------
