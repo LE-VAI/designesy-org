@@ -36,7 +36,7 @@ const RAW_SEED: Omit<SeedSite, 'rank'>[] = [
   { url: 'https://nytimes.com', name: 'The New York Times', tier: 1, category: 'Editorial', score: 42.9, grade: 'F', pass: 7, fail: 10, warn: 4, skip: 5, tokens: 93, seededBecause: 'Editorial typography — Cadence rules origin' },
   // Tier 2 — Competitors
   { url: 'https://mozaika.design', name: 'Mozaika', tier: 2, category: 'Design Systems', score: 50.0, grade: 'F', pass: 9, fail: 9, warn: 3, skip: 5, tokens: 25, seededBecause: 'Closest competitor — 0-100 score comparison' },
-  { url: 'https://www.designesy.org', name: 'Designesy', tier: 2, category: 'Design Systems', score: 95.9, grade: 'A', pass: 28, fail: 0, warn: 3, skip: 3, tokens: 39, seededBecause: 'Self-score — transparency earns trust' },
+  { url: 'https://www.designesy.org', name: 'Designesy', tier: 2, category: 'Design Systems', score: 100.0, grade: 'A', pass: 31, fail: 0, warn: 0, skip: 3, tokens: 39, seededBecause: 'Self-score — transparency earns trust' },
   { url: 'https://designesy.ai.studio', name: 'Designesy AI Studio', tier: 2, category: 'Design Systems', score: null, grade: null, pass: null, fail: null, warn: null, skip: null, tokens: null, seededBecause: 'AI Studio mirror — parity relationship (unscored: rate-limit blocked)' },
   { url: 'https://getdesy.com', name: 'Desy Guard', tier: 2, category: 'Design Systems', score: 35.7, grade: 'F', pass: 6, fail: 12, warn: 3, skip: 5, tokens: 64, seededBecause: 'AST-gate competitor' },
   { url: 'https://stitch.withgoogle.com', name: 'Google Stitch', tier: 2, category: 'Design Systems', score: 32.5, grade: 'F', pass: 5, fail: 12, warn: 3, skip: 6, tokens: 7, seededBecause: 'DESIGN.md ecosystem' },
