@@ -234,6 +234,42 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: `${BASE}/contracts/tokens`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/contracts/tokens.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/contracts/a11y`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/contracts/a11y.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/contracts/motion`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/contracts/motion.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${BASE}/work`,
       lastModified: NOW,
       changeFrequency: 'weekly',
