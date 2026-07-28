@@ -60,6 +60,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
     },
     {
+      url: `${BASE}/leaderboard`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
       url: `${BASE}/score/lovable`,
       lastModified: NOW,
       changeFrequency: 'monthly',
