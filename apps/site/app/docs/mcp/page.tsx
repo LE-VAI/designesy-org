@@ -359,7 +359,7 @@ export default function McpDocsPage() {
             }}
           >{`curl -X POST ${ENDPOINT} \\
   -H "Content-Type: application/json" \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}`}</pre>
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
             The response is a JSON-RPC 2.0 message listing all eight tools
             with their schemas.
