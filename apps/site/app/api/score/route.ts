@@ -15,8 +15,11 @@ export const dynamic = 'force-dynamic';
 const SCORE_TTL_SECONDS = 60 * 60 * 24; // 24h
 
 // ── Rate limiting (in-memory) ──────────────────────────────────────────────
+// Pro Plan: lifted from 20/hr to 100/hr. Results are cached 24h via
+// unstable_cache, so the effective throughput is much higher — repeat
+// scores for the same URL hit the Data Cache and cost nothing.
 
-const RATE_LIMIT = 20; // requests per hour per IP
+const RATE_LIMIT = 100; // requests per hour per IP (Pro Plan)
 const RATE_WINDOW = 60 * 60 * 1000;
 const hits = new Map<string, number[]>();
 
@@ -1196,7 +1199,7 @@ export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
   if (rateLimited(ip)) {
     return NextResponse.json(
-      { ok: false, error: 'Rate limit exceeded. Maximum 20 scores per hour.' },
+      { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },
       { status: 429 }
     );
   }
