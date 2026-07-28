@@ -296,7 +296,7 @@ export default function LeaderboardPage() {
           Leaderboard v0.2 · curated seed (30 sites) · last scored{' '}
           {LEADERBOARD_LAST_SCORED} · open submission is a follow-up. Scores are
           deterministic and re-run weekly. The JSON endpoint lives at{' '}
-          <Link href="/leaderboard">/leaderboard</Link> (the API). Submit a site
+          <Link href="/api/leaderboard">/api/leaderboard</Link>. Submit a site
           via <a href="mailto:hello@designesy.org">hello@designesy.org</a>.
         </div>
       </main>
