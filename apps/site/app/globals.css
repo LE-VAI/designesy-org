@@ -8617,3 +8617,52 @@ a.lab-card:focus-visible .lab-card-arrow {
     transition: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Forced-colors readiness (Windows High Contrast Mode / Chrome forced-colors)
+   v35 — WCAG 2.2 §1.4.1 Use of Color + HCM resilience.
+   Brand-critical elements preserve their identity via forced-color-adjust: none.
+   Structural borders/outlines use currentColor so they adapt to the HCM palette.
+   Tested against Windows 11 Accessibility > Contrast themes (Aquatic, Desert,
+   Dusk, Night Sky).
+   -------------------------------------------------------------------------- */
+@media (forced-colors: active) {
+  /* Brand-critical: preserve the wordmark dot, signal accents, grade badges,
+     and demo swatches so they don't get recolored to the HCM palette. */
+  .wordmark .dot,
+  .wordmark-hero .dot,
+  .lb-grade-a,
+  .lb-self-tag,
+  .demo-swatch-chip,
+  .demo-state-btn.s-default,
+  .demo-state-btn.s-hover,
+  .footer-badge img {
+    forced-color-adjust: none;
+  }
+
+  /* Structural: borders and outlines adapt to the HCM system colors. */
+  .row,
+  .lb-row,
+  .surface-page,
+  .doctrine-section,
+  .token-table,
+  .lb-stat,
+  .lb-policy,
+  .definition,
+  .demo-cell {
+    border-color: currentColor;
+  }
+
+  /* Focus rings stay visible under HCM. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="listitem"]:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  /* Links get the system link color; don't let --signal disappear. */
+  a {
+    forced-color-adjust: auto;
+  }
+}
