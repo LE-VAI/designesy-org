@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   }
 
   // Check for duplicates against the seed list
-  const { SEED } = await import('../../leaderboard/seed');
+  const { SEED } = await import('../../../leaderboard/seed');
   const exists = SEED.some((s) => {
     try {
       return new URL(s.url).hostname === new URL(url).hostname;
