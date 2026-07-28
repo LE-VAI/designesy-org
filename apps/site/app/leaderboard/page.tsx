@@ -79,15 +79,14 @@ function SiteRow({ site }: { site: SeedSite }) {
   const externalHref = site.url;
 
   return (
-    <div
-      className={`row lb-row${isSelf ? ' lb-row-self' : ''}${needsWork ? ' lb-row-needs-work' : ''}`}
-      role="listitem"
-    >
-      <span className="row-index lb-rank" data-tabular>
-        {site.rank !== null ? String(site.rank).padStart(2, '0') : '—'}
-      </span>
-      <span className="row-body lb-row-body">
-        <span className="lb-row-head">
+    <tr className={`lb-row${isSelf ? ' lb-row-self' : ''}${needsWork ? ' lb-row-needs-work' : ''}`}>
+      <th scope="row" className="lb-rank-cell">
+        <span className="lb-rank" data-tabular>
+          {site.rank !== null ? String(site.rank).padStart(2, '0') : '—'}
+        </span>
+      </th>
+      <td className="lb-name-cell">
+        <div className="lb-row-head">
           <Link href={scoreHref} className="row-title lb-name" data-cuelume-hover="whisper" data-cuelume-press>
             {site.name}
             {isSelf && <span className="lb-self-tag">self</span>}
@@ -105,25 +104,37 @@ function SiteRow({ site }: { site: SeedSite }) {
               T{site.tier} · {site.category}
             </span>
           </span>
-        </span>
-        <span className="lb-row-foot">
-          {site.score !== null && site.grade !== null ? (
-            <>
-              <GradeBadge grade={site.grade} score={site.score} />
-              <ScoreCell site={site} />
-              <span className="lb-breakdown" data-tabular>
-                {site.pass} pass · {site.fail} fail · {site.warn} warn · {site.skip} skip
-              </span>
-            </>
-          ) : (
-            <span className="lb-pending-note">unscored — pending re-score</span>
-          )}
-          <Link href={scoreHref} className="lb-score-link" data-cuelume-press>
-            re-score →
-          </Link>
-        </span>
-      </span>
-    </div>
+        </div>
+      </td>
+      <td className="lb-grade-cell">
+        {site.score !== null && site.grade !== null ? (
+          <GradeBadge grade={site.grade} score={site.score} />
+        ) : (
+          <span className="lb-pending-note">—</span>
+        )}
+      </td>
+      <td className="lb-score-cell">
+        {site.score !== null ? (
+          <ScoreCell site={site} />
+        ) : (
+          <span className="lb-pending-note">pending</span>
+        )}
+      </td>
+      <td className="lb-breakdown-cell" data-tabular>
+        {site.score !== null ? (
+          <span className="lb-breakdown">
+            {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}s
+          </span>
+        ) : (
+          <span className="lb-pending-note">unscored</span>
+        )}
+      </td>
+      <td className="lb-action-cell">
+        <Link href={scoreHref} className="lb-score-link" data-cuelume-press>
+          re-score →
+        </Link>
+      </td>
+    </tr>
   );
 }
 
@@ -147,17 +158,29 @@ export default function LeaderboardPage() {
 
       <main id="main-content" className="surface-page lb-page">
         <style>{`
-          .lb-page .lb-table { display: flex; flex-direction: column; gap: 0.5rem; }
-          .lb-row { display: grid; grid-template-columns: 2.5rem 1fr; gap: 1rem; align-items: start; padding: 1rem 1.25rem; }
-          .lb-row .lb-rank { font-family: var(--mono, ui-monospace, monospace); font-size: 0.85rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; padding-top: 0.125rem; }
+          .lb-page .lb-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .lb-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+          .lb-caption { text-align: left; padding: 0 0 0.75rem; font-size: 0.78rem; color: var(--muted-dim); caption-side: top; }
+          .lb-th-rank { width: 2.75rem; }
+          .lb-th-grade { width: 3.25rem; }
+          .lb-th-score { width: 4.5rem; }
+          .lb-th-breakdown { width: 7.5rem; }
+          .lb-th-action { width: 4.5rem; }
+          .lb-th-name { width: auto; }
+          .lb-table thead th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
+          .lb-table thead th.lb-th-score, .lb-table thead th.lb-th-grade, .lb-table thead th.lb-th-breakdown { text-align: right; }
+          .lb-rank-cell, .lb-name-cell, .lb-grade-cell, .lb-score-cell, .lb-breakdown-cell, .lb-action-cell { padding: 0.875rem 0.625rem; border-bottom: 1px solid var(--line-faint); vertical-align: middle; }
+          .lb-row { content-visibility: auto; contain-intrinsic-size: 0 64px; }
+          .lb-row:hover { background: var(--surface-soft); }
+          .lb-rank-cell { font-family: var(--mono, ui-monospace, monospace); font-size: 0.85rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; text-align: left; }
           .lb-row:hover .lb-rank { color: var(--ink); }
-          .lb-row-body { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+          .lb-name-cell { min-width: 0; }
           .lb-row-head { display: flex; flex-direction: column; gap: 0.25rem; }
           .lb-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; font-size: 0.78rem; color: var(--muted-dim); }
           .lb-host { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
           .lb-host:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-tier-tag { font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.04em; }
-          .lb-row-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.875rem; font-size: 0.82rem; color: var(--muted); }
+          .lb-grade-cell { text-align: right; }
           .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); }
           .lb-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); }
           .lb-grade-b { background: rgba(254,204,52,0.18); color: var(--ink); border-color: var(--activation); }
@@ -165,27 +188,38 @@ export default function LeaderboardPage() {
           .lb-grade-d { background: var(--surface-hover); color: var(--muted); border-color: var(--line); }
           .lb-grade-f { background: transparent; color: var(--muted-dim); border-color: var(--line-faint); }
           .lb-needs-work { opacity: 0.85; }
+          .lb-score-cell { text-align: right; }
           .lb-score { font-family: var(--mono, ui-monospace, monospace); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
           .lb-score-pending { color: var(--muted-dim); font-style: italic; font-weight: 400; font-family: inherit; font-size: 0.82rem; }
           .lb-score-pct { color: var(--muted-dim); font-weight: 400; margin-left: 0.125rem; font-size: 0.78rem; }
-          .lb-breakdown { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; }
+          .lb-breakdown-cell { text-align: right; font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; }
           .lb-pending-note { color: var(--muted-dim); font-style: italic; font-size: 0.8rem; }
-          .lb-score-link { margin-left: auto; font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
+          .lb-action-cell { text-align: right; }
+          .lb-score-link { font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
           .lb-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-self-tag { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.4rem; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); background: var(--signal-dim); border-radius: 3px; vertical-align: middle; }
-          .lb-row-self { background: var(--signal-dim); border-color: var(--signal-light) !important; }
-          .lb-row-self:hover { background: var(--signal-dim); border-color: var(--signal) !important; }
+          .lb-row-self { background: var(--signal-dim); }
+          .lb-row-self:hover { background: var(--signal-dim); }
+          .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
           .lb-row-needs-work .lb-name { color: var(--muted); }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
           .lb-stat { padding: 0.875rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
           .lb-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .lb-stat-label { display: block; margin-top: 0.35rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
+          .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
           .lb-policy strong { color: var(--ink); font-weight: 600; }
+          .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+          @media (max-width: 720px) {
+            .lb-th-breakdown, .lb-breakdown-cell { display: none; }
+            .lb-th-action, .lb-action-cell { display: none; }
+          }
           @media (max-width: 560px) {
-            .lb-row { grid-template-columns: 1.75rem 1fr; gap: 0.625rem; padding: 0.875rem 1rem; }
-            .lb-row-foot { gap: 0.4rem 0.625rem; }
-            .lb-breakdown { display: none; }
+            .lb-th-rank, .lb-rank-cell { width: 2rem; padding-left: 0.5rem; padding-right: 0.5rem; }
+            .lb-th-grade, .lb-grade-cell { width: 2.75rem; padding-left: 0.25rem; padding-right: 0.25rem; }
+            .lb-th-score, .lb-score-cell { width: 3.5rem; }
+            .lb-grade { width: 1.5rem; height: 1.5rem; font-size: 0.72rem; }
+            .lb-row-meta { font-size: 0.72rem; gap: 0.25rem 0.5rem; }
+            .lb-tier-tag { display: none; }
           }
         `}</style>
 
@@ -262,10 +296,28 @@ export default function LeaderboardPage() {
             cohort. Select any row to re-score it live at{' '}
             <Link href="/score">/score</Link>.
           </p>
-          <div className="row-stack lb-table" role="list">
-            {ranked.map((site) => (
-              <SiteRow key={site.url} site={site} />
-            ))}
+          <div className="lb-table-scroll">
+            <table className="lb-table">
+              <caption className="lb-caption">
+                Design verification leaderboard — {LEADERBOARD_SCORED_COUNT} of{' '}
+                {SEED.length} sites scored. Sorted by total score descending.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" className="lb-th-rank">#</th>
+                  <th scope="col" className="lb-th-name">Site</th>
+                  <th scope="col" className="lb-th-grade">Grade</th>
+                  <th scope="col" className="lb-th-score">Score</th>
+                  <th scope="col" className="lb-th-breakdown">Checks</th>
+                  <th scope="col" className="lb-th-action"><span className="sr-only">Action</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranked.map((site) => (
+                  <SiteRow key={site.url} site={site} />
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
