@@ -46,6 +46,8 @@ const MACHINE_LINKS = [
   { href: '/labs/takt.json', label: 'takt.json' },
   { href: '/labs/cadence.json', label: 'cadence.json' },
   { href: '/graph.json', label: 'graph.json' },
+  { href: '/api/mcp', label: 'MCP server' },
+  { href: '/docs/mcp', label: 'MCP docs' },
   { href: '/review/keyboard', label: 'Keyboard' },
 ];
 

@@ -94,6 +94,7 @@ export const openIndex = {
     agent_json: 'https://www.designesy.org/.well-known/agent.json',
     security_txt: 'https://www.designesy.org/.well-known/security.txt',
     skill_md: 'https://www.designesy.org/contracts/skill',
+    mcp_server: 'https://www.designesy.org/api/mcp',
     sitemap: 'https://www.designesy.org/sitemap.xml',
     robots: 'https://www.designesy.org/robots.txt',
   },
@@ -328,6 +329,12 @@ export const openIndex = {
       path: '/graph.json',
       url: 'https://www.designesy.org/graph.json',
       meta: 'Provenance chain v0.1 — source to shipped work, ten stages, public examples',
+    },
+    {
+      title: 'MCP server',
+      path: '/api/mcp',
+      url: 'https://www.designesy.org/api/mcp',
+      meta: 'Streamable HTTP MCP endpoint — 8 design-intelligence tools (catalog, contract, review, score). Docs: /docs/mcp',
     },
   ],
   anti_patterns: [
