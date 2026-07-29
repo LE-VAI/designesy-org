@@ -14,12 +14,21 @@ export const ENGINE_CHECK_COUNT = 34;
 // Public contract version the engine scores against.
 export const CONTRACT_VERSION = 'v0.3.0';
 
-// Latest self-score — the engine's own run against designesy.org
-// (designesy_score, 2026-07-29 deploy: 20P / 1F / 5S, the 1F is the known
-// INP static-probe artifact v21, score 95.2% grade A). Keep in sync with the
-// engine's last clean gate, not with the leaderboard seed snapshot.
-export const SELF_SCORE = 95.2; // percent
-export const SELF_GRADE = 'A';
+// Latest self-score — DERIVED from the public leaderboard seed row, never a
+// second literal. The hero and the leaderboard show the same number because
+// they read the same source: two frozen values for one fact is the exact
+// contradiction this module exists to kill. Current engine self-run
+// (2026-07-29 post-v12-fix gate): 100.0% A (21P / 0F / 0W / 5S — the 5 skips
+// are live-browser-only probes: sound toggle, Poise, Takt, Cadence pages).
+function selfRow() {
+  const row = SEED.find((s) => s.url === 'https://www.designesy.org');
+  if (!row || row.score === null || row.grade === null) {
+    throw new Error('hero-stats: leaderboard seed lost its designesy.org self row');
+  }
+  return row;
+}
+export const SELF_SCORE = selfRow().score as number; // percent — from the seed row
+export const SELF_GRADE = selfRow().grade as string;
 
 // Seeded cohort honesty — what the public leaderboard actually contains.
 export const COHORT_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;
