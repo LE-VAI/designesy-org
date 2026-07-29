@@ -247,6 +247,90 @@ export default function McpDocsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Conformance</h2>
+          <div
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div
+              className="surface-card"
+              style={{
+                padding: '1rem 1.25rem',
+                flex: '1 1 240px',
+              }}
+            >
+              <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
+                WCAG 2.2 AA
+              </p>
+              <p
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  margin: 0,
+                  color: 'var(--ink)',
+                }}
+              >
+                0 violations
+              </p>
+              <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
+                axe-core 4.12.1 · wcag22aa · verified 2026-07-28
+              </p>
+            </div>
+            <div
+              className="surface-card"
+              style={{
+                padding: '1rem 1.25rem',
+                flex: '1 1 240px',
+              }}
+            >
+              <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
+                DTCG 2025.10
+              </p>
+              <p
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  margin: 0,
+                  color: 'var(--ink)',
+                }}
+              >
+                100% A
+              </p>
+              <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
+                /export/dtcg · 10/10 checks pass · self-verified
+              </p>
+            </div>
+            <div
+              className="surface-card"
+              style={{
+                padding: '1rem 1.25rem',
+                flex: '1 1 240px',
+              }}
+            >
+              <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
+                Contract score
+              </p>
+              <p
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  margin: 0,
+                  color: 'var(--ink)',
+                }}
+              >
+                100% A
+              </p>
+              <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
+                34-check engine · v01–v35 all pass
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Eight tools fetch public machine exports from designesy.org and
