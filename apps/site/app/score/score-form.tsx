@@ -23,6 +23,15 @@ type CheckResult = {
   remediation?: string;
 };
 
+type CategoryScore = {
+  score: number | null;
+  weight: number;
+  pass: number;
+  fail: number;
+  warn: number;
+  skip: number;
+};
+
 type ScoreResponse = {
   ok: boolean;
   score?: number;
@@ -33,6 +42,7 @@ type ScoreResponse = {
   skip?: number;
   total?: number;
   a11yFloorApplied?: boolean;
+  categoryScores?: Record<string, CategoryScore>;
   checks?: CheckResult[];
   tokensExtracted?: number;
   error?: string;
@@ -59,6 +69,56 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'cadence', label: 'Cadence' },
   { key: 'performance', label: 'Performance' },
 ];
+
+// ── Constellation geometry ────────────────────────────────────────────────
+// The category constellation replaces the radar/wheel idiom (Observable's
+// 2025 radar critique: axis-order illusion undermines exactly the legitimacy
+// a scoring tool must earn). Categories sit on a FIXED ring indexed by
+// contract weight — heaviest (cadence) at 12 o'clock, descending clockwise.
+// Fixed order = no axis-order manipulation. The center circle r=26 leaves
+// room for the grade letter + percent; nodes render at r=48 as small arcs
+// whose fill length = category score.
+const CONSTELLATION_ORDER = [
+  'cadence', 'accessibility', 'semantic', 'motion', 'tokens',
+  'takt', 'poise', 'identity', 'interaction', 'performance', 'responsive',
+];
+const CONSTEL_C = 50;      // viewBox center (0 0 100 100)
+const CONSTEL_RING_R = 26; // main-score ring radius (circumference ≈ 163.36)
+const CONSTEL_NODE_R = 48; // category node ring radius
+const MAIN_CIRC = 2 * Math.PI * CONSTEL_RING_R; // 163.3628
+const NODE_ARC_R = 7;      // category micro-arc stroke radius
+const NODE_ARC_CIRC = 2 * Math.PI * NODE_ARC_R; // 43.9823
+
+function constellationPoint(index: number, total: number, r: number): { x: number; y: number } {
+  const angle = (index / total) * 2 * Math.PI - Math.PI / 2; // 12 o'clock start
+  return { x: CONSTEL_C + r * Math.cos(angle), y: CONSTEL_C + r * Math.sin(angle) };
+}
+
+// Verdict line — PSI "Core Web Vitals Assessment: Passed" pattern: the
+// one-line human verdict leads, in words not color, before the number.
+function verdictLine(r: ScoreResponse): string {
+  const total = r.total ?? 0;
+  const fails = r.fail ?? 0;
+  if (fails === 0 && (r.warn ?? 0) <= Math.max(1, Math.floor(total * 0.15))) {
+    return 'Strong conformance — this design system reads as engineered, not assembled.';
+  }
+  if (fails > 0) {
+    const worst = topCategories(r, 'worst');
+    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? ` — weakest in ${worst.label}` : ''}.`;
+  }
+  return 'Partial conformance — passes the floor, but the contract sees warnings the eye forgives.';
+}
+
+// Strongest / weakest scored categories for the hero meta line.
+function topCategories(r: ScoreResponse, mode: 'best' | 'worst'): { label: string; score: number | null } {
+  const entries = Object.entries(r.categoryScores || {}).filter(([, v]) => v.score !== null);
+  if (entries.length === 0) return { label: '', score: null };
+  const sorted = entries.sort((a, b) => (mode === 'best' ? (b[1].score! - a[1].score!) : (a[1].score! - b[1].score!)));
+  const [key, val] = sorted[0];
+  const label = CATEGORIES.find((c) => c.key === key)?.label
+    || key.charAt(0).toUpperCase() + key.slice(1);
+  return { label, score: val.score };
+}
 
 // Sort order for check cards — failures and warnings first, passes/skips last.
 // This surfaces "what to fix first" without a separate quick-wins block, per
@@ -91,6 +151,8 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [auditStatus, setAuditStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [auditError, setAuditError] = useState<string | null>(null);
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [delta, setDelta] = useState<number | null>(null);
+  const [rubricOpen, setRubricOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Load history on mount (client-only). SSR-safe via the guards inside
@@ -114,7 +176,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       return;
     }
     const target = result.score;
-    const duration = 800;
+    const duration = 1200; // Lighthouse PR 17045 "earned" window — long enough to watch the arc fill
     const start = performance.now();
     let rafId: number;
     const animate = (now: number) => {
@@ -155,6 +217,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     setSearchQuery('');
     setAuditStatus('idle');
     setAuditError(null);
+    setDelta(null);
 
     try {
       const resp = await fetch('/api/score', {
@@ -172,11 +235,16 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setScoredUrl(targetUrl);
       setResult(data);
       // Persist to free-tier local history. saveScore is SSR-safe and
-      // dedupes by URL (most-recent wins), caps at 5 entries.
+      // dedupes by URL (most-recent wins), caps at 5 entries. The entry
+      // carries prevScore so we can show a delta chip ("▲ +3.8 since last").
       if (typeof data.score === 'number' && typeof data.grade === 'string') {
         const next = saveScore(targetUrl, data);
         setHistory(next);
         setHistoryCleared(false);
+        const mine = next.find((e) => e.url === targetUrl);
+        if (mine && typeof mine.prevScore === 'number') {
+          setDelta(Math.round((data.score - mine.prevScore) * 10) / 10);
+        }
       }
     } catch {
       setStatus('error');
@@ -222,14 +290,29 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const lines = [
       `# Designesy Verification Receipt`,
       `Site: ${scoredUrl}`,
+      `Verdict: ${verdictLine(result)}`,
       `Grade: ${result.grade} (${result.score}%)`,
+      ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
+      `Assessed: ${new Date().toISOString()}`,
       `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Skip: ${result.skip}`,
       `Tokens Extracted: ${result.tokensExtracted || 0}`,
       `Contract: Designesy Design System Contract v0.3.0`,
-      ``,
-      `## Check Summary`,
-      ...checks.map((c) => `[${c.status}] ${c.id}: ${c.item} — ${c.detail}`),
+      `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded), weights below; accessibility < 60% caps grade at C.`,
     ];
+    const cats = result.categoryScores || {};
+    const catKeys = CONSTELLATION_ORDER.filter((k) => cats[k]);
+    if (catKeys.length > 0) {
+      lines.push(``, `## Category Breakdown`);
+      for (const k of catKeys) {
+        const v = cats[k];
+        const label = CATEGORIES.find((c) => c.key === k)?.label || k;
+        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : v.score + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.skip}s`);
+      }
+    }
+    lines.push(``, `## Check Summary`);
+    for (const c of checks) {
+      lines.push(`[${c.status}] ${c.id}: ${c.item} — ${c.detail}`);
+    }
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -294,8 +377,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         setAuditError(data.error || 'Audit failed.');
         return;
       }
-      // Merge audit checks into result.checks, replacing by id.
-      // Re-scores using the same weighted formula + a11y floor as the server.
+      // Merge audit checks into result.checks, replacing by id. Re-derives
+      // composite score + categoryScores client-side with the same weight
+      // table and a11y floor as the server (the audit endpoint returns
+      // checks only, so the merge recomputes — same math, one place in the
+      // file, verified against route.ts).
       setResult((prev) => {
         if (!prev) return prev;
         const auditById = new Map(data.checks!.map((c) => [c.id, c]));
@@ -305,7 +391,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const warn = merged.filter((c) => c.status === 'WARN').length;
         const skip = merged.filter((c) => c.status === 'SKIP').length;
         const total = merged.length;
-        // Weighted scoring (matches server-side CATEGORY_WEIGHTS)
+        // Weighted scoring (matches server-side CATEGORY_WEIGHTS in route.ts)
         const CATEGORY_WEIGHTS: Record<string, number> = {
           cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
           takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
@@ -316,21 +402,32 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           catCounts[c.category] = (catCounts[c.category] || 0) + 1;
         }
         let wp = 0, wt = 0;
+        const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number }> = {};
         for (const c of merged) {
-          if (c.status === 'SKIP') continue;
+          const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0 });
+          if (c.status === 'SKIP') { agg.skip += 1; continue; }
           const cw = (CATEGORY_WEIGHTS[c.category] || 5) / (catCounts[c.category] || 1);
-          wt += cw;
-          if (c.status === 'PASS') wp += cw;
-          else if (c.status === 'WARN') wp += cw * 0.5;
+          wt += cw; agg.wt += cw;
+          if (c.status === 'PASS') { wp += cw; agg.wp += cw; agg.pass += 1; }
+          else if (c.status === 'WARN') { wp += cw * 0.5; agg.wp += cw * 0.5; agg.warn += 1; }
+          else agg.fail += 1;
         }
         let score = wt === 0 ? 0 : Math.round((wp / wt) * 1000) / 10;
-        // a11y floor
+        const categoryScores: Record<string, CategoryScore> = {};
+        for (const [cat, agg] of Object.entries(catAgg)) {
+          categoryScores[cat] = {
+            score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
+            weight: CATEGORY_WEIGHTS[cat] || 5,
+            pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip,
+          };
+        }
+        // a11y floor (matches server)
         const a11yChecks = merged.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP');
         const a11yPct = a11yChecks.length === 0 ? 100 : ((a11yChecks.filter((c) => c.status === 'PASS').length + a11yChecks.filter((c) => c.status === 'WARN').length * 0.5) / a11yChecks.length) * 100;
         let a11yFloorApplied = false;
         if (a11yChecks.length > 0 && a11yPct < 60 && score > 70) { score = 70; a11yFloorApplied = true; }
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied };
+        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied, categoryScores };
       });
       setAuditStatus('ok');
     } catch {
@@ -402,10 +499,21 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       )}
 
       {status === 'loading' && (
-        <div className="score-skeleton-feed" aria-label="Running verification checks">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="score-skeleton-row" />
-          ))}
+        <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
+          <p className="score-verify-log-title">Legitimacy engine running</p>
+          <ol className="score-verify-log-list">
+            {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 10 categories', 'Composing verdict'].map((step, i) => (
+              <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
+                <span className="score-verify-dot" aria-hidden="true" />
+                {step}
+              </li>
+            ))}
+          </ol>
+          <div className="score-skeleton-feed" aria-hidden="true">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="score-skeleton-row" />
+            ))}
+          </div>
         </div>
       )}
 
@@ -413,45 +521,139 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-results fade-up">
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
+            {/* Verdict line — leads before the number (PSI verdict-first pattern) */}
+            <p className="score-verdict-line">{verdictLine(result)}</p>
+
             <div className="score-hero-top">
-              <div className={`score-grade-emblem is-${result.grade?.toLowerCase()}`}>
-                <span className="score-grade-glow" />
-                <svg className="score-grade-arc" viewBox="0 0 100 100" aria-hidden="true">
-                  <circle className="score-arc-track" cx="50" cy="50" r="44" fill="none" strokeWidth="2" />
+              {/* Constellation gauge — the contract's 10 categories as a fixed
+                  weight-ordered ring around the main score arc. NOT a radar
+                  chart: fixed axis order kills the axis-order illusion; the
+                  arcs decompose the composite like Lighthouse's explodey
+                  gauge. Categories with all checks skipped render unscored. */}
+              <div className="score-constellation" role="img" aria-label={`Grade ${result.grade}, ${result.score} percent legitimacy score. Category breakdown available in the feed below.`}>
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  {/* connector spokes — faint, weight-indexed */}
+                  <g className="constel-spokes">
+                    {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((key, i, arr) => {
+                      const p = constellationPoint(i, arr.length, CONSTEL_NODE_R - NODE_ARC_R - 3);
+                      return <line key={key} x1={CONSTEL_C} y1={CONSTEL_C} x2={p.x} y2={p.y} className="constel-spoke" />;
+                    })}
+                  </g>
+                  {/* main score ring */}
+                  <circle className="constel-track" cx={CONSTEL_C} cy={CONSTEL_C} r={CONSTEL_RING_R} fill="none" />
                   <circle
-                    className="score-arc-fill"
-                    cx="50"
-                    cy="50"
-                    r="44"
+                    className={`constel-main-fill is-${result.grade?.toLowerCase()}`}
+                    cx={CONSTEL_C}
+                    cy={CONSTEL_C}
+                    r={CONSTEL_RING_R}
                     fill="none"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(animatedScore / 100) * 276.46} 276.46`}
-                    transform="rotate(-90 50 50)"
+                    strokeDasharray={`${(animatedScore / 100) * MAIN_CIRC} ${MAIN_CIRC}`}
+                    transform={`rotate(-90 ${CONSTEL_C} ${CONSTEL_C})`}
                   />
+                  {/* category nodes */}
+                  {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((key, i, arr) => {
+                    const cat = result.categoryScores![key];
+                    const scored = cat.score !== null;
+                    const p = constellationPoint(i, arr.length, CONSTEL_NODE_R);
+                    const frac = scored ? cat.score! / 100 : 0;
+                    return (
+                      <g
+                        key={key}
+                        className={`constel-node ${scored ? '' : 'is-unscored'} ${selectedCategory === key ? 'is-active' : ''}`}
+                        onClick={() => setSelectedCategory(selectedCategory === key ? 'ALL' : key)}
+                        style={{ animationDelay: `${200 + i * 70}ms` }}
+                      >
+                        <circle className="constel-node-track" cx={p.x} cy={p.y} r={NODE_ARC_R} fill="none" />
+                        {scored && (
+                          <circle
+                            className="constel-node-fill"
+                            cx={p.x}
+                            cy={p.y}
+                            r={NODE_ARC_R}
+                            fill="none"
+                            strokeDasharray={`${frac * NODE_ARC_CIRC * (animatedScore / (result.score || 100))} ${NODE_ARC_CIRC}`}
+                            transform={`rotate(-90 ${p.x} ${p.y})`}
+                          />
+                        )}
+                        <text className="constel-node-label" x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central">
+                          {scored ? Math.round(cat.score!) : '–'}
+                        </text>
+                      </g>
+                    );
+                  })}
                 </svg>
-                <span className="score-grade-letter">{result.grade}</span>
+                <div className="constel-center">
+                  <span className={`constel-grade is-${result.grade?.toLowerCase()}`}>{result.grade}</span>
+                  <span className="constel-pct">{Math.round(animatedScore * 10) / 10}%</span>
+                </div>
               </div>
 
               <div className="score-hero-meta">
                 <div className="score-percent-badge">
                   <span className="score-percent-value">{result.score}%</span>
                   <span className="score-percent-label">Legitimacy Score</span>
+                  {delta !== null && delta !== 0 && (
+                    <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
+                      {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}
+                    </span>
+                  )}
                 </div>
 
-                <div className="score-progress-bar">
-                  <div
-                    className="score-progress-fill"
-                    style={{ width: `${animatedScore}%` }}
-                  />
-                </div>
+                <p className="score-strong-weak">
+                  {(() => {
+                    const best = topCategories(result, 'best');
+                    const worst = topCategories(result, 'worst');
+                    if (!best.label) return null;
+                    return (
+                      <>
+                        Strongest: <strong>{best.label} {best.score}%</strong>
+                        {worst.label && worst.label !== best.label && (
+                          <> · Weakest: <strong>{worst.label} {worst.score}%</strong></>
+                        )}
+                      </>
+                    );
+                  })()}
+                </p>
 
                 <div className="score-site-url">
                   <span className="score-url-dot" />
                   <span className="score-url-text">{scoredUrl}</span>
+                  <span className="score-url-time">{new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
                 </div>
               </div>
             </div>
+
+            {/* Category legend — the accessible text mirror of the SVG
+                constellation (screen readers can navigate SVG text poorly).
+                Doubles as a second filter affordance: clicking a row filters
+                the feed, same as the nodes and chips. */}
+            <ul className="score-cat-legend">
+              {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((k) => {
+                const cat = result.categoryScores![k];
+                const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
+                const active = selectedCategory === k;
+                return (
+                  <li key={k}>
+                    <button
+                      type="button"
+                      className={`score-cat-legend-row ${active ? 'is-active' : ''} ${cat.score === null ? 'is-unscored' : ''}`}
+                      onClick={() => setSelectedCategory(active ? 'ALL' : k)}
+                      aria-pressed={active}
+                      data-cuelume-hover="tick"
+                    >
+                      <span className="score-cat-legend-name">{label}</span>
+                      <span className="score-cat-legend-bar" aria-hidden="true">
+                        <span
+                          className={`score-cat-legend-fill ${cat.score !== null && cat.score < 60 ? 'is-weak' : ''}`}
+                          style={{ width: `${cat.score ?? 0}%` }}
+                        />
+                      </span>
+                      <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(cat.score!)}`}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
 
             {/* Score-scale legend — per Lighthouse PR #8121: never show a
                 colored gauge without a legend so users can verify the bands. */}
@@ -460,6 +662,53 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <span className="score-scale-band is-warn"><span className="score-scale-dot" />50–69 Needs work</span>
               <span className="score-scale-band is-pass"><span className="score-scale-dot" />70–89 Good</span>
               <span className="score-scale-band is-a"><span className="score-scale-dot" />90–100 Excellent</span>
+            </div>
+
+            {/* Scoring rubric — Socket.dev published-math pattern. The exact
+                weight function is visible on the same page as the number so
+                the composite can never read as arbitrary. */}
+            <div className="score-rubric">
+              <button
+                type="button"
+                className="score-rubric-toggle"
+                onClick={() => setRubricOpen((v) => !v)}
+                aria-expanded={rubricOpen}
+                aria-controls="score-rubric-body"
+                data-cuelume-press="tick"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: rubricOpen ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-fast) var(--ease-out)' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+                How this is scored
+              </button>
+              {rubricOpen && (
+                <div className="score-rubric-body" id="score-rubric-body">
+                  <p className="score-rubric-formula">
+                    score = Σ (category<sub>earned</sub> / category<sub>weight</sub>) × 100 —
+                    PASS 1.0 · WARN 0.5 · FAIL 0, SKIP excluded. Each category contributes its
+                    full contract weight, split evenly across its checks. Accessibility &lt; 60% caps the grade at C.
+                  </p>
+                  <ol className="score-rubric-weights">
+                    {(result.categoryScores
+                      ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k])
+                      : CONSTELLATION_ORDER.slice(0, 10)
+                    ).map((k) => {
+                      const cat = result.categoryScores?.[k];
+                      const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
+                      const w = cat?.weight ?? 5;
+                      return (
+                        <li key={k} className="score-rubric-weight-row">
+                          <span className="score-rubric-weight-label">{label}</span>
+                          <span className="score-rubric-weight-bar" aria-hidden="true">
+                            <span className="score-rubric-weight-fill" style={{ width: `${(w / 18) * 100}%` }} />
+                          </span>
+                          <span className="score-rubric-weight-num">{w}%</span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
             </div>
 
             {/* 4 Metrics Cell Grid */}
