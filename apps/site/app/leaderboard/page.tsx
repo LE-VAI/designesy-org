@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { SubmitForm } from './submit-form/submit-form';
+import { MiniConstellation } from '../lib/mini-constellation';
 import {
   SEED,
   LEADERBOARD_POLICY,
@@ -124,7 +125,19 @@ function SiteRow({ site }: { site: SeedSite }) {
       <td className="lb-breakdown-cell" data-tabular>
         {site.score !== null ? (
           <span className="lb-breakdown">
-            {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}s
+            <MiniConstellation
+              categories={site.categoryScores || {}}
+              score={site.score}
+              grade={site.grade}
+              label={
+                site.categoryScores
+                  ? `${site.name}: grade ${site.grade}, ${site.score.toFixed(1)}% — per-category verification breakdown`
+                  : `${site.name}: grade ${site.grade}, ${site.score.toFixed(1)}% — no per-category data yet`
+              }
+            />
+            <span className="lb-breakdown-counts">
+              {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}s
+            </span>
           </span>
         ) : (
           <span className="lb-pending-note">unscored</span>
@@ -165,7 +178,7 @@ export default function LeaderboardPage() {
           .lb-th-rank { width: 2.75rem; }
           .lb-th-grade { width: 3.25rem; }
           .lb-th-score { width: 4.5rem; }
-          .lb-th-breakdown { width: 7.5rem; }
+          .lb-th-breakdown { width: 9rem; }
           .lb-th-action { width: 4.5rem; }
           .lb-th-name { width: auto; }
           .lb-table thead th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
@@ -194,6 +207,8 @@ export default function LeaderboardPage() {
           .lb-score-pending { color: var(--muted-dim); font-style: italic; font-weight: 400; font-family: inherit; font-size: 0.82rem; }
           .lb-score-pct { color: var(--muted-dim); font-weight: 400; margin-left: 0.125rem; font-size: 0.78rem; }
           .lb-breakdown-cell { text-align: right; font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; }
+          .lb-breakdown { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
+          .lb-breakdown-counts { font-family: var(--mono, ui-monospace, monospace); font-size: 0.66rem; color: var(--muted-dim); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
           .lb-pending-note { color: var(--muted-dim); font-style: italic; font-size: 0.8rem; }
           .lb-action-cell { text-align: right; }
           .lb-score-link { font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
