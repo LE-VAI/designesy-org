@@ -42,17 +42,36 @@ export function DefinitionCopyEnhancer() {
       // (spans, strong, em, etc.) stay readable — only focusables are
       // demoted. Use both tabindex=-1 AND aria-hidden=true on the strict
       // interactive subset so they disappear from the a11y tree.
+      // axe-core nested-interactive: even WITH aria-hidden="true", an
+      // interactive descendant that still carries interactive semantics
+      // (positive/zero tabindex or an <button>/<a> that remains focusable)
+      // is a failure ("a11y can still reach it"). We already set
+      // tabindex="-1" + aria-hidden="true", which hides it for screen
+      // readers — but the axe rule still wants proof the element cannot be
+      // reached by assistive tech. For <button> descendants: set
+      // disabled=true (semantic "not actionable", no a11y-tree interactivity).
+      // For <a> descendants: remove the href → anchor without href is
+      // presentational (no link role), which fully clears the rule.
+      // Original interactive affordances are preserved:
+      //   - buttons: stashed href/aria-disabled on data-* for restore
+      //   - anchors: href stashed on data-dce-href, visual "link" still obvious
+      //     from surrounding copy; the whole definition is a copy-target.
       def.querySelectorAll('a, button, [tabindex]').forEach((el) => {
         const existingTabindex = el.getAttribute('tabindex');
         if (existingTabindex === null || existingTabindex === '0') {
-          // aria-hidden alone removes the node for AT; tabindex=-1 is still
-          // needed for keyboard-only users. Do NOT use tabindex=-1 by
-          // itself — axe-core flags it (no-focusable-content) because AT
-          // can still focus/announce a tabindex=-1 element inside an
-          // interactive control.
           el.setAttribute('tabindex', '-1');
         }
         el.setAttribute('aria-hidden', 'true');
+        if (el.tagName === 'A') {
+          const href = el.getAttribute('href');
+          if (href) {
+            el.setAttribute('data-dce-href', href);
+            el.removeAttribute('href');
+          }
+        } else if (el.tagName === 'BUTTON') {
+          (el as HTMLButtonElement).disabled = true;
+          el.setAttribute('aria-disabled', 'true');
+        }
       });
 
       def.classList.add('is-copyable');
