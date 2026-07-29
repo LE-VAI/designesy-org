@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { play } from 'cuelume';
 import { playExtended } from './cuelume-extend';
 
@@ -64,6 +64,26 @@ export function Copyable({
       playExtended('error');
     }
   }, [text]);
+
+  // WCAG 4.1.2 nested-interactive: this container is role="button" +
+  // tabindex=0. Any focusable descendant would create a tab trap. On mount
+  // (and after children change), force descendants out of the tab order.
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const demote = () => {
+      root.querySelectorAll('a, button, [tabindex]').forEach((el) => {
+        const existing = el.getAttribute('tabindex');
+        if (existing === null || existing === '0') {
+          el.setAttribute('tabindex', '-1');
+        }
+      });
+    };
+    demote();
+    const obs = new MutationObserver(demote);
+    obs.observe(root, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, [children]);
 
   return (
     <div
