@@ -123,32 +123,32 @@ export function CheckGrid({
 
         if (item.href) {
           return (
-            <Link
-              key={`${item.href}-${item.title}`}
-              href={item.href}
-              className={cellClass}
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              {body}
-            </Link>
+            <div key={`${item.href}-${item.title}`} role="listitem">
+              <Link
+                href={item.href}
+                className={cellClass}
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                {body}
+              </Link>
+            </div>
           );
         }
 
         return (
-          <button
-            key={`${index}-${item.title}`}
-            className={cellClass}
-            role="listitem"
-            type="button"
-            data-cuelume-hover="whisper"
-            data-cuelume-toggle="toggle"
-            onClick={() => toggle(i)}
-            aria-pressed={isChecked}
-          >
-            {body}
-          </button>
+          <div key={`${index}-${item.title}`} role="listitem">
+            <button
+              className={cellClass}
+              type="button"
+              data-cuelume-hover="whisper"
+              data-cuelume-toggle="toggle"
+              onClick={() => toggle(i)}
+              aria-pressed={isChecked}
+            >
+              {body}
+            </button>
+          </div>
         );
       })}
     </div>

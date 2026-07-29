@@ -39,6 +39,7 @@
 
   --signal: #0133cb;
   --signal-light: #3358e8;
+  --signal-access: #5d7bff;
   --signal-dim: rgba(1, 51, 203, 0.14);
   --activation: #fecc34;
 
@@ -1869,11 +1870,18 @@ button.pillar:hover::before {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--signal-light);
+  /* 11.2px uppercase is WCAG 1.4.3 AA-normal (4.5:1) territory. --signal-light
+     (#3358e8) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
+     the same hue family — clears 4.5:1 while preserving the brand signal
+     identity. --signal-access is additive; contract tokens untouched. */
+  color: var(--signal-access);
   padding: 0.25rem 0.6rem;
   border: 1px solid var(--signal-dim);
   border-radius: 3px;
-  background: var(--signal-dim);
+  /* No --signal-dim background fill: rgba(1,51,203,0.14) over surfaces produces
+     a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
+     the badge readable from the border + light text alone. */
+  background: transparent;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -2367,7 +2375,9 @@ button.pillar:hover::before {
 .health-radar-sub {
   font-size: 0.62rem;
   color: var(--muted-dim);
-  opacity: 0.7;
+  /* No opacity reduction here — a11y WCAG 1.4.3: --muted-dim (#7d7d7d) at 0.7 alpha
+     on --surface (#0a0a0c) renders #5b5b5b = 2.91:1, below AA 4.5:1. Keep at full
+     opacity; the muted-dim token alone is the hierarchy signal. */
 }
 
 .health-radar-svg {
@@ -2894,6 +2904,13 @@ button.pillar:hover::before {
   flex-shrink: 0;
 }
 
+/* Wraps each toggleable .row to carry role="listitem" (aria-pressed only valid
+   on interactive roles). display:contents lets the flex parent see the inner row
+   directly so the original layout is preserved. */
+.row-stack > [role="listitem"] {
+  display: contents;
+}
+
 /*
   State marquee — sits beside the row-stack on desktop, filling the
   right-side negative space with an auto-scrolling vertical marquee
@@ -3127,7 +3144,11 @@ button.row:active {
 .layer-num {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--signal);
+  /* --signal (#0133cb) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
+     --signal-light (#3358e8) is 3.68:1 — passes AA-large (3:1) for the
+     0.75rem bold context but still fails AA-normal. Bump to AA-normal safe
+     color: --muted-dim (#7d7d7d) is 5.07:1 on --paper. */
+  color: var(--muted-dim);
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
 }
@@ -3378,6 +3399,13 @@ button.row {
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--paper);
+}
+
+/* Wraps each .check-cell to carry role="listitem" (aria-pressed is only valid
+   on interactive roles). display:contents lets the grid see the cell directly
+   so the original layout is preserved. */
+.check-grid > [role="listitem"] {
+  display: contents;
 }
 
 /* denser tiles for short labels (anatomy, maps, do-not lists) */

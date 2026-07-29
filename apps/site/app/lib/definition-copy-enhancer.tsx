@@ -36,6 +36,20 @@ export function DefinitionCopyEnhancer() {
       const copyLabel =
         def.getAttribute('data-copy-label')?.trim() || 'text';
 
+      // WCAG 4.1.2 nested-interactive: when this container becomes a button,
+      // any focusable descendants must leave the tab order or the role
+      // change breaks the a11y tree. Demote them to tabindex=-1 (still
+      // mouse-clickable, just not tab-focusable) so only the outer
+      // button role carries focus.
+      def.querySelectorAll('a, button, [tabindex]').forEach((el) => {
+        const existing = el.getAttribute('tabindex');
+        if (existing === null || existing === '0') {
+          el.setAttribute('tabindex', '-1');
+          // Track for cleanup so mutation doesn't permanently alter unrelated UI
+          el.setAttribute('data-copy-enhancer-demoted', existing ?? '0');
+        }
+      });
+
       def.classList.add('is-copyable');
       def.setAttribute('role', 'button');
       def.setAttribute('tabindex', '0');
