@@ -4964,16 +4964,16 @@ html:not(.js-ready) .demo-stagger-bar {
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 .fade-up {
-  animation: fadeUp var(--duration) var(--ease) both;
+  animation: fadeUp var(--duration) var(--ease-out) both;
 }
 
 .fade-up-delay-1 {
@@ -5028,7 +5028,7 @@ html:not(.js-ready) .demo-stagger-bar {
 
 /* Reveal slide done via animation so no transform residue blocks :hover tilt */
 @keyframes reveal-slide-up {
-  from { transform: translateY(20px); }
+  from { transform: translateY(16px); }
   to { transform: none; }
 }
 
@@ -5060,6 +5060,18 @@ html:not(.js-ready) .demo-stagger-bar {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  /* Stage 5 — fade-up entrance animations must collapse for reduced-motion
+     users. Targets .fade-up + all stagger delays. */
+  .fade-up,
+  .fade-up-delay-1,
+  .fade-up-delay-2,
+  .fade-up-delay-3,
+  .fade-up-delay-4,
+  .fade-up-delay-5 {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 
