@@ -15,6 +15,20 @@ No authentication required — all 11 tools are read-only. The server runs on Ve
 
 ## Tools
 
+- `designesy_score` — Score a live URL against the 34-check design contract. Returns score, grade (A–F), and per-check breakdown.
+- `designesy_tokens_score` — Validate a DTCG design-token file. 10 conformance checks against W3C DTCG 2025.10.
+- `designesy_a11y_score` — Get the WCAG 2.2 AA accessibility framework and Playwright/axe-core script template.
+- `designesy_motion_score` — Validate a Lottie animation file. 10 checks against Lottie spec v1.0.1 and §16 motion standards.
+- `designesy_contract` — Get the design-system contract (tokens, motion, takt, cadence, typography, verification).
+- `designesy_catalog` — List the 12 published Designesy packages with versions and URLs.
+- `designesy_design_review` — Get the 8-dimension qualitative design review rubric.
+- `designesy_skill_md` — Get the contract as an agent-skill-format SKILL.md for Cursor, Claude Code, or Replit.
+- `designesy_agent_json` — Get the /.well-known/agent.json discovery document.
+- `designesy_llms_txt` — Get the short /llms.txt agent brief.
+- `designesy_llms_full_txt` — Get the full /llms-full.txt agent brief with paste-ready prompt.
+
+### Tool reference table
+
 | Tool | Description |
 |---|---|
 | `designesy_score` | Score a live URL against the 34-check design contract — returns score, grade (A–F), per-check breakdown |
@@ -87,6 +101,23 @@ AGENTS.md          agent operating rules
 Designesy is not a template gallery. Designesy is not a generic AI design tool. Designesy is not a moodboard.
 
 Designesy is a system.
+
+## FAQ
+
+**Does it need an API key?**
+No — all 11 tools are read-only. The MCP endpoint is stateless Streamable HTTP with no authentication.
+
+**Is it deterministic?**
+Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.
+
+**What does it score against?**
+The Designesy v0.3.0 design-system contract — 34 checks across 11 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic).
+
+**Can I use it in CI?**
+Yes. The [GitHub Action](#github-action) gates your workflow on contract compliance — fail the build if the score drops below your threshold.
+
+**Where is the contract published?**
+At [designesy.org/contracts/design-system](https://www.designesy.org/contracts/design-system) (human-readable) and [designesy.org/contracts/design-system.json](https://www.designesy.org/contracts/design-system.json) (machine-readable, W3C DTCG 2025.10).
 
 ## License
 
