@@ -1,6 +1,7 @@
 // v2026-07-25-0220-force-left-align-css-recompile
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import '@fontsource-variable/inter';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
