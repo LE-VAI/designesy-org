@@ -542,11 +542,11 @@ p {
 */
 .hero-seam {
   position: absolute;
-  right: clamp(0.25rem, 5vw, 3rem);
+  right: clamp(0rem, 2vw, 1.5rem);
   top: 50%;
   transform: translateY(-50%);
-  width: min(200px, 30vw);
-  height: min(320px, 54vh);
+  width: min(300px, 34vw);
+  height: min(300px, 46vh);
   pointer-events: none;
   z-index: 3;
   display: none;
@@ -559,27 +559,9 @@ p {
   }
 }
 
-.hero-seam-line {
-  position: absolute;
-  left: 0;
-  top: 6%;
-  bottom: 6%;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    var(--line-strong) 14%,
-    var(--line-strong) 86%,
-    transparent 100%
-  );
-}
-
 .hero-seam-constellation {
   position: absolute;
-  left: 2rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: calc(100% - 2rem);
+  inset: 0;
   transform-style: preserve-3d;
   z-index: 2;
 }
@@ -596,8 +578,8 @@ p {
 }
 
 .hero-seam-mark {
-  width: min(148px, 22vw);
-  height: auto;
+  width: 100%;
+  height: 100%;
   display: block;
   overflow: visible;
   pointer-events: auto;
@@ -647,9 +629,10 @@ p {
   transform-box: fill-box;
   transform-origin: center;
   transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
-  animation: seamDock 0.9s var(--ease-out) both;
+  animation: seamDockScatter 0.9s var(--ease-out) both;
   transition: filter 180ms var(--ease-out), fill 180ms var(--ease), opacity 180ms var(--ease);
-  cursor: default;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .hero-seam-mark .seam-dot {
@@ -688,7 +671,8 @@ p {
     3D tilt is applied via JS (EffectEnhancer) on the .hero-seam-mark
     container — the whole mark tilts toward the cursor like the field
     cards. SVG child elements can't use CSS transforms individually,
-    so the container carries the effect.
+    so the container carries the effect. Shapes themselves are interactive
+    (magnetized drift + pulse + burst) — cursor: pointer says so.
   */
   .hero-seam-mark {
     cursor: default;
@@ -9372,9 +9356,11 @@ select {
 /* Orbit — breathing arc. pathLength=100 in the SVG normalizes the dash
    units; dashoffset cycles the 60/40 aperture open → closed → open. 8s.
    Dock-in stagger (0.16s) is encoded here because the combined animation
-   shorthand below overrides the legacy per-shape animation-delay rules. */
+   shorthand below overrides the legacy per-shape animation-delay rules.
+   The v2 dock-in keyframe (translateX from the vertical spine) is replaced
+   by seamDockScatter — shapes settle in place, not from off-column. */
 .hero-seam-mark .seam-orbit {
-  animation: seamDock 0.9s var(--ease-out) 0.16s both, seamOrbitBreathe 8s var(--ease-in-out) 1.4s infinite;
+  animation: seamDockScatter 0.9s var(--ease-out) 0.16s both, seamOrbitBreathe 8s var(--ease-in-out) 1.4s infinite;
 }
 
 @keyframes seamOrbitBreathe {
@@ -9386,7 +9372,7 @@ select {
 .hero-seam-mark .seam-square-satellite {
   transform-box: fill-box;
   transform-origin: center;
-  animation: seamDock 0.9s var(--ease-out) 0.26s both, seamSatelliteSpin 12s linear 1.5s infinite;
+  animation: seamDockScatter 0.9s var(--ease-out) 0.26s both, seamSatelliteSpin 12s linear 1.5s infinite;
 }
 
 @keyframes seamSatelliteSpin {
@@ -9396,7 +9382,7 @@ select {
 
 /* Block — 8s sine bob. The smallest body wanders the most. */
 .hero-seam-mark .seam-block {
-  animation: seamDock 0.9s var(--ease-out) 0.34s both, seamBlockBob 8s var(--ease-in-out) 1.6s infinite;
+  animation: seamDockScatter 0.9s var(--ease-out) 0.34s both, seamBlockBob 8s var(--ease-in-out) 1.6s infinite;
 }
 
 @keyframes seamBlockBob {
@@ -9432,7 +9418,7 @@ select {
 /* The solid triangle itself needs its dock-in preserved (was on the
    shared selector before the echoes existed). */
 .hero-seam-mark .seam-triangle {
-  animation: seamDock 0.9s var(--ease-out) 0.28s both;
+  animation: seamDockScatter 0.9s var(--ease-out) 0.28s both;
 }
 
 /* Fix the five original dock-in delays — orbit/square/block carry combined
@@ -9459,5 +9445,173 @@ select {
   .hero-seam-mark .seam-triangle-echo {
     animation: none;
     opacity: 0;
+  }
+}
+
+/* Seam v3 — scatter field. Shapes settle in place from a quiet scale+fade,
+   no directional travel (v2 was translateX from the vertical spine — replaced
+   when the spine was removed). Stagger delays per-shape, unchanged from v2. */
+@keyframes seamDockScatter {
+  0% {
+    opacity: 0;
+    transform: translateZ(-14px) scale(0.78);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+/* Reduced-motion — the scatter field returns to five quiet statics.
+   Echoes vanish, satellite parks, orbit holds its full arc, click burst
+   and magnetic drift are both skipped in EffectEnhancer under this media. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-seam-mark .seam-dot,
+  .hero-seam-mark .seam-orbit,
+  .hero-seam-mark .seam-square,
+  .hero-seam-mark .seam-triangle,
+  .hero-seam-mark .seam-block,
+  .hero-seam-mark .seam-square-satellite,
+  .hero-seam-mark .seam-triangle-echo {
+    animation: none !important;
+  }
+
+  .hero-seam-mark .seam-orbit {
+    stroke-dashoffset: 0;
+  }
+
+  .hero-seam-mark .seam-square-satellite {
+    opacity: 0.5;
+  }
+
+  .hero-seam-mark .seam-triangle-echo {
+    opacity: 0;
+  }
+}
+
+/* MiniConstellation — the score-tool visual idiom shrunk to a 44px inline
+   unit. Used for the leaderboard category breakdown and anywhere a compact
+   per-category arc readout belongs. No interactive semantics by default;
+   wrap in a button/link if the parent needs one. */
+.mini-constel {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.mini-constel .mini-constel-track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.mini-constel .mini-constel-spoke {
+  stroke: var(--line-faint);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+
+.mini-constel .mini-constel-node-track {
+  fill: none;
+  stroke: var(--surface-hover);
+  stroke-width: 2.5;
+}
+
+.mini-constel .mini-constel-node-fill {
+  fill: none;
+  stroke: var(--signal-light);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 600ms var(--ease-out);
+}
+
+.mini-constel .mini-constel-node-fill.is-a { stroke: #22c55e; }
+.mini-constel .mini-constel-node-fill.is-b { stroke: #84cc16; }
+.mini-constel .mini-constel-node-fill.is-c { stroke: #eab308; }
+.mini-constel .mini-constel-node-fill.is-d { stroke: #fb923c; }
+.mini-constel .mini-constel-node-fill.is-f { stroke: #ef4444; }
+
+.mini-constel .mini-constel-node.is-unscored .mini-constel-node-track {
+  stroke-dasharray: 2 3;
+}
+.mini-constel .mini-constel-node.is-unscored .mini-constel-node-fill {
+  display: none;
+}
+
+.mini-constel .mini-constel-center-grade {
+  fill: var(--ink);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 700;
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  letter-spacing: -0.02em;
+}
+
+.mini-constel .mini-constel-center-pct {
+  fill: var(--muted-dim);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 5.5px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-constel .mini-constel-node-fill {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Seam hover personalities (fine pointer only)
+   ---------------------------------------------------------------------------
+   EffectEnhancer applies the fill shift + magnetic drift; these CSS states
+   layer the per-shape idle-language acceleration on top, so hovering a shape
+   doesn't just recolor it — it excites its own motion grammar. All values
+   stay within the motion token contract (no new durations/easings outside
+   existing tokens; animation-duration overrides only). Reduced-motion kills
+   all of these via the seam reduced-motion block below.
+--------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* Satellite spin-up: the dashed ring's lazy 12s orbit tightens to 5s. */
+  .hero-seam-mark .seam-shape-square:hover .seam-square-satellite {
+    animation-duration: 5s;
+  }
+
+  /* Echo surge: triangle echoes flare briefly while hovered. */
+  .hero-seam-mark .seam-shape-triangle:hover .seam-triangle-echo {
+    animation-duration: 2.4s;
+  }
+
+  /* Block tumble: the wanderer's bob becomes a slow 3/4-turn tumble. */
+  .hero-seam-mark .seam-block:hover {
+    animation: seamBlockTumble 2s var(--ease-in-out) infinite;
+  }
+
+  /* Orbit excite: breathing arc tightens its cycle. */
+  .hero-seam-mark .seam-shape-orbit:hover .seam-orbit {
+    animation-duration: 4s;
+  }
+}
+
+@keyframes seamBlockTumble {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px) rotate(135deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(270deg);
   }
 }
