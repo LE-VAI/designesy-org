@@ -182,12 +182,12 @@ export default function LeaderboardPage() {
           .lb-host:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-tier-tag { font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.04em; }
           .lb-grade-cell { text-align: right; }
-          .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); }
-          .lb-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); }
+          .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), var(--inner-light); }
+          .lb-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); box-shadow: inset 0 0 0 1px rgba(51,88,232,0.18), var(--inner-light); }
           .lb-grade-b { background: rgba(254,204,52,0.18); color: var(--ink); border-color: var(--activation); }
           .lb-grade-c { background: var(--surface-hover); color: var(--ink); border-color: var(--line-strong); }
           .lb-grade-d { background: var(--surface-hover); color: var(--muted); border-color: var(--line); }
-          .lb-grade-f { background: transparent; color: var(--muted-dim); border-color: var(--line-faint); }
+          .lb-grade-f { background: transparent; color: var(--muted-dim); border-color: var(--line-faint); box-shadow: none; }
           .lb-needs-work { opacity: 0.85; }
           .lb-score-cell { text-align: right; }
           .lb-score { font-family: var(--mono, ui-monospace, monospace); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
@@ -204,7 +204,7 @@ export default function LeaderboardPage() {
           .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
           .lb-row-needs-work .lb-name { color: var(--muted); }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
-          .lb-stat { padding: 0.875rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+          .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
           .lb-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .lb-stat-label { display: block; margin-top: 0.35rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
           .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
