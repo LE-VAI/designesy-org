@@ -66,8 +66,9 @@ export function Copyable({
   }, [text]);
 
   // WCAG 4.1.2 nested-interactive: this container is role="button" +
-  // tabindex=0. Any focusable descendant would create a tab trap. On mount
-  // (and after children change), force descendants out of the tab order.
+  // tabindex=0. Inner interactive descendants must leave the a11y tree
+  // (axe-core says tabindex=-1 alone is insufficient — need aria-hidden
+  // too). Non-interactive content stays readable.
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
@@ -77,6 +78,7 @@ export function Copyable({
         if (existing === null || existing === '0') {
           el.setAttribute('tabindex', '-1');
         }
+        el.setAttribute('aria-hidden', 'true');
       });
     };
     demote();

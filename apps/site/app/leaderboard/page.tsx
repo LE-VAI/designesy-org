@@ -351,7 +351,7 @@ export default function LeaderboardPage() {
               typography discipline, reduced-motion handling, AI disclosure,
               forced-colors readiness. Not an LLM impression. Not a roast. The
               same engine scores designesy.org itself, in public, at{' '}
-              <Link href="/score?url=designesy.org">/score?url=designesy.org</Link>.
+              <code>/score?url=designesy.org</code>.
             </p>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>

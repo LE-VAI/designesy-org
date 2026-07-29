@@ -37,17 +37,17 @@ export function DefinitionCopyEnhancer() {
         def.getAttribute('data-copy-label')?.trim() || 'text';
 
       // WCAG 4.1.2 nested-interactive: when this container becomes a button,
-      // any focusable descendants must leave the tab order or the role
-      // change breaks the a11y tree. Demote them to tabindex=-1 (still
-      // mouse-clickable, just not tab-focusable) so only the outer
-      // button role carries focus.
+      // inner interactive descendants cannot remain reachable by keyboard
+      // or AT (axe-core nested-interactive). Non-interactive descendants
+      // (spans, strong, em, etc.) stay readable — only focusables are
+      // demoted. Use both tabindex=-1 AND aria-hidden=true on the strict
+      // interactive subset so they disappear from the a11y tree.
       def.querySelectorAll('a, button, [tabindex]').forEach((el) => {
-        const existing = el.getAttribute('tabindex');
-        if (existing === null || existing === '0') {
+        const existingTabindex = el.getAttribute('tabindex');
+        if (existingTabindex === null || existingTabindex === '0') {
           el.setAttribute('tabindex', '-1');
-          // Track for cleanup so mutation doesn't permanently alter unrelated UI
-          el.setAttribute('data-copy-enhancer-demoted', existing ?? '0');
         }
+        el.setAttribute('aria-hidden', 'true');
       });
 
       def.classList.add('is-copyable');

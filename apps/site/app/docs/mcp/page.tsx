@@ -201,12 +201,7 @@ export default function McpDocsPage() {
             <p className="definition-label">Registry</p>
             <p>
               <code>org.designesy.www/designesy</code> v1.3.0 on{' '}
-              <a
-                href="https://registry.modelcontextprotocol.io/v0.1/servers/org.designesy.www%2Fdesignesy/versions/1.3.0"
-                rel="noopener noreferrer"
-              >
-                registry.modelcontextprotocol.io
-              </a>
+              <code>registry.modelcontextprotocol.io</code>
             </p>
           </div>
         </section>
@@ -377,11 +372,10 @@ export default function McpDocsPage() {
                     }}
                   >
                     <span>
-                      <strong style={{ opacity: 0.6 }}>args:</strong>{' '}
-                      {tool.args}
+                      <strong>args:</strong> {tool.args}
                     </span>
                     <span>
-                      <strong style={{ opacity: 0.6 }}>source:</strong>{' '}
+                      <strong>source:</strong>{' '}
                       <a href={tool.source}>{tool.source}</a>
                     </span>
                   </span>
