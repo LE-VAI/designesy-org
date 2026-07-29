@@ -84,9 +84,15 @@ export function EffectEnhancer() {
       }
     };
 
-    /* --- Hero seam: per-shape color shift + dot pulse on hover --- */
+    /* --- Hero seam: per-shape color shift + magnetic drift + pulse + click burst --- */
     let activeMark: HTMLElement | null = null;
     let pulseAnimating = false;
+    let burstAnimating = false;
+
+    // v3 scatter field: pulse ring radii follow the new dot geometry
+    // (dot r=11 at cx164 cy34; pulse ring starts r=30, expands to r=58).
+    const PULSE_START_R = 30;
+    const PULSE_MAX_R = 58;
 
     const triggerDotPulse = (mark: HTMLElement) => {
       if (pulseAnimating) return;
@@ -95,9 +101,8 @@ export function EffectEnhancer() {
       pulseAnimating = true;
 
       // Use SVG attribute animation via rAF
-      let r = 56;
+      let r = PULSE_START_R;
       let opacity = 0.8;
-      const maxR = 90;
       const start = performance.now();
       const duration = 600;
 
@@ -105,20 +110,67 @@ export function EffectEnhancer() {
         const elapsed = now - start;
         const t = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-        r = 56 + (maxR - 56) * eased;
+        r = PULSE_START_R + (PULSE_MAX_R - PULSE_START_R) * eased;
         opacity = 0.8 * (1 - eased);
 
         pulse.setAttribute('r', String(r));
         pulse.style.setProperty('opacity', String(opacity), 'important');
-        pulse.style.setProperty('stroke-width', String(2 + eased * 2), 'important');
+        pulse.style.setProperty('stroke-width', String(1.5 + eased * 1.5), 'important');
 
         if (t < 1) {
           requestAnimationFrame(animate);
         } else {
-          pulse.setAttribute('r', '56');
+          pulse.setAttribute('r', String(PULSE_START_R));
           pulse.style.removeProperty('opacity');
           pulse.style.removeProperty('stroke-width');
           pulseAnimating = false;
+        }
+      };
+      requestAnimationFrame(animate);
+    };
+
+    // Click burst — spawn a temporary ring from the clicked shape's own
+    // position and expand+fade it. One at a time; skip under reduced-motion
+    // (decorative, not feedback).
+    const triggerBurst = (mark: HTMLElement, shape: HTMLElement) => {
+      if (burstAnimating || reducedMotion) return;
+      const svg = mark as unknown as SVGSVGElement;
+      // read the shape's own geometry for the ring center
+      const svgRect = svg.getBoundingClientRect();
+      const shapeRect = shape.getBoundingClientRect();
+      // convert viewport px → SVG user units via the viewBox scale
+      const viewBox = svg.viewBox.baseVal;
+      const scaleX = viewBox.width / svgRect.width;
+      const scaleY = viewBox.height / svgRect.height;
+      const cx = (shapeRect.left + shapeRect.width / 2 - svgRect.left) * scaleX;
+      const cy = (shapeRect.top + shapeRect.height / 2 - svgRect.top) * scaleY;
+      const r0 = Math.max(shapeRect.width, shapeRect.height) * Math.max(scaleX, scaleY) * 0.9;
+
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', String(cx));
+      ring.setAttribute('cy', String(cy));
+      ring.setAttribute('r', String(r0));
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', '#3358e8');
+      ring.setAttribute('stroke-width', '2');
+      ring.setAttribute('opacity', '0.7');
+      ring.setAttribute('pointer-events', 'none');
+      svg.appendChild(ring);
+      burstAnimating = true;
+
+      const start = performance.now();
+      const duration = 550;
+      const maxR = r0 * 3.2;
+      const animate = (now: number) => {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        ring.setAttribute('r', String(r0 + (maxR - r0) * eased));
+        ring.setAttribute('opacity', String(0.7 * (1 - eased)));
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          ring.remove();
+          burstAnimating = false;
         }
       };
       requestAnimationFrame(animate);
@@ -128,10 +180,11 @@ export function EffectEnhancer() {
       mark.querySelectorAll<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block')
         .forEach(s => {
           s.style.removeProperty('fill');
+          s.style.removeProperty('transform');
         });
       const pulse = mark.querySelector<HTMLElement>('.seam-dot-pulse');
       if (pulse) {
-        pulse.setAttribute('r', '56');
+        pulse.setAttribute('r', String(PULSE_START_R));
         pulse.style.removeProperty('opacity');
         pulse.style.removeProperty('stroke-width');
       }
@@ -165,12 +218,30 @@ export function EffectEnhancer() {
         }
       });
 
-      // Apply: closest shape gets color shift, no sibling dim
+      // Apply: closest shape gets color shift + magnetic drift toward the
+      // cursor. The drift is capped at 8px and eases out as the cursor nears
+      // the centroid, so the element feels grabbed, not shoved.
       shapes.forEach(shape => {
         if (shape === closest) {
           shape.style.setProperty('fill', '#3358e8', 'important');
+          if (!reducedMotion) {
+            const sr = shape.getBoundingClientRect();
+            const sx = sr.x + sr.width / 2;
+            const sy = sr.y + sr.height / 2;
+            const dx = e.clientX - sx;
+            const dy = e.clientY - sy;
+            const dist = Math.max(Math.hypot(dx, dy), 1);
+            const cap = 8;
+            const pull = Math.min(cap, dist * 0.18);
+            shape.style.setProperty(
+              'transform',
+              `translate(${(dx / dist) * pull}px, ${(dy / dist) * pull}px)`,
+              'important',
+            );
+          }
         } else {
           shape.style.removeProperty('fill');
+          shape.style.removeProperty('transform');
         }
       });
 
@@ -197,11 +268,23 @@ export function EffectEnhancer() {
       }
     };
 
+    // Click burst — fires on any shape press when fine-pointer, decorative.
+    const handleSeamPress = (e: PointerEvent) => {
+      if (!finePointer.matches) return;
+      const target = e.target as Element;
+      const mark = target.closest<HTMLElement>('.hero-seam-mark');
+      if (!mark) return;
+      const shape = target.closest<HTMLElement>('.seam-dot, .seam-orbit, .seam-square, .seam-triangle, .seam-block');
+      if (!shape) return;
+      triggerBurst(mark, shape);
+    };
+
     document.addEventListener('pointermove', handleMove, { passive: true });
     document.addEventListener('pointermove', handleSeamMove, { passive: true });
     document.addEventListener('pointerout', handleLeave, { passive: true });
     document.addEventListener('pointerout', handleSeamOut, { passive: true });
     document.addEventListener('pointerdown', handleShake, { passive: true });
+    document.addEventListener('pointerdown', handleSeamPress, { passive: true });
 
     return () => {
       document.removeEventListener('pointermove', handleMove);
@@ -209,6 +292,7 @@ export function EffectEnhancer() {
       document.removeEventListener('pointerout', handleLeave);
       document.removeEventListener('pointerout', handleSeamOut);
       document.removeEventListener('pointerdown', handleShake);
+      document.removeEventListener('pointerdown', handleSeamPress);
     };
   }, []);
 
