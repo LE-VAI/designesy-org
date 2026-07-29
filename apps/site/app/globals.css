@@ -4975,7 +4975,9 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-row .token-value {
-  color: var(--signal-light);
+  /* signal-light (#3358e8) on surface (#0a0a0c) is 3.48:1 — below WCAG 1.4.3
+     AA 4.5:1 for 12.8px text. --signal-access (#5d7bff) reaches 5.41:1. */
+  color: var(--signal-access);
   font-variant-numeric: tabular-nums;
 }
 
