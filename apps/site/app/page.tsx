@@ -7,7 +7,16 @@ import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
-import { HeroSeam } from './hero-seam';
+import { HeroConstruction } from './hero-construction';
+import {
+  ENGINE_CHECK_COUNT,
+  CONTRACT_VERSION,
+  SELF_SCORE,
+  SELF_GRADE,
+  COHORT_SCORED_COUNT,
+  COHORT_TOTAL_COUNT,
+  RECENT_SCORES,
+} from './hero-stats';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -142,36 +151,95 @@ export default function HomePage() {
       <Topbar scrolled />
 
       <main id="main-content" className="site-shell">
-        {/* --- Score hero — the input is the product, front and center --- */}
-        <section className="hero" aria-labelledby="hero-title">
-          <HeroSeam />
-          <p className="hero-eyebrow fade-up" data-scramble>
-            The design legitimacy standard
-          </p>
-          <h1 className="hero-title sr-only" id="hero-title">
-            designesy.
-          </h1>
-          <p className="hero-lede fade-up fade-up-delay-1" data-scramble>
-            AI makes execution free. We make execution yours.
-          </p>
-          <p className="hero-sub fade-up fade-up-delay-2">
-            Score any site against a real design contract. 32 checks. One grade.
-            No vibe-tax.
-          </p>
-          <div id="score" className="score-hero-input fade-up fade-up-delay-3">
-            <ScoreForm />
+        {/* --- Product hero — the scoring input is the gravitational center ---
+            Layout: eyebrow → editorial display (two-line proof statement) →
+            the product (URL input) → a real stats row + recent-scores rail.
+            Behind it all: the hero-construction field (datum arc + CAD
+            primitives), the architectural-interface midground layer. */}
+        <section className="hero hero-architectural" aria-labelledby="hero-title">
+          <HeroConstruction />
+          <div className="hero-content">
+            <p className="hero-eyebrow fade-up" data-scramble>
+              The design legitimacy standard
+            </p>
+            <h1 className="hero-title hero-display fade-up fade-up-delay-1" id="hero-title">
+              <span className="hero-display-line">AI makes execution free.</span>
+              <span className="hero-display-line is-accent">
+                We make execution yours.
+              </span>
+            </h1>
+            <p className="hero-sub fade-up fade-up-delay-2">
+              Score any site against a real design contract. {ENGINE_CHECK_COUNT}{' '}
+              checks. One grade. No vibe-tax.
+            </p>
+
+            {/* THE PRODUCT — the URL input, the visual center of gravity */}
+            <div id="score" className="score-hero-input fade-up fade-up-delay-3">
+              <ScoreForm />
+            </div>
+
+            {/* REAL proof only — every value from app/hero-stats.ts. Nothing
+                fabricated. VWP receipt: see hero-stats module header. */}
+            <div className="hero-proof fade-up fade-up-delay-4" role="group" aria-label="Live verification facts">
+              <ul className="hero-proof-stats">
+                <li className="hero-proof-stat">
+                  <span className="hero-proof-dot is-live" aria-hidden="true" />
+                  <span>Live contract <b>{CONTRACT_VERSION}</b></span>
+                </li>
+                <li className="hero-proof-stat">
+                  <span className="hero-proof-num">{ENGINE_CHECK_COUNT}</span>
+                  <span>checks</span>
+                </li>
+                <li className="hero-proof-stat">
+                  <span>No login</span>
+                </li>
+                <li className="hero-proof-stat">
+                  <span className="hero-proof-num">{COHORT_SCORED_COUNT}</span>
+                  <span>of {COHORT_TOTAL_COUNT} sites scored</span>
+                </li>
+                <li className="hero-proof-stat">
+                  <span>Self-score </span>
+                  <span className="hero-proof-num">{SELF_SCORE}%</span>
+                  <span className="hero-proof-grade is-a">{SELF_GRADE}</span>
+                </li>
+              </ul>
+
+              <div className="hero-proof-recent">
+                <p className="hero-proof-recent-label">Highest-scoring in the cohort</p>
+                <ul className="hero-proof-recent-list">
+                  {RECENT_SCORES.map((s) => (
+                    <li key={s.url} className="hero-proof-recent-item">
+                      <a
+                        className="hero-proof-recent-link"
+                        href={`/score?url=${encodeURIComponent(new URL(s.url).host.replace(/^www\./, ''))}`}
+                        data-cuelume-hover="tick"
+                      >
+                        <span className="hero-proof-recent-name">
+                          {s.name}
+                          {s.isSelf && <span className="hero-proof-recent-self">self</span>}
+                        </span>
+                        <span className="hero-proof-recent-dots" aria-hidden="true" />
+                        <span className="hero-proof-recent-score" data-tabular>{s.score.toFixed(1)}</span>
+                        <span className={`hero-proof-recent-grade is-${s.grade.toLowerCase()}`}>{s.grade}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <p className="hero-hint fade-up fade-up-delay-5">
+              No login. Real-time. {ENGINE_CHECK_COUNT} checks against contract {CONTRACT_VERSION}.{' '}
+              <Link
+                href="/contracts/design-system"
+                className="text-link"
+                data-cuelume-hover="tick"
+                data-cuelume-press
+              >
+                Read the contract →
+              </Link>
+            </p>
           </div>
-          <p className="hero-hint fade-up fade-up-delay-4">
-            No login. Real-time. 32 checks against contract v0.3.0.{' '}
-            <Link
-              href="/contracts/design-system"
-              className="text-link"
-              data-cuelume-hover="tick"
-              data-cuelume-press
-            >
-              Read the contract →
-            </Link>
-          </p>
         </section>
 
         {/* --- Pillars: reframed as brand-legitimacy infrastructure --- */}
