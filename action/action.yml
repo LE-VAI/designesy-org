@@ -1,0 +1,44 @@
+name: "Designesy Contract Check"
+description: >-
+  Score a URL against the Designesy design-system contract (34 deterministic
+  checks) and fail the workflow when the score or grade drops below your
+  threshold. A design-contract quality gate for CI — token, motion,
+  accessibility, cadence, takt, and typography compliance as a PR check.
+author: "designesy"
+branding:
+  icon: "check-circle"
+  color: "blue"
+inputs:
+  url:
+    description: "The URL to score against the design contract."
+    required: true
+  min-score:
+    description: "Minimum acceptable score (0–100). The step fails if the score is below this. 0 disables the score check."
+    required: false
+    default: "0"
+  min-grade:
+    description: "Minimum acceptable letter grade (A, B, C, D, F). The step fails if the grade is worse than this. Empty disables the grade check."
+    required: false
+    default: ""
+  api:
+    description: "Base URL of the scoring engine (the /api/score endpoint). Defaults to the public designesy.org engine."
+    required: false
+    default: "https://www.designesy.org"
+  fail-on-error:
+    description: "Fail the step when the scoring engine is unreachable or returns a non-OK response. Set false to warn instead."
+    required: false
+    default: "true"
+outputs:
+  score:
+    description: "Numeric design-contract score (0–100)."
+  grade:
+    description: "Letter grade (A, B, C, D, or F)."
+  pass-count:
+    description: "Number of checks that returned PASS."
+  fail-count:
+    description: "Number of checks that returned FAIL."
+  result:
+    description: "The full scoring result as a JSON string."
+runs:
+  using: "node20"
+  main: "dist/index.js"
