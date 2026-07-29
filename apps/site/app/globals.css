@@ -85,6 +85,18 @@
   --sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
   --display: var(--sans);
   --mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+
+  /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
+     Gradients replace the flat opacity ladder on card interiors; token
+     VALUES for --surface / --surface-raised / --surface-lifted are untouched
+     so the 34-check engine still matches the published contract.
+     --signal-glow uses the existing --signal-light value in rgba form.
+     --signal-gradient is for borders/focus only, NOT button fill (v22). */
+  --surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  --surface-card-gradient: linear-gradient(135deg, #0d0d11 0%, var(--surface) 100%);
+  --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --signal-glow: 0 0 60px rgba(51, 88, 232, 0.18), 0 0 24px rgba(51, 88, 232, 0.28);
+  --signal-gradient: linear-gradient(135deg, var(--signal-light), #6b8aff 130%);
 }
 
 /* --- Reset --- */
@@ -279,10 +291,11 @@ p {
 }
 
 .topbar.scrolled {
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: rgba(10, 10, 12, 0.66);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-bottom-color: var(--line);
+  box-shadow: var(--inner-light), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .topbar-inner {
@@ -804,17 +817,25 @@ p {
   background: var(--signal);
   color: #ffffff;
   border: 1px solid var(--signal);
+  box-shadow: var(--inner-light), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition: background var(--duration-quick) var(--ease-out),
+              border-color var(--duration-quick) var(--ease-out),
+              box-shadow var(--duration-quick) var(--ease-out),
+              transform var(--duration-quick) var(--ease-out),
+              filter var(--duration-quick) var(--ease-out);
 }
 
 .button.primary:hover {
   background: var(--signal-light);
   border-color: var(--signal-light);
+  box-shadow: var(--inner-light), 0 0 32px rgba(51, 88, 232, 0.24);
 }
 
 .button.primary:active {
   background: var(--signal);
   filter: brightness(0.92);
   transform: scale(0.97);
+  box-shadow: var(--inner-light);
 }
 
 .button.ghost {
@@ -1084,14 +1105,18 @@ p {
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
+    background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .surface-card:hover {
   border-left-color: var(--signal);
   border-color: var(--line-strong);
   background: var(--surface-raised);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light), 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 a.surface-card:active {
@@ -6776,7 +6801,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-input-flex-box:focus-within {
   border-color: var(--signal-light);
-  box-shadow: 0 0 0 3px var(--signal-dim);
+  box-shadow: 0 0 0 3px var(--signal-dim), var(--signal-glow);
 }
 
 .score-input-icon {
@@ -6831,10 +6856,11 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-hero-input .score-input-card {
   background: var(--surface-raised);
+  background-image: var(--surface-card-gradient);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-xl);
   padding: 1.25rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), var(--inner-light);
 }
 
 .score-hero-input .score-input-flex-box {
@@ -6846,7 +6872,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-hero-input .score-input-flex-box:focus-within {
   border-color: var(--signal-light);
-  box-shadow: 0 0 0 4px var(--signal-dim), var(--shadow-md);
+  box-shadow: 0 0 0 4px var(--signal-dim), var(--signal-glow), var(--shadow-md);
 }
 
 .score-hero-input .score-submit {
