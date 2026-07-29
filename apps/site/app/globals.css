@@ -9646,3 +9646,318 @@ select {
     transform: translateY(0) rotate(270deg);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Hero construction field — Architectural Interface (midground depth layer)
+   ---------------------------------------------------------------------------
+   Replaces the hero-seam scatter on the landing hero with CAD construction
+   geometry orbiting a giant datum arc. Placement math is in hero-construction.tsx.
+   This block owns: stroke/fill language, studio-light glows, hover personalities
+   layered on the EffectEnhancer seam machinery, and the reduced-motion freeze.
+--------------------------------------------------------------------------- */
+.hero-construction {
+  position: absolute;
+  inset: 0;
+  z-index: 0;            /* behind foreground UI (content z-index: 3) */
+  pointer-events: none;  /* decorative layer; content stays interactive above */
+  overflow: hidden;
+}
+@media (max-width: 859px) {
+  /* On narrow viewports the construction field would crowd the input — step back. */
+  .hero-construction { display: none; }
+}
+
+.hero-construction-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Datum arc — faint ink construction circle, one signal-light segment. */
+.hc-arc-ghost { stroke: var(--line-strong); opacity: 0.5; stroke-dasharray: 1 0; }
+.hc-arc-lit   { stroke: var(--signal-light); opacity: 0.85; }
+.hc-arc-tick  { fill: var(--line-strong); opacity: 0.7; }
+.hc-shadow    { opacity: 1; }
+
+/* Primitives are seam hosts: EffectEnhancer picks closest, drifts + recolors. */
+.hc-prim { pointer-events: none; }
+.hc-prim .seam-shape {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease),
+              filter 200ms var(--ease-out);
+  will-change: transform;
+}
+
+/* Sphere — the studio key light. Bloom breathes very slowly. */
+.hc-bloom-field  { animation: hcSphereBloom 9s var(--ease-in-out) infinite; }
+.hc-sphere-body  { filter: drop-shadow(0 10px 24px rgba(0,0,0,0.5)); }
+@keyframes hcSphereBloom {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+
+/* Chamfered square — slow free float above its shadow. */
+.hc-prim-chamfer .seam-shape { animation: hcChamferFloat 14s var(--ease-in-out) infinite; }
+@keyframes hcChamferFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-10px) rotate(1.5deg); }
+}
+
+/* Floating plane — near-imperceptible drift. */
+.hc-prim-plane .seam-shape { animation: hcPlaneDrift 17s var(--ease-in-out) infinite; }
+@keyframes hcPlaneDrift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(9px); }
+}
+
+/* Thin ring — the signal inner edge pulses on a slow rotation. */
+.hc-ring-glow { animation: hcRingSpin 20s linear infinite; }
+@keyframes hcRingSpin {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -389; } /* 2π×62 ≈ ring circumference */
+}
+
+/* Wireframe box — construction edges flicker like a redrawn schematic. */
+.hc-box-edges {
+  fill: none;
+  stroke: var(--muted-dim);
+  stroke-width: 1;
+  stroke-dasharray: 5 6;
+  opacity: 0.75;
+  animation: hcBoxFlicker 11s var(--ease-in-out) infinite;
+}
+@keyframes hcBoxFlicker {
+  0%, 18%, 100% { opacity: 0.75; }
+  6%            { opacity: 0.45; }
+  12%           { opacity: 0.9; }
+}
+
+/* Hover personalities (fine pointer, motion-allowed): excite each primitive's
+   own idle language. EffectEnhancer adds the magnetic drift + fill shift. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hc-prim-sphere:hover  .hc-bloom-field { animation-duration: 4.5s; }
+  .hc-prim-chamfer:hover .seam-shape     { animation-duration: 7s; }
+  .hc-prim-plane:hover   .seam-shape     { animation-duration: 8s; }
+  .hc-prim-ring:hover    .hc-ring-glow   { animation-duration: 9s; stroke-opacity: 0.4; }
+  .hc-prim-box:hover     .hc-box-edges   { animation-duration: 5s; }
+}
+
+/* Reduced-motion: the whole field freezes to a quiet exploded drawing —
+   no bloom pulse, no float, no flicker; the geometry stays fully drawn. */
+@media (prefers-reduced-motion: reduce) {
+  .hc-bloom-field,
+  .hc-ring-glow,
+  .hc-box-edges,
+  .hc-prim-chamfer .seam-shape,
+  .hc-prim-plane .seam-shape {
+    animation: none !important;
+  }
+  .hc-prim .seam-shape { transition: none; will-change: auto; }
+}
+
+/* ---------------------------------------------------------------------------
+   Hero — Architectural Interface editorial pass (v2, additive)
+   ---------------------------------------------------------------------------
+   Scoped to .hero-architectural so legacy .hero rules elsewhere are untouched.
+   Language: editorial display type (single weight family, tight tracking,
+   generous spacing), the input as the gravitational center, and a proof rail
+   rendered exclusively from app/hero-stats.ts (no fabricated counts).
+--------------------------------------------------------------------------- */
+
+/* The hero is now centered (product-first) rather than right-anchored for the
+   seam. The construction field sits behind at z-index 0; content at 3. */
+.hero-architectural {
+  min-height: min(880px, 96vh);
+  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(3.5rem, 7vw, 6rem);
+  text-align: center;
+}
+.hero-content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: var(--maxw-wide);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.hero-architectural .hero-eyebrow {
+  color: var(--muted);
+  margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+/* Editorial display — massive, confident, single-weight, tracking tight.
+   Two stacked lines: the claim in ink, the answer carried by the accent dot. */
+.hero-display {
+  font-size: clamp(2.6rem, 6.4vw, 5.25rem);
+  font-weight: 340;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0 0 clamp(1.25rem, 2.6vw, 2rem);
+  text-wrap: balance;
+  font-variation-settings: 'opsz' 32;
+}
+.hero-display-line { display: block; }
+.hero-display-line.is-accent { color: var(--ink); }
+.hero-display-line.is-accent::after {
+  content: '';
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.08em;
+  border-radius: 50%;
+  background: var(--signal-light);
+}
+
+.hero-architectural .hero-sub {
+  margin-inline: auto;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  max-width: 56ch;
+  text-align: center;
+}
+
+/* THE PRODUCT — the input panel is the foreground UI layer. */
+.hero-architectural .score-hero-input {
+  max-width: 640px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* Proof rail — quiet, single cluster, real values only. */
+.hero-proof { margin: clamp(1.75rem, 3vw, 2.5rem) 0 0; }
+.hero-proof-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 1.1rem;
+}
+.hero-proof-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.hero-proof-stat b { color: var(--ink); font-weight: 600; }
+.hero-proof-num { font-family: var(--mono, ui-monospace, monospace); color: var(--ink); font-variant-numeric: tabular-nums; }
+.hero-proof-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-dim); }
+.hero-proof-dot.is-live { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.55); }
+.hero-proof-grade {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 700;
+  padding: 0.05rem 0.34rem;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+}
+.hero-proof-grade.is-a { color: #22c55e; border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.08); }
+
+/* Recent-scores — the real cohort leaders, hairline ledger rows. */
+.hero-proof-recent {
+  max-width: 460px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light);
+  padding: 0.75rem 1.05rem 0.8rem;
+  text-align: left;
+}
+.hero-proof-recent-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted-dim);
+  font-weight: 600;
+}
+.hero-proof-recent-list { list-style: none; margin: 0; padding: 0; }
+.hero-proof-recent-item + .hero-proof-recent-item { border-top: 1px solid var(--line-faint); }
+.hero-proof-recent-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.42rem 0;
+  text-decoration: none;
+  color: var(--muted);
+}
+.hero-proof-recent-link:hover { color: var(--ink); }
+.hero-proof-recent-name { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.84rem; color: var(--ink); white-space: nowrap; }
+.hero-proof-recent-self {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--signal-dim);
+  padding: 0.03rem 0.3rem;
+  border-radius: 3px;
+}
+.hero-proof-recent-dots { flex: 1; border-bottom: 1px dotted var(--line-strong); transform: translateY(-3px); min-width: 1rem; }
+.hero-proof-recent-score { font-family: var(--mono, ui-monospace, monospace); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hero-proof-recent-grade {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 700;
+  font-size: 0.74rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+.hero-proof-recent-grade.is-a { color: #22c55e; border-color: rgba(34,197,94,0.45); }
+.hero-proof-recent-grade.is-b { color: #84cc16; border-color: rgba(132,204,22,0.4); }
+.hero-proof-recent-grade.is-c { color: #eab308; border-color: rgba(234,179,8,0.4); }
+.hero-proof-recent-grade.is-d { color: #fb923c; border-color: rgba(251,146,60,0.4); }
+.hero-proof-recent-grade.is-f { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+
+.hero-architectural .hero-hint { margin-top: clamp(1.4rem, 2.6vw, 2rem); }
+
+/* Narrow viewports: construction field hides (see .hero-construction), and
+   the hero recent rail keeps its measure within the column. */
+@media (max-width: 640px) {
+  .hero-proof-stats { gap: 0.4rem 0.9rem; }
+  .hero-proof-recent { max-width: 100%; }
+}
+
+/* ---------------------------------------------------------------------------
+   Chapter rhythm — "book chapter" separators for the homepage flow.
+   ---------------------------------------------------------------------------
+   Operator brief: "Think in chapters. Like reading a premium book." The
+   six content .section blocks after the hero already breathe (Stage-3
+   clamp padding); this layer adds a hairline construction rule above each
+   chapter so the page reads as bounded chapters rather than a continuous
+   scroll, plus chapter eyebrows stay quiet. Scoped to the homepage shell
+   via .hero-architectural (only present on /).
+--------------------------------------------------------------------------- */
+.site-shell .section::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 1px;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line) 12%,
+    var(--line) 88%,
+    transparent 100%
+  );
+}
+
+/* The first chapter after the hero gets extra top air so the hero → chapter
+   handoff reads as a page turn. */
+.hero-architectural + .section {
+  padding-top: clamp(4rem, 9vw, 7.5rem);
+}
