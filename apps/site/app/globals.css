@@ -1084,15 +1084,31 @@ p {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+  align-items: start;
 }
 
 .pillar {
+  display: grid;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
+}
+
+/* Subgrid: cards in the same row share track sizing so numbers, titles, and
+   descriptions align horizontally across the row. Falls back gracefully —
+   browsers without subgrid support use the implicit row sizing. */
+@supports (grid-template-rows: subgrid) {
+  .pillar {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.75rem;
+  }
+  .pillar-number { grid-row: 1; }
+  .pillar h3 { grid-row: 2; }
+  .pillar p { grid-row: 3; }
 }
 
 .pillar:hover {
@@ -1136,6 +1152,7 @@ p {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
+  align-items: start;
 }
 
 .surface-card {
@@ -1151,6 +1168,20 @@ p {
   box-shadow: var(--inner-light);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+/* Subgrid: surface cards in the same row share track sizing so meta, label,
+   and desc align horizontally. Falls back to flex column without subgrid. */
+@supports (grid-template-rows: subgrid) {
+  .surface-card {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.45rem;
+  }
+  .surface-card-meta { grid-row: 1; }
+  .surface-card-label { grid-row: 2; }
+  .surface-card-desc { grid-row: 3; }
 }
 
 .surface-card:hover {
