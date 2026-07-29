@@ -1,7 +1,12 @@
 // MiniConstellation — the score-tool visual idiom (center arc + per-category
 // node ring, fixed weight-ordered axes) composed as a small inline component.
-// Used on /score alongside the full constellation and on /leaderboard rows as
-// the per-site category fingerprint.
+// Used on /leaderboard rows as the per-site category fingerprint.
+//
+// Intentionally NOT mounted on the /score result itself: /score already
+// renders the full-size constellation (100×100, animated arcs, click-to-filter
+// legend, rubric). A 44px echo on the same result would duplicate one idiom at
+// two scales in one viewport. This component exists for COMPACT surfaces —
+// leaderboard rows now; compact cards/badges later. Keep it for those.
 //
 // Geometry mirrors the full constellation at 1/4 scale: C=22, RING_R=13,
 // NODE_R=24, NODE_ARC_R=3.5 on a 44×44 viewBox. Fixed axis order so every
