@@ -162,9 +162,24 @@ export default function LeaderboardPage() {
   });
 
   const aCount = SEED.filter((s) => s.grade === 'A').length;
+  const bCount = SEED.filter((s) => s.grade === 'B').length;
+  const cCount = SEED.filter((s) => s.grade === 'C').length;
   const dCount = SEED.filter((s) => s.grade === 'D').length;
   const fCount = SEED.filter((s) => s.grade === 'F').length;
   const needsWorkCount = SEED.filter((s) => s.score !== null && s.score < 50).length;
+
+  // A–F grand-totals histogram — score distribution across the cohort.
+  // Pattern from DesignSystems.one Agent-Ready Index: the histogram + the
+  // "nobody scores X" headline is the credibility signal.
+  const gradeBands = [
+    { grade: 'A' as Grade, count: aCount, min: 90, color: 'var(--signal-light)', bg: 'var(--signal-dim)' },
+    { grade: 'B' as Grade, count: bCount, min: 80, color: 'var(--activation)', bg: 'rgba(254,204,52,0.14)' },
+    { grade: 'C' as Grade, count: cCount, min: 70, color: 'var(--line-strong)', bg: 'var(--surface-hover)' },
+    { grade: 'D' as Grade, count: dCount, min: 60, color: 'var(--muted)', bg: 'var(--surface-soft)' },
+    { grade: 'F' as Grade, count: fCount, min: 0, color: 'var(--muted-dim)', bg: 'transparent' },
+  ];
+  const maxCount = Math.max(...gradeBands.map((g) => g.count), 1);
+  const scoredTotal = SEED.filter((s) => s.score !== null).length;
 
   return (
     <>
@@ -225,6 +240,22 @@ export default function LeaderboardPage() {
           .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
           .lb-policy strong { color: var(--ink); font-weight: 600; }
           .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+          .lb-histogram { margin: 1.5rem 0; }
+          .lb-histogram-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; padding: 0.5rem 0; }
+          .lb-hist-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+          .lb-hist-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; height: 100px; }
+          .lb-hist-bar { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; border: 1px solid var(--line-faint); border-bottom: none; transition: height 200ms var(--ease, ease-out); }
+          .lb-hist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+          .lb-hist-label { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 0.3rem; border-top: 1px solid var(--line); width: 100%; }
+          .lb-hist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.92rem; }
+          .lb-hist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+          .lb-hist-headline { font-size: 0.92rem; color: var(--muted); line-height: 1.5; margin: 1rem 0 0; max-width: 66ch; }
+          .lb-hist-headline strong { color: var(--ink); font-weight: 600; }
+          @media (max-width: 560px) {
+            .lb-histogram-bars { gap: 0.375rem; }
+            .lb-hist-bar-wrap { height: 70px; }
+            .lb-hist-range { display: none; }
+          }
           .lb-submit { max-width: 480px; }
           .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
           .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -325,6 +356,62 @@ export default function LeaderboardPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Score distribution</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            How the {scoredTotal} scored sites distribute across grade bands.
+            The histogram shows the shape of the cohort — not a bell curve.
+          </p>
+          <div className="lb-histogram">
+            <div className="lb-histogram-bars" role="img" aria-label={`Score distribution: ${aCount} A, ${bCount} B, ${cCount} C, ${dCount} D, ${fCount} F`}>
+              {gradeBands.map((band) => (
+                <div key={band.grade} className="lb-hist-col">
+                  <span className="lb-hist-bar-count">{band.count}</span>
+                  <div className="lb-hist-bar-wrap">
+                    <div
+                      className="lb-hist-bar"
+                      style={{
+                        height: `${(band.count / maxCount) * 100}%`,
+                        background: band.bg,
+                        borderColor: band.color,
+                      }}
+                      title={`${band.grade}: ${band.count} site${band.count !== 1 ? 's' : ''} (score ≥ ${band.min})`}
+                    />
+                  </div>
+                  <div className="lb-hist-label">
+                    <span className="lb-hist-grade" style={{ color: band.color }}>{band.grade}</span>
+                    <span className="lb-hist-range">≥{band.min}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="lb-hist-headline">
+              {aCount === 1 ? (
+                <>
+                  <strong>One A-grade site</strong> in a cohort of {scoredTotal}. The
+                  contract is demanding — most sites land in D or F because they
+                  don&rsquo;t ship the primitives (token systems, reduced-motion
+                  blocks, font-synthesis rules) at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
+                  See the <Link href="/methodology">methodology page</Link> for
+                  what each check measures and why.
+                </>
+              ) : aCount === 0 ? (
+                <>
+                  <strong>No A-grade sites</strong> in a cohort of {scoredTotal}. The
+                  contract is demanding — see the <Link href="/methodology">methodology</Link> for
+                  what each check measures.
+                </>
+              ) : (
+                <>
+                  <strong>{aCount} A-grade sites</strong> in a cohort of {scoredTotal}. See
+                  the <Link href="/methodology">methodology page</Link> for what
+                  each check measures and why.
+                </>
+              )}
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Ranking</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Ranked by total score. The top site is the only A-grade site in the
@@ -375,7 +462,9 @@ export default function LeaderboardPage() {
             in storybook and still score low if the marketing surface
             doesn&rsquo;t expose those tokens at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
             That gap — between documented and shipped — is exactly what the
-            leaderboard surfaces.
+            leaderboard surfaces. For the full scoring methodology — every
+            check, its category weight, the scoring math, and the accessibility
+            floor — see the <Link href="/methodology">methodology page</Link>.
           </p>
         </section>
 

@@ -1,0 +1,697 @@
+// /methodology — Designesy scoring methodology page.
+// The credibility prerequisite: every credible 2026 leaderboard (DesignSystems.one,
+// sealambda shadcn index, MCP Toplist) publishes methodology + score distribution.
+// Without it, cross-listings send traffic to a leaderboard that looks arbitrary.
+//
+// This page documents: the 34 checks, their categories and weights, the scoring
+// math (weighted PASS/WARN/FAIL with SKIP exclusion), grade bands, the a11y floor,
+// and what the engine measures vs. what it cannot measure (SKIP reasons).
+//
+// The CHECKS array below is the human-facing description of the same checks in
+// apps/site/app/api/score/route.ts. The score engine is the source of truth;
+// this page is documentation of it. The REMEDIATION text is pulled from the
+// same route.ts REMEDIATION table. If a check is added to the engine, add it
+// here too — the page header shows a count that must match.
+
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { Topbar } from '../lib/topbar';
+import { Footer } from '../lib/footer';
+import { pageMeta } from '../lib/site-meta';
+
+export const metadata: Metadata = pageMeta({
+  title: 'Methodology',
+  description:
+    'How the Designesy 34-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
+  path: '/methodology',
+  ogDescription:
+    'The 34-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
+  twitterDescription:
+    'Designesy scoring methodology — 34 checks, 11 categories, deterministic · designesy.org/methodology',
+});
+
+// ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
+const CATEGORY_WEIGHTS: Record<string, number> = {
+  cadence: 18,
+  accessibility: 15,
+  semantic: 12,
+  motion: 10,
+  tokens: 9,
+  takt: 8,
+  poise: 7,
+  identity: 6,
+  interaction: 6,
+  performance: 6,
+  responsive: 3,
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  cadence: 'Cadence',
+  accessibility: 'Accessibility',
+  semantic: 'Semantic',
+  motion: 'Motion',
+  tokens: 'Tokens',
+  takt: 'Takt',
+  poise: 'Poise',
+  identity: 'Identity',
+  interaction: 'Interaction',
+  performance: 'Performance',
+  responsive: 'Responsive',
+};
+
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (11), weighted highest at 18%.',
+  accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
+  semantic: 'HTML semantic foundation — single h1, meta description, landmark elements, AI-disclosure readiness (EU AI Act Art 50). Labeled "semantic" in the engine; maps to the contract.identity section.',
+  motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
+  tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
+  takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
+  poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (SKIP).',
+  identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav). 6% weight, 1 scored check.',
+  interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
+  performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (SKIP in the static engine). 6% weight, 0 scored checks in the current engine.',
+  responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (SKIP in the static engine). 3% weight, 0 scored checks.',
+};
+
+// ── Check definitions (mirror apps/site/app/api/score/route.ts) ──
+interface CheckDef {
+  id: string;
+  item: string;
+  category: string;
+  how: string;
+  skipReason?: string;
+}
+
+const CHECKS: CheckDef[] = [
+  // ── Tokens (9%) ──
+  {
+    id: 'v01',
+    item: 'Token values match live site :root foundation',
+    category: 'tokens',
+    how: 'Parses :root custom properties from the fetched CSS. Looks for --paper specifically — the contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation. PASS if --paper resolves to a value.',
+  },
+  {
+    id: 'v29',
+    item: 'Token architecture: primitive → semantic → component layers',
+    category: 'tokens',
+    how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) signals a mature token system. PASS if at least 2 layers are detected.',
+  },
+
+  // ── Responsive (3%) ──
+  {
+    id: 'v02',
+    item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
+    category: 'responsive',
+    how: 'Requires rendering the page at four viewport widths and measuring scrollWidth > clientWidth. The static engine cannot do this.',
+    skipReason: 'Requires a browser viewport trace — the engine fetches CSS, not a rendered DOM.',
+  },
+
+  // ── Interaction (6%) ──
+  {
+    id: 'v03',
+    item: 'Primary interactive elements show focus-visible rings',
+    category: 'interaction',
+    how: 'Regex-searches the CSS for :focus-visible declarations. PASS if any :focus-visible rule is found. This is the keyboard-navigation visibility primitive — without it, Tab users cannot see where they are.',
+  },
+
+  // ── Poise (7%) ──
+  {
+    id: 'v04',
+    item: 'Sound toggle flips aria-pressed and applies the audio preference',
+    category: 'poise',
+    how: 'Requires clicking a sound toggle and verifying aria-pressed flips and a [data-audio] attribute is applied. The static engine cannot interact with the DOM.',
+    skipReason: 'Requires live DOM interaction — the engine does not execute JavaScript or click elements.',
+  },
+  {
+    id: 'v08',
+    item: 'Poise interaction rules match live /labs/poise and contract.interaction',
+    category: 'poise',
+    how: 'Verifies the static half: fine-pointer hover guard (@media hover: hover), press-settle scale ~0.97, opacity-only mark breath. The interaction-feel half requires a browser.',
+  },
+  {
+    id: 'v09',
+    item: 'Poise keyboard-path verification remains published and current',
+    category: 'poise',
+    how: 'Verifies the static half: 4 keyboard-affordance signals in the HTML/CSS (tabindex, accesskey, key bindings, focus management). Tab-order traversal requires a browser.',
+  },
+
+  // ── Motion (10%) ──
+  {
+    id: 'v05',
+    item: 'prefers-reduced-motion disables entrance and wordmark breath',
+    category: 'motion',
+    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive — without it, motion-sensitive users cannot use the site.',
+  },
+  {
+    id: 'v11',
+    item: 'No transition:all in the live stylesheet',
+    category: 'motion',
+    how: 'Regex-searches for transition: all (case-insensitive). FAIL if found. transition: all causes layout-thrash and surprises — the contract requires named properties only.',
+  },
+  {
+    id: 'v12',
+    item: 'will-change restricted to transform and opacity only',
+    category: 'motion',
+    how: 'Parses every will-change declaration. If any value contains anything other than transform or opacity (including auto), it WARNs. will-change on non-transform/opacity properties forces unnecessary layer promotion.',
+  },
+  {
+    id: 'v23',
+    item: 'Duration tokens --duration-quick through --duration-slow present in :root',
+    category: 'motion',
+    how: 'Checks :root for the 5 duration tokens: --duration, --duration-quick, --duration-fast, --duration-medium, --duration-slow. PASS if all 5 are declared. Hardcoded ms values in component CSS are the anti-pattern.',
+  },
+
+  // ── Accessibility (15%) — carries the a11y floor ──
+  {
+    id: 'v06',
+    item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)',
+    category: 'accessibility',
+    how: 'Resolves --paper, --ink, --muted, --muted-dim to RGB and computes WCAG 2.1 contrast ratios. PASS if all clear 4.5:1 (AA body text). WARN if any clear 3:1 but not 4.5:1. FAIL if any below 3:1. APCA Lc values are reported alongside.',
+  },
+  {
+    id: 'v22',
+    item: 'Primary button text passes WCAG AA contrast against --signal fill',
+    category: 'accessibility',
+    how: 'Resolves --signal to RGB, then tests --ink and --paper against it. PASS if the best ratio ≥ 4.5:1. WARN if ≥ 3:1 (large-text pass). FAIL if below 3:1. SKIP if --signal is not declared or unresolvable.',
+  },
+  {
+    id: 'v24',
+    item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)',
+    category: 'accessibility',
+    how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. This is the WCAG 2.2 Target Size Minimum (AA). Full verification needs a browser to measure rendered dimensions.',
+  },
+  {
+    id: 'v25',
+    item: 'Heading hierarchy: single h1, no skipped levels',
+    category: 'accessibility',
+    how: 'Parses the HTML for h1-h6 elements. PASS if exactly one h1 and no skipped levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline.',
+  },
+  {
+    id: 'v27',
+    item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)',
+    category: 'accessibility',
+    how: 'Searches CSS for input/textarea/select font-size declarations ≥ 16px (or 1rem). PASS if the floor is detected. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks mobile UX.',
+  },
+  {
+    id: 'v35',
+    item: 'Forced-colors readiness: @media (forced-colors: active) block present',
+    category: 'accessibility',
+    how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible.',
+  },
+
+  // ── Identity (6%) ──
+  {
+    id: 'v07',
+    item: 'Semantic HTML foundation: single h1, title, meta description, landmark',
+    category: 'semantic',
+    how: 'Parses HTML for: exactly one h1, a descriptive <title>, <meta name="description">, and at least one <main>/<header>/<nav> landmark. PASS if all 4 are present. WARN if 1-2 missing. FAIL if 3+ missing.',
+  },
+  {
+    id: 'v34',
+    item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)',
+    category: 'semantic',
+    how: 'Detects AI-interactive surfaces (chatbots, AI assistants) in the HTML. If detected, checks for disclosure signals (visible "AI" text, aria-label, meta generator, C2PA). PASS if no AI surface is detected (disclosure not required) or if disclosure is present. FAIL if an AI surface is detected without disclosure.',
+  },
+
+  // ── Takt (8%) ──
+  {
+    id: 'v10',
+    item: 'Takt interface-feel rules match live CSS and contract.takt',
+    category: 'takt',
+    how: 'Verifies the static half: stagger enter animation-delay, soften exit transform ease-out, concentric border-radius set. Press-behavior and hit-area require a browser.',
+  },
+  {
+    id: 'v13',
+    item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
+    category: 'takt',
+    how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (glitch, not a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum — lower reads as a glitch.',
+  },
+
+  // ── Cadence (18%) — highest weight, most checks ──
+  {
+    id: 'v14',
+    item: 'Cadence typography rules match live CSS and contract.cadence',
+    category: 'cadence',
+    how: 'Checks for the Cadence rule set: font-synthesis: none, text-underline-position: from-font, text-decoration-skip-ink: auto, -webkit-font-smoothing: antialiased, -moz-osx-font-smoothing: grayscale, root font-size: 16px, all sizes in rem. PASS if all present.',
+  },
+  {
+    id: 'v15',
+    item: 'Font smoothing: antialiased + grayscale on :root confirmed',
+    category: 'cadence',
+    how: 'Searches :root or html for -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale. PASS if both are present. Prevents subpixel rendering artifacts on dark backgrounds.',
+  },
+  {
+    id: 'v16',
+    item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed',
+    category: 'cadence',
+    how: 'Counts rem-based vs px-based font-size declarations. PASS if the majority are rem and root is 16px. The 16px root is the Cadence floor — iOS Safari auto-zooms inputs below 16px.',
+  },
+  {
+    id: 'v17',
+    item: 'Line-height by role: headings 1.08, body 1.55 confirmed',
+    category: 'cadence',
+    how: 'Extracts line-height values from heading and body selectors. PASS if heading line-heights cluster near 1.08 and body line-heights near 1.55. Tight headings read as deliberate; relaxed body copy reads as confident.',
+  },
+  {
+    id: 'v18',
+    item: 'text-wrap: balance + pretty both present in live CSS',
+    category: 'cadence',
+    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement — unsupported browsers ignore them.',
+  },
+  {
+    id: 'v19',
+    item: 'tabular-nums: 8 instances across the live CSS',
+    category: 'cadence',
+    how: 'Counts font-feature-settings: "tnum" or font-variant-numeric: tabular-nums declarations. PASS if ≥ 8 instances (threshold for a site that takes numeric display seriously). Prevents digits from shifting width as values change.',
+  },
+  {
+    id: 'v20',
+    item: '::selection styled with var(--signal) — not browser default',
+    category: 'cadence',
+    how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token, not the browser default. The selection color is a small but loud brand surface.',
+  },
+  {
+    id: 'v26',
+    item: 'Font family count ≤3 (body + heading + mono)',
+    category: 'cadence',
+    how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4-5. FAIL if 6+. More than 3 families signals inconsistency and hurts performance.',
+  },
+  {
+    id: 'v28',
+    item: 'Reading width 45-75ch on prose containers',
+    category: 'cadence',
+    how: 'Searches for max-width declarations in the 45-75ch range (66ch ideal). PASS if at least one measure is in range. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy.',
+  },
+  {
+    id: 'x01',
+    item: 'font-synthesis: none set (Cadence resolved tension)',
+    category: 'cadence',
+    how: 'Searches for font-synthesis: none. PASS if declared. WARN if font-synthesis is declared but not set to none, or if no rule is found. Prevents the browser from synthesizing bold/italic faces when the real weights are not loaded — a common cause of blurry headlines on Windows.',
+  },
+  {
+    id: 'x02',
+    item: 'text-underline-position: from-font set (Cadence resolved tension)',
+    category: 'cadence',
+    how: 'Searches for text-underline-position: from-font or under. PASS if declared. Uses the font designer\u2019s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
+  },
+  {
+    id: 'x03',
+    item: 'text-decoration-skip-ink: auto set',
+    category: 'cadence',
+    how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
+  },
+
+  // ── Performance (6%) ──
+  {
+    id: 'v21',
+    item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
+    category: 'performance',
+    how: 'Requires a CDP/Playwright trace to measure LCP, INP, and CLS against the Google thresholds. The static engine cannot do this.',
+    skipReason: 'Requires a CDP trace — the engine fetches HTML/CSS, not a rendered page with timing data.',
+  },
+];
+
+// ── Grade bands (mirror computeGrade in route.ts) ──
+const GRADE_BANDS = [
+  { grade: 'A', min: 90, color: 'var(--signal-light)', description: 'Reference-tier craft. The site ships the contract primitives at :root and passes the majority of checks across all categories.' },
+  { grade: 'B', min: 80, color: 'var(--activation)', description: 'Strong. A few checks are missing or WARN, but the foundation is solid.' },
+  { grade: 'C', min: 70, color: 'var(--line-strong)', description: 'Acceptable. Notable gaps in cadence, motion, or accessibility. The a11y floor caps here if accessibility < 60%.' },
+  { grade: 'D', min: 60, color: 'var(--line)', description: 'Below standard. Significant gaps across multiple categories. Most sites land here — the contract is demanding.' },
+  { grade: 'F', min: 0, color: 'var(--line-faint)', description: 'Needs work. The site does not ship the contract primitives. Common for sites with no :root token system, no reduced-motion block, no font-synthesis rule.' },
+];
+
+// Group checks by category for display
+const CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
+const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
+  category: cat,
+  weight: CATEGORY_WEIGHTS[cat],
+  checks: CHECKS.filter((c) => c.category === cat),
+})).filter((g) => g.checks.length > 0);
+
+const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
+const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason).length;
+const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
+
+export default function MethodologyPage() {
+  return (
+    <>
+      <Topbar scrolled />
+
+      <main id="main-content" className="surface-page methodology-page">
+        <style>{`
+          .methodology-page .methodology-section { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
+          .methodology-page .methodology-prose { max-width: 66ch; }
+          .methodology-page .methodology-prose p { color: var(--muted); font-size: 1rem; line-height: 1.6; margin: 0 0 1rem; }
+          .methodology-page .methodology-prose strong { color: var(--ink); font-weight: 600; }
+          .methodology-page .methodology-prose code { font-family: var(--mono, ui-monospace, monospace); font-size: 0.88rem; background: var(--surface); padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid var(--line-faint); color: var(--ink); }
+          .methodology-page .methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.875rem; margin: 1.5rem 0; }
+          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
+          .methodology-page .methodology-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+          .methodology-page .methodology-stat-label { display: block; margin-top: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
+          .methodology-page .weight-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.25rem 0; }
+          .methodology-page .weight-table th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
+      .methodology-page .weight-table th.wt-num { text-align: right; }
+          .methodology-page .weight-table td { padding: 0.625rem; border-bottom: 1px solid var(--line-faint); font-size: 0.88rem; color: var(--muted); vertical-align: top; }
+          .methodology-page .weight-table td.wt-num { font-family: var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+          .methodology-page .weight-table td.wt-name { color: var(--ink); font-weight: 600; }
+          .methodology-page .weight-bar { display: inline-block; height: 0.5rem; border-radius: 2px; background: var(--signal-dim); vertical-align: middle; margin-right: 0.5rem; min-width: 2px; }
+          .methodology-page .grade-bands { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.25rem 0; }
+          .methodology-page .grade-band { display: grid; grid-template-columns: 2.5rem 4rem 1fr; gap: 0.75rem; align-items: start; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+          .methodology-page .grade-band-letter { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 1.1rem; text-align: center; padding: 0.25rem 0; border-radius: 4px; border: 1px solid var(--line); }
+          .methodology-page .grade-band-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; padding-top: 0.35rem; }
+          .methodology-page .grade-band-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+          .methodology-page .check-group { margin: 2.5rem 0; }
+          .methodology-page .check-group-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
+          .methodology-page .check-group-name { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
+          .methodology-page .check-group-weight { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; }
+          .methodology-page .check-group-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
+          .methodology-page .check-row { padding: 0.875rem 0; border-bottom: 1px solid var(--line-faint); }
+          .methodology-page .check-row:last-child { border-bottom: none; }
+          .methodology-page .check-row-head { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+          .methodology-page .check-id { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; font-weight: 600; color: var(--signal-light); background: var(--signal-dim); padding: 0.1rem 0.4rem; border-radius: 3px; letter-spacing: 0.02em; }
+          .methodology-page .check-item { font-size: 0.92rem; color: var(--ink); font-weight: 500; line-height: 1.4; }
+          .methodology-page .check-how { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin: 0 0 0 0; }
+          .methodology-page .check-skip { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.5rem; font-size: 0.7rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: 3px; letter-spacing: 0.02em; }
+          .methodology-page .methodology-formula { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; margin: 1.25rem 0; font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; line-height: 1.7; color: var(--ink); overflow-x: auto; box-shadow: var(--inner-light); }
+          .methodology-page .methodology-formula .formula-comment { color: var(--muted-dim); }
+          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: 6px; margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; }
+          .methodology-page .methodology-callout strong { font-weight: 700; }
+          .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; margin: 1.5rem 0; font-size: 0.85rem; }
+          .methodology-page .methodology-toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
+          .methodology-page .methodology-toc a:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
+          .methodology-page .methodology-toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.3rem 1rem; }
+          @media (max-width: 560px) {
+            .methodology-page .grade-band { grid-template-columns: 2rem 3.5rem 1fr; gap: 0.5rem; }
+            .methodology-page .methodology-grid { grid-template-columns: 1fr 1fr; }
+          }
+        `}</style>
+
+        <section className="surface-header fade-up methodology-section">
+          <p className="surface-eyebrow" data-scramble>Verification transparency</p>
+          <h1 className="surface-title" data-scramble>Methodology</h1>
+          <p className="surface-lede">
+            The full scoring methodology behind the Designesy 34-check engine.
+            Deterministic, no LLM, no human judgment. Every check is a regex or
+            token-resolution test against the live fetched CSS and HTML. This
+            page documents exactly what the engine measures, how the score is
+            computed, and what it cannot measure.
+          </p>
+          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
+            <Link className="button primary" href="/score" data-cuelume-press>
+              Score a site
+            </Link>
+            <Link className="button ghost" href="/leaderboard" data-cuelume-press style={{ marginLeft: '0.5rem' }}>
+              View leaderboard
+            </Link>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section">
+          <h2 className="doctrine-heading">At a glance</h2>
+          <div className="methodology-grid">
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{CHECKS.length}</span>
+              <span className="methodology-stat-label">Total checks</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{SCORED_CHECKS}</span>
+              <span className="methodology-stat-label">Scored (PASS/WARN/FAIL)</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{SKIP_CHECKS}</span>
+              <span className="methodology-stat-label">SKIP (needs browser)</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length}</span>
+              <span className="methodology-stat-label">Categories</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{TOTAL_WEIGHT}%</span>
+              <span className="methodology-stat-label">Weight total</span>
+            </div>
+          </div>
+
+          <div className="methodology-toc">
+            <strong style={{ color: 'var(--ink)', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Contents</strong>
+            <ul style={{ marginTop: '0.6rem' }}>
+              <li><a href="#scoring-math">Scoring math</a></li>
+              <li><a href="#category-weights">Category weights</a></li>
+              <li><a href="#grade-bands">Grade bands</a></li>
+              <li><a href="#a11y-floor">Accessibility floor</a></li>
+              <li><a href="#what-engine-measures">What the engine measures</a></li>
+              <li><a href="#what-engine-skips">What the engine skips</a></li>
+              {CHECKS_BY_CATEGORY.map((g) => (
+                <li key={g.category}><a href={`#${g.category}`}>{CATEGORY_LABELS[g.category]} ({g.weight}%)</a></li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="scoring-math">
+          <h2 className="doctrine-heading">Scoring math</h2>
+          <div className="methodology-prose">
+            <p>
+              The engine fetches the target URL&rsquo;s HTML and all linked CSS,
+              parses <code>:root</code> custom properties, and runs{' '}
+              <strong>{CHECKS.length} deterministic checks</strong> across{' '}
+              <strong>{CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length} weighted categories</strong>.
+              Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
+              <code>FAIL</code>, or <code>SKIP</code>. The score is a weighted
+              average — not a simple count.
+            </p>
+            <p>
+              <strong>SKIP</strong> checks are excluded from both numerator and
+              denominator (Lighthouse precedent: manual/N/A audits excluded).
+              This means a site is not penalized for checks the static engine
+              cannot run. The {SKIP_CHECKS} SKIP checks require a browser
+              viewport trace, CDP performance trace, or live DOM interaction.
+            </p>
+          </div>
+          <div className="methodology-formula">
+            <span className="formula-comment"># Per-check weight = category weight / checks in that category</span><br />
+            checkWeight = CATEGORY_WEIGHTS[category] / count(scored checks in category)<br /><br />
+            <span className="formula-comment"># Status scoring</span><br />
+            PASS  &rarr; 1.0 &times; checkWeight<br />
+            WARN  &rarr; 0.5 &times; checkWeight<br />
+            FAIL  &rarr; 0<br />
+            SKIP  &rarr; excluded (weight &times; 0, not counted in total)<br /><br />
+            <span className="formula-comment"># Composite score</span><br />
+            score = round( &sum;(weightedPoints) / &sum;(weightedTotal) &times; 1000 ) / 10<br /><br />
+            <span className="formula-comment"># Per-category sub-score (same math, scoped to one category)</span><br />
+            categoryScore = round( &sum;(catPoints) / &sum;(catWeight) &times; 1000 ) / 10
+          </div>
+          <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
+            The <code>round(&hellip; &times; 1000) / 10</code> pattern produces a
+            one-decimal-place score (e.g. 95.2, not 95.2347). The same math runs
+            per-category, producing the constellation breakdown shown on the
+            leaderboard and score pages.
+          </p>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="category-weights">
+          <h2 className="doctrine-heading">Category weights</h2>
+          <div className="methodology-prose">
+            <p>
+              Weights follow the contract&rsquo;s section emphasis — the contract
+              <em>is</em> the scoring basis. Cadence (typography) carries the
+              highest weight at 18% because it has the most checks (11) and
+              typography discipline is the loudest craft signal. Accessibility
+              carries 15% and the a11y floor. Semantic/identity, motion, and
+              tokens follow. Performance and responsive are lowest-weighted
+              because their checks are SKIP in the static engine.
+            </p>
+          </div>
+          <table className="weight-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th className="wt-num">Weight</th>
+                <th>Checks</th>
+                <th>Scored</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CHECKS_BY_CATEGORY.map((g) => (
+                <tr key={g.category}>
+                  <td className="wt-name">
+                    <span className="weight-bar" style={{ width: `${g.weight * 3}px` }} />
+                    {CATEGORY_LABELS[g.category]}
+                  </td>
+                  <td className="wt-num">{g.weight}%</td>
+                  <td style={{ color: 'var(--muted-dim)' }}>{g.checks.length}</td>
+                  <td className="wt-num" style={{ color: g.checks.filter(c => !c.skipReason).length > 0 ? 'var(--ink)' : 'var(--muted-dim)' }}>
+                    {g.checks.filter(c => !c.skipReason).length}
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '1px solid var(--line)' }}>
+                <td className="wt-name">Total</td>
+                <td className="wt-num">{TOTAL_WEIGHT}%</td>
+                <td style={{ color: 'var(--muted-dim)' }}>{CHECKS.length}</td>
+                <td className="wt-num">{SCORED_CHECKS}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="grade-bands">
+          <h2 className="doctrine-heading">Grade bands</h2>
+          <div className="methodology-prose">
+            <p>
+              The letter grade is a simple threshold on the numeric score. The
+              bands are deliberately demanding — a site must score 90+ to earn
+              an A. Most sites land in D or F because the contract requires
+              primitives (token systems, reduced-motion blocks, font-synthesis
+              rules) that most sites do not ship.
+            </p>
+          </div>
+          <div className="grade-bands">
+            {GRADE_BANDS.map((band) => (
+              <div key={band.grade} className="grade-band">
+                <span className="grade-band-letter" style={{ color: band.color, borderColor: band.color }}>{band.grade}</span>
+                <span className="grade-band-range">&ge; {band.min}</span>
+                <span className="grade-band-desc">{band.description}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="a11y-floor">
+          <h2 className="doctrine-heading">Accessibility floor</h2>
+          <div className="methodology-callout">
+            <strong>The a11y floor:</strong> if the accessibility category scores
+            below 60%, the overall grade is capped at C (70) — no matter how high
+            the weighted score is. This prevents &ldquo;perfect tokens, zero a11y
+            = A&rdquo; dishonesty. A site with beautiful typography and no contrast
+            or touch targets cannot earn above C.
+          </div>
+          <div className="methodology-prose">
+            <p>
+              The floor is a softer version of the DSAF enterprise-grade precedent
+              (DSAF enforces A8 Accessibility &ge;75%). Designesy applies 60% as
+              the floor — strict enough to prevent the &ldquo;all tokens, no
+              a11y&rdquo; failure mode, lenient enough that a site with 3 of 6
+              accessibility checks passing is not auto-capped. The cap only
+              triggers if the weighted score <em>is above 70</em> — if the score
+              is already below 70, the floor does not change it.
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="what-engine-measures">
+          <h2 className="doctrine-heading">What the engine measures</h2>
+          <div className="methodology-prose">
+            <p>
+              The engine fetches the target URL, extracts all CSS (inline{' '}
+              <code>&lt;style&gt;</code> blocks + linked{' '}
+              <code>&lt;link rel=&quot;stylesheet&quot;&gt;</code> files), parses{' '}
+              <code>:root</code> custom properties, and runs each check as a regex
+              or token-resolution test. It does <strong>not</strong> render the
+              page, execute JavaScript, or interact with the DOM. This means:
+            </p>
+            <p>
+              <strong>It measures what is shipped, not what is documented.</strong>{' '}
+              A design-system site can publish a rich token taxonomy in Storybook
+              and still score low if the marketing surface doesn&rsquo;t expose
+              those tokens at <code>:root</code>. That gap — between documented
+              and shipped — is exactly what the leaderboard surfaces.
+            </p>
+            <p>
+              <strong>It is deterministic.</strong> No LLM, no human judgment, no
+              roast. The same URL always produces the same score (within the
+              24-hour cache window). If a site changes its CSS, the score changes
+              on the next run.
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="what-engine-skips">
+          <h2 className="doctrine-heading">What the engine skips</h2>
+          <div className="methodology-prose">
+            <p>
+              {SKIP_CHECKS} checks are marked <code>SKIP</code> because they
+              require a capability the static engine does not have:
+            </p>
+          </div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', maxWidth: '66ch' }}>
+            {CHECKS.filter((c) => c.skipReason).map((c) => (
+              <li key={c.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--line-faint)' }}>
+                <span className="check-id">{c.id}</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--ink)', marginLeft: '0.5rem' }}>{c.item}</span>
+                <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '0.3rem', lineHeight: 1.5 }}>
+                  {c.skipReason}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="surface-note" style={{ maxWidth: '66ch' }}>
+            SKIP checks are excluded from both numerator and denominator — a site
+            is not penalized for them. Future versions of the engine may run
+            these via a Playwright/CDP trace integration.
+          </p>
+        </section>
+
+        {CHECKS_BY_CATEGORY.map((group) => (
+          <section
+            key={group.category}
+            className="doctrine-section fade-up methodology-section"
+            id={group.category}
+          >
+            <div className="check-group-header">
+              <h2 className="check-group-name">{CATEGORY_LABELS[group.category]}</h2>
+              <span className="check-group-weight">
+                {group.weight}% weight · {group.checks.length} check{group.checks.length !== 1 ? 's' : ''} ·{' '}
+                {group.checks.filter((c) => !c.skipReason).length} scored
+              </span>
+            </div>
+            <p className="check-group-desc">{CATEGORY_DESCRIPTIONS[group.category]}</p>
+            <div className="check-group">
+              {group.checks.map((check) => (
+                <div key={check.id} className="check-row">
+                  <div className="check-row-head">
+                    <span className="check-id">{check.id}</span>
+                    <span className="check-item">{check.item}</span>
+                  </div>
+                  <p className="check-how">{check.how}</p>
+                  {check.skipReason && (
+                    <span className="check-skip">SKIP — {check.skipReason}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        <section className="doctrine-section fade-up methodology-section">
+          <h2 className="doctrine-heading">Data exports</h2>
+          <div className="methodology-prose">
+            <p>
+              The leaderboard data is available in two machine-readable formats
+              for agents and researchers:
+            </p>
+            <p>
+              <Link href="/api/leaderboard" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>
+                <code style={{ background: 'var(--surface)', padding: '0.1rem 0.35rem', borderRadius: '3px', border: '1px solid var(--line-faint)' }}>/api/leaderboard</code>
+              </Link>
+              {' '}&mdash; JSON with full per-site categoryScores. CORS-enabled.<br />
+              <Link href="/api/leaderboard.csv" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>
+                <code style={{ background: 'var(--surface)', padding: '0.1rem 0.35rem', borderRadius: '3px', border: '1px solid var(--line-faint)' }}>/api/leaderboard.csv</code>
+              </Link>
+              {' '}&mdash; RFC 4180 CSV with a header row. Spreadsheet-friendly.
+            </p>
+          </div>
+        </section>
+
+        <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
+          Methodology v1 · {CHECKS.length} checks · {CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length} categories ·{' '}
+          deterministic, no LLM · engine source at{' '}
+          <Link href="/api/score" style={{ color: 'var(--muted)' }}>/api/score</Link> ·{' '}
+          contract at{' '}
+          <Link href="/contracts/design-system.json" style={{ color: 'var(--muted)' }}>/contracts/design-system.json</Link>
+        </div>
+      </main>
+
+      <Footer />
+    </>
+  );
+}
