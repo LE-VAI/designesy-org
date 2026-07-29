@@ -151,17 +151,17 @@ export default function HomePage() {
           <h1 className="hero-title sr-only" id="hero-title">
             designesy.
           </h1>
-          <p className="hero-lede fade-up fade-up-delay-2" data-scramble>
+          <p className="hero-lede fade-up fade-up-delay-1" data-scramble>
             AI makes execution free. We make execution yours.
           </p>
-          <p className="hero-sub fade-up fade-up-delay-3">
+          <p className="hero-sub fade-up fade-up-delay-2">
             Score any site against a real design contract. 32 checks. One grade.
             No vibe-tax.
           </p>
-          <div id="score" className="score-hero-input fade-up fade-up-delay-4">
+          <div id="score" className="score-hero-input fade-up fade-up-delay-3">
             <ScoreForm />
           </div>
-          <p className="hero-hint fade-up fade-up-delay-5">
+          <p className="hero-hint fade-up fade-up-delay-4">
             No login. Real-time. 32 checks against contract v0.3.0.{' '}
             <Link
               href="/contracts/design-system"
