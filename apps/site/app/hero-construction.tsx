@@ -23,7 +23,7 @@
 //   sphere (-24°, on-arc center (1468,848.8), r=72 → rect x=1392..1544)
 //   ring   (-156°, on-arc center (531.9,848.8), r=62)
 // Free-floating primitives at fixed construction coordinates:
-//   chamfer rect (420,420)-(620,620) · plane rect (1150,470)-(1345,500)
+//   chamfer rect (420,420)-(620,620) · plane rect (1500,330)-(1695,344)
 //   box wireframe occupying (330-490, 800-1010)
 // All positions are absolute viewBox coordinates so EffectEnhancer's
 // viewport→viewBox scale math (triggerBurst) stays exact.
@@ -129,10 +129,15 @@ export function HeroConstruction() {
         {/* --- Floating plane — E, thin slab. -------------------------------- */}
         <g className="hero-construction-mark hc-prim hc-prim-plane">
           <g className="seam-shape seam-shape-block">
-            <rect className="seam-block hc-plane-body" x="1150" y="470"
+            {/* Parked in the free band above the input, inside the datum ring
+                (ring inner edge at y≈330 here) and right of the editorial
+                title column (titles end ≈x1395). The midline-centered spot
+                (~x1150,y470) is reserved for the input — the orbit, never
+                the obstacle. */}
+            <rect className="seam-block hc-plane-body" x="1500" y="330"
                   width="195" height="14" rx="2" fill="#101014"
                   stroke="var(--line-strong)" strokeWidth="1" />
-            <line x1="1150" y1="470" x2="1345" y2="470" stroke="#ffffff"
+            <line x1="1500" y1="330" x2="1695" y2="330" stroke="#ffffff"
                   strokeOpacity="0.14" strokeWidth="1" />
           </g>
         </g>

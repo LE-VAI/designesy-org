@@ -9706,11 +9706,13 @@ select {
   50%      { transform: translateY(-10px) rotate(1.5deg); }
 }
 
-/* Floating plane — near-imperceptible drift. */
+/* Floating plane — vertical-only drift. Horizontal motion on this slab would
+   sweep it across the centered input/title column; vertical float keeps it
+   inside its parked gap above the input at every phase of the cycle. */
 .hc-prim-plane .seam-shape { animation: hcPlaneDrift 17s var(--ease-in-out) infinite; }
 @keyframes hcPlaneDrift {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(9px); }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
 }
 
 /* Thin ring — the signal inner edge pulses on a slow rotation. */
