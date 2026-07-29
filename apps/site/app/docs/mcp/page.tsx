@@ -200,9 +200,9 @@ export default function McpDocsPage() {
           <div className="definition">
             <p className="definition-label">Registry</p>
             <p>
-              <code>org.designesy.www/designesy</code> v1.2.0 on{' '}
+              <code>org.designesy.www/designesy</code> v1.3.0 on{' '}
               <a
-                href="https://registry.modelcontextprotocol.io"
+                href="https://registry.modelcontextprotocol.io/v0.1/servers/org.designesy.www%2Fdesignesy/versions/1.3.0"
                 rel="noopener noreferrer"
               >
                 registry.modelcontextprotocol.io
@@ -212,12 +212,47 @@ export default function McpDocsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <div
+            className="surface-card"
+            style={{
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div>
+              <p className="definition-label" style={{ marginBottom: '0.25rem' }}>
+                Published on the MCP Registry
+              </p>
+              <p className="surface-note" style={{ margin: 0 }}>
+                Discoverable by any MCP-compatible client. Search{' '}
+                <code>designesy</code> on the registry or connect directly.
+              </p>
+            </div>
+            <a
+              href="https://registry.modelcontextprotocol.io/v0.1/servers/org.designesy.www%2Fdesignesy/versions/1.3.0"
+              rel="noopener noreferrer"
+              className="mono-link"
+              style={{
+                whiteSpace: 'nowrap',
+                fontSize: '0.875rem',
+              }}
+            >
+              View registry entry →
+            </a>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Seven read-only tools fetch public machine exports from
-            designesy.org with a 5-minute in-memory cache. One executable
-            tool runs the 34-check verification engine against any live URL.
-            All tools return JSON.
+            Eight tools fetch public machine exports from designesy.org and
+            run the 34-check verification engine. Three living-systems
+            validators check DTCG token files, WCAG 2.2 accessibility, and
+            Lottie motion conformance. All tools return JSON.
           </p>
           <div className="row-stack" role="list">
             {TOOLS.map((tool, i) => (
