@@ -9755,7 +9755,7 @@ select {
   .hc-prim-plane .seam-shape {
     animation: none !important;
   }
-  .hc-prim .seam-shape { transition: none; will-change: auto; }
+  .hc-prim .seam-shape { transition: none; }
 }
 
 /* ---------------------------------------------------------------------------
