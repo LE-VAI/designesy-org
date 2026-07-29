@@ -45,6 +45,11 @@ export function DefinitionCopyEnhancer() {
       def.querySelectorAll('a, button, [tabindex]').forEach((el) => {
         const existingTabindex = el.getAttribute('tabindex');
         if (existingTabindex === null || existingTabindex === '0') {
+          // aria-hidden alone removes the node for AT; tabindex=-1 is still
+          // needed for keyboard-only users. Do NOT use tabindex=-1 by
+          // itself — axe-core flags it (no-focusable-content) because AT
+          // can still focus/announce a tabindex=-1 element inside an
+          // interactive control.
           el.setAttribute('tabindex', '-1');
         }
         el.setAttribute('aria-hidden', 'true');
