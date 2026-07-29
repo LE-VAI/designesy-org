@@ -1150,6 +1150,34 @@ async function scoreUrlUncached(targetUrl: string) {
 
   let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
 
+  // ── Per-category sub-scores (the constellation) ─────────────────────────
+  // Each category gets its own 0-100 score using the same weighting rule as
+  // the composite (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded). Categories
+  // with zero scored checks report null so the client can render them as
+  // "unscored" rather than fabricating a 0 or 100. This is the same math the
+  // composite uses — one source of truth, no client-side re-derivation.
+  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number }> = {};
+  for (const c of checks) {
+    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0 });
+    if (c.status === 'SKIP') { agg.skip += 1; continue; }
+    const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
+    agg.wt += checkWeight;
+    if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
+    else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
+    else agg.fail += 1; // FAIL
+  }
+  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number }> = {};
+  for (const [cat, agg] of Object.entries(catAgg)) {
+    categoryScores[cat] = {
+      score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
+      weight: CATEGORY_WEIGHTS[cat] || 5,
+      pass: agg.pass,
+      fail: agg.fail,
+      warn: agg.warn,
+      skip: agg.skip,
+    };
+  }
+
   // ── Tier 2: accessibility floor (DSAF enterprise-grade precedent) ──────────
   // DSAF enforces A8 Accessibility ≥75% — a system can score 90% combined and
   // still fail enterprise-grade if a11y is 73%. We apply a softer version: if
@@ -1179,7 +1207,7 @@ async function scoreUrlUncached(targetUrl: string) {
     remediation: REMEDIATION[c.id],
   }));
 
-  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length };
+  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the

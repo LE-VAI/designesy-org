@@ -8848,3 +8848,598 @@ select {
     forced-color-adjust: auto;
   }
 }
+/* ===========================================================================
+   SCORE CONSTELLATION (v2) — the 2026 results experience
+   ---------------------------------------------------------------------------
+   Replaces the boxed grade emblem + linear progress bar with a fixed
+   weight-ordered category ring around the main score arc. Design provenance:
+   - Lighthouse PR 17045 "earned arc" (transparent track → animated fill)
+   - Socket.dev published-math rubric (the weight function lives on-page)
+   - Observable 2025 radar critique (fixed axis order, no polygon web)
+   - PSI verdict-first (one-line human verdict leads, in words not color)
+   =========================================================================== */
+
+.score-verdict-line {
+  font-size: clamp(0.95rem, 2vw, 1.075rem);
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  line-height: 1.42;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+  border-left: 2px solid var(--signal);
+  padding-left: 0.75rem;
+}
+
+/* ── Constellation gauge ────────────────────────────────────────────────── */
+
+.score-constellation {
+  position: relative;
+  width: clamp(11rem, 34vw, 15.5rem);
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+
+.score-constellation > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.constel-spoke {
+  stroke: var(--line);
+  stroke-width: 0.35;
+  opacity: 0.6;
+}
+
+.constel-track {
+  stroke: var(--line);
+  stroke-width: 2.4;
+  opacity: 0.55;
+}
+
+.constel-main-fill {
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  transition: stroke var(--duration-fast) var(--ease);
+}
+
+/* Grade-colored main arc — same five-band semantics as the retired emblem,
+   so OG/badge logic keeps a single grade language. */
+.constel-main-fill.is-a { stroke: #22c55e; }
+.constel-main-fill.is-b { stroke: #84cc16; }
+.constel-main-fill.is-c { stroke: #eab308; }
+.constel-main-fill.is-d { stroke: #fb923c; }
+.constel-main-fill.is-f { stroke: #ef4444; }
+
+.constel-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  pointer-events: none;
+}
+
+.constel-grade {
+  font-size: clamp(2.1rem, 7vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.constel-grade.is-a { color: #22c55e; }
+.constel-grade.is-b { color: #a3e635; }
+.constel-grade.is-c { color: var(--warn); }
+.constel-grade.is-d { color: #fb923c; }
+.constel-grade.is-f { color: var(--error); }
+
+.constel-pct {
+  font-size: clamp(0.8rem, 2.4vw, 1rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Category nodes — each is a micro-arc whose fill equals the category's
+   own 0-100 score. Click filters the feed (same affordance as chips). */
+.constel-node {
+  cursor: pointer;
+  opacity: 0;
+  animation: constelNodeIn var(--duration) var(--ease-out) forwards;
+}
+
+@keyframes constelNodeIn {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.constel-node-track {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  fill: var(--paper);
+}
+
+.constel-node-fill {
+  stroke: var(--signal-light);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--duration-fast) var(--ease-out);
+}
+
+.constel-node:hover .constel-node-track,
+.constel-node.is-active .constel-node-track {
+  stroke: var(--signal);
+  opacity: 1;
+}
+
+.constel-node.is-active .constel-node-fill {
+  stroke: var(--signal-access);
+  stroke-width: 2.2;
+}
+
+.constel-node-label {
+  fill: var(--ink);
+  font-size: 4.6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.constel-node.is-unscored {
+  cursor: default;
+}
+
+.constel-node.is-unscored .constel-node-label {
+  fill: var(--muted-dim);
+}
+
+.constel-node.is-unscored .constel-node-track {
+  stroke-dasharray: 1.5 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .constel-node {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ── Hero meta additions: delta chip + strongest/weakest line ──────────── */
+
+.score-delta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.score-delta-chip.is-up {
+  color: var(--ok);
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.score-delta-chip.is-down {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.score-strong-weak {
+  margin: 0.15rem 0 0.45rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.score-strong-weak strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.score-url-time {
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--line);
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+  font-family: var(--mono, ui-monospace, monospace);
+  white-space: nowrap;
+}
+
+/* ── Category legend (text mirror of the SVG nodes) ─────────────────────── */
+
+.score-cat-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem 1rem;
+}
+
+.score-cat-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.2rem 0.4rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.score-cat-legend-row:hover {
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.score-cat-legend-row.is-active {
+  color: var(--ink);
+  border-color: var(--signal);
+  background: rgba(1, 51, 203, 0.1);
+}
+
+.score-cat-legend-row.is-unscored {
+  opacity: 0.55;
+}
+
+.score-cat-legend-name {
+  flex: 0 0 auto;
+  min-width: 5.4rem;
+}
+
+.score-cat-legend-bar {
+  flex: 1 1 auto;
+  height: 3px;
+  background: var(--surface);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-cat-legend-fill {
+  display: block;
+  height: 100%;
+  background: var(--signal-light);
+  border-radius: 999px;
+  transition: width var(--duration) var(--ease-out);
+}
+
+.score-cat-legend-fill.is-weak {
+  background: var(--warn);
+}
+
+.score-cat-legend-score {
+  flex: 0 0 auto;
+  min-width: 1.6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── Scoring rubric (published math) ────────────────────────────────────── */
+
+.score-rubric {
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.score-rubric-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.score-rubric-toggle:hover {
+  color: var(--signal-access);
+}
+
+.score-rubric-body {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.score-rubric-formula {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--muted);
+  font-family: var(--mono, ui-monospace, monospace);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+}
+
+.score-rubric-formula sub {
+  font-size: 0.85em;
+}
+
+.score-rubric-weights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.score-rubric-weight-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+}
+
+.score-rubric-weight-label {
+  flex: 0 0 7.2rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.score-rubric-weight-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  background: var(--surface);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-rubric-weight-fill {
+  display: block;
+  height: 100%;
+  background: var(--signal);
+  border-radius: 999px;
+}
+
+.score-rubric-weight-num {
+  flex: 0 0 2.4rem;
+  text-align: right;
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Verification log (loading state) ───────────────────────────────────── */
+
+.score-verify-log {
+  margin-top: 1.75rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.score-verify-log-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--signal-access);
+}
+
+.score-verify-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.score-verify-log-step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  opacity: 0;
+  animation: verifyStepIn var(--duration) var(--ease-out) forwards;
+}
+
+@keyframes verifyStepIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.score-verify-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-light);
+  flex-shrink: 0;
+  animation: verifyPulse 1.4s var(--ease-in-out) infinite;
+}
+
+@keyframes verifyPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-verify-log-step {
+    animation: none;
+    opacity: 1;
+  }
+  .score-verify-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ── Constellation responsive ───────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .score-hero-top {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .score-hero-meta {
+    align-items: center;
+  }
+
+  .score-percent-badge {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .score-cat-legend {
+    grid-template-columns: 1fr;
+  }
+
+  .score-verdict-line {
+    font-size: 0.92rem;
+  }
+
+  .score-url-time {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .score-constellation {
+    width: min(13rem, 74vw);
+  }
+
+  .score-rubric-weight-label {
+    flex-basis: 6rem;
+  }
+}
+
+/* ===========================================================================
+   HERO SEAM v2 — the living mark grammar
+   ---------------------------------------------------------------------------
+   Creative rework: each shape carries its own idle language. All animation
+   is transform + stroke-dashoffset only (zero fill/opacity compositing
+   surprises, zero box paint). transform-box: fill-box makes scale cascades
+   emanate from each shape's own centroid. Reduced-motion: kill-switch in
+   the media block below — the seam returns to five quiet statics.
+   =========================================================================== */
+
+/* Orbit — breathing arc. pathLength=100 in the SVG normalizes the dash
+   units; dashoffset cycles the 60/40 aperture open → closed → open. 8s.
+   Dock-in stagger (0.16s) is encoded here because the combined animation
+   shorthand below overrides the legacy per-shape animation-delay rules. */
+.hero-seam-mark .seam-orbit {
+  animation: seamDock 0.9s var(--ease-out) 0.16s both, seamOrbitBreathe 8s var(--ease-in-out) 1.4s infinite;
+}
+
+@keyframes seamOrbitBreathe {
+  0%, 100% { stroke-dashoffset: 0; }
+  50%      { stroke-dashoffset: -40; }
+}
+
+/* Square satellite — dashed ring orbiting the solid square's centroid. */
+.hero-seam-mark .seam-square-satellite {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: seamDock 0.9s var(--ease-out) 0.26s both, seamSatelliteSpin 12s linear 1.5s infinite;
+}
+
+@keyframes seamSatelliteSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Block — 8s sine bob. The smallest body wanders the most. */
+.hero-seam-mark .seam-block {
+  animation: seamDock 0.9s var(--ease-out) 0.34s both, seamBlockBob 8s var(--ease-in-out) 1.6s infinite;
+}
+
+@keyframes seamBlockBob {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(-6px, -8px); }
+  50%      { transform: translate(-10px, 2px); }
+  75%      { transform: translate(-4px, 8px); }
+}
+
+/* Triangle echo cascade — two ghost copies expand outward behind the solid,
+   staggered 1.5s apart so the blueprint breathes continuously. */
+.hero-seam-mark .seam-triangle-echo {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: seamTriangleEcho 6s var(--ease-out) 1.2s infinite;
+}
+
+.hero-seam-mark .seam-triangle-echo.is-echo-2 {
+  animation-delay: 4.2s;
+}
+
+@keyframes seamTriangleEcho {
+  0%   { opacity: 0;    transform: scale(1); }
+  12%  { opacity: 0.28; }
+  55%  { opacity: 0;    transform: scale(1.14); }
+  100% { opacity: 0;    transform: scale(1.14); }
+}
+
+/* The solid triangle itself needs its dock-in preserved (was on the
+   shared selector before the echoes existed). */
+.hero-seam-mark .seam-triangle {
+  animation: seamDock 0.9s var(--ease-out) 0.28s both;
+}
+
+/* Fix the five original dock-in delays — orbit/square/block carry combined
+   animation shorthand above, so the base rule only styles dot + triangle.
+   Dot keeps its standalone rule below (delay 0.08s from the base block). */
+
+/* Reduced-motion — the seam returns to five quiet statics. Echoes vanish,
+   satellite parks, orbit holds its full arc. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-seam-mark .seam-orbit {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .hero-seam-mark .seam-square-satellite {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .hero-seam-mark .seam-block {
+    animation: none;
+  }
+
+  .hero-seam-mark .seam-triangle-echo {
+    animation: none;
+    opacity: 0;
+  }
+}
