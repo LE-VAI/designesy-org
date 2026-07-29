@@ -5659,14 +5659,19 @@ a.field-card:active {
 ::selection {
   background: var(--signal);
   color: #ffffff;
+  text-shadow: none;
 }
 
 /* --- Focus --- */
 
 :focus-visible {
   outline: 2px solid var(--signal-light);
-  outline-offset: 2px;
+  outline-offset: 3px;
   border-radius: var(--radius-sm);
+  /* Companion dim halo under the outline — keeps the outline crisp at
+     2px while adding a subtle signal atmosphere. Outline stays primary
+     (forced-colors safe). */
+  box-shadow: 0 0 0 4px var(--signal-dim);
 }
 
 /* Card focus-visible — match hover state so keyboard focus is not second-class */
