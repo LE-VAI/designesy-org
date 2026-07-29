@@ -52,6 +52,10 @@
   --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.5);
 
   --maxw: 1080px;
+  /* Wider shell for hero/section chrome (Stage 3). Body copy and prose-heavy
+     blocks stay on --maxw to protect readability (the published contract
+     pins --maxw at 1080px; --maxw-wide is additive only). */
+  --maxw-wide: 1180px;
   --radius: 6px;
   --radius-sm: 4px;
   --radius-lg: 12px;
@@ -269,7 +273,7 @@ p {
 /* --- Layout shell --- */
 
 .site-shell {
-  max-width: var(--maxw);
+  max-width: var(--maxw-wide);
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -299,7 +303,7 @@ p {
 }
 
 .topbar-inner {
-  max-width: var(--maxw);
+  max-width: var(--maxw-wide);
   margin: 0 auto;
   padding: 0 1.5rem 1rem;
   display: flex;
@@ -467,7 +471,7 @@ p {
 
 .hero {
   position: relative;
-  padding: 4.75rem 0 3.75rem;
+  padding: clamp(5.5rem, 11vw, 8.5rem) 0 clamp(4rem, 8vw, 6rem);
   min-height: min(600px, 78vh);
   display: flex;
   flex-direction: column;
@@ -994,7 +998,7 @@ p {
 /* --- Sections --- */
 
 .section {
-  padding: 3.5rem 0;
+  padding: clamp(3.5rem, 8vw, 6.5rem) 0;
 }
 
 /* Scroll-driven depth — sections drift up 8px as they enter the viewport,
@@ -2069,7 +2073,7 @@ button.pillar:hover::before {
 /* --- Route page shells --- */
 
 .surface-page {
-  max-width: var(--maxw);
+  max-width: var(--maxw-wide);
   margin: 0 auto;
   padding: 0 1.5rem;
   min-height: 100vh;
@@ -2082,7 +2086,7 @@ button.pillar:hover::before {
 }
 
 .surface-header {
-  padding: 4rem 0 2.5rem;
+  padding: clamp(4rem, 9vw, 7rem) 0 clamp(2.5rem, 5vw, 3.5rem);
   max-width: 680px;
 }
 
@@ -2151,7 +2155,7 @@ button.pillar:hover::before {
 /* --- Doctrine content (route pages) --- */
 
 .doctrine-section {
-  padding: 3rem 0;
+  padding: clamp(3rem, 7vw, 5.5rem) 0;
   border-top: 1px solid var(--line);
 }
 
