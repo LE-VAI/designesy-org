@@ -1,14 +1,24 @@
-// Hero seam constellation — the five modular mark elements that dock on a
-// vertical seam to the right of the hero copy on /.
+// Hero seam constellation — the modular mark grammar docked on a vertical
+// seam to the right of the hero copy on /.
 //
-// The CSS (globals.css .hero-seam) and the per-shape hover/3D-tilt JS
-// (effect-enhancer.tsx) already existed but had no rendered markup to act on.
-// This component wires the SVG into the hero. Shapes: dot, orbit quarter,
-// square, triangle, rounded block — the brand mark grammar.
+// v2 — "creative rework": the five dead statics come alive. Each shape now
+// carries its own idle language (all transforms + stroke-offsets, zero
+// fill/opacity painting, all honors prefers-reduced-motion via globals.css):
 //
-// Fine-pointer only (hidden < 860px via CSS). Scrambles on dock-in via the
-// seamDock keyframe. Hover shifts the closest shape to signal-light and
-// pulses the dot ring (EffectEnhancer handles this).
+//   orbit   — the arc BREATHES: dash-array slow-cycles 60→100→60 over 8s,
+//             the contract's own motion idiom made ambient
+//   square  — a dashed satellite ORBITS the solid square on a 12s loop
+//   triangle — three ink echoes cascade outward (1.00→1.06→1.12 scale, fade)
+//   block   — the rounded block now drifts on an 8s sine bob beside the square
+//   dot     — keeps its JS pulse-ring on hover (EffectEnhancer)
+//
+// Hover: EffectEnhancer still shifts the closest shape to signal-light.
+// Scramble dock-in: seamDock keyframe + per-shape delays, unchanged.
+// Fine-pointer only (hidden < 860px via CSS). aria-hidden decorative.
+//
+// Geometry notes: viewBox 0 0 148 300 (was 280 — triangle cascade needed
+// headroom at the bottom). transform-box: fill-box + transform-origin: center
+// are set in CSS so scale cascades emanate from each shape's own centroid.
 
 export function HeroSeam() {
   return (
@@ -17,7 +27,7 @@ export function HeroSeam() {
       <div className="hero-seam-constellation">
         <svg
           className="hero-seam-mark"
-          viewBox="0 0 148 280"
+          viewBox="0 0 148 300"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -27,7 +37,8 @@ export function HeroSeam() {
             <circle className="seam-dot" cx="74" cy="40" r="14" />
           </g>
 
-          {/* Orbit quarter — the second living element (signal blue). */}
+          {/* Orbit — breathing arc (signal blue). The dash-array cycle makes
+              the quarter-dome slowly open and close like a lens aperture. */}
           <g className="seam-shape">
             <path
               className="seam-orbit"
@@ -36,22 +47,41 @@ export function HeroSeam() {
               stroke="var(--signal)"
               strokeWidth="10"
               strokeLinecap="round"
+              pathLength={100}
+              strokeDasharray="60 40"
             />
           </g>
 
-          {/* Square — body form (ink). */}
+          {/* Square — body form (ink) with an orbiting dashed satellite.
+              The satellite ring rotates around the square's centroid. */}
           <g className="seam-shape">
             <rect className="seam-square" x="44" y="158" width="60" height="60" rx="2" />
+            <rect
+              className="seam-square-satellite"
+              x="36"
+              y="150"
+              width="76"
+              height="76"
+              rx="8"
+              fill="none"
+              stroke="var(--muted-dim)"
+              strokeWidth="1"
+              strokeDasharray="3 6"
+            />
           </g>
 
-          {/* Triangle — body form (ink). */}
+          {/* Block — bobbing satellite (ink). Drifts on an 8s sine beside the
+              square, the constellation's smallest body with the most wander. */}
           <g className="seam-shape">
+            <rect className="seam-block" x="30" y="146" width="16" height="16" rx="4" />
+          </g>
+
+          {/* Triangle — echo cascade (ink). Two expanding ghost copies pulse
+              outward behind the solid form; a blueprint leaving the page. */}
+          <g className="seam-shape">
+            <path className="seam-triangle-echo is-echo-2" d="M 74 232 L 44 278 L 104 278 Z" />
+            <path className="seam-triangle-echo is-echo-1" d="M 74 232 L 44 278 L 104 278 Z" />
             <path className="seam-triangle" d="M 74 232 L 44 278 L 104 278 Z" />
-          </g>
-
-          {/* Rounded block — body form (ink). */}
-          <g className="seam-shape">
-            <rect className="seam-block" x="34" y="150" width="16" height="16" rx="4" />
           </g>
         </svg>
       </div>

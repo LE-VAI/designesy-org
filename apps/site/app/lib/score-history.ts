@@ -27,6 +27,7 @@ export type ScoreHistoryEntry = {
   total: number;
   tokensExtracted: number;
   scoredAt: string; // ISO-8601
+  prevScore?: number; // score this entry replaced, if the URL was re-scored
 };
 
 const STORAGE_KEY = 'designesy.score.history.v1';
@@ -97,6 +98,12 @@ export function saveScore(url: string, result: {
   };
 
   const current = readScoreHistory();
+  // Capture the score being replaced so the UI can show a delta
+  // ("67.4 → 71.2, +3.8 since last run"). Most-recent wins.
+  const prior = current.find((e) => e.url === url);
+  if (prior && typeof prior.score === 'number' && prior.score !== entry.score) {
+    entry.prevScore = prior.score;
+  }
   // Drop any prior entry for the same URL so we keep the freshest score
   // per site, not a long tail of duplicates.
   const withoutDupes = current.filter((e) => e.url !== url);
