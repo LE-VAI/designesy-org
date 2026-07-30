@@ -501,10 +501,10 @@ export default function LeaderboardPage() {
           <div className="definition">
             <p className="definition-label">What the engine measures</p>
             <p>
-              36 deterministic checks across 13 weighted categories — token
+              40 deterministic checks across 14 weighted categories — token
               architecture, motion hygiene, accessibility primitives,
               typography discipline, reduced-motion handling, AI disclosure,
-              forced-colors readiness. Not an LLM impression. Not a roast. The
+              forced-colors readiness, UX copywriting. Not an LLM impression. Not a roast. The
               same engine scores designesy.org itself, in public, at{' '}
               <code>/score?url=designesy.org</code>.
             </p>
