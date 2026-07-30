@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-// Google's official DESIGN.md spec linter — the canonical spec-layer
-// validator. designesy is the contract layer ABOVE it: Google validates the
-// file is well-formed; designesy validates the design system the file
-// describes passes the contract. Provenance: google-labs-code/design.md,
-// v0.4.0, Apache-2.0. https://github.com/google-labs-code/design.md
-import { lint as lintDesignMd } from '@google/design.md/linter';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -1377,6 +1371,23 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   }
 
   // Run Google's official linter on the DESIGN.md content.
+  // Dynamic import isolates the dependency — if the package fails to load in
+  // serverless, only v37 reports the error, not the entire API route.
+  let lintDesignMd: (markdown: string) => { findings: Array<{ severity: string; path?: string; message?: string }>; summary: { errors: number; warnings: number; infos: number } };
+  try {
+    const mod = await import('@google/design.md/linter');
+    lintDesignMd = mod.lint;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'unknown error';
+    return {
+      id: 'v37',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'WARN',
+      detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime.`,
+    };
+  }
+
   try {
     const report = lintDesignMd(designMdContent);
     const errors = report.summary?.errors || 0;
