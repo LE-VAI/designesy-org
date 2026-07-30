@@ -20,7 +20,8 @@
     "react": "19.1.2",
     "react-dom": "19.1.2",
     "zod": "^3.25.50",
-    "web-haptics": "file:./vendor/web-haptics"
+    "web-haptics": "file:./vendor/web-haptics",
+    "@google/design.md": "0.4.0"
   },
   "devDependencies": {
     "@types/node": "22.15.17",
