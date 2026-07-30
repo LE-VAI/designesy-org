@@ -255,7 +255,7 @@ export default function BenchmarksPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             designesy gaps. These are the AI-slop aesthetic detection,
             structural-variety, signature, and cohesion checks. designesy does
-            not ask "does this look AI-generated" — it verifies contract
+            not ask &ldquo;does this look AI-generated&rdquo; — it verifies contract
             conformance.
           </p>
           <CheckGrid items={checkItemsFromStrings(COMPETITOR_UNIQUE, { avoid: true })} />
@@ -265,7 +265,7 @@ export default function BenchmarksPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The moat</h2>
           <div className="definition">
-            <p className="definition-label">designesy's uncontested layers</p>
+            <p className="definition-label">designesy&rsquo;s uncontested layers</p>
             <p>
               The layers no competitor approaches. These are not features —
               they are the category-of-one positioning.
