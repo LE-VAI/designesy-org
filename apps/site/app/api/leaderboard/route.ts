@@ -1,11 +1,13 @@
 // /api/leaderboard — public leaderboard API (JSON)
 // Serves the curated seed list (30 sites across 5 tiers) as JSON.
-// Scores from the 2026-07-28 batch run (34-check engine, contract v0.3.0).
+// Scores from the 2026-07-28 batch run (36-check engine, contract v0.3.0).
 // Each scored site now also carries `categoryScores` — the verbatim
 // per-category breakdown from a live engine batch run (batch-data.ts), used
 // by the MiniConstellation ring on the rendered page. score:null = unscored.
+// prevScore carries the previous week's score for delta-badge rendering
+// (populated by scripts/rescore-leaderboard.mjs from snapshot.json).
 // The rendered HTML page lives at /leaderboard (app/leaderboard/page.tsx).
-// v2: open submission + weekly re-scoring is a follow-up.
+// v0.3: weekly re-scoring via .github/workflows/rescore-leaderboard.yml.
 export const dynamic = 'force-static';
 
 import {
