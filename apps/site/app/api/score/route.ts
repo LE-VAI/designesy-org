@@ -1347,14 +1347,24 @@ function checkButtonTextVerb(html: string): CheckResult {
   const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
   const roleButtonRe = /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi;
 
+  // Strip leading icon characters (Unicode symbols, emoji, geometric shapes,
+  // arrows, dingbats) that precede the actual verb in button labels like
+  // "✕ Close" or "◐ Play". Range: misc symbols (2600-26FF), dingbats (2700-27BF),
+  // geometric shapes (2A00-2BFF), arrows (2190-21FF), misc technical (2300-23FF),
+  // CJK symbols, private use, and common icon chars like ✕ ◐ ✦ → etc.
+  const ICON_PREFIX_RE = /^[\u2100-\u27BF\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\u2A00-\u2BFF\u2190-\u21FF\u00A0\s]+/;
+
   const buttonTexts: string[] = [];
   let m;
   while ((m = buttonRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    // Strip leading icon characters so "✕Close" → "Close"
+    text = text.replace(ICON_PREFIX_RE, '').trim();
     if (text) buttonTexts.push(text);
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    text = text.replace(ICON_PREFIX_RE, '').trim();
     if (text) buttonTexts.push(text);
   }
 
@@ -1364,6 +1374,10 @@ function checkButtonTextVerb(html: string): CheckResult {
 
   const violations: string[] = [];
   for (const text of buttonTexts) {
+    // Skip text that's clearly not a button label — if it's longer than ~40 chars
+    // it's likely a regex false positive from nested content (e.g. a div
+    // containing a whole section being matched as role="button")
+    if (text.length > 40) continue;
     const words = text.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) continue;
     const firstWord = words[0].toLowerCase();
@@ -1421,7 +1435,10 @@ function checkNoTrailingPeriod(html: string): CheckResult {
     return { id: 'v39', item: ITEM, category: CATEGORY, status: 'SKIP', detail: 'no button/label/tab elements found in HTML' };
   }
 
-  const violations = texts.filter(t => /\.$/.test(t.text) && !/\.\.\.$/.test(t.text));
+  const violations = texts.filter(t =>
+    t.text.length <= 40 &&  // skip false positives from nested content
+    /\.$/.test(t.text) && !/\.\.\.$/.test(t.text)
+  );
 
   if (violations.length === 0) {
     return { id: 'v39', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${texts.length} element(s) checked — no trailing periods on buttons, labels, or tabs` };
