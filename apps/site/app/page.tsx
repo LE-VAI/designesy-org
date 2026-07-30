@@ -291,9 +291,9 @@ export default function HomePage() {
             </div>
           </div>
           <div className="principle-layout" data-reveal-group>
-            <div className="principle-list principle-list--rail">
+            <div className="principle-cell" role="list">
               {PRINCIPLES_PREVIEW.map((p) => (
-                <div className="principle" key={p.num} data-reveal>
+                <div className="principle" key={p.num} data-reveal role="listitem">
                   <span className="principle-num">{p.num}</span>
                   <div className="principle-body">
                     <h3>{p.title}</h3>
@@ -303,7 +303,9 @@ export default function HomePage() {
               ))}
             </div>
 
-            <ContractHealthRack />
+            <div className="health-panel" data-reveal>
+              <ContractHealthRack />
+            </div>
           </div>
           <div className="section-more">
             <Link
