@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
+// Google's official DESIGN.md spec linter — the canonical spec-layer
+// validator. designesy is the contract layer ABOVE it: Google validates the
+// file is well-formed; designesy validates the design system the file
+// describes passes the contract. Provenance: google-labs-code/design.md,
+// v0.4.0, Apache-2.0. https://github.com/google-labs-code/design.md
+import { lint as lintDesignMd } from '@google/design.md/linter';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -371,6 +377,7 @@ const REMEDIATION: Record<string, string> = {
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters — e.g. Cyrillic а (U+0430) looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. designesy is the only design verification engine that checks this surface.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format — 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. designesy integrates Google\'s linter as the spec layer and runs its own 34-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only — for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -1287,6 +1294,141 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
   };
 }
 
+// v37 — DESIGN.md Spec-Layer Validation (Google @google/design.md integration).
+//
+// This is the two-layer integration: Google's `@google/design.md` CLI validates
+// the DESIGN.md file is well-formed (spec layer); designesy validates the
+// design system the file describes passes the contract (contract layer).
+// designesy does NOT compete with Google's linter — it integrates with it.
+//
+// What this check does:
+// 1. Fetches /DESIGN.md from the target site's origin (no public convention
+//    exists, so "not served" is the expected state → SKIP, not FAIL).
+// 2. If found, runs Google's official `lint()` on the raw markdown.
+// 3. Reports the findings: errors → FAIL, warnings → WARN, infos → PASS.
+//
+// The 11 lint rules (v0.4.0):
+//   broken-ref (error) — token references that don't resolve
+//   missing-primary (warning) — no primary color defined
+//   contrast-ratio (warning) — component color pairs below WCAG AA
+//   orphaned-tokens (warning) — tokens defined but never referenced
+//   token-summary (info) — summary of defined tokens
+//   missing-sections (info) — optional sections absent
+//   missing-typography (warning) — colors but no typography
+//   section-order (warning) — sections out of canonical order
+//   unknown-key (warning) — YAML key that looks like a typo
+//   token-like-ignored (warning) — unknown key with token-like values
+//   omitted-rules (info) — validates the omitted config
+//
+// Provenance: @google/design.md v0.4.0, Apache-2.0.
+// https://github.com/google-labs-code/design.md
+// Import path: @google/design.md/linter (subpath export, library API).
+// Atlassian ADS research: MCP beats DESIGN.md on token cost — designesy's
+// MCP path is the higher-value delivery, DESIGN.md is the portable fallback.
+// This check bridges both: if the site publishes DESIGN.md, designesy lints
+// it with Google's engine AND scores the design system with its own.
+async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
+  const ITEM = 'DESIGN.md spec-layer validation (Google @google/design.md lint)';
+  const CATEGORY = 'spec';
+
+  // Attempt to fetch /DESIGN.md from the target origin. No public convention
+  // exists — most sites don't serve it. "Not served" is SKIP, not FAIL.
+  const parsed = new URL(targetUrl);
+  const designMdUrl = `${parsed.protocol}//${parsed.host}/DESIGN.md`;
+
+  let designMdContent: string;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch(designMdUrl, {
+      headers: BROWSER_HEADERS,
+      signal: controller.signal,
+      redirect: 'follow',
+    });
+    clearTimeout(timeout);
+    if (!resp.ok) {
+      return {
+        id: 'v37',
+        item: ITEM,
+        category: CATEGORY,
+        status: 'SKIP',
+        detail: `/DESIGN.md not publicly served (HTTP ${resp.status}). No public convention exists — this is expected. designesy scores the shipped CSS directly.`,
+      };
+    }
+    designMdContent = await resp.text();
+    // Basic validation: must contain YAML frontmatter (---) and be > 50 chars
+    if (designMdContent.length < 50 || !designMdContent.includes('---')) {
+      return {
+        id: 'v37',
+        item: ITEM,
+        category: CATEGORY,
+        status: 'WARN',
+        detail: `/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatter). Content: ${designMdContent.substring(0, 100)}...`,
+      };
+    }
+  } catch {
+    return {
+      id: 'v37',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'SKIP',
+      detail: `could not fetch /DESIGN.md — designesy scores the shipped CSS directly (spec layer optional)`,
+    };
+  }
+
+  // Run Google's official linter on the DESIGN.md content.
+  try {
+    const report = lintDesignMd(designMdContent);
+    const errors = report.summary?.errors || 0;
+    const warnings = report.summary?.warnings || 0;
+    const infos = report.summary?.infos || 0;
+    const totalFindings = (report.findings || []).length;
+
+    // Extract the most significant findings for the detail string
+    const errorFindings = (report.findings || []).filter(f => f.severity === 'error');
+    const warnFindings = (report.findings || []).filter(f => f.severity === 'warning');
+
+    if (errors > 0) {
+      const topErrors = errorFindings.slice(0, 3).map(f => `${f.path || 'root'}: ${f.message?.substring(0, 80)}`).join('; ');
+      return {
+        id: 'v37',
+        item: ITEM,
+        category: CATEGORY,
+        status: 'FAIL',
+        detail: `/DESIGN.md linted: ${errors} error(s), ${warnings} warning(s), ${infos} info(s). Errors: ${topErrors}${errorFindings.length > 3 ? ` (+${errorFindings.length - 3} more)` : ''}. Google validates the file; designesy validates the design system.`,
+      };
+    }
+
+    if (warnings > 0) {
+      const topWarns = warnFindings.slice(0, 3).map(f => `${f.path || 'root'}: ${f.message?.substring(0, 80)}`).join('; ');
+      return {
+        id: 'v37',
+        item: ITEM,
+        category: CATEGORY,
+        status: 'WARN',
+        detail: `/DESIGN.md linted: ${warnings} warning(s), ${infos} info(s). Warnings: ${topWarns}${warnFindings.length > 3 ? ` (+${warnFindings.length - 3} more)` : ''}. File is well-formed; designesy scores the design system separately.`,
+      };
+    }
+
+    return {
+      id: 'v37',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'PASS',
+      detail: `/DESIGN.md linted clean: ${infos} info(s), 0 errors, 0 warnings. Google validates the file; designesy validates the design system. ${totalFindings} finding(s).`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'unknown error';
+    return {
+      id: 'v37',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'WARN',
+      detail: `/DESIGN.md fetched but lint failed: ${msg}. The file may use a format version the linter doesn't support yet.`,
+    };
+  }
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -1338,6 +1480,10 @@ async function scoreUrlUncached(targetUrl: string) {
     checkSecurityConfusables(css, tokens),
   ];
 
+  // v37 is async (fetches /DESIGN.md from the target origin and runs Google's
+  // linter) — added after the synchronous checks array is built.
+  checks.push(await checkDesignMdSpec(targetUrl));
+
   const pass = checks.filter((c) => c.status === 'PASS').length;
   const fail = checks.filter((c) => c.status === 'FAIL').length;
   const warn = checks.filter((c) => c.status === 'WARN').length;
@@ -1357,7 +1503,7 @@ async function scoreUrlUncached(targetUrl: string) {
   const CATEGORY_WEIGHTS: Record<string, number> = {
     cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
     takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
-    security: 5,
+    security: 5, spec: 4,
   };
 
   // Per-check weight = category weight / number of checks in that category
