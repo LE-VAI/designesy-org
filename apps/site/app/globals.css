@@ -469,6 +469,13 @@ p {
   align-items: center;
   gap: 0.35rem;
   flex-shrink: 0;
+  /* Precision-instrument separation: a 1px vertical hairline marks the
+     boundary between navigational verbs (Score / Leaderboard / Contract /
+     Kits / Docs) and sensory controls (sound / haptics). Lab-instrument
+     register — each cluster reads as its own module. */
+  margin-left: 0.4rem;
+  padding-left: 0.85rem;
+  border-left: 1px solid var(--line);
 }
 
 .sense-toggle {
@@ -782,18 +789,11 @@ p {
   font-variation-settings: 'opsz' 28;
 }
 
-/* Keep hero copy + the score input clear of the hero seam shapes on the right */
-@media (min-width: 860px) {
-  .hero-eyebrow,
-  .hero-lede,
-  .hero-body,
-  .hero-actions,
-  .hero-sub,
-  .hero-hint,
-  .score-hero-input {
-    max-width: calc(100% - 280px);
-  }
-}
+/* v2 — The right-rail 280px compensation is gone. With the hero-construction
+   field stripped to only the datum arc (no floating primitives), hero copy
+   takes its natural centered measure inside .hero-content. The arc sits
+   behind everything at z-index 0 and reads through the copy's negative space,
+   not around it. */
 
 .hero-body {
   font-size: clamp(0.875rem, 1.8vw, 0.95rem);
@@ -3860,7 +3860,8 @@ a.check-cell:hover .check-cell-title {
     pointer-events: auto;
   }
 
-  /* Mobile drawer panel */
+  /* Mobile drawer panel — narrowed from 85vw to 75vw so the scrim is wide
+     enough to read as an obvious tap-target (25% of screen instead of 15%). */
   .nav-drawer {
     display: flex;
     flex-direction: column;
@@ -3868,18 +3869,63 @@ a.check-cell:hover .check-cell-title {
     top: 0;
     right: 0;
     height: 100vh;
-    width: min(320px, 85vw);
+    width: min(280px, 75vw);
     background: var(--surface);
     border-left: 1px solid var(--line);
     z-index: 200;
     transform: translateX(100%);
     transition: transform var(--duration-slow) var(--ease-drawer);
-    padding: 5rem 1.5rem 2rem;
+    padding: 1.25rem 1.25rem 2rem;
     overflow-y: auto;
   }
 
   .nav-drawer.open {
     transform: translateX(0);
+  }
+
+  /* Explicit close control at the drawer's top — users who don't recognize
+     the hamburger→X transformation have an obvious labelled escape. */
+  .nav-drawer-close {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-end;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: color var(--duration-fast) var(--ease),
+      border-color var(--duration-fast) var(--ease),
+      background var(--duration-fast) var(--ease);
+  }
+
+  .nav-drawer-close:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+  }
+
+  .nav-drawer-close:focus-visible {
+    outline: 2px solid var(--signal-light);
+    outline-offset: 2px;
+  }
+
+  .nav-drawer-close-icon {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .nav-drawer-close-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
   }
 
   .nav-drawer a {
@@ -9802,6 +9848,17 @@ select {
   text-wrap: balance;
   font-variation-settings: 'opsz' 32;
 }
+
+/* Mobile: lower the floor so "AI makes execution free." fits in 3 short
+   lines, not 5 fragments. The 7.5vw middle keeps the type proportional to
+   the screen; the 2rem floor maintains display weight at 375px. */
+@media (max-width: 720px) {
+  .hero-display {
+    font-size: clamp(2rem, 7.5vw, 3.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.022em;
+  }
+}
 .hero-display-line { display: block; }
 .hero-display-line.is-accent { color: var(--ink); }
 .hero-display-line.is-accent::after {
@@ -9821,9 +9878,11 @@ select {
   text-align: center;
 }
 
-/* THE PRODUCT — the input panel is the foreground UI layer. */
+/* THE PRODUCT — the input panel is the foreground UI layer. 720px measure:
+   wide enough to read as the instrument on the workbench, narrow enough to
+   retain optical center. Precision-lab register, not SaaS marketing. */
 .hero-architectural .score-hero-input {
-  max-width: 640px;
+  max-width: 720px;
   margin-inline: auto;
   width: 100%;
 }
