@@ -157,6 +157,19 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
         className={`nav-drawer${drawerOpen ? ' open' : ''}`}
         aria-label="Mobile navigation"
       >
+        {/* Explicit close control — always visible inside the drawer. The
+            hamburger→X CSS rotation is subtle and easy to miss on a real
+            device; an obvious "Close" labelled button means users don't
+            feel forced to select a route to escape. */}
+        <button
+          type="button"
+          className="nav-drawer-close"
+          aria-label="Close navigation"
+          onClick={() => setDrawerOpen(false)}
+        >
+          <span className="nav-drawer-close-icon" aria-hidden="true">✕</span>
+          <span className="nav-drawer-close-label">Close</span>
+        </button>
         {NAV_ROUTES.map((route) => {
           const active = isActiveRoute(pathname, route.href);
           return (
