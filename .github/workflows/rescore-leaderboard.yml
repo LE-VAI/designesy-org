@@ -41,8 +41,8 @@ jobs:
 
       - name: Commit updated leaderboard
         run: |
-          git config user.name 'designesy-bot'
-          git config user.email 'bot@designesy.org'
+          git config user.name 'LE-VAI'
+          git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git add apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json
           if git diff --cached --quiet; then
             echo "No score changes since last week — nothing to commit."
