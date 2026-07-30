@@ -10,10 +10,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.3.0 is public (Poise + Takt + Cadence adopted).',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.4.0 is public (Poise + Takt + Cadence + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract v0.3.0 is live — Poise, Takt, and Cadence rules adopted.',
+    'Portable design agreements for people and agents. Design system contract v0.4.0 is live — Poise, Takt, Cadence, and Copywriting rules adopted.',
   twitterDescription:
     'Portable design judgment — designesy.org/contracts/design-system',
 });
@@ -28,6 +28,7 @@ const CONTRACT_CONTENTS = [
   'Component behavior and states',
   'Accessibility requirements',
   'Motion and reduced-motion guidance',
+  'Copywriting principles',
   'Anti-patterns',
   'Implementation notes',
   'Verification criteria',
@@ -174,6 +175,10 @@ const ANTI_PATTERNS = [
   'Multiple simultaneous accent colors competing with --signal',
   'Touch targets under ~32px or full-width buttons that skip on mobile',
   'Animation that cannot be reduced',
+  'Button text that is a bare noun without a verb ("Settings" alone for a destructive action)',
+  'Generic error messages ("An error occurred", "Something went wrong") with no remediation',
+  'Link text that is "click here", "learn more", "read more", or "here" without destination context',
+  'ALL CAPS body text or button text (except eyebrow labels per typography contract)',
 ];
 
 const IMPLEMENTATION_NOTES = [
@@ -193,6 +198,10 @@ const VERIFICATION = [
   'prefers-reduced-motion disables entrance and wordmark breath',
   'Contrast: ink on paper, muted on paper, accent on paper remain readable',
   'No public surface displays internal control-plane naming',
+  'Button text is a verb phrase or recognized command — not a bare noun (copywriting v38)',
+  'No trailing period on button text, labels, or tab text (copywriting v39)',
+  'Link text is descriptive — not bare "click here", "learn more", "here" (copywriting v40)',
+  'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
 ];
 
 const OPEN_TENSIONS = [
@@ -203,6 +212,45 @@ const OPEN_TENSIONS = [
   'Human contract page and machine export remain dual sources until a single generator owns both',
   'Block-axis logical properties not yet migrated — direction-ready is partial (inline-axis only)',
   'border-inline-start not yet used — decorative borders still physical',
+];
+
+const COPYWRITING_PRINCIPLES = [
+  'Button copy is a verb phrase (or a recognized single-word command), never a bare noun — "Save changes" not "Changes", "Delete file" not "File"',
+  'Button text is ≤ 4 words; articles (a/an/the) removed for scannability',
+  'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs — the label must state the action',
+  'Commands that open a further-input dialog end with an ellipsis (…); immediate commands do not',
+  'Error messages state what happened, what to do, and what to expect next — not just "An error occurred"',
+  'Error messages use plain language — no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
+  'Error messages don\'t overapologize and don\'t introduce "we/us" unless the system caused the error',
+  'Empty states have a clear next action (button or link with a verb), not just a message',
+  'Link text is descriptive of the destination, not bare "click here / learn more / read more / here"',
+  'All UI text uses sentence case — not title case, not ALL CAPS (except eyebrows per typography contract)',
+  'No trailing period on buttons, labels, radio/checkbox text, tab text; periods only on full sentences (tooltips, error bodies, dialog bodies)',
+  'Active voice, not passive, except when the system is the subject of an error',
+  'Second person (you/your) for user-facing copy; "I/me" never used for the app\'s voice; "we" only when the system is the actor',
+  'No "please / thank you" in standard UI — only when the user is genuinely inconvenienced',
+  'Voice is constant; tone adapts to the user\'s emotional state — error tone is economical and direct, not humorous',
+  'Don\'t blame the user — error messages describe the problem and the fix, not the user\'s mistake',
+];
+
+const COPYWRITING_VERIFICATION = [
+  'v38: Button text is a verb phrase or recognized command — not a bare noun',
+  'v39: No trailing period on button text, labels, or tab text',
+  'v40: Link text is descriptive — not bare "click here", "learn more", "here"',
+  'v41: No ALL CAPS UI text (except eyebrow labels per typography contract)',
+];
+
+const COPYWRITING_GOVERNANCE = [
+  'Error message completeness (what happened + what to do + what to expect) — human review using NN/g 12-guideline rubric',
+  'Empty-state next-action presence — human review if no automated DOM check',
+  'Voice and tone consistency — human review against Mailchimp-style voice-and-tone guide',
+  'Consistency map: one canonical label per action across the product (no "Sign in" vs "Log in")',
+];
+
+const COPYWRITING_TOOLING = [
+  'Vale (errata-ai/vale) — YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
+  'textlint — pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
+  'alex — inclusive/insensitive-language linter for the blame-words subset',
 ];
 
 function TokenTable({
@@ -803,6 +851,38 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">09e · Copywriting (v0.4.0)</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            UX copy principles adopted in v0.4.0 from NN/g, Polaris, IBM
+            Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap signal:{' '}
+            <a
+              href="https://detail.design"
+              style={{ color: 'var(--signal-light)' }}
+            >
+              detail.design
+            </a>{' '}
+            Copywriting discipline. 4 principles are codified as verification
+            checks (v38–v41); 12 are governance.
+          </p>
+          <p className="surface-note" style={{ marginBottom: '0.5rem' }}>
+            <strong style={{ color: 'var(--ink)' }}>Principles</strong>
+          </p>
+          <CheckGrid items={checkItemsFromStrings(COPYWRITING_PRINCIPLES)} />
+          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
+            <strong style={{ color: 'var(--ink)' }}>Verification checks (automated)</strong>
+          </p>
+          <CheckGrid items={checkItemsFromStrings(COPYWRITING_VERIFICATION)} />
+          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
+            <strong style={{ color: 'var(--ink)' }}>Governance (human review)</strong>
+          </p>
+          <CheckGrid items={checkItemsFromStrings(COPYWRITING_GOVERNANCE)} />
+          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
+            <strong style={{ color: 'var(--ink)' }}>Tooling</strong>
+          </p>
+          <CheckGrid items={checkItemsFromStrings(COPYWRITING_TOOLING)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">10 · Anti-patterns</h2>
           <CheckGrid items={checkItemsFromStrings(ANTI_PATTERNS, { avoid: true })} />
         </section>
@@ -823,10 +903,10 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract v0.3.0 — public artifact discipline,
+          Designesy design system contract v0.4.0 — public artifact discipline,
           not legal advice or a client service agreement. Values are taken from
-          the live site tokens. Poise, Takt, and Cadence rules are adopted. Contract
-          home:{' '}
+          the live site tokens. Poise, Takt, Cadence, and Copywriting rules are
+          adopted. Contract home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>
           {' · '}
           Machine export:{' '}

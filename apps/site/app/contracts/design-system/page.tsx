@@ -11,11 +11,11 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
-    'Designesy design system contract v0.3.0 — human overview and machine export. Lab One · Poise, Lab Two · Takt, and Lab Three · Cadence rules adopted.',
+    'Designesy design system contract v0.4.0 — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Copywriting rules adopted.',
   path: '/contracts/design-system',
-  ogTitle: 'Design system contract · v0.3.0',
+  ogTitle: 'Design system contract · v0.4.0',
   ogDescription:
-    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, and Cadence typography rules adopted. Human overview with machine export.',
+    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, Cadence typography, and Copywriting rules adopted. Human overview with machine export.',
   twitterDescription:
     'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
 });
@@ -28,6 +28,7 @@ const SECTIONS = [
   { title: 'Motion', meta: 'Duration, easing, reduced-motion' },
   { title: 'Components', meta: 'Behavior and states' },
   { title: 'Accessibility', meta: 'Focus, preference, landmarks' },
+  { title: 'Copywriting', meta: 'UX copy principles (v0.4.0)' },
   { title: 'Verification', meta: 'How to know the system still holds' },
 ];
 
@@ -359,6 +360,30 @@ export default function DesignSystemContractPage() {
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.cadence.rules)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Copywriting adoption</h2>
+          <div className="definition">
+            <p className="definition-label">
+              Copywriting · adopted in v0.4.0
+            </p>
+            <p>
+              UX copy principles from NN/g, Polaris, IBM Carbon, Microsoft
+              Fluent, Apple HIG, and Atlassian. Gap signal from{' '}
+              <a
+                href="https://detail.design"
+                style={{ color: 'var(--signal-light)' }}
+              >
+                detail.design
+              </a>{' '}
+              Copywriting discipline. 16 principles across button text, error
+              messages, empty states, link text, general microcopy, and voice &
+              tone. 4 codifiable principles are verification checks (v38–v41);
+              12 are governance. Tooling: Vale, textlint, alex.
+            </p>
+          </div>
+          <CheckGrid items={checkItemsFromStrings(c.copywriting.principles)} />
         </section>
 
         <div className="status-note">
