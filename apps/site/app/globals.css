@@ -2375,157 +2375,186 @@ button.pillar:hover::before {
 }
 
 /*
-  Contract health radar — octagonal SVG chart showing 8 design review
-  dimensions. Sits beside the principle-list on desktop, filling the
-  right-side negative space. Pure SVG + CSS, no JS.
+  Contract health rack — 8 mini-gauge modules in a 4×2 (desktop) / 2×4
+  (mobile) grid. Replaces the octagonal radar: the radar's arbitrary axis
+  order, meaningless connecting lines, and area-judgment cost made the
+  reading feel decorative rather than measured. Each rack module encodes its
+  dimension as a 270° arc from one shared baseline, with a mono numeral and
+  a hover state that lifts just that instrument — the register is hardware
+  panel, not dashboard card. Pure SVG + CSS.
 */
-.health-radar {
-  display: none;
+.health-rack {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: 1rem;
-  gap: 0.5rem;
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease);
-  transform-style: preserve-3d;
+  padding: clamp(1rem, 2vw, 1.25rem);
+  gap: clamp(0.9rem, 1.6vw, 1.15rem);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .health-radar:hover {
-    transform: perspective(600px) rotateX(3deg) rotateY(-3deg) translateZ(6px);
-    border-color: var(--line-strong);
-  }
-
-  .health-radar:hover .health-radar-boundary {
-    stroke-width: 1.5;
-  }
-
-  .health-radar:hover .health-radar-zone {
-    opacity: 1;
-  }
-
-  .health-radar:hover .health-radar-grid {
-    stroke: var(--line);
-  }
+.health-rack-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line-faint);
 }
 
-.health-radar-header {
+.health-rack-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.health-rack-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.health-rack-sub {
+  font-size: 0.62rem;
+  color: var(--muted-dim);
+}
+
+/* Mean readout — the header instrument. Tabular mono, larger than the
+   module numerals so it reads as the rack's primary value. */
+.health-rack-mean {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
 }
-
-.health-radar-title {
-  font-size: 0.68rem;
+.health-rack-mean-numeral {
+  font-size: clamp(1.6rem, 2.2vw, 1.9rem);
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
-
-.health-radar-sub {
-  font-size: 0.62rem;
-  color: var(--muted-dim);
-  /* No opacity reduction here — a11y WCAG 1.4.3: --muted-dim (#7d7d7d) at 0.7 alpha
-     on --surface (#0a0a0c) renders #5b5b5b = 2.91:1, below AA 4.5:1. Keep at full
-     opacity; the muted-dim token alone is the hierarchy signal. */
-}
-
-.health-radar-svg {
-  width: 100%;
-  height: auto;
-  flex: 1 1 0;
-  min-height: 0;
-}
-
-.health-radar-grid {
-  fill: none;
-  stroke: var(--line-faint);
-  stroke-width: 0.5;
-}
-
-.health-radar-axis {
-  stroke: var(--line-faint);
-  stroke-width: 0.5;
-}
-
-/* Measured zone — a soft radial glow that fades to nothing, reading as the
-   calibrated area the contract occupies, not an opaque blob. */
-.health-radar-zone {
-  fill: url(#hr-zone);
-  animation: health-radar-pulse 3.6s var(--ease-in-out) infinite;
-}
-.hr-zone-0 { stop-color: var(--signal-light); stop-opacity: 0.20; }
-.hr-zone-1 { stop-color: var(--signal); stop-opacity: 0.10; }
-.hr-zone-2 { stop-color: var(--signal); stop-opacity: 0; }
-
-/* The boundary is the precise reading: a crisp angular dial trace. */
-.health-radar-boundary {
-  fill: none;
-  stroke: var(--signal-light);
-  stroke-width: 1.2;
-  stroke-linejoin: round;
-}
-
-@keyframes health-radar-pulse {
-  0%, 100% { opacity: 0.85; }
-  50% { opacity: 1; }
-}
-
-.health-radar-point {
-  fill: var(--paper);
-  stroke: var(--signal-light);
-  stroke-width: 1.2;
-}
-
-/* Live center readout — the mean score rendered as a gauge value. */
-.health-radar-center {
-  font-size: 22px;
-  font-weight: 640;
-  fill: var(--ink);
-  letter-spacing: -0.02em;
-}
-.health-radar-center-sub {
-  font-size: 5.5px;
+.health-rack-mean-label {
+  font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.health-rack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.75rem, 1.4vw, 1rem);
+}
+
+.health-rack-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.5rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) * 0.7);
+  transition: border-color 240ms var(--ease-out), background 240ms var(--ease-out);
+}
+
+.health-rack-svg {
+  width: clamp(64px, 6.2vw, 84px);
+  height: auto;
+  display: block;
+}
+
+/* 270° arc track — the "always 100" reference baseline. */
+.health-rack-track {
+  stroke: var(--line-faint);
+  stroke-width: 4;
+  fill: none;
+}
+
+/* The measured reading: one accent arc truncated by stroke-dasharray. */
+.health-rack-value {
+  stroke: var(--signal-light);
+  stroke-width: 4;
+  fill: none;
+  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
+}
+
+.health-rack-tip {
+  fill: var(--signal-light);
+  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
+}
+
+.health-rack-numeral {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: fill 240ms var(--ease-out);
+}
+
+.health-rack-unit {
+  font-size: 5.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   fill: var(--muted-dim);
 }
 
-/* Per-axis hover group. Pure CSS interactivity: hovering any label/value
-   cluster for a dimension lifts its label + value to signal accent. The
-   group is pointer-transparent to layout (pointer-events on text only). */
-.health-radar-dim { transition: opacity 200ms var(--ease); }
-.health-radar-label {
-  font-size: 6px;
+.health-rack-label {
+  font-size: 0.6rem;
   font-weight: 600;
-  fill: var(--muted);
-  letter-spacing: 0.02em;
-  transition: fill 200ms var(--ease);
-  pointer-events: all;
-}
-.health-radar-value {
-  font-size: 6.5px;
-  font-weight: 600;
-  fill: var(--muted-dim);
-  letter-spacing: 0;
-  transition: fill 200ms var(--ease);
-  pointer-events: all;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 240ms var(--ease-out);
 }
 
-/* Honest hover: hovering the chart lifts labels dim→ink; hovering a specific
-   dimension lifts that dim's label + value to the signal accent and lifts the
-   boundary stroke, while the others recede. Nothing fabricated. */
+.health-rack-foot {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.6;
+  color: var(--muted-dim);
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line-faint);
+}
+
+/* Hover — the premium instrument micro-state. Only the hovered module lifts;
+   the others recede slightly so the eye lands on the active reading. */
 @media (hover: hover) and (pointer: fine) {
-  .health-radar-dim:hover .health-radar-label,
-  .health-radar-dim:hover .health-radar-value {
-    fill: var(--signal-light);
+  .health-rack-module:hover {
+    border-color: var(--line-strong);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .health-rack-module:hover .health-rack-track {
+    stroke: var(--line);
+  }
+  .health-rack-module:hover .health-rack-value {
+    stroke: var(--signal);
+    stroke-width: 5;
+  }
+  .health-rack-module:hover .health-rack-numeral,
+  .health-rack-module:hover .health-rack-label {
+    color: var(--ink);
+    fill: var(--ink);
+  }
+  .health-rack-module:hover .health-rack-tip {
+    fill: var(--signal);
+  }
+  /* On rack hover, non-hovered modules recede — directs attention */
+  .health-rack:hover .health-rack-module:not(:hover) {
+    opacity: 0.45;
+  }
+  .health-rack .health-rack-module {
+    transition: opacity 240ms var(--ease-out), border-color 240ms var(--ease-out), background 240ms var(--ease-out);
   }
 }
+
 
 @media (min-width: 860px) {
   .principle-layout {
@@ -2540,21 +2569,23 @@ button.pillar:hover::before {
     flex-shrink: 0;
   }
 
-  .health-radar {
-    display: flex;
+  .health-rack {
     align-self: flex-start;
-    /* Match principle-list content height (4 items × ~90px + gaps) */
-    height: 360px;
+  }
+
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .health-radar-zone {
-    animation: none;
-  }
-  .health-radar:hover {
-    transform: none;
-    border-color: var(--line);
+  .health-rack .health-rack-module,
+  .health-rack .health-rack-value,
+  .health-rack .health-rack-track,
+  .health-rack .health-rack-tip,
+  .health-rack .health-rack-numeral,
+  .health-rack .health-rack-label {
+    transition: none;
   }
 }
 
@@ -10020,7 +10051,10 @@ select {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  padding: 0.42rem 0;
+  /* WCAG 2.5.5 target size: ensure a 44px-tall hit area on mobile — the row
+     content is ~20px, so 12px of vertical padding on each side. */
+  padding: 0.75rem 0;
+  min-height: 44px;
   text-decoration: none;
   color: var(--muted);
 }
