@@ -1,6 +1,6 @@
 // /api/leaderboard — public leaderboard API (JSON)
 // Serves the curated seed list (30 sites across 5 tiers) as JSON.
-// Scores from the 2026-07-28 batch run (36-check engine, contract v0.3.0).
+// Scores from the 2026-07-30 re-score (40-check engine, contract v0.4.0).
 // Each scored site now also carries `categoryScores` — the verbatim
 // per-category breakdown from a live engine batch run (batch-data.ts), used
 // by the MiniConstellation ring on the rendered page. score:null = unscored.

@@ -108,8 +108,8 @@ export const SEED: SeedSite[] = [
 export const LEADERBOARD_LAST_SCORED = '2026-07-30';
 
 export const LEADERBOARD_POLICY =
-  'Curated seed (30 sites) + open submission. Scores are deterministic — 36 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
+  'Curated seed (30 sites) + open submission. Scores are deterministic — 40 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
 
-export const LEADERBOARD_VERSION = '0.3.0';
+export const LEADERBOARD_VERSION = '0.4.0';
 
 export const LEADERBOARD_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;

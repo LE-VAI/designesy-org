@@ -25,10 +25,10 @@ const TOOLS = [
     question: 'Does this conform to the contracted design system?',
     category: 'Contract conformance verification',
     delivery: 'URL-based API + MCP tools (agent-invocable)',
-    checks: '36 checks across 13 categories',
+    checks: '40 checks across 14 categories',
     license: 'See designesy.org',
     stars: '—',
-    score: '99.1% A (self)',
+    score: '99.2% A (self)',
     url: 'https://www.designesy.org/',
   },
   {
@@ -106,7 +106,7 @@ const COMPETITOR_UNIQUE = [
 const POSITIONING = [
   'Generation → hallmark (prevent slop at emit time, 58 gates)',
   'Evaluation → slop-eval (score existing designs, 108 tells + 2 positive axes)',
-  'Verification → designesy (verify contract conformance, 36 checks + MCP delivery)',
+  'Verification → designesy (verify contract conformance, 40 checks + MCP delivery)',
 ];
 
 const DESIGNESY_MOAT = [
@@ -173,10 +173,10 @@ export default function BenchmarksPage() {
               { attr: 'Question', d: 'Does this conform to the contracted design system?', h: 'Does this look AI-generated?', s: 'How much slop does this contain?' },
               { attr: 'Category', d: 'Contract conformance verification', h: 'Anti-slop generation gate', s: 'Anti-slop evaluation skill' },
               { attr: 'Delivery', d: 'URL API + MCP tools (agent-invocable)', h: 'Agent skill (prompt-encoded)', s: 'Agent skill (deterministic script)' },
-              { attr: 'Checks', d: '36 across 13 categories', h: '58 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
+              { attr: 'Checks', d: '40 across 14 categories', h: '58 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
               { attr: 'License', d: 'See designesy.org', h: 'MIT', s: 'Apache-2.0' },
               { attr: 'Stars', d: '—', h: '20k', s: '40 (parent repo)' },
-              { attr: 'Score on designesy.org', d: '99.1% A (31/36 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
+              { attr: 'Score on designesy.org', d: '99.2% A (35/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
             ].map((row) => (
               <div className="token-table-row" role="row" key={row.attr}>
                 <span role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{row.attr}</span>
@@ -285,7 +285,7 @@ export default function BenchmarksPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>designesy</code>
-              <code role="cell">99.1% A (31 PASS / 0 FAIL / 1 WARN / 4 SKIP)</code>
+              <code role="cell">99.2% A (35 PASS / 0 FAIL / 1 WARN / 4 SKIP)</code>
               <span role="cell">v26 WARN: font family count (4, threshold ≤3)</span>
             </div>
             <div className="token-table-row" role="row">
@@ -315,13 +315,13 @@ export default function BenchmarksPage() {
             <p className="definition-label">Sources</p>
             <p>
               Live research via AnySearch MCP (2026-07-30). designesy live score
-              verified via POST to https://www.designesy.org/api/score (99.1% A,
-              36 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
+              verified via POST to https://www.designesy.org/api/score (99.2% A,
+              40 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.
             </p>
           </div>
           <CheckGrid items={[
-            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 99.1% A, 36 checks, verified 2026-07-30' },
+            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 99.2% A, 40 checks, verified 2026-07-30' },
             { title: 'hallmark 58 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },
