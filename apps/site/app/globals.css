@@ -9895,15 +9895,6 @@ select {
 }
 .hero-display-line { display: block; }
 .hero-display-line.is-accent { color: var(--ink); }
-.hero-display-line.is-accent::after {
-  content: '';
-  display: inline-block;
-  width: 0.22em;
-  height: 0.22em;
-  margin-left: 0.08em;
-  border-radius: 50%;
-  background: var(--signal-light);
-}
 
 .hero-architectural .hero-sub {
   margin-inline: auto;
