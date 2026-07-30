@@ -163,8 +163,42 @@ body::before {
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, black 20%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, black 20%, transparent 75%);
+  /* Over-faded mask: the ellipse is far larger than any viewport (250%×190%)
+     and hits fully-transparent at 55%, well inside its far edge. Because the
+     fully-transparent zone always starts beyond the visible frame — whatever
+     the zoom level or aspect ratio — the grid fades out with no visible seam.
+     Tight ellipses (e.g. 120%×80%) show their transparent edge inside the
+     frame on ultra-wide zoomed-out viewports; the oversized ellipse can't. */
+  mask-image: radial-gradient(ellipse 250% 190% at 50% -10%, black 18%, transparent 55%);
+  -webkit-mask-image: radial-gradient(ellipse 250% 190% at 50% -10%, black 18%, transparent 55%);
+}
+
+/*
+  Ambient signal wash — viewport-pinned, cutoff-proof
+  ---------------------------------------------------
+  The signal glow that used to be painted on .hero as a percentage-sized
+  background-image. That bounding-box approach showed a hard edge when the
+  hero's aspect went extreme under browser zoom-out (the CSS viewport
+  shrinks, the hero compresses, and a percentage gradient's fade lands
+  inside the visible frame).
+
+  Now it lives on its own fixed, full-viewport layer (z-index 0, behind
+  content just like the grid + noise). Sizing is in vmax — a viewport unit,
+  not a percentage of the element — and each radial reaches fully
+  transparent at 55% of its radius, far inside the farthest viewport edge.
+  Result: the wash is always present and always seamless, at any zoom from
+  deep zoom-out to 400% zoom-in, on mobile and desktop. Decorative only:
+  pointer-events none, static (no animation) so reduced-motion is not
+  implicated. */
+.ambient-signal {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle 110vmax at 76% 12%, rgba(51, 88, 232, 0.10), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78%, rgba(51, 88, 232, 0.05), transparent 60%);
+  background-repeat: no-repeat;
 }
 
 body::after {
@@ -523,20 +557,20 @@ p {
 
 .hero {
   position: relative;
-  padding: clamp(5.5rem, 11vw, 8.5rem) 0 clamp(4rem, 8vw, 6rem);
-  min-height: min(600px, 78vh);
+  /* Optical (not mathematical) vertical centering: more bottom padding than
+     top seats the instrument block slightly above the true midpoint, so the
+     frame reads balanced instead of leaving a dead void under the hero. */
+  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(5.5rem, 12vw, 9rem);
+  /* Dense-hero rhythm (Stage 7 polish): mid-band of the 50–75svh dense-hero
+     range — enough presence to lead, not so tall it strands a void before the
+     pillars. px floor/ceiling (not svh) keep the height stable under browser
+     zoom; svh (not vh) avoids the mobile URL-bar jump. */
+  min-height: clamp(520px, 70svh, 880px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   isolation: isolate;
   overflow: hidden;
-  /* Soft gradient mesh — atmospheric signal presence behind hero copy.
-     Two faint radial washes using existing signal values at very low
-     alphas; stays below "glowing blob" tell (Stage 4). */
-  background-image:
-    radial-gradient(50% 40% at 78% 18%, rgba(51, 88, 232, 0.10), transparent 70%),
-    radial-gradient(40% 35% at 18% 82%, rgba(1, 51, 203, 0.08), transparent 70%);
-  background-repeat: no-repeat;
 }
 
 /*
