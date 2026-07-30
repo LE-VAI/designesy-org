@@ -2399,13 +2399,12 @@ button.pillar:hover::before {
     border-color: var(--line-strong);
   }
 
-  .health-radar:hover .health-radar-score {
-    fill-opacity: 0.55;
+  .health-radar:hover .health-radar-boundary {
     stroke-width: 1.5;
   }
 
-  .health-radar:hover .health-radar-label {
-    fill: var(--signal-light);
+  .health-radar:hover .health-radar-zone {
+    opacity: 1;
   }
 
   .health-radar:hover .health-radar-grid {
@@ -2453,31 +2452,79 @@ button.pillar:hover::before {
   stroke-width: 0.5;
 }
 
-.health-radar-score {
-  fill: var(--signal-dim);
-  fill-opacity: 0.4;
-  stroke: var(--signal);
-  stroke-width: 1;
-  animation: health-radar-pulse 3s var(--ease-in-out) infinite;
+/* Measured zone — a soft radial glow that fades to nothing, reading as the
+   calibrated area the contract occupies, not an opaque blob. */
+.health-radar-zone {
+  fill: url(#hr-zone);
+  animation: health-radar-pulse 3.6s var(--ease-in-out) infinite;
+}
+.hr-zone-0 { stop-color: var(--signal-light); stop-opacity: 0.20; }
+.hr-zone-1 { stop-color: var(--signal); stop-opacity: 0.10; }
+.hr-zone-2 { stop-color: var(--signal); stop-opacity: 0; }
+
+/* The boundary is the precise reading: a crisp angular dial trace. */
+.health-radar-boundary {
+  fill: none;
+  stroke: var(--signal-light);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
 }
 
 @keyframes health-radar-pulse {
-  0%, 100% { fill-opacity: 0.35; }
-  50% { fill-opacity: 0.5; }
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
 }
 
 .health-radar-point {
-  fill: var(--signal-light);
-  stroke: var(--signal);
-  stroke-width: 0.5;
+  fill: var(--paper);
+  stroke: var(--signal-light);
+  stroke-width: 1.2;
 }
 
+/* Live center readout — the mean score rendered as a gauge value. */
+.health-radar-center {
+  font-size: 22px;
+  font-weight: 640;
+  fill: var(--ink);
+  letter-spacing: -0.02em;
+}
+.health-radar-center-sub {
+  font-size: 5.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  fill: var(--muted-dim);
+}
+
+/* Per-axis hover group. Pure CSS interactivity: hovering any label/value
+   cluster for a dimension lifts its label + value to signal accent. The
+   group is pointer-transparent to layout (pointer-events on text only). */
+.health-radar-dim { transition: opacity 200ms var(--ease); }
 .health-radar-label {
   font-size: 6px;
   font-weight: 600;
-  fill: var(--muted-dim);
+  fill: var(--muted);
   letter-spacing: 0.02em;
   transition: fill 200ms var(--ease);
+  pointer-events: all;
+}
+.health-radar-value {
+  font-size: 6.5px;
+  font-weight: 600;
+  fill: var(--muted-dim);
+  letter-spacing: 0;
+  transition: fill 200ms var(--ease);
+  pointer-events: all;
+}
+
+/* Honest hover: hovering the chart lifts labels dim→ink; hovering a specific
+   dimension lifts that dim's label + value to the signal accent and lifts the
+   boundary stroke, while the others recede. Nothing fabricated. */
+@media (hover: hover) and (pointer: fine) {
+  .health-radar-dim:hover .health-radar-label,
+  .health-radar-dim:hover .health-radar-value {
+    fill: var(--signal-light);
+  }
 }
 
 @media (min-width: 860px) {
@@ -2502,7 +2549,7 @@ button.pillar:hover::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .health-radar-score {
+  .health-radar-zone {
     animation: none;
   }
   .health-radar:hover {
