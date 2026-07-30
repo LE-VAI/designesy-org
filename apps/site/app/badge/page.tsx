@@ -7,7 +7,7 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Badge',
   description:
-    'Sites that pass the 26-check Designesy design contract gate can embed the Verified by Designesy badge. The badge links to a live score anyone can verify.',
+    'Sites that pass the 40-check Designesy design contract gate can embed the Verified by Designesy badge. The badge links to a live score anyone can verify.',
   path: '/badge',
   ogTitle: 'Verified by Designesy',
   ogDescription:
@@ -63,7 +63,7 @@ export default function BadgePage() {
             Verified by Designesy
           </h1>
           <p className="surface-lede">
-            Sites that pass the 26-check design contract gate can embed the badge.
+            Sites that pass the 40-check design contract gate can embed the badge.
             The badge links to a live score anyone can verify.
           </p>
           <p className="surface-note">
@@ -132,7 +132,7 @@ export default function BadgePage() {
               <li>
                 <strong>Score your site</strong> at{' '}
                 <Link href="/score" className="text-link">/score</Link> —
-                26 automated checks against the design contract, real-time, no login.
+                40 automated checks against the design contract, real-time, no login.
               </li>
               <li>
                 <strong>If you score A or B</strong> (≥80%), you qualify to embed the badge.
@@ -178,7 +178,7 @@ export default function BadgePage() {
             </div>
             <p className="definition-note">
               The score is the percentage of checks that pass (warnings count as half).
-              26 checks total — see the{' '}
+              40 checks total — see the{' '}
               <Link href="/contracts/design-system" className="text-link">
                 contract
               </Link>{' '}

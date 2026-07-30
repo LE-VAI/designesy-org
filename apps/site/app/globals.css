@@ -9106,6 +9106,11 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-decoration: none;
   height: 2.25rem;
   padding: 0 1rem;
   font-size: 0.8rem;
@@ -10793,8 +10798,11 @@ select {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.25rem 1rem;
+  /* 11 categories — 3-col puts the orphan in the bottom-right instead of
+     stranding it alone on a 6th row. 3+3+3+2 reads as a deliberate rhythm;
+     2+2+2+2+2+1 reads as a bug. */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem 0.75rem;
 }
 
 .score-cat-legend-row {
@@ -11747,5 +11755,72 @@ select {
   }
   .section-heading-badge {
     align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+   Universal-sphere preference coverage (T2.5)
+   ==========================================================================
+
+   designesy.org is deliberately dark-only — one surface register, one ink.
+   That is the design, not a limitation to patch. But a dark-only site does
+   not get to ignore the rest of the user's OS-level preference set:
+
+     prefers-contrast: more              (Baseline Widely Available 2024-11)
+     prefers-reduced-transparency: reduce (Chrome 118+, not yet cross-browser)
+
+   These two blocks are additive, zero-JS, and inert when the user has no
+   preference set. They are the site's answer to "we are ready for the
+   multiverse of people" without becoming a corporate theme-picker.
+
+   What we do NOT do:
+     - No light-mode fork. Dark is the surface; a light sibling is a
+       separate product decision, not a media query away.
+     - No forced-colors override. Windows High Contrast already re-paints
+       the palette via its own cascade; our color-scheme: dark + system
+       colors inherit correctly. Overriding it would be hubris.
+     - No JavaScript. These are pure CSS, evaluated by the browser's media
+       engine — no hydration, no layout shift, no CLS risk.
+   ========================================================================== */
+
+@media (prefers-contrast: more) {
+  :root {
+    /* Deepen the paper so ink sits further from the surface — the dark-side
+       analogue of "increase contrast". On a dark theme "more contrast" means
+       further separation, not brighter paper. */
+    --ink: #ffffff;
+    --muted: #b8b8b8;
+    --muted-dim: #999999;
+
+    /* Solidify translucent surfaces — rgba soft surfaces collapse toward
+       their lifted neighbor so the ladder keeps its 3 steps instead of
+       compressing to 2. */
+    --surface-soft: rgba(255, 255, 255, 0.05);
+    --surface-hover: rgba(255, 255, 255, 0.08);
+
+    /* Strengthen the two working line tokens; faint stays faint because it
+       is a texture cue, not a structural boundary. */
+    --line: rgba(255, 255, 255, 0.18);
+    --line-strong: rgba(255, 255, 255, 0.34);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    /* The glass topbar is the only backdrop-filter surface on the site.
+       Under reduce-transparency the blur goes opaque — the chrome reads as
+       a solid instrument panel, not a frosted window. This is the exact
+       behavior the media feature was designed to trigger. */
+    --surface-soft: #0a0a0c;
+    --surface-hover: #121216;
+  }
+
+  /* Swap the blurred topbar for the solid topbar. backdrop-filter: none is
+     the semantic opposite, not a hack — the browser stops compositing the
+     blur layer entirely. */
+  .topbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface-raised);
   }
 }

@@ -44,6 +44,7 @@ const MACHINE_LINKS = [
   { href: '/llms-full.txt', label: 'llms-full.txt' },
   { href: '/.well-known/agent.json', label: 'agent.json' },
   { href: '/contracts/design-system.json', label: 'design-system.json' },
+  { href: '/export/dtcg', label: 'dtcg.json' },
   { href: '/contracts/tokens.json', label: 'tokens.json' },
   { href: '/contracts/a11y.json', label: 'a11y.json' },
   { href: '/contracts/motion.json', label: 'motion.json' },

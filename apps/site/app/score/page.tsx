@@ -12,11 +12,11 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Score',
   description:
-    'Score any site against the Designesy design system contract. 26 checks. One grade. Real-time. No login.',
+    'Score any site against the Designesy design system contract. 40 checks. One grade. Real-time. No login.',
   path: '/score',
   ogTitle: 'Score any site — Designesy',
   ogDescription:
-    '26 automated verification checks against a real design contract. Enter a URL, get a grade.',
+    '40 automated verification checks against a real design contract. Enter a URL, get a grade.',
 });
 
 export default async function ScorePage({
@@ -36,7 +36,7 @@ export default async function ScorePage({
             Score any site
           </h1>
           <p className="surface-lede">
-            26 checks. One grade. Enter a URL and get a verified score against the Designesy
+            40 checks. One grade. Enter a URL and get a verified score against the Designesy
             design system contract.
           </p>
           <p className="surface-note">
