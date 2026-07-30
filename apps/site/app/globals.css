@@ -9930,14 +9930,16 @@ select {
   font-variation-settings: 'opsz' 32;
 }
 
-/* Mobile: lower the floor so "AI makes execution free." fits in 3 short
-   lines, not 5 fragments. The 7.5vw middle keeps the type proportional to
-   the screen; the 2rem floor maintains display weight at 375px. */
+/* Mobile: keep both full sentences on their own line, matching the desktop
+   two-line composition. L2 ("We make execution yours.") is the longer line,
+   so scale the fluid step to *it* — ~5.9vw lands ≈22px at 375px, just under
+   the L2 single-line break point, preserving display weight without ragging. */
 @media (max-width: 720px) {
   .hero-display {
-    font-size: clamp(2rem, 7.5vw, 3.2rem);
-    line-height: 1.04;
-    letter-spacing: -0.022em;
+    font-size: clamp(1.4rem, 5.9vw, 3.2rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    text-wrap: nowrap;
   }
 }
 .hero-display-line { display: block; }
