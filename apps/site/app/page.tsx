@@ -8,6 +8,7 @@ import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
 import { HeroConstruction } from './hero-construction';
+import { ContractHealthRack } from './contract-health-rack';
 import {
   ENGINE_CHECK_COUNT,
   CONTRACT_VERSION,
@@ -289,118 +290,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <aside className="health-radar" aria-label="Contract health radar">
-              {(() => {
-                // Single source of truth: per-dimension live readings (0–1).
-                // Informed by the same contract categories the score engine
-                // verifies (v01–v23, x01–x03). Instrument, not shape: the
-                // value is a measured angular boundary on a dial, not a filled
-                // blob. Mean drives the center readout.
-                const DIMS = [
-                  { label: 'Type', v: 0.95 },
-                  { label: 'Motion', v: 0.90 },
-                  { label: 'Color', v: 0.95 },
-                  { label: 'A11y', v: 0.88 },
-                  { label: 'Space', v: 0.92 },
-                  { label: 'Hierarchy', v: 0.95 },
-                  { label: 'Interact', v: 0.90 },
-                  { label: 'Provenance', v: 1.0 },
-                ];
-                const C = 100;
-                const R = 78; // outer dial radius; grid rings sit inside
-                const pct = (v: number) => Math.round(v * 100);
-                const mean = DIMS.reduce((s, d) => s + d.v, 0) / DIMS.length;
-                const polar = (idx: number, r: number) => {
-                  const a = ((idx * 45 - 90) * Math.PI) / 180;
-                  return [C + r * Math.cos(a), C + r * Math.sin(a)] as const;
-                };
-                // Score boundary polygon + per-axis end tick.
-                const boundary = DIMS.map((d, i) => {
-                  const [x, y] = polar(i, d.v * R);
-                  return `${x},${y}`;
-                }).join(' ');
-                return (
-                  <>
-                    <svg
-                      className="health-radar-svg"
-                      viewBox="0 0 200 200"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      role="img"
-                      aria-hidden="true"
-                    >
-                      <defs>
-                        {/* Reading fill: a faint radial glow that fades to nothing
-                            before its edge — a measured zone, not an opaque shape. */}
-                        <radialGradient id="hr-zone" cx="50%" cy="50%" r="55%">
-                          <stop offset="0%" className="hr-zone-0" />
-                          <stop offset="70%" className="hr-zone-1" />
-                          <stop offset="100%" className="hr-zone-2" />
-                        </radialGradient>
-                      </defs>
-
-                      {/* Dial grid: 3 concentric octagonal reference rings */}
-                      {[0.33, 0.66, 1].map((ring, ri) => {
-                        const pts = [];
-                        for (let i = 0; i < 8; i++) {
-                          const [x, y] = polar(i, ring * R);
-                          pts.push(`${x},${y}`);
-                        }
-                        return (
-                          <polygon key={ri} className="health-radar-grid" points={pts.join(' ')} />
-                        );
-                      })}
-
-                      {/* Axes: 8 spokes, each its own hover group */}
-                      {DIMS.map((d, i) => {
-                        const [ox, oy] = polar(i, R);
-                        return <line key={i} className="health-radar-axis" x1={C} y1={C} x2={ox} y2={oy} />;
-                      })}
-
-                      {/* Measured zone (soft fill) + crisp boundary reading */}
-                      <polygon className="health-radar-zone" points={boundary} />
-                      <polygon className="health-radar-boundary" points={boundary} />
-
-                      {/* Vertex registration markers + end ticks */}
-                      {DIMS.map((d, i) => {
-                        const [x, y] = polar(i, d.v * R);
-                        return <circle key={i} className="health-radar-point" cx={x} cy={y} r={2.2} />;
-                      })}
-
-                      {/* Center live readout: mean score as a gauge value */}
-                      <text className="health-radar-center" x={C} y={C - 5} textAnchor="middle" dominantBaseline="middle">
-                        {pct(mean)}
-                      </text>
-                      <text className="health-radar-center-sub" x={C} y={C + 9} textAnchor="middle" dominantBaseline="middle">
-                        mean
-                      </text>
-
-                      {/* Axis labels + per-dimension live values, each a hover target */}
-                      {DIMS.map((d, i) => {
-                        const a = ((i * 45 - 90) * Math.PI) / 180;
-                        const labelR = 90;
-                        const x = C + labelR * Math.cos(a);
-                        const y = C + labelR * Math.sin(a);
-                        return (
-                          <g key={i} className="health-radar-dim" data-dim={i}>
-                            <text className="health-radar-label" x={x} y={y} textAnchor="middle" dominantBaseline="middle">
-                              {d.label}
-                            </text>
-                            <text className="health-radar-value" x={x} y={y + 9} textAnchor="middle" dominantBaseline="middle" data-tabular>
-                              {pct(d.v)}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </svg>
-                  </>
-                );
-              })()}
-              <div className="health-radar-header">
-                <span className="health-radar-title">Contract health</span>
-                <span className="health-radar-sub">8 dimensions</span>
-              </div>
-            </aside>
+            <ContractHealthRack />
           </div>
           <div className="section-more">
             <Link
