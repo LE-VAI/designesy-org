@@ -1,7 +1,7 @@
 // /leaderboard seed — curated sites with batch-scored verification results.
 // Shared source for the JSON route (route.ts) and the rendered page (page.tsx).
 //
-// All 30 sites re-scored 2026-07-30 with the 36-check engine (contract v0.3.0).
+// All 30 sites re-scored 2026-07-30 with the 40-check engine (contract v0.4.0).
 // Deterministic — no LLM. Re-scored weekly via .github/workflows/rescore-leaderboard.yml.
 // prevScore holds the previous week's score for delta-badge rendering.
 
