@@ -2291,117 +2291,87 @@ button.pillar:hover::before {
 
 /* Principle list — numbered entries with title + description */
 
+/*
+  Operating principles + contract health — two stacked, bordered cells on one
+  vertical rhythm. No side-by-side columns: the principles read as a 2×2 cell
+  grid (sleek bordered tiles), and the contract-health rack lives in its own
+  full-width cell directly beneath, so alignment stays optimal and nothing
+  overlaps. Each cell is a quiet instrument panel — hairline border, faint
+  surface, generous padding.
+*/
 .principle-layout {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: clamp(0.9rem, 1.6vw, 1.25rem);
 }
 
-.principle-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.principle-list--rail {
-  position: relative;
-}
-
-.principle-list--rail::before {
-  content: "";
-  position: absolute;
-  left: 0.2rem;
-  top: 0.45rem;
-  bottom: 0.45rem;
-  width: 1px;
-  background: var(--line-faint);
-  pointer-events: none;
+/* Cell 1 — the four operating principles as a 2×2 grid of bordered tiles. */
+.principle-cell {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.85rem, 1.4vw, 1.1rem);
 }
 
 .principle {
-  display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  gap: 1rem;
-  align-items: baseline;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: clamp(1.05rem, 1.8vw, 1.4rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color 240ms var(--ease-out), background 240ms var(--ease-out), transform 240ms var(--ease-out);
 }
 
 .principle-num {
-  position: relative;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--signal);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
 }
 
-.principle-list--rail .principle-num {
-  padding-inline-start: 0.7rem;
-}
-
-.principle-list--rail .principle-num::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--signal);
-  box-shadow: 0 0 0 3px var(--paper);
-}
-
-.principle-list--rail .principle:first-child .principle-num::before {
-  background: var(--signal-light);
-}
-
 .principle-body h3 {
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.45rem;
   text-wrap: balance;
 }
 
 .principle-body p {
-  font-size: 0.88rem;
+  font-size: 0.87rem;
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.6;
   max-width: 100%;
 }
 
-.section-more {
-  margin-top: 2rem;
+/* Cell 2 — the contract-health rack in its own bordered panel. */
+.health-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: clamp(1.05rem, 2vw, 1.5rem);
 }
 
-/*
-  Contract health rack — 8 mini-gauge modules, one per design review
-  dimension. Unbordered, un-padded, un-contained: the gauges sit on the page
-  background at the same optical weight as the principle-list items beside
-  them. The mean lives in the section header as a quiet badge, not inside
-  the rack, so the rack has one type scale (module numeral) and one accent
-  (arc stroke) — no internal hierarchy fight, no card visual mass pulling
-  the eye lower than the list.
-*/
 .health-rack-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: clamp(1rem, 1.8vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
-  flex: 1 1 0;
+  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
   min-width: 0;
 }
 
 .health-rack-module {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.55rem;
   padding: 0;
   transition: opacity 240ms var(--ease-out);
 }
 
 .health-rack-svg {
-  width: clamp(72px, 6.5vw, 92px);
+  width: clamp(70px, 7vw, 88px);
   height: auto;
   display: block;
 }
@@ -2453,8 +2423,13 @@ button.pillar:hover::before {
   transition: color 240ms var(--ease-out);
 }
 
-/* Hover — the premium instrument micro-state. Lift just the hovered module. */
+/* Hover — the premium instrument micro-state. Lift just the hovered gauge
+   and gently raise the hovered principle tile. */
 @media (hover: hover) and (pointer: fine) {
+  .principle:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-1px);
+  }
   .health-rack-module:hover .health-rack-track {
     stroke: var(--line);
   }
@@ -2469,6 +2444,20 @@ button.pillar:hover::before {
   }
   .health-rack-module:hover .health-rack-tip {
     fill: var(--signal);
+  }
+}
+
+/* Mobile: collapse principle tiles to a single readable column. */
+@media (max-width: 640px) {
+  .principle-cell {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Desktop: the rack spreads to a 4×2 instrument row inside its cell. */
+@media (min-width: 860px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -2523,25 +2512,8 @@ button.pillar:hover::before {
   color: var(--muted-dim);
 }
 
-/* Desktop: principle list and the unbordered rack sit side-by-side. The list
-   pins its width; the rack grid takes the rest. Rack top aligns to list top. */
-@media (min-width: 860px) {
-  .principle-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .principle-list {
-    width: 600px;
-    max-width: 600px;
-    flex-shrink: 0;
-  }
-
-  .health-rack-grid {
-    align-self: flex-start;
-    grid-template-columns: repeat(4, 1fr);
-  }
+.section-more {
+  margin-top: 2rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3990,110 +3962,168 @@ button.pillar:hover::before {
 
 /* Principle list — numbered entries with title + description */
 
+/*
+  Operating principles + contract health (segment 2 — the cascade defines each
+  section twice; keep both in step). Stacked bordered cells on one vertical
+  rhythm: principles as a 2×2 tile grid, the contract-health rack in its own
+  full-width cell below. No side-by-side columns — alignment stays optimal.
+*/
 .principle-layout {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: clamp(0.9rem, 1.6vw, 1.25rem);
 }
 
-.principle-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.principle-list--rail {
-  position: relative;
-}
-
-.principle-list--rail::before {
-  content: "";
-  position: absolute;
-  left: 0.2rem;
-  top: 0.45rem;
-  bottom: 0.45rem;
-  width: 1px;
-  background: var(--line-faint);
-  pointer-events: none;
+.principle-cell {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.85rem, 1.4vw, 1.1rem);
 }
 
 .principle {
-  display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  gap: 1rem;
-  align-items: baseline;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: clamp(1.05rem, 1.8vw, 1.4rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color 240ms var(--ease-out), background 240ms var(--ease-out), transform 240ms var(--ease-out);
 }
 
 .principle-num {
-  position: relative;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--signal);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
 }
 
-.principle-list--rail .principle-num {
-  padding-inline-start: 0.7rem;
-}
-
-.principle-list--rail .principle-num::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--signal);
-  box-shadow: 0 0 0 3px var(--paper);
-}
-
-.principle-list--rail .principle:first-child .principle-num::before {
-  background: var(--signal-light);
-}
-
 .principle-body h3 {
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.45rem;
   text-wrap: balance;
 }
 
 .principle-body p {
-  font-size: 0.88rem;
+  font-size: 0.87rem;
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.6;
   max-width: 100%;
+}
+
+.health-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: clamp(1.05rem, 2vw, 1.5rem);
+}
+
+.health-rack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
+  min-width: 0;
+}
+
+.health-rack-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  transition: opacity 240ms var(--ease-out);
+}
+
+.health-rack-svg {
+  width: clamp(70px, 7vw, 88px);
+  height: auto;
+  display: block;
+}
+
+.health-rack-track {
+  stroke: var(--line-faint);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out);
+}
+
+.health-rack-value {
+  stroke: var(--signal-light);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
+}
+
+.health-rack-tip {
+  fill: var(--signal-light);
+  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
+}
+
+.health-rack-numeral {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: fill 240ms var(--ease-out);
+}
+
+.health-rack-unit {
+  font-size: 5.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  fill: var(--muted-dim);
+}
+
+.health-rack-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 240ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .principle:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-1px);
+  }
+  .health-rack-module:hover .health-rack-track {
+    stroke: var(--line);
+  }
+  .health-rack-module:hover .health-rack-value {
+    stroke: var(--signal);
+    stroke-width: 5.5;
+  }
+  .health-rack-module:hover .health-rack-numeral,
+  .health-rack-module:hover .health-rack-label {
+    color: var(--ink);
+    fill: var(--ink);
+  }
+  .health-rack-module:hover .health-rack-tip {
+    fill: var(--signal);
+  }
+}
+
+@media (max-width: 640px) {
+  .principle-cell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 860px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .section-more {
   margin-top: 2rem;
-}
-
-
-/* Desktop override (segment 2): the unconditional `.principle-layout` above
-   would otherwise cascade over the earlier min-width:860px row rule. Keep the
-   side-by-side layout authoritative here too so the last matching rule wins. */
-@media (min-width: 860px) {
-  .principle-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .principle-list {
-    width: 600px;
-    max-width: 600px;
-    flex-shrink: 0;
-  }
-
-  .health-rack-grid {
-    align-self: flex-start;
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 .text-link {
