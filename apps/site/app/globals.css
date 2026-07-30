@@ -196,8 +196,8 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle 110vmax at 76% 12%, rgba(51, 88, 232, 0.10), transparent 55%),
-    radial-gradient(circle 95vmax at 16% 78%, rgba(51, 88, 232, 0.05), transparent 60%);
+    radial-gradient(circle 110vmax at 76% 12%, rgba(51, 88, 232, 0.045), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78%, rgba(51, 88, 232, 0.022), transparent 60%);
   background-repeat: no-repeat;
 }
 
