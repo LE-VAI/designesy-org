@@ -11667,3 +11667,85 @@ select {
 .hero-architectural + .section {
   padding-top: clamp(4rem, 9vw, 7.5rem);
 }
+
+/* ===========================================================================
+   MOBILE ALIGNMENT / PADDING / SPACING PASS  (max-width: 720px)
+   ---------------------------------------------------------------------------
+   Consolidated small-screen spacing pass, placed LAST in source so it wins the
+   cascade by source order. Binds the homepage to the mature mobile tokens the
+   research lane confirmed (Material 3 / Apple HIG / IBM Carbon / Stripe /
+   USWDS consensus):
+
+     gutter 16px · base unit 4px, rhythm 8px · cell padding 16px ·
+     body >= 16px · caption floor ~12px (11px for tracked micro-labels) ·
+     caps tracking <= 0.12em · measure 30-50ch · left-align / rag-right ·
+     section rhythm ~48px on mobile (jump a scale step at breakpoints)
+
+   Everything below uses whole-px values on the 4px scale — no fractional clamp
+   mid-values (the earlier clamp(1.05rem,1.8vw,1.4rem) resolved to 17px at
+   390px, breaking the grid). Desktop is untouched: scoped to <= 720px only.
+--------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+
+  /* -- Cell padding token: one value everywhere. 1rem = 16px exactly. -- */
+  .principle,
+  .health-panel,
+  .field-card,
+  .score-input-card {
+    padding: 1rem;
+  }
+
+  /* -- Principle cell grids: even 2-col gutters, consistent gap. ------ -- */
+  .principle-cell,
+  .field-grid,
+  .pillar-grid {
+    gap: 0.75rem; /* 12px — Material dense mobile gutter */
+  }
+
+  /* -- Contract-health rack: even 4-col modules inside the panel so the 8
+     gauges read as two aligned rows. Grid sits on the panel's 16px padding,
+     i.e. gutter(16) + panel(16) = 32px from the viewport edge — on-grid. -- */
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem 0.5rem; /* 14px row / 8px column */
+  }
+  .health-rack-module {
+    gap: 0.5rem;
+  }
+
+  /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
+  .principle-body p {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.55;
+  }
+  .principle-body h3 {
+    font-size: 1rem; /* 16px */
+    line-height: 1.3;
+  }
+
+  /* -- Caps micro-labels: lift from ~9.9px to 11px and relax tracking from
+     0.14em to <= 0.12em so the "words" read as words, not letter strings.
+     11px is a deliberate concession at this weight (600) + tracking below
+     the strict 12px caption floor, the minimum legible step for the
+     instrument register. -- */
+  .health-rack-label,
+  .section-heading-badge-label {
+    font-size: 0.6875rem; /* 11px */
+    letter-spacing: 0.11em;
+  }
+  .health-rack-unit,
+  .section-heading-badge-unit {
+    font-size: 0.6875rem; /* 11px */
+  }
+
+  /* -- Section heading row: ensure the badge stacks under the title with a
+     clean 12px gap and aligns flush-left (rag-right), never crowding the
+     two-line h2. -- */
+  .section-heading-row {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .section-heading-badge {
+    align-items: flex-start;
+  }
+}
