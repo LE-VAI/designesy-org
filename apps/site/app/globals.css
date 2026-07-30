@@ -2397,7 +2397,11 @@ button.pillar:hover::before {
 
 .health-rack-header {
   display: flex;
-  align-items: flex-end;
+  /* Optical alignment: left "Contract health" and right "93" both start at
+     the rack's top content edge — the same line as the principle-list's
+     first h3. baseline would pin them to different bottoms because the two
+     blocks have different type metrics (12px label vs 34px mean numeral). */
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.9rem;
@@ -2571,6 +2575,12 @@ button.pillar:hover::before {
 
   .health-rack {
     align-self: flex-start;
+    /* Optical alignment: the rack border is flush with the principle-list top,
+       so the header content must start at the same y as the first principle
+       h3. The rack's card border reads as the enclosure, so the internal
+       top padding collapses to zero here — no invisible 20px gutter that
+       the left column lacks. */
+    padding-top: 0;
   }
 
   .health-rack-grid {
