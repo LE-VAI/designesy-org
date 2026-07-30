@@ -370,6 +370,7 @@ const REMEDIATION: Record<string, string> = {
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
+  v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters — e.g. Cyrillic а (U+0430) looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. designesy is the only design verification engine that checks this surface.',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -1057,6 +1058,235 @@ function checkForcedColors(css: string): CheckResult {
   return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'no forced-colors media query or forced-color-adjust detected — Windows HCM users may see illegible UI' };
 }
 
+// v36 — Unicode Security: UTS #39 Confusable Detection in design tokens + CSS identifiers.
+//
+// This is the Unicode-binding moat — the only design verification engine that
+// binds UTS #39 confusable detection into a contract check. No competitor
+// (Google @google/design.md, Nutlope/hallmark, fabricioctelles/slop-eval,
+// jakubkrehel/skills, Atlassian ADS) checks for confusable characters in
+// design-system surfaces.
+//
+// UTS #39 defines "confusables" as pairs of Unicode characters that look
+// identical or near-identical but have different code points — e.g., Latin
+// 'a' (U+0061) vs Cyrillic 'а' (U+0430), Latin 'o' (U+006F) vs Cyrillic 'о'
+// (U+043E). In a design system, confusables in token names, class names, or
+// URL references enable:
+//   - Token shadowing: --color-bg (Latin) vs --соlor-bg (Cyrillic 'с') looks
+//     identical but resolves to a different value — a supply-chain attack
+//     vector for injected CSS.
+//   - Class spoofing: .btn-primary vs .btn-рrimary (Cyrillic 'р') bypasses
+//     styling rules and can hide malicious UI.
+//   - URL confusion: url(/assets/logo.png) vs url(/аssets/logo.png) loads
+//     from a different path.
+//
+// Provenance: Unicode® Technical Standard #39, Unicode Security Mechanisms,
+// Version 16.0.0. Copyright © 1991-2024 Unicode, Inc. Published under the
+// Unicode License v3 — permits republishing with attribution.
+// Reference: https://www.unicode.org/reports/tr39/
+//
+// The full UTS #39 confusable data file is ~500KB. We embed a curated subset
+// covering the highest-risk Latin ↔ Cyrillic ↔ Greek confusables — the pairs
+// most likely to appear in CSS identifiers (ASCII-range lookalikes). This is
+// a static-check approximation; the full ICU confusables.txt integration is
+// a follow-up. The check is deterministic: same CSS input → same result.
+
+// ── UTS #39 confusable map (curated subset, Unicode 16.0.0) ──────────────────
+// Each entry maps a confusable code point (Cyrillic/Greek/etc.) to its ASCII
+// visual equivalent. We scan CSS identifiers for any character matching these
+// code points and flag the position.
+const CONFUSABLE_MAP: Record<string, string> = {
+  // Latin → Cyrillic confusables (the highest-risk set for CSS identifiers)
+  '\u0430': 'a',  // Cyrillic а → Latin a
+  '\u0435': 'e',  // Cyrillic е → Latin e
+  '\u043E': 'o',  // Cyrillic о → Latin o
+  '\u0440': 'p',  // Cyrillic р → Latin p
+  '\u0441': 'c',  // Cyrillic с → Latin c
+  '\u0445': 'x',  // Cyrillic х → Latin x
+  '\u0443': 'y',  // Cyrillic у → Latin y
+  '\u0410': 'A',  // Cyrillic А → Latin A
+  '\u0412': 'B',  // Cyrillic В → Latin B
+  '\u0415': 'E',  // Cyrillic Е → Latin E
+  '\u041A': 'K',  // Cyrillic К → Latin K
+  '\u041C': 'M',  // Cyrillic М → Latin M
+  '\u041D': 'H',  // Cyrillic Н → Latin H
+  '\u041E': 'O',  // Cyrillic О → Latin O
+  '\u0420': 'P',  // Cyrillic Р → Latin P
+  '\u0421': 'C',  // Cyrillic С → Latin C
+  '\u0422': 'T',  // Cyrillic Т → Latin T
+  '\u0425': 'X',  // Cyrillic Х → Latin X
+  '\u0446': 'u',  // Cyrillic ц → Latin u (approximate)
+  '\u0448': 'w',  // Cyrillic ш → Latin w (approximate)
+  '\u0456': 'i',  // Cyrillic і → Latin i
+  '\u0458': 'j',  // Cyrillic ј → Latin j
+  '\u0455': 's',  // Cyrillic ѕ → Latin s
+  // Greek confusables
+  '\u03BF': 'o',  // Greek ο → Latin o
+  '\u0391': 'A',  // Greek Α → Latin A
+  '\u0392': 'B',  // Greek Β → Latin B
+  '\u0395': 'E',  // Greek Ε → Latin E
+  '\u0396': 'Z',  // Greek Ζ → Latin Z
+  '\u0397': 'H',  // Greek Η → Latin H
+  '\u0399': 'I',  // Greek Ι → Latin I
+  '\u039A': 'K',  // Greek Κ → Latin K
+  '\u039C': 'M',  // Greek Μ → Latin M
+  '\u039D': 'N',  // Greek Ν → Latin N
+  '\u039F': 'O',  // Greek Ο → Latin O
+  '\u03A1': 'P',  // Greek Ρ → Latin P
+  '\u03A4': 'T',  // Greek Τ → Latin T
+  '\u03A5': 'Y',  // Greek Υ → Latin Y
+  '\u03A7': 'X',  // Greek Χ → Latin X
+  '\u03C1': 'p',  // Greek ρ → Latin p
+  '\u03C5': 'u',  // Greek υ → Latin u
+  '\u03C7': 'x',  // Greek χ → Latin x
+  // Fullwidth → ASCII (CJK range)
+  '\uFF41': 'a',  // Fullwidth ａ → Latin a
+  '\uFF42': 'b',  // Fullwidth ｂ → Latin b
+  '\uFF43': 'c',  // Fullwidth ｃ → Latin c
+  '\uFF44': 'd',  // Fullwidth ｄ → Latin d
+  '\uFF45': 'e',  // Fullwidth ｅ → Latin e
+  '\uFF46': 'f',  // Fullwidth ｆ → Latin f
+  '\uFF47': 'g',  // Fullwidth ｇ → Latin g
+  '\uFF48': 'h',  // Fullwidth ｈ → Latin h
+  '\uFF49': 'i',  // Fullwidth ｉ → Latin i
+  '\uFF4A': 'j',  // Fullwidth ｊ → Latin j
+  '\uFF4B': 'k',  // Fullwidth ｋ → Latin k
+  '\uFF4C': 'l',  // Fullwidth ｌ → Latin l
+  '\uFF4D': 'm',  // Fullwidth ｍ → Latin m
+  '\uFF4E': 'n',  // Fullwidth ｎ → Latin n
+  '\uFF4F': 'o',  // Fullwidth ｏ → Latin o
+  '\uFF50': 'p',  // Fullwidth ｐ → Latin p
+  '\uFF51': 'q',  // Fullwidth ｑ → Latin q
+  '\uFF52': 'r',  // Fullwidth ｒ → Latin r
+  '\uFF53': 's',  // Fullwidth ｓ → Latin s
+  '\uFF54': 't',  // Fullwidth ｔ → Latin t
+  '\uFF55': 'u',  // Fullwidth ｕ → Latin u
+  '\uFF56': 'v',  // Fullwidth ｖ → Latin v
+  '\uFF57': 'w',  // Fullwidth ｗ → Latin w
+  '\uFF58': 'x',  // Fullwidth ｘ → Latin x
+  '\uFF59': 'y',  // Fullwidth ｙ → Latin y
+  '\uFF5A': 'z',  // Fullwidth ｚ → Latin z
+};
+
+// Scan a string for confusable characters. Returns array of { char, pos,
+// ascii } for each confusable found.
+function findConfusables(text: string): Array<{ char: string; pos: number; ascii: string }> {
+  const found: Array<{ char: string; pos: number; ascii: string }> = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const ascii = CONFUSABLE_MAP[ch];
+    if (ascii) {
+      found.push({ char: ch, pos: i, ascii });
+    }
+  }
+  return found;
+}
+
+function checkSecurityConfusables(css: string, tokens: Record<string, string>): CheckResult {
+  const ITEM = 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers';
+  const CATEGORY = 'security';
+
+  // Scan 1: token names (the highest-value attack surface — token shadowing)
+  // Token names are the keys of the :root custom properties. If a token name
+  // contains a confusable, it can shadow a legitimate token.
+  const tokenNameConfusables: string[] = [];
+  for (const name of Object.keys(tokens)) {
+    const found = findConfusables(name);
+    if (found.length > 0) {
+      const detail = found.map(f => `U+${f.char.codePointAt(0)?.toString(16).padStart(4, '0')}→${f.ascii}`).join(', ');
+      tokenNameConfusables.push(`--${name.replace(/^--/, '')}: ${detail}`);
+    }
+  }
+
+  // Scan 2: CSS class names and identifiers in selectors.
+  // Extract class names (.className) and id selectors (#id) from CSS. Scan
+  // each for confusables. This catches class spoofing attacks.
+  const classRe = /\.([a-zA-Z_\u00A0-\uFFFF][\w\u00A0-\uFFFF-]*)/g;
+  const idRe = /#([a-zA-Z_\u00A0-\uFFFF][\w\u00A0-\uFFFF-]*)/g;
+  const identifierConfusables: string[] = [];
+  const scannedClasses = new Set<string>();
+  let m;
+  while ((m = classRe.exec(css)) !== null) {
+    const className = m[1];
+    if (scannedClasses.has(className)) continue;
+    scannedClasses.add(className);
+    const found = findConfusables(className);
+    if (found.length > 0) {
+      const detail = found.map(f => `U+${f.char.codePointAt(0)?.toString(16).padStart(4, '0')}→${f.ascii}`).join(', ');
+      identifierConfusables.push(`.${className}: ${detail}`);
+    }
+  }
+  const scannedIds = new Set<string>();
+  while ((m = idRe.exec(css)) !== null) {
+    const idName = m[1];
+    if (scannedIds.has(idName)) continue;
+    scannedIds.add(idName);
+    // Skip hex colors (#fff, #000 — these are not id selectors)
+    if (/^[0-9a-fA-F]{3,8}$/.test(idName)) continue;
+    const found = findConfusables(idName);
+    if (found.length > 0) {
+      const detail = found.map(f => `U+${f.char.codePointAt(0)?.toString(16).padStart(4, '0')}→${f.ascii}`).join(', ');
+      identifierConfusables.push(`#${idName}: ${detail}`);
+    }
+  }
+
+  // Scan 3: url() references — confusables in file paths can redirect to
+  // different assets (logo spoofing, CSS injection via @import)
+  const urlRe = /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
+  const urlConfusables: string[] = [];
+  const scannedUrls = new Set<string>();
+  while ((m = urlRe.exec(css)) !== null) {
+    const urlPath = m[1];
+    if (scannedUrls.has(urlPath)) continue;
+    scannedUrls.add(urlPath);
+    // Skip data: URIs (no security risk from confusables in base64)
+    if (urlPath.startsWith('data:')) continue;
+    const found = findConfusables(urlPath);
+    if (found.length > 0) {
+      const detail = found.map(f => `U+${f.char.codePointAt(0)?.toString(16).padStart(4, '0')}→${f.ascii}`).join(', ');
+      urlConfusables.push(`${urlPath}: ${detail}`);
+    }
+  }
+
+  const totalConfusables = tokenNameConfusables.length + identifierConfusables.length + urlConfusables.length;
+
+  if (totalConfusables === 0) {
+    return {
+      id: 'v36',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'PASS',
+      detail: `scanned ${Object.keys(tokens).length} token names, ${scannedClasses.size} classes, ${scannedIds.size} ids, ${scannedUrls.size} url refs — no UTS #39 confusables detected (Unicode 16.0.0)`,
+    };
+  }
+
+  const allFindings = [
+    ...tokenNameConfusables.map(d => `TOKEN: ${d}`),
+    ...identifierConfusables.map(d => `IDENT: ${d}`),
+    ...urlConfusables.map(d => `URL: ${d}`),
+  ];
+
+  // Token-name confusables are FAIL (direct security risk — token shadowing
+  // can override design-system values). Identifier confusables are WARN
+  // (class spoofing risk but less direct). URL confusables are WARN.
+  if (tokenNameConfusables.length > 0) {
+    return {
+      id: 'v36',
+      item: ITEM,
+      category: CATEGORY,
+      status: 'FAIL',
+      detail: `${totalConfusables} confusable(s) found — ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. Token-name confusables enable shadowing attacks: a --соlor-bg token (Cyrillic с) looks identical to --color-bg but resolves to a different value.`,
+    };
+  }
+
+  return {
+    id: 'v36',
+    item: ITEM,
+    category: CATEGORY,
+    status: 'WARN',
+    detail: `${totalConfusables} confusable(s) in identifiers/urls — ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. No token names affected, but class/id/url confusables can spoof UI elements or redirect asset loads.`,
+  };
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -1105,6 +1335,7 @@ async function scoreUrlUncached(targetUrl: string) {
     checkTokenLayerDepth(tokens),
     checkAiDisclosure(html),
     checkForcedColors(css),
+    checkSecurityConfusables(css, tokens),
   ];
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
@@ -1126,6 +1357,7 @@ async function scoreUrlUncached(targetUrl: string) {
   const CATEGORY_WEIGHTS: Record<string, number> = {
     cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
     takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
+    security: 5,
   };
 
   // Per-check weight = category weight / number of checks in that category
