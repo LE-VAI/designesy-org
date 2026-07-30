@@ -8,7 +8,7 @@ import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
 import { HeroConstruction } from './hero-construction';
-import { ContractHealthRack } from './contract-health-rack';
+import { ContractHealthRack, CONTRACT_HEALTH_DIMS, CONTRACT_HEALTH_MEAN } from './contract-health-rack';
 import {
   ENGINE_CHECK_COUNT,
   CONTRACT_VERSION,
@@ -146,6 +146,8 @@ const PRINCIPLES_PREVIEW = [
   { num: '04', title: 'Responsibility is a design material', desc: 'Equity, environment, economy, and social consequence are not externalities. They are design materials.' },
 ];
 
+const pctMean = Math.round(CONTRACT_HEALTH_MEAN * 100);
+
 export default function HomePage() {
   return (
     <>
@@ -271,12 +273,23 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* --- Principles preview + Contract health radar --- */}
+        {/* --- Principles preview + Contract health rack --- */}
         <section className="section" aria-labelledby="principles-title">
-          <p className="section-eyebrow">Operating principles</p>
-          <h2 className="section-title" id="principles-title" data-scramble>
-            Nine principles. Four shown here.
-          </h2>
+          <div className="section-heading-row">
+            <div>
+              <p className="section-eyebrow">Operating principles</p>
+              <h2 className="section-title" id="principles-title" data-scramble>
+                Nine principles. Four shown here.
+              </h2>
+            </div>
+            <div className="section-heading-badge" aria-label={`Contract health mean ${pctMean} out of 100 across ${CONTRACT_HEALTH_DIMS.length} dimensions`}>
+              <span className="section-heading-badge-label">Contract health</span>
+              <span className="section-heading-badge-value">
+                <span className="section-heading-badge-numeral" data-tabular>{pctMean}</span>
+                <span className="section-heading-badge-unit">· {CONTRACT_HEALTH_DIMS.length} dimensions</span>
+              </span>
+            </div>
+          </div>
           <div className="principle-layout" data-reveal-group>
             <div className="principle-list principle-list--rail">
               {PRINCIPLES_PREVIEW.map((p) => (
