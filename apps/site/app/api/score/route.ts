@@ -1610,6 +1610,162 @@ export const scoreUrl = unstable_cache(
   { revalidate: SCORE_TTL_SECONDS, tags: ['score'] }
 );
 
+// ── Format emission ─────────────────────────────────────────────────────────
+// The canonical schema is at /specs/review-findings.json. Three emission formats:
+//   format=designesy (default) — the native designesy shape (current response)
+//   format=review  — jakubkrehel-compatible markdown table (Scope, Findings, Verdict)
+//   format=google  — Google @google/design.md-compatible shape ({findings, summary, designSystem})
+// The canonical JSON is the source of truth; the other two are lossy projections.
+
+type ScoreResult = Awaited<ReturnType<typeof scoreUrlUncached>>;
+
+/** Normalize designesy status to canonical severity. */
+function statusToSeverity(status: string): string {
+  switch (status) {
+    case 'PASS': return 'pass';
+    case 'FAIL': return 'error';
+    case 'WARN': return 'warning';
+    case 'SKIP': return 'skip';
+    default: return status.toLowerCase();
+  }
+}
+
+/** Derive the overall verdict from check results. */
+function deriveVerdict(result: ScoreResult): string {
+  if (result.fail > 0) return 'fail';
+  if (result.warn > 0) return 'needs-changes';
+  if (result.pass === 0 && result.skip === result.total) return 'not-scored';
+  return 'pass';
+}
+
+/** Emission format: designesy (default, native shape — unchanged). */
+function emitDesignesy(result: ScoreResult) {
+  return { ok: true, ...result };
+}
+
+/** Emission format: canonical review-findings.json schema (the superset). */
+function emitCanonical(url: string, result: ScoreResult) {
+  return {
+    schemaVersion: '1.0',
+    generatedAt: new Date().toISOString(),
+    tool: {
+      name: 'designesy',
+      version: 'v0.3.0',
+    },
+    subject: {
+      type: 'url' as const,
+      requested: url,
+    },
+    categories: Object.entries(result.categoryScores).map(([id, cs]) => ({
+      id,
+      score: cs.score,
+      weight: cs.weight,
+      counts: { pass: cs.pass, fail: cs.fail, warn: cs.warn, skip: cs.skip },
+    })),
+    findings: result.checks.map((c) => ({
+      id: c.id,
+      item: c.item,
+      category: c.category,
+      status: c.status,
+      severity: statusToSeverity(c.status),
+      severityRaw: c.status,
+      message: c.detail,
+      detail: c.detail,
+      remediation: c.remediation,
+    })),
+    summary: {
+      score: result.score,
+      grade: result.grade,
+      countsByStatus: { pass: result.pass, fail: result.fail, warn: result.warn, skip: result.skip },
+      countsBySeverity: {
+        error: result.fail,
+        warning: result.warn,
+        pass: result.pass,
+        skip: result.skip,
+        info: 0,
+      },
+      scored: result.scored,
+      total: result.total,
+      a11yFloorApplied: result.a11yFloorApplied,
+      categoryScores: Object.fromEntries(
+        Object.entries(result.categoryScores).map(([id, cs]) => [id, cs.score])
+      ),
+    },
+    verdict: deriveVerdict(result),
+  };
+}
+
+/** Emission format: Google @google/design.md-compatible shape. */
+function emitGoogle(result: ScoreResult) {
+  return {
+    findings: result.checks.map((c) => ({
+      severity: c.status === 'FAIL' ? 'error' : c.status === 'WARN' ? 'warning' : c.status === 'PASS' ? 'info' : 'info',
+      path: c.category,
+      message: c.detail,
+    })),
+    summary: {
+      errors: result.fail,
+      warnings: result.warn,
+      infos: result.pass,
+    },
+    designSystem: null,
+  };
+}
+
+/** Emission format: jakubkrehel better-interface-compatible markdown report. */
+function emitReview(url: string, result: ScoreResult): string {
+  const lines: string[] = [];
+  // Scope and Coverage
+  lines.push('## Scope and Coverage\n');
+  lines.push('| Domain | Evidence inspected | Result |');
+  lines.push('|---|---|---|');
+  const domains = new Map<string, { pass: number; fail: number; warn: number; skip: number }>();
+  for (const c of result.checks) {
+    const d = domains.get(c.category) || { pass: 0, fail: 0, warn: 0, skip: 0 };
+    if (c.status === 'PASS') d.pass++;
+    else if (c.status === 'FAIL') d.fail++;
+    else if (c.status === 'WARN') d.warn++;
+    else d.skip++;
+    domains.set(c.category, d);
+  }
+  for (const [domain, d] of domains) {
+    const findings = d.fail + d.warn;
+    const result_str = findings === 0 ? 'Clear' : `${findings} finding(s): ${d.fail} FAIL, ${d.warn} WARN`;
+    lines.push(`| ${domain} | CSS, HTML | ${result_str} |`);
+  }
+  lines.push('');
+
+  // Findings table
+  lines.push('## Findings\n');
+  lines.push('| # | Severity | Domain | Location | Before | After | Why |');
+  lines.push('|---|---|---|---|---|---|---|');
+  let num = 0;
+  for (const c of result.checks) {
+    if (c.status === 'PASS' || c.status === 'SKIP') continue;
+    num++;
+    const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
+    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
+  }
+  if (num === 0) {
+    lines.push('| — | — | — | — | No actionable findings | — | — |');
+  }
+  lines.push('');
+
+  // Verdict
+  lines.push('## Verdict\n');
+  const verdict = deriveVerdict(result);
+  if (verdict === 'fail') lines.push('**Block** — at least one HIGH finding (FAIL) remains.');
+  else if (verdict === 'needs-changes') lines.push('**Needs changes** — only MEDIUM findings (WARN) remain.');
+  else lines.push('**Approve** — no actionable findings remain.');
+  lines.push('');
+  lines.push(`**Score: ${result.score}% (Grade ${result.grade})** — ${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.skip} SKIP / ${result.total} total`);
+
+  return lines.join('\n');
+}
+
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -1621,7 +1777,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: unknown };
+  let body: { url?: unknown; format?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -1630,6 +1786,7 @@ export async function POST(request: Request) {
 
   const rawUrl = typeof body.url === 'string' ? body.url : '';
   const url = normalizeInputUrl(rawUrl);
+  const format = typeof body.format === 'string' ? body.format.toLowerCase() : 'designesy';
 
   if (!url || !isValidUrl(url)) {
     return NextResponse.json(
@@ -1638,10 +1795,42 @@ export async function POST(request: Request) {
     );
   }
 
+  // Validate format
+  if (!['designesy', 'review', 'google', 'canonical'].includes(format)) {
+    return NextResponse.json(
+      { ok: false, error: `Unknown format "${format}". Supported: designesy (default), review, google, canonical.` },
+      { status: 400 }
+    );
+  }
+
   try {
     const result = await scoreUrl(url);
+
+    if (format === 'review') {
+      const markdown = emitReview(url, result);
+      return new Response(markdown, {
+        status: 200,
+        headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'Cache-Control': 'no-store' },
+      });
+    }
+
+    if (format === 'google') {
+      return NextResponse.json(emitGoogle(result), {
+        status: 200,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+
+    if (format === 'canonical') {
+      return NextResponse.json(emitCanonical(url, result), {
+        status: 200,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+
+    // default: designesy (native shape, unchanged)
     return NextResponse.json(
-      { ok: true, ...result },
+      emitDesignesy(result),
       { status: 200, headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (e) {
