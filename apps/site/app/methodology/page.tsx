@@ -3,7 +3,7 @@
 // sealambda shadcn index, MCP Toplist) publishes methodology + score distribution.
 // Without it, cross-listings send traffic to a leaderboard that looks arbitrary.
 //
-// This page documents: the 34 checks, their categories and weights, the scoring
+// This page documents: the 40 checks, their categories and weights, the scoring
 // math (weighted PASS/WARN/FAIL with SKIP exclusion), grade bands, the a11y floor,
 // and what the engine measures vs. what it cannot measure (SKIP reasons).
 //
@@ -22,12 +22,12 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
   description:
-    'How the Designesy 34-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
+    'How the Designesy 40-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
   path: '/methodology',
   ogDescription:
-    'The 34-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
+    'The 40-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
   twitterDescription:
-    'Designesy scoring methodology — 34 checks, 11 categories, deterministic · designesy.org/methodology',
+    'Designesy scoring methodology — 40 checks, 11 categories, deterministic · designesy.org/methodology',
 });
 
 // ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
@@ -390,7 +390,7 @@ export default function MethodologyPage() {
           <p className="surface-eyebrow" data-scramble>Verification transparency</p>
           <h1 className="surface-title" data-scramble>Methodology</h1>
           <p className="surface-lede">
-            The full scoring methodology behind the Designesy 34-check engine.
+            The full scoring methodology behind the Designesy 40-check engine.
             Deterministic, no LLM, no human judgment. Every check is a regex or
             token-resolution test against the live fetched CSS and HTML. This
             page documents exactly what the engine measures, how the score is

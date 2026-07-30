@@ -70,7 +70,7 @@ const TOOLS = [
   {
     name: 'designesy_score',
     kind: 'Executable',
-    desc: 'The 34-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 23+ automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return SKIP.',
+    desc: 'The 40-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 40 automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return SKIP.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/score',
   },
@@ -319,7 +319,7 @@ export default function McpDocsPage() {
                 100% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                34-check engine · v01–v35 all pass
+                40-check engine · v01–v41 all pass
               </p>
             </div>
           </div>
@@ -329,7 +329,7 @@ export default function McpDocsPage() {
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Eight tools fetch public machine exports from designesy.org and
-            run the 34-check verification engine. Three living-systems
+            run the 40-check verification engine. Three living-systems
             validators check DTCG token files, WCAG 2.2 accessibility, and
             Lottie motion conformance. All tools return JSON.
           </p>

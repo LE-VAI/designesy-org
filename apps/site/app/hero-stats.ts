@@ -6,10 +6,11 @@
 
 import { SEED, LEADERBOARD_LAST_SCORED } from './leaderboard/seed';
 
-// The verification engine's check count. The engine ships 34 checks
-// (v01–v23 + x01–x03 = 26 statically-reportable on the root URL, the rest
-// page/SKIP-gated). Marketing copy said "32" — stale; the engine is the truth.
-export const ENGINE_CHECK_COUNT = 34;
+// The verification engine's check count. The engine ships 40 checks
+// (v01–v23 + x01–x03 + v36–v41, grounded in CSS Color 5, WCAG 2.2, and
+// Baseline 2024–2026). Marketing copy previously said "32" and "34" —
+// stale; the engine is the truth.
+export const ENGINE_CHECK_COUNT = 40;
 
 // Public contract version the engine scores against.
 export const CONTRACT_VERSION = 'v0.3.0';

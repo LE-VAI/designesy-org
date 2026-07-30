@@ -68,6 +68,7 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'takt', label: 'Takt' },
   { key: 'cadence', label: 'Cadence' },
   { key: 'performance', label: 'Performance' },
+  { key: 'semantic', label: 'Semantic' },
 ];
 
 // ── Constellation geometry ────────────────────────────────────────────────
@@ -473,7 +474,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {status === 'loading' ? (
               <span className="score-loading-state">
                 <span className="score-spinner" />
-                Evaluating 32 Contract Checks…
+                Evaluating 40 Contract Checks…
               </span>
             ) : (
               'Score it'
@@ -502,7 +503,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
           <p className="score-verify-log-title">Legitimacy engine running</p>
           <ol className="score-verify-log-list">
-            {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 10 categories', 'Composing verdict'].map((step, i) => (
+            {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 11 categories', 'Composing verdict'].map((step, i) => (
               <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
                 <span className="score-verify-dot" aria-hidden="true" />
                 {step}
@@ -691,7 +692,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   <ol className="score-rubric-weights">
                     {(result.categoryScores
                       ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k])
-                      : CONSTELLATION_ORDER.slice(0, 10)
+                      : CONSTELLATION_ORDER.slice(0, 11)
                     ).map((k) => {
                       const cat = result.categoryScores?.[k];
                       const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
@@ -904,7 +905,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <input
                 type="text"
                 className="score-search-input"
-                placeholder="Search 32 verification checks…"
+                placeholder="Search 40 verification checks…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1023,7 +1024,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
-            extract design tokens, and evaluate 32 verification checks against the Designesy
+            extract design tokens, and evaluate 40 verification checks against the Designesy
             contract v0.3.0. Real-time. No login required.
           </p>
         </div>

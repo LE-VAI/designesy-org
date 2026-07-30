@@ -22,7 +22,7 @@ export function GET() {
   const md = `---
 name: Designesy
 version: ${c.version}
-description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, 34 automated checks.
+description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, 40 automated checks.
 standards:
   - WCAG 2.1 AA
   - APCA
@@ -34,7 +34,7 @@ standards:
 
 ## Overview
 
-Organization-first design system with deterministic verification. The contract is the scoring basis — 34 automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 11 weighted categories. No LLM, no vibes.
+Organization-first design system with deterministic verification. The contract is the scoring basis — 40 automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 11 weighted categories. No LLM, no vibes.
 
 ## Tokens
 
