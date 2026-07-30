@@ -17,10 +17,10 @@ import {
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
   description:
-    'Public design-verification leaderboard — 30 curated sites scored by the deterministic 40-check Designesy engine. No LLM, no paywall, no pay-to-remove.',
+    'Public design-verification leaderboard — 30 curated sites scored by the deterministic 36-check Designesy engine. No LLM, no paywall, no pay-to-remove.',
   path: '/leaderboard',
   ogDescription:
-    '30 sites scored by the same deterministic 40-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.',
+    '30 sites scored by the same deterministic 36-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.',
   twitterDescription:
     'Public design-verification leaderboard — designesy.org/leaderboard',
 });
@@ -74,6 +74,38 @@ function ScoreCell({ site }: { site: SeedSite }) {
   );
 }
 
+// Delta badge — shows the change since last week's re-score.
+// null prevScore (first score or prior run failed) renders no badge.
+// Zero delta renders a neutral "•" hold mark.
+function DeltaBadge({ site }: { site: SeedSite }) {
+  if (site.score === null || site.prevScore === null) {
+    return null;
+  }
+  const delta = site.score - site.prevScore;
+  if (Math.abs(delta) < 0.05) {
+    return (
+      <span
+        className="lb-delta lb-delta-flat"
+        aria-label="No change since last week"
+        title="No change since last week"
+      >
+        &bull;
+      </span>
+    );
+  }
+  const up = delta > 0;
+  const magnitude = Math.abs(delta).toFixed(1);
+  return (
+    <span
+      className={`lb-delta ${up ? 'lb-delta-up' : 'lb-delta-down'}`}
+      aria-label={`${up ? 'Up' : 'Down'} ${magnitude} since last week`}
+      title={`${up ? 'Up' : 'Down'} ${magnitude} since last week (${site.prevScore.toFixed(1)} → ${site.score.toFixed(1)})`}
+    >
+      {up ? '↑' : '↓'} {magnitude}
+    </span>
+  );
+}
+
 function SiteRow({ site }: { site: SeedSite }) {
   const isSelf = site.url === 'https://www.designesy.org';
   const needsWork = site.score !== null && site.score < 50;
@@ -117,7 +149,10 @@ function SiteRow({ site }: { site: SeedSite }) {
       </td>
       <td className="lb-score-cell">
         {site.score !== null ? (
-          <ScoreCell site={site} />
+          <div className="lb-score-stack">
+            <ScoreCell site={site} />
+            <DeltaBadge site={site} />
+          </div>
         ) : (
           <span className="lb-pending-note">pending</span>
         )}
@@ -144,9 +179,19 @@ function SiteRow({ site }: { site: SeedSite }) {
         )}
       </td>
       <td className="lb-action-cell">
-        <Link href={scoreHref} className="lb-score-link" data-cuelume-press>
-          re-score →
-        </Link>
+        <div className="lb-action-stack">
+          <Link href={scoreHref} className="lb-score-link" data-cuelume-press>
+            re-score →
+          </Link>
+          <Link
+            href="/methodology"
+            className="lb-bench-link"
+            data-cuelume-press
+            title={`What this score measures — the 36 checks, their weights, and the accessibility floor`}
+          >
+            what it means ↗
+          </Link>
+        </div>
       </td>
     </tr>
   );
@@ -221,13 +266,21 @@ export default function LeaderboardPage() {
           .lb-score { font-family: var(--mono, ui-monospace, monospace); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
           .lb-score-pending { color: var(--muted-dim); font-style: italic; font-weight: 400; font-family: inherit; font-size: 0.82rem; }
           .lb-score-pct { color: var(--muted-dim); font-weight: 400; margin-left: 0.125rem; font-size: 0.78rem; }
+          .lb-score-stack { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.18rem; }
+          .lb-delta { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; line-height: 1; padding: 0.1rem 0.3rem; border-radius: 3px; border: 1px solid transparent; white-space: nowrap; }
+          .lb-delta-up { color: var(--signal-light); background: var(--signal-dim); border-color: var(--signal-light); }
+          .lb-delta-down { color: var(--ink); background: var(--surface-hover); border-color: var(--line-strong); }
+          .lb-delta-flat { color: var(--muted-dim); background: transparent; border-color: var(--line-faint); }
           .lb-breakdown-cell { text-align: right; font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; }
           .lb-breakdown { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
           .lb-breakdown-counts { font-family: var(--mono, ui-monospace, monospace); font-size: 0.66rem; color: var(--muted-dim); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
           .lb-pending-note { color: var(--muted-dim); font-style: italic; font-size: 0.8rem; }
           .lb-action-cell { text-align: right; }
+          .lb-action-stack { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.22rem; }
           .lb-score-link { font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
           .lb-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
+          .lb-bench-link { font-size: 0.7rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.02em; }
+          .lb-bench-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-self-tag { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.4rem; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); background: var(--signal-dim); border-radius: 3px; vertical-align: middle; }
           .lb-row-self { background: var(--signal-dim); }
           .lb-row-self:hover { background: var(--signal-dim); }
@@ -290,7 +343,7 @@ export default function LeaderboardPage() {
           <p className="surface-eyebrow" data-scramble>Public verification</p>
           <h1 className="surface-title" data-scramble>Leaderboard</h1>
           <p className="surface-lede">
-            30 curated sites scored by the same deterministic 40-check engine
+            30 curated sites scored by the same deterministic 36-check engine
             that scores designesy.org. No LLM, no paywall, no pay-to-remove.
           </p>
           <p className="surface-note">
@@ -315,7 +368,7 @@ export default function LeaderboardPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Submit a site</h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Enter a URL to score it against the same 40-check engine. Submissions
+            Enter a URL to score it against the same 36-check engine. Submissions
             are scored instantly and curated into the seed list on the next weekly
             batch. No paywall, no pay-to-remove.
           </p>
@@ -431,7 +484,7 @@ export default function LeaderboardPage() {
                   <th scope="col" className="lb-th-grade">Grade</th>
                   <th scope="col" className="lb-th-score">Score</th>
                   <th scope="col" className="lb-th-breakdown">Checks</th>
-                  <th scope="col" className="lb-th-action"><span className="sr-only">Action</span></th>
+                  <th scope="col" className="lb-th-action"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -448,7 +501,7 @@ export default function LeaderboardPage() {
           <div className="definition">
             <p className="definition-label">What the engine measures</p>
             <p>
-              34 deterministic checks across 11 weighted categories — token
+              36 deterministic checks across 13 weighted categories — token
               architecture, motion hygiene, accessibility primitives,
               typography discipline, reduced-motion handling, AI disclosure,
               forced-colors readiness. Not an LLM impression. Not a roast. The
@@ -469,10 +522,10 @@ export default function LeaderboardPage() {
         </section>
 
         <div className="status-note">
-          Leaderboard v0.2 · curated seed (30 sites) · last scored{' '}
+          Leaderboard v0.3 · curated seed (30 sites) · last scored{' '}
           {LEADERBOARD_LAST_SCORED} · open submission is live — use the form
-          above. Scores are deterministic and re-run weekly. The JSON endpoint
-          lives at{' '}
+          above. Scores are deterministic and re-run weekly via a GitHub Action
+          (Mondays 10:00 UTC). The JSON endpoint lives at{' '}
           <Link href="/api/leaderboard">/api/leaderboard</Link>. Submit via the
           form above or POST to{' '}
           <Link href="/api/leaderboard/submit">/api/leaderboard/submit</Link>.
