@@ -42,8 +42,15 @@ async function main() {
   const url = readInput('url', '');
   const minScore = parseFloat(readInput('min-score', '0'));
   const minGradeRaw = normalizeGrade(readInput('min-grade', ''));
+  const format = readInput('format', 'designesy') || 'designesy';
   const api = readInput('api', 'https://www.designesy.org').replace(/\/$/, '');
   const failOnError = String(readInput('fail-on-error', 'true')) !== 'false';
+
+  const VALID_FORMATS = ['designesy', 'canonical', 'review', 'google'];
+  if (!VALID_FORMATS.includes(format)) {
+    fail(`Input "format" must be one of ${VALID_FORMATS.join(', ')} (got "${format}").`);
+    return;
+  }
 
   if (!url) {
     fail('Input "url" is required.');
@@ -54,16 +61,26 @@ async function main() {
     return;
   }
 
-  console.log(`Scoring ${url} against the Designesy design contract (${api}/api/score)…`);
+  console.log(`Scoring ${url} against the Designesy design contract (${api}/api/score, format=${format})…`);
 
   let body;
   try {
     const res = await fetch(`${api}/api/score`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ url }),
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown' },
+      body: JSON.stringify({ url, format }),
     });
     const text = await res.text();
+    // 'review' format returns markdown, not JSON — emit it as the result verbatim.
+    if (format === 'review') {
+      body = { ok: true, score: NaN, grade: '', pass: 0, fail: 0, warn: 0, skip: 0, total: 0, markdown: text };
+      // Markdown format doesn't carry numeric score/grade for gating; warn and skip gate.
+      console.log('Review (markdown) format requested — score/grade gate skipped (no numeric values).');
+      writeOutput('result', text);
+      appendSummary(`## Designesy Contract Check\n\n\`\`\`markdown\n${text}\n\`\`\``);
+      console.log('Design contract check completed (markdown format).');
+      return;
+    }
     try {
       body = JSON.parse(text);
     } catch {
@@ -78,17 +95,36 @@ async function main() {
     return;
   }
 
-  const score = typeof body.score === 'number' ? body.score : NaN;
-  const grade = normalizeGrade(body.grade);
-  const pass = body.pass ?? 0;
-  const failC = body.fail ?? 0;
-  const warn = body.warn ?? 0;
-  const skip = body.skip ?? 0;
-  const total = body.total ?? 0;
-  const a11yFloor = !!body.a11yFloorApplied;
+  // Extract score/grade — works across designesy (native), canonical, and google formats.
+  // Native: { score, grade, pass, fail, warn, skip, total }
+  // Canonical: { summary: { score, grade, countsByStatus }, verdict }
+  // Google: { summary: { errors, warnings, infos } } — no score/grade; gate skipped.
+  let score = typeof body.score === 'number' ? body.score
+    : (body.summary && typeof body.summary.score === 'number') ? body.summary.score
+    : NaN;
+  let grade = normalizeGrade(body.grade)
+    || (body.summary && body.summary.grade ? normalizeGrade(body.summary.grade) : '');
+  let pass = body.pass ?? (body.summary && body.summary.countsByStatus ? body.summary.countsByStatus.pass : 0) ?? 0;
+  let failC = body.fail ?? (body.summary && body.summary.countsByStatus ? body.summary.countsByStatus.fail : 0) ?? 0;
+  let warn = body.warn ?? (body.summary && body.summary.countsByStatus ? body.summary.countsByStatus.warn : 0) ?? 0;
+  let skip = body.skip ?? (body.summary && body.summary.countsByStatus ? body.summary.countsByStatus.skip : 0) ?? 0;
+  let total = body.total ?? (body.summary && body.summary.total ? body.summary.total : 0) ?? 0;
+  let a11yFloor = !!body.a11yFloorApplied;
+
+  // Google format has no score/grade — skip gating, just emit the result.
+  if (format === 'google') {
+    console.log('Google (design.md-compatible) format requested — no numeric score/grade; gate skipped.');
+    writeOutput('result', JSON.stringify(body));
+    const gErr = body.summary?.errors ?? 0;
+    const gWarn = body.summary?.warnings ?? 0;
+    const gInfo = body.summary?.infos ?? 0;
+    appendSummary(`## Designesy Contract Check\n\n| URL | Format | Errors / Warnings / Infos |\n|---|---|---|\n| ${url} | google | ${gErr} / ${gWarn} / ${gInfo} |\n\nℹ️ Google format carries no numeric score/grade — quality gate skipped.\n\n<sub>Engine: ${api} · 36-check · format: google</sub>`);
+    console.log(`Google format result — errors ${gErr}, warnings ${gWarn}, infos ${gInfo}.`);
+    return;
+  }
 
   if (Number.isNaN(score) || !grade) {
-    const msg = `Engine response missing score/grade for ${url}.`;
+    const msg = `Engine response missing score/grade for ${url} (format=${format}).`;
     if (failOnError) { fail(msg); } else { console.warn(`::warning::${msg}`); }
     return;
   }
@@ -124,7 +160,7 @@ async function main() {
       ? `❌ **Quality gate failed** — ${verdict.join('; ')}.`
       : `✅ **Quality gate passed** — ${url} meets the design-contract threshold.`,
     ``,
-    `<sub>Engine: ${api} · 34-check deterministic design-contract verification · full result in the \`result\` step output.</sub>`,
+    `<sub>Engine: ${api} · 36-check deterministic design-contract verification · format: ${format} · full result in the \`result\` step output.</sub>`,
   ].join('\n');
   appendSummary(md);
 
