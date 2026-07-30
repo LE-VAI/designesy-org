@@ -10,7 +10,7 @@ import { ScoreForm } from './score-form';
  *
  * The example URL is prefilled into ScoreForm via initialUrl — the visitor
  * can edit it to their own URL or just hit Score to run the engine against
- * the example. Either way the engine runs the same 26 checks.
+ * the example. Either way the engine runs the same 40 checks.
  */
 export type TargetLandingProps = {
   /** Platform name, e.g. 'Lovable' */
@@ -64,13 +64,13 @@ export function TargetLanding({
               <>
                 <strong>{platform}</strong> currently scores{' '}
                 <strong>{exampleScore}</strong> on the contract. Score your own{' '}
-                {platform} site below — the engine runs the same 26 checks
+                {platform} site below — the engine runs the same 40 checks
                 against your URL.
               </>
             ) : (
               <>
                 Score your <strong>{platform}</strong> site below — the engine
-                runs the same 26 checks against your URL as it does against
+                runs the same 40 checks against your URL as it does against
                 any other.
               </>
             )}

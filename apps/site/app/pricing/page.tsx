@@ -24,7 +24,7 @@ const TIERS = [
     suffix: 'forever',
     sub: 'Contract, Kit One, labs, open feed, Director Q&A, score + export.',
     bullets: [
-      '26-check score on any URL',
+      '40-check score on any URL',
       'Score history (5 most recent, local)',
       'Embeddable SVG badge',
       'Verification receipt export',
@@ -157,7 +157,7 @@ export default function PricingPage() {
           <div className="pricing-desk">
             <p className="pricing-desk-lede">
               The free tier is not a trial. It is the whole verification engine
-              — 26 checks, one grade, real-time. The paid tiers add volume,
+              — 40 checks, one grade, real-time. The paid tiers add volume,
               history, and continuity for teams shipping with agents.
             </p>
             <p className="pricing-desk-note">

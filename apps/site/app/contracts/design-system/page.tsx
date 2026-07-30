@@ -83,10 +83,10 @@ export default function DesignSystemContractPage() {
           <div className="hero-actions fade-up fade-up-delay-2" style={{ marginTop: '1.75rem' }}>
             <Link
               className="button primary"
-              href="/contracts/design-system.json"
+              href="/export/dtcg"
               data-cuelume-press
             >
-              Open machine export
+              Open DTCG tokens export
             </Link>
             <Link
               className="button ghost"

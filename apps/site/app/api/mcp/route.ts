@@ -211,11 +211,11 @@ const handler = createMcpHandler(
     );
 
     // ── Tool 8: designesy_score ───────────────────────────────────────────────
-    // Calls the internal /api/score endpoint — the 34-check verification engine
+    // Calls the internal /api/score endpoint — the 40-check verification engine
     // that already runs natively on this same Vercel project. No Python needed.
     server.tool(
       'designesy_score',
-      'Score a live URL against the Designesy design contract — a deterministic 34-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography). It fetches the page HTML, extracts inline + linked CSS, parses :root custom properties, and runs each check with provenance back to contract rules. Executable — performs the fetch and scoring server-side. Returns a JSON object with overall score/grade plus per-check PASS/FAIL/WARN/SKIP detail; checks needing a live browser (CWV, sound toggle, overflow) are marked SKIP. x01-x03 cover v0.3.0 resolved tensions (font-synthesis, text-underline-position, skip-ink). For qualitative design critique rather than compliance scoring, use designesy_design_review.',
+      'Score a live URL against the Designesy design contract — a deterministic 40-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography). It fetches the page HTML, extracts inline + linked CSS, parses :root custom properties, and runs each check with provenance back to contract rules. Executable — performs the fetch and scoring server-side. Returns a JSON object with overall score/grade plus per-check PASS/FAIL/WARN/SKIP detail; checks needing a live browser (CWV, sound toggle, overflow) are marked SKIP. x01-x03 cover v0.3.0 resolved tensions (font-synthesis, text-underline-position, skip-ink). For qualitative design critique rather than compliance scoring, use designesy_design_review.',
       {
         url: z.string().optional().describe('URL to score. Defaults to https://www.designesy.org/ if not provided.'),
       },

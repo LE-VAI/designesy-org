@@ -25,13 +25,13 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — Score any site against the design contract',
   description:
-    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 32 checks, one grade, real-time. The design legitimacy standard.',
+    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 40 checks, one grade, real-time. The design legitimacy standard.',
   path: '/',
   ogTitle: 'Designesy — The design legitimacy standard',
   ogDescription:
-    '32 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
+    '40 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
   twitterDescription:
-    'Score any site against the Designesy design contract. 32 checks. One grade. designesy.org',
+    'Score any site against the Designesy design contract. 40 checks. One grade. designesy.org',
 });
 
 const PILLARS = [
@@ -43,7 +43,7 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: '32 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
+    text: '40 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
   },
   {
     number: '03',
@@ -417,7 +417,7 @@ export default function HomePage() {
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
                 },
                 {
-                  title: 'Verification engine · 32 checks',
+                  title: 'Verification engine · 40 checks',
                   meta: 'Live on /score · scores any URL against the contract in real-time',
                 },
                 {

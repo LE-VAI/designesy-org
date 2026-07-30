@@ -17,10 +17,10 @@ import {
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
   description:
-    'Public design-verification leaderboard — 30 curated sites scored by the deterministic 34-check Designesy engine. No LLM, no paywall, no pay-to-remove.',
+    'Public design-verification leaderboard — 30 curated sites scored by the deterministic 40-check Designesy engine. No LLM, no paywall, no pay-to-remove.',
   path: '/leaderboard',
   ogDescription:
-    '30 sites scored by the same deterministic 34-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.',
+    '30 sites scored by the same deterministic 40-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.',
   twitterDescription:
     'Public design-verification leaderboard — designesy.org/leaderboard',
 });
@@ -290,7 +290,7 @@ export default function LeaderboardPage() {
           <p className="surface-eyebrow" data-scramble>Public verification</p>
           <h1 className="surface-title" data-scramble>Leaderboard</h1>
           <p className="surface-lede">
-            30 curated sites scored by the same deterministic 34-check engine
+            30 curated sites scored by the same deterministic 40-check engine
             that scores designesy.org. No LLM, no paywall, no pay-to-remove.
           </p>
           <p className="surface-note">
@@ -315,7 +315,7 @@ export default function LeaderboardPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Submit a site</h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Enter a URL to score it against the same 34-check engine. Submissions
+            Enter a URL to score it against the same 40-check engine. Submissions
             are scored instantly and curated into the seed list on the next weekly
             batch. No paywall, no pay-to-remove.
           </p>
