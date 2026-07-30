@@ -8,6 +8,7 @@ const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/benchmarks', label: 'Benchmarks' },
+  { href: '/specs', label: 'Specs' },
   { href: '/methodology', label: 'Methodology' },
   { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
