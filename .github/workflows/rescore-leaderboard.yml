@@ -1,0 +1,56 @@
+name: Rescore Leaderboard
+
+# Weekly re-score of all leaderboard seed sites against the live designesy.org
+# /api/score engine. Computes delta-since-last-week badges and commits the
+# updated seed.ts + snapshot.json back to main. This keeps the leaderboard fresh
+# without manual batch runs.
+#
+# The Vercel Cron (/api/cron/rescore) also fires weekly but only returns scores
+# as a JSON response — it can't write to the repo. This workflow IS the write
+# path. It runs the re-score, generates the updated TypeScript, and commits.
+#
+# Schedule: Mondays 10:00 UTC (one hour after the Vercel Cron fires, so the
+# Vercel /api/score cache is warm from the cron's probe — the Action's fetches
+# are instant instead of 3-8s cold).
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'   # every Monday 10:00 UTC
+  workflow_dispatch:         # manual trigger from the Actions tab
+
+permissions:
+  contents: write            # needed to commit the updated seed back
+
+jobs:
+  rescore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Re-score all leaderboard sites
+        env:
+          SCORE_API: 'https://www.designesy.org/api/score'
+        run: node scripts/rescore-leaderboard.mjs
+
+      - name: Commit updated leaderboard
+        run: |
+          git config user.name 'designesy-bot'
+          git config user.email 'bot@designesy.org'
+          git add apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json
+          if git diff --cached --quiet; then
+            echo "No score changes since last week — nothing to commit."
+          else
+            git commit -m "chore(leaderboard): weekly re-score $(date -u +%Y-%m-%d)
+
+          Automated re-score of all leaderboard seed sites against the live
+          /api/score engine. Delta badges computed from the previous week's
+          snapshot. Triggered by .github/workflows/rescore-leaderboard.yml."
+            git push
+          fi
