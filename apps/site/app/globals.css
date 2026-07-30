@@ -2375,100 +2375,33 @@ button.pillar:hover::before {
 }
 
 /*
-  Contract health rack — 8 mini-gauge modules in a 4×2 (desktop) / 2×4
-  (mobile) grid. Replaces the octagonal radar: the radar's arbitrary axis
-  order, meaningless connecting lines, and area-judgment cost made the
-  reading feel decorative rather than measured. Each rack module encodes its
-  dimension as a 270° arc from one shared baseline, with a mono numeral and
-  a hover state that lifts just that instrument — the register is hardware
-  panel, not dashboard card. Pure SVG + CSS.
+  Contract health rack — 8 mini-gauge modules, one per design review
+  dimension. Unbordered, un-padded, un-contained: the gauges sit on the page
+  background at the same optical weight as the principle-list items beside
+  them. The mean lives in the section header as a quiet badge, not inside
+  the rack, so the rack has one type scale (module numeral) and one accent
+  (arc stroke) — no internal hierarchy fight, no card visual mass pulling
+  the eye lower than the list.
 */
-.health-rack {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: clamp(1rem, 2vw, 1.25rem);
-  gap: clamp(0.9rem, 1.6vw, 1.15rem);
-}
-
-.health-rack-header {
-  display: flex;
-  /* Optical alignment: left "Contract health" and right "93" both start at
-     the rack's top content edge — the same line as the principle-list's
-     first h3. baseline would pin them to different bottoms because the two
-     blocks have different type metrics (12px label vs 34px mean numeral). */
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px solid var(--line-faint);
-}
-
-.health-rack-title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.health-rack-title {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-}
-
-.health-rack-sub {
-  font-size: 0.62rem;
-  color: var(--muted-dim);
-}
-
-/* Mean readout — the header instrument. Tabular mono, larger than the
-   module numerals so it reads as the rack's primary value. */
-.health-rack-mean {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-.health-rack-mean-numeral {
-  font-size: clamp(1.6rem, 2.2vw, 1.9rem);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-.health-rack-mean-label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-}
-
 .health-rack-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.75rem, 1.4vw, 1rem);
+  gap: clamp(1rem, 1.8vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .health-rack-module {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.55rem;
-  padding: 0.65rem 0.5rem 0.55rem;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius) * 0.7);
-  transition: border-color 240ms var(--ease-out), background 240ms var(--ease-out);
+  padding: 0;
+  transition: opacity 240ms var(--ease-out);
 }
 
 .health-rack-svg {
-  width: clamp(64px, 6.2vw, 84px);
+  width: clamp(72px, 6.5vw, 92px);
   height: auto;
   display: block;
 }
@@ -2476,14 +2409,15 @@ button.pillar:hover::before {
 /* 270° arc track — the "always 100" reference baseline. */
 .health-rack-track {
   stroke: var(--line-faint);
-  stroke-width: 4;
+  stroke-width: 4.5;
   fill: none;
+  transition: stroke 240ms var(--ease-out);
 }
 
 /* The measured reading: one accent arc truncated by stroke-dasharray. */
 .health-rack-value {
   stroke: var(--signal-light);
-  stroke-width: 4;
+  stroke-width: 4.5;
   fill: none;
   transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
 }
@@ -2494,7 +2428,7 @@ button.pillar:hover::before {
 }
 
 .health-rack-numeral {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.02em;
   fill: var(--ink);
@@ -2511,7 +2445,7 @@ button.pillar:hover::before {
 }
 
 .health-rack-label {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2519,28 +2453,14 @@ button.pillar:hover::before {
   transition: color 240ms var(--ease-out);
 }
 
-.health-rack-foot {
-  margin: 0;
-  font-size: 0.62rem;
-  line-height: 1.6;
-  color: var(--muted-dim);
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--line-faint);
-}
-
-/* Hover — the premium instrument micro-state. Only the hovered module lifts;
-   the others recede slightly so the eye lands on the active reading. */
+/* Hover — the premium instrument micro-state. Lift just the hovered module. */
 @media (hover: hover) and (pointer: fine) {
-  .health-rack-module:hover {
-    border-color: var(--line-strong);
-    background: rgba(255, 255, 255, 0.015);
-  }
   .health-rack-module:hover .health-rack-track {
     stroke: var(--line);
   }
   .health-rack-module:hover .health-rack-value {
     stroke: var(--signal);
-    stroke-width: 5;
+    stroke-width: 5.5;
   }
   .health-rack-module:hover .health-rack-numeral,
   .health-rack-module:hover .health-rack-label {
@@ -2550,16 +2470,61 @@ button.pillar:hover::before {
   .health-rack-module:hover .health-rack-tip {
     fill: var(--signal);
   }
-  /* On rack hover, non-hovered modules recede — directs attention */
-  .health-rack:hover .health-rack-module:not(:hover) {
-    opacity: 0.45;
-  }
-  .health-rack .health-rack-module {
-    transition: opacity 240ms var(--ease-out), border-color 240ms var(--ease-out), background 240ms var(--ease-out);
-  }
 }
 
+/* Section heading row — title left, contract-health badge right. The badge
+   carries the mean as a quiet, bounded instrument reading, so the section
+   title and the rack mean occupy the same horizontal band as the principle
+   list's first "01" row. */
+.section-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(1rem, 2.6vw, 2rem);
+  flex-wrap: wrap;
+}
 
+.section-heading-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--surface);
+}
+
+.section-heading-badge-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.section-heading-badge-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.section-heading-badge-numeral {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.section-heading-badge-unit {
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+}
+
+/* Desktop: principle list and the unbordered rack sit side-by-side. The list
+   pins its width; the rack grid takes the rest. Rack top aligns to list top. */
 @media (min-width: 860px) {
   .principle-layout {
     flex-direction: row;
@@ -2573,29 +2538,1561 @@ button.pillar:hover::before {
     flex-shrink: 0;
   }
 
-  .health-rack {
-    align-self: flex-start;
-    /* Optical alignment: the rack border is flush with the principle-list top,
-       so the header content must start at the same y as the first principle
-       h3. The rack's card border reads as the enclosure, so the internal
-       top padding collapses to zero here — no invisible 20px gutter that
-       the left column lacks. */
-    padding-top: 0;
-  }
-
   .health-rack-grid {
+    align-self: flex-start;
     grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .health-rack .health-rack-module,
-  .health-rack .health-rack-value,
-  .health-rack .health-rack-track,
-  .health-rack .health-rack-tip,
-  .health-rack .health-rack-numeral,
-  .health-rack .health-rack-label {
+  .health-rack-module,
+  .health-rack-value,
+  .health-rack-track,
+  .health-rack-tip,
+  .health-rack-numeral,
+  .health-rack-label {
     transition: none;
+  }
+}
+
+.text-link {
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* --- Buttons --- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  border-radius: var(--radius);
+  transition: transform 160ms var(--ease-out), background 0.2s var(--ease),
+    border-color 0.2s var(--ease);
+  cursor: pointer;
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+.button.primary {
+  background: var(--signal);
+  color: #ffffff;
+  border: 1px solid var(--signal);
+  box-shadow: var(--inner-light), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition: background var(--duration-quick) var(--ease-out),
+              border-color var(--duration-quick) var(--ease-out),
+              box-shadow var(--duration-quick) var(--ease-out),
+              transform var(--duration-quick) var(--ease-out),
+              filter var(--duration-quick) var(--ease-out);
+}
+
+.button.primary:hover {
+  background: var(--signal-light);
+  border-color: var(--signal-light);
+  box-shadow: var(--inner-light), 0 0 32px rgba(51, 88, 232, 0.24);
+}
+
+.button.primary:active {
+  background: var(--signal);
+  filter: brightness(0.92);
+  transform: scale(0.97);
+  box-shadow: var(--inner-light);
+}
+
+.button.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+.button.ghost:hover {
+  background: var(--surface-hover);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* --- Pipeline diagram — continuous rail, stable across widths --- */
+
+.pipeline {
+  padding: 2.25rem 0 2.75rem;
+  margin-bottom: 1.5rem;
+  border-top: 1px solid var(--line-faint);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.pipeline-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 1.5rem;
+}
+
+.pipeline-track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  position: relative;
+}
+
+.pipeline-track::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 0.55rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--line) 8%,
+    var(--line) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.45rem;
+  padding: 0 0.35rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.pipeline-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+
+.pipeline-node-core {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--muted-dim);
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease-out);
+}
+
+.pipeline-num {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.35rem;
+}
+
+.pipeline-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--muted);
+  line-height: 1.2;
+  transition: color 0.2s var(--ease);
+}
+
+.pipeline-note {
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+  line-height: 1.3;
+  max-width: 7.5rem;
+}
+
+.pipeline-step.is-end .pipeline-node {
+  border-color: var(--signal);
+  background: var(--signal-dim);
+}
+
+.pipeline-step.is-end .pipeline-node-core {
+  background: var(--signal);
+  width: 0.4rem;
+  height: 0.4rem;
+  animation: signalPulse 3.2s var(--ease-in-out) infinite;
+}
+
+.pipeline-step.is-end .pipeline-label {
+  color: var(--ink);
+}
+
+.pipeline-step.is-end .pipeline-num {
+  color: var(--signal-light);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pipeline-step:hover .pipeline-node {
+    border-color: var(--signal-light);
+  }
+
+  .pipeline-step:hover .pipeline-node-core {
+    background: var(--signal-light);
+    transform: scale(1.15);
+  }
+
+  .pipeline-step:hover .pipeline-label {
+    color: var(--ink);
+  }
+}
+
+.pipeline-step:focus-within .pipeline-node {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+/* --- Sections --- */
+
+.section {
+  padding: clamp(3.5rem, 8vw, 6.5rem) 0;
+}
+
+/* Scroll-driven depth — sections drift up 8px as they enter the viewport,
+   purely via native CSS scroll-driven animations. Progressive enhancement:
+   browsers without animation-timeline support (Firefox, older Safari) skip
+   this and sections render statically. No JS, no layout shift, no jank.
+   Reduced-motion users get the static fallback via the media query. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .section > * {
+      animation: section-depth linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    /* Transform-only reveal: opacity is a contrast smell for WCAG 1.4.3 —
+       sampling at any scroll position must still show AA 4.5:1 text. */
+    @keyframes section-depth {
+      from { transform: translateY(16px); }
+      to   { transform: none; }
+    }
+  }
+}
+
+.section-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: clamp(1.875rem, 4vw, 2.75rem);
+  font-weight: 400;
+  letter-spacing: -0.018em;
+  line-height: 1.08;
+  margin-bottom: 2rem;
+  max-width: 820px;
+  text-wrap: balance;
+  font-variation-settings: 'opsz' 30;
+}
+
+/* --- Pillar grid --- */
+
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.pillar {
+  display: grid;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+/* Subgrid: cards in the same row share track sizing so numbers, titles, and
+   descriptions align horizontally across the row. Falls back gracefully —
+   browsers without subgrid support use the implicit row sizing. */
+@supports (grid-template-rows: subgrid) {
+  .pillar {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.75rem;
+  }
+  .pillar-number { grid-row: 1; }
+  .pillar h3 { grid-row: 2; }
+  .pillar p { grid-row: 3; }
+}
+
+.pillar:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.pillar:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pillar:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.pillar-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.pillar h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+
+.pillar p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* --- Surfaces grid --- */
+
+.surface-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.surface-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+/* Subgrid: surface cards in the same row share track sizing so meta, label,
+   and desc align horizontally. Falls back to flex column without subgrid. */
+@supports (grid-template-rows: subgrid) {
+  .surface-card {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.45rem;
+  }
+  .surface-card-meta { grid-row: 1; }
+  .surface-card-label { grid-row: 2; }
+  .surface-card-desc { grid-row: 3; }
+}
+
+.surface-card:hover {
+  border-left-color: var(--signal);
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+a.surface-card:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .surface-card:hover {
+    transform: perspective(600px)
+      rotateX(var(--tilt-rx, 0deg))
+      rotateY(var(--tilt-ry, 0deg))
+      translateY(-1px);
+  }
+}
+
+.surface-card-meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.45rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.surface-card-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+  text-wrap: balance;
+}
+
+.surface-card-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.surface-card-arrow {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.surface-card:hover .surface-card-arrow {
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .surface-card:hover .surface-card-arrow {
+    transform: translateX(2px);
+  }
+}
+
+/*
+  ==========================================================================
+  Site-wide effect enhancements — spotlight, sweep, tilt, fill,
+  underline, slide, shake. Applied to existing components using
+  contract tokens. Respects prefers-reduced-motion.
+  ==========================================================================
+*/
+
+/* --- Spotlight: cursor-tracking glow on field cards --- */
+.field-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: radial-gradient(
+    circle 120px at var(--spot-x, 50%) var(--spot-y, 30%),
+    var(--signal-dim),
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 280ms var(--ease-out);
+}
+.field-card {
+  position: relative;
+  overflow: hidden;
+}
+.field-card:hover::before {
+  opacity: 0.5;
+}
+.field-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Spotlight: cursor-tracking glow on surface cards --- */
+.surface-card {
+  position: relative;
+  overflow: hidden;
+}
+.surface-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: radial-gradient(
+    circle 100px at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--signal-dim),
+    transparent 70%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 200ms var(--ease);
+}
+.surface-card:hover::before {
+  opacity: 0.5;
+}
+.surface-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Sweep: signal line scans across the top edge of surface cards --- */
+.surface-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 400ms var(--ease-out);
+}
+.surface-card:hover::after {
+  transform: translateX(100%);
+}
+
+/* --- Tilt: 3D tilt toward cursor on field cards (fine pointer only) --- */
+/* Tilt is merged into the .field-card:hover rule above to avoid
+   transform conflicts with the existing lift + active states. */
+@media (hover: hover) and (pointer: fine) {
+  .field-card {
+    transition: transform 120ms var(--ease-out),
+      border-color 0.2s var(--ease), background 0.2s var(--ease);
+  }
+}
+
+/* --- Fill: signal-dim washes up into the pipeline node on hover --- */
+.pipeline-step:hover .pipeline-node {
+  background: var(--signal-dim);
+  border-color: var(--signal);
+}
+.pipeline-step:hover .pipeline-node-core {
+  background: var(--signal);
+  transform: scale(1.2);
+}
+
+/* --- Underline: signal underline grows under nav links on hover --- */
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: 50%;
+  bottom: 0.2rem;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0;
+  transition: left 250ms var(--ease-out), right 250ms var(--ease-out),
+    opacity 200ms var(--ease);
+}
+.nav-links a:hover::after {
+  left: 0.65rem;
+  right: 0.65rem;
+  opacity: 0.7;
+}
+/* Active link keeps its static underline, overrides the hover animation */
+.nav-links a.is-active::after,
+.nav-links a[aria-current="page"]::after {
+  left: 0.65rem;
+  right: 0.65rem;
+  opacity: 0.9;
+  transition: none;
+}
+
+/* --- Slide: surface card label slides right, desc slides in on hover --- */
+.surface-card-label,
+.surface-card-desc,
+.surface-card-arrow {
+  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .surface-card:hover .surface-card-label {
+    transform: translateX(4px);
+  }
+  .surface-card:hover .surface-card-desc {
+    color: var(--ink);
+  }
+}
+
+/* --- Shake: non-link elements jitter on tap --- */
+.principle.is-shaking,
+.pipeline-step.is-shaking {
+  animation: site-shake 400ms var(--ease-out);
+}
+@keyframes site-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(1px); }
+}
+
+/* --- Reduced motion: disable all site-wide effects --- */
+@media (prefers-reduced-motion: reduce) {
+  .field-card::before,
+  .surface-card::before,
+  .surface-card::after {
+    display: none;
+  }
+  /* Keep field-card hover tilt — it's interaction feedback, not motion.
+     The --tilt-rx/--tilt-ry vars are set by EffectEnhancer on pointermove. */
+  .nav-links a::after {
+    display: none;
+  }
+  .principle.is-shaking,
+  .pipeline-step.is-shaking {
+    animation: none;
+  }
+  .surface-card:hover .surface-card-label,
+  .surface-card:hover .surface-card-desc {
+    transform: none;
+  }
+}
+
+/*
+  ==========================================================================
+  Site-wide subtle enhancements — second pass
+  Extends lab-cards, rows, check-cells, definitions, buttons, toggles,
+  principles, footer links, lab-card children, surface-item cards,
+  token-table rows, and copy affordances. All token-driven, all
+  reduced-motion safe (guard at bottom).
+  ==========================================================================
+*/
+
+/* --- Lab cards: sweep on top edge + label slide on hover --- */
+.lab-card {
+  position: relative;
+  overflow: hidden;
+}
+.lab-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 400ms var(--ease-out);
+}
+.lab-card:hover::after {
+  transform: translateX(100%);
+}
+.lab-card-title,
+.lab-card-lede {
+  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lab-card:hover .lab-card-title {
+    transform: translateX(3px);
+  }
+  .lab-card:hover .lab-card-lede {
+    color: var(--ink);
+  }
+}
+
+/* --- Rows: row-index brighten on hover --- */
+.row-index {
+  transition: color 200ms var(--ease);
+}
+.row:hover .row-index {
+  color: var(--signal-light);
+}
+
+/* --- Check cells: fill sweep from bottom + arrow slide --- */
+.check-cell {
+  position: relative;
+  overflow: hidden;
+}
+.check-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--signal-dim);
+  transform: translateY(100%);
+  transition: transform 250ms var(--ease-out);
+  z-index: 0;
+  pointer-events: none;
+}
+.check-cell:hover::before {
+  transform: translateY(0);
+  opacity: 0.3;
+}
+.check-cell > * {
+  position: relative;
+  z-index: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  a.check-cell:hover .check-cell-title {
+    transform: translateX(2px);
+  }
+}
+
+/* --- Definitions: signal sweep across left border on hover --- */
+.definition {
+  position: relative;
+  overflow: hidden;
+}
+.definition::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 300ms var(--ease-out);
+  z-index: 0;
+}
+.definition:hover::after {
+  transform: scaleY(1);
+}
+
+/* --- Buttons: signal glow ring on hover (primary) --- */
+.button.primary {
+  position: relative;
+  overflow: visible;
+}
+.button.primary::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid var(--signal-light);
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+  pointer-events: none;
+  z-index: -1;
+}
+.button.primary:hover::after {
+  opacity: 0.4;
+  transform: scale(1);
+}
+
+/* --- Ghost buttons: signal-dim underline sweep --- */
+.button.ghost {
+  position: relative;
+  overflow: hidden;
+}
+.button.ghost::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  transition: transform 300ms var(--ease-out);
+  pointer-events: none;
+}
+.button.ghost:hover::after {
+  transform: translateX(0);
+}
+
+/* --- Toggle (pillar): signal left-edge trace on hover --- */
+button.pillar {
+  position: relative;
+  overflow: hidden;
+}
+button.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out);
+  z-index: 0;
+}
+button.pillar:hover::before {
+  transform: scaleY(1);
+}
+
+/* --- Principles: signal-dot brighten + title slide on hover --- */
+.principle {
+  transition: transform 200ms var(--ease-out);
+}
+.principle:hover .principle-num::before {
+  background: var(--signal-light);
+  box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
+}
+.principle-body h3 {
+  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
+}
+.principle-body p {
+  transition: color 200ms var(--ease);
+  text-wrap: pretty;
+}
+@media (hover: hover) and (pointer: fine) {
+  .principle:hover .principle-body h3 {
+    transform: translateX(3px);
+  }
+  .principle:hover .principle-body p {
+    color: var(--ink);
+  }
+}
+
+/* --- Footer links: signal underline grow --- */
+.footer-dock-pill,
+.footer-link {
+  position: relative;
+}
+.footer-dock-pill::after,
+.footer-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.footer-dock-pill:hover::after,
+.footer-link:hover::after {
+  right: 0;
+}
+
+/* --- Lab meta links: signal underline grow --- */
+.lab-meta-item a {
+  position: relative;
+}
+.lab-meta-item a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.lab-meta-item a:hover::after {
+  right: 0;
+}
+
+/* --- Lab crumbs: signal underline grow --- */
+.lab-crumb {
+  position: relative;
+}
+.lab-crumb::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.lab-crumb:hover::after {
+  right: 0;
+}
+
+/* --- Text links: signal underline grow (replaces static border) --- */
+.text-link {
+  position: relative;
+  /* Readable-by-default: --ink (≥ 7:1) carries the text; the brand-signal
+     moment is carried by the hover underline grow below, not by dim text. */
+  color: var(--ink);
+  border-bottom: 1px solid var(--line-strong);
+  overflow: visible;
+}
+.text-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.text-link:hover::after {
+  right: 0;
+}
+
+/* --- Scope path links: signal underline grow --- */
+.scope-path-link,
+.scope-line a {
+  position: relative;
+}
+.scope-path-link::after,
+.scope-line a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.scope-path-link:hover::after,
+.scope-line a:hover::after {
+  right: 0;
+}
+
+/* --- Sense toggles: signal ring on hover when active --- */
+.sense-toggle[aria-pressed="true"]:hover {
+  border-color: var(--signal-light);
+  box-shadow: 0 0 0 2px var(--signal-dim);
+}
+
+/* --- Copy prompt button: signal glow on hover --- */
+.copy-prompt-btn {
+  position: relative;
+  overflow: visible;
+}
+.copy-prompt-btn::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid var(--signal-dim);
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  pointer-events: none;
+}
+.copy-prompt-btn:hover::after {
+  opacity: 0.6;
+}
+
+/* --- Copy row: signal left trace on hover --- */
+/* CopyRow uses class="row", already covered by .row::above */
+
+/* --- Wordmark (nav): signal dot brighten on hover --- */
+.wordmark {
+  position: relative;
+}
+.wordmark:hover .dot {
+  animation: dot-brighten 400ms var(--ease-out);
+}
+@keyframes dot-brighten {
+  0% { color: var(--signal); }
+  50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
+  100% { color: var(--signal); }
+}
+
+/* --- Field card title + lede: slide on hover (parity with surface-card) --- */
+.field-card-title,
+.field-card-lede {
+  transition: transform 200ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .field-card:hover .field-card-title {
+    transform: translateX(2px);
+  }
+  .field-card:hover .field-card-lede {
+    transform: translateX(1px);
+  }
+}
+
+/* --- Open package path links: signal underline grow --- */
+.open-package-paths a {
+  position: relative;
+}
+.open-package-paths a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -1px;
+  height: 1px;
+  background: var(--signal);
+  transition: right 200ms var(--ease-out);
+}
+.open-package-paths a:hover::after {
+  right: 0;
+}
+
+/* --- Back button: signal glow ring on hover --- */
+.back-button {
+  position: relative;
+  overflow: visible;
+}
+.back-button::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--signal-dim);
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  pointer-events: none;
+}
+.back-button:hover::after {
+  opacity: 0.5;
+}
+
+/* --- Surface item: lift + border brighten (parity with surface-card) --- */
+.surface-item {
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+.surface-item:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+@media (hover: hover) and (pointer: fine) {
+  .surface-item:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* --- Token table rows: subtle background highlight on hover --- */
+.token-table-row {
+  transition: background 200ms var(--ease);
+}
+.token-table-row:hover {
+  background: var(--surface-soft);
+}
+
+/* --- Checkmark list items: glyph color shift on hover --- */
+.checkmark-list li,
+.avoid-list li {
+  transition: color 200ms var(--ease);
+}
+.checkmark-list li:hover {
+  color: var(--ink);
+}
+.avoid-list li:hover {
+  color: var(--muted);
+}
+
+/* --- Reduced motion: disable all second-pass effects --- */
+@media (prefers-reduced-motion: reduce) {
+  .lab-card::after,
+  .check-cell::before,
+  .definition::after,
+  .button.primary::after,
+  .button.ghost::after,
+  button.pillar::before,
+  .footer-dock-pill::after,
+  .footer-link::after,
+  .lab-meta-item a::after,
+  .lab-crumb::after,
+  .text-link::after,
+  .scope-path-link::after,
+  .scope-line a::after,
+  .open-package-paths a::after,
+  .back-button::after,
+  .copy-prompt-btn::after {
+    display: none;
+  }
+  /* Keep hover text lifts — subtle transform on hover is interaction feedback */
+  .wordmark:hover .dot {
+    animation-duration: 12s;
+  }
+}
+
+/* --- Status bar --- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--signal);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 3rem;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* 11.2px uppercase is WCAG 1.4.3 AA-normal (4.5:1) territory. --signal-light
+     (#3358e8) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
+     the same hue family — clears 4.5:1 while preserving the brand signal
+     identity. --signal-access is additive; contract tokens untouched. */
+  color: var(--signal-access);
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--signal-dim);
+  border-radius: 3px;
+  /* No --signal-dim background fill: rgba(1,51,203,0.14) over surfaces produces
+     a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
+     the badge readable from the border + light text alone. */
+  background: transparent;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* --- Footer --- */
+
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 3rem 0 2.5rem;
+  margin-top: 2rem;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.footer-meta strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.footer-badge {
+  margin-top: 0.5rem;
+  opacity: 0.85;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.footer-badge:hover {
+  opacity: 1;
+}
+
+/*
+  Footer docks — two separate horizontal auto-scrolling rows of pill cells.
+  Surfaces dock (human links) and Machine dock (agent links) are visually
+  distinct sections, each with its own label and track. Content duplicated
+  for seamless loop. Pauses on hover/focus. Edge fade on clip only.
+  Pure CSS, no JS. Respects prefers-reduced-motion.
+
+  Structure: .footer-dock > label + .footer-dock-clip > .footer-dock-track > pills
+  - .footer-dock-clip: width:100%, overflow:hidden, mask gradient (visible window)
+  - .footer-dock-track: width:max-content, animated translateX (the scroller)
+*/
+.footer-docks {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.footer-dock {
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.footer-dock-label {
+  display: block;
+  padding: 0.4rem 0.75rem 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  flex-shrink: 0;
+}
+
+/* Visible window — clips the scrolling track */
+.footer-dock-clip {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.15rem 0 0.55rem;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 5%,
+    #000 95%,
+    transparent 100%
+  );
+}
+
+/* Inner scroller — as wide as content, animated */
+.footer-dock-track {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem;
+  width: max-content;
+  animation: footer-dock-scroll 50s linear infinite;
+}
+
+.footer-dock:hover .footer-dock-track,
+.footer-dock:focus-within .footer-dock-track {
+  animation-play-state: paused;
+}
+
+/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
+.footer-dock-clip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.footer-dock-clip::-webkit-scrollbar {
+  height: 3px;
+}
+.footer-dock-clip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.footer-dock-clip::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.footer-dock:hover .footer-dock-clip {
+  cursor: grab;
+}
+
+@keyframes footer-dock-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.footer-dock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: transform 0.18s var(--ease-out),
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+
+/* Signal dot accent before each surface pill */
+.footer-dock-pill--surface::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
+  opacity: 0.5;
+  transition: opacity 0.18s var(--ease);
+}
+
+.footer-dock-pill--surface:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+  color: var(--ink);
+  transform: scale(1.06);
+}
+
+.footer-dock-pill--surface:hover::before {
+  opacity: 1;
+}
+
+.footer-dock-pill--machine {
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--mono, 'SF Mono', 'Fira Code', monospace);
+  font-size: 0.68rem;
+}
+
+/* Dim dot accent before each machine pill */
+.footer-dock-pill--machine::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted-dim);
+  opacity: 0.4;
+  transition: opacity 0.18s var(--ease);
+}
+
+.footer-dock-pill--machine:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+  color: var(--muted);
+  transform: scale(1.06);
+}
+
+.footer-dock-pill--machine:hover::before {
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-dock-track {
+    animation-duration: 200s;
+  }
+}
+
+.footer-link {
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: color 0.2s var(--ease);
+}
+
+.footer-link:hover {
+  color: var(--ink);
+}
+
+/* --- Route page shells --- */
+
+.surface-page {
+  max-width: var(--maxw-wide);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  min-height: 100vh;
+  /* Lift above body's fixed background texture layers (Stage 4) */
+  position: relative;
+  z-index: 1;
+}
+
+/* Continuity case study — deliberate pacing entrance (350ms --ease).
+   Page-scoped so Tile/Compile keep the default 600ms --duration. */
+.continuity-page .fade-up {
+  animation-duration: var(--duration-medium);
+}
+
+.surface-header {
+  padding: clamp(4rem, 9vw, 7rem) 0 clamp(2.5rem, 5vw, 3.5rem);
+  max-width: 680px;
+}
+
+.surface-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+}
+
+.surface-title {
+  font-size: clamp(2.4rem, 5.5vw, 3.5rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin-bottom: 1rem;
+  text-wrap: balance;
+  font-variation-settings: 'opsz' 32;
+}
+
+.surface-lede {
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  text-wrap: pretty;
+}
+
+.surface-note {
+  font-size: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 580px;
+  text-wrap: pretty;
+}
+
+.surface-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding-bottom: 4rem;
+}
+
+.surface-item {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.surface-item-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+.surface-item-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* --- Doctrine content (route pages) --- */
+
+.doctrine-section {
+  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  border-top: 1px solid var(--line);
+}
+
+.doctrine-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.doctrine-heading {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 1.5rem;
+}
+
+/* Principle list — numbered entries with title + description */
+
+.principle-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.principle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.principle-list--rail {
+  position: relative;
+}
+
+.principle-list--rail::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 1px;
+  background: var(--line-faint);
+  pointer-events: none;
+}
+
+.principle {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  position: relative;
+}
+
+.principle-num {
+  position: relative;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.principle-list--rail .principle-num {
+  padding-inline-start: 0.7rem;
+}
+
+.principle-list--rail .principle-num::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 0 3px var(--paper);
+}
+
+.principle-list--rail .principle:first-child .principle-num::before {
+  background: var(--signal-light);
+}
+
+.principle-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+  text-wrap: balance;
+}
+
+.principle-body p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 100%;
+}
+
+.section-more {
+  margin-top: 2rem;
+}
+
+
+/* Desktop override (segment 2): the unconditional `.principle-layout` above
+   would otherwise cascade over the earlier min-width:860px row rule. Keep the
+   side-by-side layout authoritative here too so the last matching rule wins. */
+@media (min-width: 860px) {
+  .principle-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .principle-list {
+    width: 600px;
+    max-width: 600px;
+    flex-shrink: 0;
+  }
+
+  .health-rack-grid {
+    align-self: flex-start;
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
