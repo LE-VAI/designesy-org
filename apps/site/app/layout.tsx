@@ -114,6 +114,11 @@ export default function RootLayout({
         <MagneticCursor />
         <ScrambleEnhancer />
         <ScrollDepth />
+        {/* Ambient signal wash — fixed full-viewport gradient layer, sits
+            behind all content (z-index 0 with grid + noise). Pure CSS, no
+            JS. Replaces the old hero-bounded mesh that showed a cutoff at
+            extreme zoom-out. aria-hidden: decorative only. */}
+        <div className="ambient-signal" aria-hidden="true" />
         {children}
         <Analytics />
       </body>
