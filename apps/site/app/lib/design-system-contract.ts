@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.3.0 — machine + human source.
+ * Designesy design system contract v0.4.0 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (Commander order 2026-07-12).
@@ -9,17 +9,21 @@
  * v0.3.0 reconciles with on-disk core contract v0.3.0: W3C DTCG token format,
  *   spring physics, full acoustic cue enumeration, 10 non-negotiable motion
  *   standards, motion anti-patterns, entrance scale tokens (2026-07-15).
+ * v0.4.0 adds the copywriting section from detail.design gap signal +
+ *   NN/g, Polaris, IBM Carbon, Microsoft Fluent, Apple HIG, Atlassian
+ *   research (2026-07-30). Codifiable principles become verification checks;
+ *   non-codifiable principles are governance.
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.3.0',
+  version: '0.4.0',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-07-15',
+  updated: '2026-07-30',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -33,6 +37,7 @@ export const designSystemContract = {
     motion_standards: 'Ten non-negotiable motion standards (§16)',
     springs: 'Spring physics tokens via custom $type: spring',
     acoustic: 'Acoustic cue tokens via custom $type: sound (net-new vs W3C DTCG)',
+    copywriting: 'UX copywriting principles from NN/g, Polaris, Carbon, Fluent, HIG (v0.4.0)',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -97,6 +102,30 @@ export const designSystemContract = {
         author: 'Jakub Antalik (@Jakubantalik)',
         url: 'https://transitions.dev',
         role: 'Motion token library — duration scale cross-referenced; press scale values validated (0.96/0.97 match); easing curves confirmed compatible',
+      },
+      {
+        name: 'detail.design',
+        author: 'detail.design',
+        url: 'https://detail.design',
+        role: 'Copywriting gap signal — pattern catalog organizing UI decisions by discipline (Design, Accessibility, Copywriting, Motion, Optimization). The Copywriting discipline gap triggered the v0.4.0 contract section. Patterns are inspiration, not contract — the taxonomy structure is the value.',
+      },
+      {
+        name: 'NN/g UI Copy Guidelines',
+        author: 'Nielsen Norman Group',
+        url: 'https://www.nngroup.com/articles/ui-copy/',
+        role: 'Button text 2–4 words, verb-first, remove articles, ellipsis convention, avoid generic OK/Submit. Error message guidelines: what happened + what to do + what to expect. Source for copywriting checks v38–v41.',
+      },
+      {
+        name: 'Polaris Content Guidelines',
+        author: 'Shopify',
+        url: 'https://polaris.shopify.com/content/error-messages',
+        role: 'Error messages: explain what\'s wrong + what to do, be specific, don\'t overapologize, avoid "invalid" jargon. Source for error-message copywriting principle.',
+      },
+      {
+        name: 'IBM Carbon Writing Style',
+        author: 'IBM',
+        url: 'https://carbondesignsystem.com/guidelines/content/writing-style/',
+        role: 'Sentence case for all UI text, second person (you/your), active voice, no please/thank you, simplest term. Source for sentence-case and voice principles.',
       },
     ],
     adoption: {
@@ -395,6 +424,51 @@ export const designSystemContract = {
     type_roles:
       'ink = primary claim · muted = supporting body · muted-dim = eyebrows, meta, footers',
   },
+  copywriting: {
+    adopted_in: '0.4.0',
+    source_signal: 'detail.design Copywriting discipline gap + NN/g, Polaris, IBM Carbon, Microsoft Fluent, Apple HIG, Atlassian research',
+    principles: [
+      // ── Button text (codifiable — checks v38, v39) ──────────────────────
+      'Button copy is a verb phrase (or a recognized single-word command), never a bare noun — "Save changes" not "Changes", "Delete file" not "File"',
+      'Button text is ≤ 4 words; articles (a/an/the) removed for scannability',
+      'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs — the label must state the action',
+      'Commands that open a further-input dialog end with an ellipsis (…); immediate commands do not',
+      // ── Error messages (codifiable subset — structural check) ───────────
+      'Error messages state what happened, what to do, and what to expect next — not just "An error occurred"',
+      'Error messages use plain language — no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
+      'Error messages don\'t overapologize and don\'t introduce "we/us" unless the system caused the error',
+      // ── Empty states (codifiable — structural check) ─────────────────────
+      'Empty states have a clear next action (button or link with a verb), not just a message',
+      // ── Link text (codifiable — check v40) ───────────────────────────────
+      'Link text is descriptive of the destination, not bare "click here / learn more / read more / here"',
+      // ── General microcopy (codifiable — check v41) ───────────────────────
+      'All UI text uses sentence case — not title case, not ALL CAPS (except eyebrows per typography contract)',
+      'No trailing period on buttons, labels, radio/checkbox text, tab text; periods only on full sentences (tooltips, error bodies, dialog bodies)',
+      'Active voice, not passive, except when the system is the subject of an error',
+      'Second person (you/your) for user-facing copy; "I/me" never used for the app\'s voice; "we" only when the system is the actor',
+      'No "please / thank you" in standard UI — only when the user is genuinely inconvenienced',
+      // ── Voice & tone (governance — not automated) ────────────────────────
+      'Voice is constant; tone adapts to the user\'s emotional state — error tone is economical and direct, not humorous',
+      'Don\'t blame the user — error messages describe the problem and the fix, not the user\'s mistake',
+    ],
+    verification: [
+      'v38: Button text is a verb phrase or recognized command — not a bare noun',
+      'v39: No trailing period on button text, labels, or tab text',
+      'v40: Link text is descriptive — not bare "click here", "learn more", "here"',
+      'v41: No ALL CAPS UI text (except eyebrow labels per typography contract)',
+    ],
+    governance: [
+      'Error message completeness (what happened + what to do + what to expect) — human review using NN/g 12-guideline rubric',
+      'Empty-state next-action presence — human review if no automated DOM check',
+      'Voice and tone consistency — human review against Mailchimp-style voice-and-tone guide',
+      'Consistency map: one canonical label per action across the product (no "Sign in" vs "Log in")',
+    ],
+    tooling: [
+      'Vale (errata-ai/vale) — YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
+      'textlint — pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
+      'alex — inclusive/insensitive-language linter for the blame-words subset',
+    ],
+  },
   components: [
     {
       name: 'Primary button',
@@ -446,6 +520,10 @@ export const designSystemContract = {
     'Touch targets under ~32px',
     'Animation that cannot be reduced',
     'Public product names that sound like research demos or AI jargon',
+    'Button text that is a bare noun without a verb ("Settings" alone for a destructive action)',
+    'Generic error messages ("An error occurred", "Something went wrong") with no remediation',
+    'Link text that is "click here", "learn more", "read more", or "here" without destination context',
+    'ALL CAPS body text or button text (except eyebrow labels per typography contract)',
   ],
   implementation: [
     'Single live token source of truth — no secondary theme framework',
@@ -480,6 +558,10 @@ export const designSystemContract = {
     'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1 (Taste Skill pre-flight)',
     'Primary button text passes WCAG AA 4.5:1 contrast against --signal fill (Taste Skill pre-flight)',
     'Duration tokens --duration-quick through --duration-slow present in :root (transitions.dev cross-ref)',
+    'Button text is a verb phrase or recognized command — not a bare noun (copywriting v38)',
+    'No trailing period on button text, labels, or tab text (copywriting v39)',
+    'Link text is descriptive — not bare "click here", "learn more", "here" (copywriting v40)',
+    'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
   ],
   open_tensions: [
     'Light theme is not contracted — dark technical foundation is provisional',
@@ -550,6 +632,20 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts#design-system-contract',
+      ],
+    },
+    {
+      version: '0.4.0',
+      date: '2026-07-30',
+      summary:
+        'Added copywriting section from detail.design gap signal + NN/g, Polaris, IBM Carbon, Microsoft Fluent, Apple HIG, Atlassian research. 16 principles across button text, error messages, empty states, link text, general microcopy, and voice & tone. 4 codifiable principles become verification checks (v38–v41): button verb phrase, no trailing period on buttons, descriptive link text, no ALL CAPS. 12 non-codifiable principles are governance. Tooling: Vale, textlint, alex. detail.design added to provenance as gap-signal source. 4 anti-patterns added (bare-noun buttons, generic errors, bare link text, ALL CAPS). Copywriting category weight: 8.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.nngroup.com/articles/ui-copy/',
+        'https://polaris.shopify.com/content/error-messages',
+        'https://carbondesignsystem.com/guidelines/content/writing-style/',
+        'https://learn.microsoft.com/en-us/windows/apps/design/style/writing-style',
+        'https://detail.design',
       ],
     },
   ],

@@ -372,6 +372,10 @@ const REMEDIATION: Record<string, string> = {
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters — e.g. Cyrillic а (U+0430) looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. designesy is the only design verification engine that checks this surface.',
   v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format — 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. designesy integrates Google\'s linter as the spec layer and runs its own 34-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only — for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic) — review flagged buttons manually.',
+  v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
+  v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
+  v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels (per typography contract: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em) and acronyms should be uppercase. Use CSS text-transform: uppercase on eyebrow elements if needed, but keep the HTML text in sentence case for screen readers.',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -1288,6 +1292,231 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
   };
 }
 
+// ── Copywriting checks (v38–v41) — contract v0.4.0 ─────────────────────────
+//
+// These checks parse the HTML DOM for UI text patterns that violate the
+// copywriting principles from NN/g, Polaris, IBM Carbon, Microsoft Fluent,
+// Apple HIG, and Atlassian. The gap signal came from detail.design which
+// organizes patterns by discipline including Copywriting — designesy's
+// contract had no copywriting section until v0.4.0.
+//
+// Each check operates on the fetched HTML (not CSS) since copywriting is
+// about the text content, not the styling. We extract <button>, <a>, <label>,
+// and heading text content and apply heuristics.
+
+// v38 — Button text is a verb phrase or recognized command, not a bare noun.
+//
+// Heuristic: extract all <button> and [role="button"] element text. For each:
+//   - Allow if it's in the recognized-commands allowlist (Save, Cancel, Delete,
+//     Edit, Share, Close, Back, Next, Previous, etc.)
+//   - Allow if the first word is a verb (heuristic: ends in -e, -ate, -ize,
+//     -ify, -en, -ing, or is in a verb allowlist)
+//   - FAIL if the text is a single noun with no verb ("Settings", "Profile",
+//     "Account" used as button labels without a verb context)
+//
+// Provenance: NN/g "Lead with verbs or verb phrases", Apple HIG "use a verb",
+// Microsoft Fluent "use words that represent actions".
+const RECOGNIZED_BUTTON_COMMANDS = new Set([
+  'save', 'cancel', 'delete', 'edit', 'share', 'close', 'back', 'next',
+  'previous', 'undo', 'redo', 'install', 'retry', 'done', 'ok', 'okay',
+  'yes', 'no', 'confirm', 'submit', 'apply', 'send', 'create', 'add',
+  'remove', 'clear', 'reset', 'search', 'filter', 'sort', 'export',
+  'import', 'download', 'upload', 'copy', 'cut', 'paste', 'print',
+  'play', 'pause', 'stop', 'start', 'open', 'view', 'show', 'hide',
+  'enable', 'disable', 'accept', 'reject', 'decline', 'continue',
+  'login', 'logout', 'register', 'subscribe', 'unsubscribe', 'follow',
+  'unfollow', 'like', 'bookmark', 'pin', 'star', 'report', 'block',
+  'mute', 'unmute', 'archive', 'restore', 'refresh', 'reload', 'update',
+]);
+
+function isVerbLike(word: string): boolean {
+  const w = word.toLowerCase().trim();
+  if (RECOGNIZED_BUTTON_COMMANDS.has(w)) return true;
+  // Common verb endings (heuristic — not a full POS tagger)
+  if (/^(re)?[a-z]+(e|ate|ize|ify|en|ing|ed)$/.test(w) && w.length > 2) return true;
+  // Gerunds (-ing) are verb-like
+  if (/^[a-z]+ing$/.test(w) && w.length > 4) return true;
+  return false;
+}
+
+function checkButtonTextVerb(html: string): CheckResult {
+  const ITEM = 'Button text is a verb phrase or recognized command — not a bare noun';
+  const CATEGORY = 'copywriting';
+
+  // Extract <button> and [role="button"] text content
+  const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
+  const roleButtonRe = /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi;
+
+  const buttonTexts: string[] = [];
+  let m;
+  while ((m = buttonRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) buttonTexts.push(text);
+  }
+  while ((m = roleButtonRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) buttonTexts.push(text);
+  }
+
+  if (buttonTexts.length === 0) {
+    return { id: 'v38', item: ITEM, category: CATEGORY, status: 'SKIP', detail: 'no button elements found in HTML' };
+  }
+
+  const violations: string[] = [];
+  for (const text of buttonTexts) {
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    if (words.length === 0) continue;
+    const firstWord = words[0].toLowerCase();
+
+    // Allow recognized single-word commands
+    if (RECOGNIZED_BUTTON_COMMANDS.has(firstWord)) continue;
+    // Allow if first word is verb-like
+    if (isVerbLike(firstWord)) continue;
+    // Allow "Get X", "Set X", "Try X" patterns (Get/Set/Try are in the set)
+    // If we get here, the first word is likely a noun → potential violation
+    violations.push(`"${text}"`);
+  }
+
+  if (violations.length === 0) {
+    return { id: 'v38', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${buttonTexts.length} button(s) checked — all start with a verb or recognized command` };
+  }
+  return {
+    id: 'v38',
+    item: ITEM,
+    category: CATEGORY,
+    status: 'WARN',
+    detail: `${violations.length}/${buttonTexts.length} button(s) may not start with a verb: ${violations.slice(0, 3).join(', ')}${violations.length > 3 ? ` (+${violations.length - 3} more)` : ''}. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen."`,
+  };
+}
+
+// v39 — No trailing period on button text, labels, or tab text.
+//
+// Heuristic: extract <button>, <label>, and tab text ([role="tab"]) and check
+// for trailing periods. Microsoft Fluent: "Don't end text for buttons, radio
+// buttons, labels, or checkboxes with a period."
+function checkNoTrailingPeriod(html: string): CheckResult {
+  const ITEM = 'No trailing period on button text, labels, or tab text';
+  const CATEGORY = 'copywriting';
+
+  const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
+  const labelRe = /<label[^>]*>([\s\S]*?)<\/label>/gi;
+  const tabRe = /<[a-z]+[^>]*role=["']tab["'][^>]*>([\s\S]*?)<\/[a-z]+>/gi;
+
+  const texts: { type: string; text: string }[] = [];
+  let m;
+  while ((m = buttonRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) texts.push({ type: 'button', text });
+  }
+  while ((m = labelRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) texts.push({ type: 'label', text });
+  }
+  while ((m = tabRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) texts.push({ type: 'tab', text });
+  }
+
+  if (texts.length === 0) {
+    return { id: 'v39', item: ITEM, category: CATEGORY, status: 'SKIP', detail: 'no button/label/tab elements found in HTML' };
+  }
+
+  const violations = texts.filter(t => /\.$/.test(t.text) && !/\.\.\.$/.test(t.text));
+
+  if (violations.length === 0) {
+    return { id: 'v39', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${texts.length} element(s) checked — no trailing periods on buttons, labels, or tabs` };
+  }
+  return {
+    id: 'v39',
+    item: ITEM,
+    category: CATEGORY,
+    status: 'WARN',
+    detail: `${violations.length}/${texts.length} element(s) have trailing periods: ${violations.slice(0, 3).map(v => `"${v.text}"`).join(', ')}${violations.length > 3 ? ` (+${violations.length - 3} more)` : ''}. Microsoft Fluent: "Don't end text for buttons, radio buttons, labels, or checkboxes with a period."`,
+  };
+}
+
+// v40 — Link text is descriptive, not bare "click here / learn more / read more / here".
+//
+// Heuristic: extract all <a> text content and check against a blocklist of
+// non-descriptive link text. WCAG 2.4.4 Link Purpose (In Context) + NN/g
+// microcontent guidance.
+const NON_DESCRIPTIVE_LINK_TEXT = /^(click here|here|learn more|read more|more|link|this|that|continue|see more|view details)$/i;
+
+function checkLinkTextDescriptive(html: string): CheckResult {
+  const ITEM = 'Link text is descriptive — not bare "click here", "learn more", "here"';
+  const CATEGORY = 'copywriting';
+
+  const linkRe = /<a[^>]*>([\s\S]*?)<\/a>/gi;
+  const linkTexts: string[] = [];
+  let m;
+  while ((m = linkRe.exec(html)) !== null) {
+    const text = m[1].replace(/<[^>]*>/g, '').trim();
+    if (text) linkTexts.push(text);
+  }
+
+  if (linkTexts.length === 0) {
+    return { id: 'v40', item: ITEM, category: CATEGORY, status: 'SKIP', detail: 'no anchor elements found in HTML' };
+  }
+
+  const violations = linkTexts.filter(t => NON_DESCRIPTIVE_LINK_TEXT.test(t));
+
+  if (violations.length === 0) {
+    return { id: 'v40', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${linkTexts.length} link(s) checked — all have descriptive text` };
+  }
+  return {
+    id: 'v40',
+    item: ITEM,
+    category: CATEGORY,
+    status: 'WARN',
+    detail: `${violations.length}/${linkTexts.length} link(s) have non-descriptive text: ${violations.slice(0, 3).map(v => `"${v}"`).join(', ')}${violations.length > 3 ? ` (+${violations.length - 3} more)` : ''}. WCAG 2.4.4: link text should describe the destination. Use "Read the typography guide" not "Click here".`,
+  };
+}
+
+// v41 — No ALL CAPS UI text except eyebrow labels.
+//
+// Heuristic: extract <button>, <a>, <label>, <td>, <th>, and <p> text.
+// Flag strings >3 chars in ALL CAPS. Exclude elements with class containing
+// "eyebrow" or "label" (per typography contract, eyebrows are intentionally
+// uppercase: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em).
+// IBM Carbon: "All caps has been shown to be slower to read."
+function checkNoAllCaps(html: string): CheckResult {
+  const ITEM = 'No ALL CAPS UI text except eyebrow labels';
+  const CATEGORY = 'copywriting';
+
+  // Match elements with their class attributes so we can exclude eyebrow labels
+  const elementRe = /<(button|a|label|td|th|p|li|h[1-6])\s([^>]*?)>([\s\S]*?)<\/\1>/gi;
+  const violations: string[] = [];
+  let m;
+  while ((m = elementRe.exec(html)) !== null) {
+    const attrs = m[2] || '';
+    const text = m[3].replace(/<[^>]*>/g, '').trim();
+    if (!text || text.length < 4) continue;
+
+    // Skip eyebrow labels (class contains "eyebrow" or "label" — per typography
+    // contract, eyebrows are intentionally uppercase)
+    if (/class=["'][^"']*(eyebrow|eyebro|meta-label)[^"']*["']/i.test(attrs)) continue;
+    // Skip elements with text-transform: uppercase in inline style
+    if (/style=["'][^"']*text-transform:\s*uppercase[^"']*["']/i.test(attrs)) continue;
+
+    // Check if text is ALL CAPS (only letters, all uppercase, >3 chars)
+    const letters = text.replace(/[^a-zA-Z]/g, '');
+    if (letters.length >= 4 && letters === letters.toUpperCase() && letters !== letters.toLowerCase()) {
+      violations.push(`"${text}"`);
+    }
+  }
+
+  if (violations.length === 0) {
+    return { id: 'v41', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'No ALL CAPS UI text found outside eyebrow labels' };
+  }
+  return {
+    id: 'v41',
+    item: ITEM,
+    category: CATEGORY,
+    status: 'WARN',
+    detail: `${violations.length} element(s) have ALL CAPS text: ${violations.slice(0, 3).join(', ')}${violations.length > 3 ? ` (+${violations.length - 3} more)` : ''}. IBM Carbon: "All caps has been shown to be slower to read." Use sentence case for UI text. Eyebrow labels are exempt per typography contract.`,
+  };
+}
+
 // v37 — DESIGN.md Spec-Layer Validation (Google @google/design.md integration).
 //
 // This is the two-layer integration: Google's `@google/design.md` CLI validates
@@ -1489,6 +1718,10 @@ async function scoreUrlUncached(targetUrl: string) {
     checkAiDisclosure(html),
     checkForcedColors(css),
     checkSecurityConfusables(css, tokens),
+    checkButtonTextVerb(html),
+    checkNoTrailingPeriod(html),
+    checkLinkTextDescriptive(html),
+    checkNoAllCaps(html),
   ];
 
   // v37 is async (fetches /DESIGN.md from the target origin and runs Google's
@@ -1511,10 +1744,11 @@ async function scoreUrlUncached(targetUrl: string) {
   // Lighthouse axe user-impact, design-auditor category %, and DSAF 50/50):
   //   cadence 18, accessibility 15, semantic 12, motion 10, tokens 9,
   //   takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3
+  // v0.4.0 additions: copywriting 8, security 5, spec 4
   const CATEGORY_WEIGHTS: Record<string, number> = {
     cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
     takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
-    security: 5, spec: 4,
+    security: 5, spec: 4, copywriting: 8,
   };
 
   // Per-check weight = category weight / number of checks in that category
