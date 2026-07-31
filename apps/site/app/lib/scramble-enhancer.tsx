@@ -351,6 +351,91 @@ export function ScrambleEnhancer() {
       const hasChildElements = el.querySelector('span, svg, img, a');
 
       if (hasChildElements) {
+        const isRotator = el.hasAttribute('data-scramble-rotate-words');
+
+        if (isRotator) {
+          // First-load parity: scramble the WHOLE sentence (prefix + word +
+          // punctuation) as one flat text, exactly like a simple-text line
+          // (L1), so both hero lines scramble in fresh together. On resolve
+          // the markup is re-split into <span data-prefix>/<span data-word>/
+          // <span>.</span> and rotation takes over the final word only.
+          const flat = (el.textContent || '').trim();
+          if (!flat) return;
+          el.setAttribute('aria-label', flat);
+
+          let words: string[] = [];
+          try {
+            words = JSON.parse(el.getAttribute('data-scramble-rotate-words') || '[]') as string[];
+          } catch { /* leave flat */ }
+
+          const sd = scaledDelays(flat);
+          const unlockHeight = lockHeight(el);
+          el.textContent = scrambleString(flat);
+
+          const resplit = () => {
+            unlockHeight();
+            if (words.length < 2) return;
+            // Derive prefix from the flat text: everything before the final
+            // word + punctuation. Words[0] is the current final word.
+            const punctMatch = flat.match(/[.,!?;:]?\s*$/);
+            const punctText = punctMatch && punctMatch[0] ? punctMatch[0].trim() || '.' : '.';
+            const body = punctMatch ? flat.slice(0, flat.length - punctMatch[0].length) : flat;
+            const w0 = words[0];
+            const idx = body.toLowerCase().lastIndexOf(w0.toLowerCase());
+            const prefixText = idx >= 0 ? body.slice(0, idx) : body;
+            el.innerHTML = '';
+            const p = document.createElement('span');
+            p.setAttribute('data-prefix', '');
+            p.textContent = prefixText;
+            const w = document.createElement('span');
+            w.setAttribute('data-word', '');
+            w.textContent = w0;
+            const pu = document.createElement('span');
+            pu.textContent = punctText;
+            el.appendChild(p);
+            el.appendChild(w);
+            el.appendChild(pu);
+          };
+
+          const finish = (text: string) => {
+            if (text !== flat) return;
+            // Decode completed — re-split and hand off to rotation.
+            el.textContent = flat;
+            resplit();
+          };
+
+          if (isInViewport(el)) {
+            decodeToString(flat, sd.charDelay, sd.churnCount, (text) => {
+              el.textContent = text;
+              finish(text);
+            });
+            return;
+          }
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  decodeToString(flat, sd.charDelay, sd.churnCount, (text) => {
+                    el.textContent = text;
+                    finish(text);
+                  });
+                  observer.disconnect();
+                }
+              });
+            },
+            { threshold: 0.1 }
+          );
+          observer.observe(el);
+          allObservers.push(observer);
+
+          pendingResolvers.push(() => {
+            el.textContent = flat;
+            resplit();
+          });
+          return;
+        }
+
         // For elements with children (like wordmark with .dot span),
         // scramble only the first text node
         const firstChild = el.firstChild;
@@ -480,20 +565,18 @@ export function ScrambleEnhancer() {
       const prefix = el.querySelector<HTMLElement>('[data-prefix]');
       const wordSpan = el.querySelector<HTMLElement>('[data-word]');
       const punct = Array.from(el.querySelectorAll<HTMLElement>('span:not([data-prefix]):not([data-word])')).pop() ?? null;
+
+      // If the markup was hand-authored (not yet re-split by the scramble
+      // pass), the spans exist immediately. If re-split failed, leave the
+      // sentence static rather than hang a poll that never resolves.
       if (!prefix || !wordSpan || !punct) return;
 
       const rotateDelayAttr = el.getAttribute('data-scramble-rotate-delay');
       const rotateDelay = rotateDelayAttr ? parseInt(rotateDelayAttr, 10) : 8000;
 
-      // Lock the final word's width so cycling between variants of different
-      // lengths (yours / intentional) doesn't shift the prefix or punctuation.
-      let widthLocked = false;
-      const lockWidth = () => {
-        if (widthLocked) return;
-        const w = wordSpan.offsetWidth;
-        if (w > 0) wordSpan.style.minWidth = `${w}px`;
-        widthLocked = true;
-      };
+      // Width is pinned in CSS (min-width: 6.9em = the longest variant),
+      // so the rotator never re-measures mid-scroll (jank at 800px) and no
+      // scramble glyph set can ever widen the line past the 2-line break.
 
       // Blue → white per-char blend over the resolved tail (normal motion
       // only; reduced motion keeps the accent color via CSS).
@@ -529,11 +612,26 @@ export function ScrambleEnhancer() {
         rotatorTimers.push(setTimeout(fn, ms));
       };
 
+      // Rotation must only start AFTER the element's own first-load decode
+      // settles — and the safety net can force-resolve at 8s, so polling is
+      // the only deterministic gate (an estimate timer can overlap the tail).
+      const startWhenDecoded = (first: number) => {
+        const poll = setInterval(() => {
+          if (cancelled) { clearInterval(poll); return; }
+          const cur = (wordSpan.textContent || '').trim();
+          if (cur === words[0]) {
+            clearInterval(poll);
+            schedule(rotateDelay, () => rotateOnce(first));
+          }
+        }, 300);
+        rotatorCancels.push(() => clearInterval(poll));
+      };
+
       const rotateOnce = (idx: number) => {
         if (cancelled) return;
         const next = words[idx];
-        lockWidth();
         // Brief scramble of the CURRENT word, then time-derived decode to next.
+        // Width is CSS-pinned; no mid-rotation measurement.
         wordSpan.textContent = scrambleString(wordSpan.textContent || next);
         schedule(150, () => {
           if (cancelled) return;
@@ -544,11 +642,11 @@ export function ScrambleEnhancer() {
         });
       };
 
-      // Gate on the initial scramble loop settling. The safety net fires at
-      // 8s; the loop caps its own resolution well before that, so starting
-      // rotation at 3.5s + rotateDelay is safe on the initial paint.
+      // Gate on the FIRST-load decode settling (polled, not estimated — the
+      // safety net can force-resolve at 8s, and an estimate would overlap
+      // the tail of a slow decode).
       setWord(words[0]);
-      schedule(3500 + rotateDelay, () => rotateOnce(1));
+      startWhenDecoded(1);
     });
 
     // Max-timeout safety net: force-resolve all pending scramble elements
