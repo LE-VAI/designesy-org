@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { SEED } from '../leaderboard/seed';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -35,13 +36,16 @@ const CATEGORY_WEIGHTS: Record<string, number> = {
   cadence: 18,
   accessibility: 15,
   semantic: 12,
+  copywriting: 8,
   motion: 10,
   tokens: 9,
   takt: 8,
+  security: 5,
   poise: 7,
   identity: 6,
   interaction: 6,
   performance: 6,
+  spec: 4,
   responsive: 3,
 };
 
@@ -49,13 +53,16 @@ const CATEGORY_LABELS: Record<string, string> = {
   cadence: 'Cadence',
   accessibility: 'Accessibility',
   semantic: 'Semantic',
+  copywriting: 'Copywriting',
   motion: 'Motion',
   tokens: 'Tokens',
   takt: 'Takt',
+  security: 'Security',
   poise: 'Poise',
   identity: 'Identity',
   interaction: 'Interaction',
   performance: 'Performance',
+  spec: 'Spec',
   responsive: 'Responsive',
 };
 
@@ -63,13 +70,16 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (11), weighted highest at 18%.',
   accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
   semantic: 'HTML semantic foundation — single h1, meta description, landmark elements, AI-disclosure readiness (EU AI Act Art 50). Labeled "semantic" in the engine; maps to the contract.identity section.',
+  copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in v0.4.0. 8% weight.',
   motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
   tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
   takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
+  security: 'Unicode Security — UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks. designesy is the only design verification engine that checks this surface. 5% weight, 1 scored check.',
   poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (SKIP).',
   identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav). 6% weight, 1 scored check.',
   interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
   performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (SKIP in the static engine). 6% weight, 0 scored checks in the current engine.',
+  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 40-check contract verification. 4% weight, 1 check (SKIP if /DESIGN.md is not served).',
   responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (SKIP in the static engine). 3% weight, 0 scored checks.',
 };
 
@@ -301,6 +311,49 @@ const CHECKS: CheckDef[] = [
     how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
   },
 
+  // ── Security (5%) — v0.4.0 ──
+  {
+    id: 'v36',
+    item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers',
+    category: 'security',
+    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk — e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. designesy is the only design verification engine that checks this surface.',
+  },
+
+  // ── Spec (4%) — v0.4.0 ──
+  {
+    id: 'v37',
+    item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
+    category: 'spec',
+    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. SKIP if /DESIGN.md is not served — this is expected, as no public convention requires it yet.',
+    skipReason: 'SKIP if /DESIGN.md is not served at the target origin — no public convention requires it yet.',
+  },
+
+  // ── Copywriting (8%) — v0.4.0 ──
+  {
+    id: 'v38',
+    item: 'Button text is a verb phrase or recognized command — not a bare noun',
+    category: 'copywriting',
+    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. SKIP if no buttons found. Heuristic — review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
+  },
+  {
+    id: 'v39',
+    item: 'No trailing period on button text, labels, or tab text',
+    category: 'copywriting',
+    how: 'Searches button/label/tab elements for trailing periods (excludes ellipsis ...). WARN if found. SKIP if no relevant elements. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
+  },
+  {
+    id: 'v40',
+    item: 'Link text is descriptive — not bare "click here", "learn more", "here"',
+    category: 'copywriting',
+    how: 'Parses anchor elements and checks link text against a blocklist of non-descriptive patterns (click here, here, learn more, read more, more, link, this, that, continue, see more, view details). WARN if matched. SKIP if no anchors. WCAG 2.4.4 Link Purpose: link text should describe the destination.',
+  },
+  {
+    id: 'v41',
+    item: 'No ALL CAPS UI text except eyebrow labels',
+    category: 'copywriting',
+    how: 'Searches button/a/label/td/th/p/li/h1-h6 for ALL CAPS text (>3 letters), excluding elements with class containing "eyebrow"/"meta-label" or inline text-transform: uppercase. WARN if found. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels and acronyms should be uppercase.',
+  },
+
   // ── Performance (6%) ──
   {
     id: 'v21',
@@ -332,6 +385,37 @@ const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
 const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason).length;
 const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
 
+// ── Score distribution from the leaderboard SEED ──
+const SCORED_SITES = SEED.filter((s) => s.score !== null && s.score !== undefined);
+const GRADE_COUNTS: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+for (const s of SCORED_SITES) {
+  if (s.grade && s.grade in GRADE_COUNTS) GRADE_COUNTS[s.grade]++;
+}
+const SCORED_TOTAL = SCORED_SITES.length;
+const MAX_GRADE_COUNT = Math.max(1, ...Object.values(GRADE_COUNTS));
+const SCORE_VALUES = SCORED_SITES.map((s) => s.score as number);
+const MEAN_SCORE = SCORE_VALUES.length > 0 ? Math.round((SCORE_VALUES.reduce((a, b) => a + b, 0) / SCORE_VALUES.length) * 10) / 10 : 0;
+const MIN_SCORE = SCORE_VALUES.length > 0 ? Math.min(...SCORE_VALUES) : 0;
+const MAX_SCORE = SCORE_VALUES.length > 0 ? Math.max(...SCORE_VALUES) : 0;
+
+// Per-grade histogram bar config (colors mirror the leaderboard histogram)
+const HIST_BARS = GRADE_BANDS.map((band) => {
+  const bgMap: Record<string, string> = {
+    A: 'var(--signal-dim)',
+    B: 'rgba(254, 204, 52, 0.14)',
+    C: 'var(--surface-hover)',
+    D: 'var(--surface-soft)',
+    F: 'transparent',
+  };
+  return {
+    grade: band.grade,
+    min: band.min,
+    color: band.color,
+    bg: bgMap[band.grade] || 'var(--surface-soft)',
+    count: GRADE_COUNTS[band.grade] || 0,
+  };
+});
+
 export default function MethodologyPage() {
   return (
     <>
@@ -360,6 +444,17 @@ export default function MethodologyPage() {
           .methodology-page .grade-band-letter { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 1.1rem; text-align: center; padding: 0.25rem 0; border-radius: 4px; border: 1px solid var(--line); }
           .methodology-page .grade-band-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; padding-top: 0.35rem; }
           .methodology-page .grade-band-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+          .methodology-page .score-distribution { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
+          .methodology-page .score-dist-histogram { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; margin: 1.5rem 0; }
+          .methodology-page .score-dist-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+          .methodology-page .score-dist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+          .methodology-page .score-dist-bar-wrap { width: 100%; height: 100px; display: flex; align-items: flex-end; justify-content: center; }
+          .methodology-page .score-dist-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; border: 1px solid var(--line-faint); border-bottom: none; transition: height 200ms var(--ease, ease-out); }
+          .methodology-page .score-dist-label { width: 100%; text-align: center; padding-top: 0.4rem; border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+          .methodology-page .score-dist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.9rem; }
+          .methodology-page .score-dist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.68rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; }
+          .methodology-page .score-dist-headline { font-size: 0.92rem; color: var(--muted); line-height: 1.6; margin: 1rem 0 0; max-width: 66ch; }
+          .methodology-page .score-dist-headline strong { color: var(--ink); font-weight: 600; }
           .methodology-page .check-group { margin: 2.5rem 0; }
           .methodology-page .check-group-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
           .methodology-page .check-group-name { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
@@ -383,6 +478,8 @@ export default function MethodologyPage() {
           @media (max-width: 560px) {
             .methodology-page .grade-band { grid-template-columns: 2rem 3.5rem 1fr; gap: 0.5rem; }
             .methodology-page .methodology-grid { grid-template-columns: 1fr 1fr; }
+            .methodology-page .score-dist-bar-wrap { height: 70px; }
+            .methodology-page .score-dist-range { display: none; }
           }
         `}</style>
 
@@ -437,6 +534,7 @@ export default function MethodologyPage() {
               <li><a href="#scoring-math">Scoring math</a></li>
               <li><a href="#category-weights">Category weights</a></li>
               <li><a href="#grade-bands">Grade bands</a></li>
+              <li><a href="#score-distribution">Score distribution</a></li>
               <li><a href="#a11y-floor">Accessibility floor</a></li>
               <li><a href="#what-engine-measures">What the engine measures</a></li>
               <li><a href="#what-engine-skips">What the engine skips</a></li>
@@ -553,6 +651,64 @@ export default function MethodologyPage() {
                 <span className="grade-band-desc">{band.description}</span>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="score-distribution">
+          <h2 className="doctrine-heading">Score distribution</h2>
+          <div className="methodology-prose">
+            <p>
+              The histogram below shows the grade distribution across all{' '}
+              <strong>{SCORED_TOTAL} sites</strong> on the{' '}
+              <Link href="/leaderboard" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>leaderboard</Link>.
+              The contract is deliberately demanding — most sites land in D or F because
+              they do not ship the contract primitives (token systems, reduced-motion
+              blocks, font-synthesis rules) that the engine checks for at <code>:root</code>.
+            </p>
+          </div>
+          <div className="score-dist-histogram">
+            {HIST_BARS.map((bar) => (
+              <div key={bar.grade} className="score-dist-col">
+                <span className="score-dist-bar-count">{bar.count}</span>
+                <div className="score-dist-bar-wrap">
+                  <div
+                    className="score-dist-bar"
+                    style={{
+                      height: `${(bar.count / MAX_GRADE_COUNT) * 100}%`,
+                      background: bar.bg,
+                      borderColor: bar.color,
+                    }}
+                  />
+                </div>
+                <div className="score-dist-label">
+                  <span className="score-dist-grade" style={{ color: bar.color }}>{bar.grade}</span>
+                  <span className="score-dist-range">&ge; {bar.min}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="score-dist-headline">
+            Of {SCORED_TOTAL} sites scored,{' '}
+            <strong>{GRADE_COUNTS.A} earned an A</strong>,{' '}
+            {GRADE_COUNTS.B} earned a B, {GRADE_COUNTS.C} earned a C,{' '}
+            {GRADE_COUNTS.D} earned a D, and {GRADE_COUNTS.F} earned an F.
+            The mean score is <strong>{MEAN_SCORE}%</strong> with a range of{' '}
+            {MIN_SCORE}%&ndash;{MAX_SCORE}%. The median site lands in D — the
+            contract requires primitives that most sites do not ship.
+          </p>
+          <div className="methodology-grid" style={{ marginTop: '1.5rem' }}>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{MEAN_SCORE}%</span>
+              <span className="methodology-stat-label">Mean score</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{MIN_SCORE}&ndash;{MAX_SCORE}</span>
+              <span className="methodology-stat-label">Score range</span>
+            </div>
+            <div className="methodology-stat">
+              <span className="methodology-stat-num">{SCORED_TOTAL}</span>
+              <span className="methodology-stat-label">Sites scored</span>
+            </div>
           </div>
         </section>
 
