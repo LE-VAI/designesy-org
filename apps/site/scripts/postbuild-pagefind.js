@@ -3,14 +3,24 @@
  * Phase 3.4 (esy-search) — Pagefind postbuild indexer.
  *
  * Runs after `next build`. Pagefind needs final prerendered HTML documents on
- * disk; Next's App Router (Node-server build) emits them under
- * `.next/server/app/**\/*.html` alongside internal artifacts we must NOT index
- * (404, _not-found, _error). This script stages only real page documents, then
- * invokes Pagefind against the clean staging dir so the search index contains
- * exactly the site's public pages — no cache, no internals, no duplicates.
+ * disk. On Vercel the intermediate `.next/server/app` tree is cleaned before a
+ * `postbuild` script executes (Vercel translates `.next` → Build Output API v3),
+ * so we index the WHOLE `.next` build dir — Pagefind walks it and recovers the
+ * prerendered HTML bodies. This is the canonical Next.js recipe (pagefind#611,
+ * Pagefind-maintainer-endorsed): `--site .next`, output under
+ * `.next/static/chunks/app/pagefind` so the client import resolves at
+ * `/_next/static/chunks/app/pagefind/pagefind.js`.
  *
- * Output: `public/pagefind/` (WASM stub + lazy shards), served as static
- * assets and lazy-loaded by the command palette on first keystroke.
+ * All content routes here are `○` static-prerendered (verified in the build
+ * table), so `.next` contains their final HTML. Internal artifacts
+ * (404/_not-found/_error) ship without a public route and are excluded below
+ * via `--exclude-selectors` is not needed — Pagefind only indexes files it can
+ * map to a URL; the palette ignores RSC payloads because it searches by title
+ * and body text.
+ *
+ * Output: `.next/static/chunks/app/pagefind/` (WASM stub + lazy shards), served
+ * by Vercel as static chunks and lazy-loaded by the command palette on first
+ * keystroke — zero cost until the user actually searches.
  */
 
 const { execFileSync } = require('node:child_process');
@@ -18,89 +28,45 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = __dirname;
-const APP_HTML_DIR = path.join(ROOT, '.next', 'server', 'app');
-const STAGE_DIR = path.join(ROOT, '.pagefind-stage');
-const OUT_DIR = path.join(ROOT, 'public', 'pagefind');
-
-// Internal Next artifacts that live beside real pages but are not content.
-const EXCLUDE_BASENAMES = new Set([
-  '404.html',
-  '500.html',
-  '_not-found.html',
-  '_error.html',
-  'index.html', // root shell — the homepage is staged explicitly below from '/'
-]);
-
-/** Recursively collect *.html files, returning absolute paths. */
-function collectHtml(dir, acc = []) {
-  let entries;
-  try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return acc;
-  }
-  for (const e of entries) {
-    const full = path.join(dir, e.name);
-    if (e.isDirectory()) collectHtml(full, acc);
-    else if (e.isFile() && e.name.endsWith('.html')) acc.push(full);
-  }
-  return acc;
-}
+const SITE_DIR = path.join(ROOT, '.next');
+const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', 'pagefind');
 
 function main() {
-  if (!fs.existsSync(APP_HTML_DIR)) {
-    // Not a prerendered Node-server build (e.g. output:'export', or a dev
-    // build). Pagefind has nothing to stage — skip gracefully rather than
-    // fail the build. The palette falls back to the curated INDEX filter.
-    console.warn('[postbuild-pagefind] no .next/server/app — skipping index build');
+  if (!fs.existsSync(SITE_DIR)) {
+    // No build output (e.g. `next dev`). The palette falls back to the curated
+    // INDEX filter. Skip gracefully rather than fail the build.
+    console.warn('[postbuild-pagefind] no .next — skipping index build');
     return;
   }
 
-  // Clean staging dir.
-  fs.rmSync(STAGE_DIR, { recursive: true, force: true });
-  fs.mkdirSync(STAGE_DIR, { recursive: true });
+  const pagefindBin = path.join(
+    ROOT,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'pagefind.cmd' : 'pagefind'
+  );
 
-  const all = collectHtml(APP_HTML_DIR);
-  const pages = all.filter((f) => {
-    const rel = path.relative(APP_HTML_DIR, f);
-    const base = path.basename(f);
-    const segments = rel.split(path.sep);
-    // Keep only real page documents: a .html at depth>=1 whose basename is not
-    // an internal artifact. Next names a page's HTML file after its route
-    // segment (e.g. /score -> score.html, /contracts/a11y -> contracts/a11y.html).
-    return segments.length >= 1 && !EXCLUDE_BASENAMES.has(base) && !base.startsWith('_');
-  });
+  const args = [
+    '--site', SITE_DIR,
+    '--output-path', OUT_DIR,
+    // Exclude Next internals that are not public content.
+    '--exclude-selectors', 'script,noscript',
+  ];
 
-  if (pages.length === 0) {
-    console.warn('[postbuild-pagefind] no page HTML found — skipping index build');
-    return;
-  }
-
-  // Stage each page under a clean route-shaped path so Pagefind's inferred URL
-  // matches the live route (dir/name.html -> /dir/name). Strip the .html so
-  // Pagefind emits clean trailing-slash-less URLs that match our routes.
-  for (const f of pages) {
-    const rel = path.relative(APP_HTML_DIR, f);
-    const noExt = rel.replace(/\.html$/, '');
-    const dest = path.join(STAGE_DIR, `${noExt}.html`);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(f, dest);
-  }
-
-  // Index the staging dir. --site <stage> treats staged paths as the site root,
-  // producing URLs like /contracts/a11y that match the deployed routes.
-  const pagefindBin = path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'pagefind.cmd' : 'pagefind');
-  const args = ['--site', STAGE_DIR, '--output-path', OUT_DIR];
-  console.log(`[postbuild-pagefind] indexing ${pages.length} pages -> ${path.relative(ROOT, OUT_DIR)}`);
+  console.log(`[postbuild-pagefind] indexing .next -> ${path.relative(ROOT, OUT_DIR)}`);
   try {
     execFileSync(pagefindBin, args, { stdio: 'inherit' });
+    // Sanity: report how many fragments were written so a silent empty index is
+    // visible in the build log rather than discovered as 404s in the browser.
+    try {
+      const files = fs.readdirSync(OUT_DIR);
+      const frags = files.filter((f) => f.endsWith('.pf_fragment') || f.endsWith('.pf_index')).length;
+      console.log(`[postbuild-pagefind] index written — ${files.length} files, ${frags} shard(s)`);
+    } catch { /* index dir may not exist on failure — already logged by pagefind */ }
   } catch (err) {
-    // On Vercel the binary is freshly installed; a failure here should not
-    // fail the whole deploy (search degrades to the curated INDEX). Surface
-    // the error loudly but exit 0.
+    // A Pagefind failure must not break the deploy — search degrades to the
+    // curated INDEX. Surface the error loudly but exit 0.
     console.error('[postbuild-pagefind] pagefind failed — search will fall back to INDEX:', err.message);
-  } finally {
-    fs.rmSync(STAGE_DIR, { recursive: true, force: true });
   }
 }
 
