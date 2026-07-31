@@ -12743,8 +12743,8 @@ select {
   /* INLINE (horizontal) clip bleed — the same trick on the left/right axis.
      The effective line box caps at ~1068px inside the padding chain
      (site-shell 1180 maxw − 24px pad → hero-content − 32px pad), but at the
-     desktop display size the longest rotator word "accountable." measures
-     ~1135.5px natural nowrap — 67.5px WIDER than the box. white-space:nowrap
+     desktop display size the longest rotator word ("accountable.", now
+     swapped for "liable.") measured ~1135.5px natural nowrap — 67.5px WIDER than the box. white-space:nowrap
      already guarantees no wrap, so overflow:hidden's only live effect is to
      SHEAR the trailing glyph: the Commander's "accountabl[e]" cut-off (and
      the period vanishing with it). Mobile is unaffected (5.9vw auto-scales
@@ -12753,7 +12753,7 @@ select {
      final glyph + period inside the clip region; padding keeps the centered
      text optically unmoved and the negative margins preserve the block's
      outer footprint (no reflow of the eyebrow/sub around it). 1.6ch ≈
-     77px/side at 78px covers BOTH the ~34px/side "accountable" shear AND
+     77px/side at 78px covers BOTH the ~34px/side longest-word shear AND
      the trailing period (which sits another ~20px past the word's final
      glyph) with generous headroom. */
   padding-inline: 1.6ch;
