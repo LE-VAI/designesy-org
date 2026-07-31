@@ -9716,7 +9716,145 @@ a.lab-card:focus-visible .lab-card-arrow {
   line-height: 1.5;
 }
 
-/* ── Filter Controls & Feed ────────────────────────────────────────────── */
+.score-originality-notice {
+  color: var(--signal, #6ea8fe);
+  font-weight: 500;
+}
+
+/* ── Signals panel — craft signals + anti-slop audit ────────────────────── */
+/* Sits between the dashboard card and the filter controls. Two groups:
+   originality (positive lift) and anti-slop (deductions), each with evidence.
+   Surfaces the taste-separation layers that float around the weighted
+   compliance score — "compliant" and "distinctive" are scored separately. */
+
+.score-signals-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.score-signals-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.score-signals-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.score-signals-net {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-signals-net-pos { color: #34d399; }
+.score-signals-net-neg { color: #f87171; }
+
+.score-signals-group-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink, #f5f5f7);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.score-signals-group-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: #34d399;
+}
+
+.score-signals-group-chip.is-neg {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.26);
+  color: #f87171;
+}
+
+.score-signals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.score-signal-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.score-signal-row.is-originality { border-left: 2px solid rgba(52, 211, 153, 0.55); }
+.score-signal-row.is-slop { border-left: 2px solid rgba(248, 113, 113, 0.55); }
+
+.score-signal-points {
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #34d399;
+  min-width: 1.7rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.score-signal-points.is-neg { color: #f87171; }
+
+.score-signal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.score-signal-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink, #f5f5f7);
+}
+
+.score-signal-evidence {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+[data-theme="light"] .score-signal-row { background: rgba(0, 0, 0, 0.02); }
+[data-theme="light"] .score-signals-group-title,
+[data-theme="light"] .score-signal-label { color: #1a1a1e; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .score-signal-row { transition: background var(--duration-fast) var(--ease-out); }
+  .score-signal-row:hover { background: rgba(255, 255, 255, 0.04); }
+  [data-theme="light"] .score-signal-row:hover { background: rgba(0, 0, 0, 0.035); }
+}
+
+
 
 .score-controls-card {
   background: var(--surface-raised);
