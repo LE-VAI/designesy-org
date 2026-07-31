@@ -35,7 +35,7 @@ const LAYERS = [
     num: '03',
     name: 'Contracts',
     desc: 'portable design agreements',
-    state: 'Public · design system v0.3.0',
+    state: 'Public · design system v0.4.0',
   },
   {
     num: '04',
