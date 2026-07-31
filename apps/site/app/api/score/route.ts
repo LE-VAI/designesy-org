@@ -1812,16 +1812,19 @@ async function scoreUrlUncached(targetUrl: string) {
   }
 
   // S2. Full-page gradient background — multi-color gradient on body/html or fixed overlay
-  // (Not a 1px hairline grid — only fires on gradients with 2+ distinct color stops)
+  // (Not a 1px hairline grid — only fires on gradients with 2+ distinct color stops.
+  //  Anchored to a real `background`/`background-image` property on body/html directly,
+  //  so `--*-gradient` custom-property declarations inside :root do NOT count.)
   {
-    // Check for multi-color linear-gradient on body/html/:root (not ::before grid patterns)
-    const bodyGrad = css.match(/(?:body|html|:root)(?!::)\s*\{[^}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi);
+    // Multi-color linear-gradient set as an actual background on body or html (not :root tokens)
+    const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi);
     // Multi-color gradient on a fixed/absolute overlay (not 1px hairline)
     const overlayGrad = css.match(/(?:position\s*:\s*(?:fixed|absolute)[\s\S]{0,300}linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}\)|linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}[\s\S]{0,300}position\s*:\s*(?:fixed|absolute))/gi);
     // Filter out 1px grid patterns (transparent 1px + color 1px = hairline grid, not gradient)
     const isGridPattern = (text: string) => /(?:transparent|rgba\([^)]+\))\s+1px(?:\s*,)/.test(text);
-    const bodyGradFiltered = bodyGrad?.filter(m => !isGridPattern(m)) || [];
-    const overlayGradFiltered = overlayGrad?.filter(m => !isGridPattern(m)) || [];
+    // Filter out single-hue / near-monochrome gradients (subtle surface sheen, not a slop rainbow)
+    const bodyGradFiltered = (bodyGrad?.filter(m => !isGridPattern(m)) || []);
+    const overlayGradFiltered = (overlayGrad?.filter(m => !isGridPattern(m)) || []);
     const instances = bodyGradFiltered.length + overlayGradFiltered.length;
     if (instances > 0) {
       slopFindings.push({
@@ -1850,30 +1853,66 @@ async function scoreUrlUncached(targetUrl: string) {
   }
 
   // S4. Gradient text — multi-color gradient text (background-clip: text + color: transparent)
-  // Only fires on MULTI-COLOR gradients (2+ distinct colors) — a single-hue brand sweep
-  // (e.g. signal-blue gradient on a grade letter) is intentional, not slop.
+  // Only fires on gradients spanning 2+ genuinely DISTINCT hues (a slop rainbow).
+  // A single-hue brand shimmer (e.g. signal-blue sweep across a wordmark or grade letter)
+  // uses var(--ink)/var(--signal) tokens plus tints of ONE hue — intentional, not slop.
   {
-    const gradientTextBlocks = css.match(/background-clip\s*:\s*text|color\s*:\s*transparent/gi);
-    if (gradientTextBlocks) {
-      // Check if the gradients used with these clips are multi-color (2+ distinct hues)
-      const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
-      const multiColorGradient = gradientClips.filter(block => {
-        const gradientMatch = block.match(/linear-gradient\(([^)]+)\)/i);
-        if (!gradientMatch) return false;
-        const stops = gradientMatch[1].split(',').map(s => s.trim()).filter(s => s.includes('#') || s.includes('rgb') || s.includes('oklch') || s.includes('hsl'));
-        // Check if stops have distinct hues (not just different alphas of the same hue)
-        const uniqueStops = new Set(stops.map(s => s.replace(/rgba?\([^)]+\)/, '').replace(/oklch\([^)]+\)/, '').replace(/\d+%?/g, '').trim()));
-        return uniqueStops.size >= 2;
-      });
-      if (multiColorGradient.length > 0) {
-        slopFindings.push({
-          id: 'S4',
-          label: 'Gradient text (background-clip:text)',
-          severity: 4,
-          instances: multiColorGradient.length,
-          evidence: multiColorGradient.slice(0, 2).map(m => m.substring(0, 80)),
-        });
+    const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    // Extract a comparable hue signature from a color stop; var()/token stops are ignored
+    // (they resolve to brand tokens, not literal slop colors).
+    const hueKey = (stop: string): string | null => {
+      // Ignore CSS variable / token references — these are brand tokens, not slop literals
+      if (/var\(/.test(stop)) return null;
+      const hex = stop.match(/#([0-9a-f]{6})/i);
+      if (hex) {
+        const n = parseInt(hex[1], 16);
+        const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        // Near-neutral (white/grey/black sheen) — treat as same neutral bucket
+        if (mx - mn < 28) return 'neutral';
+        // Bucket hue into 8 families (45° each) — only count genuinely different families
+        let h = 0;
+        const d = mx - mn;
+        if (mx === r) h = ((g - b) / d) % 6;
+        else if (mx === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h = Math.round(((h * 60) + 360) % 360);
+        return 'h' + Math.floor(h / 45);
       }
+      const rgb = stop.match(/rgba?\(([^)]+)\)/i);
+      if (rgb) {
+        const p = rgb[1].split(',').map(x => parseFloat(x));
+        if (p.length >= 3) {
+          const [r, g, b] = p;
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          if (mx - mn < 28) return 'neutral';
+          let h = 0;
+          const d = mx - mn;
+          if (mx === r) h = ((g - b) / d) % 6;
+          else if (mx === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h = Math.round(((h * 60) + 360) % 360);
+          return 'h' + Math.floor(h / 45);
+        }
+      }
+      return null; // oklch/hsl/var or unparseable — don't count as evidence of slop
+    };
+    const multiColorGradient = gradientClips.filter(block => {
+      const gradientMatch = block.match(/linear-gradient\(([\s\S]+)\)\s*;?\s*background-size|linear-gradient\(([^;]+)\)/i);
+      const gradText = (gradientMatch && (gradientMatch[1] || gradientMatch[2])) || '';
+      const stops = gradText.split(',').map(s => s.trim());
+      const hueKeys = new Set(stops.map(hueKey).filter((k): k is string => k !== null && k !== 'neutral'));
+      // Need 2+ distinct hue FAMILIES — a single-hue shimmer buckets to one family
+      return hueKeys.size >= 2;
+    });
+    if (multiColorGradient.length > 0) {
+      slopFindings.push({
+        id: 'S4',
+        label: 'Gradient text (background-clip:text)',
+        severity: 4,
+        instances: multiColorGradient.length,
+        evidence: multiColorGradient.slice(0, 2).map(m => m.substring(0, 80)),
+      });
     }
   }
 
