@@ -12749,27 +12749,33 @@ select {
      hydration-proof, and because it lives on the clipped text itself the
      shimmer band sweeps through the gap exactly like any other glyph. */
   padding-left: 0.14em; /* optical kern: nbsp + this ≈ one natural word space */
+  /* Flat base face (#f5f5f7-adjacent light gray) with a NARROW pure-white
+     band at 47–53%. With background-size 250% the band lives at container
+     coords 117.5–132.5% — fully off the right edge of the word at rest, so
+     the resting face reads as flat typography, not a gradient. The band is
+     tighter (6% of image) and brighter (pure #ffffff) than the old 12% mix. */
   background-image: linear-gradient(
     104deg,
     color-mix(in srgb, var(--ink) 70%, #ffffff 30%),
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 44%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 47%,
     #ffffff 50%,
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 56%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 53%,
     color-mix(in srgb, var(--ink) 70%, #ffffff 30%)
   );
   background-size: 250% 100%;
-  background-position: 118% 0;
-  background-repeat: no-repeat;
+  background-position: 0% 0; /* band parked fully off the right edge */
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent; /* fallback guard — overridden below where clip is unsupported */
   /* No glow — the shimmer band alone carries the emphasis. A text-shadow
      here reads as a static halo that fights the sweep. */
-  /* Sweep left → right on an infinite loop with a built-in dwell: the band
-     is parked off-word at both extremes, so the loop restart is invisible
-     and the read is "a shine that keeps passing through", never frozen. */
-  animation: hero-free-shimmer 4.4s cubic-bezier(0.42, 0, 0.2, 1) 1.4s infinite;
+  /* Sweep left → right on an infinite loop with a built-in dwell. Because
+     the default background-repeat tiles the gradient seamlessly (edge stops
+     match), and both park positions leave the band fully off-word, the loop
+     wrap is invisible and the band is never parked ON the word — the "stuck
+     gradient" failure the old 118%/-118% keyframes produced. */
+  animation: hero-free-shimmer 3.6s cubic-bezier(0.42, 0, 0.2, 1) 1s infinite;
 }
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
@@ -12783,13 +12789,16 @@ select {
 }
 
 /* Continuous left→right sweep, eased so the band breathes instead of
-   crawling. 62%→100% is the dwell: band parked off-word, restart invisible.
-   Resting state (pre-animation) is the same off-word 118% — the band never
-   sits parked OVER the word looking frozen. */
+   crawling. 50%→100% is the dwell. With background-size 250%, the white
+   band (image coords 47–53%) lives at container coords 117.5–132.5% at
+   position 0% — fully off the right edge — and at −32.5…−17.5% at
+   position 100% — fully off the left edge. Both extremes render the same
+   flat base color, so the 100%→0% loop wrap is invisible. The band is
+   never parked OVER the word: resting face is flat, not a frozen gradient. */
 @keyframes hero-free-shimmer {
-  0% { background-position: 118% 0; }
-  62% { background-position: -118% 0; }
-  100% { background-position: -118% 0; }
+  0% { background-position: 0% 0; }    /* band parked off the right edge */
+  50% { background-position: 100% 0; } /* band exited off the left edge */
+  100% { background-position: 100% 0; } /* dwell — restart is invisible */
 }
 
 @media (prefers-reduced-motion: reduce) {
