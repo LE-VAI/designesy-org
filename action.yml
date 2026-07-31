@@ -2,7 +2,7 @@ name: "Designesy Contract Check"
 description: "Score a URL against the Designesy 40-check design contract; fail CI on score or grade regression."
 author: "designesy"
 branding:
-  icon: "check-circle"
+  icon: "radio"
   color: "blue"
 inputs:
   url:
