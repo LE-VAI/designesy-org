@@ -89,7 +89,7 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="footer">
+    <footer className="footer" data-pagefind-ignore>
       <div className="site-shell footer-inner">
         <div className="footer-meta">
           <span className="wordmark" data-cuelume-hover="sparkle">

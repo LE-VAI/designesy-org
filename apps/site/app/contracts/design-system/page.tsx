@@ -58,7 +58,7 @@ export default function DesignSystemContractPage() {
       />
       <Topbar scrolled />
 
-      <main id="main-content" className="surface-page">
+      <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow">
             <Link href="/contracts" className="lab-crumb">
