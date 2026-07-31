@@ -12740,6 +12740,23 @@ select {
      guarantees the 2-line no-wrap during the scramble. */
   padding-bottom: 0.22em;
   margin-bottom: -0.22em;
+  /* INLINE (horizontal) clip bleed — the same trick on the left/right axis.
+     The effective line box caps at ~1068px inside the padding chain
+     (site-shell 1180 maxw − 24px pad → hero-content − 32px pad), but at the
+     desktop display size the longest rotator word "accountable." measures
+     ~1135.5px natural nowrap — 67.5px WIDER than the box. white-space:nowrap
+     already guarantees no wrap, so overflow:hidden's only live effect is to
+     SHEAR the trailing glyph: the Commander's "accountabl[e]" cut-off (and
+     the period vanishing with it). Mobile is unaffected (5.9vw auto-scales
+     every word under the box). Extend the clip region 1ch outward on both
+     inline sides with equal negative margins so the widest word renders its
+     final glyph + period inside the clip region; padding keeps the centered
+     text optically unmoved and the negative margins preserve the block's
+     outer footprint (no reflow of the eyebrow/sub around it). 1ch ≈ the
+     zero-glyph width (~39px/side at 78px), comfortably over the ~34px/side
+     worst-case shear. */
+  padding-inline: 1ch;
+  margin-inline: -1ch;
   overflow: hidden;
   text-overflow: clip;
 }
