@@ -69,14 +69,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (11), weighted highest at 18%.',
   accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
-  semantic: 'HTML semantic foundation — single h1, meta description, landmark elements, AI-disclosure readiness (EU AI Act Art 50). Labeled "semantic" in the engine; maps to the contract.identity section.',
+  semantic: 'Reserved weight (12%) — declared in the engine CATEGORY_WEIGHTS table but no check currently returns category: "semantic". The semantic-HTML and AI-disclosure checks (v07, v34) are categorized as "identity" in the engine. This weight is held in reserve for future semantic-structure checks (RDFa, microdata, Open Graph). Documented for transparency; does not affect any site\'s score today.',
   copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in v0.4.0. 8% weight.',
   motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
   tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
   takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
   security: 'Unicode Security — UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks. designesy is the only design verification engine that checks this surface. 5% weight, 1 scored check.',
   poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (SKIP).',
-  identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav). 6% weight, 1 scored check.',
+  identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness (EU AI Act Art 50). 6% weight, 2 scored checks (v07, v34).',
   interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
   performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (SKIP in the static engine). 6% weight, 0 scored checks in the current engine.',
   spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 40-check contract verification. 4% weight, 1 check (SKIP if /DESIGN.md is not served).',
@@ -209,17 +209,17 @@ const CHECKS: CheckDef[] = [
     how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible.',
   },
 
-  // ── Identity (6%) ──
+  // ── Identity (6%) — engine returns these as category: 'identity' ──
   {
     id: 'v07',
     item: 'Semantic HTML foundation: single h1, title, meta description, landmark',
-    category: 'semantic',
+    category: 'identity',
     how: 'Parses HTML for: exactly one h1, a descriptive <title>, <meta name="description">, and at least one <main>/<header>/<nav> landmark. PASS if all 4 are present. WARN if 1-2 missing. FAIL if 3+ missing.',
   },
   {
     id: 'v34',
     item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)',
-    category: 'semantic',
+    category: 'identity',
     how: 'Detects AI-interactive surfaces (chatbots, AI assistants) in the HTML. If detected, checks for disclosure signals (visible "AI" text, aria-label, meta generator, C2PA). PASS if no AI surface is detected (disclosure not required) or if disclosure is present. FAIL if an AI surface is detected without disclosure.',
   },
 
@@ -373,13 +373,15 @@ const GRADE_BANDS = [
   { grade: 'F', min: 0, color: 'var(--line-faint)', description: 'Needs work. The site does not ship the contract primitives. Common for sites with no :root token system, no reduced-motion block, no font-synthesis rule.' },
 ];
 
-// Group checks by category for display
+// Group checks by category for display — keep ALL declared categories
+// (including reserved weights like `semantic` that have 0 checks today)
+// so the category table documents the full weight table transparently.
 const CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
 const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
   category: cat,
   weight: CATEGORY_WEIGHTS[cat],
   checks: CHECKS.filter((c) => c.category === cat),
-})).filter((g) => g.checks.length > 0);
+}));
 
 const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
 const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason).length;
@@ -519,7 +521,7 @@ export default function MethodologyPage() {
               <span className="methodology-stat-label">SKIP (needs browser)</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length}</span>
+              <span className="methodology-stat-num">{CATEGORIES.length}</span>
               <span className="methodology-stat-label">Categories</span>
             </div>
             <div className="methodology-stat">
@@ -552,7 +554,7 @@ export default function MethodologyPage() {
               The engine fetches the target URL&rsquo;s HTML and all linked CSS,
               parses <code>:root</code> custom properties, and runs{' '}
               <strong>{CHECKS.length} deterministic checks</strong> across{' '}
-              <strong>{CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length} weighted categories</strong>.
+              <strong>{CATEGORIES.length} weighted categories</strong>.
               Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
               <code>FAIL</code>, or <code>SKIP</code>. The score is a weighted
               average — not a simple count.
@@ -802,6 +804,15 @@ export default function MethodologyPage() {
             </div>
             <p className="check-group-desc">{CATEGORY_DESCRIPTIONS[group.category]}</p>
             <div className="check-group">
+              {group.checks.length === 0 && (
+                <div className="check-row">
+                  <div className="check-row-head">
+                    <span className="check-item" style={{ color: 'var(--muted-dim)' }}>
+                      No checks assigned to this category in the current engine.
+                    </span>
+                  </div>
+                </div>
+              )}
               {group.checks.map((check) => (
                 <div key={check.id} className="check-row">
                   <div className="check-row-head">
@@ -839,7 +850,7 @@ export default function MethodologyPage() {
         </section>
 
         <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
-          Methodology v1 · {CHECKS.length} checks · {CATEGORIES.filter(c => CHECKS.some(ch => ch.category === c)).length} categories ·{' '}
+          Methodology v1 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
           deterministic, no LLM · engine source at{' '}
           <Link href="/api/score" style={{ color: 'var(--muted)' }}>/api/score</Link> ·{' '}
           contract at{' '}
