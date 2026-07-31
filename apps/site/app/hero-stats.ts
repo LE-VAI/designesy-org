@@ -13,7 +13,7 @@ import { SEED, LEADERBOARD_LAST_SCORED } from './leaderboard/seed';
 export const ENGINE_CHECK_COUNT = 40;
 
 // Public contract version the engine scores against.
-export const CONTRACT_VERSION = 'v0.3.0';
+export const CONTRACT_VERSION = 'v0.4.0';
 
 // Latest self-score — DERIVED from the public leaderboard seed row, never a
 // second literal. The hero and the leaderboard show the same number because

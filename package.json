@@ -1,9 +1,13 @@
 {
   "name": "designesy-org",
   "private": true,
+  "bin": {
+    "designesy-score": "cli/designesy-score.mjs"
+  },
   "scripts": {
     "dev": "cd apps/site && npm run dev",
     "build": "cd apps/site && npm run build",
-    "lint": "cd apps/site && npm run lint"
+    "lint": "cd apps/site && npm run lint",
+    "score": "node cli/designesy-score.mjs"
   }
 }

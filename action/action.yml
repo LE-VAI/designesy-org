@@ -1,12 +1,13 @@
 name: "Designesy Contract Check"
 description: >-
-  Score a URL against the Designesy design-system contract (36 deterministic
+  Score a URL against the Designesy design-system contract (40 deterministic
   checks) and fail the workflow when the score or grade drops below your
   threshold. A design-contract quality gate for CI — token, motion,
-  accessibility, cadence, takt, and typography compliance as a PR check.
-  Supports 4 emission formats via the 'format' input: designesy (default),
-  canonical (review-findings.json schema), review (jakubkrehel markdown),
-  google (design.md-compatible).
+  accessibility, cadence, takt, typography, and copywriting compliance as a PR
+  check. Supports 4 emission formats via the 'format' input: designesy
+  (default), canonical (review-findings.json schema), review (jakubkrehel
+  markdown), google (design.md-compatible). Posts a summary comment on pull
+  requests when post-comment is enabled.
 author: "designesy"
 branding:
   icon: "check-circle"
@@ -35,6 +36,14 @@ inputs:
     description: "Fail the step when the scoring engine is unreachable or returns a non-OK response. Set false to warn instead."
     required: false
     default: "true"
+  post-comment:
+    description: "Post a summary comment on the pull request with the score, grade, and gate verdict. Only acts on pull_request events; no-op on push/schedule/dispatch."
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub token for posting PR comments. Defaults to the workflow GITHUB_TOKEN. Requires pull-requests: write permission."
+    required: false
+    default: "${{ github.token }}"
 outputs:
   score:
     description: "Numeric design-contract score (0–100)."
@@ -47,5 +56,5 @@ outputs:
   result:
     description: "The full scoring result as a JSON string (format depends on the 'format' input)."
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"

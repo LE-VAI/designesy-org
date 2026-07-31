@@ -122,7 +122,7 @@ function generateSeedTS(entries, lastScored) {
   return `// /leaderboard seed — curated sites with batch-scored verification results.
 // Shared source for the JSON route (route.ts) and the rendered page (page.tsx).
 //
-// All ${entries.length} sites re-scored ${lastScored} with the 36-check engine (contract v0.3.0).
+// All ${entries.length} sites re-scored ${lastScored} with the 40-check engine (contract v0.4.0).
 // Deterministic — no LLM. Re-scored weekly via .github/workflows/rescore-leaderboard.yml.
 // prevScore holds the previous week's score for delta-badge rendering.
 
@@ -200,7 +200,7 @@ export const SEED: SeedSite[] = [
 export const LEADERBOARD_LAST_SCORED = '${lastScored}';
 
 export const LEADERBOARD_POLICY =
-  'Curated seed (${entries.length} sites) + open submission. Scores are deterministic — 36 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
+  'Curated seed (${entries.length} sites) + open submission. Scores are deterministic — 40 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
 
 export const LEADERBOARD_VERSION = '0.3.0';
 

@@ -503,7 +503,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
           <p className="score-verify-log-title">Legitimacy engine running</p>
           <ol className="score-verify-log-list">
-            {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 11 categories', 'Composing verdict'].map((step, i) => (
+            {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 14 categories', 'Composing verdict'].map((step, i) => (
               <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
                 <span className="score-verify-dot" aria-hidden="true" />
                 {step}

@@ -95,7 +95,7 @@ const handler = createMcpHandler(
     // ── Tool 2: designesy_contract ───────────────────────────────────────────
     server.tool(
       'designesy_contract',
-      'Get the Designesy design-system contract (v0.3.0) — the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. Returns the full contract JSON from /contracts/design-system.json, or a single section when "section" is provided (available: colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction). Read-only. To score a live URL against this contract, use designesy_score instead.',
+      'Get the Designesy design-system contract (v0.4.0) — the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. Returns the full contract JSON from /contracts/design-system.json, or a single section when "section" is provided (available: colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction). Read-only. To score a live URL against this contract, use designesy_score instead.',
       {
         section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction).'),
       },
@@ -127,7 +127,7 @@ const handler = createMcpHandler(
         artifact: z.string().optional().describe('URL or description of the artifact to review.'),
         purpose: z.string().optional().describe('What the design is trying to make possible.'),
         context: z.string().optional().describe('Audience, device, environment, and constraints.'),
-        rules: z.string().optional().describe('Governing rules or contract version (default: designesy design system v0.3.0).'),
+        rules: z.string().optional().describe('Governing rules or contract version (default: designesy design system v0.4.0).'),
       },
       async ({ artifact, purpose, context, rules }) => {
         const data = await cachedFetch(`${BASE_URL}/kits/design-review.json`, true) as Record<string, unknown>;
@@ -138,7 +138,7 @@ const handler = createMcpHandler(
             artifact: artifact || 'Not specified',
             purpose: purpose || 'Not specified',
             context: context || 'Not specified',
-            rules: rules || 'designesy design system v0.3.0',
+            rules: rules || 'designesy design system v0.4.0',
             dimensions: dimensions.map((d) => ({
               name: d.name,
               question: d.question,
@@ -215,7 +215,7 @@ const handler = createMcpHandler(
     // that already runs natively on this same Vercel project. No Python needed.
     server.tool(
       'designesy_score',
-      'Score a live URL against the Designesy design contract — a deterministic 40-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography). It fetches the page HTML, extracts inline + linked CSS, parses :root custom properties, and runs each check with provenance back to contract rules. Executable — performs the fetch and scoring server-side. Returns a JSON object with overall score/grade plus per-check PASS/FAIL/WARN/SKIP detail; checks needing a live browser (CWV, sound toggle, overflow) are marked SKIP. x01-x03 cover v0.3.0 resolved tensions (font-synthesis, text-underline-position, skip-ink). For qualitative design critique rather than compliance scoring, use designesy_design_review.',
+      'Score a live URL against the Designesy design contract — a deterministic 40-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). It fetches the page HTML, extracts inline + linked CSS, parses :root custom properties, and runs each check with provenance back to contract rules. Executable — performs the fetch and scoring server-side. Returns a JSON object with overall score/grade plus per-check PASS/FAIL/WARN/SKIP detail; checks needing a live browser (CWV, sound toggle, overflow) are marked SKIP. x01-x03 cover v0.3.0 resolved tensions (font-synthesis, text-underline-position, skip-ink). v38-v41 cover v0.4.0 copywriting (button verbs, trailing periods, link text, ALL CAPS). For qualitative design critique rather than compliance scoring, use designesy_design_review.',
       {
         url: z.string().optional().describe('URL to score. Defaults to https://www.designesy.org/ if not provided.'),
       },
