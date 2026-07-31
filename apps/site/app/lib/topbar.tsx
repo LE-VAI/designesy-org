@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
 import { ThemeToggle } from './theme-toggle';
+import { CommandPalette } from './command-palette';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -129,6 +130,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             <SoundToggle />
             <HapticsToggle />
           </div>
+          <CommandPalette />
           <ThemeToggle />
           <button
             className="nav-trigger"

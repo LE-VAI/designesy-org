@@ -734,6 +734,309 @@ p {
   border-color: var(--signal-dim);
 }
 
+/* ===================================================================
+   Command palette (Cmd+K) — Phase 2.5
+   True-glass modal over the whole viewport. Client-side filter.
+   =================================================================== */
+
+.cmdk-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 32px;
+  padding: 0 0.55rem 0 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+  flex-shrink: 0;
+}
+
+.cmdk-trigger:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+.cmdk-trigger-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.cmdk-trigger-label {
+  line-height: 1;
+}
+
+.cmdk-trigger-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-family: inherit;
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 4px;
+  line-height: 1.4;
+}
+
+.cmdk-kbd-mod {
+  font-size: 0.75rem;
+}
+
+/* Hide the kbd hint + label on very small screens — keep just the icon */
+@media (max-width: 720px) {
+  .cmdk-trigger-kbd,
+  .cmdk-trigger-label {
+    display: none;
+  }
+  .cmdk-trigger {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+/* --- overlay + panel --- */
+
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 14vh 1rem 1rem;
+  background: rgba(1, 1, 2, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: cmdk-fade 160ms var(--ease-out);
+}
+
+[data-theme="light"] .cmdk-overlay {
+  background: rgba(28, 28, 32, 0.32);
+}
+
+.cmdk-panel {
+  width: 100%;
+  max-width: 34rem;
+  background: linear-gradient(180deg, rgba(22, 22, 27, 0.82), rgba(14, 14, 18, 0.88));
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  animation: cmdk-pop 180ms var(--ease-out);
+}
+
+[data-theme="light"] .cmdk-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 248, 250, 0.94));
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@keyframes cmdk-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cmdk-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- input row --- */
+
+.cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.cmdk-input-icon {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.cmdk-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.cmdk-input::placeholder {
+  color: var(--muted-dim);
+}
+
+.cmdk-esc {
+  font-family: inherit;
+  font-size: 0.66rem;
+  color: var(--muted-dim);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 5px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* --- results list --- */
+
+.cmdk-list {
+  max-height: 22rem;
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+
+.cmdk-group + .cmdk-group {
+  margin-top: 0.3rem;
+}
+
+.cmdk-group-label {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  padding: 0.35rem 0.55rem 0.2rem;
+}
+
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+
+.cmdk-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdk-item-meta {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  flex-shrink: 0;
+}
+
+.cmdk-item-arrow {
+  color: var(--muted-dim);
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity 0.12s var(--ease), transform 0.12s var(--ease);
+  flex-shrink: 0;
+}
+
+.cmdk-item.is-active {
+  background: var(--surface-hover);
+}
+
+.cmdk-item.is-active .cmdk-item-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--signal-light);
+}
+
+.cmdk-empty {
+  padding: 1.75rem 1rem;
+  text-align: center;
+}
+
+.cmdk-empty-title {
+  color: var(--ink);
+  font-size: 0.9rem;
+  margin: 0 0 0.3rem;
+}
+
+.cmdk-empty-sub {
+  color: var(--muted-dim);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+/* --- footer hints --- */
+
+.cmdk-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 0.55rem 0.95rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.cmdk-footer-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+}
+
+.cmdk-footer-hint kbd {
+  font-family: inherit;
+  font-size: 0.66rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 4px;
+  line-height: 1.3;
+  background: var(--surface);
+}
+
+/* Reduced transparency — flatten the glass */
+@media (prefers-reduced-transparency: reduce) {
+  .cmdk-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(1, 1, 2, 0.7);
+  }
+  .cmdk-panel,
+  [data-theme="light"] .cmdk-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface);
+  }
+}
+
+/* Reduced motion — no pop/fade animation, instant appear */
+@media (prefers-reduced-motion: reduce) {
+  .cmdk-overlay,
+  .cmdk-panel {
+    animation: none;
+  }
+  .cmdk-item,
+  .cmdk-item-arrow {
+    transition: none;
+  }
+}
+
 .sense-toggle-icon {
   font-size: 0.95rem;
   line-height: 1;
