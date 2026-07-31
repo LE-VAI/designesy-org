@@ -1,7 +1,6 @@
 // v2026-07-25-0220-force-left-align-css-recompile
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
-import { cookies } from 'next/headers';
 import '@fontsource-variable/inter';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
@@ -96,17 +95,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const store = await cookies();
-  const rawTheme = store.get('theme')?.value;
-  const resolvedTheme = rawTheme === 'light' || rawTheme === 'dark' ? rawTheme : null;
-
+  // NOTE: no cookies()/headers() here. Reading the theme cookie in the RSC
+  // render path forces the WHOLE layout (and every page under it) to dynamic,
+  // `Cache-Control: private, no-store` — defeating ISR (Next.js #82571). The
+  // theme is stamped client-side by the inline script below (cookie →
+  // localStorage → prefers-color-scheme), which runs before first paint → no
+  // FOUC AND identical server HTML for every user → page can be ISR-cached.
   return (
-    <html lang="en" data-theme={resolvedTheme ?? undefined} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Set js-ready before CSS paints so [data-reveal] hidden state
             only applies when JS is active — prevents invisible content
@@ -116,7 +117,8 @@ export default async function RootLayout({
             __html: 'document.documentElement.classList.add("js-ready");',
           }}
         />
-        {/* Theme detection — first visit only, cookie handles subsequent loads */}
+        {/* Theme detection — stamps data-theme before first paint (no FOUC),
+            keeps the RSC render path free of dynamic APIs so ISR can cache. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
