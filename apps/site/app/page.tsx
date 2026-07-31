@@ -19,8 +19,13 @@ import {
   RECENT_SCORES,
 } from './hero-stats';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR: the homepage is statically rendered and cached at the Vercel edge,
+// regenerated at most once per hour. This is now possible because the theme
+// stamp moved out of the RSC render path (cookies() in layout.tsx forced the
+// whole tree dynamic; it now runs client-side via the inline script). The
+// hero self-score is baked at build/revalidate time — it refreshes within
+// the hour window, which is the correct freshness for a marketing page.
+export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — Score any site against the design contract',
