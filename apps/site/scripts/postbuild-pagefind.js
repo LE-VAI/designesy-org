@@ -15,8 +15,8 @@
  * bodies, emitting into `.next/static/chunks/app/pagefind` so Vercel serves the
  * index as static chunks at `/_next/static/chunks/app/pagefind/pagefind.js`.
  * All content routes are `○` static-prerendered (verified in the build table),
- * so their HTML is present in `.next`. Pagefind's default glob only indexes
- * `**/*.html`, so JS/CSS chunks under `.next/static` are ignored automatically.
+ * so their HTML is present in `.next`. Pagefind only indexes HTML files by
+ * default, so the JS/CSS chunks under `.next/static` are ignored automatically.
  *
  * Output: `.next/static/chunks/app/pagefind/` (WASM stub + lazy shards), served
  * by Vercel as static chunks and lazy-loaded by the command palette on first
