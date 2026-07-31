@@ -638,14 +638,28 @@ export function ScrambleEnhancer() {
         // 800px) and no scramble glyph set can ever widen the line past the
         // 2-line break.
 
-        // Blue → white per-char blend over the resolved tail (normal motion
-        // only; reduced motion keeps the accent color via CSS).
+        // Blue → INK per-char blend over the resolved tail (normal motion only;
+        // reduced motion keeps the accent color via CSS). The blend endpoint was
+        // hardcoded to rgb(245,245,247) — dark-mode ink — so in LIGHT mode the
+        // settled trailing glyphs (the last 2–4 chars of every rotated word:
+        // "...coun[t]", "...intentiona[l]", "...accountabl[e]") were painted
+        // near-white on near-white paper and read as "cut off". Resolve the LIVE
+        // --ink from the element's computed color ONCE per rotation so the blend
+        // lands on the theme-correct ink (near-white in dark, near-black in
+        // light) and survives theme switches mid-view.
+        const resolveInkRGB = (): [number, number, number] => {
+          const cs = getComputedStyle(el).color;
+          const m = cs.match(/(\d+(?:\.\d+)?)[,\s)]+(\d+(?:\.\d+)?)[,\s)]+(\d+(?:\.\d+)?)/);
+          if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
+          return [245, 245, 247]; // dark-mode fallback only if unparseable
+        };
+        const inkRGB = resolveInkRGB();
         const colorFn = (i: number, n: number): string => {
           if (n <= 1) return 'var(--ink)';
           const t = i / (n - 1);
-          const r = Math.round(51 + (245 - 51) * t);
-          const g = Math.round(88 + (245 - 88) * t);
-          const b = Math.round(232 + (247 - 232) * t);
+          const r = Math.round(51 + (inkRGB[0] - 51) * t);
+          const g = Math.round(88 + (inkRGB[1] - 88) * t);
+          const b = Math.round(232 + (inkRGB[2] - 232) * t);
           return `rgb(${r}, ${g}, ${b})`;
         };
 
