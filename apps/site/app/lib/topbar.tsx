@@ -91,7 +91,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   }, [pathname]);
 
   return (
-    <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar">
+    <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar" data-pagefind-ignore>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>

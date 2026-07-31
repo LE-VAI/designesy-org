@@ -6,11 +6,16 @@ import { useRouter } from 'next/navigation';
 /**
  * Command palette (Cmd+K / Ctrl+K).
  *
- * Phase 2.5 — a client-side filter over the site's curated surface index.
- * This is intentionally local (no network, no backend index): designesy.org is
- * a compact, high-signal site where a hand-maintained corpus outperforms a
- * crawler. Phase 3 (esy-search) replaces the static INDEX with a real search
- * surface; the modal shell, keybinding, and list semantics carry forward.
+ * Phase 3.4 (esy-search) — hybrid search surface:
+ *   • Empty query  → curated browse view over the static INDEX (grouped
+ *     navigation aid; hand-maintained because a compact, high-signal site
+ *     benefits from an intentional zero-state, not a crawler's guess).
+ *   • Typed query  → Pagefind full-text search over the built site (BM25 +
+ *     fuzzy, title-weighted), degrading gracefully to the INDEX filter when
+ *     the Pagefind asset isn't available (next dev, pre-postbuild).
+ *
+ * Pagefind is emitted by the postbuild step into /public/pagefind and loaded
+ * lazily on first keystroke — zero cost until the user actually searches.
  *
  * Accessibility: roving tabindex listbox, full keyboard operability,
  * aria-activedescendant, Escape/scrim close, focus restore. Reduced-motion
@@ -95,14 +100,184 @@ function scoreItem(item: SearchItem, q: string): number {
   return score;
 }
 
+// ---------------------------------------------------------------------------
+// Pagefind loader (lazy, resilient)
+//
+// Pagefind emits a WASM-backed stub at /pagefind/pagefind.js during postbuild.
+// We import it on first keystroke with webpackIgnore so Next leaves the URL
+// as a runtime fetch of a static asset. In `next dev` (and before the first
+// production postbuild) the asset doesn't exist — loadPagefind() resolves
+// null and the palette silently falls back to the curated INDEX filter.
+// ---------------------------------------------------------------------------
+
+type PagefindResultData = {
+  url: string;
+  meta?: { title?: string };
+  excerpt?: string;
+};
+
+type PagefindSearchHit = {
+  data: () => Promise<PagefindResultData>;
+};
+
+type PagefindSearchResponse = {
+  results: PagefindSearchHit[];
+};
+
+type PagefindApi = {
+  search: (query: string) => Promise<PagefindSearchResponse>;
+  debouncedSearch: (
+    query: string,
+    options?: { debounceTimeoutMs?: number }
+  ) => Promise<PagefindSearchResponse | null>;
+  options: (opts: { ranking?: { metaWeights?: Record<string, number> } }) => Promise<void> | void;
+  init?: () => Promise<void> | void;
+};
+
+let pagefindPromise: Promise<PagefindApi | null> | null = null;
+
+const FLAGSHIP_HREFS = new Set([
+  '/score',
+  '/contracts/design-system',
+  '/contracts/a11y',
+  '/docs',
+  '/methodology',
+]);
+
+function loadPagefind(): Promise<PagefindApi | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (!pagefindPromise) {
+    pagefindPromise = import(/* webpackIgnore: true */ '/pagefind/pagefind.js')
+      .then(async (mod) => {
+        const pf = (mod as { default?: PagefindApi }).default ?? (mod as unknown as PagefindApi);
+        if (typeof pf.init === 'function') await pf.init();
+        // Boost title/metadata so contract + flagship surfaces rank above
+        // incidental body-text mentions (metaWeights maps data-pagefind-meta
+        // keys; title is Pagefind's built-in page-title signal).
+        await pf.options({
+          ranking: { metaWeights: { title: 5.0, description: 3.0, priority: 10.0 } },
+        });
+        return pf;
+      })
+      .catch(() => null);
+  }
+  return pagefindPromise;
+}
+
+/** Strip the Pagefind-injected trailing slash/anchors so hrefs stay clean. */
+function cleanHref(url: string): string {
+  // Pagefind returns absolute-ish paths like "/contracts/a11y" — keep the
+  // pathname only and drop any fragment so Enter goes to the page top.
+  try {
+    const u = new URL(url, window.location.origin);
+    return u.pathname.replace(/\/$/, '') || '/';
+  } catch {
+    return url;
+  }
+}
+
+/** Derive a display group from the href so hit rows keep the visual grouping. */
+function groupForHref(href: string): SearchItem['group'] {
+  if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/benchmarks')
+    || href.startsWith('/methodology') || href.startsWith('/specs')) return 'Verify';
+  if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
+  if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';
+  if (href.startsWith('/labs')) return 'Labs';
+  if (href.startsWith('/kits') || href.startsWith('/review')) return 'Kits';
+  if (href.endsWith('.json') || href.endsWith('.txt') || href.startsWith('/.well-known') || href.startsWith('/api')) return 'Machine';
+  return 'Company';
+}
+
+/** Human fallback label when Pagefind meta.title is absent (raw asset hits). */
+function titleFromHref(href: string): string {
+  const seg = href.split('/').filter(Boolean).pop() || 'home';
+  return seg
+    .replace(/\.(json|txt|html)$/, '')
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 export function CommandPalette() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  const [hits, setHits] = useState<SearchItem[] | null>(null); // Pagefind results for typed queries
+  const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const searchSeq = useRef(0); // stale-response guard
+
+  // Typed-query search. Prefers Pagefind full-text (body + BM25 ranking);
+  // falls back to the curated INDEX filter when Pagefind is unavailable.
+  useEffect(() => {
+    const q = normalize(query);
+    if (!q) {
+      setHits(null);
+      setSearching(false);
+      return;
+    }
+
+    // Instant local filter FIRST so the UI always shows something with zero
+    // perceived latency; Pagefind refines when it resolves.
+    const local = INDEX
+      .map((item) => ({ item, s: scoreItem(item, q) }))
+      .filter((r) => r.s > 0)
+      .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
+      .map((r) => r.item)
+      .slice(0, 12);
+    setHits(local);
+
+    const seq = ++searchSeq.current;
+    let cancelled = false;
+
+    (async () => {
+      setSearching(true);
+      const pf = await loadPagefind();
+      if (!pf || cancelled) {
+        setSearching(false);
+        return;
+      }
+      // debouncedSearch returns null when superseded by a newer keystroke —
+      // treat that as "a newer request owns the listbox now".
+      const res = await pf.debouncedSearch(q, { debounceTimeoutMs: 120 });
+      if (cancelled || seq !== searchSeq.current) return;
+      if (!res) return; // superseded
+
+      const rows = await Promise.all(
+        res.results.slice(0, 12).map(async (hit) => {
+          const d = await hit.data();
+          const href = cleanHref(d.url);
+          const title = d.meta?.title?.trim() || titleFromHref(href);
+          // excerpt carries matched body context — use it as the row meta so
+          // hits show WHY they matched, not just where they go.
+          const meta = d.excerpt
+            ? d.excerpt.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 80)
+            : '';
+          return {
+            title,
+            href,
+            group: groupForHref(href),
+            keywords: '',
+            meta,
+            _flagship: FLAGSHIP_HREFS.has(href),
+          } as SearchItem & { _flagship: boolean };
+        })
+      );
+
+      if (cancelled || seq !== searchSeq.current) return;
+      // Flagship surfaces float to the top of their group on exact page hits.
+      rows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
+      setHits(rows.map(({ _flagship, ...rest }) => rest));
+      setSearching(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
 
   const results = useMemo(() => {
     const q = normalize(query);
@@ -112,13 +287,8 @@ export function CommandPalette() {
         (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group)
       );
     }
-    return INDEX
-      .map((item) => ({ item, s: scoreItem(item, q) }))
-      .filter((r) => r.s > 0)
-      .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
-      .map((r) => r.item)
-      .slice(0, 12);
-  }, [query]);
+    return hits ?? [];
+  }, [query, hits]);
 
   const openPalette = useCallback(() => {
     setOpen(true);
@@ -130,6 +300,9 @@ export function CommandPalette() {
     setOpen(false);
     setQuery('');
     setActive(0);
+    setHits(null);
+    setSearching(false);
+    searchSeq.current += 1; // invalidate any in-flight Pagefind response
     // Restore focus to the trigger for keyboard users
     triggerRef.current?.focus();
   }, []);
@@ -303,8 +476,17 @@ export function CommandPalette() {
             >
               {results.length === 0 && (
                 <div className="cmdk-empty" role="option" aria-selected="false">
-                  <p className="cmdk-empty-title">No matches for “{query}”</p>
-                  <p className="cmdk-empty-sub">Try a page name, contract, endpoint, or topic.</p>
+                  {searching ? (
+                    <>
+                      <p className="cmdk-empty-title">Searching…</p>
+                      <p className="cmdk-empty-sub">Looking through body content and contracts.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="cmdk-empty-title">No matches for “{query}”</p>
+                      <p className="cmdk-empty-sub">Try a page name, contract, endpoint, or topic.</p>
+                    </>
+                  )}
                 </div>
               )}
               {grouped.map((g) => (

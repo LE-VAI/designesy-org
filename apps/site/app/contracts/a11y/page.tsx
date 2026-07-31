@@ -21,7 +21,7 @@ export default function A11yContractPage() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" className="surface-page">
+      <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Sibling contract</p>
           <h1 className="surface-title" data-scramble>Accessibility</h1>
