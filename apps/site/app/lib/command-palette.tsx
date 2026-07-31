@@ -148,15 +148,17 @@ function loadPagefind(): Promise<PagefindApi | null> {
   if (typeof window === 'undefined') return Promise.resolve(null);
   if (!pagefindPromise) {
     // Load the Pagefind stub at RUNTIME only. A literal dynamic-import specifier
-    // is type-checked by `next build` (TS resolves '/pagefind/pagefind.js' and
-    // fails on missing declarations) even with webpackIgnore. Using new Function
-    // hides the specifier from BOTH TypeScript and the webpack bundler, so the
-    // build passes and the import resolves against the deployed static asset
-    // only when the user actually searches. Zero bundle cost; dev falls back.
+    // is type-checked by `next build` (TS resolves the URL and fails on missing
+    // declarations) even with webpackIgnore. Using new Function hides the
+    // specifier from BOTH TypeScript and the webpack bundler, so the build
+    // passes and the import resolves against the deployed static chunk only
+    // when the user actually searches. The index lives under
+    // /_next/static/chunks/app/pagefind (emitted by postbuild into .next).
+    // Zero bundle cost; dev falls back to the curated INDEX.
     const runtimeImport = new Function('u', 'return import(u)') as (
       u: string
     ) => Promise<unknown>;
-    pagefindPromise = runtimeImport('/pagefind/pagefind.js')
+    pagefindPromise = runtimeImport('/_next/static/chunks/app/pagefind/pagefind.js')
       .then(async (mod) => {
         const pf = (mod as { default?: PagefindApi }).default ?? (mod as unknown as PagefindApi);
         if (typeof pf.init === 'function') await pf.init();
