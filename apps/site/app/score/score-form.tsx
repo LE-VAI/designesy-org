@@ -770,10 +770,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               </button>
 
               <a
-                href={`/score?url=${encodeURIComponent(scoredUrl)}`}
+                href={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
                 className="score-action-btn"
                 data-cuelume-press="tick"
-                title="Open the full report on the dedicated Score page — shareable URL."
+                title="Open the full verification report — shareable URL, print-friendly."
               >
                 View full report →
               </a>
