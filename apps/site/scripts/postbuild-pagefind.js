@@ -2,21 +2,21 @@
 /**
  * Phase 3.4 (esy-search) — Pagefind postbuild indexer.
  *
- * Runs after `next build`. Pagefind needs final prerendered HTML documents on
- * disk. On Vercel the intermediate `.next/server/app` tree is cleaned before a
- * `postbuild` script executes (Vercel translates `.next` → Build Output API v3),
- * so we index the WHOLE `.next` build dir — Pagefind walks it and recovers the
- * prerendered HTML bodies. This is the canonical Next.js recipe (pagefind#611,
- * Pagefind-maintainer-endorsed): `--site .next`, output under
- * `.next/static/chunks/app/pagefind` so the client import resolves at
- * `/_next/static/chunks/app/pagefind/pagefind.js`.
+ * Runs INSIDE the `build` script (`next build && node postbuild-pagefind.js`).
+ * This is load-bearing: Vercel's build orchestrator sweeps `.next` before the
+ * npm `postbuild` lifecycle hook fires, so a `postbuild` script finds no `.next`
+ * and skips. Running it chained directly after `next build` is the only moment
+ * `.next` provably still exists on Vercel. The script always exits 0 on error,
+ * so a Pagefind failure degrades the search (curated-INDEX fallback) without
+ * ever failing the deploy.
  *
- * All content routes here are `○` static-prerendered (verified in the build
- * table), so `.next` contains their final HTML. Internal artifacts
- * (404/_not-found/_error) ship without a public route and are excluded below
- * via `--exclude-selectors` is not needed — Pagefind only indexes files it can
- * map to a URL; the palette ignores RSC payloads because it searches by title
- * and body text.
+ * Pagefind needs final prerendered HTML documents on disk. We index the WHOLE
+ * `.next` build dir — Pagefind walks it and recovers the prerendered HTML
+ * bodies, emitting into `.next/static/chunks/app/pagefind` so Vercel serves the
+ * index as static chunks at `/_next/static/chunks/app/pagefind/pagefind.js`.
+ * All content routes are `○` static-prerendered (verified in the build table),
+ * so their HTML is present in `.next`. Pagefind's default glob only indexes
+ * `**/*.html`, so JS/CSS chunks under `.next/static` are ignored automatically.
  *
  * Output: `.next/static/chunks/app/pagefind/` (WASM stub + lazy shards), served
  * by Vercel as static chunks and lazy-loaded by the command palette on first
@@ -49,8 +49,6 @@ function main() {
   const args = [
     '--site', SITE_DIR,
     '--output-path', OUT_DIR,
-    // Exclude Next internals that are not public content.
-    '--exclude-selectors', 'script,noscript',
   ];
 
   console.log(`[postbuild-pagefind] indexing .next -> ${path.relative(ROOT, OUT_DIR)}`);
