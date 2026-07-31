@@ -28,7 +28,7 @@ const TOOLS = [
   {
     name: 'designesy_contract',
     kind: 'Read-only',
-    desc: 'The design-system contract v0.3.0 — tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions. Optional section filter.',
+    desc: 'The design-system contract v0.4.0 — tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions. Optional section filter.',
     args: 'section?: string',
     source: '/contracts/design-system.json',
   },
@@ -559,7 +559,7 @@ export default function McpDocsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  v0.3.0 — the contract behind designesy_contract
+                  v0.4.0 — the contract behind designesy_contract
                 </span>
               </span>
             </Link>
