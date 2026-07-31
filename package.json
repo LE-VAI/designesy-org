@@ -1,9 +1,41 @@
 {
-  "name": "designesy-org",
-  "private": true,
+  "name": "designesy-score",
+  "version": "0.4.0",
+  "description": "Score any URL against the Designesy design-system contract — 40 deterministic checks, one grade, no vibe-tax. Zero dependencies.",
+  "license": "SEE LICENSE AT https://www.designesy.org",
+  "author": "Designesy",
+  "homepage": "https://www.designesy.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "."
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "design-contract",
+    "design-verification",
+    "accessibility",
+    "wcag",
+    "core-web-vitals",
+    "ci",
+    "quality-gate",
+    "designesy"
+  ],
   "bin": {
     "designesy-score": "cli/designesy-score.mjs"
   },
+  "files": [
+    "cli/designesy-score.mjs",
+    "cli/README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "private": false,
   "scripts": {
     "dev": "cd apps/site && npm run dev",
     "build": "cd apps/site && npm run build",
