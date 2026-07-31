@@ -12752,11 +12752,12 @@ select {
      inline sides with equal negative margins so the widest word renders its
      final glyph + period inside the clip region; padding keeps the centered
      text optically unmoved and the negative margins preserve the block's
-     outer footprint (no reflow of the eyebrow/sub around it). 1ch ≈ the
-     zero-glyph width (~39px/side at 78px), comfortably over the ~34px/side
-     worst-case shear. */
-  padding-inline: 1ch;
-  margin-inline: -1ch;
+     outer footprint (no reflow of the eyebrow/sub around it). 1.6ch ≈
+     77px/side at 78px covers BOTH the ~34px/side "accountable" shear AND
+     the trailing period (which sits another ~20px past the word's final
+     glyph) with generous headroom. */
+  padding-inline: 1.6ch;
+  margin-inline: -1.6ch;
   overflow: hidden;
   text-overflow: clip;
 }
