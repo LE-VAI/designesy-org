@@ -177,7 +177,7 @@ export default function HomePage() {
               <span
                 className="hero-display-line is-accent"
                 data-scramble
-                data-scramble-rotate-words='["yours","count","stick","intentional","visible","accountable","legitimate","real","shipped"]'
+                data-scramble-rotate-words='["yours","count","stick","intentional","visible","liable","legitimate","real","shipped"]'
                 data-scramble-rotate-delay="3200"
               >
                 <span data-prefix>We make execution </span>
