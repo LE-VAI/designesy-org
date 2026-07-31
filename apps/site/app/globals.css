@@ -12693,7 +12693,11 @@ select {
 }
 
 /* Editorial display — massive, confident, single-weight, tracking tight.
-   Two stacked lines: the claim in ink, the answer carried by the accent dot. */
+   Two stacked lines: the claim in ink, the answer carried by the accent dot.
+   text-wrap: balance was re-flowing the lines' inline center so the display
+   sat optically off-axis against the clean-centered eyebrow and sub above
+   and below it — removed: the lines are single-line blocks (display:block),
+   plain centered text-align is the only correct register here. */
 .hero-display {
   font-size: clamp(2.35rem, 5.9vw, 4.9rem);
   font-weight: 340;
@@ -12701,7 +12705,6 @@ select {
   letter-spacing: -0.03em;
   color: var(--ink);
   margin: 0 0 clamp(1.25rem, 2.6vw, 2rem);
-  text-wrap: balance;
   font-variation-settings: 'opsz' 32;
 }
 
@@ -12714,7 +12717,6 @@ select {
     font-size: clamp(1.4rem, 5.9vw, 3.2rem);
     line-height: 1.06;
     letter-spacing: -0.02em;
-    text-wrap: nowrap;
   }
 }
 .hero-display-line { display: block; }
@@ -12729,23 +12731,33 @@ select {
    scrambler's textContent writes identically in every engine — a CSS
    margin would DOUBLE the gap in browsers that keep the natural space. */
 .hero-word-free {
+  /* The gap is a REAL U+00A0 encoded as this span's own leading character —
+     hydration-proof, and because it lives on the clipped text itself the
+     shimmer band sweeps through the gap exactly like any other glyph. */
+  padding-left: 0.14em; /* optical kern: nbsp + this ≈ one natural word space */
   background-image: linear-gradient(
     104deg,
-    color-mix(in srgb, var(--ink) 88%, #ffffff 12%),
-    color-mix(in srgb, var(--ink) 88%, #ffffff 12%) 40%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%),
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 44%,
     #ffffff 50%,
-    color-mix(in srgb, var(--ink) 88%, #ffffff 12%) 60%,
-    color-mix(in srgb, var(--ink) 88%, #ffffff 12%)
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 56%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%)
   );
-  background-size: 230% 100%;
+  background-size: 250% 100%;
   background-position: 118% 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent; /* fallback guard — overridden below where clip is unsupported */
-  /* Smart glow, kept quiet: a faint signal-white halo, present at rest. */
-  text-shadow: 0 0 18px color-mix(in srgb, var(--signal-light) 26%, transparent);
-  animation: hero-free-shimmer 4.4s cubic-bezier(0.42, 0, 0.2, 1) 0.9s infinite;
+  /* Bright, taut glow — light-core white with a whisper of signal blue,
+     tight enough to read as shine rather than halo. */
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.42),
+    0 0 26px color-mix(in srgb, var(--signal-light) 34%, transparent);
+  /* Sweep left → right on an infinite loop with a built-in dwell: the band
+     is parked off-word at both extremes, so the loop restart is invisible
+     and the read is "a shine that keeps passing through", never frozen. */
+  animation: hero-free-shimmer 4.4s cubic-bezier(0.42, 0, 0.2, 1) 1.4s infinite;
 }
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
@@ -12757,9 +12769,14 @@ select {
   }
 }
 
+/* Continuous left→right sweep, eased so the band breathes instead of
+   crawling. 62%→100% is the dwell: band parked off-word, restart invisible.
+   Resting state (pre-animation) is the same off-word 118% — the band never
+   sits parked OVER the word looking frozen. */
 @keyframes hero-free-shimmer {
-  0%, 22% { background-position: 118% 0; }
-  72%, 100% { background-position: -118% 0; }
+  0% { background-position: 118% 0; }
+  62% { background-position: -118% 0; }
+  100% { background-position: -118% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -12774,9 +12791,14 @@ select {
 
 [data-word] {
   /* Never break the 2-line rule: width is pinned to the LONGEST variant
-     ("intentional") so no scramble or cycle can push L2 past two lines. */
+     ("intentional" — measured 4.51em in-page, pinned 4.9em to cover
+     variable-font rendering drift across engines) so no scramble glyph set
+     or cycle can push L2 past two lines. inline-block is REQUIRED —
+     min-width is a no-op on a plain inline span, which is exactly what
+     leaked the line to three during churn. */
+  display: inline-block;
   white-space: nowrap;
-  min-width: 6.4em;
+  min-width: 4.9em;
 }
 
 [data-word] .is-scrambling {
