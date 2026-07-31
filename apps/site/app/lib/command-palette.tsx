@@ -7,19 +7,28 @@ import { useRouter } from 'next/navigation';
  * Command palette (Cmd+K / Ctrl+K).
  *
  * Phase 3.4 (esy-search) — hybrid search surface:
- *   • Empty query  → curated browse view over the static INDEX (grouped
- *     navigation aid; hand-maintained because a compact, high-signal site
- *     benefits from an intentional zero-state, not a crawler's guess).
- *   • Typed query  → Pagefind full-text search over the built site (BM25 +
- *     fuzzy, title-weighted), degrading gracefully to the INDEX filter when
- *     the Pagefind asset isn't available (next dev, pre-postbuild).
+ *   • Empty query  → curated QUICK JUMP grid (top destination per group) so
+ *     the zero-state is scannable in one glance instead of a 30-row scroll.
+ *   • Typed query  → instant local INDEX filter painted first (zero perceived
+ *     latency), then Pagefind full-text (BM25 + fuzzy, title-weighted) refines
+ *     over the built site. Degrades gracefully to the INDEX filter when the
+ *     Pagefind asset isn't available (next dev, pre-postbuild).
  *
- * Pagefind is emitted by the postbuild step into /public/pagefind and loaded
+ * Pagefind is emitted by the postbuild step into .next/static and loaded
  * lazily on first keystroke — zero cost until the user actually searches.
  *
+ * Interaction contract (Phase-critical tweaks):
+ *   • Click-away / tap-away dismisses via pointerdown (before blur/scroll),
+ *     not click — so a tap that starts outside the panel closes it on both
+ *     desktop and touch.
+ *   • Escape closes even when focus has left the input (global capture-phase
+ *     listener while open), and Cmd+K resets as well as toggles.
+ *   • Results list is the only scroll container (overscroll-behavior: contain)
+ *     so wheel/touch scrolling never chains to the page behind the overlay.
+ *
  * Accessibility: roving tabindex listbox, full keyboard operability,
- * aria-activedescendant, Escape/scrim close, focus restore. Reduced-motion
- * respected via CSS (opacity/transform transitions only, gated by media query).
+ * aria-activedescendant, focus restore. Reduced-motion respected via CSS
+ * (opacity/transform transitions only, gated by media query).
  */
 
 type SearchItem = {
@@ -75,6 +84,18 @@ const INDEX: SearchItem[] = [
 
 const GROUP_ORDER: SearchItem['group'][] = ['Verify', 'Contract', 'Learn', 'Labs', 'Kits', 'Machine', 'Company'];
 
+/** Best single destination per group — the zero-state shows exactly one tile
+ *  per group so all seven groups fit without scrolling. */
+const QUICK_PICKS: Record<SearchItem['group'], string> = {
+  Verify: 'Score a site',
+  Contract: 'Design system contract',
+  Learn: 'Docs',
+  Labs: 'Labs',
+  Kits: 'Kits',
+  Machine: 'MCP docs',
+  Company: 'Pricing',
+};
+
 function normalize(s: string) {
   return s.toLowerCase().trim();
 }
@@ -103,11 +124,11 @@ function scoreItem(item: SearchItem, q: string): number {
 // ---------------------------------------------------------------------------
 // Pagefind loader (lazy, resilient)
 //
-// Pagefind emits a WASM-backed stub at /pagefind/pagefind.js during postbuild.
-// We import it on first keystroke with webpackIgnore so Next leaves the URL
-// as a runtime fetch of a static asset. In `next dev` (and before the first
-// production postbuild) the asset doesn't exist — loadPagefind() resolves
-// null and the palette silently falls back to the curated INDEX filter.
+// Pagefind emits a WASM-backed stub under /_next/static/chunks/app/pagefind
+// during postbuild. We import it on first keystroke via a hidden runtime
+// specifier so the build never type-checks the URL. In `next dev` (and before
+// the first production postbuild) the asset doesn't exist — loadPagefind()
+// resolves null and the palette silently falls back to the INDEX filter.
 // ---------------------------------------------------------------------------
 
 type PagefindResultData = {
@@ -152,9 +173,8 @@ function loadPagefind(): Promise<PagefindApi | null> {
     // declarations) even with webpackIgnore. Using new Function hides the
     // specifier from BOTH TypeScript and the webpack bundler, so the build
     // passes and the import resolves against the deployed static chunk only
-    // when the user actually searches. The index lives under
-    // /_next/static/chunks/app/pagefind (emitted by postbuild into .next).
-    // Zero bundle cost; dev falls back to the curated INDEX.
+    // when the user actually searches. Zero bundle cost; dev falls back to
+    // the curated INDEX.
     const runtimeImport = new Function('u', 'return import(u)') as (
       u: string
     ) => Promise<unknown>;
@@ -218,6 +238,7 @@ export function CommandPalette() {
   const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const searchSeq = useRef(0); // stale-response guard
 
@@ -247,7 +268,7 @@ export function CommandPalette() {
     (async () => {
       setSearching(true);
       const pf = await loadPagefind();
-      if (!pf || cancelled) {
+      if (!pf || cancelled || seq !== searchSeq.current) {
         setSearching(false);
         return;
       }
@@ -255,7 +276,12 @@ export function CommandPalette() {
       // treat that as "a newer request owns the listbox now".
       const res = await pf.debouncedSearch(q, { debounceTimeoutMs: 120 });
       if (cancelled || seq !== searchSeq.current) return;
-      if (!res) return; // superseded
+      if (!res) {
+        // Superseded — a newer query is in-flight. Keep searching=true only
+        // while the newer request could still own the listbox.
+        setSearching(false);
+        return;
+      }
 
       const rows = await Promise.all(
         res.results.slice(0, 12).map(async (hit) => {
@@ -281,6 +307,7 @@ export function CommandPalette() {
       if (cancelled || seq !== searchSeq.current) return;
       // Flagship surfaces float to the top of their group on exact page hits.
       rows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
+      rows.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
       setHits(rows.map(({ _flagship, ...rest }) => rest));
       setSearching(false);
     })();
@@ -290,16 +317,19 @@ export function CommandPalette() {
     };
   }, [query]);
 
+  // Zero-state: one QUICK JUMP tile per group (7 tiles, no scroll) — the
+  // authoritative browse view. Typed queries stay in the grouped list.
+  const zeroStateResults = useMemo(() => {
+    return GROUP_ORDER.map(
+      (g) => INDEX.find((item) => item.group === g && item.title === QUICK_PICKS[g])!
+    ).filter(Boolean);
+  }, []);
+
   const results = useMemo(() => {
     const q = normalize(query);
-    if (!q) {
-      // Default: ordered by group, the curated browse view
-      return [...INDEX].sort(
-        (a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group)
-      );
-    }
+    if (!q) return zeroStateResults;
     return hits ?? [];
-  }, [query, hits]);
+  }, [query, hits, zeroStateResults]);
 
   const openPalette = useCallback(() => {
     setOpen(true);
@@ -326,17 +356,24 @@ export function CommandPalette() {
     [closePalette, router]
   );
 
-  // Global Cmd+K / Ctrl+K (and '/' as a power-user alias)
+  // Global keys — capture phase, so nothing between target and window
+  // swallows them, and Escape works even when focus is NOT in the input
+  // (the intermittent-Escape bug: keydown on document.body had no handler).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
       if (isMod && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        setOpen((o) => !o);
-        if (!open) {
-          setQuery('');
-          setActive(0);
+        if (open) {
+          closePalette();
+        } else {
+          openPalette();
         }
+        return;
+      }
+      if (e.key === 'Escape' && open) {
+        e.preventDefault();
+        closePalette();
         return;
       }
       if (e.key === '/' && !open) {
@@ -348,9 +385,25 @@ export function CommandPalette() {
         }
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, openPalette]);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open, openPalette, closePalette]);
+
+  // Click-away / tap-away dismiss — pointerdown (not click) so the palette
+  // closes before blur, focus-shift, or scroll can interfere, on desktop
+  // and touch alike. Guarded to presses that start OUTSIDE the panel.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const el = panelRef.current;
+      if (el && e.target instanceof Node && !el.contains(e.target)) {
+        e.preventDefault(); // don't let the stray tap activate anything behind
+        closePalette();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [open, closePalette]);
 
   // Focus input when opened
   useEffect(() => {
@@ -360,7 +413,8 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  // Lock body scroll while open
+  // Lock body scroll while open (list is the only scroll container;
+  // CSS overscroll-behavior: contain stops wheel/touch chaining).
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = 'hidden';
@@ -381,10 +435,7 @@ export function CommandPalette() {
   }, [active]);
 
   const onInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closePalette();
-    } else if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActive((a) => Math.min(a + 1, results.length - 1));
     } else if (e.key === 'ArrowUp') {
@@ -401,9 +452,13 @@ export function CommandPalette() {
       e.preventDefault();
       setActive(results.length - 1);
     }
+    // Escape is handled by the global capture listener (works from any focus).
   };
 
-  // Group the current results for rendering with headers
+  // Group the current results for rendering with headers. The zero-state is
+  // intentionally flat (one tile per group, self-labeled) so headers would
+  // be redundant; typed queries keep the familiar grouped list.
+  const isZeroState = normalize(query) === '';
   const grouped = useMemo(() => {
     const out: { group: string; items: { item: SearchItem; index: number }[] }[] = [];
     let lastGroup = '';
@@ -417,6 +472,27 @@ export function CommandPalette() {
     });
     return out;
   }, [results]);
+
+  const renderRow = (item: SearchItem, index: number) => (
+    <button
+      key={item.href}
+      id={`cmdk-opt-${index}`}
+      data-index={index}
+      type="button"
+      role="option"
+      aria-selected={index === active}
+      className={`cmdk-item${index === active ? ' is-active' : ''}`}
+      onMouseEnter={() => setActive(index)}
+      onClick={() => go(item.href)}
+    >
+      <span className="cmdk-item-title">
+        {isZeroState && <span className="cmdk-item-group">{item.group} — </span>}
+        {item.title}
+      </span>
+      {item.meta && <span className="cmdk-item-meta">{item.meta}</span>}
+      <span className="cmdk-item-arrow" aria-hidden="true">→</span>
+    </button>
+  );
 
   return (
     <>
@@ -441,14 +517,9 @@ export function CommandPalette() {
       </button>
 
       {open && (
-        <div
-          className="cmdk-overlay"
-          role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closePalette();
-          }}
-        >
+        <div className="cmdk-overlay" role="presentation">
           <div
+            ref={panelRef}
             className="cmdk-panel"
             role="dialog"
             aria-modal="true"
@@ -500,28 +571,19 @@ export function CommandPalette() {
                   )}
                 </div>
               )}
-              {grouped.map((g) => (
-                <div key={g.group} className="cmdk-group">
-                  <div className="cmdk-group-label" aria-hidden="true">{g.group}</div>
-                  {g.items.map(({ item, index }) => (
-                    <button
-                      key={item.href}
-                      id={`cmdk-opt-${index}`}
-                      data-index={index}
-                      type="button"
-                      role="option"
-                      aria-selected={index === active}
-                      className={`cmdk-item${index === active ? ' is-active' : ''}`}
-                      onMouseEnter={() => setActive(index)}
-                      onClick={() => go(item.href)}
-                    >
-                      <span className="cmdk-item-title">{item.title}</span>
-                      {item.meta && <span className="cmdk-item-meta">{item.meta}</span>}
-                      <span className="cmdk-item-arrow" aria-hidden="true">→</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
+              {isZeroState ? (
+                <>
+                  <div className="cmdk-group-label" aria-hidden="true">Quick jump</div>
+                  {results.map((item, index) => renderRow(item, index))}
+                </>
+              ) : (
+                grouped.map((g) => (
+                  <div key={g.group} className="cmdk-group">
+                    <div className="cmdk-group-label" aria-hidden="true">{g.group}</div>
+                    {g.items.map(({ item, index }) => renderRow(item, index))}
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="cmdk-footer" aria-hidden="true">

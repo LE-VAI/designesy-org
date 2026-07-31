@@ -812,37 +812,38 @@ p {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 14vh 1rem 1rem;
-  background: rgba(1, 1, 2, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  padding: 12vh 1rem 1rem;
+  background: rgba(1, 1, 2, 0.62);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
   animation: cmdk-fade 160ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-overlay {
-  background: rgba(28, 28, 32, 0.32);
+  background: rgba(28, 28, 32, 0.34);
 }
 
 .cmdk-panel {
   width: 100%;
-  max-width: 34rem;
-  background: linear-gradient(180deg, rgba(22, 22, 27, 0.82), rgba(14, 14, 18, 0.88));
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  max-width: 36rem;
+  background: linear-gradient(180deg, rgba(24, 24, 30, 0.72), rgba(14, 14, 18, 0.82));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    0 2px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
   overflow: hidden;
   animation: cmdk-pop 180ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-panel {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 248, 250, 0.94));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(248, 248, 250, 0.92));
   box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 32px 80px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 @keyframes cmdk-fade {
@@ -861,13 +862,13 @@ p {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.85rem 0.95rem;
+  padding: 0.95rem 1rem;
   border-bottom: 1px solid var(--line);
 }
 
 .cmdk-input-icon {
   flex-shrink: 0;
-  color: var(--muted);
+  color: var(--signal-light);
 }
 
 .cmdk-input {
@@ -878,7 +879,7 @@ p {
   outline: none;
   color: var(--ink);
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 1rem; /* 16px floor — no iOS zoom-on-focus */
 }
 
 .cmdk-input::placeholder {
@@ -899,9 +900,16 @@ p {
 /* --- results list --- */
 
 .cmdk-list {
-  max-height: 22rem;
+  max-height: min(20rem, calc(100dvh - 32vh));
   overflow-y: auto;
+  overscroll-behavior: contain; /* wheel/touch never chains to the page behind */
   padding: 0.4rem;
+}
+
+.cmdk-item-group {
+  color: var(--signal-light);
+  font-size: 0.8em;
+  font-weight: 500;
 }
 
 .cmdk-group + .cmdk-group {
@@ -1008,6 +1016,20 @@ p {
   padding: 1px 4px;
   line-height: 1.3;
   background: var(--surface);
+}
+
+/* Small screens: pull the panel higher and give the list more room to
+   breathe, so tap targets stay reachable and results read at a glance. */
+@media (max-width: 560px) {
+  .cmdk-overlay {
+    padding: 7vh 0.6rem 0.6rem;
+  }
+  .cmdk-list {
+    max-height: min(24rem, calc(100dvh - 22vh));
+  }
+  .cmdk-item {
+    padding: 0.7rem 0.6rem;
+  }
 }
 
 /* Reduced transparency — flatten the glass */
@@ -12697,6 +12719,62 @@ select {
 }
 .hero-display-line { display: block; }
 .hero-display-line.is-accent { color: var(--ink); }
+
+/* Hero word treatments — "free" shimmer (subtle white sweep that fades into
+   the word's own ink color; stops and holds readable solid under reduced
+   motion) and the last-word rotator spans (prefix stays, word scrambles,
+   punctuation static). */
+.hero-word-free {
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--ink) 82%, #ffffff 18%),
+    color-mix(in srgb, var(--ink) 82%, #ffffff 18%) 42%,
+    #ffffff 50%,
+    color-mix(in srgb, var(--ink) 82%, #ffffff 18%) 58%,
+    color-mix(in srgb, var(--ink) 82%, #ffffff 18%)
+  );
+  background-size: 240% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; /* fallback guard — overridden below where clip is unsupported */
+  animation: hero-free-shimmer 6.5s ease-in-out infinite;
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-word-free {
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+    background-image: none;
+  }
+}
+
+@keyframes hero-free-shimmer {
+  0% { background-position: 130% 0; }
+  55% { background-position: -130% 0; }
+  100% { background-position: -130% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word-free {
+    animation: none;
+    background-image: none;
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+[data-word] {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+[data-word] .is-scrambling {
+  color: var(--signal-light);
+  opacity: 0.85;
+}
 
 .hero-architectural .hero-sub {
   margin-inline: auto;
