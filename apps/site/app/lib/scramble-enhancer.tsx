@@ -37,10 +37,11 @@ function decodeToString(
   charDelay: number,
   churnCount: number,
   onUpdate: (text: string) => void
-): void {
+): () => void {
   let revealed = 0;
   const total = realText.length;
   let cancelled = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   const revealStep = () => {
     if (cancelled || revealed >= total) {
@@ -59,7 +60,7 @@ function decodeToString(
     }
     onUpdate(result);
     revealed++;
-    setTimeout(revealStep, charDelay);
+    timer = setTimeout(revealStep, charDelay);
   };
 
   let churn = 0;
@@ -70,16 +71,64 @@ function decodeToString(
     }
     onUpdate(scrambleString(realText));
     churn++;
-    setTimeout(churnStep, 40);
+    timer = setTimeout(churnStep, 40);
   };
 
   churnStep();
 
-  // Return cancel function so caller can abort if needed
-  return void (undefined as never);
+  // Caller-cancellable: used by last-word rotators to prevent overlapping
+  // decode passes on the same element (a stuck-scramble vector when an
+  // older timeout survives a route-change re-scan).
+  return () => {
+    cancelled = true;
+    if (timer) clearTimeout(timer);
+  };
 }
 
-/** Check if an element is currently in the viewport */
+// Deterministic, time-derived decode: which chars are resolved is a pure
+// function of elapsed time (with a small per-char ease-out stagger), so a
+// cancelled/duplicated pass can never leave a glyph stuck mid-scramble.
+function decodeWordTimeDerived(
+  word: string,
+  colorFn: (i: number, n: number) => string | null,
+  onFrame: (g: { ch: string; done: boolean; color: string | null }[]) => void
+): () => void {
+  const churnMs = 140; // full-scramble window before any resolve
+  const staggerMs = 42; // per-char resolve stagger (slot-machine settle)
+  const total = word.length;
+  const duration = churnMs + total * staggerMs + 90;
+  let raf = 0;
+  const start = performance.now();
+
+  const tick = (now: number) => {
+    const t = now - start;
+    const glyphs: { ch: string; done: boolean; color: string | null }[] = [];
+    for (let i = 0; i < total; i++) {
+      const threshold = churnMs + i * staggerMs;
+      const done = t > threshold;
+      glyphs.push({
+        ch: done ? word[i] : randomChar(),
+        done,
+        color: done ? (colorFn ? colorFn(i, total) : null) : null,
+      });
+    }
+    onFrame(glyphs);
+    if (t < duration) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      // Final state — guaranteed real text + colors.
+      onFrame(
+        word.split('').map((ch, i) => ({
+          ch,
+          done: true,
+          color: colorFn ? colorFn(i, total) : null,
+        }))
+      );
+    }
+  };
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
+}
 function isInViewport(el: HTMLElement): boolean {
   const rect = el.getBoundingClientRect();
   return (
@@ -171,7 +220,7 @@ export function ScrambleEnhancer() {
                 }
               });
             },
-            { threshold: 0.3 }
+            { threshold: 0.1 }
           );
           observer.observe(el);
           allObservers.push(observer);
@@ -202,7 +251,7 @@ export function ScrambleEnhancer() {
               }
             });
           },
-          { threshold: 0.3 }
+          { threshold: 0.1 }
         );
         observer.observe(el);
         allObservers.push(observer);
@@ -339,7 +388,7 @@ export function ScrambleEnhancer() {
             }
           });
         },
-        { threshold: 0.3 }
+        { threshold: 0.1 }
       );
       observer.observe(el);
       allObservers.push(observer);
@@ -385,7 +434,7 @@ export function ScrambleEnhancer() {
             }
           });
         },
-        { threshold: 0.3 }
+        { threshold: 0.1 }
       );
       observer.observe(el);
       allObservers.push(observer);
@@ -397,110 +446,109 @@ export function ScrambleEnhancer() {
       });
     });
 
-    /* --- Scramble Rotation ---
-       Elements with data-scramble-rotate get post-decode variant cycling.
-       After the initial decode completes, wait data-scramble-rotate-delay ms
-       (default 10s), then scramble → decode to the next variant.
-       data-scramble-rotate is a JSON array of variant strings. The original
-       textContent is variant[0]. */
-    const rotateEls = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-scramble-rotate]')
+    /* --- Last-Word Rotation ---
+       Elements with data-scramble-rotate-words get post-decode variant
+       cycling on their FINAL word only: the sentence prefix stays put and
+       the last word scrambles → decodes to the next variant. Decode is
+       time-derived (cancellation immune — a re-scan can never leave a glyph
+       stuck mid-scramble). Under normal motion, the resolved tail blends a
+       blue→white gradient across the word. data-scramble-rotate-words is a
+       JSON array of LAST-WORD variants (no trailing punctuation; punctuation
+       is a static <span> preserved by the markup).
+       This REPLACES the legacy data-scramble-rotate full-sentence rotation,
+       which could stack a stale timeout-driven decode over a route-change
+       re-scan (the "scramble gets stuck" vector). */
+    const rotatorEls = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-scramble-rotate-words]')
     );
 
-    const rotateTimers: ReturnType<typeof setTimeout>[] = [];
+    const rotatorTimers: ReturnType<typeof setTimeout>[] = [];
+    const rotatorCancels: (() => void)[] = [];
 
-    rotateEls.forEach((el) => {
-      const variantsJson = el.getAttribute('data-scramble-rotate');
-      if (!variantsJson) return;
+    rotatorEls.forEach((el) => {
+      const wordsJson = el.getAttribute('data-scramble-rotate-words');
+      if (!wordsJson) return;
 
-      let variants: string[];
+      let words: string[];
       try {
-        variants = JSON.parse(variantsJson) as string[];
+        words = JSON.parse(wordsJson) as string[];
       } catch {
         return; // invalid JSON — skip rotation
       }
+      if (words.length < 2) return;
 
-      if (variants.length < 2) return;
+      const prefix = el.querySelector<HTMLElement>('[data-prefix]');
+      const wordSpan = el.querySelector<HTMLElement>('[data-word]');
+      const punct = Array.from(el.querySelectorAll<HTMLElement>('span:not([data-prefix]):not([data-word])')).pop() ?? null;
+      if (!prefix || !wordSpan || !punct) return;
 
       const rotateDelayAttr = el.getAttribute('data-scramble-rotate-delay');
-      const rotateDelay = rotateDelayAttr
-        ? parseInt(rotateDelayAttr, 10)
-        : 10000; // default 10s between rotations
+      const rotateDelay = rotateDelayAttr ? parseInt(rotateDelayAttr, 10) : 8000;
 
-      // Whether the element has child elements (spans, etc.) — determines
-      // which text node to rotate. Simple text-only elements use
-      // el.textContent directly.
-      const hasChildElements = !!el.querySelector('span, svg, img, a');
+      // Lock the final word's width so cycling between variants of different
+      // lengths (yours / intentional) doesn't shift the prefix or punctuation.
+      let widthLocked = false;
+      const lockWidth = () => {
+        if (widthLocked) return;
+        const w = wordSpan.offsetWidth;
+        if (w > 0) wordSpan.style.minWidth = `${w}px`;
+        widthLocked = true;
+      };
 
-      let currentIndex = 0; // variant[0] is the original text
-      let rotationActive = false;
+      // Blue → white per-char blend over the resolved tail (normal motion
+      // only; reduced motion keeps the accent color via CSS).
+      const colorFn = (i: number, n: number): string => {
+        if (n <= 1) return 'var(--ink)';
+        const t = i / (n - 1);
+        const r = Math.round(51 + (245 - 51) * t);
+        const g = Math.round(88 + (245 - 88) * t);
+        const b = Math.round(232 + (247 - 232) * t);
+        return `rgb(${r}, ${g}, ${b})`;
+      };
 
-      function rotateToNext() {
-        if (cancelled || !rotationActive) return;
-
-        currentIndex = (currentIndex + 1) % variants.length;
-        const nextText = variants[currentIndex];
-
-        // Update aria-label to the new text for screen readers
-        el.setAttribute('aria-label', nextText);
-
-        const rotateSd = scaledDelays(nextText);
-
-        if (hasChildElements) {
-          const firstChild = el.firstChild;
-          if (!firstChild || firstChild.nodeType !== 3) return;
-
-          // Scramble current text, then decode to next
-          const currentText = firstChild.textContent || '';
-          const rotateLock = lockHeight(el);
-          firstChild.textContent = scrambleString(currentText);
-
-          setTimeout(() => {
-            if (cancelled) return;
-            decodeToString(nextText, rotateSd.charDelay, rotateSd.churnCount, (text) => {
-              firstChild.textContent = text;
-              if (text === nextText) {
-                rotateLock();
-                scheduleNext();
-              }
-            });
-          }, 300); // brief pause showing scrambled glyphs
-        } else {
-          const currentText = el.textContent || '';
-          const rotateLock = lockHeight(el);
-          el.textContent = scrambleString(currentText);
-
-          setTimeout(() => {
-            if (cancelled) return;
-            decodeToString(nextText, rotateSd.charDelay, rotateSd.churnCount, (text) => {
-              el.textContent = text;
-              if (text === nextText) {
-                rotateLock();
-                scheduleNext();
-              }
-            });
-          }, 300);
+      const paintWord = (glyphs: { ch: string; done: boolean; color: string | null }[]) => {
+        wordSpan.innerHTML = '';
+        for (const g of glyphs) {
+          const s = document.createElement('span');
+          s.textContent = g.ch;
+          if (!g.done) {
+            s.className = 'is-scrambling';
+          } else if (g.color) {
+            s.style.color = g.color;
+          }
+          wordSpan.appendChild(s);
         }
-      }
+      };
 
-      function scheduleNext() {
+      const setWord = (w: string) => {
+        wordSpan.textContent = w;
+        el.setAttribute('aria-label', `${prefix.textContent ?? ''}${w}${punct.textContent ?? ''}`);
+      };
+
+      const schedule = (ms: number, fn: () => void) => {
+        rotatorTimers.push(setTimeout(fn, ms));
+      };
+
+      const rotateOnce = (idx: number) => {
         if (cancelled) return;
-        rotateTimers.push(setTimeout(rotateToNext, rotateDelay));
-      }
+        const next = words[idx];
+        lockWidth();
+        // Brief scramble of the CURRENT word, then time-derived decode to next.
+        wordSpan.textContent = scrambleString(wordSpan.textContent || next);
+        schedule(150, () => {
+          if (cancelled) return;
+          const cancel = decodeWordTimeDerived(next, colorFn, paintWord);
+          rotatorCancels.push(cancel);
+          const nextIdx = (idx + 1) % words.length;
+          schedule(150 + 140 + next.length * 42 + 90 + rotateDelay, () => rotateOnce(nextIdx));
+        });
+      };
 
-      // Start rotation after the initial decode completes. The initial
-      // decode is already scheduled by the scramble loop above. Rotation
-      // starts after decode finishes + rotateDelay.
-      //
-      // Estimate initial decode duration: average 2.5s max (scaledDelays cap),
-      // plus rotateDelay for the hold period.
-      const initialDecodeEstimate = 3000;
-      rotationActive = true;
-      rotateTimers.push(
-        setTimeout(() => {
-          if (!cancelled) rotateToNext();
-        }, initialDecodeEstimate + rotateDelay)
-      );
+      // Gate on the initial scramble loop settling. The safety net fires at
+      // 8s; the loop caps its own resolution well before that, so starting
+      // rotation at 3.5s + rotateDelay is safe on the initial paint.
+      setWord(words[0]);
+      schedule(3500 + rotateDelay, () => rotateOnce(1));
     });
 
     // Max-timeout safety net: force-resolve all pending scramble elements
@@ -601,7 +649,8 @@ export function ScrambleEnhancer() {
       window.removeEventListener('scroll', onScroll);
       clearTimeout(fallbackTimer);
       clearTimeout(safetyTimer);
-      rotateTimers.forEach((t) => clearTimeout(t));
+      rotatorTimers.forEach((t) => clearTimeout(t));
+      rotatorCancels.forEach((c) => c());
     };
   }, [pathname]); // Re-run on route change so new page elements get observers
 

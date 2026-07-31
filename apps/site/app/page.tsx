@@ -171,13 +171,17 @@ export default function HomePage() {
               The design legitimacy standard
             </p>
             <h1 className="hero-title hero-display fade-up fade-up-delay-1" id="hero-title">
-              <span className="hero-display-line" data-scramble>AI makes execution free.</span>
+              <span className="hero-display-line" data-scramble>
+                AI makes execution <span className="hero-word-free">free</span>.
+              </span>
               <span
                 className="hero-display-line is-accent"
                 data-scramble
-                data-scramble-rotate='["We make execution yours.","We make execution count.","We make execution stick.","We make execution intentional."]'
+                data-scramble-rotate-words='["yours","count","stick","intentional"]'
               >
-                We make execution yours.
+                <span data-prefix>We make execution </span>
+                <span data-word>yours</span>
+                <span>.</span>
               </span>
             </h1>
             <p className="hero-sub fade-up fade-up-delay-2">
