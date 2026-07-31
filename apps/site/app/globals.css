@@ -12725,7 +12725,14 @@ select {
     letter-spacing: -0.02em;
   }
 }
-.hero-display-line { display: block; }
+.hero-display-line {
+  display: block;
+  white-space: nowrap; /* prevent line-wrap during scramble; min-width on the
+    word created dead-air gaps between short words and the period, especially
+    on mobile. nowrap on the line achieves the 2-line guarantee without it. */
+  overflow: hidden;
+  text-overflow: clip;
+}
 .hero-display-line.is-accent { color: var(--ink); }
 
 /* Hero word treatments — "free" shimmer (a tight white band that sweeps on
@@ -12796,15 +12803,12 @@ select {
 }
 
 [data-word] {
-  /* Never break the 2-line rule: width is pinned to the LONGEST variant
-     ("intentional" — measured 4.51em in-page, pinned 4.9em to cover
-     variable-font rendering drift across engines) so no scramble glyph set
-     or cycle can push L2 past two lines. inline-block is REQUIRED —
-     min-width is a no-op on a plain inline span, which is exactly what
-     leaked the line to three during churn. */
+  /* inline-block so the rotator can paint per-char glyph spans inside;
+     nowrap so a word never breaks across lines. No min-width — a fixed
+     width creates dead-air gaps between short words ("yours") and the
+     period. The 2-line guarantee comes from .hero-display-line nowrap. */
   display: inline-block;
   white-space: nowrap;
-  min-width: 4.9em;
 }
 
 [data-word] .is-scrambling {
