@@ -1,5 +1,10 @@
 # Designesy
 
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
+  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 99.2% grade A, and the gate passes" width="1280">
+</picture>
+
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
 
 Designesy turns sources into principles, principles into contracts, and contracts into tools, systems, and artifacts that improve quality of life. The MCP server exposes 11 tools for scoring live URLs against a 40-check design contract, validating design tokens, auditing accessibility, and fetching the contract itself.
