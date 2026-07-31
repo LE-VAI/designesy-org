@@ -7,7 +7,18 @@
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
 
-Designesy turns sources into principles, principles into contracts, and contracts into tools, systems, and artifacts that improve quality of life. The MCP server exposes 11 tools for scoring live URLs against a 40-check design contract, validating design tokens, auditing accessibility, and fetching the contract itself.
+**Designesy Contract Check** is a GitHub Action that scores any URL against a **40-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
+
+```yaml
+- uses: LE-VAI/designesy-org@v1
+  with:
+    url: https://your-app.vercel.app
+    min-score: 70
+    min-grade: B
+    post-comment: true   # posts a summary comment on PRs (default)
+```
+
+The same 40-check engine powers an MCP server (11 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
 ## Install
 
