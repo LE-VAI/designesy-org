@@ -1178,7 +1178,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     {truncateUrl(entry.url)}
                   </span>
                   <span className="score-history-meta">
-                    {entry.score}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
+                    {(Math.round(entry.score * 10) / 10)}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
                   </span>
                 </div>
                 <button

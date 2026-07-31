@@ -86,7 +86,9 @@ export function saveScore(url: string, result: {
 
   const entry: ScoreHistoryEntry = {
     url,
-    score: result.score,
+    // Round to 1dp at write time so floating-point artifacts from the weighted
+    // score pipeline (e.g. 58.099999999999994) never reach storage or the UI.
+    score: Math.round(result.score * 10) / 10,
     grade: result.grade,
     pass: result.pass ?? 0,
     fail: result.fail ?? 0,
