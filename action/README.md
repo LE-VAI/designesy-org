@@ -7,7 +7,7 @@ Supports **4 emission formats** so the result integrates with any downstream too
 ## Usage
 
 ```yaml
-- uses: LE-VAI/designesy-org/action@main
+- uses: LE-VAI/designesy-org@v1
   with:
     url: https://your-app.vercel.app
     min-score: 70      # fail if score < 70
@@ -17,7 +17,7 @@ Supports **4 emission formats** so the result integrates with any downstream too
 Emit the canonical review-findings schema (for aggregation across multiple verifiers):
 
 ```yaml
-- uses: LE-VAI/designesy-org/action@main
+- uses: LE-VAI/designesy-org@v1
   with:
     url: https://your-app.vercel.app
     format: canonical  # review-findings.json schema (see /specs/review-findings.json)
@@ -36,7 +36,7 @@ jobs:
   score:
     runs-on: ubuntu-latest
     steps:
-      - uses: LE-VAI/designesy-org/action@main
+      - uses: LE-VAI/designesy-org@v1
         with:
           url: https://preview-${{ github.event.number }}.your-app.vercel.app
           min-score: 60

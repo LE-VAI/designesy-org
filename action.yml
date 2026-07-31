@@ -1,0 +1,52 @@
+name: "Designesy Contract Check"
+description: "Score a URL against the Designesy 40-check design contract; fail CI on score or grade regression."
+author: "designesy"
+branding:
+  icon: "check-circle"
+  color: "blue"
+inputs:
+  url:
+    description: "The URL to score against the design contract."
+    required: true
+  min-score:
+    description: "Minimum acceptable score (0–100). The step fails if the score is below this. 0 disables the score check."
+    required: false
+    default: "0"
+  min-grade:
+    description: "Minimum acceptable letter grade (A, B, C, D, F). The step fails if the grade is worse than this. Empty disables the grade check."
+    required: false
+    default: ""
+  format:
+    description: "Emission format for the result JSON. designesy (default, native shape), canonical (review-findings.json schema — see /specs/review-findings.json), review (jakubkrehel better-interface markdown), google (@google/design.md-compatible {findings, summary, designSystem})."
+    required: false
+    default: "designesy"
+  api:
+    description: "Base URL of the scoring engine (the /api/score endpoint). Defaults to the public designesy.org engine."
+    required: false
+    default: "https://www.designesy.org"
+  fail-on-error:
+    description: "Fail the step when the scoring engine is unreachable or returns a non-OK response. Set false to warn instead."
+    required: false
+    default: "true"
+  post-comment:
+    description: "Post a summary comment on the pull request with the score, grade, and gate verdict. Only acts on pull_request events; no-op on push/schedule/dispatch."
+    required: false
+    default: "true"
+  github-token:
+    description: "GitHub token for posting PR comments. Defaults to the workflow GITHUB_TOKEN. Requires pull-requests: write permission."
+    required: false
+    default: "${{ github.token }}"
+outputs:
+  score:
+    description: "Numeric design-contract score (0–100)."
+  grade:
+    description: "Letter grade (A, B, C, D, or F)."
+  pass-count:
+    description: "Number of checks that returned PASS."
+  fail-count:
+    description: "Number of checks that returned FAIL."
+  result:
+    description: "The full scoring result as a JSON string (format depends on the 'format' input)."
+runs:
+  using: "node24"
+  main: "action/dist/index.js"

@@ -76,7 +76,7 @@ See the [contract page](https://www.designesy.org/contracts/design-system) for t
 Gate your CI on design-contract compliance:
 
 ```yaml
-- uses: LE-VAI/designesy-org/action@main
+- uses: LE-VAI/designesy-org@v1
   with:
     url: https://your-app.vercel.app
     min-score: 70
