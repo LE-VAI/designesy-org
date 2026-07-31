@@ -2078,6 +2078,170 @@ async function scoreUrlUncached(targetUrl: string) {
       ? '1 anti-slop pattern detected'
       : null;
 
+  // ── Originality / anti-slop POSITIVE lift ───────────────────────────────────
+  // The compliance checks reward meeting the contract; the slop layer penalizes
+  // generic patterns. Neither answers "is this DISTINCTIVE?" — the taste question
+  // behind the Commander's fairness audit ("uglier than IBM/Figma/DeepMind but
+  // scoring 100"). This layer adds up to +8 points for positive craft signals
+  // detectable from CSS/HTML text alone. Symmetric to slop deductions but in the
+  // opposite direction: compliant-but-generic sites earn NO lift (stay at their
+  // weighted score), while bespoke craft is rewarded. The two layers are
+  // independent and cannot double-count: slop subtracts for generic patterns,
+  // originality adds only for signals slop does not already penalize the absence
+  // of. A site can be compliant AND generic (no lift) OR compliant AND sloppy
+  // (deducted) — never rewarded for both. Cap +8 so originality nudges rather
+  // than dominates the weighted compliance base.
+  interface OriginalitySignal { id: string; label: string; points: number; evidence: string; }
+  const originalitySignals: OriginalitySignal[] = [];
+
+  {
+    // O1. Bespoke easing — distinct custom cubic-bezier/linear() curves beyond the
+    // keyword equivalents AND the template presets. Generic sites reuse keyword
+    // easings or Material/Tailwind defaults; craft authors curves. Overshoot
+    // (y<0 or y>1) is deliberate physics — a strong bespoke-motion tell.
+    const bezierRe = /cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)/gi;
+    // Template presets — keyword equivalents + Material + Tailwind v4 + Bootstrap back-ease.
+    const EASING_PRESETS = new Set([
+      '0.25,0.1,0.25,1',   // ease
+      '0.42,0,1,1',        // ease-in
+      '0,0,0.58,1',        // ease-out
+      '0.42,0,0.58,1',     // ease-in-out
+      '0.4,0,0.2,1',       // Material standard / Tailwind v4 default
+      '0.4,0,0.6,1',       // Material decel-accel
+      '0,0,0.2,1',         // Material decel
+      '0.4,0,1,1',         // Material accel
+      '0.68,-0.55,0.265,1.55', // Bootstrap easeInOutBack
+    ]);
+    const distinct = new Set<string>();
+    let hasOvershoot = false;
+    let m: RegExpExecArray | null;
+    while ((m = bezierRe.exec(css)) !== null) {
+      const key = `${m[1]},${m[2]},${m[3]},${m[4]}`.replace(/(\.\d*?)0+(?=\D|$)/g, '$1').replace(/\s+/g, '');
+      if (EASING_PRESETS.has(key)) continue;
+      distinct.add(key);
+      const y1 = parseFloat(m[2]), y2 = parseFloat(m[4]);
+      if (y1 < 0 || y1 > 1 || y2 < 0 || y2 > 1) hasOvershoot = true;
+    }
+    // linear() spring easings (State of CSS pick — needs ≥3 stops to be a spring)
+    const linearSprings = css.match(/linear\(\s*[^)]{20,}\)/gi) || [];
+    if (linearSprings.length > 0) { hasOvershoot = true; }
+    const easingCount = distinct.size;
+    // Require ≥3 distinct non-preset curves for the full signal. Template CSS
+    // (tailwindcss.com, shadcn) carries a handful of framework curves — 2 could
+    // be a single copy-pasted bespoke accent, so the bar for "bespoke motion
+    // system" is three authored curves. Overshoot/spring bumps the tier.
+    if (easingCount >= 3) {
+      originalitySignals.push({ id: 'O1', label: 'Bespoke motion easing', points: 3 + (hasOvershoot ? 2 : 0), evidence: `${easingCount} custom easing curves${hasOvershoot ? ' incl. spring/overshoot physics' : ''}` });
+    } else if (easingCount >= 1) {
+      originalitySignals.push({ id: 'O1', label: 'Custom easing curve', points: 1, evidence: `${easingCount} custom easing curve${easingCount !== 1 ? 's' : ''}` });
+    }
+
+    // O2. Modern layout — clamp() fluid type/spacing + container queries/subgrid.
+    // These are deliberate, considered layout choices absent from template output.
+    const hasClamp = /clamp\s*\(/.test(css);
+    const hasContainer = /container-type\s*:|@container\b/.test(css);
+    const hasSubgrid = /subgrid/.test(css);
+    const modernCount = (hasClamp ? 1 : 0) + (hasContainer ? 1 : 0) + (hasSubgrid ? 1 : 0);
+    if (modernCount >= 2) {
+      originalitySignals.push({ id: 'O2', label: 'Modern layout primitives', points: 2, evidence: ['clamp()', hasContainer ? 'container queries' : '', hasSubgrid ? 'subgrid' : ''].filter(Boolean).join(' + ') });
+    } else if (modernCount === 1) {
+      originalitySignals.push({ id: 'O2', label: 'Fluid/container layout', points: 1, evidence: hasClamp ? 'clamp()' : hasContainer ? 'container queries' : 'subgrid' });
+    }
+
+    // O3. Typographic craft — font-feature-settings/letter-spacing tuning/ligature
+    // control beyond defaults. Signals art-directed type, not font-family: inherit.
+    const typoFeats = css.match(/font-feature-settings\s*:|font-variant-numeric\s*:|hanging-punctuation\s*:|text-underline-offset\s*:|font-optical-sizing\s*:/gi) || [];
+    if (typoFeats.length >= 2) {
+      originalitySignals.push({ id: 'O3', label: 'Typographic detail', points: 2, evidence: `${typoFeats.length} advanced type properties` });
+    } else if (typoFeats.length === 1) {
+      originalitySignals.push({ id: 'O3', label: 'Typographic detail', points: 1, evidence: typoFeats[0].split(':')[0] });
+    }
+
+    // O4. Intentional reduced-motion / reduced-data handling — TIERED handling
+    // (soften, not just kill-switch) is a maturity tell. Reward a media query
+    // that references a specific animation/transition (targeted) over a blanket
+    // `* { animation: none }`.
+    const reducedMotion = /@media[^{]*prefers-reduced-motion/i.test(css);
+    const blanketKill = /prefers-reduced-motion[\s\S]{0,200}\*\s*\{[^}]*animation\s*:\s*none/i.test(css);
+    if (reducedMotion && !blanketKill) {
+      originalitySignals.push({ id: 'O4', label: 'Tiered reduced-motion', points: 1, evidence: 'targeted (not blanket) motion reduction' });
+    }
+
+    // O5. Custom scroll/animation choreography — scroll-driven animations, view
+    // transitions, or named keyframes beyond a single fade. Indicates considered
+    // motion design rather than a single `transition: opacity`.
+    const scrollDriven = /animation-timeline\s*:|scroll-timeline\s*:|view-timeline\s*:|animation-range\s*:/i.test(css);
+    const viewTransition = /::view-transition|view-transition-name\s*:/i.test(css);
+    const keyframes = css.match(/@keyframes\s+[\w-]+/gi) || [];
+    const distinctKeyframes = new Set(keyframes.map((k) => k.replace(/@keyframes\s+/i, '')));
+    if (scrollDriven || viewTransition) {
+      originalitySignals.push({ id: 'O5', label: 'Advanced motion choreography', points: 2, evidence: scrollDriven ? 'scroll-driven animation' : 'view transitions' });
+    } else if (distinctKeyframes.size >= 3) {
+      originalitySignals.push({ id: 'O5', label: 'Multi-keyframe motion system', points: 1, evidence: `${distinctKeyframes.size} named keyframe animations` });
+    }
+
+    // O6. Bespoke iconography / SVG art-direction — inline SVG with viewBox (hand-
+    // placed iconography/diagrams) rather than emoji or an icon-font/CDN sprite.
+    const inlineSvg = html.match(/<svg[^>]*viewBox=/gi) || [];
+    const svgSymbols = html.match(/<symbol[^>]*>/gi) || [];
+    if (inlineSvg.length >= 3 || svgSymbols.length >= 2) {
+      originalitySignals.push({ id: 'O6', label: 'Bespoke iconography', points: 1, evidence: `${inlineSvg.length} inline SVGs${svgSymbols.length ? ` + ${svgSymbols.length} symbols` : ''}` });
+    }
+
+    // O7. Semantic design-token system — named custom properties with role-based
+    // taxonomy (--surface/--ink/--signal, not --color-blue-500). A rich semantic
+    // layer is the strongest marker of a real design system. Guards against two
+    // template tells: (a) Tailwind v4 primitive hue tokens (--color-red-500) earn
+    // zero — only semantic roles count; (b) the shadcn fingerprint (--background/
+    // --foreground/--card/--popover/--ring with bare-HSL values) is a template,
+    // zeroed out.
+    // Shadcn/Radix fingerprint: co-occurrence of the shadcn token set. Modern
+    // shadcn uses hex/oklch (not bare-HSL) and references Tailwind primitives
+    // (var(--color-*-500)). Two fingerprint forms: (a) ≥6 of the classic shadcn
+    // names co-occur, or (b) ≥4 co-occur AND the css references Tailwind
+    // primitive hue tokens — either is near-certain template-generated.
+    const SHADCN_FINGERPRINT = ['--background', '--foreground', '--card', '--popover', '--primary-foreground', '--ring', '--secondary', '--muted', '--accent', '--destructive', '--border', '--input'];
+    const shadcnHits = SHADCN_FINGERPRINT.filter((t) => css.includes(t + ':')).length;
+    const referencesTwPrimitives = /var\(--color-[a-z]+-\d{2,3}\)/i.test(css);
+    const isShadcnTemplate = shadcnHits >= 6 || (shadcnHits >= 4 && referencesTwPrimitives);
+
+    const customProps = css.match(/--[\w-]+\s*:/g) || [];
+    const semanticTokens = customProps.filter((p) => /--(surface|ink|paper|signal|line|muted|elevation|radius|duration|ease|accent|foreground|space|gap|shadow|canvas|action|feedback|success|warning|danger|error|info|subtle|on-[a-z]+)/i.test(p));
+    // Exclude primitive hue tokens (--color-blue-500, --red-500) — those are a
+    // framework palette, not a semantic system.
+    const primitiveHue = /--(?:color|colour)-[a-z]+-\d{2,3}\s*:/i;
+    const semanticCount = isShadcnTemplate ? 0 : semanticTokens.filter((p) => !primitiveHue.test(p)).length;
+
+    // Layering: a semantic token whose value references a primitive (var(--x-500))
+    // indicates a primitive→semantic→component architecture.
+    const hasLayering = /--(?:color|surface|accent|action|feedback)[\w-]*\s*:\s*var\(--/i.test(css);
+    // Theming: same token redefined under a theme selector or light-dark().
+    const hasTheming = /light-dark\(|prefers-color-scheme\s*:\s*dark|data-theme/i.test(css);
+
+    let tokenPoints = 0;
+    const tokenEvidence: string[] = [];
+    if (semanticCount >= 8) { tokenPoints += 4; tokenEvidence.push(`${semanticCount} semantic tokens`); }
+    else if (semanticCount >= 4) { tokenPoints += 2; tokenEvidence.push(`${semanticCount} semantic tokens`); }
+    if (hasLayering) { tokenPoints += 2; tokenEvidence.push('primitive→semantic layering'); }
+    if (hasTheming && semanticCount >= 4) { tokenPoints += 2; tokenEvidence.push('theme-aware tokens'); }
+    if (tokenPoints > 0) {
+      originalitySignals.push({ id: 'O7', label: 'Semantic design tokens', points: Math.min(tokenPoints, 6), evidence: tokenEvidence.join(' · ') });
+    }
+
+  const ORIGINALITY_CAP = 8;
+  const rawOriginality = originalitySignals.reduce((s, o) => s + o.points, 0);
+  // Slop gate (research Rule 3): a heavily-sloppy site that also shows originality
+  // signals is usually a heavily-customized TEMPLATE — the "originality" is
+  // framework-driven, not authorial. Cap the lift at 50% when slop is heavy.
+  const slopGateApplied = slopTotal >= 12;
+  const originalityPoints = Math.min(
+    slopGateApplied ? Math.round(rawOriginality * 0.5) : rawOriginality,
+    ORIGINALITY_CAP
+  );
+  const originalitySummary = originalitySignals.length > 0
+    ? `${originalitySignals.length} craft signal${originalitySignals.length !== 1 ? 's' : ''} (+${originalityPoints}pts${rawOriginality > ORIGINALITY_CAP ? `, capped from +${rawOriginality}` : ''}${slopGateApplied ? ', slop-gated ×0.5' : ''})`
+    : null;
+
   // ── Tier 2: per-category weighted scoring ──────────────────────────────────
   // Weights follow the contract's section emphasis (the contract IS the scoring
   // basis), with an accessibility floor so contract sections covering real-user
@@ -2123,6 +2287,15 @@ async function scoreUrlUncached(targetUrl: string) {
   // the site more minimal. Capped at 20 total.
   if (slopTotal > 0) {
     score = Math.max(0, score - slopTotal);
+  }
+
+  // ── Originality lift ─────────────────────────────────────────────────────────
+  // Reward positive craft signals. Applied after the slop deduction so a generic
+  // site with no distinctive signals stays at its (already-slop-deducted) score,
+  // while a distinctive site is lifted above the compliant-but-generic baseline.
+  // Capped at +8. Score clamped to ≤100 since this is a bonus on a 100-scale base.
+  if (originalityPoints > 0) {
+    score = Math.min(100, score + originalityPoints);
   }
 
   // ── Per-category sub-scores (the constellation) ─────────────────────────
@@ -2214,7 +2387,7 @@ async function scoreUrlUncached(targetUrl: string) {
     remediation: REMEDIATION[c.id],
   }));
 
-  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences } };
+  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
