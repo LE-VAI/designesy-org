@@ -431,20 +431,13 @@ export function ScrambleEnhancer() {
             el.innerHTML = '';
             const p = document.createElement('span');
             p.setAttribute('data-prefix', '');
-            p.textContent = prefixText;
-            // Explicit space text node between prefix and word: React's SSR
-            // whitespace between sibling spans is dropped by the flatten/
-            // resplit round-trip, and a bare appendChild sequence creates
-            // no inter-element whitespace — without this node the sentence
-            // resolves as "...executionyours.".
-            const sp = document.createTextNode(' ');
+            p.textContent = prefixText; // carries the trailing space already
             const w = document.createElement('span');
             w.setAttribute('data-word', '');
             w.textContent = w0;
             const pu = document.createElement('span');
             pu.textContent = punctText;
             el.appendChild(p);
-            el.appendChild(sp);
             el.appendChild(w);
             el.appendChild(pu);
           };
