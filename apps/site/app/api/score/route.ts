@@ -1811,20 +1811,42 @@ async function scoreUrlUncached(targetUrl: string) {
     }
   }
 
-  // S2. Full-page gradient background — multi-color gradient on body/html or fixed overlay
-  // (Not a 1px hairline grid — only fires on gradients with 2+ distinct color stops.
-  //  Anchored to a real `background`/`background-image` property on body/html directly,
-  //  so `--*-gradient` custom-property declarations inside :root do NOT count.)
+  // S2. Full-page gradient background — multi-color gradient on body/html or a
+  // full-viewport-sized overlay. Not: a gradient on a scoped component (the
+  // glass score hero), a hairline sheen (height/border 1px), or a single-hue
+  // near-monochrome wash. Evidence-tied attribution: a finding is only recorded
+  // when position:fixed|absolute co-occurs within the SAME declaration block as
+  // the gradient (compact, ≤200 chars) — a 300-char sliding window previously
+  // reached across sibling rules and lumped a 1px hairline in with an unrelated
+  // gradient elsewhere. Full-page means a large viewport area, so an overlay
+  // must also be full-bleed (fixed or inset:0), not a pinned corner element.
   {
-    // Multi-color linear-gradient set as an actual background on body or html (not :root tokens)
-    const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi);
-    // Multi-color gradient on a fixed/absolute overlay (not 1px hairline)
-    const overlayGrad = css.match(/(?:position\s*:\s*(?:fixed|absolute)[\s\S]{0,300}linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}\)|linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}[\s\S]{0,300}position\s*:\s*(?:fixed|absolute))/gi);
-    // Filter out 1px grid patterns (transparent 1px + color 1px = hairline grid, not gradient)
     const isGridPattern = (text: string) => /(?:transparent|rgba\([^)]+\))\s+1px(?:\s*,)/.test(text);
-    // Filter out single-hue / near-monochrome gradients (subtle surface sheen, not a slop rainbow)
-    const bodyGradFiltered = (bodyGrad?.filter(m => !isGridPattern(m)) || []);
-    const overlayGradFiltered = (overlayGrad?.filter(m => !isGridPattern(m)) || []);
+
+    // (a) Multi-color gradient on body/html directly (real background property).
+    const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi) || [];
+
+    // (b) Full-bleed overlay gradient: a compact declaration block that sets a
+    // linear-gradient AND gives the element a fixed position or inset:0 /
+    // 100vw100vh cover. Iterate candidate gradient declarations, then require
+    // fixed/inset within that same block (never across rule boundaries).
+    const overlayGrad: string[] = [];
+    const gradBlockRe = /\{[^{}]{0,500}?linear-gradient\s*\(\s*[^)]*,\s*[^)]{4,}\)[^{}]{0,500}?\}/gi;
+    let block: RegExpExecArray | null;
+    while ((block = gradBlockRe.exec(css)) !== null) {
+      const decl = block[0];
+      // Full-bleed: fixed overlay, or explicitly inset:0 / covering 100vw|100vh.
+      const fullBleed = /position\s*:\s*fixed/i.test(decl)
+        || /inset\s*:\s*0\b/i.test(decl)
+        || /width\s*:\s*100vw/i.test(decl) || /height\s*:\s*100vh/i.test(decl);
+      // A 1px-thick element is a hairline sheen/grain, not a page gradient —
+      // regardless of position. Skip it.
+      const hairline = /(?:height|width)\s*:\s*1px\b/.test(decl) || /border(?:-top|-bottom)?-width\s*:\s*1px\b/.test(decl);
+      if (fullBleed && !hairline) overlayGrad.push(decl.slice(0, 160));
+    }
+
+    const bodyGradFiltered = bodyGrad.filter(m => !isGridPattern(m));
+    const overlayGradFiltered = overlayGrad.filter(m => !isGridPattern(m));
     const instances = bodyGradFiltered.length + overlayGradFiltered.length;
     if (instances > 0) {
       slopFindings.push({
