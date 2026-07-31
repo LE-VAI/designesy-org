@@ -76,6 +76,7 @@ const INDEX: SearchItem[] = [
   { title: 'MCP docs', href: '/docs/mcp', group: 'Machine', keywords: 'model context protocol server tools', meta: '' },
   // Company
   { title: 'Work', href: '/work', group: 'Company', keywords: 'case studies tile continuity', meta: '' },
+  { title: 'Continuity case study', href: '/work/continuity', group: 'Company', keywords: 'continuity case study work artifact live', meta: 'case study' },
   { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost plans continuity free', meta: '' },
   { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current', meta: 'waitlist' },
   { title: 'Badge', href: '/badge', group: 'Company', keywords: 'verified badge embed svg', meta: '' },
@@ -197,6 +198,12 @@ function loadPagefind(): Promise<PagefindApi | null> {
 
 /** Strip the Pagefind-injected trailing slash/anchors so hrefs stay clean. */
 function cleanHref(url: string): string {
+  // Pagefind can return internal chunk paths (e.g. /_next/static/chunks/...)
+  // for pages it indexed during build — those are not navigable routes.
+  // Filter them out and return an empty string so the caller skips the hit.
+  if (url.includes('/_next/') || url.includes('/static/chunks/') || url.endsWith('.html')) {
+    return '';
+  }
   // Pagefind returns absolute-ish paths like "/contracts/a11y" — keep the
   // pathname only and drop any fragment so Enter goes to the page top.
   try {
@@ -209,6 +216,7 @@ function cleanHref(url: string): string {
 
 /** Derive a display group from the href so hit rows keep the visual grouping. */
 function groupForHref(href: string): SearchItem['group'] {
+  if (!href) return 'Company';
   if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/benchmarks')
     || href.startsWith('/methodology') || href.startsWith('/specs')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
@@ -287,6 +295,7 @@ export function CommandPalette() {
         res.results.slice(0, 12).map(async (hit) => {
           const d = await hit.data();
           const href = cleanHref(d.url);
+          if (!href) return null; // skip Pagefind internal chunk URLs
           const title = d.meta?.title?.trim() || titleFromHref(href);
           // excerpt carries matched body context — use it as the row meta so
           // hits show WHY they matched, not just where they go.
@@ -305,10 +314,11 @@ export function CommandPalette() {
       );
 
       if (cancelled || seq !== searchSeq.current) return;
+      const validRows = rows.filter(Boolean) as (SearchItem & { _flagship: boolean })[];
       // Flagship surfaces float to the top of their group on exact page hits.
-      rows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
-      rows.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
-      setHits(rows.map(({ _flagship, ...rest }) => rest));
+      validRows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
+      validRows.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
+      setHits(validRows.map(({ _flagship, ...rest }) => rest));
       setSearching(false);
     })();
 
