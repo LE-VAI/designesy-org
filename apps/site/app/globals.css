@@ -12705,6 +12705,12 @@ select {
   letter-spacing: -0.03em;
   color: var(--ink);
   margin: 0 0 clamp(1.25rem, 2.6vw, 2rem);
+  /* Null the global h1-h4 text-wrap:balance for THIS title only: balance
+     re-centers each wrapped line's inline box so the two display lines sit
+     optically off-axis against the clean-centered eyebrow and sub. The
+     lines are explicit single-line blocks; plain centered text-align is
+     the correct register. */
+  text-wrap: unset;
   font-variation-settings: 'opsz' 32;
 }
 
