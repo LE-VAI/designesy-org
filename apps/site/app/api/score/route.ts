@@ -2094,8 +2094,7 @@ async function scoreUrlUncached(targetUrl: string) {
   interface OriginalitySignal { id: string; label: string; points: number; evidence: string; }
   const originalitySignals: OriginalitySignal[] = [];
 
-  {
-    // O1. Bespoke easing — distinct custom cubic-bezier/linear() curves beyond the
+  // O1. Bespoke easing — distinct custom cubic-bezier/linear() curves beyond the
     // keyword equivalents AND the template presets. Generic sites reuse keyword
     // easings or Material/Tailwind defaults; craft authors curves. Overshoot
     // (y<0 or y>1) is deliberate physics — a strong bespoke-motion tell.
