@@ -106,7 +106,7 @@ export default function TokensContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.3.0. Machine export at{' '}
+          Sibling contract to the design system v0.4.0. Machine export at{' '}
           <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>.
         </div>
       </main>

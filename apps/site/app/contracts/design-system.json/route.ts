@@ -8,7 +8,7 @@ export function GET() {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
       'Content-Disposition':
-        'inline; filename="designesy-design-system-v0.3.0.json"',
+        'inline; filename="designesy-design-system-v0.4.0.json"',
     },
   });
 }

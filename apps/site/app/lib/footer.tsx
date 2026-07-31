@@ -127,6 +127,8 @@ export function Footer() {
                       className="footer-dock-pill footer-dock-pill--surface"
                       data-cuelume-hover="tick"
                       data-cuelume-press="tick"
+                      aria-hidden={i >= SURFACE_LINKS.length ? true : undefined}
+                      tabIndex={i >= SURFACE_LINKS.length ? -1 : undefined}
                     >
                       {link.label}
                     </Link>
@@ -146,6 +148,8 @@ export function Footer() {
                       className="footer-dock-pill footer-dock-pill--machine"
                       data-cuelume-hover="chime"
                       data-cuelume-press="tick"
+                      aria-hidden={i >= MACHINE_LINKS.length ? true : undefined}
+                      tabIndex={i >= MACHINE_LINKS.length ? -1 : undefined}
                     >
                       {link.label}
                     </Link>

@@ -264,6 +264,9 @@ export function ScrambleEnhancer() {
     // Track elements that still need force-resolving (safety net)
     const pendingResolvers: (() => void)[] = [];
 
+    // Effect-level cancellation for scramble rotation timers
+    let cancelled = false;
+
     /**
      * Lock an element's dimensions to its current rendered state before
      * scrambling, so random glyphs with different metrics don't cause
@@ -394,6 +397,112 @@ export function ScrambleEnhancer() {
       });
     });
 
+    /* --- Scramble Rotation ---
+       Elements with data-scramble-rotate get post-decode variant cycling.
+       After the initial decode completes, wait data-scramble-rotate-delay ms
+       (default 10s), then scramble → decode to the next variant.
+       data-scramble-rotate is a JSON array of variant strings. The original
+       textContent is variant[0]. */
+    const rotateEls = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-scramble-rotate]')
+    );
+
+    const rotateTimers: ReturnType<typeof setTimeout>[] = [];
+
+    rotateEls.forEach((el) => {
+      const variantsJson = el.getAttribute('data-scramble-rotate');
+      if (!variantsJson) return;
+
+      let variants: string[];
+      try {
+        variants = JSON.parse(variantsJson) as string[];
+      } catch {
+        return; // invalid JSON — skip rotation
+      }
+
+      if (variants.length < 2) return;
+
+      const rotateDelayAttr = el.getAttribute('data-scramble-rotate-delay');
+      const rotateDelay = rotateDelayAttr
+        ? parseInt(rotateDelayAttr, 10)
+        : 10000; // default 10s between rotations
+
+      // Whether the element has child elements (spans, etc.) — determines
+      // which text node to rotate. Simple text-only elements use
+      // el.textContent directly.
+      const hasChildElements = !!el.querySelector('span, svg, img, a');
+
+      let currentIndex = 0; // variant[0] is the original text
+      let rotationActive = false;
+
+      function rotateToNext() {
+        if (cancelled || !rotationActive) return;
+
+        currentIndex = (currentIndex + 1) % variants.length;
+        const nextText = variants[currentIndex];
+
+        // Update aria-label to the new text for screen readers
+        el.setAttribute('aria-label', nextText);
+
+        const rotateSd = scaledDelays(nextText);
+
+        if (hasChildElements) {
+          const firstChild = el.firstChild;
+          if (!firstChild || firstChild.nodeType !== 3) return;
+
+          // Scramble current text, then decode to next
+          const currentText = firstChild.textContent || '';
+          const rotateLock = lockHeight(el);
+          firstChild.textContent = scrambleString(currentText);
+
+          setTimeout(() => {
+            if (cancelled) return;
+            decodeToString(nextText, rotateSd.charDelay, rotateSd.churnCount, (text) => {
+              firstChild.textContent = text;
+              if (text === nextText) {
+                rotateLock();
+                scheduleNext();
+              }
+            });
+          }, 300); // brief pause showing scrambled glyphs
+        } else {
+          const currentText = el.textContent || '';
+          const rotateLock = lockHeight(el);
+          el.textContent = scrambleString(currentText);
+
+          setTimeout(() => {
+            if (cancelled) return;
+            decodeToString(nextText, rotateSd.charDelay, rotateSd.churnCount, (text) => {
+              el.textContent = text;
+              if (text === nextText) {
+                rotateLock();
+                scheduleNext();
+              }
+            });
+          }, 300);
+        }
+      }
+
+      function scheduleNext() {
+        if (cancelled) return;
+        rotateTimers.push(setTimeout(rotateToNext, rotateDelay));
+      }
+
+      // Start rotation after the initial decode completes. The initial
+      // decode is already scheduled by the scramble loop above. Rotation
+      // starts after decode finishes + rotateDelay.
+      //
+      // Estimate initial decode duration: average 2.5s max (scaledDelays cap),
+      // plus rotateDelay for the hold period.
+      const initialDecodeEstimate = 3000;
+      rotationActive = true;
+      rotateTimers.push(
+        setTimeout(() => {
+          if (!cancelled) rotateToNext();
+        }, initialDecodeEstimate + rotateDelay)
+      );
+    });
+
     // Max-timeout safety net: force-resolve all pending scramble elements
     // after 8 seconds, regardless of observer state. Catches edge cases
     // where IntersectionObserver never fires (background tab, zero-height
@@ -486,11 +595,13 @@ export function ScrambleEnhancer() {
     const fallbackTimer = setTimeout(onScroll, 200);
 
     return () => {
+      cancelled = true;
       allObservers.forEach((o) => o.disconnect());
       revealObserver.disconnect();
       window.removeEventListener('scroll', onScroll);
       clearTimeout(fallbackTimer);
       clearTimeout(safetyTimer);
+      rotateTimers.forEach((t) => clearTimeout(t));
     };
   }, [pathname]); // Re-run on route change so new page elements get observers
 
