@@ -647,15 +647,25 @@ export function ScrambleEnhancer() {
         // --ink from the element's computed color ONCE per rotation so the blend
         // lands on the theme-correct ink (near-white in dark, near-black in
         // light) and survives theme switches mid-view.
+        // Resolve ink LAZILY on every colorFn call — NOT once at setup. The
+        // enhancer captures these closures when the element is first decoded,
+        // and the page initializes in dark mode by default. If the user (or a
+        // light-default preference) switches to light AFTER setup, a
+        // setup-time-captured inkRGB stays frozen at the dark value and the
+        // trailing glyphs keep blending toward rgb(245,245,247) — near-white —
+        // which is invisible on light paper: exactly the "last letters cut off"
+        // report. Reading getComputedStyle per char is a bounded cost (≤12
+        // chars × ~25 tail frames per rotation) and always reflects the LIVE
+        // theme, so dark→light flips re-tint mid-view.
         const resolveInkRGB = (): [number, number, number] => {
           const cs = getComputedStyle(el).color;
           const m = cs.match(/(\d+(?:\.\d+)?)[,\s)]+(\d+(?:\.\d+)?)[,\s)]+(\d+(?:\.\d+)?)/);
           if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
           return [245, 245, 247]; // dark-mode fallback only if unparseable
         };
-        const inkRGB = resolveInkRGB();
         const colorFn = (i: number, n: number): string => {
           if (n <= 1) return 'var(--ink)';
+          const inkRGB = resolveInkRGB(); // live — re-sample on every call
           const t = i / (n - 1);
           const r = Math.round(51 + (inkRGB[0] - 51) * t);
           const g = Math.round(88 + (inkRGB[1] - 88) * t);
