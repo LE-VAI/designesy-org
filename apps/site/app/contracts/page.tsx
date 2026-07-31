@@ -327,7 +327,7 @@ export default function ContractsPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system · v0.3.0</span>
+                <span className="row-title">Design system · v0.4.0</span>
                 <span className="row-meta">
                   Human overview, full tables below, machine JSON export
                 </span>
@@ -437,7 +437,7 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="design-system-contract">
           <h2 className="doctrine-heading">Published contract</h2>
           <div className="definition">
-            <p className="definition-label">Designesy design system · v0.3.0</p>
+            <p className="definition-label">Designesy design system · v0.4.0</p>
             <p>
               Public design contract for designesy.org. Derived from the live
               site token foundation, with Lab One · Poise, Lab Two · Takt, and
@@ -487,7 +487,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.3.0 — Poise, Takt, and Cadence rules adopted',
+                meta: 'Public v0.4.0 — Poise, Takt, Cadence, and Copywriting rules adopted',
               },
             ]} />
         </section>

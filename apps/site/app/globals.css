@@ -367,6 +367,9 @@ p {
   flex-direction: column;
   gap: 0;
   padding: 1rem 0 0;
+  background: rgba(10, 10, 12, 0.3);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
   transition: background var(--duration) var(--ease),
     border-color var(--duration) var(--ease),
     backdrop-filter var(--duration) var(--ease);
@@ -465,8 +468,7 @@ p {
   font-weight: 600;
 }
 
-.nav-links a.is-active::after,
-.nav-links a[aria-current="page"]::after {
+.nav-links a::after {
   content: "";
   position: absolute;
   left: 0.65rem;
@@ -474,7 +476,17 @@ p {
   bottom: 0.2rem;
   height: 1px;
   background: var(--signal);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+.nav-links a.is-active::after,
+.nav-links a[aria-current="page"]::after {
   opacity: 0.9;
+  transform: scaleX(1);
 }
 
 .nav-links a:focus-visible {
@@ -10510,6 +10522,421 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
+/* ==========================================================================
+   Score Report (/score/report) — dedicated full-page verification report
+   ==========================================================================
+   Adobe Stardust pattern: scorecard hero at top, sticky category navigation,
+   per-dimension sections with evidence pairs. Print-friendly. */
+
+.report-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+.report-loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--line);
+  border-top-color: var(--signal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.report-loading p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.report-error {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.report-error h2 {
+  margin-bottom: 0.75rem;
+}
+
+.report-error p {
+  color: var(--error);
+  margin-bottom: 1.5rem;
+}
+
+/* --- Report hero --- */
+
+.report-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 2.5rem;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--line-faint);
+  flex-wrap: wrap;
+}
+
+.report-hero-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.report-hero-grade {
+  font-size: clamp(3.5rem, 8vw, 5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.report-hero-number {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+}
+
+.report-hero-value {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-hero-pct {
+  font-size: 1.25rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.report-hero-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-hero-url {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+  word-break: break-all;
+}
+
+.report-hero-contract {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.report-hero-counts {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.report-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-count--pass { color: var(--ok); background: rgba(74, 222, 128, 0.12); }
+.report-count--fail { color: var(--error); background: rgba(248, 113, 113, 0.12); }
+.report-count--warn { color: var(--warn); background: rgba(250, 204, 21, 0.12); }
+.report-count--skip { color: var(--muted); background: var(--surface-soft); }
+
+.report-hero-floor {
+  font-size: 0.85rem;
+  color: var(--warn);
+  margin-top: 0.5rem;
+}
+
+.report-hero-scored {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+  margin-top: 0.5rem;
+}
+
+/* --- Category navigation --- */
+
+.report-cat-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--line-faint);
+  position: sticky;
+  top: 72px;
+  background: var(--paper);
+  z-index: 10;
+}
+
+.report-cat-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease);
+}
+
+.report-cat-chip:hover {
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.report-cat-chip.expanded {
+  border-color: var(--signal-light);
+  color: var(--ink);
+  background: var(--surface-raised);
+}
+
+.report-cat-label {
+  font-weight: 600;
+}
+
+.report-cat-weight {
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+}
+
+.report-cat-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-cat-score--null {
+  color: var(--muted-dim);
+}
+
+.report-cat-detail {
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+}
+
+/* --- Not measured notice --- */
+
+.report-not-measured {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.report-not-measured p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* --- Report sections --- */
+
+.report-section {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.report-section:not(.expanded) {
+  display: none;
+}
+
+.report-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.report-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.report-section-score {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-section-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.report-section-weight {
+  font-weight: 600;
+}
+
+/* --- Check list --- */
+
+.report-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.report-check {
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.report-check-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background var(--duration-fast) var(--ease);
+  min-height: 2.75rem;
+}
+
+.report-check-summary:hover {
+  background: var(--surface-hover);
+}
+
+.report-check-status {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.report-check-status--pass { color: var(--ok); background: rgba(74, 222, 128, 0.1); }
+.report-check-status--fail { color: var(--error); background: rgba(248, 113, 113, 0.1); }
+.report-check-status--warn { color: var(--warn); background: rgba(250, 204, 21, 0.1); }
+.report-check-status--skip { color: var(--muted); background: var(--surface-soft); }
+
+.report-check-id {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-width: 2rem;
+}
+
+.report-check-item {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.report-check-detail {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-check-remediation {
+  padding: 0.75rem 0.85rem;
+  border-top: 1px solid var(--line-faint);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+  background: var(--surface);
+}
+
+.report-check-remediation strong {
+  color: var(--ink);
+}
+
+.report-skipped {
+  margin-top: 0.75rem;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.report-skipped summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.report-skipped .report-check-list {
+  margin-top: 0.75rem;
+}
+
+/* --- Report footer --- */
+
+.report-footer {
+  padding: 2rem 0;
+}
+
+.report-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.report-version {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+}
+
+/* --- Report responsive --- */
+
+@media (max-width: 720px) {
+  .report-hero {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .report-cat-nav {
+    top: 60px;
+  }
+
+  .report-section-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .report-check-detail {
+    display: none;
+  }
+
+  .report-check-summary {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-cat-chip,
+  .report-check-summary {
+    transition: none;
+  }
+}
+
 /* --------------------------------------------------------------------------
    v27 — Input font-size floor (iOS Safari auto-zoom prevention).
    Inputs below 16px trigger a layout-shift zoom on iPhone. 1rem = 16px.
@@ -11818,7 +12245,8 @@ select {
   /* Swap the blurred topbar for the solid topbar. backdrop-filter: none is
      the semantic opposite, not a hack — the browser stops compositing the
      blur layer entirely. */
-  .topbar {
+  .topbar,
+  .topbar.scrolled {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--surface-raised);
