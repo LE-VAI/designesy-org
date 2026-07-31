@@ -27,7 +27,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const ROOT = __dirname;
+const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
 const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', 'pagefind');
 
