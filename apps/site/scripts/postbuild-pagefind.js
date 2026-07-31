@@ -49,6 +49,11 @@ function main() {
   const args = [
     '--site', SITE_DIR,
     '--output-path', OUT_DIR,
+    // The build dir contains Next INTERNAL pages we must not surface as search
+    // hits (error pages, not-found shell, RSC dev probes). The first build
+    // indexed 47 pages including /server/pages/500.html. Restrict the corpus to
+    // the real prerendered App Router documents and exclude every internal dir.
+    '--glob', 'server/app/**/*.html',
   ];
 
   console.log(`[postbuild-pagefind] indexing .next -> ${path.relative(ROOT, OUT_DIR)}`);
