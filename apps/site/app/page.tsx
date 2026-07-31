@@ -92,7 +92,7 @@ const SURFACES = [
     href: '/contracts',
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
-    meta: 'v0.3.0 public',
+    meta: 'v0.4.0 public',
   },
 ];
 
@@ -100,7 +100,7 @@ const FIELD = [
   {
     href: '/contracts/design-system',
     badge: 'Contract',
-    status: 'v0.3.0',
+    status: 'v0.4.0',
     title: 'Design system contract',
     lede: 'The rules behind this site — portable and versioned.',
     desc: 'Tokens, motion, components, Poise + Takt + Cadence rules. Human overview plus a machine export agents can cite directly.',
@@ -417,7 +417,7 @@ export default function HomePage() {
             <div className="row-stack" role="list">
               {[
                 {
-                  title: 'Design system contract v0.3.0',
+                  title: 'Design system contract v0.4.0',
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
                 },
                 {
