@@ -376,6 +376,18 @@ const REMEDIATION: Record<string, string> = {
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
   v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels (per typography contract: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em) and acronyms should be uppercase. Use CSS text-transform: uppercase on eyebrow elements if needed, but keep the HTML text in sentence case for screen readers.',
+  S1: 'Replace overused AI-signal fonts with a distinctive choice from your brand system. Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, and Geist are the fonts AI defaults to when it has no design brief. A custom or less common font signals intentionality.',
+  S2: 'Remove or reduce full-page gradient backgrounds. The 60%+ viewport gradient is the most recognizable AI slop pattern. Use a solid or subtle textured background instead. If a gradient serves a purpose (e.g., a data visualization), scope it to a small area.',
+  S3: 'Remove purple/violet gradient overlays (#615fff, #8e51ff, #4f39f6, #7f22fe family). This is the "VibeCode Purple" tell — the most hardcoded gradient in AI-generated UIs. Replace with your brand signal color or a neutral surface.',
+  S4: 'Remove gradient text (background-clip: text + color: transparent). Gradient text is decorative, harms readability, and kills scannability. Use solid text colors that pass WCAG contrast.',
+  S5: 'Replace default Tailwind/Bootstrap hex values with brand-specific colors. Default indigo-500 (#6366f1), violet-500 (#8b5cf6), slate-900 (#0f172a), Bootstrap primary (#0d6efd) signal no design system. Extend your token set with brand-specific values.',
+  S6: 'Vary your card layouts. Repeated identical cards in a rigid grid are the universal AI feature-card template. Mix sizes, use asymmetric layouts, vary content density, or use a different component for your features section.',
+  S7: 'Replace emoji icons with SVG or icon-library icons. Emoji render differently across operating systems, do not inherit CSS color, do not adapt to dark mode, and do not scale cleanly. Use Lucide, Heroicons, or custom SVGs.',
+  S8: 'Remove "AI-powered", "Generate", "Chat with AI", "Powered by AI" pill badges from your hero or marketing copy. The user already knows what your product does. These badges signal that the copy was AI-generated.',
+  S9: 'Remove all Lorem ipsum placeholder text. It signals the page is unfinished or was generated without real content. Replace with actual copy.',
+  S10: 'Use at least 2 font families: one for display/headings, one for body text (and optionally a mono for code). A single font family for everything signals no typographic hierarchy.',
+  S11: 'Replace marketing buzzwords (streamline, empower, supercharge, world-class, enterprise-grade, unlock, leverage, seamless, cutting-edge, revolutionize) with specific, concrete copy. Instead of "Streamline your workflow", say what actually changes: "Deploy in 3 minutes instead of 3 hours."',
+  S12: 'Replace placeholder/stock image URLs (via.placeholder.com, placehold.co,picsum.photos, unsplash.com/random) with real assets, optimized images, or well-composed CSS gradients.',
 };
 
 function checkPaperToken(tokens: Record<string, string>): CheckResult {
@@ -1751,6 +1763,266 @@ async function scoreUrlUncached(targetUrl: string) {
   const skip = checks.filter((c) => c.status === 'SKIP').length;
   const total = checks.length;
 
+  // ── Anti-slop deduction layer ───────────────────────────────────────────────
+  // Second pass: detect generic/AI-generated design patterns that the compliance
+  // checks above cannot catch. Deductions are subtracted from the weighted score
+  // (not the checks), capped per check and in total. This makes "taste" part of
+  // the score — a site can pass every contract rule and still be generic.
+  //
+  // Sources: Impeccable (59 rules), solodesign (50 rules), Web AI Slop (20 tells),
+  // sikora.software (10), 925studios (6). Wave 1 = 12 highest-signal rules.
+  //
+  // Slop checks do NOT produce PASS/FAIL/WARN/SKIP check items — they produce
+  // deductions that reduce the weighted score directly.
+
+  interface SlopFinding {
+    id: string;
+    label: string;
+    severity: number;   // points deducted per instance
+    instances: number;
+    evidence: string[];
+  }
+
+  const slopFindings: SlopFinding[] = [];
+
+  // S1. Overused font families — the most reflexive AI tell
+  {
+    const overusedFonts = new Set([
+      'inter', 'roboto', 'open sans', 'montserrat', 'poppins', 'lato',
+      'space grotesk', 'instrument serif', 'geist',
+    ]);
+    const fontMatches = css.match(/font-family\s*:([^;}{]+)/gi) || [];
+    const usedFonts = new Set<string>();
+    for (const match of fontMatches) {
+      const families = match.replace(/^font-family\s*:/i, '').split(',');
+      for (const fam of families) {
+        const clean = fam.trim().replace(/["']/g, '').toLowerCase();
+        if (overusedFonts.has(clean)) usedFonts.add(clean);
+      }
+    }
+    if (usedFonts.size > 0) {
+      slopFindings.push({
+        id: 'S1',
+        label: 'Overused font family',
+        severity: 5,
+        instances: usedFonts.size,
+        evidence: [...usedFonts],
+      });
+    }
+  }
+
+  // S2. Full-page gradient background — linear-gradient covering >60% of viewport
+  {
+    const gradientMatches = css.match(/linear-gradient\([^)]+\)/gi) || [];
+    if (gradientMatches.length > 0) {
+      // Check if any gradient is applied to body/html or a top-level wrapper
+      const bodyGrad = css.match(/(?:body|html|:root)\s*\{[^}]*linear-gradient/gi);
+      // Also check for a large fixed/absolutely positioned gradient overlay
+      const overlayGrad = css.match(/(?:position\s*:\s*(?:fixed|absolute)[\s\S]{0,200}linear-gradient)|(?:linear-gradient[\s\S]{0,200}position\s*:\s*(?:fixed|absolute))/gi);
+      const instances = (bodyGrad?.length || 0) + (overlayGrad?.length || 0);
+      if (instances > 0) {
+        slopFindings.push({
+          id: 'S2',
+          label: 'Full-page gradient background',
+          severity: 5,
+          instances,
+          evidence: [`${gradientMatches.length} linear-gradient(s) found, ${instances} on body/overlay`],
+        });
+      }
+    }
+  }
+
+  // S3. Purple/violet gradient on text or background — the "VibeCode Purple" tell
+  {
+    const purplePattern = /(?:background(?:-image)?\s*:[^;]*linear-gradient[^;]*(?:#?(?:615fff|8e51ff|4f39f6|7f22fe|a855f7|9333ea|7c3aed|6d28d9|5b21b6|4c1d95)))/gi;
+    const matches = css.match(purplePattern);
+    if (matches) {
+      slopFindings.push({
+        id: 'S3',
+        label: 'Purple/violet AI gradient',
+        severity: 4,
+        instances: matches.length,
+        evidence: matches.slice(0, 3),
+      });
+    }
+  }
+
+  // S4. Gradient text (background-clip: text + color: transparent)
+  {
+    const gradientText = css.match(/background-clip\s*:\s*text[^}]*color\s*:\s*transparent|color\s*:\s*transparent[^}]*background-clip\s*:\s*text/gi);
+    if (gradientText) {
+      slopFindings.push({
+        id: 'S4',
+        label: 'Gradient text (background-clip:text)',
+        severity: 4,
+        instances: gradientText.length,
+        evidence: gradientText.slice(0, 2),
+      });
+    }
+  }
+
+  // S5. Tailwind default palette hexes — indigo/violet/slate defaults
+  {
+    const tailwindDefaults = [
+      '#0f172a', '#1e293b', '#334155', // slate-900/800/700
+      '#615fff', '#8e51ff', '#4f39f6', '#7f22fe', // indigo/violet defaults
+      '#6366f1', '#8b5cf6', '#a78bfa', // indigo-500/violet-500/violet-400
+      '#0d6efd', '#007bff', // Bootstrap primaries
+    ];
+    const hexPattern = new RegExp(tailwindDefaults.map(h => h.replace('#', '#?')).join('|'), 'gi');
+    const allColors = css.match(/#[0-9a-f]{6}/gi) || [];
+    const matches = allColors.filter(c => tailwindDefaults.some(t => c.toLowerCase() === t.toLowerCase()));
+    if (matches.length >= 3) {
+      slopFindings.push({
+        id: 'S5',
+        label: 'Default Tailwind/Bootstrap palette',
+        severity: 5,
+        instances: matches.length,
+        evidence: [...new Set(matches)].slice(0, 5),
+      });
+    }
+  }
+
+  // S6. Repeated identical cards — structural twins in card containers
+  {
+    // Detect card-like repeated structures: same class applied to multiple siblings
+    const cardPattern = /\.(card|panel|tile|feature|item|box|cell|block)\b/gi;
+    const cardClasses = css.match(cardPattern) || [];
+    // Look for grid with repeated card children (same class repeated)
+    const gridCardPattern = /grid-template-columns[^}]*repeat\s*\(\s*(?:auto-fit|auto-fill|\d+)/gi;
+    const gridMatches = css.match(gridCardPattern) || [];
+    // If we have card classes AND repeating grid layouts, likely card grid
+    if (cardClasses.length >= 3 && gridMatches.length > 0) {
+      slopFindings.push({
+        id: 'S6',
+        label: 'Repeated identical card grid',
+        severity: 5,
+        instances: 1,
+        evidence: [`${cardClasses.length} card-like classes with repeating grid layouts`],
+      });
+    }
+  }
+
+  // S7. Emoji as UI icons — emoji in button/CTA positions
+  {
+    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/giu);
+    if (emojiInButtons && emojiInButtons.length >= 2) {
+      slopFindings.push({
+        id: 'S7',
+        label: 'Emoji as UI icons',
+        severity: 4,
+        instances: emojiInButtons.length,
+        evidence: [`${emojiInButtons.length} emoji in button/CTA elements`],
+      });
+    }
+  }
+
+  // S8. AI-pill badges — "AI-powered", "Generate", "Chat with AI" pill badges
+  {
+    const pillPattern = /(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)/gi;
+    const matches = html.match(pillPattern) || [];
+    if (matches.length > 0) {
+      slopFindings.push({
+        id: 'S8',
+        label: 'AI-pill badge text',
+        severity: 3,
+        instances: matches.length,
+        evidence: [...new Set(matches.map(m => m.trim()))].slice(0, 3),
+      });
+    }
+  }
+
+  // S9. Lorem ipsum placeholder text
+  {
+    const loremPattern = /lorem ipsum|dolor sit amet|consectetur adipiscing|sed do eiusmod|tempor incididunt/gi;
+    const matches = html.match(loremPattern) || [];
+    if (matches.length > 0) {
+      slopFindings.push({
+        id: 'S9',
+        label: 'Lorem ipsum placeholder text',
+        severity: 5,
+        instances: matches.length,
+        evidence: ['Lorem ipsum detected in page content'],
+      });
+    }
+  }
+
+  // S10. Single font family for entire page (heading + body + mono same family)
+  {
+    const fontFamilyMatches = css.match(/font-family\s*:([^;}{]+)/gi) || [];
+    const uniqueFamilies = new Set<string>();
+    for (const match of fontFamilyMatches) {
+      const first = match.replace(/^font-family\s*:/i, '').split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+      if (first && !['serif', 'sans-serif', 'monospace', 'system-ui'].includes(first)) {
+        uniqueFamilies.add(first);
+      }
+    }
+    if (uniqueFamilies.size === 1) {
+      slopFindings.push({
+        id: 'S10',
+        label: 'Single font family for everything',
+        severity: 4,
+        instances: 1,
+        evidence: [`Only "${[...uniqueFamilies][0]}" used across entire page`],
+      });
+    }
+  }
+
+  // S11. Marketing buzzword copy
+  {
+    const buzzwords = ['streamline', 'empower', 'supercharge', 'world-class', 'enterprise-grade',
+      'next-generation', 'unlock', 'leverage', 'seamless', 'cutting-edge', 'revolutionize',
+      'game-chang', 'disrupt', 'synerg'];
+    const bodyText = html.replace(/<[^>]+>/g, ' ').toLowerCase();
+    const found: string[] = [];
+    for (const word of buzzwords) {
+      if (bodyText.includes(word)) found.push(word);
+    }
+    if (found.length >= 2) {
+      slopFindings.push({
+        id: 'S11',
+        label: 'Marketing buzzword copy',
+        severity: 3,
+        instances: found.length,
+        evidence: found.slice(0, 5),
+      });
+    }
+  }
+
+  // S12. Placeholder/stock image URLs
+  {
+    const placeholderPatterns = /via\.placeholder|placehold\.co|placeholder\.com|dummyimage|picsum\.photos|loremflickr|unsplash\.com\/(?:random|featured)/gi;
+    const matches = html.match(placeholderPatterns) || [];
+    if (matches.length > 0) {
+      slopFindings.push({
+        id: 'S12',
+        label: 'Placeholder/stock image URLs',
+        severity: 4,
+        instances: matches.length,
+        evidence: [...new Set(matches)].slice(0, 3),
+      });
+    }
+  }
+
+  // ── Compute slop deductions ───────────────────────────────────────────────
+  // Per-check cap: 5 points. Total slop cap: 20 points.
+  const SLOP_PER_CHECK_CAP = 5;
+  const SLOP_TOTAL_CAP = 20;
+
+  const slopDeductions = slopFindings.map((f) => ({
+    ...f,
+    deduction: Math.min(f.severity * Math.min(f.instances, 3), SLOP_PER_CHECK_CAP),
+  }));
+
+  let slopTotal = slopDeductions.reduce((sum, d) => sum + d.deduction, 0);
+  slopTotal = Math.min(slopTotal, SLOP_TOTAL_CAP);
+
+  const slopConvergences = slopDeductions.length >= 2
+    ? `${slopDeductions.length} anti-slop pattern${slopDeductions.length !== 1 ? 's' : ''} detected`
+    : slopDeductions.length === 1
+      ? '1 anti-slop pattern detected'
+      : null;
+
   // ── Tier 2: per-category weighted scoring ──────────────────────────────────
   // Weights follow the contract's section emphasis (the contract IS the scoring
   // basis), with an accessibility floor so contract sections covering real-user
@@ -1789,6 +2061,14 @@ async function scoreUrlUncached(targetUrl: string) {
   }
 
   let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
+
+  // ── Anti-slop deduction ─────────────────────────────────────────────────────
+  // Apply detected slop patterns as a direct subtraction from the weighted score.
+  // The deduction is flat (not percentage-scaled) so it cannot be gamed by making
+  // the site more minimal. Capped at 20 total.
+  if (slopTotal > 0) {
+    score = Math.max(0, score - slopTotal);
+  }
 
   // ── Per-category sub-scores (the constellation) ─────────────────────────
   // Each category gets its own 0-100 score using the same weighting rule as
@@ -1837,6 +2117,38 @@ async function scoreUrlUncached(targetUrl: string) {
     }
   }
 
+  // ── Hard-fail ceilings (PixelJury precedent) ────────────────────────────────
+  // Certain check FAILures are so severe they cap the score regardless of other
+  // strengths. These are design-integrity failures — a site that FAILs on
+  // contrast or horizontal overflow cannot be A-grade no matter how good its
+  // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
+  const hardFailChecks = checks.filter((c) => c.status === 'FAIL');
+  let hardFailCeilingApplied = false;
+  let hardFailCeilingReason: string | null = null;
+  for (const c of hardFailChecks) {
+    let cap: number | null = null;
+    let reason: string | null = null;
+
+    // v06 Contrast readable — fundamental legibility failure
+    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum — text is unreadable for many users.'; }
+    // v22 Contrast signal — CTA text unreadable on brand color
+    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA — the most important interaction on the page is hard to read.'; }
+    // v02 Horizontal overflow — broken layout on mobile
+    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
+    // v24 Touch targets — interactive elements too small to use
+    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target — inaccessible on touch devices.'; }
+    // v25 Heading hierarchy — broken document outline
+    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
+    // v16 Rem scale — root font-size under 16px (iOS zoom break)
+    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px — triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+
+    if (cap !== null && score > cap) {
+      score = cap;
+      hardFailCeilingApplied = true;
+      hardFailCeilingReason = reason;
+    }
+  }
+
   const grade = computeGrade(score);
 
   // Attach remediation guidance to each check from the lookup table. Every
@@ -1847,7 +2159,7 @@ async function scoreUrlUncached(targetUrl: string) {
     remediation: REMEDIATION[c.id],
   }));
 
-  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length };
+  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences } };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
