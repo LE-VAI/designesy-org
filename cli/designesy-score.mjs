@@ -126,7 +126,7 @@ function formatReport(data, url) {
       const catGrade = catScore >= 90 ? 'A' : catScore >= 80 ? 'B' : catScore >= 70 ? 'C' : catScore >= 60 ? 'D' : 'F';
       const w = info.weight ?? 0;
       const p = info.pass ?? 0, f = info.fail ?? 0, wn = info.warn ?? 0, s = info.skip ?? 0;
-      lines.push(`  ${gradeColor(catGrade)}${catScore.padStart(5)}${RESET} ${DIM}w${w}${RESET}  ${cat.padEnd(16)} ${p}p/${wn}w/${f}f/${s}s`);
+      lines.push(`  ${gradeColor(catGrade)}${String(catScore).padStart(5)}${RESET} ${DIM}w${w}${RESET}  ${cat.padEnd(16)} ${p}p/${wn}w/${f}f/${s}s`);
     }
   }
 
