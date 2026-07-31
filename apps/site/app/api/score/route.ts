@@ -1811,24 +1811,26 @@ async function scoreUrlUncached(targetUrl: string) {
     }
   }
 
-  // S2. Full-page gradient background — linear-gradient covering >60% of viewport
+  // S2. Full-page gradient background — multi-color gradient on body/html or fixed overlay
+  // (Not a 1px hairline grid — only fires on gradients with 2+ distinct color stops)
   {
-    const gradientMatches = css.match(/linear-gradient\([^)]+\)/gi) || [];
-    if (gradientMatches.length > 0) {
-      // Check if any gradient is applied to body/html or a top-level wrapper
-      const bodyGrad = css.match(/(?:body|html|:root)\s*\{[^}]*linear-gradient/gi);
-      // Also check for a large fixed/absolutely positioned gradient overlay
-      const overlayGrad = css.match(/(?:position\s*:\s*(?:fixed|absolute)[\s\S]{0,200}linear-gradient)|(?:linear-gradient[\s\S]{0,200}position\s*:\s*(?:fixed|absolute))/gi);
-      const instances = (bodyGrad?.length || 0) + (overlayGrad?.length || 0);
-      if (instances > 0) {
-        slopFindings.push({
-          id: 'S2',
-          label: 'Full-page gradient background',
-          severity: 5,
-          instances,
-          evidence: [`${gradientMatches.length} linear-gradient(s) found, ${instances} on body/overlay`],
-        });
-      }
+    // Check for multi-color linear-gradient on body/html/:root (not ::before grid patterns)
+    const bodyGrad = css.match(/(?:body|html|:root)(?!::)\s*\{[^}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi);
+    // Multi-color gradient on a fixed/absolute overlay (not 1px hairline)
+    const overlayGrad = css.match(/(?:position\s*:\s*(?:fixed|absolute)[\s\S]{0,300}linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}\)|linear-gradient\s*\([^)]*\([^)]*,\s*[^)]{4,}[\s\S]{0,300}position\s*:\s*(?:fixed|absolute))/gi);
+    // Filter out 1px grid patterns (transparent 1px + color 1px = hairline grid, not gradient)
+    const isGridPattern = (text: string) => /(?:transparent|rgba\([^)]+\))\s+1px(?:\s*,)/.test(text);
+    const bodyGradFiltered = bodyGrad?.filter(m => !isGridPattern(m)) || [];
+    const overlayGradFiltered = overlayGrad?.filter(m => !isGridPattern(m)) || [];
+    const instances = bodyGradFiltered.length + overlayGradFiltered.length;
+    if (instances > 0) {
+      slopFindings.push({
+        id: 'S2',
+        label: 'Full-page gradient background',
+        severity: 5,
+        instances,
+        evidence: [...bodyGradFiltered, ...overlayGradFiltered].slice(0, 3),
+      });
     }
   }
 
@@ -1847,17 +1849,31 @@ async function scoreUrlUncached(targetUrl: string) {
     }
   }
 
-  // S4. Gradient text (background-clip: text + color: transparent)
+  // S4. Gradient text — multi-color gradient text (background-clip: text + color: transparent)
+  // Only fires on MULTI-COLOR gradients (2+ distinct colors) — a single-hue brand sweep
+  // (e.g. signal-blue gradient on a grade letter) is intentional, not slop.
   {
-    const gradientText = css.match(/background-clip\s*:\s*text[^}]*color\s*:\s*transparent|color\s*:\s*transparent[^}]*background-clip\s*:\s*text/gi);
-    if (gradientText) {
-      slopFindings.push({
-        id: 'S4',
-        label: 'Gradient text (background-clip:text)',
-        severity: 4,
-        instances: gradientText.length,
-        evidence: gradientText.slice(0, 2),
+    const gradientTextBlocks = css.match(/background-clip\s*:\s*text|color\s*:\s*transparent/gi);
+    if (gradientTextBlocks) {
+      // Check if the gradients used with these clips are multi-color (2+ distinct hues)
+      const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+      const multiColorGradient = gradientClips.filter(block => {
+        const gradientMatch = block.match(/linear-gradient\(([^)]+)\)/i);
+        if (!gradientMatch) return false;
+        const stops = gradientMatch[1].split(',').map(s => s.trim()).filter(s => s.includes('#') || s.includes('rgb') || s.includes('oklch') || s.includes('hsl'));
+        // Check if stops have distinct hues (not just different alphas of the same hue)
+        const uniqueStops = new Set(stops.map(s => s.replace(/rgba?\([^)]+\)/, '').replace(/oklch\([^)]+\)/, '').replace(/\d+%?/g, '').trim()));
+        return uniqueStops.size >= 2;
       });
+      if (multiColorGradient.length > 0) {
+        slopFindings.push({
+          id: 'S4',
+          label: 'Gradient text (background-clip:text)',
+          severity: 4,
+          instances: multiColorGradient.length,
+          evidence: multiColorGradient.slice(0, 2).map(m => m.substring(0, 80)),
+        });
+      }
     }
   }
 
