@@ -20,6 +20,21 @@ type CategoryScore = {
   skip: number;
 };
 
+type SlopFinding = {
+  id: string;
+  label: string;
+  severity: number;
+  instances: number;
+  evidence: string[];
+  deduction: number;
+};
+
+type SlopResult = {
+  total: number;
+  findings: SlopFinding[];
+  convergences: string | null;
+};
+
 type ScoreResponse = {
   ok: boolean;
   score?: number;
@@ -30,9 +45,12 @@ type ScoreResponse = {
   skip?: number;
   total?: number;
   a11yFloorApplied?: boolean;
+  hardFailCeilingApplied?: boolean;
+  hardFailCeilingReason?: string | null;
   categoryScores?: Record<string, CategoryScore>;
   checks?: CheckResult[];
   tokensExtracted?: number;
+  slop?: SlopResult;
   error?: string;
 };
 
@@ -281,6 +299,45 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             categories require a live browser and were excluded from scoring.
             A missing dimension is visible, not silently averaged.
           </p>
+        </div>
+      )}
+
+      {/* ── HARD-FAIL CEILING ── */}
+      {result.hardFailCeilingApplied && (
+        <div className="report-hard-fail">
+          <p>
+            <strong>Hard-fail ceiling applied:</strong> {result.hardFailCeilingReason || 'A critical check failed, capping the overall score.'}
+          </p>
+        </div>
+      )}
+
+      {/* ── SLOP FINDINGS ── */}
+      {result.slop && result.slop.total > 0 && (
+        <div className="report-slop">
+          <h2 className="report-slop-title">
+            Anti-slop deduction: −{result.slop.total} point{result.slop.total !== 1 ? 's' : ''}
+          </h2>
+          {result.slop.convergences && (
+            <p className="report-slop-convergence">{result.slop.convergences}</p>
+          )}
+          <div className="report-slop-findings">
+            {result.slop.findings.map((finding) => (
+              <div key={finding.id} className="report-slop-finding">
+                <div className="report-slop-finding-header">
+                  <span className="report-slop-finding-id">{finding.id}</span>
+                  <span className="report-slop-finding-label">{finding.label}</span>
+                  <span className="report-slop-finding-deduction">
+                    −{finding.deduction} pt{finding.deduction !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                {finding.evidence.length > 0 && (
+                  <p className="report-slop-finding-evidence">
+                    {finding.evidence.join(' · ')}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

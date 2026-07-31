@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { HapticsToggle } from './haptics-toggle';
 import { SoundToggle } from './sound-toggle';
+import { ThemeToggle } from './theme-toggle';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -128,6 +129,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             <SoundToggle />
             <HapticsToggle />
           </div>
+          <ThemeToggle />
           <button
             className="nav-trigger"
             aria-label="Toggle navigation"

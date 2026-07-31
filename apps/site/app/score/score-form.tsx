@@ -42,10 +42,28 @@ type ScoreResponse = {
   skip?: number;
   total?: number;
   a11yFloorApplied?: boolean;
+  hardFailCeilingApplied?: boolean;
+  hardFailCeilingReason?: string | null;
   categoryScores?: Record<string, CategoryScore>;
   checks?: CheckResult[];
   tokensExtracted?: number;
+  slop?: SlopResult;
   error?: string;
+};
+
+type SlopFinding = {
+  id: string;
+  label: string;
+  severity: number;
+  instances: number;
+  evidence: string[];
+  deduction: number;
+};
+
+type SlopResult = {
+  total: number;
+  findings: SlopFinding[];
+  convergences: string | null;
 };
 
 type AuditResponse = {
@@ -427,8 +445,22 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const a11yPct = a11yChecks.length === 0 ? 100 : ((a11yChecks.filter((c) => c.status === 'PASS').length + a11yChecks.filter((c) => c.status === 'WARN').length * 0.5) / a11yChecks.length) * 100;
         let a11yFloorApplied = false;
         if (a11yChecks.length > 0 && a11yPct < 60 && score > 70) { score = 70; a11yFloorApplied = true; }
+        // hard-fail ceilings (matches server)
+        let hardFailCeilingApplied = false;
+        let hardFailCeilingReason: string | null = null;
+        for (const c of merged.filter((c) => c.status === 'FAIL')) {
+          let cap: number | null = null;
+          let reason: string | null = null;
+          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum — text is unreadable for many users.'; }
+          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA — the most important interaction on the page is hard to read.'; }
+          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
+          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target — inaccessible on touch devices.'; }
+          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
+          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px — triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+          if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
+        }
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied, categoryScores };
+        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores };
       });
       setAuditStatus('ok');
     } catch {
@@ -1011,9 +1043,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </div>
 
           <p className="score-note">
-            {result.total} checks evaluated against Designesy design system contract v0.3.0.
+            {result.total} checks evaluated against Designesy design system contract v0.4.0.
             {result.a11yFloorApplied && (
               <span className="score-a11y-floor-notice"> · Accessibility floor applied: score capped at C (70) because accessibility &lt; 60%.</span>
+            )}
+            {result.hardFailCeilingApplied && (
+              <span className="score-a11y-floor-notice"> · Hard-fail ceiling applied: {result.hardFailCeilingReason || 'A critical check failed, capping the overall score.'}</span>
+            )}
+            {result.slop && result.slop.total > 0 && (
+              <span className="score-a11y-floor-notice"> · Anti-slop: −{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''} ({result.slop.findings.length} pattern{result.slop.findings.length !== 1 ? 's' : ''} detected)</span>
             )}
           </p>
         </div>
@@ -1025,7 +1063,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
             extract design tokens, and evaluate 40 verification checks against the Designesy
-            contract v0.3.0. Real-time. No login required.
+            contract v0.4.0. Real-time. No login required.
           </p>
         </div>
       )}

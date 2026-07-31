@@ -107,6 +107,62 @@
   --signal-gradient: linear-gradient(135deg, var(--signal-light), #6b8aff 130%);
 }
 
+/* --- Light theme — [data-theme="light"] ---
+   Same brand, re-lit. OKLCH-mirrored lightness values with slight chroma
+   reduction (light surfaces carry less saturation before they look neon).
+   Structural tokens (radius, duration, ease, maxw, typography stacks) are
+   inherited from :root — only color/surface/shadow tokens differ.
+   The topbar glass and shadow recipes also differ to stay visible on a
+   light background. */
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Ink ladder: near-black, mid-gray, subdued gray */
+  --ink: #1a1a1e;
+  --muted: #555560;
+  --muted-dim: #888890;
+
+  /* Paper: warm near-white with faint blue cast (same hue as dark paper) */
+  --paper: #fbfbfc;
+
+  /* 3-step surface ladder inverted — white planes, subtle gray lifts */
+  --surface: #ffffff;
+  --surface-raised: #f5f5f7;
+  --surface-lifted: #ececf0;
+  --surface-soft: rgba(0, 0, 0, 0.03);
+  --surface-hover: rgba(0, 0, 0, 0.05);
+
+  /* Lines: dark on light, same alpha proportions */
+  --line: rgba(0, 0, 0, 0.10);
+  --line-strong: rgba(0, 0, 0, 0.18);
+  --line-faint: rgba(0, 0, 0, 0.05);
+
+  /* Signal: same blue brand, slightly higher chroma for visibility on light */
+  --signal: #0133cb;
+  --signal-light: #3358e8;
+  --signal-access: #2a4cd8;
+  --signal-dim: rgba(1, 51, 203, 0.08);
+  --paper-on-signal: #ffffff;
+  --activation: #d4a017;
+
+  /* Shadows: softer on light backgrounds */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.12);
+
+  /* Semantic state colors keep the same hue, slightly adjusted for light bg */
+  --ok: #16a34a;
+  --error: #dc2626;
+  --warn: #ca8a04;
+
+  /* Surface depth vocabulary adapted for light */
+  --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
+  --surface-card-gradient: linear-gradient(135deg, #fafafc 0%, var(--surface) 100%);
+  --inner-light: inset 0 1px 0 rgba(0, 0, 0, 0.04);
+  --signal-glow: 0 0 60px rgba(51, 88, 232, 0.08), 0 0 24px rgba(51, 88, 232, 0.12);
+}
+
 /* --- Reset --- */
 
 *,
@@ -492,6 +548,129 @@ p {
 .nav-links a:focus-visible {
   outline: 2px solid var(--signal-light);
   outline-offset: 2px;
+}
+
+/* --- Theme Toggle ---
+   Single SVG that morphs sun → moon via mask slide.
+   Dark mode: sun visible (rays extended, mask circle offset).
+   Light mode: mask circle slides in to "bite" the sun into a crescent. */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--duration-quick) var(--ease-out),
+              background var(--duration-quick) var(--ease-out);
+}
+
+.theme-toggle:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+.theme-toggle:active {
+  transform: scale(0.96);
+}
+
+/* Sun core: the main circle that becomes the crescent */
+.theme-icon .sun-core {
+  transition: r var(--duration-fast) var(--ease-out);
+}
+
+/* Moon mask circle: offset far in dark (invisible), slides into view in light */
+.theme-icon .moon-mask-circle {
+  transition: cx var(--duration-fast) var(--ease-out),
+              cy var(--duration-fast) var(--ease-out);
+}
+
+/* Sun rays: visible in dark, scale to 0 in light */
+.theme-icon .sun-rays {
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+  transform-origin: center;
+}
+
+/* Dark mode (default): sun fully visible, mask hidden */
+[data-theme="dark"] .theme-icon .sun-core,
+:root:not([data-theme="light"]) .theme-icon .sun-core {
+  r: 5px;
+}
+
+[data-theme="dark"] .theme-icon .moon-mask-circle,
+:root:not([data-theme="light"]) .theme-icon .moon-mask-circle {
+  cx: 30px;
+  cy: 4px;
+}
+
+[data-theme="dark"] .theme-icon .sun-rays,
+:root:not([data-theme="light"]) .theme-icon .sun-rays {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Light mode: rays retract, mask slides in to create crescent */
+[data-theme="light"] .theme-icon .sun-core {
+  r: 6px;
+}
+
+[data-theme="light"] .theme-icon .moon-mask-circle {
+  cx: 20px;
+  cy: 8px;
+}
+
+[data-theme="light"] .theme-icon .sun-rays {
+  opacity: 0;
+  transform: scale(0.5) rotate(90deg);
+}
+
+/* View Transitions: no default animation on root — we drive our own clip-path */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Light-mode topbar glass: white surface with subtle blur, no saturate
+   (saturation boost looks neon on light backgrounds) */
+[data-theme="light"] .topbar {
+  background: rgba(251, 251, 252, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[data-theme="light"] .topbar.scrolled {
+  background: rgba(251, 251, 252, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom-color: var(--line);
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Light-mode ambient signal wash — subtle blue tint on light surface */
+[data-theme="light"] .ambient-signal {
+  background-image:
+    radial-gradient(circle 110vmax at 76% 12%, rgba(1, 51, 203, 0.03), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78%, rgba(1, 51, 203, 0.015), transparent 60%);
+}
+
+/* Light-mode grid: dark lines instead of white */
+[data-theme="light"] body::before {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+/* Light-mode noise: multiply blend with slightly higher opacity for visibility */
+[data-theme="light"] body::after {
+  opacity: 0.04;
+  mix-blend-mode: multiply;
 }
 
 /* Mobile nav trigger — hidden on desktop, shown at ≤720px */
@@ -10866,6 +11045,97 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
 }
 
+/* --- Hard-fail ceiling notice --- */
+
+.report-hard-fail {
+  max-width: var(--maxw);
+  margin: 1.5rem auto;
+  padding: 0 2rem;
+}
+
+.report-hard-fail p {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--error);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.report-hard-fail strong {
+  color: var(--ink);
+}
+
+/* --- Slop findings --- */
+
+.report-slop {
+  max-width: var(--maxw);
+  margin: 1.5rem auto;
+  padding: 0 2rem;
+}
+
+.report-slop-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--warn);
+  margin-bottom: 0.25rem;
+}
+
+.report-slop-convergence {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.report-slop-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-slop-finding {
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.report-slop-finding-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.report-slop-finding-id {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+  flex-shrink: 0;
+}
+
+.report-slop-finding-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+}
+
+.report-slop-finding-deduction {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--warn);
+  flex-shrink: 0;
+}
+
+.report-slop-finding-evidence {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding-left: 2.5rem;
+}
+
 .report-skipped {
   margin-top: 0.75rem;
   border: 1px solid var(--line-faint);
@@ -12189,25 +12459,24 @@ select {
    Universal-sphere preference coverage (T2.5)
    ==========================================================================
 
-   designesy.org is deliberately dark-only — one surface register, one ink.
-   That is the design, not a limitation to patch. But a dark-only site does
-   not get to ignore the rest of the user's OS-level preference set:
+   designesy.org is dark-first — one surface register, one ink.
+   A light sibling exists at [data-theme="light"] for accessibility and
+   preference coverage. The toggle is a View Transitions circular reveal,
+   not a raw flip. Both themes share the same structural tokens.
+
+   These blocks are additive, zero-JS, and inert when the user has no
+   preference set:
 
      prefers-contrast: more              (Baseline Widely Available 2024-11)
      prefers-reduced-transparency: reduce (Chrome 118+, not yet cross-browser)
 
-   These two blocks are additive, zero-JS, and inert when the user has no
-   preference set. They are the site's answer to "we are ready for the
-   multiverse of people" without becoming a corporate theme-picker.
-
    What we do NOT do:
-     - No light-mode fork. Dark is the surface; a light sibling is a
-       separate product decision, not a media query away.
      - No forced-colors override. Windows High Contrast already re-paints
-       the palette via its own cascade; our color-scheme: dark + system
-       colors inherit correctly. Overriding it would be hubris.
-     - No JavaScript. These are pure CSS, evaluated by the browser's media
-       engine — no hydration, no layout shift, no CLS risk.
+       the palette via its own cascade; our color-scheme + system colors
+       inherit correctly. Overriding it would be hubris.
+     - No per-component theme logic. One attribute on :root, one fork in
+       globals.css. If a token needs a light value, it goes in the
+       [data-theme="light"] block at the top of this file.
    ========================================================================== */
 
 @media (prefers-contrast: more) {
@@ -12240,6 +12509,11 @@ select {
        behavior the media feature was designed to trigger. */
     --surface-soft: #0a0a0c;
     --surface-hover: #121216;
+  }
+
+  [data-theme="light"] {
+    --surface-soft: #ffffff;
+    --surface-hover: #f5f5f7;
   }
 
   /* Swap the blurred topbar for the solid topbar. backdrop-filter: none is

@@ -1,6 +1,7 @@
 // v2026-07-25-0220-force-left-align-css-recompile
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import { cookies } from 'next/headers';
 import '@fontsource-variable/inter';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
@@ -23,8 +24,17 @@ import {
   websiteJsonLd,
 } from './lib/json-ld';
 
+/* Theme detection — inline blocking script that runs before first paint.
+   Reads cookie → localStorage → matchMedia. Only runs when no data-theme
+   has been stamped server-side (first visit / cleared cookies). After the
+   cookie exists, the server stamp renders the right theme from byte one. */
+const themeScript = `(function(){try{var d=document.documentElement;if(d.hasAttribute('data-theme'))return;var m=document.cookie.match(/(?:^|;\\s*)theme=(light|dark)/);var s=null;try{s=localStorage.getItem('theme')}catch(e){}var v=m?m[1]:(s||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));if(v==='system'){v='dark'}d.setAttribute('data-theme',v);}catch(e){}})();`
+
 export const viewport: Viewport = {
-  themeColor: '#010102',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#010102' },
+    { media: '(prefers-color-scheme: light)', color: '#fbfbfc' },
+  ],
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -86,13 +96,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const store = await cookies();
+  const rawTheme = store.get('theme')?.value;
+  const resolvedTheme = rawTheme === 'light' || rawTheme === 'dark' ? rawTheme : null;
+
   return (
-    <html lang="en">
+    <html lang="en" data-theme={resolvedTheme ?? undefined} suppressHydrationWarning>
       <head>
         {/* Set js-ready before CSS paints so [data-reveal] hidden state
             only applies when JS is active — prevents invisible content
@@ -102,6 +116,8 @@ export default function RootLayout({
             __html: 'document.documentElement.classList.add("js-ready");',
           }}
         />
+        {/* Theme detection — first visit only, cookie handles subsequent loads */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
