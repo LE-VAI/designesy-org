@@ -318,7 +318,22 @@ export function CommandPalette() {
       // Flagship surfaces float to the top of their group on exact page hits.
       validRows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
       validRows.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
-      setHits(validRows.map(({ _flagship, ...rest }) => rest));
+
+      // MERGE — never REPLACE. The local INDEX filter already produced scored,
+      // sorted matches (authoritative for our curated routes). Pagefind may
+      // resolve to an empty set when its index references build-chunk URLs we
+      // filter out, or when BM25 ranks body text below our curated pages. If we
+      // blindly setHits(validRows) an empty Pagefind result would wipe correct
+      // local matches (the live "score"/"methodology" → No matches bug). So:
+      // keep every local hit, and append ONLY Pagefind rows whose href is not
+      // already present locally. Local wins on collision.
+      const localHrefs = new Set(local.map((item) => item.href));
+      const pfOnly = validRows.filter((r) => !localHrefs.has(r.href));
+      const merged = [
+        ...local,
+        ...pfOnly.map(({ _flagship, ...rest }) => rest),
+      ].slice(0, 12);
+      setHits(merged);
       setSearching(false);
     })();
 
