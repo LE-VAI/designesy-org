@@ -172,7 +172,7 @@ export default function HomePage() {
             </p>
             <h1 className="hero-title hero-display fade-up fade-up-delay-1" id="hero-title">
               <span className="hero-display-line" data-scramble>
-                AI makes execution <span className="hero-word-free">free</span>.
+                AI makes execution <span className="hero-word-free">free</span>.
               </span>
               <span
                 className="hero-display-line is-accent"
