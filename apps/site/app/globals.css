@@ -12720,26 +12720,28 @@ select {
 .hero-display-line { display: block; }
 .hero-display-line.is-accent { color: var(--ink); }
 
-/* Hero word treatments — "free" shimmer (subtle white sweep that fades into
-   the word's own ink color; stops and holds readable solid under reduced
-   motion) and the last-word rotator spans (prefix stays, word scrambles,
-   punctuation static). */
+/* Hero word treatments — "free" shimmer (a tight white band that sweeps on
+   a slow loop; the word's resting face carries a faint bright lift so the
+   shimmer reads as authority, not decoration) and the last-word rotator
+   spans (prefix stays, word scrambles, punctuation static). */
 .hero-word-free {
   background-image: linear-gradient(
-    100deg,
-    color-mix(in srgb, var(--ink) 82%, #ffffff 18%),
-    color-mix(in srgb, var(--ink) 82%, #ffffff 18%) 42%,
+    104deg,
+    color-mix(in srgb, var(--ink) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ink) 88%, #ffffff 12%) 40%,
     #ffffff 50%,
-    color-mix(in srgb, var(--ink) 82%, #ffffff 18%) 58%,
-    color-mix(in srgb, var(--ink) 82%, #ffffff 18%)
+    color-mix(in srgb, var(--ink) 88%, #ffffff 12%) 60%,
+    color-mix(in srgb, var(--ink) 88%, #ffffff 12%)
   );
-  background-size: 240% 100%;
-  background-position: 130% 0;
+  background-size: 230% 100%;
+  background-position: 118% 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent; /* fallback guard — overridden below where clip is unsupported */
-  animation: hero-free-shimmer 6.5s ease-in-out infinite;
+  /* Smart glow, kept quiet: a faint signal-white halo, present at rest. */
+  text-shadow: 0 0 18px color-mix(in srgb, var(--signal-light) 26%, transparent);
+  animation: hero-free-shimmer 4.4s cubic-bezier(0.42, 0, 0.2, 1) 0.9s infinite;
 }
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
@@ -12752,9 +12754,8 @@ select {
 }
 
 @keyframes hero-free-shimmer {
-  0% { background-position: 130% 0; }
-  55% { background-position: -130% 0; }
-  100% { background-position: -130% 0; }
+  0%, 22% { background-position: 118% 0; }
+  72%, 100% { background-position: -118% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -12763,12 +12764,16 @@ select {
     background-image: none;
     color: var(--ink);
     -webkit-text-fill-color: currentColor;
+    text-shadow: none;
   }
 }
 
 [data-word] {
   display: inline-block;
   white-space: nowrap;
+  /* Fixed at the longest variant ("intentional") so no scramble can ever
+     widen the line past the natural two-line break. */
+  min-width: 6.9em;
 }
 
 [data-word] .is-scrambling {
