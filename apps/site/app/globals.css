@@ -12695,7 +12695,7 @@ select {
 /* Editorial display — massive, confident, single-weight, tracking tight.
    Two stacked lines: the claim in ink, the answer carried by the accent dot. */
 .hero-display {
-  font-size: clamp(2.6rem, 6.4vw, 5.25rem);
+  font-size: clamp(2.35rem, 5.9vw, 4.9rem);
   font-weight: 340;
   line-height: 1.02;
   letter-spacing: -0.03em;
@@ -12769,11 +12769,10 @@ select {
 }
 
 [data-word] {
-  display: inline-block;
+  /* Never break the 2-line rule: width is pinned to the LONGEST variant
+     ("intentional") so no scramble or cycle can push L2 past two lines. */
   white-space: nowrap;
-  /* Fixed at the longest variant ("intentional") so no scramble can ever
-     widen the line past the natural two-line break. */
-  min-width: 6.9em;
+  min-width: 6.4em;
 }
 
 [data-word] .is-scrambling {
