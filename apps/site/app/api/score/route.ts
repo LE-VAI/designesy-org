@@ -1901,7 +1901,7 @@ function emitCanonical(url: string, result: ScoreResult) {
     generatedAt: new Date().toISOString(),
     tool: {
       name: 'designesy',
-      version: 'v0.3.0',
+      version: 'v0.4.0',
     },
     subject: {
       type: 'url' as const,

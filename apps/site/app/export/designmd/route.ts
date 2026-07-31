@@ -34,7 +34,7 @@ standards:
 
 ## Overview
 
-Organization-first design system with deterministic verification. The contract is the scoring basis — 40 automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 11 weighted categories. No LLM, no vibes.
+Organization-first design system with deterministic verification. The contract is the scoring basis — 40 automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
 
 ## Tokens
 
@@ -80,8 +80,8 @@ ${colorRows}
 
 ## Verification
 
-- **Checks:** 34 (v01-v35)
-- **Categories:** 11 weighted (cadence 18, accessibility 15, semantic 12, motion 10, tokens 9, takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3)
+- **Checks:** 40 (v01–v41 + x01–x03)
+- **Categories:** 14 weighted (cadence 18, accessibility 15, semantic 12, motion 10, copywriting 8, tokens 9, takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3, security 5, spec 4)
 - **A11y floor:** 60% (accessibility category below 60% caps overall score at C/70)
 - **Standards:** WCAG 2.1 AA + APCA supplementary + DTCG 2025.10 + EU AI Act Art 50
 - **v34 AI-Disclosure:** effective 2026-08-02 (EU AI Act Art 50)

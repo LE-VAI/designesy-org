@@ -27,7 +27,7 @@ export const metadata: Metadata = pageMeta({
   ogDescription:
     'The 40-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
   twitterDescription:
-    'Designesy scoring methodology — 40 checks, 11 categories, deterministic · designesy.org/methodology',
+    'Designesy scoring methodology — 40 checks, 14 categories, deterministic · designesy.org/methodology',
 });
 
 // ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
