@@ -17,7 +17,7 @@ jobs:
   score:
     runs-on: ubuntu-latest
     steps:
-      - uses: LE-VAI/designesy-org/action@main
+      - uses: LE-VAI/designesy-org@main
         with:
           url: https://www.designesy.org
           min-score: 90
