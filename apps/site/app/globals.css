@@ -12724,11 +12724,11 @@ select {
    a slow loop; the word's resting face carries a faint bright lift so the
    shimmer reads as authority, not decoration) and the last-word rotator
    spans (prefix stays, word scrambles, punctuation static). */
-/* The scrambler writes plain text nodes alongside the shimmer span; a CSS
-   margin guarantees the optical space survives every textContent write,
-   regardless of which whitespace the DOM serializer chooses to keep. */
+/* The gap between "execution" and "free" is a REAL non-breaking space in
+   the JSX (U+00A0): it survives HTML whitespace collapsing AND the
+   scrambler's textContent writes identically in every engine — a CSS
+   margin would DOUBLE the gap in browsers that keep the natural space. */
 .hero-word-free {
-  margin-left: 0.24em;
   background-image: linear-gradient(
     104deg,
     color-mix(in srgb, var(--ink) 88%, #ffffff 12%),

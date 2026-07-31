@@ -26,9 +26,13 @@ function randomChar(): string {
 }
 
 function scrambleString(text: string): string {
+  // Non-breaking spaces (hero word gaps) pass through like normal spaces so
+  // the gap never becomes a random glyph or disappears during churn.
   return text
     .split('')
-    .map((ch) => (ch === ' ' || ch === '.' || ch === '\n' ? ch : randomChar()))
+    .map((ch) =>
+      ch === ' ' || ch === ' ' || ch === '.' || ch === '\n' ? ch : randomChar()
+    )
     .join('');
 }
 
@@ -52,7 +56,12 @@ function decodeToString(
     for (let i = 0; i < total; i++) {
       if (i < revealed) {
         result += realText[i];
-      } else if (realText[i] === ' ' || realText[i] === '.' || realText[i] === '\n') {
+      } else if (
+        realText[i] === ' ' ||
+        realText[i] === ' ' ||
+        realText[i] === '.' ||
+        realText[i] === '\n'
+      ) {
         result += realText[i];
       } else {
         result += randomChar();
@@ -193,6 +202,42 @@ export function ScrambleEnhancer() {
       scrambleEls.forEach((el) => {
         const hasChildElements = el.querySelector('span, svg, img, a');
         if (hasChildElements) {
+          if (el.hasAttribute('data-scramble-rotate-words')) {
+            // Rotator (hero L2): simple-text path so the whole sentence
+            // decodes in like every other line; spans stay intact for the
+            // sentence to remain readable under softened motion.
+            const realText = (el.textContent || '').trim();
+            if (!realText) return;
+            el.setAttribute('aria-label', realText);
+            const unlockHeight = lockHeight(el);
+            const sd = scaledDelays(realText);
+            el.textContent = scrambleString(realText);
+            const finish = () => unlockHeight();
+            if (isInViewport(el)) {
+              decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
+                el.textContent = text;
+                if (text === realText) finish();
+              });
+              return;
+            }
+            const observer = new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    decodeToString(realText, sd.charDelay, sd.churnCount, (text) => {
+                      el.textContent = text;
+                      if (text === realText) finish();
+                    });
+                    observer.disconnect();
+                  }
+                });
+              },
+              { threshold: 0.1 }
+            );
+            observer.observe(el);
+            allObservers.push(observer);
+            return;
+          }
           const firstChild = el.firstChild;
           if (!firstChild || firstChild.nodeType !== 3) return;
           const originalText = firstChild.textContent || '';
@@ -387,12 +432,19 @@ export function ScrambleEnhancer() {
             const p = document.createElement('span');
             p.setAttribute('data-prefix', '');
             p.textContent = prefixText;
+            // Explicit space text node between prefix and word: React's SSR
+            // whitespace between sibling spans is dropped by the flatten/
+            // resplit round-trip, and a bare appendChild sequence creates
+            // no inter-element whitespace — without this node the sentence
+            // resolves as "...executionyours.".
+            const sp = document.createTextNode(' ');
             const w = document.createElement('span');
             w.setAttribute('data-word', '');
             w.textContent = w0;
             const pu = document.createElement('span');
             pu.textContent = punctText;
             el.appendChild(p);
+            el.appendChild(sp);
             el.appendChild(w);
             el.appendChild(pu);
           };
@@ -562,91 +614,126 @@ export function ScrambleEnhancer() {
       }
       if (words.length < 2) return;
 
-      const prefix = el.querySelector<HTMLElement>('[data-prefix]');
-      const wordSpan = el.querySelector<HTMLElement>('[data-word]');
-      const punct = Array.from(el.querySelectorAll<HTMLElement>('span:not([data-prefix]):not([data-word])')).pop() ?? null;
-
-      // If the markup was hand-authored (not yet re-split by the scramble
-      // pass), the spans exist immediately. If re-split failed, leave the
-      // sentence static rather than hang a poll that never resolves.
-      if (!prefix || !wordSpan || !punct) return;
-
       const rotateDelayAttr = el.getAttribute('data-scramble-rotate-delay');
       const rotateDelay = rotateDelayAttr ? parseInt(rotateDelayAttr, 10) : 8000;
 
-      // Width is pinned in CSS (min-width: 6.9em = the longest variant),
-      // so the rotator never re-measures mid-scroll (jank at 800px) and no
-      // scramble glyph set can ever widen the line past the 2-line break.
+      // The first-load scramble branch FLATTENS this element to plain text
+      // at effect-run and only re-splits it into prefix/word/punct spans
+      // when the decode settles (or the safety net fires). So the spans are
+      // NOT guaranteed to exist right now — wire the controller only once
+      // they do. Without this deferral, rotator wiring silently no-ops the
+      // moment a sibling pass has already flattened the spans.
+      const tryWire = (): boolean => {
+        const prefix = el.querySelector<HTMLElement>('[data-prefix]');
+        const wordSpan = el.querySelector<HTMLElement>('[data-word]');
+        if (!prefix || !wordSpan) return false;
 
-      // Blue → white per-char blend over the resolved tail (normal motion
-      // only; reduced motion keeps the accent color via CSS).
-      const colorFn = (i: number, n: number): string => {
-        if (n <= 1) return 'var(--ink)';
-        const t = i / (n - 1);
-        const r = Math.round(51 + (245 - 51) * t);
-        const g = Math.round(88 + (245 - 88) * t);
-        const b = Math.round(232 + (247 - 232) * t);
-        return `rgb(${r}, ${g}, ${b})`;
-      };
-
-      const paintWord = (glyphs: { ch: string; done: boolean; color: string | null }[]) => {
-        wordSpan.innerHTML = '';
-        for (const g of glyphs) {
-          const s = document.createElement('span');
-          s.textContent = g.ch;
-          if (!g.done) {
-            s.className = 'is-scrambling';
-          } else if (g.color) {
-            s.style.color = g.color;
-          }
-          wordSpan.appendChild(s);
+        // Re-derive punctuation if the resplit pass did not preserve it as
+        // a trailing span (hand-authored markup always has one; resplit too,
+        // but normalize for the generic case).
+        let punctSpan = (
+          Array.from(el.querySelectorAll<HTMLElement>('span:not([data-prefix]):not([data-word])'))
+        ).pop() ?? null;
+        if (!punctSpan) {
+          punctSpan = document.createElement('span');
+          punctSpan.textContent = '.';
+          el.appendChild(punctSpan);
         }
-      };
 
-      const setWord = (w: string) => {
-        wordSpan.textContent = w;
-        el.setAttribute('aria-label', `${prefix.textContent ?? ''}${w}${punct.textContent ?? ''}`);
-      };
+        // Width is pinned in CSS (min-width on [data-word] = the longest
+        // variant), so the rotator never re-measures mid-scroll (jank at
+        // 800px) and no scramble glyph set can ever widen the line past the
+        // 2-line break.
 
-      const schedule = (ms: number, fn: () => void) => {
-        rotatorTimers.push(setTimeout(fn, ms));
-      };
+        // Blue → white per-char blend over the resolved tail (normal motion
+        // only; reduced motion keeps the accent color via CSS).
+        const colorFn = (i: number, n: number): string => {
+          if (n <= 1) return 'var(--ink)';
+          const t = i / (n - 1);
+          const r = Math.round(51 + (245 - 51) * t);
+          const g = Math.round(88 + (245 - 88) * t);
+          const b = Math.round(232 + (247 - 232) * t);
+          return `rgb(${r}, ${g}, ${b})`;
+        };
 
-      // Rotation must only start AFTER the element's own first-load decode
-      // settles — and the safety net can force-resolve at 8s, so polling is
-      // the only deterministic gate (an estimate timer can overlap the tail).
-      const startWhenDecoded = (first: number) => {
-        const poll = setInterval(() => {
-          if (cancelled) { clearInterval(poll); return; }
-          const cur = (wordSpan.textContent || '').trim();
-          if (cur === words[0]) {
-            clearInterval(poll);
-            schedule(rotateDelay, () => rotateOnce(first));
+        const paintWord = (glyphs: { ch: string; done: boolean; color: string | null }[]) => {
+          wordSpan.innerHTML = '';
+          for (const g of glyphs) {
+            const s = document.createElement('span');
+            s.textContent = g.ch;
+            if (!g.done) {
+              s.className = 'is-scrambling';
+            } else if (g.color) {
+              s.style.color = g.color;
+            }
+            wordSpan.appendChild(s);
           }
-        }, 300);
-        rotatorCancels.push(() => clearInterval(poll));
-      };
+        };
 
-      const rotateOnce = (idx: number) => {
-        if (cancelled) return;
-        const next = words[idx];
-        // Brief scramble of the CURRENT word, then time-derived decode to next.
-        // Width is CSS-pinned; no mid-rotation measurement.
-        wordSpan.textContent = scrambleString(wordSpan.textContent || next);
-        schedule(150, () => {
+        const setWord = (w: string) => {
+          wordSpan.textContent = w;
+          el.setAttribute(
+            'aria-label',
+            `${prefix.textContent ?? ''}${w}${punctSpan!.textContent ?? ''}`
+          );
+        };
+
+        // Rotation must only start AFTER the element's own first-load decode
+        // settles — and the safety net can force-resolve at 8s, so polling is
+        // the only deterministic gate (an estimate timer can overlap the tail).
+        const startWhenDecoded = (first: number) => {
+          let attempts = 0;
+          const poll = setInterval(() => {
+            if (cancelled) { clearInterval(poll); return; }
+            // Fail-safe: ~25s max, then give up rather than poll forever
+            if (++attempts > 80) { clearInterval(poll); return; }
+            const cur = (wordSpan.textContent || '').trim();
+            if (cur === words[0]) {
+              clearInterval(poll);
+              rotatorTimers.push(setTimeout(() => rotateOnce(first), rotateDelay));
+            }
+          }, 300);
+          rotatorCancels.push(() => clearInterval(poll));
+        };
+
+        const rotateOnce = (idx: number) => {
           if (cancelled) return;
-          const cancel = decodeWordTimeDerived(next, colorFn, paintWord);
-          rotatorCancels.push(cancel);
-          const nextIdx = (idx + 1) % words.length;
-          schedule(150 + 140 + next.length * 42 + 90 + rotateDelay, () => rotateOnce(nextIdx));
-        });
+          const next = words[idx];
+          // Brief scramble of the CURRENT word, then time-derived decode to next.
+          // Width is CSS-pinned; no mid-rotation measurement.
+          wordSpan.textContent = scrambleString(wordSpan.textContent || next);
+          rotatorTimers.push(
+            setTimeout(() => {
+              if (cancelled) return;
+              const cancel = decodeWordTimeDerived(next, colorFn, paintWord);
+              rotatorCancels.push(cancel);
+              const nextIdx = (idx + 1) % words.length;
+              rotatorTimers.push(
+                setTimeout(
+                  () => rotateOnce(nextIdx),
+                  150 + 140 + next.length * 42 + 90 + rotateDelay
+                )
+              );
+            }, 150)
+          );
+        };
+
+        setWord(words[0]);
+        startWhenDecoded(1);
+        return true;
       };
 
-      // Gate on the FIRST-load decode settling (polled, not estimated — the
-      // safety net can force-resolve at 8s, and an estimate would overlap
-      // the tail of a slow decode).
-      setWord(words[0]);
-      startWhenDecoded(1);
+      if (tryWire()) return;
+
+      // Spans absent — the scramble branch has flattened this element.
+      // Poll until its decode pass re-splits the markup (or give up after
+      // ~25s; the static sentence is a graceful fallback).
+      let attempts = 0;
+      const wirePoll = setInterval(() => {
+        if (cancelled) { clearInterval(wirePoll); return; }
+        if (++attempts > 80 || tryWire()) clearInterval(wirePoll);
+      }, 300);
+      rotatorCancels.push(() => clearInterval(wirePoll));
     });
 
     // Max-timeout safety net: force-resolve all pending scramble elements
