@@ -48,6 +48,7 @@ type ScoreResponse = {
   checks?: CheckResult[];
   tokensExtracted?: number;
   slop?: SlopResult;
+  originality?: OriginalityResult;
   error?: string;
 };
 
@@ -64,6 +65,20 @@ type SlopResult = {
   total: number;
   findings: SlopFinding[];
   convergences: string | null;
+};
+
+type OriginalitySignal = {
+  id: string;
+  label: string;
+  points: number;
+  evidence: string;
+};
+
+type OriginalityResult = {
+  points: number;
+  signals: OriginalitySignal[];
+  summary: string | null;
+  slopGateApplied: boolean;
 };
 
 type AuditResponse = {
@@ -883,6 +898,70 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             )}
           </div>
 
+          {/* Signals panel — the taste-separation audit. Two independent layers
+              that sit AROUND the weighted compliance score: the slop detector
+              (docks points for generic/template patterns) and the originality
+              detector (lifts points for bespoke craft signals). Surfacing both
+              with evidence makes the composite auditable — "compliant" and
+              "distinctive" are scored separately, never conflated. */}
+          {((result.originality && result.originality.signals.length > 0) || (result.slop && result.slop.findings.length > 0)) && (
+            <div className="score-signals-card">
+              <div className="score-signals-head">
+                <span className="score-signals-eyebrow">Craft signals & anti-slop audit</span>
+                <span className="score-signals-net">
+                  {result.originality && result.originality.points > 0 && (
+                    <span className="score-signals-net-pos">+{result.originality.points}</span>
+                  )}
+                  {result.slop && result.slop.total > 0 && (
+                    <span className="score-signals-net-neg">−{result.slop.total}</span>
+                  )}
+                </span>
+              </div>
+
+              {result.originality && result.originality.signals.length > 0 && (
+                <div className="score-signals-group">
+                  <p className="score-signals-group-title is-originality">
+                    Originality — positive craft signals
+                    <span className="score-signals-group-chip">+{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''}{result.originality.slopGateApplied ? ' · slop-gated ×0.5' : ''}</span>
+                  </p>
+                  <ul className="score-signals-list">
+                    {result.originality.signals.map((s) => (
+                      <li key={s.id} className="score-signal-row is-originality">
+                        <span className="score-signal-points">+{s.points}</span>
+                        <span className="score-signal-body">
+                          <span className="score-signal-label">{s.label}</span>
+                          <span className="score-signal-evidence">{s.evidence}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {result.slop && result.slop.findings.length > 0 && (
+                <div className="score-signals-group">
+                  <p className="score-signals-group-title is-slop">
+                    Anti-slop — generic/template patterns
+                    <span className="score-signals-group-chip is-neg">−{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''}</span>
+                  </p>
+                  <ul className="score-signals-list">
+                    {result.slop.findings.map((f) => (
+                      <li key={f.id} className="score-signal-row is-slop">
+                        <span className="score-signal-points is-neg">−{f.deduction}</span>
+                        <span className="score-signal-body">
+                          <span className="score-signal-label">{f.label}</span>
+                          {f.evidence && f.evidence.length > 0 && (
+                            <span className="score-signal-evidence">{f.evidence.slice(0, 3).join(' · ')}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Interactive Filter & Search Controls */}
           <div className="score-controls-card">
             <div className="score-filter-segmented">
@@ -1052,6 +1131,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             )}
             {result.slop && result.slop.total > 0 && (
               <span className="score-a11y-floor-notice"> · Anti-slop: −{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''} ({result.slop.findings.length} pattern{result.slop.findings.length !== 1 ? 's' : ''} detected)</span>
+            )}
+            {result.originality && result.originality.points > 0 && (
+              <span className="score-originality-notice"> · Originality: +{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''} — {result.originality.summary}{result.originality.slopGateApplied ? ' (halved by anti-slop gate)' : ''}</span>
             )}
           </p>
         </div>
