@@ -19,10 +19,10 @@ export const CONTRACT_VERSION = 'v0.4.0';
 // second literal. The hero and the leaderboard show the same number because
 // they read the same source: two frozen values for one fact is the exact
 // contradiction this module exists to kill. Current seed-derived self-score
-// (2026-07-29 leaderboard seed): 99.2% A (35P / 0F / 1W / 4S — the 4 skips
+// (2026-08-01 leaderboard seed): 100% A (37P / 0F / 0W / 3S — the 3 skips
 // are live-browser-only probes: sound toggle, Core Web Vitals, responsive
-// overflow, primary-button contrast). The number below is derived from
-// the seed row, never a second literal — update the seed to change it.
+// overflow). The number below is derived from the seed row, never a second
+// literal — update the seed to change it.
 function selfRow() {
   const row = SEED.find((s) => s.url === 'https://www.designesy.org');
   if (!row || row.score === null || row.grade === null) {
