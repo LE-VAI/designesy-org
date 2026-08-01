@@ -549,36 +549,63 @@ function checkNoAtlasNaming(html: string): CheckResult {
 }
 
 // v13 — REAL press-scale check. Scans CSS for scale() values in :active or
-// transition contexts. Contract: 0.96 cells, 0.985 cards, 0.995 large surfaces,
+// press-related contexts. Contract: 0.96 cells, 0.985 cards, 0.995 large surfaces,
 // all above the 0.95 floor. We look for scale(0.9[5-9]|0.99[0-9]) and confirm
-// at least one press-scale exists; below-floor values (scale(0.8x-0.94)) FAIL.
+// at least one press-scale exists; below-floor values in :active contexts FAIL.
+// Decorative below-floor scales (theme icons, hidden elements with opacity:0)
+// are downgraded to WARN — they are not press-feedback glitches.
 function checkPressScale(css: string): CheckResult {
   // Strip @keyframes blocks — scale(0) inside a ripple/particle keyframe is a
-  // legitimate animation starting point, not a press scale. We only care about
-  // scale() in :active, transition, or component-rule contexts (the press feel).
+  // legitimate animation starting point, not a press scale.
   const stripped = css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gi, '');
-  const allScales = stripped.match(/scale\(\s*([0-9.]+)\s*\)/gi) || [];
+
+  // Collect all press-scale candidates: scale() < 1 found in CSS rule blocks
+  // (not keyframes). We split by '}' to get individual rule blocks so we can
+  // inspect the selector context for each scale() value.
+  const ruleBlocks = stripped.split('}');
   const pressScales: number[] = [];
-  let belowFloor = false;
-  let belowVal = '';
-  for (const m of allScales) {
-    const num = parseFloat(m.replace(/scale\(\s*/i, '').replace(/\s*\)/, ''));
-    if (isNaN(num)) continue;
-    if (num < 1) {
-      pressScales.push(num);
-      if (num < 0.95 && num > 0) { belowFloor = true; belowVal = num.toString(); }
-      // scale(0) in a transition is suspicious but likely a hidden/initial state,
-      // not a press scale — treat as WARN signal, not FAIL.
-      if (num === 0) { belowFloor = true; belowVal = num.toString(); }
+  const decorativeBelowFloor: string[] = [];
+  let activeBelowFloor = false;
+  let activeBelowVal = '';
+
+  for (const block of ruleBlocks) {
+    const scaleMatch = block.match(/scale\(\s*([0-9.]+)\s*\)/i);
+    if (!scaleMatch) continue;
+    const num = parseFloat(scaleMatch[1]);
+    if (isNaN(num) || num >= 1) continue;
+
+    pressScales.push(num);
+
+    if (num > 0 && num < 0.95) {
+      // Check if this rule is a press/active context or a decorative context.
+      // Press contexts: :active, .is-pressed, [data-press], .press
+      const isPressContext = /:active|\.is-pressed|\[data-press|\.press\b/i.test(block);
+      if (isPressContext) {
+        activeBelowFloor = true;
+        activeBelowVal = num.toString();
+      } else {
+        // Decorative — theme icon, hidden element, SVG transform, etc.
+        // These are not press-feedback glitches.
+        decorativeBelowFloor.push(num.toString());
+      }
     }
   }
-  // scale(0) is only a FAIL if it's in an :active context (a real press scale
-  // below the floor). Otherwise it's a WARN (likely an animation initial state
-  // we couldn't fully strip, or a hidden element). Re-scan original CSS for
-  // :active + scale(0) specifically.
-  const activeScaleZero = /:active[^{]*\{[^}]*scale\(\s*0\s*\)/i.test(stripped);
-  if (activeScaleZero) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: 'found scale(0) in :active context — below 0.95 floor, reads as a glitch' };
-  if (pressScales.filter(s => s > 0 && s < 0.95).length > 0) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${belowVal}) below 0.95 floor` };
+
+  // FAIL only if a below-floor scale is in an :active/press context.
+  if (activeBelowFloor) {
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${activeBelowVal}) in :active context — below 0.95 floor, reads as a glitch` };
+  }
+
+  // Decorative below-floor scales: WARN (not a press glitch, but worth reviewing).
+  if (decorativeBelowFloor.length > 0) {
+    const realPressScales = pressScales.filter(s => s >= 0.95 && s < 1);
+    if (realPressScales.length > 0) {
+      const vals = realPressScales.map(s => s.toFixed(3)).join(', ');
+      return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}; ${decorativeBelowFloor.length} decorative scale(s) below floor (non-press, ignored)` };
+    }
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: `${decorativeBelowFloor.length} decorative scale(s) below 0.95 floor: ${decorativeBelowFloor.join(', ')} — not in :active context, but no valid press scales found` };
+  }
+
   const realPressScales = pressScales.filter(s => s > 0);
   if (realPressScales.length > 0) {
     const vals = realPressScales.map(s => s.toFixed(3)).join(', ');
@@ -1369,15 +1396,24 @@ function checkButtonTextVerb(html: string): CheckResult {
 
   const buttonTexts: string[] = [];
   let m;
+  // Strip keyboard shortcut hints that are fused to or appended after the
+  // button label — e.g. "Find⌘K", "Search ⌘+K", "Save Ctrl+S". These are
+  // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
+  // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
+  const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
+  const TEXT_SHORTCUT_RE = /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)\s*\+.*$/i;
   while ((m = buttonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
+    // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
+    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
     if (text) buttonTexts.push(text);
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     text = text.replace(ICON_PREFIX_RE, '').trim();
+    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
     if (text) buttonTexts.push(text);
   }
 
