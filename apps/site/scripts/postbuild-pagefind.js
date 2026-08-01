@@ -31,6 +31,86 @@ const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scr
 const SITE_DIR = path.join(ROOT, '.next');
 const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', 'pagefind');
 
+// Staging directory that mirrors the PUBLIC route tree. Pagefind stores the
+// file path of each indexed document as its result `url`, so a clean route
+// tree -> clean result URLs (e.g. /work/continuity, not /_next/static/chunks/
+// app/server/app/work/continuity.html). Eliminates the query-time prefix
+// rewrite in cleanHref() — the index is born with canonical URLs.
+const STAGE_DIR = path.join(ROOT, '.next', 'search-stage');
+
+// Next.js internal pages under server/app/ that are NOT real routes and must
+// not appear in search results. The glob already restricts to *.html, but
+// the postbuild copies anything matching, so filter these out explicitly.
+const INTERNAL_PATTERNS = [
+  /^_not-found\.html$/i,
+  /^_error\.html$/i,
+  /^(404|500)\.html$/i,
+  // Metadata-route handlers (only relevant if glob is widened beyond *.html)
+  /^(icon|apple-icon|favicon|opengraph-image|twitter-image|sitemap|robots|manifest)\./i,
+];
+
+/** Walk a directory tree, returning every file path relative to root. */
+function walkFiles(dir, base = dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkFiles(full, base));
+    else out.push(path.relative(base, full).replace(/\\/g, '/'));
+  }
+  return out;
+}
+
+/** Build a clean route-shaped staging dir from .next/server/app/*.html.
+ *  Each <route>.html becomes search-stage/<route>.html so Pagefind stores
+ *  /<route>.html as the URL (and with the default keep_index_url:false, the
+ *  trailing .html is stripped -> /<route>). Nested index.html files map to
+ *  their parent dir. Internal pages (_not-found, _error, 404/500) are
+ *  skipped so they never enter the index. */
+function buildStageIndex() {
+  const srcDir = path.join(SITE_DIR, 'server', 'app');
+  if (!fs.existsSync(srcDir)) {
+    console.warn('[postbuild-pagefind] no .next/server/app — skipping stage build');
+    return false;
+  }
+  // Clean any prior stage dir so stale pages don't linger from a previous build.
+  if (fs.existsSync(STAGE_DIR)) fs.rmSync(STAGE_DIR, { recursive: true, force: true });
+  fs.mkdirSync(STAGE_DIR, { recursive: true });
+
+  const files = walkFiles(srcDir);
+  let copied = 0, skipped = 0;
+  for (const rel of files) {
+    // Only stage HTML documents (skip .txt/.json/.png route-handler outputs).
+    if (!rel.endsWith('.html')) continue;
+    // Skip internal Next.js pages by filename (relative to server/app).
+    const basename = path.basename(rel);
+    if (INTERNAL_PATTERNS.some((re) => re.test(basename))) { skipped++; continue; }
+    // Skip metadata-route handler dirs (icon/, opengraph-image/, etc.).
+    if (/(^|\/)(icon|apple-icon|favicon|opengraph-image|twitter-image)(\/|$)/.test(rel)) { skipped++; continue; }
+
+    // Map the on-disk path to a clean route path:
+    //   work/continuity.html    -> work/continuity.html     (route /work/continuity)
+    //   foo/index.html          -> foo.html                (route /foo, not /foo/index)
+    //   index.html              -> .html (root)            (handled: "" -> keep as "" = root)
+    let routeRel = rel;
+    if (/\/index\.html$/i.test(routeRel)) routeRel = routeRel.replace(/\/index\.html$/i, '.html');
+    else if (routeRel === 'index.html') routeRel = '.html';
+
+    // Root page: index.html -> ".html" so Pagefind stores URL "/". An empty
+    // filename would be skipped by Pagefind, so write to a sentinel the
+    // Pagefind glob catches and let cleanHref's /index.html->/ handle it.
+    // Simpler: write root as index.html at stage root (route "/").
+    if (routeRel === '.html') routeRel = 'index.html';
+
+    const dest = path.join(STAGE_DIR, routeRel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(path.join(srcDir, rel), dest);
+    copied++;
+  }
+  console.log(`[postbuild-pagefind] staged ${copied} route HTML(s) to ${path.relative(ROOT, STAGE_DIR)} (${skipped} internal skipped)`);
+  return true;
+}
+
 function main() {
   if (!fs.existsSync(SITE_DIR)) {
     // No build output (e.g. `next dev`). The palette falls back to the curated
@@ -38,6 +118,9 @@ function main() {
     console.warn('[postbuild-pagefind] no .next — skipping index build');
     return;
   }
+
+  // Stage a clean route-shaped index dir so Pagefind stores canonical URLs.
+  if (!buildStageIndex()) return;
 
   const pagefindBin = path.join(
     ROOT,
@@ -47,16 +130,13 @@ function main() {
   );
 
   const args = [
-    '--site', SITE_DIR,
+    // Index the STAGED route tree (not .next/server/app), so result URLs are
+    // clean routes (e.g. /work/continuity) instead of build-chunk paths.
+    '--site', STAGE_DIR,
     '--output-path', OUT_DIR,
-    // The build dir contains Next INTERNAL pages we must not surface as search
-    // hits (error pages, not-found shell, RSC dev probes). The first build
-    // indexed 47 pages including /server/pages/500.html. Restrict the corpus to
-    // the real prerendered App Router documents and exclude every internal dir.
-    '--glob', 'server/app/**/*.html',
   ];
 
-  console.log(`[postbuild-pagefind] indexing .next -> ${path.relative(ROOT, OUT_DIR)}`);
+  console.log(`[postbuild-pagefind] indexing ${path.relative(ROOT, STAGE_DIR)} -> ${path.relative(ROOT, OUT_DIR)}`);
   try {
     execFileSync(pagefindBin, args, { stdio: 'inherit' });
     // Sanity: report how many fragments were written so a silent empty index is
