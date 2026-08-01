@@ -28,7 +28,7 @@ const REASONS = [
   {
     num: '02',
     title: 'The same checks grade everyone',
-    desc: 'The 23-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest SKIPs when a browser path is not enabled. If we ever fail our own contract, the score says so on the same surface.',
+    desc: 'The 40-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest SKIPs when a browser path is not enabled. If we ever fail our own contract, the score says so on the same surface.',
   },
   {
     num: '03',
@@ -150,7 +150,7 @@ export default function WhyPublicScorePage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Score any URL</span>
-                <span className="row-meta">Run the 23-check engine against your own site</span>
+                <span className="row-meta">Run the 40-check engine against your own site</span>
               </span>
             </Link>
             <Link

@@ -33,12 +33,12 @@ const CONTRACT_LAYERS = [
   {
     num: '03',
     name: 'Behavior',
-    desc: 'How an interface responds to touch, keyboard, sound, and reduced-motion preferences. Poise, Takt, and Cadence are the names Designesy gives these layers.',
+    desc: 'How an interface responds to touch, keyboard, sound, and reduced-motion preferences. Poise, Takt, Cadence, and Acoustics are the names Designesy gives these layers.',
   },
   {
     num: '04',
     name: 'Verification',
-    desc: 'A runnable checklist — 23+ automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.',
+    desc: 'A runnable checklist — 40 automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.',
   },
 ];
 
@@ -207,7 +207,7 @@ export default function WhatIsDesignVerificationPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Score a URL</span>
-                <span className="row-meta">Run the 23-check engine against any live site, including this one</span>
+                <span className="row-meta">Run the 40-check engine against any live site, including this one</span>
               </span>
             </Link>
             <Link
