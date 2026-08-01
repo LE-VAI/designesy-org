@@ -145,8 +145,8 @@ export const labs = {
     ],
     engine: 'Cuelume v0.1.0 (MIT, Daniel Belyi)',
     field_check: {
-      outcome: 'live — no field check card yet',
-      url: null,
+      outcome: 'pass with notes',
+      url: 'https://www.designesy.org/review/acoustics',
     },
   },
 } as const;
