@@ -103,6 +103,30 @@ const SURFACES = [
     meta: 'v0.4.0 public',
   },
   {
+    href: '/work',
+    label: 'Work',
+    desc: 'Case studies — shipped artifacts with before/after scores',
+    meta: '5 case studies',
+  },
+  {
+    href: '/methodology',
+    label: 'Methodology',
+    desc: 'The full 40-check scoring methodology — weights, math, grade bands',
+    meta: 'Fully transparent',
+  },
+  {
+    href: '/benchmarks',
+    label: 'Benchmarks',
+    desc: 'Designesy vs hallmark vs slop-eval — three tools, three questions',
+    meta: 'Competitive',
+  },
+  {
+    href: '/badge',
+    label: 'Badge',
+    desc: 'Embed the Verified by Designesy badge — links to a live score',
+    meta: 'SVG embed',
+  },
+  {
     href: '/pricing',
     label: 'Pricing',
     desc: 'Open core, paid continuity, enterprise',
@@ -482,6 +506,10 @@ export default function HomePage() {
                 {
                   title: 'Drift rule',
                   meta: 'Every new public UI cites a contract token or open tension',
+                },
+                {
+                  title: 'Evidenciary surfaces',
+                  meta: 'Methodology · Benchmarks · Badge · Specs · Graph — all open and documented',
                 },
               ].map((item, i) => (
                 <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
