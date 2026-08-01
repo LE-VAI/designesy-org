@@ -269,7 +269,7 @@ export default function PoiseLabPage() {
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts#design-system-contract">
-              Design system contract v0.1
+              Design system contract v0.4.0
             </Link>
             {' · '}
             <Link href="/contracts/design-system">Contract home</Link>
