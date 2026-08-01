@@ -2887,7 +2887,10 @@ button.pillar:hover::before {
 }
 
 .health-rack-svg {
-  width: clamp(70px, 7vw, 88px);
+  /* Floor set below the smallest target cell width so the gauge scales with
+     the viewport instead of pinning at 70px. At ≤720 the mobile block
+     (below) further tightens this; the floor here just prevents collapse. */
+  width: clamp(48px, 7vw, 88px);
   height: auto;
   display: block;
 }
@@ -4554,7 +4557,7 @@ button.pillar:hover::before {
 }
 
 .health-rack-svg {
-  width: clamp(70px, 7vw, 88px);
+  width: clamp(48px, 7vw, 88px);
   height: auto;
   display: block;
 }
@@ -9606,9 +9609,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-tile {
-  background: var(--surface-soft);
+  background: var(--surface-card-gradient), var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  box-shadow: var(--inner-light);
   padding: 0.75rem 0.5rem;
   text-align: center;
   display: flex;
@@ -9671,18 +9675,28 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
-  background: var(--surface-raised);
+  /* Elevation: card gradient + hairline top highlight (the site's glass cue)
+     over the raised plane, so the action reads as a lift, not a flat fill. */
+  background: var(--surface-card-gradient), var(--surface-raised);
   border: 1px solid var(--line);
+  box-shadow: var(--inner-light);
   color: var(--ink);
   cursor: pointer;
   transition: background var(--duration-fast) var(--ease-out),
               border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out),
               color var(--duration-fast) var(--ease-out);
 }
 
 .score-action-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-lifted);
   border-color: var(--signal);
+  box-shadow: var(--inner-light);
+  transform: translateY(-1px);
+}
+.score-action-btn:active {
+  transform: translateY(0);
 }
 
 /* Share buttons — icon + label, same height as other action buttons.
@@ -9920,9 +9934,11 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-filter-tab.is-active {
-  background: var(--surface);
+  background: var(--surface-card-gradient), var(--surface-lifted);
   color: var(--ink);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  /* Floated glass: hairline highlight + small lift, softer than the old
+     opaque drop shadow — keeps the segmented track readable in both themes. */
+  box-shadow: var(--inner-light), 0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 .score-tab-count {
@@ -10045,16 +10061,18 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-item {
-  background: var(--surface-raised);
+  background: var(--surface-card-gradient), var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  box-shadow: var(--inner-light);
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
   position: relative;
   /* Staggered entrance — each card fades up in sequence.
      animationDelay set inline per-index (40ms step, capped at 600ms).
@@ -10076,13 +10094,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-item:hover {
-  background: var(--surface-soft);
+  background: var(--surface-lifted);
   border-color: var(--line-strong);
+  box-shadow: var(--inner-light);
 }
 
 .score-card-item.is-expanded {
   border-color: var(--signal);
-  background: rgba(1, 51, 203, 0.04);
+  /* Raised open panel: signal tint over the lifted plane + inner highlight,
+     so the expanded drawer reads as one elevated surface, not a recolor. */
+  background: linear-gradient(rgba(1, 51, 203, 0.06), rgba(1, 51, 203, 0.06)), var(--surface-lifted);
+  box-shadow: var(--inner-light), 0 8px 30px rgba(0, 0, 0, 0.28);
 }
 
 .score-card-main {
@@ -12009,8 +12031,11 @@ select {
   align-items: center;
   gap: 0.55rem;
   width: 100%;
-  min-height: 2rem;
-  padding: 0.2rem 0.4rem;
+  /* Fixed row height so name, bar, and score share one center axis on every
+     row — was min-height:2rem, which let taller rows push the score closer to
+     the NEXT row's bar (the alignment drift the eye catches). */
+  height: 2rem;
+  padding: 0 0.4rem;
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -12062,12 +12087,14 @@ select {
 }
 
 .score-cat-legend-score {
-  flex: 0 0 auto;
-  min-width: 1.6rem;
+  /* Fixed right-aligned value column on the shared row axis — tabular-nums
+     keeps digits monospaced so 8 / 88 / 100 all end at the same edge. */
+  flex: 0 0 2.2rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--ink);
+  line-height: 1;
 }
 
 /* ── Scoring rubric (published math) ────────────────────────────────────── */
@@ -13062,13 +13089,29 @@ select {
 
   /* -- Contract-health rack: even 4-col modules inside the panel so the 8
      gauges read as two aligned rows. Grid sits on the panel's 16px padding,
-     i.e. gutter(16) + panel(16) = 32px from the viewport edge — on-grid. -- */
+     i.e. gutter(16) + panel(16) = 32px from the viewport edge — on-grid.
+     The SVG is now sized to its cell (not a fixed px clamp), so on narrow
+     phones each gauge shrinks to fit its column instead of pinning at 70px
+     and bleeding edge-to-edge. Numeral scales with the gauge so 95/88 never
+     overflows the ring. -- */
   .health-rack-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.875rem 0.5rem; /* 14px row / 8px column */
   }
   .health-rack-module {
     gap: 0.5rem;
+    min-width: 0;
+  }
+  .health-rack-svg {
+    /* Fill the column; the cell's minmax(0,1fr) + this width:100% is what
+       actually stops the bleed. vw keeps it proportional as the phone grows. */
+    width: min(100%, 15vw);
+    height: auto;
+  }
+  .health-rack-numeral {
+    /* 24px fixed overflowed the small rings — scale with the gauge via
+       container-ish sizing: a clamp tied to viewport so it stays inside. */
+    font-size: clamp(15px, 4.2vw, 24px);
   }
 
   /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
@@ -13105,6 +13148,23 @@ select {
   }
   .section-heading-badge {
     align-items: flex-start;
+  }
+}
+
+/* Very-narrow phones (iPhone SE 1st gen 320px and below): 4 columns still
+   crowd even when scaled, so drop the rack to 2-across × 4 rows. Each gauge
+   gets a full half-cell — generous padding, no edge contact. This is the
+   guaranteed-no-bleed floor the 4-col rule can't promise under 360px. */
+@media (max-width: 360px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.75rem;
+  }
+  .health-rack-svg {
+    width: min(100%, 30vw);
+  }
+  .health-rack-numeral {
+    font-size: clamp(15px, 6vw, 22px);
   }
 }
 
