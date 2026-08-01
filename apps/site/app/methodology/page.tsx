@@ -67,7 +67,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (11), weighted highest at 18%.',
+  cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (12), weighted highest at 18%.',
   accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
   semantic: 'Reserved weight (12%) — declared in the engine CATEGORY_WEIGHTS table but no check currently returns category: "semantic". The semantic-HTML and AI-disclosure checks (v07, v34) are categorized as "identity" in the engine. This weight is held in reserve for future semantic-structure checks (RDFa, microdata, Open Graph). Documented for transparency; does not affect any site\'s score today.',
   copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in v0.4.0. 8% weight.',
@@ -490,10 +490,10 @@ export default function MethodologyPage() {
           <h1 className="surface-title" data-scramble>Methodology</h1>
           <p className="surface-lede">
             The full scoring methodology behind the Designesy 40-check engine.
-            Deterministic, no LLM, no human judgment. Every check is a regex or
-            token-resolution test against the live fetched CSS and HTML. This
-            page documents exactly what the engine measures, how the score is
-            computed, and what it cannot measure.
+            Deterministic, no LLM, no human judgment. Every check is a regex,
+            token-resolution, or spec-linter test against the live fetched CSS
+            and HTML. This page documents exactly what the engine measures, how
+            the score is computed, and what it cannot measure.
           </p>
           <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
             <Link className="button primary" href="/score" data-cuelume-press>
@@ -538,6 +538,9 @@ export default function MethodologyPage() {
               <li><a href="#grade-bands">Grade bands</a></li>
               <li><a href="#score-distribution">Score distribution</a></li>
               <li><a href="#a11y-floor">Accessibility floor</a></li>
+              <li><a href="#anti-slop">Anti-slop deduction</a></li>
+              <li><a href="#originality-lift">Originality lift</a></li>
+              <li><a href="#hard-fail-ceilings">Hard-fail ceilings</a></li>
               <li><a href="#what-engine-measures">What the engine measures</a></li>
               <li><a href="#what-engine-skips">What the engine skips</a></li>
               {CHECKS_BY_CATEGORY.map((g) => (
@@ -557,7 +560,9 @@ export default function MethodologyPage() {
               <strong>{CATEGORIES.length} weighted categories</strong>.
               Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
               <code>FAIL</code>, or <code>SKIP</code>. The score is a weighted
-              average — not a simple count.
+              average — not a simple count — then adjusted by three further
+              layers: anti-slop deduction, originality lift, and hard-fail
+              ceilings.
             </p>
             <p>
               <strong>SKIP</strong> checks are excluded from both numerator and
@@ -575,16 +580,31 @@ export default function MethodologyPage() {
             WARN  &rarr; 0.5 &times; checkWeight<br />
             FAIL  &rarr; 0<br />
             SKIP  &rarr; excluded (weight &times; 0, not counted in total)<br /><br />
-            <span className="formula-comment"># Composite score</span><br />
-            score = round( &sum;(weightedPoints) / &sum;(weightedTotal) &times; 1000 ) / 10<br /><br />
+            <span className="formula-comment"># Step 1 — Weighted compliance score</span><br />
+            weightedScore = round( &sum;(weightedPoints) / &sum;(weightedTotal) &times; 1000 ) / 10<br /><br />
+            <span className="formula-comment"># Step 2 — Anti-slop deduction (12 S-rules, up to -20pts)</span><br />
+            score = max(0, weightedScore - slopTotal)<br />
+            slopTotal = min(&sum;(per-rule deductions), 20)<br /><br />
+            <span className="formula-comment"># Step 3 — Originality lift (7 O-signals, up to +8pts)</span><br />
+            score = min(100, score + originalityPoints)<br />
+            originalityPoints = min(rawOriginality, 8) &nbsp;<span className="formula-comment"># halved if slop &ge; 12</span><br /><br />
+            <span className="formula-comment"># Step 4 — Accessibility floor (a11y &lt; 60% &rarr; cap at 70)</span><br />
+            if (a11yPct &lt; 60) score = min(score, 70)<br /><br />
+            <span className="formula-comment"># Step 5 — Hard-fail ceilings (6 checks cap at 65/70/75)</span><br />
+            if (v06 FAIL) score = min(score, 65) &nbsp;<span className="formula-comment"># contrast</span><br />
+            if (v22/v02/v16 FAIL) score = min(score, 70) &nbsp;<span className="formula-comment"># CTA contrast, overflow, rem</span><br />
+            if (v24/v25 FAIL) score = min(score, 75) &nbsp;<span className="formula-comment"># touch targets, headings</span><br /><br />
             <span className="formula-comment"># Per-category sub-score (same math, scoped to one category)</span><br />
             categoryScore = round( &sum;(catPoints) / &sum;(catWeight) &times; 1000 ) / 10
           </div>
           <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
             The <code>round(&hellip; &times; 1000) / 10</code> pattern produces a
-            one-decimal-place score (e.g. 95.2, not 95.2347). The same math runs
-            per-category, producing the constellation breakdown shown on the
-            leaderboard and score pages.
+            one-decimal-place score (e.g. 95.2, not 95.2347). The full pipeline
+            is five steps: weighted compliance &rarr; anti-slop deduction &rarr;
+            originality lift &rarr; accessibility floor &rarr; hard-fail ceilings.
+            Steps 2-3 are score modifiers (slop/originality); steps 4-5 are
+            protective caps. The per-category sub-scores use only step 1 and are
+            shown as the constellation breakdown on the leaderboard and score pages.
           </p>
         </section>
 
@@ -736,6 +756,121 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up methodology-section" id="anti-slop">
+          <h2 className="doctrine-heading">Anti-slop deduction</h2>
+          <div className="methodology-prose">
+            <p>
+              The compliance checks above verify that a site ships the contract
+              primitives. But a site can meet every contract rule and still be
+              generic — the &ldquo;compliant but slop&rdquo; failure. The engine
+              runs a second pass: <strong>12 anti-slop rules (S1&ndash;S12)</strong>{' '}
+              that detect the most recognizable AI-template design patterns.
+              Each detected pattern subtracts points directly from the weighted
+              score — not from the check scores. This makes taste part of the
+              number, not just a human judgment.
+            </p>
+            <p>
+              <strong>Per-rule cap: 5 points.</strong> Total slop deduction
+              capped at <strong>20 points</strong>. The deduction is flat (not
+              percentage-scaled) so it cannot be gamed by making the site more
+              minimal. Provenance: Impeccable, solodesign, Web AI Slop, and
+              independent research &mdash; wave 1 covers the 12 highest-signal
+              patterns.
+            </p>
+          </div>
+          <div className="methodology-callout" style={{ background: 'var(--surface-soft)', borderColor: 'var(--line)' }}>
+            <strong>S1&ndash;S12 patterns:</strong> overused fonts (Inter/Roboto/etc),
+            full-page gradients, purple/violet gradient overlays, gradient text,
+            Tailwind default palette hexes, repeated identical cards, emoji as
+            icons, &ldquo;AI-powered&rdquo; pill badges, Lorem ipsum, single
+            font family, marketing buzzwords, placeholder/stock image URLs.
+            The full remediation text for each rule lives in the engine source.
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="originality-lift">
+          <h2 className="doctrine-heading">Originality lift</h2>
+          <div className="methodology-prose">
+            <p>
+              Symmetric to the slop deduction: <strong>7 originality signals
+              (O1&ndash;O7)</strong> add points for positive craft detectable
+              from CSS/HTML text alone. A compliant-but-generic site earns no
+              lift; a bespoke site is rewarded. Cap: <strong>+8 points</strong>{' '}
+              so originality nudges rather than dominates the weighted compliance
+              base. Score is clamped to 100.
+            </p>
+            <p>
+              <strong>Slop gate:</strong> if a site has heavy slop (&ge;12
+              deduction points), the originality lift is halved. Heavily-sloppy
+              sites that also show originality signals are usually
+              heavily-customized templates &mdash; the &ldquo;originality&rdquo;
+              is framework-driven, not authorial.
+            </p>
+          </div>
+          <div className="methodology-callout" style={{ background: 'var(--surface-soft)', borderColor: 'var(--line)' }}>
+            <strong>O1&ndash;O7 signals:</strong> bespoke easing curves (incl.
+            spring/overshoot), modern layout primitives (clamp/container
+            queries/subgrid), typographic scale discipline, distinctive color
+            system, custom font stack, motion-system depth, semantic design
+            tokens. Each signal contributes 1&ndash;5 points based on depth.
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up methodology-section" id="hard-fail-ceilings">
+          <h2 className="doctrine-heading">Hard-fail ceilings</h2>
+          <div className="methodology-prose">
+            <p>
+              Certain check failures are severe enough to cap the score
+              regardless of other strengths &mdash; a site that FAILs on contrast
+              or horizontal overflow cannot be A-grade no matter how good its
+              tokens are. These are design-integrity failures, not style
+              preferences. Caps are applied <em>after</em> the a11y floor (the
+              floor wins over ceilings).
+            </p>
+          </div>
+          <table className="weight-table">
+            <thead>
+              <tr>
+                <th>Check</th>
+                <th className="wt-num">Cap</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="wt-name"><code>v06</code> Contrast readable</td>
+                <td className="wt-num">65</td>
+                <td style={{ color: 'var(--muted)' }}>Text is unreadable for many users &mdash; fundamental legibility failure</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>v22</code> CTA contrast</td>
+                <td className="wt-num">70</td>
+                <td style={{ color: 'var(--muted)' }}>Primary CTA text is hard to read &mdash; the most important interaction</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>v02</code> Horizontal overflow</td>
+                <td className="wt-num">70</td>
+                <td style={{ color: 'var(--muted)' }}>Content is cut off or scrolls sideways on smaller viewports</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>v16</code> Rem scale</td>
+                <td className="wt-num">70</td>
+                <td style={{ color: 'var(--muted)' }}>Root font-size below 16px triggers iOS Safari auto-zoom</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>v24</code> Touch targets</td>
+                <td className="wt-num">75</td>
+                <td style={{ color: 'var(--muted)' }}>Interactive elements below 44px &mdash; inaccessible on touch devices</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>v25</code> Heading hierarchy</td>
+                <td className="wt-num">75</td>
+                <td style={{ color: 'var(--muted)' }}>Multiple h1 or skipped levels &mdash; document outline is broken</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
         <section className="doctrine-section fade-up methodology-section" id="what-engine-measures">
           <h2 className="doctrine-heading">What the engine measures</h2>
           <div className="methodology-prose">
@@ -743,8 +878,8 @@ export default function MethodologyPage() {
               The engine fetches the target URL, extracts all CSS (inline{' '}
               <code>&lt;style&gt;</code> blocks + linked{' '}
               <code>&lt;link rel=&quot;stylesheet&quot;&gt;</code> files), parses{' '}
-              <code>:root</code> custom properties, and runs each check as a regex
-              or token-resolution test. It does <strong>not</strong> render the
+              <code>:root</code> custom properties, and runs each check as a regex,
+              token-resolution, or spec-linter test. It does <strong>not</strong> render the
               page, execute JavaScript, or interact with the DOM. This means:
             </p>
             <p>
@@ -850,8 +985,10 @@ export default function MethodologyPage() {
         </section>
 
         <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
-          Methodology v1 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
-          deterministic, no LLM · engine source at{' '}
+          Methodology v2 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
+          12 slop rules (S1&ndash;S12, up to -20pts) · 7 originality signals
+          (O1&ndash;O7, up to +8pts) · 6 hard-fail ceilings · deterministic, no
+          LLM · engine source at{' '}
           <Link href="/api/score" style={{ color: 'var(--muted)' }}>/api/score</Link> ·{' '}
           contract at{' '}
           <Link href="/contracts/design-system.json" style={{ color: 'var(--muted)' }}>/contracts/design-system.json</Link>
