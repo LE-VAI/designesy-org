@@ -11,9 +11,9 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
-    'Designesy design system contract v0.4.0 — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Copywriting rules adopted.',
+    `Designesy design system contract v${designSystemContract.version} — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Copywriting rules adopted.`,
   path: '/contracts/design-system',
-  ogTitle: 'Design system contract · v0.4.0',
+  ogTitle: `Design system contract · v${designSystemContract.version}`,
   ogDescription:
     'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, Cadence typography, and Copywriting rules adopted. Human overview with machine export.',
   twitterDescription:
@@ -28,7 +28,7 @@ const SECTIONS = [
   { title: 'Motion', meta: 'Duration, easing, reduced-motion' },
   { title: 'Components', meta: 'Behavior and states' },
   { title: 'Accessibility', meta: 'Focus, preference, landmarks' },
-  { title: 'Copywriting', meta: 'UX copy principles (v0.4.0)' },
+  { title: 'Copywriting', meta: `UX copy principles (v${designSystemContract.copywriting.adopted_in})` },
   { title: 'Verification', meta: 'How to know the system still holds' },
 ];
 
@@ -210,7 +210,7 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab One · Poise</span>
                 <span className="row-meta">
-                  Source lab · interaction rules adopted in v0.1.1
+                  Source lab · interaction rules adopted in v{c.interaction.adopted_in}
                 </span>
               </span>
             </Link>
@@ -225,7 +225,7 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab Two · Takt</span>
                 <span className="row-meta">
-                  Source lab · interface-feel rules adopted in v0.1.2
+                  Source lab · interface-feel rules adopted in v{c.takt.adopted_in}
                 </span>
               </span>
             </Link>
@@ -240,7 +240,7 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Lab Three · Cadence</span>
                 <span className="row-meta">
-                  Source lab · typography rules adopted in v0.1.3
+                  Source lab · typography rules adopted in v{c.cadence.adopted_in}
                 </span>
               </span>
             </Link>
@@ -311,7 +311,7 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Poise · adopted in v0.1.1
+              Poise · adopted in v{c.interaction.adopted_in}
             </p>
             <p>
               Lab One portable rules are contract material: wordmark breath,
@@ -327,7 +327,7 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Takt adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Takt · adopted in v0.1.2
+              Takt · adopted in v{c.takt.adopted_in}
             </p>
             <p>
               Lab Two portable rules are contract material: concentric radii,
@@ -345,7 +345,7 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Cadence adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Cadence · adopted in v0.1.3
+              Cadence · adopted in v{c.cadence.adopted_in}
             </p>
             <p>
               Lab Three portable rules are contract material: font smoothing
@@ -366,7 +366,7 @@ export default function DesignSystemContractPage() {
           <h2 className="doctrine-heading">Copywriting adoption</h2>
           <div className="definition">
             <p className="definition-label">
-              Copywriting · adopted in v0.4.0
+              Copywriting · adopted in v{c.copywriting.adopted_in}
             </p>
             <p>
               UX copy principles from NN/g, Polaris, IBM Carbon, Microsoft
