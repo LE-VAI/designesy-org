@@ -45,14 +45,17 @@ const CONTRACT_ANTI = [
 ];
 
 const PRIMITIVE_COLORS = [
-  { token: '--ink', value: '#ffffff', role: 'Primary text / foreground' },
+  { token: '--ink', value: '#f5f5f7', role: 'Primary text / foreground' },
   { token: '--muted', value: '#a0a0a0', role: 'Secondary text' },
-  { token: '--muted-dim', value: '#6b6b6b', role: 'Tertiary / meta text' },
-  { token: '--paper', value: '#000000', role: 'Page background' },
-  { token: '--surface', value: '#0a0a0a', role: 'Card / panel base' },
-  { token: '--surface-raised', value: '#111111', role: 'Elevated surface' },
+  { token: '--muted-dim', value: '#7d7d7d', role: 'Tertiary / meta text' },
+  { token: '--paper', value: '#010102', role: 'Page background' },
+  { token: '--surface', value: '#0a0a0c', role: 'Card / panel base' },
+  { token: '--surface-raised', value: '#121216', role: 'Elevated surface' },
+  { token: '--surface-lifted', value: '#16161b', role: 'Lifted / hover panel' },
   { token: '--signal', value: '#0133cb', role: 'Brand signal accent' },
   { token: '--signal-light', value: '#3358e8', role: 'Signal hover / focus lift' },
+  { token: '--signal-access', value: '#5d7bff', role: 'Accessible signal (AA on dark)' },
+  { token: '--paper-on-signal', value: '#ffffff', role: 'Text on signal fill' },
   { token: '--activation', value: '#fecc34', role: 'Activation highlight (reserved)' },
 ];
 
@@ -70,6 +73,10 @@ const PRIMITIVE_SHAPE_MOTION = [
   { token: '--radius-sm', value: '4px', role: 'Compact controls / nav chips' },
   { token: '--maxw', value: '1080px', role: 'Content shell max width' },
   { token: '--duration', value: '0.6s', role: 'Primary entrance duration' },
+  { token: '--duration-quick', value: '150ms', role: 'Close, swap, tooltip' },
+  { token: '--duration-fast', value: '250ms', role: 'Open, hover transition, icon swap' },
+  { token: '--duration-medium', value: '350ms', role: 'Panel close, toast' },
+  { token: '--duration-slow', value: '400ms', role: 'Panel open, skeleton reveal' },
   { token: '--ease', value: 'cubic-bezier(0.22, 0.61, 0.36, 1)', role: 'Default ease' },
   { token: '--ease-out', value: 'cubic-bezier(0.23, 1, 0.32, 1)', role: 'Exit / settle' },
   { token: '--ease-in-out', value: 'cubic-bezier(0.77, 0, 0.175, 1)', role: 'Symmetric motion' },
@@ -205,12 +212,14 @@ const VERIFICATION = [
 ];
 
 const OPEN_TENSIONS = [
-  'Light theme is not contracted — dark technical foundation is provisional doctrine',
-  '--activation exists but has limited public surface usage; needs role discipline',
-  'Inter is named in the stack but not self-hosted; system fallback is intentional for now',
-  'Shadow tokens exist; elevation language is still light-touch (borders lead, shadows secondary)',
+  'Light theme is not contracted — dark technical foundation is provisional',
+  '--activation exists but has limited public surface usage',
+  'Inter is named in the stack but not self-hosted; system fallback is intentional',
+  'Shadow tokens exist; elevation language is still light-touch (borders lead)',
   'Human contract page and machine export remain dual sources until a single generator owns both',
-  'Block-axis logical properties not yet migrated — direction-ready is partial (inline-axis only)',
+  'Keyboard-path verification packets are published for Poise only — not every public route',
+  'Inline-axis logical properties (margin-inline, padding-inline) applied — block-axis and border-inline remain physical',
+  'Block-axis logical properties (margin-block-start/end) not yet migrated — direction-ready is partial',
   'border-inline-start not yet used — decorative borders still physical',
 ];
 
@@ -334,13 +343,58 @@ export default function ContractsPage() {
               </span>
             </Link>
             <Link
-              href="/labs/poise"
+              href="/contracts/tokens"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">02</span>
+              <span className="row-body">
+                <span className="row-title">Tokens · v0.1.0</span>
+                <span className="row-meta">
+                  W3C DTCG 2025.10 format conformance — color spaces, custom types, validation
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts/a11y"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">03</span>
+              <span className="row-body">
+                <span className="row-title">Accessibility · v0.1.0</span>
+                <span className="row-meta">
+                  WCAG 2.2 AA via axe-core 4.12.1 — 11 verification checks
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts/motion"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">04</span>
+              <span className="row-body">
+                <span className="row-title">Motion · v0.1.0</span>
+                <span className="row-meta">
+                  Lottie spec v1.0.1 + Ten Non-Negotiable Motion Standards — 10 verification checks
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Poise adopted</span>
                 <span className="row-meta">
@@ -355,11 +409,56 @@ export default function ContractsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">03</span>
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Takt adopted</span>
                 <span className="row-meta">
                   Lab Two interface-feel rules adopted in contract v0.1.2
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/cadence"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">07</span>
+              <span className="row-body">
+                <span className="row-title">Cadence adopted</span>
+                <span className="row-meta">
+                  Lab Three typography rules adopted in contract v0.1.3
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts#09e-copywriting"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">08</span>
+              <span className="row-body">
+                <span className="row-title">Copywriting adopted</span>
+                <span className="row-meta">
+                  UX copy principles adopted in v0.4.0 — NN/g, Polaris, Carbon, Fluent, HIG
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts/skill"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">09</span>
+              <span className="row-body">
+                <span className="row-title">Agent skill export</span>
+                <span className="row-meta">
+                  SKILL.md format for AI coding agents — same source as JSON
                 </span>
               </span>
             </Link>
@@ -370,7 +469,7 @@ export default function ContractsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">04</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Field check</span>
                 <span className="row-meta">
@@ -522,7 +621,7 @@ export default function ContractsPage() {
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#ffffff' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#f5f5f7' }} />
                   <span className="demo-swatch-name">--ink</span>
                 </div>
                 <div className="demo-swatch">
@@ -530,7 +629,7 @@ export default function ContractsPage() {
                   <span className="demo-swatch-name">--muted</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#6b6b6b' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#7d7d7d' }} />
                   <span className="demo-swatch-name">--muted-dim</span>
                 </div>
                 <div className="demo-swatch">
@@ -540,6 +639,10 @@ export default function ContractsPage() {
                 <div className="demo-swatch">
                   <div className="demo-swatch-chip" style={{ background: '#3358e8' }} />
                   <span className="demo-swatch-name">--signal-light</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#5d7bff' }} />
+                  <span className="demo-swatch-name">--signal-access</span>
                 </div>
                 <div className="demo-swatch">
                   <div className="demo-swatch-chip" style={{ background: '#fecc34' }} />
@@ -554,16 +657,20 @@ export default function ContractsPage() {
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#000000', borderColor: 'var(--line)' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#010102', borderColor: 'var(--line)' }} />
                   <span className="demo-swatch-name">--paper</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#0a0a0a' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#0a0a0c' }} />
                   <span className="demo-swatch-name">--surface</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#111111' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#121216' }} />
                   <span className="demo-swatch-name">--raised</span>
+                </div>
+                <div className="demo-swatch">
+                  <div className="demo-swatch-chip" style={{ background: '#16161b' }} />
+                  <span className="demo-swatch-name">--lifted</span>
                 </div>
                 <div className="demo-swatch">
                   <div className="demo-swatch-chip" style={{ background: 'rgba(255,255,255,0.03)' }} />
@@ -850,7 +957,7 @@ export default function ContractsPage() {
           <CheckGrid items={checkItemsFromStrings(ACOUSTIC_TOKENS_REF)} />
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id="09e-copywriting">
           <h2 className="doctrine-heading">09e · Copywriting (v0.4.0)</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             UX copy principles adopted in v0.4.0 from NN/g, Polaris, IBM
