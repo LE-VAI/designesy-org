@@ -157,6 +157,18 @@ function topCategories(r: ScoreResponse, mode: 'best' | 'worst'): { label: strin
 // Sort order for check cards — failures and warnings first, passes/skips last.
 // This surfaces "what to fix first" without a separate quick-wins block, per
 // the Lighthouse pattern (Opportunities/Diagnostics before Passed checks).
+// Central percentage formatter. Scores arrive as numbers that can carry
+// floating-point tails (weighted WARN paths produce e.g. 68.99999999999999,
+// or long-history/API values like 68.9). Always render through fmtPct so a
+// raw float never truncates mid-cell. Integers stay integers (100, not 100.0);
+// fractions keep one decimal (68.9). The "%" glyph is appended by the caller
+// where markup needs it as a separate node.
+function fmtPct(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, SKIP: 2, PASS: 3 };
 
 function normalizeInput(input: string): string {
@@ -325,7 +337,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       `# Designesy Verification Receipt`,
       `Site: ${scoredUrl}`,
       `Verdict: ${verdictLine(result)}`,
-      `Grade: ${result.grade} (${result.score}%)`,
+      `Grade: ${result.grade} (${fmtPct(result.score)}%)`,
       ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
       `Assessed: ${new Date().toISOString()}`,
       `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Skip: ${result.skip}`,
@@ -340,7 +352,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       for (const k of catKeys) {
         const v = cats[k];
         const label = CATEGORIES.find((c) => c.key === k)?.label || k;
-        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : v.score + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.skip}s`);
+        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : fmtPct(v.score) + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.skip}s`);
       }
     }
     lines.push(``, `## Check Summary`);
@@ -357,7 +369,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     ? `${window.location.origin}/score?url=${encodeURIComponent(scoredUrl)}`
     : '';
   const shareText = result?.grade
-    ? `Designesy score: Grade ${result.grade} (${result.score}%) — ${scoredUrl}`
+    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%) — ${scoredUrl}`
     : `Score any site against the Designesy design system contract`;
 
   function copyShareLink() {
@@ -638,7 +650,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
               <div className="score-hero-meta">
                 <div className="score-percent-badge">
-                  <span className="score-percent-value">{result.score}%</span>
+                  <span className="score-percent-value">{fmtPct(result.score)}%</span>
                   <span className="score-percent-label">Legitimacy Score</span>
                   {delta !== null && delta !== 0 && (
                     <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
@@ -654,9 +666,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     if (!best.label) return null;
                     return (
                       <>
-                        Strongest: <strong>{best.label} {best.score}%</strong>
+                        Strongest: <strong>{best.label} {fmtPct(best.score)}%</strong>
                         {worst.label && worst.label !== best.label && (
-                          <> · Weakest: <strong>{worst.label} {worst.score}%</strong></>
+                          <> · Weakest: <strong>{worst.label} {fmtPct(worst.score)}%</strong></>
                         )}
                       </>
                     );
@@ -1178,7 +1190,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     {truncateUrl(entry.url)}
                   </span>
                   <span className="score-history-meta">
-                    {(Math.round(entry.score * 10) / 10)}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
+                    {fmtPct(entry.score)}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
                   </span>
                 </div>
                 <button
