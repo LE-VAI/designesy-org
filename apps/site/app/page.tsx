@@ -508,7 +508,7 @@ export default function HomePage() {
                   meta: 'Every new public UI cites a contract token or open tension',
                 },
                 {
-                  title: 'Evidenciary surfaces',
+                  title: 'Evidentiary surfaces',
                   meta: 'Methodology · Benchmarks · Badge · Specs · Graph — all open and documented',
                 },
               ].map((item, i) => (
