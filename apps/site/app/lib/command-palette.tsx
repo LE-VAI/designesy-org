@@ -198,14 +198,35 @@ function loadPagefind(): Promise<PagefindApi | null> {
 
 /** Strip the Pagefind-injected trailing slash/anchors so hrefs stay clean. */
 function cleanHref(url: string): string {
-  // Pagefind can return internal chunk paths (e.g. /_next/static/chunks/...)
-  // for pages it indexed during build — those are not navigable routes.
-  // Filter them out and return an empty string so the caller skips the hit.
-  if (url.includes('/_next/') || url.includes('/static/chunks/') || url.endsWith('.html')) {
-    return '';
+  // Pagefind indexes `.next/server/app/**/*.html` during postbuild, so every
+  // result URL is a build-chunk path like
+  //   /_next/static/chunks/app/server/app/work/continuity.html
+  //   /_next/static/chunks/app/server/app/                 (root page)
+  //   /_next/static/chunks/app/server/app/_not-found.html  (Next internal 404)
+  // These are NOT navigable routes. Before this rewrite, cleanHref filtered
+  // them ALL out and returned "" — which meant Pagefind contributed zero
+  // results in production and the "hybrid search" was local-INDEX-only.
+  //
+  // Rewrite the chunk path to its canonical route by stripping the
+  //   /_next/static/chunks/app/server/app/  prefix and the  .html  suffix.
+  // The root page (trailing slash, no file) maps to "/". Internal Next.js
+  // pages prefixed with "_" (e.g. _not-found) are filtered out — they are
+  // not real routes (/_not-found returns 404). Real routes that happen to
+  // start with an underscore do not exist in the App Router convention.
+  const CHUNK_PREFIX = '/_next/static/chunks/app/server/app/';
+  if (url.startsWith(CHUNK_PREFIX) || url === CHUNK_PREFIX.slice(0, -1)) {
+    let route = url.slice(CHUNK_PREFIX.length);
+    if (route.endsWith('.html')) route = route.slice(0, -5);
+    if (route === '' ) route = '/';
+    else if (route.endsWith('/') && route !== '/') route = route.slice(0, -1);
+    if (!route.startsWith('/')) route = '/' + route;
+    // Filter Next.js internal pages (_not-found, _error, etc.) — not navigable.
+    if (route === '/_not-found' || route.startsWith('/_')) return '';
+    return route;
   }
-  // Pagefind returns absolute-ish paths like "/contracts/a11y" — keep the
-  // pathname only and drop any fragment so Enter goes to the page top.
+
+  // Non-chunk Pagefind URLs (rare — meta-tagged canonical routes): keep the
+  // pathname only and drop any fragment/query so Enter goes to the page top.
   try {
     const u = new URL(url, window.location.origin);
     return u.pathname.replace(/\/$/, '') || '/';
