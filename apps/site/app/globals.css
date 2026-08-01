@@ -10107,6 +10107,21 @@ a.lab-card:focus-visible .lab-card-arrow {
   box-shadow: var(--inner-light), 0 8px 30px rgba(0, 0, 0, 0.28);
 }
 
+/* Press state — contract takt: 0.985 on cards/rows (> 0.95 floor).
+   transform-only, quick ease-out, reduced-motion removes it below. */
+.score-card-item:active {
+  transform: scale(0.985);
+}
+.score-cat-legend-row:active {
+  transform: scale(0.985);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-card-item:active,
+  .score-cat-legend-row:active {
+    transform: none;
+  }
+}
+
 .score-card-main {
   display: flex;
   flex-direction: column;
@@ -10177,6 +10192,17 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  /* Soft open — content slides+fades in on expand (opacity/transform only,
+     GPU-safe). Height animation is avoided (layout thrash, per motion craft);
+     the small translate reads as the drawer "arriving", not the card growing. */
+  animation: scoreDrawerOpen var(--duration-fast) var(--ease-drawer) both;
+}
+@keyframes scoreDrawerOpen {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-card-drawer { animation: none; }
 }
 
 .score-drawer-heading {
@@ -12044,6 +12070,10 @@ select {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  transition: transform var(--duration-quick) var(--ease-out),
+              color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
 }
 
 .score-cat-legend-row:hover {
@@ -12080,6 +12110,21 @@ select {
   background: var(--signal-light);
   border-radius: 999px;
   transition: width var(--duration) var(--ease-out);
+  /* Sweep-in on score: each bar draws from empty to its value with a small
+     stagger (transform scaleX, GPU-safe, no layout thrash). The inline width
+     stays as the final value; the animation only covers the entrance, so the
+     transition above still handles live re-scores. Stagger delay is set via
+     the --bar-i custom property on the row (falls back to 0). */
+  transform-origin: left center;
+  animation: scoreBarSweep var(--duration) var(--ease-out) both;
+  animation-delay: calc(var(--bar-i, 0) * 40ms);
+}
+@keyframes scoreBarSweep {
+  from { transform: scaleX(0); opacity: 0.4; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-cat-legend-fill { animation: none; }
 }
 
 .score-cat-legend-fill.is-weak {
