@@ -210,19 +210,40 @@ function cleanHref(url: string): string {
   // Rewrite the chunk path to its canonical route by stripping the
   //   /_next/static/chunks/app/server/app/  prefix and the  .html  suffix.
   // The root page (trailing slash, no file) maps to "/". Internal Next.js
-  // pages prefixed with "_" (e.g. _not-found) are filtered out — they are
-  // not real routes (/_not-found returns 404). Real routes that happen to
-  // start with an underscore do not exist in the App Router convention.
-  const CHUNK_PREFIX = '/_next/static/chunks/app/server/app/';
-  if (url.startsWith(CHUNK_PREFIX) || url === CHUNK_PREFIX.slice(0, -1)) {
-    let route = url.slice(CHUNK_PREFIX.length);
-    if (route.endsWith('.html')) route = route.slice(0, -5);
-    if (route === '' ) route = '/';
-    else if (route.endsWith('/') && route !== '/') route = route.slice(0, -1);
+  // pages (_not-found, _error, 404, 500) are filtered out — not navigable.
+  //
+  // Pagefind's stored result.url never carries ?query or #fragment, but the
+  // UI layer may append a ?highlight=... param before this runs, so split and
+  // preserve any suffix. (Validated against official Pagefind docs v1.x:
+  // no data-pagefind-url attribute, no --url-prefix CLI flag, baseUrl only
+  // prepends — query-time rewrite is the only option for this index layout.)
+  const CHUNK_PREFIX = '/_next/static/chunks/app/server/app';
+  if (url.startsWith(CHUNK_PREFIX + '/') || url === CHUNK_PREFIX) {
+    // Split off any ?query or #fragment the UI may have appended.
+    let path = url, suffix = '';
+    const m = url.match(/[?#]/);
+    if (m) { suffix = url.slice(m.index); path = url.slice(0, m.index); }
+
+    let route = path.slice(CHUNK_PREFIX.length); // '' | '/' | '/work/continuity.html'
+    route = route.replace(/\/index\.html$/i, '/'); // /foo/index.html -> /foo/
+    route = route.replace(/\.html$/i, '');          // /foo.html       -> /foo
+    try { route = decodeURIComponent(route); } catch { /* malformed %seq — leave as-is */ }
     if (!route.startsWith('/')) route = '/' + route;
-    // Filter Next.js internal pages (_not-found, _error, etc.) — not navigable.
-    if (route === '/_not-found' || route.startsWith('/_')) return '';
-    return route;
+
+    // Filter Next.js internal pages that are not real routes:
+    //   _not-found, _error (App/Pages Router), 404/500 (static export shells).
+    // Defensive: metadata-route handlers (icon, opengraph-image, sitemap,
+    // robots, manifest) and their asset extensions — these only appear if
+    // the postbuild glob is ever widened beyond **/*.html, but filtering now
+    // means a future glob change can't silently surface 404s in search.
+    if (/^\/_(not-found|error)$/.test(route)) return '';
+    if (/^\/(404|500)$/.test(route)) return '';
+    if (/\.(json|txt|xml|png|jpe?g|webp|svg|ico|avif)$/.test(route)) return '';
+    if (/\/(icon|apple-icon|favicon|opengraph-image|twitter-image|sitemap|robots|manifest)$/.test(route)) return '';
+
+    if (route === '' || route === '/') return '/' + suffix;
+    if (route.endsWith('/') && route !== '/') route = route.slice(0, -1);
+    return route + suffix;
   }
 
   // Non-chunk Pagefind URLs (rare — meta-tagged canonical routes): keep the
