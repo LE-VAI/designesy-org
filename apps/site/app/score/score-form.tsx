@@ -688,7 +688,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 Doubles as a second filter affordance: clicking a row filters
                 the feed, same as the nodes and chips. */}
             <ul className="score-cat-legend">
-              {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((k) => {
+              {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((k, i) => {
                 const cat = result.categoryScores![k];
                 const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
                 const active = selectedCategory === k;
@@ -705,7 +705,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span className="score-cat-legend-bar" aria-hidden="true">
                         <span
                           className={`score-cat-legend-fill ${cat.score !== null && cat.score < 60 ? 'is-weak' : ''}`}
-                          style={{ width: `${cat.score ?? 0}%` }}
+                          style={{ width: `${cat.score ?? 0}%`, ['--bar-i' as string]: i }}
                         />
                       </span>
                       <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(cat.score!)}`}</span>
