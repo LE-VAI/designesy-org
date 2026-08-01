@@ -41,7 +41,7 @@ export default async function ScorePage({
           </p>
           <p className="surface-note">
             The contract defines a high floor. Most sites score D or F — including
-            sites you'd expect to pass. Find out how close you are.
+            sites you&apos;d expect to pass. Find out how close you are.
           </p>
         </section>
 
