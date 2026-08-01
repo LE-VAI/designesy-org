@@ -272,10 +272,10 @@ export default function OpenPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">External standards</h2>
+          <h2 className="doctrine-heading">External references</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Designesy builds on open standards and open-source libraries.
-            These are the external surfaces cited in the contract and labs.
+            Designesy builds on open standards, community proposals, and open-source
+            libraries. These are the external surfaces cited in the contract and labs.
           </p>
           <div className="row-stack" role="list">
             <a
@@ -350,7 +350,7 @@ export default function OpenPage() {
               <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">transitions.dev</span>
-                <span className="row-meta">Motion reference — duration scale cross-referenced in contract</span>
+                <span className="row-meta">Transition gallery (Matthew Antalik) — duration scale cross-referenced in contract</span>
               </span>
             </a>
           </div>

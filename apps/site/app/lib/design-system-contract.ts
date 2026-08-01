@@ -101,7 +101,7 @@ export const designSystemContract = {
         name: 'transitions.dev',
         author: 'Jakub Antalik (@Jakubantalik)',
         url: 'https://transitions.dev',
-        role: 'Motion token library — duration scale cross-referenced; press scale values validated (0.96/0.97 match); easing curves confirmed compatible',
+        role: 'Transition gallery — duration scale cross-referenced; press scale values validated (0.96/0.97 match); easing curves confirmed compatible. Gallery reference, not a formal standard.',
       },
       {
         name: 'detail.design',

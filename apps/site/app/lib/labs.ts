@@ -1,5 +1,5 @@
 /**
- * Designesy Labs — machine-readable data for the three published labs.
+ * Designesy Labs — machine-readable data for the four published labs.
  * Source: design-system-contract.ts adopted sections + lab page content.
  *
  * Each lab is a design experiment that compiled into contract rules.
@@ -113,6 +113,40 @@ export const labs = {
     field_check: {
       outcome: 'pass with notes',
       url: 'https://www.designesy.org/review/cadence',
+    },
+  },
+  acoustics: {
+    id: 'acoustics',
+    kind: 'lab',
+    number: 'Four',
+    title: 'Acoustics',
+    version: '0.1',
+    status: 'live',
+    adopted_in_contract: '0.3.0',
+    thesis: 'Interaction sound as a token system — ten cues, ten roles, one documented engine.',
+    principle: 'If the sound is louder than the action it confirms, it fails.',
+    human_url: 'https://www.designesy.org/labs/acoustics',
+    machine_url: 'https://www.designesy.org/labs/acoustics.json',
+    contract_rules: [
+      'Every sound maps to a named token (--cue:role). No unmapped sounds anywhere.',
+      'One primary cue family per role. Nav stays tick. Brand stays sparkle. Do not randomize.',
+      'Sound is opt-in via a single toggle; store preference in localStorage; default off when prefers-reduced-motion.',
+      'Hover sounds fire on fine-pointer only. On touch, map the same hover cue to a single tap.',
+      'No focus sounds. Sounds fire on pointer and click, never on focus events.',
+      'No ambient audio — interaction-only. No background music, no loading sounds, no mood beds.',
+      'Silent fallback when Web Audio is blocked. No errors, no visual degradation.',
+      'Reduced motion is an acoustic-reduction proxy. The user can still enable sound manually.',
+      'Every cue must trace to a token document. A sound in the markup without a token is a contract violation.',
+    ],
+    verification: [
+      'https://www.designesy.org/labs/acoustics',
+      'https://www.designesy.org/acoustic-tokens',
+      'https://www.designesy.org/acoustic-tokens.json',
+    ],
+    engine: 'Cuelume v0.1.0 (MIT, Daniel Belyi)',
+    field_check: {
+      outcome: 'live — no field check card yet',
+      url: null,
     },
   },
 } as const;
