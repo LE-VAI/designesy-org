@@ -31,7 +31,7 @@ const TIERS = [
       'Open contract + machine feed',
     ],
     cta: { label: 'Start scoring', href: '/score' },
-    primary: false,
+    primary: true,
   },
   {
     name: 'Score Pass',
@@ -45,8 +45,8 @@ const TIERS = [
       'Drift comparison between scores',
       'Priority score queue',
     ],
-    cta: { label: 'Join the waitlist', href: '/continuity' },
-    primary: true,
+    cta: { label: 'Join Score Pass waitlist', href: '/continuity' },
+    primary: false,
   },
   {
     name: 'Continuity',
@@ -60,7 +60,7 @@ const TIERS = [
       'Private contract host (your own rules)',
       'Team seats',
     ],
-    cta: { label: 'Join the waitlist', href: '/continuity' },
+    cta: { label: 'Join Continuity waitlist', href: '/continuity' },
     primary: false,
   },
   {
@@ -102,6 +102,16 @@ export default function PricingPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
+          <div className="pricing-desk">
+            <p className="pricing-desk-lede">
+              The free tier is not a trial. It is the whole verification engine
+              — 40 checks, one grade, real-time. The paid tiers add volume,
+              history, and continuity for teams shipping with agents.
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up fade-up-delay-2">
           <div className="pricing-grid">
             {TIERS.map((tier) => (
               <div
@@ -154,21 +164,86 @@ export default function PricingPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
-          <div className="pricing-desk">
-            <p className="pricing-desk-lede">
-              The free tier is not a trial. It is the whole verification engine
-              — 40 checks, one grade, real-time. The paid tiers add volume,
-              history, and continuity for teams shipping with agents.
-            </p>
-            <p className="pricing-desk-note">
-              Score Pass and Continuity are in early access. Pricing will be
-              set after the early access period — join the{' '}
-              <Link href="/continuity" className="text-link">
-                Continuity waitlist
-              </Link>{' '}
-              to shape it.
-            </p>
+          <div className="pricing-faq">
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                What does &ldquo;early access&rdquo; mean?
+              </summary>
+              <p className="pricing-faq-a">
+                Score Pass and Continuity are not yet live. We are talking to
+                builders who score work with agents to shape the paid tiers
+                before pricing is set. Join the{' '}
+                <Link href="/continuity" className="text-link">
+                  waitlist
+                </Link>{' '}
+                if you want in early.
+              </p>
+            </details>
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                How many scores can I run on the free tier?
+              </summary>
+              <p className="pricing-faq-a">
+                No hard cap. The free tier scores any URL with the full 40-check
+                engine and keeps your last 5 scores in your browser. Score Pass
+                will add higher daily throughput and 90-day server-side history.
+              </p>
+            </details>
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                What&rsquo;s the difference between a private contract host
+                and a private contract instance?
+              </summary>
+              <p className="pricing-faq-a">
+                Continuity lets you host your own contract — your rules, your
+                scoring thresholds, on infrastructure Designesy runs. Enterprise
+                gives you a private contract instance on your own
+                infrastructure (on-prem or VPC) with SSO and audit trail.
+              </p>
+            </details>
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                How many team seats in Continuity?
+              </summary>
+              <p className="pricing-faq-a">
+                Seat count will be set during early access based on what teams
+                actually need. The waitlist exists to learn that number —
+                tell us your team size when you join.
+              </p>
+            </details>
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                Can I use the free tier commercially?
+              </summary>
+              <p className="pricing-faq-a">
+                Yes. Score any site, embed the badge, export the receipt —
+                commercially or otherwise. The open contract and machine feed
+                are published for any agent or tool to consume.
+              </p>
+            </details>
+            <details className="pricing-faq-item">
+              <summary className="pricing-faq-q">
+                What happens to my score history if I upgrade?
+              </summary>
+              <p className="pricing-faq-a">
+                Your 5 local scores stay in your browser. Score Pass will pick
+                up server-side history from the moment it activates. Local and
+                server-side history are separate stores — one does not
+                overwrite the other.
+              </p>
+            </details>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up fade-up-delay-3">
+          <p className="pricing-desk-note">
+            Score Pass and Continuity are in early access. Pricing will be
+            set after the early access period — join the{' '}
+            <Link href="/continuity" className="text-link">
+              Continuity waitlist
+            </Link>{' '}
+            to shape it.
+          </p>
         </section>
       </main>
       <Footer />
