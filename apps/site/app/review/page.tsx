@@ -156,7 +156,7 @@ export default function ReviewPage() {
               <p className="lab-card-desc">
                 Font smoothing, scale, leading, tracking, measure, text-wrap,
                 tabular numbers, selection — 10 cadence rules adopted into
-                contract v0.4.0.
+                contract v0.1.3.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
