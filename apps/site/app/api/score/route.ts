@@ -1339,6 +1339,7 @@ const RECOGNIZED_BUTTON_COMMANDS = new Set([
   'login', 'logout', 'register', 'subscribe', 'unsubscribe', 'follow',
   'unfollow', 'like', 'bookmark', 'pin', 'star', 'report', 'block',
   'mute', 'unmute', 'archive', 'restore', 'refresh', 'reload', 'update',
+  'find', 'replace', 'navigate', 'run', 'score', 'review', 'verify',
 ]);
 
 function isVerbLike(word: string): boolean {
