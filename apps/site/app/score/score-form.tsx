@@ -342,7 +342,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       `Assessed: ${new Date().toISOString()}`,
       `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Skip: ${result.skip}`,
       `Tokens Extracted: ${result.tokensExtracted || 0}`,
-      `Contract: Designesy Design System Contract v0.3.0`,
+      `Contract: Designesy Design System Contract v0.4.0`,
       `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded), weights below; accessibility < 60% caps grade at C.`,
     ];
     const cats = result.categoryScores || {};

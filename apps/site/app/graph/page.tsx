@@ -122,7 +122,7 @@ export default function GraphPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.3.0</span>
+                <span className="row-title">Design system contract v0.4.0</span>
                 <span className="row-meta">Contract rules and tokens</span>
               </span>
             </Link>

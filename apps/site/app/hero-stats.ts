@@ -18,9 +18,11 @@ export const CONTRACT_VERSION = 'v0.4.0';
 // Latest self-score — DERIVED from the public leaderboard seed row, never a
 // second literal. The hero and the leaderboard show the same number because
 // they read the same source: two frozen values for one fact is the exact
-// contradiction this module exists to kill. Current engine self-run
-// (2026-07-29 post-v12-fix gate): 100.0% A (21P / 0F / 0W / 5S — the 5 skips
-// are live-browser-only probes: sound toggle, Poise, Takt, Cadence pages).
+// contradiction this module exists to kill. Current seed-derived self-score
+// (2026-07-29 leaderboard seed): 99.2% A (35P / 0F / 1W / 4S — the 4 skips
+// are live-browser-only probes: sound toggle, Core Web Vitals, responsive
+// overflow, primary-button contrast). The number below is derived from
+// the seed row, never a second literal — update the seed to change it.
 function selfRow() {
   const row = SEED.find((s) => s.url === 'https://www.designesy.org');
   if (!row || row.score === null || row.grade === null) {
@@ -49,6 +51,18 @@ export const RECENT_SCORES = SEED.filter((s) => s.score !== null && s.rank !== n
     url: s.url,
     isSelf: s.url === 'https://www.designesy.org',
   }));
+
+// Lowest score in the cohort — the proof the engine doesn't grade-inflate.
+// Showing the floor alongside the self-score makes the self-score credible:
+// a benchmark that only shows its own A and hides everyone's F reads as
+// rigged. The floor is the honesty signal. Derived from the seed, same as
+// everything else — never a second literal.
+const lowestRow = SEED
+  .filter((s) => s.score !== null && s.url !== 'https://www.designesy.org')
+  .sort((a, b) => (a.score as number) - (b.score as number))[0];
+export const LOWEST_SCORE = lowestRow ? (lowestRow.score as number) : null;
+export const LOWEST_GRADE = lowestRow ? (lowestRow.grade as string) : null;
+export const LOWEST_NAME = lowestRow ? lowestRow.name : null;
 
 // Explicitly NOT exported: any "scores today" / total-scores counter. There
 // is no global score-count store — score history is per-browser

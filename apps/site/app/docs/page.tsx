@@ -83,7 +83,7 @@ const START_HERE = [
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
-    meta: 'Portable values, roles, verification · v0.3.0 · Poise + Takt + Cadence adopted',
+    meta: 'Portable values, roles, verification · v0.4.0 · Poise + Takt + Cadence adopted',
   },
   {
     href: '/labs/poise',

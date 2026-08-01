@@ -145,7 +145,7 @@ const CORRECTIONS = [
   },
   {
     title: 'Version future typography changes',
-    meta: 'New type rules require a contract bump after v0.3.0 — not silent edits',
+    meta: 'New type rules require a contract bump after v0.4.0 — not silent edits',
   },
   {
     title: 'Keep machine export and human tables aligned',

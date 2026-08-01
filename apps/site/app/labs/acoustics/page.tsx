@@ -222,7 +222,7 @@ export default function AcousticsLabPage() {
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts/design-system">
-              Design system contract v0.3.0
+              Design system contract v0.4.0
             </Link>
             {' · '}
             <Link href="/acoustic-tokens">Token reference page</Link>
