@@ -225,13 +225,28 @@ export default function LabsPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/review/acoustics"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">06</span>
+              <span className="row-body">
+                <span className="row-title">Field check · Acoustics</span>
+                <span className="row-meta">
+                  Kit One review of Lab Four · pass with notes
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">07</span>
               <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
@@ -246,7 +261,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">07</span>
+              <span className="row-index">08</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -263,7 +278,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">08</span>
+              <span className="row-index">09</span>
               <span className="row-body">
                 <span className="row-title">Talk to the Director</span>
                 <span className="row-meta">
@@ -278,7 +293,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">09</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Continuity waitlist</span>
                 <span className="row-meta">

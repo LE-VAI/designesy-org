@@ -290,13 +290,28 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/review/acoustics"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">11</span>
+              <span className="row-body">
+                <span className="row-title">Field check · Acoustics</span>
+                <span className="row-meta">
+                  Kit One review of Lab Four
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">12</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
