@@ -177,8 +177,8 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.2',
-    meta: 'Governing tokens · takt rules adopted',
+    title: 'Design system contract v0.4.0',
+    meta: 'Governing tokens · takt rules adopted in v0.1.2',
   },
   {
     href: '/labs/poise',

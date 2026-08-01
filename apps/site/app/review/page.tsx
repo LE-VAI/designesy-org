@@ -196,7 +196,7 @@ export default function ReviewPage() {
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including
-                Poise, Takt, and Cadence.
+                Poise, Takt, Cadence, and Acoustics.
               </p>
               <span className="lab-card-arrow">Open review →</span>
             </Link>
@@ -264,7 +264,7 @@ export default function ReviewPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Design system contract v0.4.0</span>
-                <span className="row-meta">Human home and machine export · Poise + Takt + Cadence</span>
+                <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
               </span>
             </Link>
             <Link

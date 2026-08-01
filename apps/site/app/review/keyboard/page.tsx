@@ -28,7 +28,7 @@ const SCOPE = [
   },
   {
     title: 'Surface routes',
-    meta: 'Open, Docs, Labs, Kits, Review, Contracts, Privacy, home',
+    meta: 'Score, Leaderboard, Contract, Kits, Docs, home',
   },
   {
     title: 'In-page row links',
@@ -58,7 +58,7 @@ const TAB_ORDER = [
   {
     step: '03',
     title: 'Primary nav',
-    meta: 'Open → Docs → Labs → Kits → Review → Contracts',
+    meta: 'Score → Leaderboard → Contract → Kits → Docs',
   },
   {
     step: '04',
@@ -78,7 +78,7 @@ const TAB_ORDER = [
   {
     step: '07',
     title: 'Footer wayfinding',
-    meta: 'Open, Docs, Labs, Kits, Review, Contracts, Privacy, mail',
+    meta: 'Score, Leaderboard, Contract, Kits, Docs, mail',
   },
 ];
 
@@ -195,7 +195,7 @@ const RELATED = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.1',
+    title: 'Design system contract v0.4.0',
     meta: 'focus-visible, reduced-motion, interaction rules',
   },
   {

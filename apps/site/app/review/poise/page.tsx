@@ -173,8 +173,8 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.1',
-    meta: 'Governing tokens · Poise interaction rules adopted',
+    title: 'Design system contract v0.4.0',
+    meta: 'Governing tokens · Poise interaction rules adopted in v0.1.1',
   },
   {
     href: '/review/designesy-org',
