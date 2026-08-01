@@ -168,6 +168,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75,
     },
     {
+      url: `${BASE}/labs/acoustics`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
       url: `${BASE}/kits`,
       lastModified: NOW,
       changeFrequency: 'weekly',
@@ -349,6 +355,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${BASE}/labs/cadence.json`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
+      url: `${BASE}/labs/acoustics.json`,
       lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.6,

@@ -210,13 +210,28 @@ export default function LabsPage() {
               </span>
             </Link>
             <Link
-              href="/review/designesy-org"
+              href="/acoustic-tokens"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Acoustic token reference</span>
+                <span className="row-meta">
+                  Ten cues, ten roles — the sound parallel to the visual token system
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/designesy-org"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
@@ -231,7 +246,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">06</span>
+              <span className="row-index">07</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -248,7 +263,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">07</span>
+              <span className="row-index">08</span>
               <span className="row-body">
                 <span className="row-title">Talk to the Director</span>
                 <span className="row-meta">
@@ -263,7 +278,7 @@ export default function LabsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">08</span>
+              <span className="row-index">09</span>
               <span className="row-body">
                 <span className="row-title">Continuity waitlist</span>
                 <span className="row-meta">

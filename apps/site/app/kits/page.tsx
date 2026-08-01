@@ -168,6 +168,36 @@ export default function KitsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/labs/cadence"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">06</span>
+              <span className="row-body">
+                <span className="row-title">Lab Three · Cadence</span>
+                <span className="row-meta">
+                  Source lab · rules adopted into contract v0.1.3
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/labs/acoustics"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">07</span>
+              <span className="row-body">
+                <span className="row-title">Lab Four · Acoustics</span>
+                <span className="row-meta">
+                  Source lab · rules adopted into contract v0.3.0
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
