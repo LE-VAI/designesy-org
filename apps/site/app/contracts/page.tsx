@@ -10,7 +10,7 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.4.0 is public (Poise + Takt + Cadence + Copywriting adopted).',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.4.0 is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
     'Portable design agreements for people and agents. Design system contract v0.4.0 is live — Poise, Takt, Cadence, and Copywriting rules adopted.',
@@ -433,13 +433,28 @@ export default function ContractsPage() {
               </span>
             </Link>
             <Link
-              href="/contracts#09e-copywriting"
+              href="/labs/acoustics"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">08</span>
+              <span className="row-body">
+                <span className="row-title">Acoustics adopted</span>
+                <span className="row-meta">
+                  Lab Four acoustic mapping rules adopted in contract v0.3.0
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/contracts#09e-copywriting"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">09</span>
               <span className="row-body">
                 <span className="row-title">Copywriting adopted</span>
                 <span className="row-meta">
@@ -454,7 +469,7 @@ export default function ContractsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">09</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Agent skill export</span>
                 <span className="row-meta">
@@ -469,7 +484,7 @@ export default function ContractsPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">10</span>
+              <span className="row-index">11</span>
               <span className="row-body">
                 <span className="row-title">Field check</span>
                 <span className="row-meta">

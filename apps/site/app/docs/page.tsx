@@ -41,7 +41,7 @@ const LAYERS = [
     num: '04',
     name: 'Labs',
     desc: 'experiments that compile into contracts',
-    state: 'Public · Poise + Takt + Cadence',
+    state: 'Public · Poise + Takt + Cadence + Acoustics',
   },
   {
     num: '05',
@@ -83,7 +83,7 @@ const START_HERE = [
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
-    meta: 'Portable values, roles, verification · v0.4.0 · Poise + Takt + Cadence adopted',
+    meta: 'Portable values, roles, verification · v0.4.0 · Poise + Takt + Cadence + Acoustics adopted',
   },
   {
     href: '/labs/poise',
@@ -101,6 +101,11 @@ const START_HERE = [
     meta: 'The rhythm of text on a page',
   },
   {
+    href: '/labs/acoustics',
+    title: 'Lab Four · Acoustics',
+    meta: 'Interaction sound as a token system',
+  },
+  {
     href: '/review/poise',
     title: 'Field check · Poise',
     meta: 'Kit One applied to Lab One · pass with notes',
@@ -114,6 +119,11 @@ const START_HERE = [
     href: '/review/cadence',
     title: 'Field check · Cadence',
     meta: 'Kit One applied to Lab Three · pass with notes',
+  },
+  {
+    href: '/review/acoustics',
+    title: 'Field check · Acoustics',
+    meta: 'Kit One applied to Lab Four · pass with notes',
   },
   {
     href: '/review/designesy-org',
