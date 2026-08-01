@@ -236,6 +236,148 @@ export default function PricingPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-3">
+          <h2 className="doctrine-heading">Feature comparison</h2>
+          <div className="surface-note" style={{ marginBottom: '1rem' }}>
+            All tiers use the same 40-check engine and the same contract. The
+            difference is volume, history, and infrastructure.
+          </div>
+          <table className="pricing-compare">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Open</th>
+                <th>Score Pass</th>
+                <th>Continuity</th>
+                <th>Enterprise</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>40-check verification engine</td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Open contract + machine feed</td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Embeddable SVG badge</td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Verification receipt export</td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Score history</td>
+                <td>5 local</td>
+                <td>90-day server</td>
+                <td>90-day server</td>
+                <td>90-day server</td>
+              </tr>
+              <tr>
+                <td>Score throughput</td>
+                <td>Standard</td>
+                <td>Higher daily</td>
+                <td>Higher daily</td>
+                <td>Higher daily</td>
+              </tr>
+              <tr>
+                <td>Per-check export (CSV + JSON)</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Drift comparison between scores</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Saved projects + re-score schedule</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Drift alerts</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Private contract host</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Team seats</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td>Yes</td>
+                <td>Yes</td>
+              </tr>
+              <tr>
+                <td>Private contract instances</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>SSO + audit trail</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>On-prem scoring engine</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>SLA + dedicated support</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="surface-note" style={{ marginTop: '0.75rem' }}>
+            Open features are live today. Score Pass and Continuity features are
+            planned after early access. Enterprise features are available by
+            conversation —{' '}
+            <a href="mailto:hello@designesy.org" className="text-link">
+              contact us
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="doctrine-section fade-up fade-up-delay-4">
           <p className="pricing-desk-note">
             Score Pass and Continuity are in early access. Pricing will be
             set after the early access period — join the{' '}
