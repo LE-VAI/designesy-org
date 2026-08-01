@@ -23,7 +23,7 @@ export const designSystemContract = {
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-07-30',
+  updated: '2026-08-01',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -152,6 +152,11 @@ export const designSystemContract = {
       value: '#121216',
       role: 'Elevated surface',
     },
+    surface_lifted: {
+      token: '--surface-lifted',
+      value: '#16161b',
+      role: 'Lifted / hover panel',
+    },
     signal: {
       token: '--signal',
       value: '#0133cb',
@@ -166,6 +171,16 @@ export const designSystemContract = {
       token: '--activation',
       value: '#fecc34',
       role: 'Activation highlight (reserved)',
+    },
+    signal_access: {
+      token: '--signal-access',
+      value: '#5d7bff',
+      role: 'Accessible signal (AA contrast on dark surfaces)',
+    },
+    paper_on_signal: {
+      token: '--paper-on-signal',
+      value: '#ffffff',
+      role: 'Text on signal fill',
     },
   },
   surfaces_and_lines: {
