@@ -198,25 +198,26 @@ function loadPagefind(): Promise<PagefindApi | null> {
 
 /** Strip the Pagefind-injected trailing slash/anchors so hrefs stay clean. */
 function cleanHref(url: string): string {
-  // Pagefind indexes `.next/server/app/**/*.html` during postbuild, so every
-  // result URL is a build-chunk path like
+  // PRIMARY path: the postbuild (scripts/postbuild-pagefind.js) now stages
+  // a clean route-shaped index dir, so Pagefind stores canonical URLs like
+  // /work/continuity and /  directly. This function only needs to strip a
+  // trailing slash and any ?query/#fragment for those — the common case.
+  //
+  // DEFENSIVE FALLBACK: if the staging step ever fails (or the build reverts),
+  // Pagefind falls back to indexing .next/server/app/*.html and result URLs
+  // come back as build-chunk paths like
   //   /_next/static/chunks/app/server/app/work/continuity.html
   //   /_next/static/chunks/app/server/app/                 (root page)
   //   /_next/static/chunks/app/server/app/_not-found.html  (Next internal 404)
-  // These are NOT navigable routes. Before this rewrite, cleanHref filtered
-  // them ALL out and returned "" — which meant Pagefind contributed zero
-  // results in production and the "hybrid search" was local-INDEX-only.
-  //
-  // Rewrite the chunk path to its canonical route by stripping the
-  //   /_next/static/chunks/app/server/app/  prefix and the  .html  suffix.
-  // The root page (trailing slash, no file) maps to "/". Internal Next.js
-  // pages (_not-found, _error, 404, 500) are filtered out — not navigable.
+  // The chunk-prefix branch below rewrites those to canonical routes so
+  // search still works (and filters internal _not-found/_error/404/500
+  // pages) instead of 404ing. This is defense-in-depth, not the main path.
   //
   // Pagefind's stored result.url never carries ?query or #fragment, but the
   // UI layer may append a ?highlight=... param before this runs, so split and
   // preserve any suffix. (Validated against official Pagefind docs v1.x:
   // no data-pagefind-url attribute, no --url-prefix CLI flag, baseUrl only
-  // prepends — query-time rewrite is the only option for this index layout.)
+  // prepends — query-time rewrite is the only option for the fallback layout.)
   const CHUNK_PREFIX = '/_next/static/chunks/app/server/app';
   if (url.startsWith(CHUNK_PREFIX + '/') || url === CHUNK_PREFIX) {
     // Split off any ?query or #fragment the UI may have appended.
@@ -246,8 +247,8 @@ function cleanHref(url: string): string {
     return route + suffix;
   }
 
-  // Non-chunk Pagefind URLs (rare — meta-tagged canonical routes): keep the
-  // pathname only and drop any fragment/query so Enter goes to the page top.
+  // Non-chunk Pagefind URLs (the PRIMARY path — staged clean routes): keep
+  // the pathname only and drop any fragment/query so Enter goes to the page top.
   try {
     const u = new URL(url, window.location.origin);
     return u.pathname.replace(/\/$/, '') || '/';
