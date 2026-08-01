@@ -204,7 +204,7 @@ export default function TaktLabPage() {
             <span className="lab-meta-item">
               Contract ·{' '}
               <Link href="/contracts/design-system" data-cuelume-hover="tick" data-cuelume-press="tick">
-                v0.1.2
+                v0.4.0
               </Link>
             </span>
             <span className="lab-meta-item">
