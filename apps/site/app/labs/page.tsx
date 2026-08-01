@@ -160,7 +160,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3
+                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
                 </span>
               </span>
             </Link>

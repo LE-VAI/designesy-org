@@ -488,7 +488,7 @@ export default function CadenceLabPage() {
               <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, verification</span>
+                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, acoustics, verification</span>
               </span>
             </Link>
             <Link
@@ -502,6 +502,19 @@ export default function CadenceLabPage() {
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">Eight dimensions, portable agent prompt</span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/labs/acoustics"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Lab Four · Acoustics</span>
+                <span className="row-meta">Interaction sound — ten cues, ten roles, Cuelume v0.1.0</span>
               </span>
             </Link>
           </div>

@@ -432,7 +432,7 @@ export default function TaktLabPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, verification</span>
+                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, acoustics, verification</span>
               </span>
             </Link>
             <Link
@@ -459,6 +459,32 @@ export default function TaktLabPage() {
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
                 <span className="row-meta">Lab One reviewed — pass with notes</span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/labs/cadence"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Lab Three · Cadence</span>
+                <span className="row-meta">Text rhythm — scale, leading, tracking, measure</span>
+              </span>
+            </Link>
+            <Link
+              className="row"
+              role="listitem"
+              href="/labs/acoustics"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">06</span>
+              <span className="row-body">
+                <span className="row-title">Lab Four · Acoustics</span>
+                <span className="row-meta">Interaction sound — ten cues, ten roles, Cuelume v0.1.0</span>
               </span>
             </Link>
           </div>
