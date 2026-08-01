@@ -504,7 +504,9 @@ export default function LeaderboardPage() {
               40 deterministic checks across 14 weighted categories — token
               architecture, motion hygiene, accessibility primitives,
               typography discipline, reduced-motion handling, AI disclosure,
-              forced-colors readiness, UX copywriting. Not an LLM impression. Not a roast. The
+              forced-colors readiness, UX copywriting, Unicode security. Plus
+              12 anti-slop rules (up to -20pts) and 7 originality signals (up
+              to +8pts) so taste is part of the number. Not an LLM impression. Not a roast. The
               same engine scores designesy.org itself, in public, at{' '}
               <code>/score?url=designesy.org</code>.
             </p>
@@ -522,7 +524,7 @@ export default function LeaderboardPage() {
         </section>
 
         <div className="status-note">
-          Leaderboard v0.3 · curated seed (30 sites) · last scored{' '}
+          Leaderboard v0.4.0 · curated seed (30 sites) · last scored{' '}
           {LEADERBOARD_LAST_SCORED} · open submission is live — use the form
           above. Scores are deterministic and re-run weekly via a GitHub Action
           (Mondays 10:00 UTC). The JSON endpoint lives at{' '}
