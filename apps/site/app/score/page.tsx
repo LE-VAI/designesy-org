@@ -31,7 +31,7 @@ export default async function ScorePage({
       <Topbar scrolled />
       <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Labs · Score</p>
+          <p className="surface-eyebrow">Verification</p>
           <h1 className="surface-title" data-scramble>
             Score any site
           </h1>
