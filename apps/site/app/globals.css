@@ -8506,12 +8506,17 @@ a.lab-card:focus-visible .lab-card-arrow {
   height: 8px;
   border-radius: 50%;
   border: 2px solid var(--signal-light);
-  transform: translate(-50%, -50%) scale(0.001);
+  transform: translate(-50%, -50%);
+  opacity: 0;
   pointer-events: none;
   animation: effect-ripple 600ms var(--ease-out) forwards;
   z-index: 3;
 }
 @keyframes effect-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.001);
+    opacity: 1;
+  }
   to {
     transform: translate(-50%, -50%) scale(20);
     opacity: 0;
