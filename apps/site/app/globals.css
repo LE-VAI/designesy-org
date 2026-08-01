@@ -2656,7 +2656,7 @@ button.pillar:hover::before {
 .footer-dock-pill--machine {
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
-  font-family: var(--mono, 'SF Mono', 'Fira Code', monospace);
+  font-family: var(--mono);
   font-size: 0.68rem;
 }
 
@@ -4330,7 +4330,7 @@ button.pillar:hover::before {
 .footer-dock-pill--machine {
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
-  font-family: var(--mono, 'SF Mono', 'Fira Code', monospace);
+  font-family: var(--mono);
   font-size: 0.68rem;
 }
 
@@ -6438,7 +6438,7 @@ a.check-cell:hover .check-cell-title {
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
 }
 
 @media (max-width: 560px) {
@@ -6578,7 +6578,7 @@ a.check-cell:hover .check-cell-title {
 .cue-cell-token {
   font-size: 0.8rem;
   color: var(--signal-light);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
 }
 
 .cue-cell-cue {
@@ -7014,7 +7014,7 @@ html:not(.js-ready) .demo-stagger-bar {
   color: var(--muted-dim);
   letter-spacing: 0.04em;
   text-align: center;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
 }
 
 /* --- Contract demo 02: radius comparison --- */
@@ -7062,7 +7062,7 @@ html:not(.js-ready) .demo-stagger-bar {
 .demo-easing-row > span:first-child {
   font-size: 0.58rem;
   color: var(--muted-dim);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   min-width: 5.5rem;
   white-space: nowrap;
 }
@@ -7788,7 +7788,7 @@ a.field-card:active {
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.78rem;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -7825,7 +7825,7 @@ a.field-card:active {
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.03em;
-  font-family: var(--font-sans, inherit);
+  font-family: var(--sans);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s var(--ease), border-color 0.2s var(--ease),
@@ -8506,7 +8506,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   height: 8px;
   border-radius: 50%;
   border: 2px solid var(--signal-light);
-  transform: translate(-50%, -50%) scale(0);
+  transform: translate(-50%, -50%) scale(0.001);
   pointer-events: none;
   animation: effect-ripple 600ms var(--ease-out) forwards;
   z-index: 3;
@@ -8784,7 +8784,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .continuity-card-tag {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -8831,7 +8831,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .continuity-ladder-name {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -8880,7 +8880,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .waitlist-field label {
   display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -9529,7 +9529,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-url-text {
   font-size: 0.8rem;
   color: var(--muted);
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10150,7 +10150,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-card-id {
   font-size: 0.725rem;
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   color: var(--muted);
   font-weight: 600;
 }
@@ -10507,14 +10507,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .badge-snippet code,
 .badge-snippet pre code {
-  font-family: var(--mono, ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", monospace);
+  font-family: var(--mono);
   font-size: 0.78rem;
   line-height: 1.55;
   color: var(--ink);
 }
 
 .inline-code {
-  font-family: var(--mono, ui-monospace, "SF Mono", "Cascadia Code", "Source Code Pro", monospace);
+  font-family: var(--mono);
   font-size: 0.8em;
   padding: 0.1rem 0.3rem;
   background: var(--surface-soft);
@@ -10798,7 +10798,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .pricing-card-name {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -12117,7 +12117,7 @@ select {
   border-left: 1px solid var(--line);
   font-size: 0.68rem;
   color: var(--muted-dim);
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   white-space: nowrap;
 }
 
@@ -12264,7 +12264,7 @@ select {
   font-size: 0.78rem;
   line-height: 1.55;
   color: var(--muted);
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -12634,7 +12634,7 @@ select {
 
 .mini-constel .mini-constel-center-grade {
   fill: var(--ink);
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   font-weight: 700;
   font-size: 9px;
   text-anchor: middle;
@@ -12644,7 +12644,7 @@ select {
 
 .mini-constel .mini-constel-center-pct {
   fill: var(--muted-dim);
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   font-size: 5.5px;
   text-anchor: middle;
   dominant-baseline: central;
@@ -13063,11 +13063,11 @@ select {
   letter-spacing: 0.01em;
 }
 .hero-proof-stat b { color: var(--ink); font-weight: 600; }
-.hero-proof-num { font-family: var(--mono, ui-monospace, monospace); color: var(--ink); font-variant-numeric: tabular-nums; }
+.hero-proof-num { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .hero-proof-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-dim); }
 .hero-proof-dot.is-live { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.55); }
 .hero-proof-grade {
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   font-weight: 700;
   padding: 0.05rem 0.34rem;
   border-radius: 4px;
@@ -13132,9 +13132,9 @@ select {
   border-radius: 3px;
 }
 .hero-proof-recent-dots { flex: 1; border-bottom: 1px dotted var(--line-strong); transform: translateY(-3px); min-width: 1rem; }
-.hero-proof-recent-score { font-family: var(--mono, ui-monospace, monospace); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hero-proof-recent-score { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .hero-proof-recent-grade {
-  font-family: var(--mono, ui-monospace, monospace);
+  font-family: var(--mono);
   font-weight: 700;
   font-size: 0.74rem;
   width: 1.45rem;

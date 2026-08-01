@@ -590,7 +590,7 @@ export function CommandPalette() {
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.5" y2="16.5" />
         </svg>
-        <span className="cmdk-trigger-label">Search</span>
+        <span className="cmdk-trigger-label">Find</span>
         <kbd className="cmdk-trigger-kbd" aria-hidden="true">
           <span className="cmdk-kbd-mod">⌘</span>K
         </kbd>
