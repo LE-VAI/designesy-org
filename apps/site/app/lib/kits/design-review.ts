@@ -31,7 +31,7 @@ export const designReviewKit = {
     {
       href: '/contracts/design-system',
       title: 'Design system contract v0.4.0',
-      meta: 'Human home and machine export · Poise + Takt + Cadence adopted',
+      meta: 'Human home and machine export · Poise + Takt + Cadence + Acoustics adopted',
     },
     {
       href: '/review/poise',
@@ -64,9 +64,19 @@ export const designReviewKit = {
       meta: 'Source lab · typography rules adopted in v0.1.3',
     },
     {
+      href: '/labs/acoustics',
+      title: 'Lab Four · Acoustics',
+      meta: 'Source lab · acoustic mapping rules adopted in v0.3.0',
+    },
+    {
       href: '/review/cadence',
       title: 'Field check · Cadence',
       meta: 'Kit One applied to Lab Three · pass with notes',
+    },
+    {
+      href: '/review/acoustics',
+      title: 'Field check · Acoustics',
+      meta: 'Kit One applied to Lab Four · pass with notes',
     },
   ],
   anatomy: [
