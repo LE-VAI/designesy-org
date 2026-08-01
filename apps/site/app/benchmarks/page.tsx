@@ -9,10 +9,10 @@ import { pageMeta } from '../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Benchmarks',
   description:
-    'Designesy vs hallmark vs slop-eval — a side-by-side benchmark of design verification engines. What each catches that the others do not.',
+    'Designesy vs hallmark vs slop-eval — a side-by-side benchmark of design verification engines. What each catches that the others do not, plus the wider emerging landscape.',
   path: '/benchmarks',
   ogDescription:
-    'Three tools, three questions: hallmark prevents slop, slop-eval scores slop, designesy verifies contract conformance.',
+    'Three tools, three questions: hallmark prevents slop, slop-eval scores slop, designesy verifies contract conformance — plus the wider landscape.',
   twitterDescription:
     'Competitive benchmark — designesy.org/benchmarks',
 });
@@ -28,7 +28,7 @@ const TOOLS = [
     checks: '40 checks across 14 categories',
     license: 'See designesy.org',
     stars: '—',
-    score: '99.2% A (self)',
+    score: '100% A (self)',
     url: 'https://www.designesy.org/',
   },
   {
@@ -36,9 +36,9 @@ const TOOLS = [
     question: 'Does this look AI-generated?',
     category: 'Anti-slop generation gate',
     delivery: 'Agent skill (prompt-encoded rule-set)',
-    checks: '58 binary gates + 6 pre-emit axes',
+    checks: '57 binary gates + 6 pre-emit axes',
     license: 'MIT',
-    stars: '20k',
+    stars: '20.5k',
     score: 'Not run (skill, not URL API)',
     url: 'https://github.com/Nutlope/hallmark',
   },
@@ -104,7 +104,7 @@ const COMPETITOR_UNIQUE = [
 ];
 
 const POSITIONING = [
-  'Generation → hallmark (prevent slop at emit time, 58 gates)',
+  'Generation → hallmark (prevent slop at emit time, 57 gates)',
   'Evaluation → slop-eval (score existing designs, 108 tells + 2 positive axes)',
   'Verification → designesy (verify contract conformance, 40 checks + MCP delivery)',
 ];
@@ -173,10 +173,10 @@ export default function BenchmarksPage() {
               { attr: 'Question', d: 'Does this conform to the contracted design system?', h: 'Does this look AI-generated?', s: 'How much slop does this contain?' },
               { attr: 'Category', d: 'Contract conformance verification', h: 'Anti-slop generation gate', s: 'Anti-slop evaluation skill' },
               { attr: 'Delivery', d: 'URL API + MCP tools (agent-invocable)', h: 'Agent skill (prompt-encoded)', s: 'Agent skill (deterministic script)' },
-              { attr: 'Checks', d: '40 across 14 categories', h: '58 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
+              { attr: 'Checks', d: '40 across 14 categories', h: '57 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
               { attr: 'License', d: 'See designesy.org', h: 'MIT', s: 'Apache-2.0' },
-              { attr: 'Stars', d: '—', h: '20k', s: '40 (parent repo)' },
-              { attr: 'Score on designesy.org', d: '99.2% A (35/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
+              { attr: 'Stars', d: '—', h: '20.5k', s: '40 (parent repo)' },
+              { attr: 'Score on designesy.org', d: '100% A (37/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
             ].map((row) => (
               <div className="token-table-row" role="row" key={row.attr}>
                 <span role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{row.attr}</span>
@@ -285,8 +285,8 @@ export default function BenchmarksPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>designesy</code>
-              <code role="cell">99.2% A (35 PASS / 0 FAIL / 1 WARN / 4 SKIP)</code>
-              <span role="cell">v26 WARN: font family count (4, threshold ≤3)</span>
+              <code role="cell">100% A (37 PASS / 0 FAIL / 0 WARN / 3 SKIP)</code>
+              <span role="cell">All previously flagged checks resolved — v13 press-scale, v26 font families, v38 button label</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>hallmark</code>
@@ -308,25 +308,59 @@ export default function BenchmarksPage() {
           </p>
         </section>
 
+        {/* ── Emerging landscape ──────────────────────────────────────────────── */}
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">The wider landscape</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            The three tools above are the closest comparators. The field is
+            growing — these are newer entrants worth tracking.
+          </p>
+          <div className="token-table" role="table" aria-label="Emerging tools">
+            <div className="token-table-head" role="row">
+              <span role="columnheader">Tool</span>
+              <span role="columnheader">Approach</span>
+              <span role="columnheader">Differentiator</span>
+            </div>
+            {[
+              { name: 'Impeccable', approach: '46 AI-slop tells (expanded slop-eval lineage)', diff: 'Largest tell catalog, community-sourced' },
+              { name: 'design-slop-cop', approach: '14 anti-slop patterns (rule-based)', diff: 'Lightweight, fast scan, focused pattern set' },
+              { name: 'anti-slop-design', approach: 'Design quality guardrails', diff: 'Pre-emit lint, not post-hoc scoring' },
+              { name: 'Atlassian ADS MCP', approach: 'Design-system MCP server (v0.21.1)', diff: 'Benchmarked against design.md — fewer tokens, lower variance' },
+            ].map((row) => (
+              <div className="token-table-row" role="row" key={row.name}>
+                <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{row.name}</code>
+                <span role="cell">{row.approach}</span>
+                <span role="cell">{row.diff}</span>
+              </div>
+            ))}
+          </div>
+          <p className="surface-note" style={{ marginTop: '1.5rem' }}>
+            81 design-related MCP servers are now indexed at mcpservers.org
+            (2026-08-01). The category is expanding from skills into
+            agent-invocable tooling — the space designesy pioneered with its
+            11-tool MCP server and URL-based scoring API.
+          </p>
+        </section>
+
         {/* ── Provenance ─────────────────────────────────────────────────────── */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Provenance</h2>
           <div className="definition">
             <p className="definition-label">Sources</p>
             <p>
-              Live research via AnySearch MCP (2026-07-30). designesy live score
-              verified via POST to https://www.designesy.org/api/score (99.2% A,
+              Live research via AnySearch MCP (2026-08-01). designesy live score
+              verified via POST to https://www.designesy.org/api/score (100% A,
               40 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.
             </p>
           </div>
           <CheckGrid items={[
-            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 99.2% A, 40 checks, verified 2026-07-30' },
-            { title: 'hallmark 58 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
+            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 100% A, 40 checks, verified 2026-08-01' },
+            { title: 'hallmark 57 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },
             { title: 'slop-eval upstream law', meta: 'pols.dev/slop.md' },
-            { title: '@google/design.md', meta: 'npmjs.com/package/@google/design.md — v0.4.0, Proprietary license' },
+            { title: '@google/design.md', meta: 'npmjs.com/package/@google/design.md — v0.4.0, Apache 2.0, 26.8k stars' },
           ]} />
         </section>
 
