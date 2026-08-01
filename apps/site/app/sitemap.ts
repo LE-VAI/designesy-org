@@ -216,6 +216,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${BASE}/review/acoustics`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${BASE}/review/poise/keyboard`,
       lastModified: NOW,
       changeFrequency: 'monthly',

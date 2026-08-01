@@ -161,6 +161,26 @@ export default function ReviewPage() {
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
             <Link
+              href="/review/acoustics"
+              className="lab-card"
+              data-cuelume-hover="tick"
+              data-cuelume-press
+            >
+              <div className="lab-card-top">
+                <span className="status-badge status-badge--lab">Lab Four</span>
+                <span className="lab-card-status">Pass with notes</span>
+              </div>
+              <h3 className="lab-card-title">Acoustics</h3>
+              <p className="lab-card-lede">
+                Kit One output format on the interaction sound lab.
+              </p>
+              <p className="lab-card-desc">
+                Ten cues, ten roles, Cuelume v0.1.0 — nine acoustic mapping rules
+                adopted into contract v0.3.0.
+              </p>
+              <span className="lab-card-arrow">Open field check →</span>
+            </Link>
+            <Link
               href="/review/designesy-org"
               className="lab-card"
               data-cuelume-hover="tick"
@@ -293,13 +313,28 @@ export default function ReviewPage() {
               </span>
             </Link>
             <Link
-              href="/kits/design-review"
+              href="/labs/acoustics"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">05</span>
+              <span className="row-body">
+                <span className="row-title">Lab Four · Acoustics</span>
+                <span className="row-meta">
+                  Interaction sound · adopted in v0.3.0
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/kits/design-review"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">06</span>
               <span className="row-body">
                 <span className="row-title">Use Kit One · Design Review</span>
                 <span className="row-meta">
@@ -312,9 +347,9 @@ export default function ReviewPage() {
 
         <div className="status-note">
           Review language and quality discipline for public artifacts. Published
-          reviews live under /review. Field checks for Poise, Takt, Cadence, the
-          public surface, and keyboard paths judge against the live contract —
-          not taste.
+          reviews live under /review. Field checks for Poise, Takt, Cadence,
+          Acoustics, the public surface, and keyboard paths judge against the
+          live contract — not taste.
         </div>
       </main>
 
