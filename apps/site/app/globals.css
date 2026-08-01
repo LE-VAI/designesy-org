@@ -11049,6 +11049,89 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
+/* --- Pricing comparison table --- */
+
+.pricing-compare {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.pricing-compare thead {
+  background: var(--surface);
+}
+
+.pricing-compare th {
+  padding: 0.85rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line-faint);
+  white-space: nowrap;
+}
+
+.pricing-compare th:first-child {
+  padding-left: 1rem;
+}
+
+.pricing-compare th:not(:first-child) {
+  text-align: center;
+}
+
+.pricing-compare td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--line-faint);
+  color: var(--muted);
+  vertical-align: middle;
+}
+
+.pricing-compare tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pricing-compare td:first-child {
+  color: var(--ink);
+  font-weight: 500;
+  padding-left: 1rem;
+}
+
+.pricing-compare td:not(:first-child) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-compare-check {
+  color: var(--signal-light);
+  font-weight: 600;
+}
+
+.pricing-compare-dash {
+  color: var(--muted-dim);
+}
+
+@media (max-width: 720px) {
+  .pricing-compare {
+    font-size: 0.8rem;
+  }
+  .pricing-compare th,
+  .pricing-compare td {
+    padding: 0.55rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-compare {
+    font-size: 0.75rem;
+  }
+  .pricing-compare th,
+  .pricing-compare td {
+    padding: 0.45rem 0.3rem;
+  }
+}
+
 /* --- Reduced motion: collapse non-essential motion (Poise rule) --- */
 
 @media (prefers-reduced-motion: reduce) {
