@@ -204,7 +204,7 @@ export default function CadenceLabPage() {
             <span className="lab-meta-item">
               Contract ·{' '}
               <Link href="/contracts/design-system" data-cuelume-hover="tick" data-cuelume-press="tick">
-                v0.3.0
+                v0.4.0
               </Link>
             </span>
             <span className="lab-meta-item">
@@ -488,7 +488,7 @@ export default function CadenceLabPage() {
               <span className="row-index">03</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.3.0 · tokens, interaction, takt, cadence, verification</span>
+                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, verification</span>
               </span>
             </Link>
             <Link

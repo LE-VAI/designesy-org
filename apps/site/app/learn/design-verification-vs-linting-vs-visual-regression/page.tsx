@@ -150,7 +150,7 @@ export default function ComparisonPage() {
         </section>
 
         <div className="status-note">
-          Citations: the design system contract (v0.3.0) for verification
+          Citations: the design system contract (v0.4.0) for verification
           scope, and the /score endpoint for the runnable artifact.
         </div>
       </main>

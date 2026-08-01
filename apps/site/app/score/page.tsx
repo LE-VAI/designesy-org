@@ -40,8 +40,8 @@ export default async function ScorePage({
             design system contract.
           </p>
           <p className="surface-note">
-            The contract defines the floor. Nobody passes it yet — not generators, not builders,
-            not even the best-designed sites on the web. Find out how close you are.
+            The contract defines a high floor. Most sites score D or F — including
+            sites you'd expect to pass. Find out how close you are.
           </p>
         </section>
 

@@ -211,7 +211,7 @@ export default function DesignesyOrgCaseStudy() {
             >
               <span className="row-index">02</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.3.0</span>
+                <span className="row-title">Design system contract v0.4.0</span>
                 <span className="row-meta">The standard the score runs against</span>
               </span>
             </Link>

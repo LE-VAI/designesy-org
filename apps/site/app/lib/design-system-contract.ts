@@ -628,7 +628,7 @@ export const designSystemContract = {
       version: '0.3.0',
       date: '2026-07-15',
       summary:
-        'Reconciled with on-disk core contract v0.3.0. Spring physics tokens added (default + momentum). Full acoustic cue enumeration added (10 cues via custom $type: sound). Ten Non-Negotiable Motion Standards added as §16. Motion anti-patterns formalized (6 block-on-sight + 4 caution). Entrance scale tokens added (min 0.9, default 0.95). Stagger interval token added (30ms lower bound). font-synthesis: none and text-underline-position: from-font confirmed fixed and removed from open tensions. W3C DTCG 2025.10 token format alignment documented.',
+        'Reconciled with on-disk core contract v0.4.0. Spring physics tokens added (default + momentum). Full acoustic cue enumeration added (10 cues via custom $type: sound). Ten Non-Negotiable Motion Standards added as §16. Motion anti-patterns formalized (6 block-on-sight + 4 caution). Entrance scale tokens added (min 0.9, default 0.95). Stagger interval token added (30ms lower bound). font-synthesis: none and text-underline-position: from-font confirmed fixed and removed from open tensions. W3C DTCG 2025.10 token format alignment documented.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts#design-system-contract',
