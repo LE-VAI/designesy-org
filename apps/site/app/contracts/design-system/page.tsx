@@ -11,11 +11,11 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract',
   description:
-    `Designesy design system contract v${designSystemContract.version} — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Copywriting rules adopted.`,
+    `Designesy design system contract v${designSystemContract.version} — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics, and Copywriting rules adopted.`,
   path: '/contracts/design-system',
   ogTitle: `Design system contract · v${designSystemContract.version}`,
   ogDescription:
-    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, Cadence typography, and Copywriting rules adopted. Human overview with machine export.',
+    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, Cadence typography, Acoustics cue tokens, and Copywriting rules adopted. Human overview with machine export.',
   twitterDescription:
     'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
 });
@@ -29,6 +29,7 @@ const SECTIONS = [
   { title: 'Components', meta: 'Behavior and states' },
   { title: 'Accessibility', meta: 'Focus, preference, landmarks' },
   { title: 'Copywriting', meta: `UX copy principles (v${designSystemContract.copywriting.adopted_in})` },
+  { title: 'Acoustics', meta: `Cue tokens and mapping rules (v${designSystemContract.acoustic.adopted_in})` },
   { title: 'Verification', meta: 'How to know the system still holds' },
 ];
 
@@ -50,7 +51,7 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence rules.',
+            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence + Acoustics rules.',
           url: c.public_url,
           version: c.version,
           related: [c.machine_url, 'https://www.designesy.org/open'],
@@ -245,13 +246,28 @@ export default function DesignSystemContractPage() {
               </span>
             </Link>
             <Link
-              href="/review/poise"
+              href="/labs/acoustics"
               className="row"
               role="listitem"
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
               <span className="row-index">08</span>
+              <span className="row-body">
+                <span className="row-title">Lab Four · Acoustics</span>
+                <span className="row-meta">
+                  Source lab · interaction-sound rules adopted in v{c.acoustic.adopted_in}
+                </span>
+              </span>
+            </Link>
+            <Link
+              href="/review/poise"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">09</span>
               <span className="row-body">
                 <span className="row-title">Field check · Poise</span>
                 <span className="row-meta">
@@ -266,7 +282,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">09</span>
+              <span className="row-index">10</span>
               <span className="row-body">
                 <span className="row-title">Field check · Takt</span>
                 <span className="row-meta">
@@ -281,7 +297,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">10</span>
+              <span className="row-index">11</span>
               <span className="row-body">
                 <span className="row-title">Field check · Cadence</span>
                 <span className="row-meta">
@@ -296,7 +312,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">11</span>
+              <span className="row-index">12</span>
               <span className="row-body">
                 <span className="row-title">Field check · Acoustics</span>
                 <span className="row-meta">
@@ -311,7 +327,7 @@ export default function DesignSystemContractPage() {
               data-cuelume-hover="whisper"
               data-cuelume-press
             >
-              <span className="row-index">12</span>
+              <span className="row-index">13</span>
               <span className="row-body">
                 <span className="row-title">Public review</span>
                 <span className="row-meta">
@@ -375,6 +391,25 @@ export default function DesignSystemContractPage() {
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.cadence.rules)} />
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Acoustics adoption</h2>
+          <div className="definition">
+            <p className="definition-label">
+              Acoustics · adopted in v{c.acoustic.adopted_in}
+            </p>
+            <p>
+              Lab Four portable rules are contract material: ten named cue
+              tokens (--cue:brand through --cue:contact), one primary cue
+              family per role, opt-in sound with localStorage preference,
+              fine-pointer hover discipline, no focus sounds, no ambient
+              audio, silent fallback when Web Audio is blocked, and
+              reduced-motion as an acoustic-reduction proxy. Engine: {c.acoustic.engine}.
+              Silence was not adoption — this version is the explicit order.
+            </p>
+          </div>
+          <CheckGrid items={checkItemsFromStrings(c.acoustic.mapping_rules)} />
         </section>
 
         <section className="doctrine-section fade-up">

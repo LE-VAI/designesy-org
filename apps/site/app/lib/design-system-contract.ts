@@ -404,6 +404,7 @@ export const designSystemContract = {
     text_decoration_skip_ink: 'auto set on :root — skips descenders for readability (fixed 2026-07-15)',
   },
   acoustic: {
+    adopted_in: '0.3.0',
     engine: 'Cuelume v0.1.0 (MIT)',
     preference_key: 'designesy:sound',
     reduced_motion_proxy: true,
