@@ -8,7 +8,7 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Score your Lovable site',
   description:
-    'Score any Lovable-built site against the Designesy design system contract. 40 checks, one grade, no login. lovable.dev currently scores A · 93.2.',
+    'Score any Lovable-built site against the Designesy design system contract. 40 checks, one grade, no login.',
   path: '/score/lovable',
   ogTitle: 'Score your Lovable site · Designesy',
   ogDescription:
@@ -24,12 +24,11 @@ export default function ScoreLovablePage() {
       eyebrow="Score · Lovable"
       headline="Score your Lovable site"
       lede="40 checks. One grade. Built on Lovable? See how close you are to a published design contract."
-      body="Lovable ships good defaults. The Designesy engine runs the same 40 checks against any Lovable-built URL and returns an honest grade — pass, fail, warn, or skip — against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with lovable.dev, which already scores A."
+      body="Lovable ships good defaults. The Designesy engine runs the same 40 checks against any Lovable-built URL and returns an honest grade — pass, fail, warn, or skip — against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with lovable.dev — score it live to see where it stands today."
       exampleUrl="lovable.dev"
-      exampleScore="A · 93.2"
       caseStudyHref="/work/lovable-dev"
       caseStudyTitle="lovable.dev · A on arrival"
-      caseStudyMeta="Case study — an AI-built site that passes the contract without citing it"
+      caseStudyMeta="Case study — a snapshot score with full per-check breakdown"
     />
   );
 }

@@ -186,7 +186,7 @@ export default function AcousticTokensPage() {
             >
               <span className="row-index">03</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.3.0</span>
+                <span className="row-title">Design system contract v0.4.0</span>
                 <span className="row-meta">Visual token system</span>
               </span>
             </Link>

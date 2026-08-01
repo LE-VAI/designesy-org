@@ -17,6 +17,9 @@ import {
   COHORT_SCORED_COUNT,
   COHORT_TOTAL_COUNT,
   RECENT_SCORES,
+  LOWEST_SCORE,
+  LOWEST_GRADE,
+  LOWEST_NAME,
 } from './hero-stats';
 
 // ISR: the homepage is statically rendered and cached at the Vercel edge,
@@ -98,6 +101,12 @@ const SURFACES = [
     label: 'Contracts',
     desc: 'Portable design agreements and verification',
     meta: 'v0.4.0 public',
+  },
+  {
+    href: '/pricing',
+    label: 'Pricing',
+    desc: 'Open core, paid continuity, enterprise',
+    meta: 'Free forever',
   },
 ];
 
@@ -218,7 +227,15 @@ export default function HomePage() {
                   <span>Self-score </span>
                   <span className="hero-proof-num">{SELF_SCORE}%</span>
                   <span className="hero-proof-grade is-a">{SELF_GRADE}</span>
+                  <span className="hero-proof-caveat">our own contract</span>
                 </li>
+                {LOWEST_SCORE !== null && (
+                  <li className="hero-proof-stat">
+                    <span>Lowest: </span>
+                    <span className="hero-proof-num">{LOWEST_SCORE}%</span>
+                    <span className={`hero-proof-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
+                  </li>
+                )}
               </ul>
 
               <div className="hero-proof-recent">

@@ -220,7 +220,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  designesy.org checked against contract v0.3.0
+                  designesy.org checked against contract v0.4.0
                 </span>
               </span>
             </Link>

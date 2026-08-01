@@ -10710,7 +10710,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* --- Pricing page (/pricing) ----------------------------------------------
-   Contract: design-system v0.3.0.
+   Contract: design-system v0.4.0.
    Tokens only — no raw hex, no magic numbers.
    Motion: Poise fade-up entrance (inherited from .fade-up), Takt press
    scale 0.985 on cards (hover lift only on fine pointer + hover-capable).
@@ -12991,6 +12991,17 @@ select {
   border: 1px solid var(--line-strong);
 }
 .hero-proof-grade.is-a { color: #22c55e; border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.08); }
+.hero-proof-grade.is-b { color: #3b82f6; border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
+.hero-proof-grade.is-c { color: #eab308; border-color: rgba(234,179,8,0.45); background: rgba(234,179,8,0.08); }
+.hero-proof-grade.is-d { color: #f97316; border-color: rgba(249,115,22,0.45); background: rgba(249,115,22,0.08); }
+.hero-proof-grade.is-f { color: #ef4444; border-color: rgba(239,68,68,0.45); background: rgba(239,68,68,0.08); }
+.hero-proof-caveat {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
 
 /* Recent-scores — the real cohort leaders, hairline ledger rows. */
 .hero-proof-recent {

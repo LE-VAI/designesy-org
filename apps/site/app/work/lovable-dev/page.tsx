@@ -9,12 +9,12 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev — A on arrival case study',
   description:
-    'An AI-built site that already passes the Designesy contract — without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
+    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract — without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
   path: '/work/lovable-dev',
   type: 'article',
   ogTitle: 'lovable.dev · A on arrival · Designesy',
   ogDescription:
-    'An AI app platform site that scores A on the Designesy contract without citing it. The upper bound of what an AI-built site can score today.',
+    'An AI app platform site that scored A on the Designesy contract without citing it. The upper bound of what an AI-built site can score — snapshot, 2026-07-25.',
   twitterDescription: 'lovable.dev A on arrival case study — designesy.org/work/lovable-dev',
 });
 
@@ -57,16 +57,17 @@ export default function LovableCaseStudy() {
           </p>
           <h1 className="surface-title">lovable.dev · A on arrival</h1>
           <p className="surface-lede">
-            An AI-built site that already passes the contract — without
-            knowing it existed.
+            Snapshot (2026-07-25): an AI-built site that scored A on the
+            contract — without knowing it existed.
           </p>
           <p className="surface-note">
             lovable.dev was scored by the same /api/score engine that grades
-            every other site. The result was an A — 19 pass, 0 fail, 3 warn, 4
-            skip — without the site ever citing the Designesy contract. This
-            is the case the AI-site-build narrative did not expect: a
-            generator that ships good defaults and lands in contract
-            territory by accident.
+            every other site. On 2026-07-25 the result was an A — 19 pass,
+            0 fail, 3 warn, 4 skip — without the site ever citing the Designesy
+            contract. Sites change and the engine evolves; score it live on
+            /score to see where it stands today. This case study documents
+            the snapshot: a generator that shipped good defaults and landed
+            in contract territory by accident.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">A · 93.2</span>
@@ -180,7 +181,7 @@ export default function LovableCaseStudy() {
             >
               <span className="row-index">02</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.3.0</span>
+                <span className="row-title">Design system contract v0.4.0</span>
                 <span className="row-meta">The contract lovable.dev passes without citing</span>
               </span>
             </Link>

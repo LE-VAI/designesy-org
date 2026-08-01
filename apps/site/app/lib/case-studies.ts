@@ -122,7 +122,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: 'lovable-dev',
     title: 'lovable.dev · A on arrival',
-    lede: 'An AI-built site that already passes the contract — without knowing it existed.',
+    lede: 'Snapshot (2026-07-25): an AI-built site that scored A on the contract — without knowing it existed.',
     status: 'Verified · public',
     badge: 'A · 93.2',
     artifact: 'lovable.dev',

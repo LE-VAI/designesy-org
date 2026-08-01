@@ -53,7 +53,7 @@ const SCHEMA = {
         },
         version: {
           type: 'string',
-          description: 'Tool version. designesy contract version (v0.3.0), Lighthouse version (12.0.0), etc.',
+          description: 'Tool version. designesy contract version (v0.4.0), Lighthouse version (12.0.0), etc.',
         },
         userAgent: {
           type: 'string',

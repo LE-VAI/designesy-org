@@ -220,7 +220,7 @@ export default function WhatIsDesignVerificationPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Read the contract</span>
-                <span className="row-meta">Designesy design system v0.3.0 — tokens, rules, behavior, verification</span>
+                <span className="row-meta">Designesy design system v0.4.0 — tokens, rules, behavior, verification</span>
               </span>
             </Link>
             <Link
@@ -254,7 +254,7 @@ export default function WhatIsDesignVerificationPage() {
 
         <div className="status-note">
           This is a category-defining article, not a marketing page. If you
-          cite it, cite the contract version (v0.3.0) and the score endpoint
+          cite it, cite the contract version (v0.4.0) and the score endpoint
           (/api/score) as the primary sources.
         </div>
       </main>
