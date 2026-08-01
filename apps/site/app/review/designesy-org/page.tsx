@@ -9,7 +9,7 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
   description:
-    'Public review of the Designesy site against design system contract v0.4.0, Lab One: Poise, Lab Two: Takt, and Lab Three: Cadence.',
+    'Public review of the Designesy site against design system contract v0.4.0, Lab One: Poise, Lab Two: Takt, Lab Three: Cadence, and Lab Four: Acoustics.',
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
@@ -32,7 +32,7 @@ const HOLDS = [
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract v0.4.0, the machine export, Poise, Takt, and Cadence reference the same values — including adopted interaction, interface-feel, and typography rules. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract v0.4.0, the machine export, Poise, Takt, Cadence, and Acoustics reference the same values — including adopted interaction, interface-feel, typography, and acoustic rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -69,10 +69,10 @@ const TENSIONS = [
 ];
 
 const NEXT_STATES = [
-  'Poise rules adopted in v0.1.1; Takt in v0.1.2; Cadence in v0.1.3; labs remain the inspectable demos',
+  'Poise rules adopted in v0.1.1; Takt in v0.1.2; Cadence in v0.1.3; Acoustics in v0.3.0; labs remain the inspectable demos',
   'Public product names stay human and premium; research-demo vocabulary stays off public surfaces',
   'A second accent or light theme ships only after it is contracted',
-  'Homepage field cards point to the contract home, Poise, Takt, and Cadence using existing tokens and opacity-only mark liveliness',
+  'Homepage field cards point to the contract home, Poise, Takt, Cadence, and Acoustics using existing tokens and opacity-only mark liveliness',
 ];
 
 const SCOPE = [
@@ -81,6 +81,9 @@ const SCOPE = [
   { href: '/labs', label: 'Labs', meta: '/labs' },
   { href: '/labs/poise', label: 'Poise', meta: '/labs/poise' },
   { href: '/labs/takt', label: 'Takt', meta: '/labs/takt' },
+  { href: '/labs/cadence', label: 'Cadence', meta: '/labs/cadence' },
+  { href: '/labs/acoustics', label: 'Acoustics', meta: '/labs/acoustics' },
+  { href: '/acoustic-tokens', label: 'Acoustic tokens', meta: '/acoustic-tokens' },
   { href: '/contracts', label: 'Contracts', meta: '/contracts' },
   {
     href: '/contracts/design-system',
@@ -116,6 +119,11 @@ const EVIDENCE = [
     href: '/labs/poise',
   },
   {
+    title: 'Lab Four · Acoustics',
+    meta: '/labs/acoustics',
+    href: '/labs/acoustics',
+  },
+  {
     title: 'Tokens',
     meta: 'Live design tokens — paper, surface, accent, radius, motion',
   },
@@ -149,9 +157,9 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
-            live public site — including Lab One · Poise, Lab Two · Takt, and
-            Lab Three · Cadence — for purpose, clarity, coherence, and what
-            remains open.
+            live public site — including Lab One · Poise, Lab Two · Takt, Lab
+            Three · Cadence, and Lab Four · Acoustics — for purpose, clarity,
+            coherence, and what remains open.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
@@ -191,8 +199,8 @@ export default function PublicSurfaceReviewPage() {
             <p>
               The public surface is functional and largely considered. It earns
               its restraint. What remains is synchronization, fuller
-              verification proof, and keeping adopted Poise and Takt rules
-              synchronized — not a redesign.
+              verification proof, and keeping adopted Poise, Takt, Cadence, and
+              Acoustics rules synchronized — not a redesign.
             </p>
           </div>
         </section>
@@ -247,13 +255,14 @@ export default function PublicSurfaceReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition">
-            <p className="definition-label">Poise, Takt, Cadence, and contract v0.4.0</p>
+            <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract v0.4.0</p>
             <p>
               Poise is Lab One; its portable interaction rules were adopted into
               contract v0.1.1. Takt is Lab Two; its interface-feel rules were
               adopted into contract v0.1.2. Cadence is Lab Three; its typography
-              rules were adopted into contract v0.1.3. The labs remain the live
-              demos; the contract carries the rules.
+              rules were adopted into contract v0.1.3. Acoustics is Lab Four; its
+              nine acoustic mapping rules were adopted into contract v0.3.0. The
+              labs remain the live demos; the contract carries the rules.
             </p>
           </div>
         </section>
@@ -261,7 +270,7 @@ export default function PublicSurfaceReviewPage() {
         <div className="status-note">
           Public review of the live designesy.org surface against contract
           v0.4.0. This is institutional quality discipline, not a client report
-          or legal audit. Poise, Takt, and Cadence rules are adopted; the labs remain the
+          or legal audit. Poise, Takt, Cadence, and Acoustics rules are adopted; the labs remain the
           inspectable source demos.
         </div>
       </main>

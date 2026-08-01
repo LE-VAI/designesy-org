@@ -156,7 +156,7 @@ const CORRECTIONS = [
 const VERIFICATION = [
   'Live route inspected: /labs/cadence structure, demo blocks, status language',
   'Live CSS audit (48,755 bytes) — font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select all parsed',
-  'Compared to design system contract v0.1.2 typography block',
+  'Compared to design system contract v0.4.0 typography block',
   'Compared to Use Kit One · Design Review output format',
   'Checked anti-patterns: no px font sizes, no decorative display fonts, no default ::selection',
   'Checked naming: Cadence remains human product language',
@@ -177,8 +177,8 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.2',
-    meta: 'Governing tokens · typography block',
+    title: 'Design system contract v0.4.0',
+    meta: 'Governing tokens · typography block (Cadence adopted in v0.1.3)',
   },
   {
     href: 'https://github.com/jakubkrehel/skills',
@@ -242,7 +242,7 @@ export default function CadenceFieldCheckPage() {
               Two rules identified in the initial field check have been resolved
               in globals.css. One rule remains open: block-axis logical
               properties are not yet migrated (inline-axis is done). Typography
-              rules are adopted into design system contract v0.3.0. Remaining
+              rules are adopted into design system contract v0.1.3. Remaining
               work is block-axis migration and synchronization — not re-arguing
               adoption.
             </p>
@@ -280,7 +280,7 @@ export default function CadenceFieldCheckPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.1.2 · Kit One Design Review · Krehel /better-typography
+                  Contract v0.4.0 · Kit One Design Review · Krehel /better-typography
                 </span>
               </span>
             </ToggleRow>

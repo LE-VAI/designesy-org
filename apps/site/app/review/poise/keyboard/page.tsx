@@ -58,7 +58,7 @@ const TAB_ORDER = [
   {
     step: '02',
     title: 'Primary nav',
-    meta: 'Docs → Labs → Kits → Review → Contracts · each link focusable',
+    meta: 'Score → Leaderboard → Contract → Kits → Docs · each link focusable',
   },
   {
     step: '03',
@@ -210,7 +210,7 @@ const RELATED = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.1.1',
+    title: 'Design system contract v0.4.0',
     meta: 'focus-visible, reduced-motion, and adopted Poise interaction rules',
   },
   {
