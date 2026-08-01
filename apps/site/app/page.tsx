@@ -56,7 +56,7 @@ const PILLARS = [
   {
     number: '03',
     title: 'Anti-generic by design',
-    text: 'Fifteen anti-generic tells detect when a surface has defaulted to the mean. No generator has this. The contract is the structural defense against AI sameness.',
+    text: 'Twelve anti-generic tells detect when a surface has defaulted to the mean. No generator has this. The contract is the structural defense against AI sameness.',
   },
   {
     number: '04',
@@ -82,7 +82,7 @@ const SURFACES = [
     href: '/labs',
     label: 'Labs',
     desc: 'Experiments that compile into contracts',
-    meta: 'Poise + Takt + Cadence live',
+    meta: 'Poise + Takt + Cadence + Acoustics live',
   },
   {
     href: '/kits',
@@ -141,7 +141,7 @@ const FIELD = [
     status: 'v0.4.0',
     title: 'Design system contract',
     lede: 'The rules behind this site — portable and versioned.',
-    desc: 'Tokens, motion, components, Poise + Takt + Cadence rules. Human overview plus a machine export agents can cite directly.',
+    desc: 'Tokens, motion, components, Poise + Takt + Cadence + Acoustics rules. Human overview plus a machine export agents can cite directly.',
     arrow: 'Read the contract →',
     kind: 'contract' as const,
   },
@@ -469,7 +469,7 @@ export default function HomePage() {
               {[
                 {
                   title: 'Design system contract v0.4.0',
-                  meta: 'Human home, full tables, machine export · Poise + Takt + Cadence adopted',
+                  meta: 'Human home, full tables, machine export · Poise + Takt + Cadence + Acoustics adopted',
                 },
                 {
                   title: 'Verification engine · 40 checks',
@@ -486,6 +486,10 @@ export default function HomePage() {
                 {
                   title: 'Lab Three · Cadence',
                   meta: 'Text rhythm — rules adopted into v0.1.3',
+                },
+                {
+                  title: 'Lab Four · Acoustics',
+                  meta: 'Interaction sound — rules adopted into v0.3.0',
                 },
                 {
                   title: 'Use Kit One · Design Review',
@@ -509,7 +513,7 @@ export default function HomePage() {
                 },
                 {
                   title: 'Evidentiary surfaces',
-                  meta: 'Methodology · Benchmarks · Badge · Specs · Graph — all open and documented',
+                  meta: 'Methodology · Benchmarks · Badge · Specs · Acoustic tokens · Graph — all open and documented',
                 },
               ].map((item, i) => (
                 <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
