@@ -37,10 +37,19 @@ type GuardrailsResponse = {
   error?: string;
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  PASS: 'var(--signal-light)',
-  WARN: 'var(--activation)',
-  FAIL: '#ff4444',
+function normalizeInput(input: string): string {
+  let clean = input.trim();
+  if (!clean) return '';
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = `https://${clean}`;
+  }
+  return clean;
+}
+
+const STATUS_TOKENS: Record<string, string> = {
+  PASS: 'var(--ok)',
+  WARN: 'var(--warn)',
+  FAIL: 'var(--error)',
 };
 
 type Tab = 'tokens' | 'lint' | 'rules' | 'contract' | 'anti';
@@ -56,16 +65,17 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    const normalized = normalizeInput(url);
+    if (!normalized) return;
     setStatus('loading');
     setResult(null);
-    setScoredUrl(url.trim());
+    setScoredUrl(normalized);
 
     try {
       const resp = await fetch('/api/guardrails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: normalized }),
       });
       const data: GuardrailsResponse = await resp.json();
       if (!data.ok) {
@@ -133,31 +143,43 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
 
   return (
     <div className="guardrails-form">
-      <form onSubmit={handleSubmit} className="score-form" role="search">
-        <div className="score-input-row">
-          <span className="score-input-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" />
-            </svg>
-          </span>
-          <input
-            ref={inputRef}
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter a URL to generate guardrails..."
-            className="score-input"
-            aria-label="URL to generate guardrails for"
-            autoFocus={!!initialUrl}
-          />
+      <form onSubmit={handleSubmit} className="score-input-card">
+        <div className="score-input-col">
+          <div className="score-input-flex-box">
+            <span className="score-input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" />
+              </svg>
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter a URL to generate guardrails..."
+              className="score-url-input-inner"
+              aria-label="URL to generate guardrails for"
+              disabled={status === 'loading'}
+            />
+          </div>
           <button
             type="submit"
-            className="button primary"
-            disabled={status === 'loading'}
-            data-cuelume-hover="tick"
-            data-cuelume-press="tick"
+            className="button primary score-submit"
+            disabled={status === 'loading' || !url.trim()}
+            data-cuelume-press="sparkle"
+            data-firework="true"
           >
-            {status === 'loading' ? 'Emitting…' : 'Generate guardrails'}
+            {status === 'loading' ? (
+              <span className="score-loading-state">
+                <span className="score-spinner" />
+                Emitting…
+              </span>
+            ) : (
+              'Generate guardrails'
+            )}
           </button>
         </div>
       </form>
@@ -222,12 +244,13 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
                   <span className="row-title">
                     {check.id} · {check.item}{' '}
                     <span
+                      className={`check-status is-${check.status.toLowerCase()}`}
                       style={{
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        color: STATUS_COLOR[check.status],
+                        color: STATUS_TOKENS[check.status] || 'var(--warn)',
                         marginLeft: '0.5rem',
                       }}
                     >
@@ -260,7 +283,7 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
                       fontWeight: activeTab === tab.id ? 600 : 400,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
-                      transition: 'all 0.15s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
+                      transition: 'background-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), border-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
                     }}
                   >
                     {tab.label}
@@ -295,7 +318,6 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
                   fontSize: '0.8rem',
                   lineHeight: 1.6,
                   color: 'var(--ink)',
-                  fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)',
                   maxHeight: '500px',
                 }}
               >
@@ -313,17 +335,23 @@ function GuardrailsDial({ score, grade }: { score: number; grade: string }) {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 90 ? 'var(--signal-light)' : score >= 70 ? 'var(--activation)' : '#ff4444';
+  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
 
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120">
+    <svg
+      width="120"
+      height="120"
+      viewBox="0 0 120 120"
+      role="img"
+      aria-label={`Grade ${grade}, ${score} percent`}
+    >
       <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
       <circle
         cx="60"
         cy="60"
         r={radius}
         fill="none"
-        stroke={color}
+        stroke={fillColor}
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={circumference}

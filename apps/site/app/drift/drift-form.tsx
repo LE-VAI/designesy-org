@@ -26,11 +26,14 @@ type DriftResponse = {
   error?: string;
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  PASS: 'var(--signal-light)',
-  WARN: 'var(--activation)',
-  FAIL: '#ff4444',
-};
+function normalizeInput(input: string): string {
+  let clean = input.trim();
+  if (!clean) return '';
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = `https://${clean}`;
+  }
+  return clean;
+}
 
 export function DriftForm({ initialUrl }: { initialUrl: string }) {
   const [url, setUrl] = useState(initialUrl);
@@ -41,16 +44,17 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    const normalized = normalizeInput(url);
+    if (!normalized) return;
     setStatus('loading');
     setResult(null);
-    setScoredUrl(url.trim());
+    setScoredUrl(normalized);
 
     try {
       const resp = await fetch('/api/drift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: normalized }),
       });
       const data: DriftResponse = await resp.json();
       if (!data.ok) {
@@ -72,32 +76,44 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
 
   return (
     <div className="drift-form">
-      <form onSubmit={handleSubmit} className="score-form" role="search">
-        <div className="score-input-row">
-          <span className="score-input-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </span>
-          <input
-            ref={inputRef}
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter a URL to scan for drift..."
-            className="score-input"
-            aria-label="URL to scan for drift"
-            autoFocus={!!initialUrl}
-          />
+      <form onSubmit={handleSubmit} className="score-input-card">
+        <div className="score-input-col">
+          <div className="score-input-flex-box">
+            <span className="score-input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter a URL to scan for drift..."
+              className="score-url-input-inner"
+              aria-label="URL to scan for drift"
+              disabled={status === 'loading'}
+            />
+          </div>
           <button
             type="submit"
-            className="button primary"
-            disabled={status === 'loading'}
-            data-cuelume-hover="tick"
-            data-cuelume-press="tick"
+            className="button primary score-submit"
+            disabled={status === 'loading' || !url.trim()}
+            data-cuelume-press="sparkle"
+            data-firework="true"
           >
-            {status === 'loading' ? 'Scanning…' : 'Scan for drift'}
+            {status === 'loading' ? (
+              <span className="score-loading-state">
+                <span className="score-spinner" />
+                Scanning for drift…
+              </span>
+            ) : (
+              'Scan for drift'
+            )}
           </button>
         </div>
       </form>
@@ -158,12 +174,13 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
                   <span className="row-title">
                     {check.id} · {check.item}{' '}
                     <span
+                      className={`check-status is-${check.status.toLowerCase()}`}
                       style={{
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        color: STATUS_COLOR[check.status],
+                        color: check.status === 'PASS' ? 'var(--ok)' : check.status === 'FAIL' ? 'var(--error)' : 'var(--warn)',
                         marginLeft: '0.5rem',
                       }}
                     >
@@ -185,17 +202,23 @@ function ScoreDial({ score, grade }: { score: number; grade: string }) {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 90 ? 'var(--signal-light)' : score >= 70 ? 'var(--activation)' : '#ff4444';
+  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
 
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120">
+    <svg
+      width="120"
+      height="120"
+      viewBox="0 0 120 120"
+      role="img"
+      aria-label={`Grade ${grade}, ${score} percent`}
+    >
       <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
       <circle
         cx="60"
         cy="60"
         r={radius}
         fill="none"
-        stroke={color}
+        stroke={fillColor}
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={circumference}

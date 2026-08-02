@@ -29,12 +29,16 @@ export default function GuardrailsContractPage() {
           <h1 className="surface-title" data-scramble>Guardrails</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url}>machine export</Link>
+            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
           </p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
+          <div className="definition">
+            <p className="definition-label">Primary source</p>
+            <p>{c.source_authority.primary}</p>
+          </div>
           <div className="definition">
             <p className="definition-label">Contract shift</p>
             <p>{c.source_authority.contract_shift}</p>
