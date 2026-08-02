@@ -9,44 +9,13 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
+import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
 
 // ── URL utilities (inlined — do not import from a route file) ─────────────────
 
-function normalizeInputUrl(raw: string): string {
-  let clean = raw.trim();
-  if (!clean) return '';
-  if (!/^https?:\/\//i.test(clean)) {
-    clean = `https://${clean}`;
-  }
-  try {
-    const u = new URL(clean);
-    return u.href;
-  } catch {
-    return clean;
-  }
-}
-
-function isValidUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
-    const host = u.hostname.toLowerCase();
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host.startsWith('10.') ||
-      host.startsWith('192.168.') ||
-      host.startsWith('172.16.') ||
-      host === '0.0.0.0' ||
-      !host.includes('.')
-    ) {
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
+// ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
+// Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
+// (169.254.169.254), full 172.16.0.0/12, and encoded-IP bypass paths.
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
