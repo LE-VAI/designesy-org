@@ -44,6 +44,7 @@ const INDEX: SearchItem[] = [
   { title: 'Score a site', href: '/score', group: 'Verify', keywords: 'verify audit grade checks engine test url', meta: '40-check engine' },
   { title: 'Drift radar', href: '/drift', group: 'Verify', keywords: 'drift ai generated ui token fabrication variance off contract', meta: '12-check drift' },
   { title: 'AI Readiness score', href: '/readiness', group: 'Verify', keywords: 'ai readiness machine readable llms.txt agent.json mcp design.md maturity', meta: '10-check readiness' },
+  { title: 'Guardrails', href: '/guardrails', group: 'Verify', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint enforce', meta: '5-check emitter' },
   { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
@@ -56,6 +57,7 @@ const INDEX: SearchItem[] = [
   { title: 'Accessibility', href: '/contracts/a11y', group: 'Contract', keywords: 'wcag axe contrast screen reader', meta: 'WCAG 2.2 AA' },
   { title: 'Drift', href: '/contracts/drift', group: 'Contract', keywords: 'ai drift token fabrication variance off contract', meta: 'v0.1.0' },
   { title: 'AI Readiness', href: '/contracts/readiness', group: 'Contract', keywords: 'ai readiness machine readable llms.txt agent.json mcp maturity', meta: 'v0.1.0' },
+  { title: 'Guardrails', href: '/contracts/guardrails', group: 'Contract', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint', meta: 'v0.1.0' },
   { title: 'Acoustic tokens', href: '/acoustic-tokens', group: 'Contract', keywords: 'sound cues audio cue', meta: '10 cues' },
   // Learn
   { title: 'Docs', href: '/docs', group: 'Learn', keywords: 'orientation mission principles architecture', meta: '' },
