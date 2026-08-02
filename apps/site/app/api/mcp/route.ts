@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 12 design-intelligence tools over Streamable HTTP. No Python, no child
+// 13 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -768,6 +768,35 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           const errText = await res.text().catch(() => res.statusText);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Drift API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+    // ── Tool 13: designesy_readiness_score ───────────────────────────────────────
+    // Scores a URL for design-system AI readiness — probes for machine-readable
+    // artifacts (tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap, robots).
+    server.tool(
+      'designesy_readiness_score',
+      'Score a URL for design-system AI readiness — the 6th maturity axis (zeroheight 2026). 10 checks probe the target origin for machine-readable artifacts: DTCG token files, llms.txt, agent.json, MCP endpoint (tools/list), DESIGN.md, token $description, component schemas, sitemap.xml, robots.txt, and Open Graph/Twitter meta. Use this to verify whether a design system is the default context AI tools build from, or whether AI is silently working around it. When NOT to use: for full design-contract scoring, use designesy_score; for AI-drift detection, use designesy_drift_score. Executable — fetches the URL and probes the origin via HEAD/GET for each artifact. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+      {
+        url: z.string().optional().describe('URL to score for AI readiness. Defaults to https://www.designesy.org/ if not provided.'),
+      },
+      async ({ url }) => {
+        const targetUrl = url || `${BASE_URL}/`;
+        const res = await fetch(`${BASE_URL}/api/readiness`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Readiness API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
