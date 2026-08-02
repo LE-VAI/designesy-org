@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 11 design-intelligence tools over Streamable HTTP. No Python, no child
+// 12 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -745,6 +745,35 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
               validator_note: 'Canonical validator: ajv 8.20.0 (import Ajv from "ajv/dist/2020") + ajv-formats 3.0.1. Schema: lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json',
             }, null, 2),
           }],
+        };
+      },
+    );
+    // ── Tool 12: designesy_drift_score ──────────────────────────────────────────
+    // Scores a live URL for AI-generated UI drift — 12 checks against compiled
+    // CSS detecting the four documented 2026 drift failure modes.
+    server.tool(
+      'designesy_drift_score',
+      'Score a live URL for AI-generated UI drift — 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full 40-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable — fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+      {
+        url: z.string().optional().describe('URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.'),
+      },
+      async ({ url }) => {
+        const targetUrl = url || `${BASE_URL}/`;
+        const res = await fetch(`${BASE_URL}/api/drift`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Drift API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
         };
       },
     );
