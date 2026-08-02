@@ -492,6 +492,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/drift"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">12</span>
+              <span className="row-body">
+                <span className="row-title">Drift · v0.1.0</span>
+                <span className="row-meta">
+                  AI-generated UI drift detection — 12 checks for token fabrication, value variance, off-contract patterns
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
