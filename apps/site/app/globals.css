@@ -13012,10 +13012,14 @@ select {
    scrambler's textContent writes identically in every engine — a CSS
    margin would DOUBLE the gap in browsers that keep the natural space. */
 .hero-word-free {
-  /* The gap is a REAL U+00A0 encoded as this span's own leading character —
-     hydration-proof, and because it lives on the clipped text itself the
-     shimmer band sweeps through the gap exactly like any other glyph. */
-  padding-left: 0.14em; /* optical kern: nbsp + this ≈ one natural word space */
+  /* No padding-left — the U+00A0 alone gives the natural word space. The old
+     0.14em "optical kern" double-spaced the gap (nbsp ≈ 0.25em + 0.14em pad
+     ≈ 0.39em vs the ~0.25em a real Inter word space holds), and the hard
+     background-clip boundary on the left edge of the f read as a second
+     barrier on top of the space. At rest the gradient band is parked fully
+     off-word (background-size: 250%), so there is no clip artifact to defend
+     against — the padding was dead weight that only widened the gap. */
+  padding-left: 0;
   /* Flat base face (#f5f5f7-adjacent light gray) with a NARROW pure-white
      band at 47–53%. With background-size 250% the band lives at container
      coords 117.5–132.5% — fully off the right edge of the word at rest, so
