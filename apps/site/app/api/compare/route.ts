@@ -9,7 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 
 // ── URL utilities (inlined — do not import from a route file) ─────────────────
 
@@ -74,10 +74,9 @@ async function fetchText(url: string): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const resp = await fetch(url, {
+    const resp = await safeFetch(url, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
-      redirect: 'follow',
     });
     if (!resp.ok) return '';
     return await resp.text();

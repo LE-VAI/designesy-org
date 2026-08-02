@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -80,10 +80,9 @@ async function fetchCssSingle(url: string): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const resp = await fetch(url, {
+    const resp = await safeFetch(url, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
-      redirect: 'follow',
     });
     if (!resp.ok) return '';
     return await resp.text();
@@ -1598,10 +1597,9 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const resp = await fetch(designMdUrl, {
+    const resp = await safeFetch(designMdUrl, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
-      redirect: 'follow',
     });
     clearTimeout(timeout);
     if (!resp.ok) {

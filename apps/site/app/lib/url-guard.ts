@@ -125,3 +125,41 @@ function isPrivateIPv4(host: string): boolean {
 
   return false;
 }
+
+// ── safeFetch — SSRF-safe fetch with per-redirect-hop validation ─────────────
+//
+// Drop-in replacement for `fetch(url, { ...init, redirect: 'follow' })`.
+// Overrides redirect to 'manual' and follows each 3xx hop individually,
+// validating every hop URL against isValidUrl before fetching it. This
+// closes the redirect-bypass vector where a public URL 302s to an internal
+// address (e.g. http://169.254.169.254/).
+//
+// Caps at MAX_REDIRECTS (5) hops. Returns the final Response. If a redirect
+// target fails isValidUrl, throws an Error — callers should catch and treat
+// as a failed fetch (most already do via try/catch returning '' or { ok: false }).
+
+const MAX_REDIRECTS = 5;
+
+export async function safeFetch(
+  url: string,
+  init?: RequestInit & { headers?: Record<string, string> },
+): Promise<Response> {
+  let currentUrl = url;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    // Validate every hop — including the initial URL and each redirect target.
+    if (!isValidUrl(currentUrl)) {
+      throw new Error(`SSF guard: blocked URL ${currentUrl}`);
+    }
+    const resp = await fetch(currentUrl, { ...init, redirect: 'manual' });
+    // Not a redirect — return the response (success, 4xx, 5xx, etc.)
+    if (resp.status < 300 || resp.status >= 400) return resp;
+    // 3xx redirect — extract Location header and resolve against current URL.
+    const location = resp.headers.get('location');
+    if (!location) return resp; // 3xx with no Location — return as-is
+    currentUrl = new URL(location, currentUrl).href;
+    // Loop continues — next iteration validates the new URL.
+  }
+  // Exceeded MAX_REDIRECTS — treat as error (matches redirect: 'follow' which
+  // also has a cap). Return a synthetic error response.
+  throw new Error(`SSR guard: exceeded ${MAX_REDIRECTS} redirects`);
+}
