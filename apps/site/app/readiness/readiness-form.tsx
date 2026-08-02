@@ -25,10 +25,19 @@ type ReadinessResponse = {
   error?: string;
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  PASS: 'var(--signal-light)',
-  WARN: 'var(--activation)',
-  FAIL: '#ff4444',
+function normalizeInput(input: string): string {
+  let clean = input.trim();
+  if (!clean) return '';
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = `https://${clean}`;
+  }
+  return clean;
+}
+
+const STATUS_TOKENS: Record<string, string> = {
+  PASS: 'var(--ok)',
+  WARN: 'var(--warn)',
+  FAIL: 'var(--error)',
 };
 
 export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
@@ -40,16 +49,17 @@ export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim()) return;
+    const normalized = normalizeInput(url);
+    if (!normalized) return;
     setStatus('loading');
     setResult(null);
-    setScoredUrl(url.trim());
+    setScoredUrl(normalized);
 
     try {
       const resp = await fetch('/api/readiness', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: normalized }),
       });
       const data: ReadinessResponse = await resp.json();
       if (!data.ok) {
@@ -71,32 +81,44 @@ export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
 
   return (
     <div className="readiness-form">
-      <form onSubmit={handleSubmit} className="score-form" role="search">
-        <div className="score-input-row">
-          <span className="score-input-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-              <path d="M12 2a10 10 0 0 1 10 10" />
-            </svg>
-          </span>
-          <input
-            ref={inputRef}
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter a URL to score AI readiness..."
-            className="score-input"
-            aria-label="URL to score for AI readiness"
-            autoFocus={!!initialUrl}
-          />
+      <form onSubmit={handleSubmit} className="score-input-card">
+        <div className="score-input-col">
+          <div className="score-input-flex-box">
+            <span className="score-input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+                <path d="M12 2a10 10 0 0 1 10 10" />
+              </svg>
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter a URL to score AI readiness..."
+              className="score-url-input-inner"
+              aria-label="URL to score for AI readiness"
+              disabled={status === 'loading'}
+            />
+          </div>
           <button
             type="submit"
-            className="button primary"
-            disabled={status === 'loading'}
-            data-cuelume-hover="tick"
-            data-cuelume-press="tick"
+            className="button primary score-submit"
+            disabled={status === 'loading' || !url.trim()}
+            data-cuelume-press="sparkle"
+            data-firework="true"
           >
-            {status === 'loading' ? 'Probing…' : 'Score readiness'}
+            {status === 'loading' ? (
+              <span className="score-loading-state">
+                <span className="score-spinner" />
+                Probing…
+              </span>
+            ) : (
+              'Score readiness'
+            )}
           </button>
         </div>
       </form>
@@ -150,12 +172,13 @@ export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
                   <span className="row-title">
                     {check.id} · {check.item}{' '}
                     <span
+                      className={`check-status is-${check.status.toLowerCase()}`}
                       style={{
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        color: STATUS_COLOR[check.status],
+                        color: STATUS_TOKENS[check.status] || 'var(--warn)',
                         marginLeft: '0.5rem',
                       }}
                     >
@@ -177,17 +200,23 @@ function ReadinessDial({ score, grade }: { score: number; grade: string }) {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 90 ? 'var(--signal-light)' : score >= 70 ? 'var(--activation)' : '#ff4444';
+  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
 
   return (
-    <svg width="120" height="120" viewBox="0 0 120 120">
+    <svg
+      width="120"
+      height="120"
+      viewBox="0 0 120 120"
+      role="img"
+      aria-label={`Grade ${grade}, ${score} percent`}
+    >
       <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
       <circle
         cx="60"
         cy="60"
         r={radius}
         fill="none"
-        stroke={color}
+        stroke={fillColor}
         strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={circumference}
