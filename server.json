@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.le-vai/designesy-org",
+  "name": "io.github.LE-VAI/designesy-org",
   "title": "Designesy",
   "description": "Design-system contract verification, scoring, and review tools for AI agents.",
   "repository": {
@@ -30,7 +30,12 @@
         "designesy_score",
         "designesy_tokens_score",
         "designesy_a11y_score",
-        "designesy_motion_score"
+        "designesy_motion_score",
+        "designesy_drift_score",
+        "designesy_readiness_score",
+        "designesy_guardrails",
+        "designesy_monitor_score",
+        "designesy_compare"
       ],
       "transport_note": "Two paths: (1) PyPI package — pip install designesy-mcp, run as stdio MCP server locally. (2) Remote HTTP — https://www.designesy.org/api/mcp native TypeScript MCP server on Vercel Node.js runtime (mcp-handler adapter, stateless Streamable HTTP, 2026-07-28 spec aligned). Sister listing org.designesy.www/designesy (DNS-authenticated) is the branded namespace; this io.github listing auto-republishes on every release tag via GitHub OIDC.",
       "auth": "github-oidc"
