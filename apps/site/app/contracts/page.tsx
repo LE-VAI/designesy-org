@@ -552,6 +552,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/compare"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">16</span>
+              <span className="row-body">
+                <span className="row-title">Compare · v0.1.0</span>
+                <span className="row-meta">
+                  The diff engine — fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions: added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
