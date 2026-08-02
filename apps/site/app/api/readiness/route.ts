@@ -10,7 +10,7 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,14 +42,13 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const resp = await fetch(url, {
+    const resp = await safeFetch(url, {
       method,
       headers: {
         'User-Agent': 'designesy-readiness/1.0 (https://www.designesy.org)',
         'Accept': '*/*',
       },
       signal: controller.signal,
-      redirect: 'follow',
     });
     const body = method === 'GET' ? await resp.text() : undefined;
     return { ok: resp.ok, status: resp.status, body };
@@ -119,7 +118,7 @@ async function checkR03AgentJson(origin: string): Promise<CheckResult> {
 async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   const mcpUrl = new URL('/api/mcp', origin).href;
   try {
-    const resp = await fetch(mcpUrl, {
+    const resp = await safeFetch(mcpUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
