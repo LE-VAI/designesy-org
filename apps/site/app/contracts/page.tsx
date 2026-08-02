@@ -537,6 +537,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/monitor"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">15</span>
+              <span className="row-body">
+                <span className="row-title">Monitor · v0.1.0</span>
+                <span className="row-meta">
+                  The continuous-governance layer — re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 

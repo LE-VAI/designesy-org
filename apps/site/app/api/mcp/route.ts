@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 14 design-intelligence tools over Streamable HTTP. No Python, no child
+// 15 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -826,6 +826,50 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           const errText = await res.text().catch(() => res.statusText);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Guardrails API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+
+    // ── Tool 15: designesy_monitor_score ───────────────────────────────────────
+    // Continuous design-drift monitor — re-runs drift checks on a URL and
+    // computes 10 governance checks (m01-m10) comparing the current run
+    // against snapshot history supplied by the caller.
+    server.tool(
+      'designesy_monitor_score',
+      'Score a URL for continuous design-drift governance — the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): schedule registered, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. Pass a history array of prior snapshots to compute deltas; omit it for a first-run baseline. Use this to watch a design system over time — "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable — fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts }. Results cached ~24h per URL.',
+      {
+        url: z.string().optional().describe('URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.'),
+        history: z.array(z.object({
+          timestamp: z.string(),
+          score: z.number(),
+          grade: z.string(),
+          tokensExtracted: z.number(),
+          checks: z.array(z.object({
+            id: z.string(),
+            item: z.string(),
+            category: z.string(),
+            status: z.enum(['PASS', 'FAIL', 'WARN']),
+            detail: z.string(),
+          })),
+        })).optional().describe('Prior snapshots for delta computation. Omit for a first-run baseline.'),
+      },
+      async ({ url, history }) => {
+        const targetUrl = url || `${BASE_URL}/`;
+        const res = await fetch(`${BASE_URL}/api/monitor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl, history: history || [] }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Monitor API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
