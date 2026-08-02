@@ -129,8 +129,8 @@ export default function CompareContractPage() {
         </section>
 
         <div className="status-note">
-          The compare contract is the diff engine — it answers "what
-          actually changed between two design systems" deterministically from
+          The compare contract is the diff engine — it answers &ldquo;what
+          actually changed between two design systems&rdquo; deterministically from
           live production URLs. <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>
