@@ -130,6 +130,13 @@ const TOOLS = [
     args: 'urlA: string (first URL), urlB: string (second URL)',
     source: '/api/compare',
   },
+  {
+    name: 'designesy_report',
+    kind: 'Executable',
+    desc: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict.',
+    args: 'url: string',
+    source: '/api/report',
+  },
 ];
 
 const CLIENT_CONFIGS = [
@@ -209,7 +216,7 @@ export default function McpDocsPage() {
           <h1 className="surface-title" data-scramble>MCP server</h1>
           <p className="surface-lede">
             Designesy design intelligence over the Model Context Protocol —
-            sixteen tools, one endpoint, no wrapper.
+            seventeen tools, one endpoint, no wrapper.
           </p>
           <p className="surface-note">
             The Designesy MCP server runs natively on the same Vercel project
@@ -531,7 +538,7 @@ export default function McpDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all sixteen tools
+            The response is a JSON-RPC 2.0 message listing all seventeen tools
             with their schemas.
           </p>
         </section>

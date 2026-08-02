@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 16 design-intelligence tools over Streamable HTTP. No Python, no child
+// 17 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -14,7 +14,7 @@
 // 3 living-systems tools (tokens_score, a11y_score, motion_score) validate
 //   token files, accessibility, and Lottie motion against sibling contracts.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.5.0 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.6.0 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
@@ -901,6 +901,35 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           const errText = await res.text().catch(() => res.statusText);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Compare API returned ${res.status}: ${errText}`, urlA, urlB }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+
+    // ── Tool 17: designesy_report ───────────────────────────────────────────────
+    // The synthesis capstone — fetch one URL, fire score + drift + readiness
+    // in parallel, and produce a unified report with a composite grade.
+    server.tool(
+      'designesy_report',
+      'Generate a unified design-intelligence report for a single URL — the synthesis capstone of the Designesy dynasty. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable — fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly) }. Results cached ~24h per URL.',
+      {
+        url: z.string().describe('Public URL to generate a design-intelligence report for.'),
+      },
+      async ({ url }) => {
+        const res = await fetch(`${BASE_URL}/api/report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Report API returned ${res.status}: ${errText}`, url }, null, 2) }],
             isError: true,
           };
         }

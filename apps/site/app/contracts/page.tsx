@@ -567,6 +567,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/report"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">17</span>
+              <span className="row-body">
+                <span className="row-title">Report · v0.1.0</span>
+                <span className="row-meta">
+                  The synthesis capstone — fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
