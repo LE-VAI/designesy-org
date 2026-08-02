@@ -812,38 +812,43 @@ p {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 12vh 1rem 1rem;
-  background: rgba(1, 1, 2, 0.62);
-  backdrop-filter: blur(10px) saturate(130%);
-  -webkit-backdrop-filter: blur(10px) saturate(130%);
-  animation: cmdk-fade 160ms var(--ease-out);
+  padding: 20vh 1rem 1rem;
+  background: rgba(1, 1, 2, 0.72);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  animation: cmdk-fade 180ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-overlay {
-  background: rgba(28, 28, 32, 0.34);
+  background: rgba(28, 28, 32, 0.46);
 }
 
 .cmdk-panel {
   width: 100%;
-  max-width: 36rem;
-  background: linear-gradient(180deg, rgba(24, 24, 30, 0.72), rgba(14, 14, 18, 0.82));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--line);
+  max-width: 40rem;
+  background: linear-gradient(180deg, rgba(20, 20, 26, 0.86), rgba(12, 12, 16, 0.92));
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.6),
-    0 2px 12px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    0 32px 90px rgba(0, 0, 0, 0.55),
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 20px 40px -20px rgba(255, 255, 255, 0.04);
   overflow: hidden;
-  animation: cmdk-pop 180ms var(--ease-out);
+  animation: cmdk-pop 200ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-panel {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(248, 248, 250, 0.92));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 250, 252, 0.97));
+  border-color: rgba(0, 0, 0, 0.09);
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 32px 90px rgba(0, 0, 0, 0.28),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 20px 40px -20px rgba(255, 255, 255, 0.7);
 }
 
 @keyframes cmdk-fade {
@@ -852,7 +857,7 @@ p {
 }
 
 @keyframes cmdk-pop {
-  from { opacity: 0; transform: translateY(-8px) scale(0.985); }
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -861,8 +866,8 @@ p {
 .cmdk-input-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.95rem 1rem;
+  gap: 0.65rem;
+  padding: 1.1rem 1.1rem;
   border-bottom: 1px solid var(--line);
 }
 
@@ -879,7 +884,8 @@ p {
   outline: none;
   color: var(--ink);
   font: inherit;
-  font-size: 1rem; /* 16px floor — no iOS zoom-on-focus */
+  font-size: 1.06rem; /* 17px — legible against glass, above 16px iOS floor */
+  letter-spacing: -0.005em;
 }
 
 .cmdk-input::placeholder {
@@ -900,10 +906,23 @@ p {
 /* --- results list --- */
 
 .cmdk-list {
-  max-height: min(20rem, calc(100dvh - 32vh));
+  max-height: min(26rem, calc(100dvh - 36vh));
   overflow-y: auto;
   overscroll-behavior: contain; /* wheel/touch never chains to the page behind */
-  padding: 0.4rem;
+  padding: 0.5rem 0.5rem 0.55rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.cmdk-list::-webkit-scrollbar {
+  width: 6px;
+}
+.cmdk-list::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+.cmdk-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .cmdk-item-group {
@@ -913,32 +932,47 @@ p {
 }
 
 .cmdk-group + .cmdk-group {
-  margin-top: 0.3rem;
+  margin-top: 0.45rem;
 }
 
 .cmdk-group-label {
   font-size: 0.64rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  padding: 0.35rem 0.55rem 0.2rem;
+  padding: 0.3rem 0.7rem 0.3rem;
+  font-weight: 500;
 }
 
 .cmdk-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
   width: 100%;
   text-align: left;
-  padding: 0.55rem 0.6rem;
+  padding: 0.68rem 0.75rem 0.68rem 0.85rem;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.12s var(--ease);
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+
+.cmdk-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 2px;
+  height: 60%;
+  background: var(--signal);
+  border-radius: 1px;
+  transition: transform 150ms var(--ease);
 }
 
 .cmdk-item-title {
@@ -953,18 +987,26 @@ p {
   font-size: 0.72rem;
   color: var(--muted-dim);
   flex-shrink: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cmdk-item-arrow {
   color: var(--muted-dim);
   opacity: 0;
   transform: translateX(-3px);
-  transition: opacity 0.12s var(--ease), transform 0.12s var(--ease);
+  transition: opacity 100ms var(--ease), transform 100ms var(--ease), color 100ms var(--ease);
   flex-shrink: 0;
 }
 
 .cmdk-item.is-active {
   background: var(--surface-hover);
+}
+
+.cmdk-item.is-active::before {
+  transform: translateY(-50%) scaleY(1);
 }
 
 .cmdk-item.is-active .cmdk-item-arrow {
@@ -974,28 +1016,32 @@ p {
 }
 
 .cmdk-empty {
-  padding: 1.75rem 1rem;
+  padding: 2.25rem 1.25rem;
   text-align: center;
 }
 
 .cmdk-empty-title {
   color: var(--ink);
-  font-size: 0.9rem;
-  margin: 0 0 0.3rem;
+  font-size: 0.94rem;
+  margin: 0 0 0.35rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 .cmdk-empty-sub {
   color: var(--muted-dim);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   margin: 0;
+  line-height: 1.45;
 }
 
 /* --- footer hints --- */
 
 .cmdk-footer {
   display: flex;
-  gap: 1rem;
-  padding: 0.55rem 0.95rem;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.6rem 1.1rem;
   border-top: 1px solid var(--line);
   background: var(--surface-soft);
 }
@@ -1003,41 +1049,71 @@ p {
 .cmdk-footer-hint {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   font-size: 0.68rem;
   color: var(--muted-dim);
+  line-height: 1;
 }
 
 .cmdk-footer-hint kbd {
   font-family: inherit;
   font-size: 0.66rem;
   border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 1px 4px;
-  line-height: 1.3;
+  border-radius: 4px;
+  padding: 3px 5px;
+  line-height: 1;
   background: var(--surface);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Small screens: pull the panel higher and give the list more room to
    breathe, so tap targets stay reachable and results read at a glance. */
-@media (max-width: 560px) {
+@media (max-width: 720px) {
   .cmdk-overlay {
-    padding: 7vh 0.6rem 0.6rem;
+    padding: 12vh 0.75rem 0.75rem;
   }
   .cmdk-list {
-    max-height: min(24rem, calc(100dvh - 22vh));
+    max-height: min(28rem, calc(100dvh - 30vh));
+  }
+  .cmdk-input-row {
+    padding: 1rem 0.95rem;
+  }
+  .cmdk-input {
+    font-size: 1rem; /* exactly 16px — iOS zoom floor */
   }
   .cmdk-item {
-    padding: 0.7rem 0.6rem;
+    padding: 0.75rem 0.75rem 0.75rem 0.85rem;
+    font-size: 0.92rem;
+  }
+  .cmdk-footer {
+    padding: 0.55rem 0.95rem;
+    gap: 0.9rem;
   }
 }
 
-/* Reduced transparency — flatten the glass */
+/* Very small screens: pull almost to the top, maximize list room */
+@media (max-width: 480px) {
+  .cmdk-overlay {
+    padding: 6vh 0.5rem 0.5rem;
+  }
+  .cmdk-panel {
+    border-radius: calc(var(--radius-lg) * 0.9);
+  }
+  .cmdk-list {
+    max-height: calc(100dvh - 26vh);
+  }
+}
+
+/* Reduced transparency — flatten the glass to solid surfaces so text
+   legibility never depends on blending with the page beneath. */
 @media (prefers-reduced-transparency: reduce) {
   .cmdk-overlay {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: rgba(1, 1, 2, 0.7);
+    background: rgba(1, 1, 2, 0.78);
+  }
+  [data-theme="light"] .cmdk-overlay {
+    background: rgba(28, 28, 32, 0.55);
   }
   .cmdk-panel,
   [data-theme="light"] .cmdk-panel {
@@ -1047,15 +1123,19 @@ p {
   }
 }
 
-/* Reduced motion — no pop/fade animation, instant appear */
+/* Reduced motion — no pop/fade animation, instant appear. Signal-bar,
+   background, and arrow micro-transitions that respond to pointer/keyboard
+   position remain valid under WCAG since they are functional, not decorative;
+   only animation-timing keyframes are gated. */
 @media (prefers-reduced-motion: reduce) {
   .cmdk-overlay,
   .cmdk-panel {
     animation: none;
   }
   .cmdk-item,
-  .cmdk-item-arrow {
-    transition: none;
+  .cmdk-item-arrow,
+  .cmdk-item::before {
+    transition-duration: 0.01ms;
   }
 }
 
