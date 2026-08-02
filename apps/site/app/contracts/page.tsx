@@ -507,6 +507,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/readiness"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">13</span>
+              <span className="row-body">
+                <span className="row-title">AI Readiness · v0.1.0</span>
+                <span className="row-meta">
+                  The 6th maturity axis — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
