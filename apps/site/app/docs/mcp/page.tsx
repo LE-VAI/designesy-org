@@ -123,6 +123,13 @@ const TOOLS = [
     args: 'url?: string, history?: Snapshot[] (omit for first-run baseline)',
     source: '/api/monitor',
   },
+  {
+    name: 'designesy_compare',
+    kind: 'Executable',
+    desc: 'Diff two design systems from live URLs — the only URL-scoped design-token diff engine. Fetches both URLs in parallel, extracts their :root custom properties, and produces a structured diff across 8 dimensions: tokens added, removed, renamed (Levenshtein ≤ 2), value-changed, scale-stop-changed, contrast-drift-per-pair (WCAG ratio), structure-delta (token count + category distribution), and score-delta (runs /score on both URLs). Use this to answer "what actually changed between two design systems" or "how does our design system differ from a reference".',
+    args: 'urlA: string (first URL), urlB: string (second URL)',
+    source: '/api/compare',
+  },
 ];
 
 const CLIENT_CONFIGS = [
@@ -202,7 +209,7 @@ export default function McpDocsPage() {
           <h1 className="surface-title" data-scramble>MCP server</h1>
           <p className="surface-lede">
             Designesy design intelligence over the Model Context Protocol —
-            fifteen tools, one endpoint, no wrapper.
+            sixteen tools, one endpoint, no wrapper.
           </p>
           <p className="surface-note">
             The Designesy MCP server runs natively on the same Vercel project
@@ -524,7 +531,7 @@ export default function McpDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all fifteen tools
+            The response is a JSON-RPC 2.0 message listing all sixteen tools
             with their schemas.
           </p>
         </section>
