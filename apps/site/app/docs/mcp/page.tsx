@@ -174,7 +174,7 @@ export default function McpDocsPage() {
           <h1 className="surface-title" data-scramble>MCP server</h1>
           <p className="surface-lede">
             Designesy design intelligence over the Model Context Protocol —
-            eight tools, one endpoint, no wrapper.
+            eleven tools, one endpoint, no wrapper.
           </p>
           <p className="surface-note">
             The Designesy MCP server runs natively on the same Vercel project
@@ -200,7 +200,7 @@ export default function McpDocsPage() {
           <div className="definition">
             <p className="definition-label">Registry</p>
             <p>
-              <code>org.designesy.www/designesy</code> v1.3.0 on{' '}
+              <code>io.github.LE-VAI/designesy-org</code> v1.3.1 on{' '}
               <code>registry.modelcontextprotocol.io</code>
             </p>
           </div>
@@ -228,7 +228,7 @@ export default function McpDocsPage() {
               </p>
             </div>
             <a
-              href="https://registry.modelcontextprotocol.io/v0.1/servers/org.designesy.www%2Fdesignesy/versions/1.3.0"
+              href="https://registry.modelcontextprotocol.io/v0.1/servers/io.github.LE-VAI%2Fdesignesy-org/versions/1.3.1"
               rel="noopener noreferrer"
               className="mono-link"
               style={{
@@ -328,10 +328,11 @@ export default function McpDocsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Eight tools fetch public machine exports from designesy.org and
-            run the 40-check verification engine. Three living-systems
-            validators check DTCG token files, WCAG 2.2 accessibility, and
-            Lottie motion conformance. All tools return JSON.
+            Seven read-only tools fetch public machine exports from
+            designesy.org. One executable tool runs the 40-check verification
+            engine live. Three living-systems validators check DTCG token
+            files, WCAG 2.2 accessibility, and Lottie motion conformance. All
+            tools return JSON.
           </p>
           <div className="row-stack" role="list">
             {TOOLS.map((tool, i) => (
@@ -495,7 +496,7 @@ export default function McpDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all eight tools
+            The response is a JSON-RPC 2.0 message listing all eleven tools
             with their schemas.
           </p>
         </section>

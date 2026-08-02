@@ -14,8 +14,7 @@
 // 3 living-systems tools (tokens_score, a11y_score, motion_score) validate
 //   token files, accessibility, and Lottie motion against sibling contracts.
 //
-// MCP Registry: org.designesy.www/designesy v1.3.0 (branded DNS namespace, manual)
-//               io.github.le-vai/designesy-org (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.3.1 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
