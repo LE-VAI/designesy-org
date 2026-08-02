@@ -6,6 +6,7 @@ import { initScrollPause } from './scroll-pause';
 
 const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
+  { href: '/drift', label: 'Drift' },
   { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/benchmarks', label: 'Benchmarks' },
   { href: '/specs', label: 'Specs' },
@@ -50,6 +51,7 @@ const MACHINE_LINKS = [
   { href: '/contracts/tokens.json', label: 'tokens.json' },
   { href: '/contracts/a11y.json', label: 'a11y.json' },
   { href: '/contracts/motion.json', label: 'motion.json' },
+  { href: '/contracts/drift.json', label: 'drift.json' },
   { href: '/kits/design-review.json', label: 'design-review.json' },
   { href: '/acoustic-tokens.json', label: 'acoustic-tokens.json' },
   { href: '/labs/poise.json', label: 'poise.json' },
