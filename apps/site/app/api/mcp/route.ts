@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 15 design-intelligence tools over Streamable HTTP. No Python, no child
+// 16 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -870,6 +870,37 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           const errText = await res.text().catch(() => res.statusText);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Monitor API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+
+    // ── Tool 16: designesy_compare ──────────────────────────────────────────────
+    // The diff engine — fetches two URLs, extracts their :root token systems,
+    // and produces a structured diff (added, removed, renamed, value-changed,
+    // scale drift, contrast drift, structure delta, score delta).
+    server.tool(
+      'designesy_compare',
+      'Diff two design systems from live URLs — the only URL-scoped design-token diff engine. Fetches both URLs in parallel, extracts their :root custom properties, and produces a structured diff across 8 dimensions: tokens added (in A not B), removed (in B not A), renamed (heuristic Levenshtein ≤ 2), value-changed (same name, different value), scale-stop-changed (spacing/radius/color scale steps), contrast-drift-per-pair (WCAG contrast ratio change for shared color tokens), structure-delta (token count + category distribution), and score-delta (runs /score on both URLs and diffs). Use this to answer "what actually changed between two design systems" or "how does our design system differ from a reference". When NOT to use: for single-site drift detection, use designesy_drift_score; for continuous monitoring, use designesy_monitor_score. Executable — fetches both URLs, extracts CSS + tokens, computes diff. No browser needed. Returns JSON: { ok, urlA, urlB, score (0-100, diff completeness), grade, pass, warn, fail, total, tokensA, tokensB, added[], removed[], renamed[], valueChanged[], scaleDiff, structureDelta, contrastDrift[], scoreDelta, checks[] }. Results cached ~24h per URL pair.',
+      {
+        urlA: z.string().describe('First URL to compare (e.g. your design system).'),
+        urlB: z.string().describe('Second URL to compare (e.g. a reference or competitor).'),
+      },
+      async ({ urlA, urlB }) => {
+        const res = await fetch(`${BASE_URL}/api/compare`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urlA, urlB }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Compare API returned ${res.status}: ${errText}`, urlA, urlB }, null, 2) }],
             isError: true,
           };
         }
