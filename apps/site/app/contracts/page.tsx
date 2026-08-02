@@ -522,6 +522,21 @@ export default function ContractsPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/contracts/guardrails"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">14</span>
+              <span className="row-body">
+                <span className="row-title">Guardrails · v0.1.0</span>
+                <span className="row-meta">
+                  The product layer — emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 

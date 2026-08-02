@@ -95,6 +95,27 @@ const TOOLS = [
     args: 'url?: string, lottie_file?: string',
     source: '/contracts/motion.json',
   },
+  {
+    name: 'designesy_drift_score',
+    kind: 'Executable',
+    desc: 'Score a live URL for AI-generated UI drift — 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Fetches the URL, extracts all CSS, parses :root tokens and var() references.',
+    args: 'url?: string (defaults to designesy.org)',
+    source: '/api/drift',
+  },
+  {
+    name: 'designesy_readiness_score',
+    kind: 'Executable',
+    desc: 'Score a URL for design-system AI readiness — the 6th maturity axis (zeroheight 2026). 10 checks probe the target origin for machine-readable artifacts: DTCG token files, llms.txt, agent.json, MCP endpoint (tools/list), DESIGN.md, token $description, component schemas, sitemap.xml, robots.txt, and Open Graph/Twitter meta.',
+    args: 'url?: string (defaults to designesy.org)',
+    source: '/api/readiness',
+  },
+  {
+    name: 'designesy_guardrails',
+    kind: 'Executable',
+    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL — the product layer. Ingests a site, extracts its :root tokens, and emits 5 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, and anti-pattern documentation. 5 emission checks verify bundle completeness.',
+    args: 'url?: string (defaults to designesy.org)',
+    source: '/api/guardrails',
+  },
 ];
 
 const CLIENT_CONFIGS = [
@@ -174,7 +195,7 @@ export default function McpDocsPage() {
           <h1 className="surface-title" data-scramble>MCP server</h1>
           <p className="surface-lede">
             Designesy design intelligence over the Model Context Protocol —
-            eleven tools, one endpoint, no wrapper.
+            fourteen tools, one endpoint, no wrapper.
           </p>
           <p className="surface-note">
             The Designesy MCP server runs natively on the same Vercel project
@@ -496,7 +517,7 @@ export default function McpDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all eleven tools
+            The response is a JSON-RPC 2.0 message listing all fourteen tools
             with their schemas.
           </p>
         </section>
