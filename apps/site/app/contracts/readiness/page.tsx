@@ -56,7 +56,7 @@ export default function ReadinessContractPage() {
               <div key={axis.axis} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
-                  <span className="row-title">{axis.axis}{i === 5 && ' (new)'}</span>
+                  <span className="row-title">{axis.axis}{axis.axis === 'AI Readiness' && ' (new)'}</span>
                   <span className="row-meta">{axis.description}</span>
                 </span>
               </div>
