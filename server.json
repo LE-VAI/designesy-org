@@ -7,7 +7,7 @@
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.5.0",
+  "version": "1.6.0",
   "websiteUrl": "https://www.designesy.org",
   "remotes": [
     {
@@ -35,7 +35,8 @@
         "designesy_readiness_score",
         "designesy_guardrails",
         "designesy_monitor_score",
-        "designesy_compare"
+        "designesy_compare",
+        "designesy_report"
       ],
       "transport_note": "Two paths: (1) PyPI package — pip install designesy-mcp, run as stdio MCP server locally. (2) Remote HTTP — https://www.designesy.org/api/mcp native TypeScript MCP server on Vercel Node.js runtime (mcp-handler adapter, stateless Streamable HTTP, 2026-07-28 spec aligned). Sister listing org.designesy.www/designesy (DNS-authenticated) is the branded namespace; this io.github listing auto-republishes on every release tag via GitHub OIDC.",
       "auth": "github-oidc"

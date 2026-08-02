@@ -16,7 +16,7 @@ const SERVER_URL = 'https://www.designesy.org/api/mcp';
 const HOMEPAGE = 'https://www.designesy.org';
 const MCP_REGISTRY_ID = 'io.github.LE-VAI/designesy-org';
 
-// The 16 tool names exposed by the MCP server (apps/site/app/api/mcp/route.ts).
+// The 17 tool names exposed by the MCP server (apps/site/app/api/mcp/route.ts).
 // Kept in sync manually; the server.tool() registrations are the source of truth.
 const TOOLS = [
   'designesy_catalog',
@@ -35,6 +35,7 @@ const TOOLS = [
   'designesy_guardrails',
   'designesy_monitor_score',
   'designesy_compare',
+  'designesy_report',
 ];
 
 export function GET() {
@@ -43,7 +44,7 @@ export function GET() {
     'server-card-version': '0.1',
     server: {
       name: 'designesy',
-      version: '1.5.0',
+      version: '1.6.0',
       description:
         'Design-system contract verification, scoring, and review tools for AI agents.',
       icon: `${HOMEPAGE}/badge.svg`,
