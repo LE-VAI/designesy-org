@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
+import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,43 +34,11 @@ function rateLimited(ip: string): boolean {
 }
 
 // ── URL Normalization & Validation ─────────────────────────────────────────
-// Exported for reuse by app/score/opengraph-image.tsx (avoids an HTTP self-call).
+// Shared hardened guard in app/lib/url-guard.ts — imported above and re-
+// exported here for backwards compatibility with app/score/opengraph-image.tsx
+// and app/score/badge/route.ts, which import from '../api/score/route'.
 
-export function normalizeInputUrl(raw: string): string {
-  let clean = raw.trim();
-  if (!clean) return '';
-  if (!/^https?:\/\//i.test(clean)) {
-    clean = `https://${clean}`;
-  }
-  try {
-    const u = new URL(clean);
-    return u.href;
-  } catch {
-    return clean;
-  }
-}
-
-export function isValidUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
-    const host = u.hostname.toLowerCase();
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host.startsWith('10.') ||
-      host.startsWith('192.168.') ||
-      host.startsWith('172.16.') ||
-      host === '0.0.0.0' ||
-      !host.includes('.')
-    ) {
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
+export { normalizeInputUrl, isValidUrl };
 
 // ── Resilient CSS & HTML Fetching ──────────────────────────────────────────
 
