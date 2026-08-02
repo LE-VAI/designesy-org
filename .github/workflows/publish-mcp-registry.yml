@@ -4,7 +4,7 @@ name: Publish to MCP Registry
 # (registry.modelcontextprotocol.io) on every version tag, via GitHub OIDC.
 # No stored secrets — uses the workflow's own OIDC token.
 #
-# Namespace: io.github.le-vai/designesy-org (GitHub-authenticated).
+# Namespace: io.github.LE-VAI/designesy-org (GitHub-authenticated, case-sensitive — must match org casing).
 # Sister listing org.designesy.www/designesy is the DNS-authenticated branded
 # namespace and is published manually when it needs a bump.
 
@@ -44,4 +44,4 @@ jobs:
 
       - name: Confirm registration
         run: |
-          curl -s "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.le-vai/designesy-org" | head -c 800
+          curl -s "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.LE-VAI/designesy-org" | head -c 800
