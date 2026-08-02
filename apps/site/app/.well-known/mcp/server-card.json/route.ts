@@ -7,16 +7,16 @@
 // and capabilities without requiring the client to open a session first.
 //
 // Provenance: SEP-1649 (server-card.json), alatirok.com MCP server discovery
-// report 2026-07. The official registry listing at io.github.le-vai/designesy-org
+// report 2026-07. The official registry listing at io.github.LE-VAI/designesy-org
 // remains the canonical registration; this card is the per-origin discovery layer.
 
 export const dynamic = 'force-static';
 
 const SERVER_URL = 'https://www.designesy.org/api/mcp';
 const HOMEPAGE = 'https://www.designesy.org';
-const MCP_REGISTRY_ID = 'io.github.le-vai/designesy-org';
+const MCP_REGISTRY_ID = 'io.github.LE-VAI/designesy-org';
 
-// The 11 tool names exposed by the MCP server (apps/site/app/api/mcp/route.ts).
+// The 16 tool names exposed by the MCP server (apps/site/app/api/mcp/route.ts).
 // Kept in sync manually; the server.tool() registrations are the source of truth.
 const TOOLS = [
   'designesy_catalog',
@@ -30,6 +30,11 @@ const TOOLS = [
   'designesy_tokens_score',
   'designesy_a11y_score',
   'designesy_motion_score',
+  'designesy_drift_score',
+  'designesy_readiness_score',
+  'designesy_guardrails',
+  'designesy_monitor_score',
+  'designesy_compare',
 ];
 
 export function GET() {
