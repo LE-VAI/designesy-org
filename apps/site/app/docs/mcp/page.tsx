@@ -116,6 +116,13 @@ const TOOLS = [
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/guardrails',
   },
+  {
+    name: 'designesy_monitor_score',
+    kind: 'Executable',
+    desc: 'Score a URL for continuous design-drift governance — the temporal layer over the drift radar. Re-runs the 12 drift checks and computes 10 monitor checks: schedule registered, last run fresh, drift delta vs baseline, trend slope, new violations, resolved since last run, score degradation threshold, token-set mutation, contract version drift, and alert delivered. Pass a history array of prior snapshots to compute deltas.',
+    args: 'url?: string, history?: Snapshot[] (omit for first-run baseline)',
+    source: '/api/monitor',
+  },
 ];
 
 const CLIENT_CONFIGS = [
@@ -195,7 +202,7 @@ export default function McpDocsPage() {
           <h1 className="surface-title" data-scramble>MCP server</h1>
           <p className="surface-lede">
             Designesy design intelligence over the Model Context Protocol —
-            fourteen tools, one endpoint, no wrapper.
+            fifteen tools, one endpoint, no wrapper.
           </p>
           <p className="surface-note">
             The Designesy MCP server runs natively on the same Vercel project
@@ -517,7 +524,7 @@ export default function McpDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all fourteen tools
+            The response is a JSON-RPC 2.0 message listing all fifteen tools
             with their schemas.
           </p>
         </section>
