@@ -1,7 +1,7 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 13 design-intelligence tools over Streamable HTTP. No Python, no child
+// 14 design-intelligence tools over Streamable HTTP. No Python, no child
 // processes, no mcp-proxy bridge — runs natively on the same Vercel project
 // as the designesy.org site.
 //
@@ -797,6 +797,35 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           const errText = await res.text().catch(() => res.statusText);
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Readiness API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            isError: true,
+          };
+        }
+        const data = await res.json();
+        return {
+          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+    // ── Tool 14: designesy_guardrails ───────────────────────────────────────────
+    // Emits a frozen build-contract bundle (DTCG tokens, Stylelint config,
+    // AGENTS.md rules, component contract, anti-patterns) from a live URL.
+    server.tool(
+      'designesy_guardrails',
+      'Generate a frozen build-contract bundle for AI coding agents from any design system URL — the product layer. Ingests a site, extracts its :root tokens, and emits 5 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable — fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns }, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+      {
+        url: z.string().optional().describe('URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.'),
+      },
+      async ({ url }) => {
+        const targetUrl = url || `${BASE_URL}/`;
+        const res = await fetch(`${BASE_URL}/api/guardrails`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: targetUrl }),
+        });
+        if (!res.ok) {
+          const errText = await res.text().catch(() => res.statusText);
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Guardrails API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
