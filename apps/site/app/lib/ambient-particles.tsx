@@ -224,6 +224,21 @@ export function AmbientParticles() {
       inside = false;
       if (raf === 0) raf = requestAnimationFrame(tick);
     };
+    // Touch release: on mobile, pointerup/pointercancel fire when the finger
+    // lifts, but pointerleave does NOT reliably fire afterward. Without
+    // this, `inside` stays true forever after a tap, the dwell ramps to
+    // max, and dots stay clumped at the last touch point (the "stuck"
+    // bug). Desktop mouse pointerup (button release) must NOT reset
+    // inside — the cursor is still hovering — so we gate on pointerType.
+    // Also reset the dwell ramp so dots disperse immediately on release
+    // instead of lingering at max pull.
+    const onTouchRelease = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return;
+      inside = false;
+      lastMoveTime = 0;
+      dwell = 0;
+      if (raf === 0) raf = requestAnimationFrame(tick);
+    };
     const onVisibility = () => {
       if (document.hidden) {
         if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -326,6 +341,8 @@ export function AmbientParticles() {
 
     window.addEventListener('resize', resize, { passive: true });
     window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerup', onTouchRelease, { passive: true });
+    window.addEventListener('pointercancel', onTouchRelease, { passive: true });
     document.addEventListener('pointerleave', onLeave, { passive: true });
     document.addEventListener('visibilitychange', onVisibility, { passive: true });
 
@@ -346,6 +363,8 @@ export function AmbientParticles() {
     return () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onTouchRelease);
+      window.removeEventListener('pointercancel', onTouchRelease);
       document.removeEventListener('pointerleave', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
       themeObserver.disconnect();
