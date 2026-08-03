@@ -6115,14 +6115,19 @@ a.check-cell:hover .check-cell-title {
     display: flex;
     flex-direction: column;
     position: fixed;
-    top: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    height: 100dvh; /* mobile-safe viewport height */
     width: min(280px, 75vw);
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+    border-left: 1px solid var(--line);
+    /* Left edge rounded — the drawer reads as a card sliding in, while
+       top/bottom stay flush to viewport (parent sticky topbar would clip
+       any inset since it's only ~67px tall). */
+    border-top-left-radius: var(--radius);
+    border-bottom-left-radius: var(--radius);
+    box-shadow: -24px 0 48px rgba(0, 0, 0, 0.28);
     z-index: 200;
     transform: translateX(calc(100% + 0.5rem));
     transition: transform var(--duration-slow) var(--ease-drawer);
