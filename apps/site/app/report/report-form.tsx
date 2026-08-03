@@ -7,7 +7,7 @@ type Status = 'idle' | 'loading' | 'ok' | 'error';
 type CheckResult = {
   id: string;
   item: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
   category?: string;
   engine?: string;
@@ -38,6 +38,7 @@ type ReportResponse = {
   totalWarn?: number;
   totalFail?: number;
   totalSkip?: number;
+  totalManual?: number;
   checks?: Array<CheckResult & { engine: string }>;
   synthesis?: CheckResult[];
   error?: string;
@@ -155,7 +156,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
                 {result.compositeGrade} · {result.compositeScore}/100
               </p>
               <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
-                {result.totalPass} pass · {result.totalWarn} warn · {result.totalFail} fail · {result.totalSkip} skip of {result.totalChecks} checks
+                {result.totalPass} pass · {result.totalWarn} warn · {result.totalFail} fail · {result.totalManual || 0} manual · {result.totalSkip} N/A of {result.totalChecks} checks
               </p>
             </div>
             <div style={{ marginLeft: 'auto' }}>

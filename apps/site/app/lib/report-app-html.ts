@@ -106,6 +106,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   .status-FAIL { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
   .status-WARN { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
   .status-SKIP { color: var(--muted-dim); background: var(--surface-soft); }
+  .status-MANUAL { color: var(--muted-dim); background: var(--surface-soft); }
 
   .re-run { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
   .re-run-form { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -226,7 +227,8 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   }
 
   function statusBadge(status) {
-    return '<span class="status status-' + status + '">' + status + '</span>';
+    var label = status === 'MANUAL' ? 'Manual' : status === 'SKIP' ? 'N/A' : status;
+    return '<span class="status status-' + status + '">' + label + '</span>';
   }
 
   function renderChecks(checks, emptyText) {
@@ -302,7 +304,8 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
         '<p class="composite-totals"><span class="badge-pass">' + (result.totalPass||0) + ' pass</span> · ' +
           '<span class="badge-warn">' + (result.totalWarn||0) + ' warn</span> · ' +
           '<span class="badge-fail">' + (result.totalFail||0) + ' fail</span> · ' +
-          (result.totalSkip||0) + ' skip of ' + (result.totalChecks||0) + ' checks</p>' +
+          (result.totalManual||0) + ' manual · ' +
+          (result.totalSkip||0) + ' N/A of ' + (result.totalChecks||0) + ' checks</p>' +
       '</div>';
 
     enginesEl.innerHTML =

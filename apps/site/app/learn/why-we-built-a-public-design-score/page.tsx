@@ -28,7 +28,7 @@ const REASONS = [
   {
     num: '02',
     title: 'The same checks grade everyone',
-    desc: 'The 40-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest SKIPs when a browser path is not enabled. If we ever fail our own contract, the score says so on the same surface.',
+    desc: 'The 40-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest MANUALs when a browser path is not enabled, and N/A when a convention is not met. If we ever fail our own contract, the score says so on the same surface.',
   },
   {
     num: '03',
@@ -105,19 +105,21 @@ export default function WhyPublicScorePage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">The honest SKIP</h2>
+          <h2 className="doctrine-heading">The honest MANUAL and N/A</h2>
           <div className="definition">
             <p className="definition-label">Transparency rule</p>
             <p>
-              When the engine cannot run a check — when a browser path is not
-              enabled on the deployment, or when a public API quota is
-              exhausted — it returns a SKIP with a diagnostic string. It
-              does not silently pass. A public score that hides its gaps is
-              worse than no score.
+              When the engine cannot run a check because it needs a live
+              browser — viewport overflow, sound toggle, Core Web Vitals — it
+              returns a MANUAL status with a diagnostic string. When a check
+              is not applicable because the site lacks the convention (no
+              DESIGN.md, no tokens, no buttons), it returns N/A. It does not
+              silently pass. A public score that hides its gaps is worse than
+              no score.
             </p>
           </div>
           <p className="surface-note">
-            This is why the audit endpoint returns honest SKIPs until env
+            This is why the audit endpoint returns honest MANUALs until env
             vars are set, and why the static score never claims a check it
             did not run. The grade is only as good as the visibility behind
             it.
