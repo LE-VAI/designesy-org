@@ -46,6 +46,7 @@ type MonitorResponse = {
     attempted: boolean;
     delivered: boolean;
     recipient?: string;
+    fromAddress?: string;
     error?: string;
   };
   error?: string;
@@ -295,7 +296,7 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
               {result.emailAlert && (
                 <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
                   {result.emailAlert.delivered
-                    ? `✉ Drift alert sent to ${result.emailAlert.recipient}`
+                    ? `✉ Drift alert sent to ${result.emailAlert.recipient}${result.emailAlert.fromAddress ? ` (from ${result.emailAlert.fromAddress})` : ''}`
                     : result.emailAlert.attempted
                       ? `⚠ Email delivery failed — ${result.emailAlert.error || 'unknown error'}`
                       : '💡 Add an email above to get drift alerts by mail'}
