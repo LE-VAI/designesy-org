@@ -230,7 +230,7 @@ export default function CompileCaseStudyPage() {
             <p>
               Nine test principles compiled across seven design domains. All
               passed. A security audit found a local path leak in compiled
-              contract output (embedding D:\DESIGNESY\DESIGN.md paths) — fixed
+              contract output (embedding internal source paths) — fixed
               to reference public designesy.org URLs. Verified clean after
               fix. The tool is ready for hosting.
             </p>

@@ -1,7 +1,7 @@
 /**
  * Designesy Tokens Contract v0.1.0 — machine-readable form.
  * Sibling contract governing W3C DTCG 2025.10 token-format conformance.
- * Source: D:\DESIGNESY\docs\designesy\contracts\designesy-tokens.v0.md
+ * Source: internal contract markdown (not for public distribution).
  *
  * This is the machine export. The human page is at /contracts/tokens.
  * The contract markdown is the source of truth; this JSON is derived.
@@ -15,7 +15,6 @@ export const tokensContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/tokens',
   machine_url: 'https://www.designesy.org/contracts/tokens.json',
-  full_contract_path: 'D:\\DESIGNESY\\docs\\designesy\\contracts\\designesy-tokens.v0.md',
   updated: '2026-07-28',
   purpose:
     'Token-format conformance is the foundation of portable design intelligence. If tokens are not structurally valid, every downstream tool inherits the rot.',

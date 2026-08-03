@@ -1,7 +1,7 @@
 /**
  * Designesy Motion Contract v0.1.0 — machine-readable form.
  * Sibling contract governing Lottie spec v1.0.1 + Designesy §16 motion conformance.
- * Source: D:\DESIGNESY\docs\designesy\contracts\designesy-motion.v0.md
+ * Source: internal contract markdown (not for public distribution).
  *
  * This is the machine export. The human page is at /contracts/motion.
  * The contract markdown is the source of truth; this JSON is derived.
@@ -15,7 +15,6 @@ export const motionContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/motion',
   machine_url: 'https://www.designesy.org/contracts/motion.json',
-  full_contract_path: 'D:\\DESIGNESY\\docs\\designesy\\contracts\\designesy-motion.v0.md',
   updated: '2026-07-28',
   purpose:
     'Motion is structural communication, not ornament. If motion files are malformed or violate the non-negotiable standards, they degrade trust, clarity, and usability.',
