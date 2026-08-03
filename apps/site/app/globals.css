@@ -13438,12 +13438,12 @@ select {
    moving blue band that sweeps across the word LEFT → RIGHT on a loop —
    the same background-clip:text technique as .hero-word-free, but in
    signal-blue. The band is WIDE (20% at 40–60% of image) and BRIGHT
-   (pure --signal at the core), plus a subtle signal-blue drop-shadow
-   glow (0.7 opacity, 18px blur) that rides only the band — the ink-parked
-   frames emit no glow because there's no signal visible. Operator request:
-   "the gradient is a bit too thin, should be shimmering left to right
-   not right to left, add a slight and subtle but bright/sharp glow to
-   the shimmer only." */
+   (pure --signal at the core). The shimmer band alone carries the emphasis —
+   NO drop-shadow glow: the halo blurred past the glyph edges and halo'd the
+   entire sentence, which the operator explicitly rejected ("remove the glow,
+   don't apply it to the entire text"). A brief earlier pass had added a
+   drop-shadow here ("add a slight glow to the shimmer only") — removed on
+   operator correction: flat clip:text band only. */
 
 [data-data-scramble-rotate] [data-word],
 [data-scramble-rotate-words] [data-word] {
@@ -13468,29 +13468,19 @@ select {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* Subtle blue glow that rides the shimmer band only. drop-shadow() is
-     filter-based — it samples only the visible gradient text: where the
-     band is (pure --signal at the core), the shadow glows; where the
-     baseline ink is, the shadow emits nothing. Band-parked frames (band
-     fully off-word) show zero glow. 18px blur on the 69px display size
-     reads as a soft halo hugging the band — sharp at the core, faint at
-     the falloff. Dark mode: signal blue on graphite. Light mode: the
-     same filter works --signal is already luminance-appropriate. */
-  filter: drop-shadow(0 0 18px rgba(1, 51, 203, 0.7));
+  /* NO GLOW — the shimmer band alone carries the emphasis. The drop-shadow()
+     halo that rode the band blurred across the glyph edges and halo'd the
+     entire sentence, which the operator explicitly rejected: "I told you NOT
+     to apply that glow to the entire text — remove the glow." Flat clip:text
+     band only. */
   /* 2.6s sweep reversed direction — enters LEFT, exits RIGHT, no dwell
      so the loop reads as a continuous crossing (faster perception even
      at same duration). */
   animation: hero-word-rotate-shimmer 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
-/* Light theme glow: on paper (#fbfbfc) the dark 0.7-alpha signal glow reads
-   slightly muddy — soften it AND use --signal-light so it harmonizes with
-   the shifted base ink (#1a1a1e is lighter in luminance-context on paper).
-   The band geometry and animation are theme-independent; only the glow
-   color changes. */
-[data-theme="light"] [data-scramble-rotate-words] [data-word] {
-  filter: drop-shadow(0 0 16px rgba(51, 88, 232, 0.55));
-}
+/* Light theme — NO GLOW either. Same operator rejection applies on paper:
+   the drop-shadow halo'd the whole sentence. Flat clip:text band only. */
 
 @keyframes hero-word-rotate-shimmer {
   /* LEFT→RIGHT: start with the band parked off the LEFT edge
