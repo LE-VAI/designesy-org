@@ -13406,6 +13406,86 @@ select {
 [data-word] .is-scrambling {
   color: var(--signal-light);
   opacity: 0.85;
+  /* Scrambling chars keep their own solid blue tint and must NOT inherit the
+     parent's background-clip:text gradient — a half-scrambled glyph under a
+     moving clip reads as a torn smear. Reset to flat color paint. */
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Continuous blue shimmer on the rotating last word ("We make execution
+   yours/count/stick/..."). The resolved word previously held a STATIC
+   per-char blue→ink gradient painted once per rotation by colorFn (which
+   read as a "still gradient"). This replaces that static paint with a
+   moving blue band that sweeps across the word on a tight, fast loop —
+   the same background-clip:text technique as .hero-word-free, but in
+   signal-blue (the brand accent) and tighter/faster (2.2s vs 3.6s, 6%
+   band) so the shimmer reads as alive on a word that already changes
+   every 3.2s. The blue→ink blend is preserved as the gradient stops.
+
+   Base face = --ink (the trailing-ink endpoint of the old colorFn blend).
+   Band = signal blue (var(--signal)) brightened toward white at the core
+   (color-mix 82% signal / 18% ink matches .hero-word-free light band).
+   background-size 250% parks the band fully off-word at rest, so the
+   resting face reads as flat ink, not a frozen gradient. */
+[data-data-scramble-rotate] [data-word],
+[data-scramble-rotate-words] [data-word] {
+  background-image: linear-gradient(
+    104deg,
+    var(--ink),
+    var(--ink) 47%,
+    color-mix(in srgb, var(--signal) 82%, var(--ink) 18%) 50%,
+    var(--ink) 53%,
+    var(--ink)
+  );
+  background-size: 250% 100%;
+  background-position: 0% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: hero-word-rotate-shimmer 2.2s cubic-bezier(0.42, 0, 0.2, 1) infinite;
+}
+
+/* Settled child spans (no .is-scrambling) must let the parent's animated
+   background-clip gradient paint through them. Inheriting the background
+   image + transparent fill makes each glyph a window into the parent
+   sweep rather than an opaque color stop. */
+[data-scramble-rotate-words] [data-word] > span:not(.is-scrambling) {
+  background: inherit;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+@keyframes hero-word-rotate-shimmer {
+  0% { background-position: 0% 0; }    /* band parked off the right edge */
+  50% { background-position: 100% 0; } /* band exited off the left edge */
+  100% { background-position: 100% 0; } /* dwell — restart is invisible */
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  [data-scramble-rotate-words] [data-word] {
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+    background-image: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-scramble-rotate-words] [data-word] {
+    animation: none;
+    background-image: none;
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+  }
+  [data-scramble-rotate-words] [data-word] > span:not(.is-scrambling) {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: inherit;
+  }
 }
 
 .hero-architectural .hero-sub {
