@@ -731,7 +731,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       <form ref={formRef} onSubmit={handleSubmit} className="score-input-card">
         <div className="score-input-col">
           <div className="score-input-flex-box">
-            <span className="score-input-icon">
+            <span className="score-input-icon" aria-hidden="true">
               <svg
                 width="18"
                 height="18"

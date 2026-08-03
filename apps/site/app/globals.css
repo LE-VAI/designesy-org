@@ -297,7 +297,13 @@ p {
 }
 
 .wordmark .dot {
-  color: var(--signal);
+  /* signal-access (#5d7bff dark / #2a4cd8 light) is the on-surface signal
+     token — 5.41:1 on dark, 7.83:1 on light. --signal (#0133cb) is 2.21:1
+     on the topbar's near-black surface, below WCAG 1.4.3 (4.5:1) for the
+     text "." and below 1.4.11 (3:1) even as a UI component. The breath
+     animation (signalPulse) only touches opacity, so the resting color
+     is what axe measures. */
+  color: var(--signal-access);
 }
 
 .wordmark-hero {
@@ -354,8 +360,11 @@ p {
 }
 
 .wordmark-hero .dot {
-  color: var(--signal);
-  -webkit-text-fill-color: var(--signal);
+  /* signal-access — see .wordmark .dot note. The hero dot sits on the
+     page surface (same near-black/near-white) and is a text node, so
+     1.4.3 applies. signalPulse only animates opacity, not color. */
+  color: var(--signal-access);
+  -webkit-text-fill-color: var(--signal-access);
   display: inline-block;
   margin-inline-start: -0.01em;
   transform: translateY(-0.02em);
@@ -2392,9 +2401,9 @@ button.pillar:hover::before {
   animation: dot-brighten 400ms var(--ease-out);
 }
 @keyframes dot-brighten {
-  0% { color: var(--signal); }
+  0% { color: var(--signal-access); }
   50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
-  100% { color: var(--signal); }
+  100% { color: var(--signal-access); }
 }
 
 /* --- Field card title + lede: slide on hover (parity with surface-card) --- */
@@ -4066,9 +4075,9 @@ button.pillar:hover::before {
   animation: dot-brighten 400ms var(--ease-out);
 }
 @keyframes dot-brighten {
-  0% { color: var(--signal); }
+  0% { color: var(--signal-access); }
   50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
-  100% { color: var(--signal); }
+  100% { color: var(--signal-access); }
 }
 
 /* --- Field card title + lede: slide on hover (parity with surface-card) --- */
@@ -9254,7 +9263,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   justify-content: center;
   margin-right: 0.75rem;
   flex-shrink: 0;
-  color: var(--signal);
+  /* signal-access (#5d7bff dark / #2a4cd8 light) — 5.41:1 / 7.83:1 on the
+     input's surface. --signal (#0133cb) was 2.21:1 on near-black, failing
+     WCAG 1.4.11 (non-text contrast 3:1) for the decorative URL icon. */
+  color: var(--signal-access);
   pointer-events: none;
 }
 
