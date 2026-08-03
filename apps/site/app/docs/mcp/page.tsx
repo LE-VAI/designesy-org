@@ -7,11 +7,11 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
   description:
-    'Designesy design intelligence over MCP — Streamable HTTP at https://www.designesy.org/api/mcp. Eleven tools: catalog, contract, review kit, SKILL.md, agent.json, llms.txt, llms-full.txt, the live score engine, plus three living-systems validators (tokens, a11y, motion). Connect Claude Desktop, Cursor, or ZCode.',
+    'Designesy design intelligence over MCP — Streamable HTTP at https://www.designesy.org/api/mcp. Seventeen tools: catalog, contract, review kit, SKILL.md, agent.json, llms.txt, llms-full.txt, the live score engine, three living-systems validators (tokens, a11y, motion), and six dynasty surfaces (drift, readiness, guardrails, monitor, compare, report). Stateless 2026-07-28 spec. Connect Claude Desktop, Cursor, or ZCode.',
   path: '/docs/mcp',
   ogTitle: 'MCP server · Designesy',
   ogDescription:
-    'Streamable HTTP endpoint with 11 design-intelligence tools. Copy-paste client configs for Claude Desktop, Cursor, and ZCode.',
+    'Streamable HTTP endpoint with 17 design-intelligence tools. Stateless 2026-07-28 spec. Copy-paste client configs for Claude Desktop, Cursor, and ZCode.',
   twitterDescription: 'Designesy MCP server — designesy.org/docs/mcp',
 });
 
@@ -486,9 +486,9 @@ export default function McpDocsPage() {
           <div className="definition">
             <p className="definition-label">Runtime</p>
             <p>
-              Vercel Node.js serverless · mcp-handler (Vercel&apos;s official
-              MCP adapter) · @modelcontextprotocol/sdk · Zod schemas ·
-              300-second max duration (Pro Plan)
+              Vercel Node.js serverless · mcp-handler 2.x (Vercel&apos;s official
+              MCP adapter) · @modelcontextprotocol/server (SDK v2) · Zod 4 ·
+              stateless 2026-07-28 spec native · 300-second max duration (Pro Plan)
             </p>
           </div>
           <div className="definition">
