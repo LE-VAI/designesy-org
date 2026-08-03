@@ -1,53 +1,53 @@
 {
   "https://linear.app": {
-    "score": 67.2,
+    "score": 68.6,
     "grade": "D",
     "pass": 18,
-    "fail": 6,
-    "warn": 12,
-    "skip": 4,
+    "fail": 5,
+    "warn": 13,
+    "skip": 1,
     "tokens": 192,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://vercel.com": {
-    "score": 66.4,
-    "grade": "D",
-    "pass": 19,
-    "fail": 7,
+    "score": 73.6,
+    "grade": "C",
+    "pass": 20,
+    "fail": 6,
     "warn": 10,
-    "skip": 4,
+    "skip": 1,
     "tokens": 3,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://stripe.com": {
-    "score": 68.8,
+    "score": 61.099999999999994,
     "grade": "D",
-    "pass": 17,
-    "fail": 4,
+    "pass": 18,
+    "fail": 3,
     "warn": 14,
-    "skip": 5,
+    "skip": 2,
     "tokens": 713,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://apple.com": {
-    "score": 66.3,
-    "grade": "D",
-    "pass": 14,
-    "fail": 5,
+    "score": 77.7,
+    "grade": "C",
+    "pass": 15,
+    "fail": 4,
     "warn": 16,
-    "skip": 5,
+    "skip": 2,
     "tokens": 90,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://nytimes.com": {
-    "score": 60.9,
+    "score": 66,
     "grade": "D",
     "pass": 11,
-    "fail": 5,
-    "warn": 19,
-    "skip": 5,
+    "fail": 4,
+    "warn": 20,
+    "skip": 2,
     "tokens": 85,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://mozaika.design": {
     "score": 52.6,
@@ -55,79 +55,79 @@
     "pass": 6,
     "fail": 3,
     "warn": 23,
-    "skip": 8,
+    "skip": 5,
     "tokens": 0,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://www.designesy.org": {
-    "score": 99.2,
+    "score": 100,
     "grade": "A",
-    "pass": 35,
+    "pass": 36,
     "fail": 0,
-    "warn": 1,
-    "skip": 4,
+    "warn": 0,
+    "skip": 1,
     "tokens": 50,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://designesy.ai.studio": {
-    "score": 64.8,
+    "score": 67.8,
     "grade": "D",
     "pass": 10,
     "fail": 1,
     "warn": 23,
-    "skip": 6,
+    "skip": 3,
     "tokens": 28,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://getdesy.com": {
-    "score": 75,
-    "grade": "C",
+    "score": 66,
+    "grade": "D",
     "pass": 16,
     "fail": 2,
     "warn": 17,
-    "skip": 5,
+    "skip": 2,
     "tokens": 61,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://stitch.withgoogle.com": {
-    "score": 56.5,
+    "score": 52.5,
     "grade": "F",
     "pass": 7,
     "fail": 3,
     "warn": 23,
-    "skip": 7,
+    "skip": 4,
     "tokens": 2,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://zeroheight.com": {
-    "score": 68.8,
-    "grade": "D",
+    "score": 73.8,
+    "grade": "C",
     "pass": 16,
     "fail": 4,
     "warn": 15,
-    "skip": 5,
+    "skip": 2,
     "tokens": 134,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://roastbyai.com": {
-    "score": 67.1,
-    "grade": "D",
+    "score": 59.3,
+    "grade": "F",
     "pass": 16,
-    "fail": 4,
-    "warn": 15,
-    "skip": 5,
+    "fail": 3,
+    "warn": 16,
+    "skip": 2,
     "tokens": 46,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://atlassian.design": {
-    "score": 65.1,
-    "grade": "D",
+    "score": 70.2,
+    "grade": "C",
     "pass": 14,
-    "fail": 4,
-    "warn": 18,
-    "skip": 4,
+    "fail": 3,
+    "warn": 19,
+    "skip": 1,
     "tokens": 27,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://primer.style": {
     "score": 77.6,
@@ -135,59 +135,59 @@
     "pass": 26,
     "fail": 5,
     "warn": 5,
-    "skip": 4,
+    "skip": 1,
     "tokens": 518,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://carbondesignsystem.com": {
-    "score": 60.6,
-    "grade": "D",
+    "score": 50.8,
+    "grade": "F",
     "pass": 14,
-    "fail": 7,
-    "warn": 14,
-    "skip": 5,
+    "fail": 6,
+    "warn": 15,
+    "skip": 2,
     "tokens": 15,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://spectrum.adobe.com": {
-    "score": 53.4,
+    "score": 49.4,
     "grade": "F",
     "pass": 7,
     "fail": 4,
     "warn": 21,
-    "skip": 8,
+    "skip": 5,
     "tokens": 0,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://m3.material.io": {
-    "score": 56,
+    "score": 59,
     "grade": "F",
     "pass": 6,
     "fail": 4,
     "warn": 22,
-    "skip": 8,
+    "skip": 5,
     "tokens": 158,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://radix-ui.com": {
-    "score": 63.3,
+    "score": 60.7,
     "grade": "D",
-    "pass": 14,
-    "fail": 6,
+    "pass": 15,
+    "fail": 5,
     "warn": 15,
-    "skip": 5,
+    "skip": 2,
     "tokens": 60,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://geist.dev": {
-    "score": 54.3,
+    "score": 50.3,
     "grade": "F",
     "pass": 7,
     "fail": 3,
     "warn": 21,
-    "skip": 9,
+    "skip": 6,
     "tokens": 0,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://plex.ibm.com": {
     "score": 51,
@@ -195,108 +195,108 @@
     "pass": 7,
     "fail": 4,
     "warn": 23,
-    "skip": 6,
+    "skip": 3,
     "tokens": 0,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://awwwards.com": {
-    "score": 57.1,
-    "grade": "F",
+    "score": 62.2,
+    "grade": "D",
     "pass": 10,
-    "fail": 5,
-    "warn": 19,
-    "skip": 6,
+    "fail": 4,
+    "warn": 20,
+    "skip": 3,
     "tokens": 98,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://fwa.org": {
-    "score": 53.1,
+    "score": 41.1,
     "grade": "F",
     "pass": 8,
     "fail": 5,
     "warn": 21,
-    "skip": 6,
+    "skip": 3,
     "tokens": 45,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://cssdesignawards.com": {
-    "score": 44.8,
+    "score": 37.9,
     "grade": "F",
     "pass": 6,
-    "fail": 6,
-    "warn": 23,
-    "skip": 5,
+    "fail": 5,
+    "warn": 24,
+    "skip": 2,
     "tokens": 0,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://pentagram.com": {
-    "score": 57.1,
+    "score": 41.1,
     "grade": "F",
     "pass": 11,
     "fail": 5,
     "warn": 19,
-    "skip": 5,
+    "skip": 2,
     "tokens": 181,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://vam.ac.uk": {
-    "score": 61.4,
+    "score": 62.6,
     "grade": "D",
     "pass": 13,
-    "fail": 6,
-    "warn": 16,
-    "skip": 5,
+    "fail": 5,
+    "warn": 17,
+    "skip": 2,
     "tokens": 46,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://github.com": {
-    "score": 70,
-    "grade": "C",
+    "score": 58.099999999999994,
+    "grade": "F",
     "pass": 21,
     "fail": 6,
     "warn": 8,
-    "skip": 5,
-    "tokens": 566,
-    "scoredAt": "2026-07-30"
+    "skip": 2,
+    "tokens": 585,
+    "scoredAt": "2026-08-03"
   },
   "https://notion.so": {
-    "score": 65.5,
+    "score": 68.5,
     "grade": "D",
     "pass": 14,
     "fail": 5,
     "warn": 16,
-    "skip": 5,
+    "skip": 2,
     "tokens": 542,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://figma.com": {
-    "score": 73.1,
-    "grade": "C",
+    "score": 68.1,
+    "grade": "D",
     "pass": 17,
     "fail": 4,
     "warn": 14,
-    "skip": 5,
+    "skip": 2,
     "tokens": 102,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://x.com": {
-    "score": 70.1,
+    "score": 73.1,
     "grade": "C",
     "pass": 14,
     "fail": 2,
     "warn": 18,
-    "skip": 6,
+    "skip": 3,
     "tokens": 166,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   },
   "https://wikipedia.org": {
-    "score": 59,
-    "grade": "F",
+    "score": 64.1,
+    "grade": "D",
     "pass": 12,
-    "fail": 6,
-    "warn": 17,
-    "skip": 5,
+    "fail": 5,
+    "warn": 18,
+    "skip": 2,
     "tokens": 393,
-    "scoredAt": "2026-07-30"
+    "scoredAt": "2026-08-03"
   }
 }
