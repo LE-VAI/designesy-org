@@ -9602,6 +9602,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   max-width: 100%;
 }
 
+[data-theme="light"] .score-site-url {
+  /* Light theme: replace the dark slab (rgba(0,0,0,0.4)) with a flat surface
+     shade so the URL chip reads as a soft chip, not a foreign dark pill. */
+  background: var(--surface-raised);
+}
+
 .score-url-dot {
   width: 6px;
   height: 6px;
@@ -10251,6 +10257,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius);
   border: 1px solid var(--line);
   gap: 2px;
+}
+
+[data-theme="light"] .score-filter-segmented {
+  /* Light theme: the dark slab (rgba(0,0,0,0.4)) reads as a foreign element
+     against the light page. Use a quiet surface shade instead. */
+  background: var(--surface-raised);
 }
 
 .score-filter-tab {
