@@ -730,8 +730,9 @@ p {
 }
 
 .sense-toggle[aria-pressed="true"] {
-  color: var(--signal-light);
-  border-color: var(--signal-dim);
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--surface-soft);
 }
 
 /* ===================================================================
@@ -6114,14 +6115,18 @@ a.check-cell:hover .check-cell-title {
     display: flex;
     flex-direction: column;
     position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
+    top: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    height: auto;
+    max-height: calc(100vh - 1rem);
     width: min(280px, 75vw);
     background: var(--surface);
-    border-left: 1px solid var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
     z-index: 200;
-    transform: translateX(100%);
+    transform: translateX(calc(100% + 0.5rem));
     transition: transform var(--duration-slow) var(--ease-drawer);
     padding: 1.25rem 1.25rem 2rem;
     overflow-y: auto;
@@ -6210,7 +6215,7 @@ a.check-cell:hover .check-cell-title {
 @media (prefers-reduced-motion: reduce) and (max-width: 720px) {
   .nav-drawer {
     transition: opacity var(--duration-fast) var(--ease);
-    transform: translateX(100%);
+    transform: translateX(calc(100% + 0.5rem));
   }
 
   .nav-drawer.open {
