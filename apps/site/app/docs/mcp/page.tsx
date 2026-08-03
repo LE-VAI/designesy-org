@@ -119,8 +119,8 @@ const TOOLS = [
   {
     name: 'designesy_monitor_score',
     kind: 'Executable',
-    desc: 'Score a URL for continuous design-drift governance — the temporal layer over the drift radar. Re-runs the 12 drift checks and computes 10 monitor checks: schedule registered, last run fresh, drift delta vs baseline, trend slope, new violations, resolved since last run, score degradation threshold, token-set mutation, contract version drift, and alert delivered. Pass a history array of prior snapshots to compute deltas.',
-    args: 'url?: string, history?: Snapshot[] (omit for first-run baseline)',
+    desc: 'Score a URL for continuous design-drift governance — the temporal layer over the drift radar. Re-runs the 12 drift checks and computes 10 monitor checks: schedule registered, last run fresh, drift delta vs baseline, trend slope, new violations, resolved since last run, score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email is provided, sends an HTML drift-alert email via Resend. Pass a history array of prior snapshots to compute deltas.',
+    args: 'url?: string, email?: string (for drift alerts), history?: Snapshot[] (omit for first-run baseline)',
     source: '/api/monitor',
   },
   {

@@ -15,13 +15,20 @@
 //   m07 score degradation threshold (alert if score drops > N points)
 //   m08 token-set mutation (tokens added/removed/renamed since baseline)
 //   m09 contract version drift (agent.json version changed since last run)
-//   m10 alert delivered (always PASS in v0.1.0 — in-UI surfacing, no webhook backend yet)
+//   m10 alert delivered (email via Resend when alerts fire + email provided + key set;
+//        falls back to in-UI surfacing otherwise)
+//
+// Email alerting (v0.2.0): When the POST body includes an `email` field AND
+// the RESEND_API_KEY environment variable is set, the monitor sends an HTML
+// alert email to that address when any alert condition fires. Without the
+// key or email, alerts are surfaced in-UI only (graceful degradation).
 //
 // Contract: /contracts/monitor.json (designesy.monitor v0.1.0)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { Resend } from 'resend';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -221,6 +228,12 @@ type MonitorResponse = {
   driftChecks?: DriftCheckResult[];
   monitorChecks?: MonitorCheckResult[];
   alerts?: string[];
+  emailAlert?: {
+    attempted: boolean;
+    delivered: boolean;
+    recipient?: string;
+    error?: string;
+  };
   error?: string;
 };
 
@@ -556,12 +569,105 @@ async function checkM09ContractVersion(targetUrl: string, previous: Snapshot | n
   return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} detected — version history comparison requires v0.2` };
 }
 
-function checkM10AlertDelivered(alerts: string[]): MonitorCheckResult {
+function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; error?: string }): MonitorCheckResult {
   if (alerts.length === 0) {
     return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered — no alert needed' };
   }
-  // In v0.1.0, alerts are surfaced in-UI (no webhook backend yet)
-  return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI (webhook delivery is a v0.2 capability)` };
+  if (emailAlert?.delivered) {
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} delivered to ${emailAlert.recipient} via email` };
+  }
+  if (emailAlert?.attempted && !emailAlert.delivered) {
+    return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI — email delivery failed (${emailAlert.error || 'unknown error'})` };
+  }
+  // No email provided or no Resend key — alerts surfaced in-UI only
+  return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI (add an email address to get drift alerts by mail)` };
+}
+
+// ── Email alerting via Resend ────────────────────────────────────────────────
+// Sends an HTML alert email when drift alerts fire. Requires:
+//   1. An `email` field in the POST body (the recipient)
+//   2. RESEND_API_KEY environment variable (set in Vercel project settings)
+// Without either, alerts are surfaced in-UI only (graceful degradation).
+
+async function sendAlertEmail(
+  targetUrl: string,
+  email: string,
+  alerts: string[],
+  currentSnapshot: Snapshot,
+  previous: Snapshot | null,
+): Promise<{ attempted: boolean; delivered: boolean; recipient?: string; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { attempted: false, delivered: false };
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { attempted: false, delivered: false };
+  }
+
+  try {
+    const resend = new Resend(apiKey);
+    const host = (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })();
+    const prevScore = previous?.score ?? '—';
+    const scoreDelta = previous ? currentSnapshot.score - previous.score : 0;
+    const deltaStr = scoreDelta >= 0 ? `+${scoreDelta}` : `${scoreDelta}`;
+
+    const subject = `[Designesy] Drift alert for ${host} — ${currentSnapshot.grade}/${currentSnapshot.score}`;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#0a0a0c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;padding:2rem 1rem;">
+    <tr>
+      <td style="padding-bottom:1.5rem;">
+        <h1 style="margin:0 0 0.25rem;font-size:1.5rem;font-weight:700;color:#ffffff;">Designesy Drift Alert</h1>
+        <p style="margin:0;font-size:0.85rem;color:#999999;">${host} · ${new Date().toLocaleString('en-US')}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#16161b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
+        <p style="margin:0 0 0.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Score</p>
+        <p style="margin:0;font-size:2rem;font-weight:700;color:${currentSnapshot.score >= 70 ? '#4ade80' : currentSnapshot.score >= 50 ? '#facc15' : '#f87171'};">${currentSnapshot.grade} · ${currentSnapshot.score}/100</p>
+        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? `Previous: ${prevScore}/100 (${deltaStr} points)` : 'First run — baseline established'}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:1rem 0;">
+        <p style="margin:0 0 0.75rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Alerts (${alerts.length})</p>
+        ${alerts.map((a) => `<p style="margin:0.25rem 0;padding:0.75rem 1rem;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:4px;font-size:0.85rem;color:#ffffff;line-height:1.5;">${a}</p>`).join('')}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:1.5rem 0;">
+        <a href="https://www.designesy.org/monitor?url=${encodeURIComponent(targetUrl)}" style="display:inline-block;padding:0.75rem 1.5rem;background:#3358e8;color:#ffffff;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding-top:2rem;border-top:1px solid rgba(255,255,255,0.06);">
+        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because you registered ${targetUrl} for drift monitoring on designesy.org. This alert was triggered by a score degradation, new violations, or token-set mutation detected during a monitor run.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const { error } = await resend.emails.send({
+      from: 'Designesy Monitor <monitor@designesy.org>',
+      to: email,
+      subject,
+      html,
+    });
+
+    if (error) {
+      return { attempted: true, delivered: false, recipient: email, error: error.message };
+    }
+    return { attempted: true, delivered: true, recipient: email };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return { attempted: true, delivered: false, recipient: email, error: msg };
+  }
 }
 
 // ── Main scoring function ────────────────────────────────────────────────────
@@ -674,7 +780,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string; history?: Snapshot[] };
+  let body: { url?: string; history?: Snapshot[]; email?: string };
   try {
     body = await request.json();
   } catch {
@@ -692,8 +798,39 @@ export async function POST(request: Request) {
     );
   }
 
+  // Validate email if provided
+  const email = body.email?.trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json(
+      { ok: false, error: 'Invalid email address.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
   const history = Array.isArray(body.history) ? body.history : [];
   const result = await scoreMonitor(targetUrl, history);
+
+  // Send email alert after the cached result returns (outside cache so
+  // the email param doesn't pollute the cache key — email fires on every
+  // request that has alerts + email + RESEND_API_KEY, even on cache hits)
+  if (result.ok && result.alerts && result.alerts.length > 0 && email && result.currentSnapshot) {
+    const emailResult = await sendAlertEmail(
+      targetUrl,
+      email,
+      result.alerts,
+      result.currentSnapshot,
+      result.previous ?? null,
+    );
+    result.emailAlert = emailResult;
+
+    // Update m10 check to reflect email delivery status
+    if (result.monitorChecks) {
+      const m10Index = result.monitorChecks.findIndex((c) => c.id === 'm10');
+      if (m10Index >= 0) {
+        result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts, emailResult);
+      }
+    }
+  }
 
   return NextResponse.json(result, {
     status: result.ok ? 200 : 502,
