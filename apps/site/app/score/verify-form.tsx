@@ -290,19 +290,24 @@ function ScoreDial({
       aria-label={`Grade ${grade}, ${score} percent`}
     >
       <circle cx="60" cy="60" r={r} fill="none" stroke="var(--line)" strokeWidth="6" />
-      <circle
-        cx="60"
-        cy="60"
-        r={r}
-        fill="none"
-        stroke={fill}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-        transform="rotate(-90 60 60)"
-        style={{ transition: 'stroke-dashoffset 0.8s var(--ease-out)' }}
-      />
+      {/* Score-0 guard: a zero-length round-capped dash paints a phantom dot.
+          Skip the arc entirely at 0 so a fully-failing URL reads as an empty
+          ring, not a dot. (Lighthouse PR fix pattern.) */}
+      {score > 0 && (
+        <circle
+          cx="60"
+          cy="60"
+          r={r}
+          fill="none"
+          stroke={fill}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          transform="rotate(-90 60 60)"
+          style={{ transition: 'stroke-dashoffset 0.8s var(--ease-out)' }}
+        />
+      )}
       <text
         x="60"
         y="58"
@@ -323,9 +328,14 @@ function ScoreDial({
   );
 }
 
-// ── EngineCard (clickable engine summary — doubles as a tab) ──────────────────
+// ── EngineTile (clickable engine summary — doubles as a tab) ──────────────────
+//
+// Replaces the old EngineCard that hijacked .score-filter-tab (a pill class)
+// with inline column overrides. This uses the new .score-engine-tile class —
+// a proper left-aligned tile with a 2px top accent bar (not left-border, which
+// is the #1 AI-tell per the 2026 design research).
 
-function EngineCard({
+function EngineTile({
   label,
   checkCount,
   result,
@@ -348,44 +358,37 @@ function EngineCard({
       : score >= 70
         ? 'var(--warn)'
         : 'var(--error)';
+  const pass = result?.pass || 0;
+  const warn = result?.warn || 0;
+  const fail = result?.fail || 0;
+
   return (
     <button
       type="button"
-      className={`score-filter-tab ${active ? 'is-active' : ''}`}
+      className={`score-engine-tile ${active ? 'is-active' : ''}`}
       onClick={onClick}
       aria-selected={active}
       role="tab"
-      style={{
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '0.15rem',
-        padding: '0.6rem 0.8rem',
-        flex: 1,
-        minWidth: '110px',
-      }}
+      aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${score} out of 100, ${pass} pass, ${warn} warn, ${fail} fail` : 'not yet run'}`}
     >
-      <span
-        style={{
-          fontSize: '0.7rem',
-          fontWeight: 600,
-          color: 'var(--muted-dim)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-        }}
-      >
-        {label} {checkCount}
+      <span className="score-engine-tile-top" style={{ background: ok ? fill : 'var(--line)' }} />
+      <span className="score-engine-tile-head">
+        <span className="score-engine-tile-label">{label}</span>
+        <span className="score-engine-tile-count">{checkCount}</span>
       </span>
       {ok ? (
         <>
-          <span style={{ fontSize: '1.25rem', fontWeight: 700, color: fill }}>
-            {grade} · {score}
+          <span className="score-engine-tile-grade" style={{ color: fill }}>
+            {grade}<span className="score-engine-tile-score"> · {score}</span>
           </span>
-          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
-            {result.pass || 0}p · {result.warn || 0}w · {result.fail || 0}f
+          <span className="score-engine-tile-pwf">
+            <b className="is-pass">{pass}</b>p{' · '}
+            <b className="is-warn">{warn}</b>w{' · '}
+            <b className="is-fail">{fail}</b>f
           </span>
         </>
       ) : (
-        <span style={{ fontSize: '0.8rem', color: 'var(--error)' }}>
+        <span className="score-engine-tile-grade is-empty">
           {result?.error ? 'Failed' : '—'}
         </span>
       )}
@@ -413,6 +416,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [delta, setDelta] = useState<number | null>(null);
   const [activeBundleTab, setActiveBundleTab] = useState('tokens');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
   // Load history on mount (client-only, SSR-safe).
@@ -579,6 +583,37 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         return (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
       });
   }, [activeChecks, filterStatus, searchQuery]);
+
+  // Group filtered checks by status — FAIL / WARN / SKIP / PASS sections.
+  // Each group is collapsible. FAIL is expanded by default (you need to see
+  // what broke); PASS is collapsed by default (it's noise when you're fixing).
+  // SKIP and WARN are expanded by default. This mirrors Lighthouse's
+  // Passed/Failed/Manual/NA bucketing pattern.
+  const groupedChecks = useMemo(() => {
+    const groups: { status: FilterStatus; checks: CheckResult[] }[] = [];
+    const order: FilterStatus[] = ['FAIL', 'WARN', 'SKIP', 'PASS'];
+    for (const s of order) {
+      const checks = filteredChecks.filter((c) => c.status === s);
+      if (checks.length > 0) groups.push({ status: s, checks });
+    }
+    return groups;
+  }, [filteredChecks]);
+
+  function isGroupCollapsed(status: FilterStatus): boolean {
+    // PASS collapses by default — it's confirmation noise, not actionable.
+    // Everything else is expanded by default so you see what needs attention.
+    const key = `${activeEngine}:${status}`;
+    if (key in collapsedGroups) return collapsedGroups[key];
+    return status === 'PASS';
+  }
+
+  function toggleGroup(status: FilterStatus) {
+    const key = `${activeEngine}:${status}`;
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [key]: !isGroupCollapsed(status),
+    }));
+  }
 
   // Active engine result (for the note line below the feed).
   const activeEngineResult: SubEngineResult | null = useMemo(() => {
@@ -853,7 +888,15 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     </p>
                     <div className="score-site-url">
                       <span className="score-url-dot" />
-                      <span className="score-url-text">{scoredUrl}</span>
+                      <a
+                        href={scoredUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="score-url-link"
+                        title={`Open ${scoredUrl} in a new tab`}
+                      >
+                        {scoredUrl.replace(/^https?:\/\//i, '')}
+                      </a>
                       <span className="score-url-time">
                         {new Date()
                           .toISOString()
@@ -893,8 +936,56 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {/* Actions — ordered by natural next-step priority.
+                    Open site is first (most common desire after scoring),
+                    then copy receipt, then share/deep-link actions. */}
                 <div className="score-hero-actions">
+                  <a
+                    href={scoredUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="score-action-btn score-open-site-btn"
+                    data-cuelume-press="tick"
+                    title={`Open ${scoredUrl} in a new tab`}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Open site
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => runVerify(scoredUrl)}
+                    className="score-action-btn"
+                    data-cuelume-press="tick"
+                    title="Re-run all 4 engines against this URL"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    </svg>
+                    Re-run
+                  </button>
                   <button
                     type="button"
                     onClick={copyReceipt}
@@ -923,14 +1014,6 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     title="Open the full synthesis report — 8 synthesis checks, MCP App, export."
                   >
                     Open /report →
-                  </a>
-                  <a
-                    href={`/guardrails?url=${encodeURIComponent(scoredUrl)}`}
-                    className="score-action-btn"
-                    data-cuelume-press="tick"
-                    title="Open the guardrails emitter — bundle download, full bundle view."
-                  >
-                    Open /guardrails →
                   </a>
                   <button
                     type="button"
@@ -981,55 +1064,58 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               </div>
             )}
 
-          {/* Engine cards row — 4 clickable cards that double as the tablist.
-              ARIA tablist: the first proper tablist in the codebase. */}
-          <div className="score-controls-card">
-            <div
-              className="score-filter-segmented"
-              role="tablist"
-              aria-label="Verification engines"
-            >
-              <EngineCard
-                label="Score"
-                checkCount="(40)"
-                result={reportResult?.score || null}
-                active={activeEngine === 'score'}
-                onClick={() => {
-                  setActiveEngine('score');
-                  setExpandedId(null);
-                }}
-              />
-              <EngineCard
-                label="Drift"
-                checkCount="(12)"
-                result={reportResult?.drift || null}
-                active={activeEngine === 'drift'}
-                onClick={() => {
-                  setActiveEngine('drift');
-                  setExpandedId(null);
-                }}
-              />
-              <EngineCard
-                label="Readiness"
-                checkCount="(10)"
-                result={reportResult?.readiness || null}
-                active={activeEngine === 'readiness'}
-                onClick={() => {
-                  setActiveEngine('readiness');
-                  setExpandedId(null);
-                }}
-              />
-              <EngineCard
-                label="Guardrails"
-                checkCount="(6)"
-                result={guardrailsResult || null}
-                active={activeEngine === 'guardrails'}
-                onClick={() => {
-                  setActiveEngine('guardrails');
-                  setExpandedId(null);
-                }}
-              />
-            </div>
+          {/* Engine tiles row — 4 clickable tiles that double as the tablist.
+              ARIA tablist: the first proper tablist in the codebase.
+              Uses a responsive grid (not a flex row) so tiles wrap cleanly. */}
+          <div
+            className="score-engine-grid"
+            role="tablist"
+            aria-label="Verification engines"
+          >
+            <EngineTile
+              label="Score"
+              checkCount="(40)"
+              result={reportResult?.score || null}
+              active={activeEngine === 'score'}
+              onClick={() => {
+                setActiveEngine('score');
+                setExpandedId(null);
+                setCollapsedGroups({});
+              }}
+            />
+            <EngineTile
+              label="Drift"
+              checkCount="(12)"
+              result={reportResult?.drift || null}
+              active={activeEngine === 'drift'}
+              onClick={() => {
+                setActiveEngine('drift');
+                setExpandedId(null);
+                setCollapsedGroups({});
+              }}
+            />
+            <EngineTile
+              label="Readiness"
+              checkCount="(10)"
+              result={reportResult?.readiness || null}
+              active={activeEngine === 'readiness'}
+              onClick={() => {
+                setActiveEngine('readiness');
+                setExpandedId(null);
+                setCollapsedGroups({});
+              }}
+            />
+            <EngineTile
+              label="Guardrails"
+              checkCount="(6)"
+              result={guardrailsResult || null}
+              active={activeEngine === 'guardrails'}
+              onClick={() => {
+                setActiveEngine('guardrails');
+                setExpandedId(null);
+                setCollapsedGroups({});
+              }}
+            />
           </div>
 
           {/* Score tab extras — slop + originality signals.
@@ -1250,8 +1336,9 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </div>
           </div>
 
-          {/* Check cards feed — same accordion as ScoreForm, with keyboard
-              handler fix (Enter/Space toggle, matching role="button"). */}
+          {/* Check cards feed — grouped by status (FAIL/WARN/SKIP/PASS),
+              each group collapsible. FAIL expanded by default; PASS collapsed.
+              This mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. */}
           <div className="score-cards-feed">
             {filteredChecks.length === 0 ? (
               <div className="score-empty-feed">
@@ -1271,44 +1358,35 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </button>
               </div>
             ) : (
-              filteredChecks.map((check, idx) => {
-                const isExpanded = expandedId === check.id;
+              groupedChecks.map((group) => {
+                const collapsed = isGroupCollapsed(group.status);
+                const statusLower = group.status.toLowerCase();
                 return (
                   <div
-                    key={check.id}
-                    className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
-                    onClick={() =>
-                      setExpandedId(isExpanded ? null : check.id)
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setExpandedId(isExpanded ? null : check.id);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
+                    key={group.status}
+                    className={`score-check-group is-${statusLower}`}
                   >
-                    <div className="score-card-main">
-                      <div className="score-card-badge-group">
-                        <span
-                          className={`score-card-status-pill is-${check.status.toLowerCase()}`}
-                        >
-                          {check.status}
-                        </span>
-                        <span className="score-card-id">{check.id}</span>
-                        {check.category && (
-                          <span className="score-card-cat">
-                            {check.category}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="score-card-title">{check.item}</h4>
-                    </div>
-
-                    <span className="score-card-right">
+                    <button
+                      type="button"
+                      className="score-check-group-header"
+                      onClick={() => toggleGroup(group.status)}
+                      aria-expanded={!collapsed}
+                      aria-controls={`group-${activeEngine}-${group.status}`}
+                    >
+                      <span
+                        className={`score-check-group-dot is-${statusLower}`}
+                        aria-hidden="true"
+                      />
+                      <span className="score-check-group-label">
+                        {group.status === 'PASS' ? 'Passing' :
+                         group.status === 'FAIL' ? 'Failing' :
+                         group.status === 'WARN' ? 'Warnings' : 'Skipped'}
+                      </span>
+                      <span className="score-check-group-count">
+                        {group.checks.length}
+                      </span>
                       <svg
+                        className="score-check-group-chevron"
                         width="14"
                         height="14"
                         viewBox="0 0 24 24"
@@ -1316,32 +1394,94 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                         stroke="currentColor"
                         strokeWidth="2"
                         style={{
-                          transform: isExpanded ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.2s',
+                          transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s var(--ease-out)',
                         }}
                       >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
-                    </span>
+                    </button>
+                    {!collapsed && (
+                      <div
+                        id={`group-${activeEngine}-${group.status}`}
+                        className="score-check-group-body"
+                      >
+                        {group.checks.map((check, idx) => {
+                          const isExpanded = expandedId === check.id;
+                          return (
+                            <div
+                              key={check.id}
+                              className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
+                              onClick={() =>
+                                setExpandedId(isExpanded ? null : check.id)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setExpandedId(isExpanded ? null : check.id);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
+                            >
+                              <div className="score-card-main">
+                                <div className="score-card-badge-group">
+                                  <span
+                                    className={`score-card-status-pill is-${check.status.toLowerCase()}`}
+                                  >
+                                    {check.status}
+                                  </span>
+                                  <span className="score-card-id">{check.id}</span>
+                                  {check.category && (
+                                    <span className="score-card-cat">
+                                      {check.category}
+                                    </span>
+                                  )}
+                                </div>
+                                <h4 className="score-card-title">{check.item}</h4>
+                              </div>
 
-                    {isExpanded && (
-                      <div className="score-card-drawer">
-                        <p className="score-drawer-heading">
-                          Technical Finding
-                        </p>
-                        <p className="score-drawer-detail">{check.detail}</p>
-                        {check.remediation &&
-                          (check.status === 'FAIL' ||
-                            check.status === 'WARN') && (
-                            <>
-                              <p className="score-drawer-heading score-drawer-remediation-heading">
-                                How to fix this
-                              </p>
-                              <p className="score-drawer-detail score-drawer-remediation">
-                                {check.remediation}
-                              </p>
-                            </>
-                          )}
+                              <span className="score-card-right">
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  style={{
+                                    transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                    transition: 'transform 0.2s',
+                                  }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </span>
+
+                              {isExpanded && (
+                                <div className="score-card-drawer">
+                                  <p className="score-drawer-heading">
+                                    Technical Finding
+                                  </p>
+                                  <p className="score-drawer-detail">{check.detail}</p>
+                                  {check.remediation &&
+                                    (check.status === 'FAIL' ||
+                                      check.status === 'WARN') && (
+                                      <>
+                                        <p className="score-drawer-heading score-drawer-remediation-heading">
+                                          How to fix this
+                                        </p>
+                                        <p className="score-drawer-detail score-drawer-remediation">
+                                          {check.remediation}
+                                        </p>
+                                      </>
+                                    )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
