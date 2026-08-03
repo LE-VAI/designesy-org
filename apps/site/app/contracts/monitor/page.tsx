@@ -8,11 +8,11 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Monitor contract',
   description:
-    'Designesy Monitor Contract v0.1.0 — continuous design-drift monitoring. Re-scores a URL on a cadence, stores snapshots, computes drift deltas against the baseline, and surfaces regressions before they compound. 10 verification checks.',
+    'Designesy Monitor Contract v0.1.0 — continuous design-drift monitoring. Re-scores a URL on a cadence, stores snapshots, computes drift deltas against the baseline, emails you when drift is detected, and surfaces regressions before they compound. 10 verification checks.',
   path: '/contracts/monitor',
   ogTitle: 'Monitor contract · Designesy',
   ogDescription:
-    'Continuous design-drift monitoring — 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
+    'Continuous design-drift monitoring with email alerts — 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
   twitterDescription: 'Designesy monitor — designesy.org/contracts/monitor',
 });
 

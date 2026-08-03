@@ -57,6 +57,13 @@ export const monitorContract = {
       { trigger: 'token-mutation', description: 'Tokens added, removed, or renamed since the baseline (silent breaking changes — drift mode 4)' },
       { trigger: 'grade-drop', description: 'Letter grade fell (e.g. A → B) since the previous run' },
     ],
+    alert_delivery: {
+      method: 'Email via Resend (transactional email service)',
+      trigger: 'When any alert condition fires AND the monitor request includes an email address AND RESEND_API_KEY is set as a Vercel env var',
+      from: 'monitor@designesy.org',
+      format: 'HTML email with score, delta, alert details, and link to full report',
+      fallback: 'Without email or key, alerts are surfaced in-UI only (graceful degradation — no feature loss)',
+    },
   },
   verification: {
     checks: [
@@ -69,7 +76,7 @@ export const monitorContract = {
       { id: 'm07', item: 'Score degradation threshold — alert if score drops > N points', pass: 'Score drop within threshold since previous run', fail: 'Score dropped beyond the alert threshold — alert fired' },
       { id: 'm08', item: 'Token-set mutation — tokens added/removed/renamed since baseline', pass: 'Token set is stable vs baseline', fail: 'Token set mutated — tokens added, removed, or renamed (silent breaking changes)', warn: '1-2 token changes since baseline' },
       { id: 'm09', item: 'Contract version drift — the site own DTCG/agent.json changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run — verify the change is intentional', warn: 'Contract metadata changed (not version)' },
-      { id: 'm10', item: 'Alert delivered — webhook/email/slack fired on threshold breach', pass: 'Alert delivered to the registered target', fail: 'Alert could not be delivered — check the webhook URL or email', warn: 'Alert queued but not yet confirmed delivered' },
+      { id: 'm10', item: 'Alert delivered — email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered — check the email address or RESEND_API_KEY', warn: 'Alert surfaced in-UI only — no email provided or Resend key not set' },
     ],
     scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/10) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable), not design quality — design quality is the /score surface.',
     validation_tools: {
@@ -86,7 +93,8 @@ export const monitorContract = {
   },
   open_questions: [
     'Snapshot storage is client-side (localStorage) in v0.1.0 — production monitoring needs server-side persistence (database or KV store)',
-    'Alert delivery (m10) requires a webhook/email backend — v0.1.0 surfaces the alert in-UI; webhook delivery is a future capability',
+    'Email alerting (m10) requires RESEND_API_KEY env var + verified sending domain (monitor@designesy.org) — without the key, alerts surface in-UI only',
+    'Scheduled cadence (daily/weekly/monthly) requires a cron runner (Vercel Cron Jobs) — v0.1.0 monitors on manual trigger only',
     'Cross-page drift (drift mode 2) requires crawling multiple pages — the monitor currently watches the single registered URL',
     'The 3-run trend slope (m04) needs 3 snapshots — the first 2 runs will show insufficient data',
     'Contract version drift (m09) probes for agent.json version field — not all sites expose one',

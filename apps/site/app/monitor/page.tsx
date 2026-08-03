@@ -10,11 +10,11 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Drift monitor',
   description:
-    'Monitor any URL for design-drift over time — re-scores on a cadence, stores snapshots, computes deltas against the baseline, and surfaces regressions before they compound. 10 governance checks plus the 12 drift checks on every run.',
+    'Monitor any URL for design-drift over time — re-scores on a cadence, stores snapshots, computes deltas against the baseline, and emails you when drift is detected. 10 governance checks plus the 12 drift checks on every run.',
   path: '/monitor',
   ogTitle: 'Drift monitor · Designesy',
   ogDescription:
-    'Continuous design-drift monitoring — score deltas, trend slopes, new violations, token mutations.',
+    'Continuous design-drift monitoring with email alerts — score deltas, trend slopes, new violations, token mutations.',
   twitterDescription: 'Designesy drift monitor — designesy.org/monitor',
 });
 

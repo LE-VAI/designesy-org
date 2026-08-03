@@ -42,6 +42,12 @@ type MonitorResponse = {
   driftChecks?: DriftCheck[];
   monitorChecks?: MonitorCheck[];
   alerts?: string[];
+  emailAlert?: {
+    attempted: boolean;
+    delivered: boolean;
+    recipient?: string;
+    error?: string;
+  };
   error?: string;
 };
 
@@ -91,6 +97,7 @@ function formatTimestamp(iso: string): string {
 
 export function MonitorForm({ initialUrl }: { initialUrl: string }) {
   const [url, setUrl] = useState(initialUrl);
+  const [email, setEmail] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<MonitorResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
@@ -98,10 +105,15 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
   const [showDriftChecks, setShowDriftChecks] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load history when url changes (client-only)
+  // Load history + saved email when url changes (client-only)
   useEffect(() => {
     if (scoredUrl) {
       setHistory(loadHistory(scoredUrl));
+    }
+    // Restore saved email
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('designesy:monitor-email');
+      if (savedEmail) setEmail(savedEmail);
     }
   }, [scoredUrl]);
 
@@ -113,13 +125,22 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
     setResult(null);
     setScoredUrl(normalized);
 
+    // Save email for next run
+    if (typeof window !== 'undefined' && email.trim()) {
+      localStorage.setItem('designesy:monitor-email', email.trim());
+    }
+
     const existingHistory = loadHistory(normalized);
 
     try {
       const resp = await fetch('/api/monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: normalized, history: existingHistory }),
+        body: JSON.stringify({
+          url: normalized,
+          history: existingHistory,
+          ...(email.trim() ? { email: email.trim() } : {}),
+        }),
       });
       const data: MonitorResponse = await resp.json();
       if (!data.ok) {
@@ -173,6 +194,26 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
               placeholder="Enter a URL to monitor for drift..."
               className="score-url-input-inner"
               aria-label="URL to monitor for drift"
+              disabled={status === 'loading'}
+            />
+          </div>
+          <div className="score-input-flex-box" style={{ marginTop: '0.5rem' }}>
+            <span className="score-input-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <path d="M22 6l-10 7L2 6" />
+              </svg>
+            </span>
+            <input
+              type="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email for drift alerts (optional)..."
+              className="score-url-input-inner"
+              aria-label="Email address to receive drift alerts"
               disabled={status === 'loading'}
             />
           </div>
@@ -251,6 +292,15 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
                   {alert}
                 </p>
               ))}
+              {result.emailAlert && (
+                <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
+                  {result.emailAlert.delivered
+                    ? `✉ Drift alert sent to ${result.emailAlert.recipient}`
+                    : result.emailAlert.attempted
+                      ? `⚠ Email delivery failed — ${result.emailAlert.error || 'unknown error'}`
+                      : '💡 Add an email above to get drift alerts by mail'}
+                </p>
+              )}
             </div>
           )}
 
