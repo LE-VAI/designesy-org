@@ -7,6 +7,7 @@ import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
 import { DirectorDock } from './lib/director-dock';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
+import { AmbientParticles } from './lib/ambient-particles';
 import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { MagneticCursor } from './lib/magnetic-cursor';
@@ -137,6 +138,11 @@ export default function RootLayout({
             JS. Replaces the old hero-bounded mesh that showed a cutoff at
             extreme zoom-out. aria-hidden: decorative only. */}
         <div className="ambient-signal" aria-hidden="true" />
+        {/* Ambient particle field — fixed full-viewport canvas at z-index 0.
+            ~450 signal-blue dots drift via Perlin noise and pull toward the
+            cursor. Reads CSS-var palette + watches data-theme to swap with
+            night/day. Sits behind all content (z-1), above body paper. */}
+        <AmbientParticles />
         {children}
         <Analytics />
       </body>
