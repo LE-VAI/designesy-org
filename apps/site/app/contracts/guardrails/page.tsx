@@ -8,11 +8,11 @@ import { pageMeta } from '../../lib/site-meta';
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails contract',
   description:
-    'Designesy Guardrails Contract v0.1.0 — ingests a design system and emits a frozen build contract for AI coding agents: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, and anti-patterns. The product layer.',
+    'Designesy Guardrails Contract v0.1.0 — ingests a design system and emits a frozen build contract for AI coding agents: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
   path: '/contracts/guardrails',
   ogTitle: 'Guardrails contract · Designesy',
   ogDescription:
-    'Emit a frozen build contract for AI coding agents — tokens, lint config, agent rules.',
+    'Emit a frozen build contract for AI coding agents — tokens, lint config, agent rules, DESIGN.md.',
   twitterDescription: 'Designesy guardrails — designesy.org/contracts/guardrails',
 });
 
