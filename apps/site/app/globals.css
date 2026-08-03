@@ -559,8 +559,8 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: transparent;
@@ -692,15 +692,15 @@ p {
 .sense-toggles {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
   flex-shrink: 0;
-  /* Precision-instrument separation: a 1px vertical hairline marks the
-     boundary between navigational verbs (Score / Leaderboard / Contract /
-     Kits / Docs) and sensory controls (sound / haptics). Lab-instrument
-     register — each cluster reads as its own module. */
+  /* No border-left divider: the preceding nav-links gap + consistent 32px
+     control heights already separate the clusters cleanly. The previous
+     1px hairline + 0.85rem padding was competing with the scroll-progress
+     gradient at the topbar bottom, reading as "two connected vertical
+     lines" on the nav (operator feedback 2026-08-02). Remove the divider;
+     the instrument register is cleaner without it. */
   margin-left: 0.4rem;
-  padding-left: 0.85rem;
-  border-left: 1px solid var(--line);
 }
 
 .sense-toggle {
