@@ -1,7 +1,7 @@
 /**
  * Designesy Accessibility Contract v0.1.0 — machine-readable form.
  * Sibling contract governing axe-core 4.12.1 + WCAG 2.2 AA accessibility verification.
- * Source: D:\DESIGNESY\docs\designesy\contracts\designesy-a11y.v0.md
+ * Source: internal contract markdown (not for public distribution).
  *
  * This is the machine export. The human page is at /contracts/a11y.
  * The contract markdown is the source of truth; this JSON is derived.
@@ -15,7 +15,6 @@ export const a11yContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/a11y',
   machine_url: 'https://www.designesy.org/contracts/a11y.json',
-  full_contract_path: 'D:\\DESIGNESY\\docs\\designesy\\contracts\\designesy-a11y.v0.md',
   updated: '2026-07-28',
   purpose:
     'Accessibility is structural — it shapes the first version, not the last audit. This contract makes that principle machine-checkable.',
