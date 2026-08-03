@@ -6118,8 +6118,6 @@ a.check-cell:hover .check-cell-title {
     top: 0.5rem;
     right: 0.5rem;
     bottom: 0.5rem;
-    height: auto;
-    max-height: calc(100vh - 1rem);
     width: min(280px, 75vw);
     background: var(--surface);
     border: 1px solid var(--line);
