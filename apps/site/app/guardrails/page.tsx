@@ -10,11 +10,11 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails',
   description:
-    'Generate a frozen build contract for AI coding agents from any design system — DTCG tokens, Stylelint config, AGENTS.md rules, component contract, and anti-patterns. The product layer.',
+    'Generate a frozen build contract for AI coding agents from any design system — DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
   path: '/guardrails',
   ogTitle: 'Guardrails · Designesy',
   ogDescription:
-    'Turn your design system into the file AI agents read and the lint that enforces it.',
+    'Turn your design system into the file AI agents read and the lint that enforces it — now with DESIGN.md emission.',
   twitterDescription: 'Designesy guardrails — designesy.org/guardrails',
 });
 
@@ -35,7 +35,7 @@ export default async function GuardrailsPage({ searchParams }: { searchParams?: 
             that enforces it. Tokens are a contract, not a library.
           </p>
           <p className="surface-note">
-            5 emission checks. The score reflects emission completeness, not
+            6 emission checks. The score reflects emission completeness, not
             design quality.
           </p>
         </section>
@@ -48,11 +48,12 @@ export default async function GuardrailsPage({ searchParams }: { searchParams?: 
           <h2 className="doctrine-heading">What it emits</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             The guardrails emitter fetches the target URL, extracts all CSS
-            and :root custom properties, and generates a 5-part build-contract
-            bundle. All static CSS analysis + generation — no browser needed.
+            and :root custom properties, and generates a 6-part build-contract
+            bundle including a DESIGN.md (Google open spec). All static CSS
+            analysis + generation — no browser needed.
           </p>
           <p className="surface-note">
-            Scoring: 5 checks. PASS=1, FAIL=0. Score = (points/5) × 100.
+            Scoring: 6 checks. PASS=1, FAIL=0. Score = (points/6) × 100.
             A≥90, B≥80, C≥70, D≥60, F&lt;60.
           </p>
         </section>
