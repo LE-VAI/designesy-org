@@ -91,65 +91,67 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   }, [pathname]);
 
   return (
-    <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar" data-pagefind-ignore>
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <div className="topbar-inner">
-        <Link
-          className="wordmark"
-          href="/"
-          data-cuelume-hover="sparkle"
-          data-cuelume-press="tick"
-          data-firework="true"
-          aria-current={pathname === '/' ? 'page' : undefined}
-        >
-          designesy<span className="dot">.</span>
-        </Link>
-        <div className="topbar-right">
-          <nav className="nav-links" aria-label="Primary">
-            {NAV_ROUTES.map((route) => {
-              const active = isActiveRoute(pathname, route.href);
-              return (
-                <Link
-                  href={route.href}
-                  key={route.href}
-                  ref={active ? activeRef : undefined}
-                  data-cuelume-hover="tick"
-                  data-cuelume-press="tick"
-                  data-firework={route.href === '/open' ? true : undefined}
-                  className={active ? 'is-active' : undefined}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  {route.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="sense-toggles" role="group" aria-label="Sensory feedback">
-            <SoundToggle />
-            <HapticsToggle />
-          </div>
-          <CommandPalette />
-          <ThemeToggle />
-          <button
-            className="nav-trigger"
-            aria-label="Toggle navigation"
-            aria-expanded={drawerOpen}
-            onClick={() => setDrawerOpen((o) => !o)}
+    <>
+      <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar" data-pagefind-ignore>
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <div className="topbar-inner">
+          <Link
+            className="wordmark"
+            href="/"
+            data-cuelume-hover="sparkle"
+            data-cuelume-press="tick"
+            data-firework="true"
+            aria-current={pathname === '/' ? 'page' : undefined}
           >
-            <span className="nav-trigger-bar" />
-            <span className="nav-trigger-bar" />
-            <span className="nav-trigger-bar" />
-          </button>
+            designesy<span className="dot">.</span>
+          </Link>
+          <div className="topbar-right">
+            <nav className="nav-links" aria-label="Primary">
+              {NAV_ROUTES.map((route) => {
+                const active = isActiveRoute(pathname, route.href);
+                return (
+                  <Link
+                    href={route.href}
+                    key={route.href}
+                    ref={active ? activeRef : undefined}
+                    data-cuelume-hover="tick"
+                    data-cuelume-press="tick"
+                    data-firework={route.href === '/open' ? true : undefined}
+                    className={active ? 'is-active' : undefined}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {route.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="sense-toggles" role="group" aria-label="Sensory feedback">
+              <SoundToggle />
+              <HapticsToggle />
+            </div>
+            <CommandPalette />
+            <ThemeToggle />
+            <button
+              className="nav-trigger"
+              aria-label="Toggle navigation"
+              aria-expanded={drawerOpen}
+              onClick={() => setDrawerOpen((o) => !o)}
+            >
+              <span className="nav-trigger-bar" />
+              <span className="nav-trigger-bar" />
+              <span className="nav-trigger-bar" />
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="scroll-progress" aria-hidden="true">
-        <span
-          className="scroll-progress-fill"
-          style={{ transform: `scaleX(${progress})` }}
-        />
-      </div>
+        <div className="scroll-progress" aria-hidden="true">
+          <span
+            className="scroll-progress-fill"
+            style={{ transform: `scaleX(${progress})` }}
+          />
+        </div>
+      </header>
       {drawerOpen && (
         <div
           className="nav-scrim open"
@@ -188,6 +190,6 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           );
         })}
       </nav>
-    </header>
+    </>
   );
 }
