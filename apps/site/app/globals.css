@@ -10017,6 +10017,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-variant-numeric: tabular-nums;
 }
 
+[data-theme="light"] .score-check-group-count {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
+
 .score-check-group.is-fail .score-check-group-count {
   background: rgba(239, 68, 68, 0.15);
   color: var(--error);
@@ -10098,6 +10103,9 @@ a.lab-card:focus-visible .lab-card-arrow {
    compliance score — "compliant" and "distinctive" are scored separately. */
 
 .score-signals-card {
+  /* Left-align signals panel — data-dense evidence rows expect left
+     alignment, not the hero's center inheritance. */
+  text-align: left;
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -10283,9 +10291,20 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
 }
 
+[data-theme="light"] .score-tab-count {
+  /* Darken the pill on light surfaces — the hardcoded white disappears,
+     leaving dim text floating. Invert to a dark wash + ink text. */
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
+
 .score-filter-tab.is-active .score-tab-count {
   background: rgba(255, 255, 255, 0.2);
   color: var(--ink);
+}
+
+[data-theme="light"] .score-filter-tab.is-active .score-tab-count {
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .score-search-wrapper {
