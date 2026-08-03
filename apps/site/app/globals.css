@@ -13417,54 +13417,80 @@ select {
    yours/count/stick/..."). The resolved word previously held a STATIC
    per-char blue→ink gradient painted once per rotation by colorFn (which
    read as a "still gradient"). This replaces that static paint with a
-   moving blue band that sweeps across the word on a loop — the same
-   background-clip:text technique as .hero-word-free, but in signal-blue.
-   Band is WIDER (12% at 44–56% of image) and BRIGHTER (pure --signal at
-   the core) than the 6% / 82%-mix band from the first pass — which read
-   as too subtle. Sweep is 2.6s (still tighter/faster than the 3.6s
-   "free" shimmer) so the band visibly crosses the word.
+   moving blue band that sweeps across the word LEFT → RIGHT on a loop —
+   the same background-clip:text technique as .hero-word-free, but in
+   signal-blue. The band is WIDE (20% at 40–60% of image) and BRIGHT
+   (pure --signal at the core), plus a subtle signal-blue drop-shadow
+   glow (0.7 opacity, 18px blur) that rides only the band — the ink-parked
+   frames emit no glow because there's no signal visible. Operator request:
+   "the gradient is a bit too thin, should be shimmering left to right
+   not right to left, add a slight and subtle but bright/sharp glow to
+   the shimmer only." */
 
-   background-clip:text on the PARENT [data-word] element clips against
-   the whole subtree's text in ONE share clip box, so descenders paint
-   via the parent line's 0.22em cushion (the .hero-display-line descender
-   fix). Crucially, per-glyph background-clip is NOT applied (that was
-   shearing the 'y'/'p' descender inside each glyph's own 1.02-line box).
-   Child spans just inherit transparent color and render inside the
-   parent's clip region. Scrambling chars (.is-scrambling) opt out with
-   solid signal-blue color paint. */
 [data-data-scramble-rotate] [data-word],
 [data-scramble-rotate-words] [data-word] {
   background-image: linear-gradient(
     104deg,
     var(--ink),
-    var(--ink) 44%,
+    var(--ink) 40%,
     var(--signal) 50%,
-    var(--ink) 56%,
+    var(--ink) 60%,
     var(--ink)
   );
+  /* background-size 250% parks the band fully off-word at rest.
+     LEFT→RIGHT sweep (reversed keyframes vs the first pass): the band
+     enters from the LEFT edge, crosses the word, exits the RIGHT edge.
+     background-position 100%→0% moves the gradient image rightward.
+     (On background-clip:text, increasing background-position moves the
+     gradient LEFT relative to the container; decreasing moves it RIGHT.
+     100%→0% therefore sweeps the band left-to-right across the word.) */
   background-size: 250% 100%;
-  background-position: 0% 0;
+  background-position: 100% 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  /* Subtle blue glow that rides the shimmer band only. drop-shadow() is
+     filter-based — it samples only the visible gradient text: where the
+     band is (pure --signal at the core), the shadow glows; where the
+     baseline ink is, the shadow emits nothing. Band-parked frames (band
+     fully off-word) show zero glow. 18px blur on the 69px display size
+     reads as a soft halo hugging the band — sharp at the core, faint at
+     the falloff. Dark mode: signal blue on graphite. Light mode: the
+     same filter works --signal is already luminance-appropriate. */
+  filter: drop-shadow(0 0 18px rgba(1, 51, 203, 0.7));
+  /* 2.6s sweep reversed direction — enters LEFT, exits RIGHT, no dwell
+     so the loop reads as a continuous crossing (faster perception even
+     at same duration). */
   animation: hero-word-rotate-shimmer 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
-/* Settled child spans (no .is-scrambling) must be INVISIBLE to the color
-   paint so the parent's background-clip gradient shows through. Using
-   color:transparent on the parent makes the spans inherit transparency
-   automatically — NO per-span background, NO per-span background-clip,
-   NO padding hacks. The parent's clip box handles the descender. */
-/* (no additional span styling needed — color:transparent on the parent
-   is inherited by child spans, and background-clip:text on the parent
-   clips the whole subtree in one shared clip box) */
+/* Light theme glow: on paper (#fbfbfc) the dark 0.7-alpha signal glow reads
+   slightly muddy — soften it AND use --signal-light so it harmonizes with
+   the shifted base ink (#1a1a1e is lighter in luminance-context on paper).
+   The band geometry and animation are theme-independent; only the glow
+   color changes. */
+[data-theme="light"] [data-scramble-rotate-words] [data-word] {
+  filter: drop-shadow(0 0 16px rgba(51, 88, 232, 0.55));
+}
 
 @keyframes hero-word-rotate-shimmer {
-  0% { background-position: 0% 0; }    /* band parked off the right edge */
-  50% { background-position: 100% 0; } /* band exited off the left edge */
-  100% { background-position: 100% 0; } /* dwell — restart is invisible */
+  /* LEFT→RIGHT: start with the band parked off the LEFT edge
+     (background-position 100%, gradient shifted right; the band at image
+     coords 40–60% lands at container coords 40–110% → fully off the
+     right). As position decreases to 0%, the gradient shifts LEFT, the
+     band enters from the LEFT, crosses the word, and parks off the
+     RIGHT edge at position 0% (band container coords −60…−10%). The
+     100%→0% wrap is seamless because both park positions are fully
+     off-word (flat ink face either way). */
+  0% { background-position: 100% 0; }
+  50% { background-position: 0% 0; }
+  100% { background-position: 0% 0; } /* brief park, restart invisible */
 }
+
+/* Settled child spans (no .is-scrambling) inherit color:transparent
+   from the parent — no per-span background, no per-span background-clip.
+   The parent's clip box handles descenders. */
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   [data-scramble-rotate-words] [data-word] {
@@ -13472,6 +13498,7 @@ select {
     -webkit-text-fill-color: currentColor;
     animation: none;
     background-image: none;
+    filter: none;
   }
 }
 
@@ -13481,6 +13508,7 @@ select {
     background-image: none;
     color: var(--ink);
     -webkit-text-fill-color: currentColor;
+    filter: none;
   }
   [data-scramble-rotate-words] [data-word] > span:not(.is-scrambling) {
     background: none;
