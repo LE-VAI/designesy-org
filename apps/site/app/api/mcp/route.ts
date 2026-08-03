@@ -1,8 +1,8 @@
 // /api/mcp — native TypeScript MCP server on Vercel Node.js runtime.
 //
 // Uses mcp-handler (Vercel's official MCP adapter) to expose designesy.org's
-// 17 design-intelligence tools. No Python, no child processes, no mcp-proxy
-// bridge — runs natively on the same Vercel project as the designesy.org site.
+// 17 design-intelligence tools + 1 MCP App UI resource. No Python, no child
+// processes, no mcp-proxy bridge — runs natively on the same Vercel project.
 //
 // MCP spec 2026-07-28 — stateless protocol core. No initialize/initialized
 // handshake, no Mcp-Session-Id header, no sessions. Every request is self-
@@ -11,15 +11,22 @@
 // the 2026-07-28 spec natively and transparently falls back to stateless
 // Streamable HTTP for 2025-era clients (one handler, both protocols).
 //
+// MCP Apps (SEP-1865, ext io.modelcontextprotocol/ui) — the designesy_report
+// tool declares _meta.ui.resourceUri so Apps-capable hosts (Claude Desktop,
+// Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline. The
+// ui://designesy/report-app resource serves the HTML5 dashboard.
+//
 // 7 read-only tools fetch public machine exports from designesy.org.
 // 10 executable tools call internal API engines (score, drift, readiness,
 //   guardrails, monitor, compare, report, tokens, a11y, motion).
+// 1 UI resource (ui://designesy/report-app) renders the report dashboard.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.7.0 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.8.0 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
+import { buildReportAppHtml } from '../../lib/report-app-html';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -39,7 +46,7 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const res = await fetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': 'designesy-mcp/2.0.0 (https://www.designesy.org)',
+      'User-Agent': 'designesy-mcp/2.1.0 (https://www.designesy.org)',
     },
   });
 
@@ -948,13 +955,35 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     // ── Tool 17: designesy_report ───────────────────────────────────────────────
     // The synthesis capstone — fetch one URL, fire score + drift + readiness
     // in parallel, and produce a unified report with a composite grade.
+    //
+    // MCP Apps (SEP-1865, ext io.modelcontextprotocol/ui): declares a UI
+    // resource at ui://designesy/report-app so Apps-capable hosts (Claude
+    // Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard
+    // inline instead of dumping JSON. The dashboard HTML is served by
+    // /api/report/app?url=... — a self-contained HTML5 document that bundles
+    // its own JS, calls back via postMessage for re-runs, and works as a
+    // standalone browser URL for hosts that don't support Apps yet.
+    //
+    // The tool still returns the full JSON payload as text content so legacy
+    // clients (no Apps support) get the same data they always did. Apps-aware
+    // clients ignore the text and render the UI resource instead.
     server.registerTool(
       'designesy_report',
       {
-        description: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone of the Designesy dynasty. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable — fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly) }. Results cached ~24h per URL.',
+        description: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone of the Designesy dynasty. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable — fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.',
         inputSchema: z.object({
           url: z.string().describe('Public URL to generate a design-intelligence report for.'),
         }),
+        // MCP Apps (SEP-1865) — declare the UI resource. Apps-capable hosts
+        // fetch ui://designesy/report-app (served by /api/report/app) and
+        // render it inline. visibility:["model"] keeps the tool callable by
+        // the agent; the app can also call it via postMessage.
+        _meta: {
+          ui: {
+            resourceUri: 'ui://designesy/report-app',
+            visibility: ['model', 'app'],
+          },
+        },
       },
       async ({ url }) => {
         const res = await fetch(`${BASE_URL}/api/report`, {
@@ -970,8 +999,59 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           };
         }
         const data = await res.json();
+        // Attach the standalone app URL so non-Apps clients can still open
+        // the interactive dashboard in a browser. Apps-aware hosts ignore
+        // this — they render the ui:// resource inline.
+        const payload = { ...data, appUrl: `${BASE_URL}/api/report/app?url=${encodeURIComponent(url)}` };
         return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
+          content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
+        };
+      },
+    );
+
+    // ── UI Resource: ui://designesy/report-app (MCP Apps, SEP-1865) ────────────
+    // Apps-capable hosts fetch this resource via resources/read when they
+    // render the designesy_report tool's UI. The resource returns the same
+    // self-contained HTML5 dashboard served by /api/report/app — we fetch
+    // it internally so the host gets it over the MCP channel (no cross-
+    // origin fetch from the host). The iframe then calls back via
+    // postMessage to re-run reports on new URLs.
+    server.registerResource(
+      'report-app',
+      'ui://designesy/report-app',
+      {
+        title: 'Designesy Report Dashboard',
+        description: 'Interactive design-intelligence report dashboard — composite grade, sub-engine scores, and check-by-check breakdown with tabbed navigation. The synthesis capstone rendered inline.',
+        mimeType: 'text/html;profile=mcp-app',
+        // CSP for the sandboxed iframe. The dashboard bundles its own JS
+        // inline (script-src 'self' 'unsafe-inline') and fetches only the
+        // designesy.org /api/report endpoint (connect-src 'self'). No
+        // external resources, no frames, no plugins.
+        _meta: {
+          ui: {
+            csp: {
+              connectDomains: ['https://www.designesy.org'],
+              resourceDomains: ['https://www.designesy.org'],
+              frameDomains: [],
+              baseUriDomains: ['https://www.designesy.org'],
+            },
+          },
+        },
+      },
+      async () => {
+        // Build the dashboard HTML directly via the shared lib — no self-
+        // fetch round-trip. The HTML is identical to what /api/report/app
+        // serves. No url param here: the dashboard reads its initial URL
+        // from the tool call result pushed by the host via postMessage.
+        const html = buildReportAppHtml('', BASE_URL);
+        return {
+          contents: [
+            {
+              uri: 'ui://designesy/report-app',
+              text: html,
+              mimeType: 'text/html;profile=mcp-app',
+            },
+          ],
         };
       },
     );
@@ -980,7 +1060,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     // Stateless 2026-07-28: server identity reported via server/discover.
     serverInfo: {
       name: 'designesy',
-      version: '1.7.0',
+      version: '1.8.0',
     },
     verboseLogs: true,
   },
