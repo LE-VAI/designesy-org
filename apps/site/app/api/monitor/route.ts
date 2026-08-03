@@ -653,17 +653,40 @@ async function sendAlertEmail(
 </body>
 </html>`;
 
-    const { error } = await resend.emails.send({
-      from: 'Designesy Monitor <monitor@designesy.org>',
+    // Try the branded sending address first; fall back to Resend's shared
+    // onboarding address when the custom domain isn't verified yet. This lets
+    // email alerting ship immediately and upgrade automatically once DNS
+    // verification completes — no feature flag, no redeploy.
+    const brandedFrom = 'Designesy Monitor <monitor@designesy.org>';
+    const fallbackFrom = 'Designesy Monitor <onboarding@resend.dev>';
+
+    const { error: brandedError } = await resend.emails.send({
+      from: brandedFrom,
       to: email,
       subject,
       html,
     });
 
-    if (error) {
-      return { attempted: true, delivered: false, recipient: email, error: error.message };
+    if (!brandedError) {
+      return { attempted: true, delivered: true, recipient: email };
     }
-    return { attempted: true, delivered: true, recipient: email };
+
+    // Branded send failed (domain not verified, 422) — retry via the shared
+    // Resend onboarding address so alerts still reach the inbox.
+    if (brandedError.message.includes('not verified') || brandedError.message.includes('422') || brandedError.message.includes('domain')) {
+      const { error: fallbackError } = await resend.emails.send({
+        from: fallbackFrom,
+        to: email,
+        subject,
+        html,
+      });
+      if (!fallbackError) {
+        return { attempted: true, delivered: true, recipient: email };
+      }
+      return { attempted: true, delivered: false, recipient: email, error: `branded: ${brandedError.message}; fallback: ${fallbackError.message}` };
+    }
+
+    return { attempted: true, delivered: false, recipient: email, error: brandedError.message };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     return { attempted: true, delivered: false, recipient: email, error: msg };
