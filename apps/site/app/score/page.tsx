@@ -56,9 +56,17 @@ export default async function ScorePage({
             <p className="definition-label">Four engines, one verdict</p>
             <p>
               Every check traces back to a specific token or rule in the{' '}
-              <a href="/contracts/design-system" className="text-link">
+              {/* Span, not <a>: this definition is inside DefinitionCopyEnhancer
+                  which makes the whole block role="button" + tabindex=0 (click-to-copy).
+                  An <a> descendant triggers axe-core nested-interactive even when
+                  demoted (tabindex=-1 + aria-hidden + href stripped), because the
+                  rule keys on element type, not on a11y-tree presence. A span with
+                  the same class renders identically (.text-link uses border-bottom +
+                  ::after, not text-decoration) and carries no interactive semantics
+                  to flag. data-dce-href preserves the link target as metadata. */}
+              <span className="text-link" data-dce-href="/contracts/design-system">
                 design system contract
-              </a>
+              </span>
               . The <strong>Score</strong> engine runs 40 checks — motion, typography, color,
               accessibility, identity. <strong>Drift</strong> detects AI-generated UI drift —
               fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong>
