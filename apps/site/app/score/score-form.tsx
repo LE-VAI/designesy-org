@@ -191,6 +191,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [badgeCopied, setBadgeCopied] = useState(false);
@@ -260,6 +261,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     setStatus('loading');
     setResult(null);
     setExpandedId(null);
+    setCollapsedGroups({});
     setFilterStatus('ALL');
     setSelectedCategory('ALL');
     setSearchQuery('');
@@ -332,6 +334,39 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         return 0;
       });
   }, [checks, filterStatus, selectedCategory, searchQuery]);
+
+  // Collapsible status groups — same pattern as verify-form. FAIL is expanded
+  // by default (you need to see what broke); PASS is collapsed by default (it's
+  // confirmation noise when you're fixing); MANUAL is expanded (actionable —
+  // run the audit to resolve); SKIP (N/A) is collapsed (nothing to do —
+  // convention not met). This keeps the feed scannable instead of a wall of 40
+  // cards, following the Lighthouse "fail-first, pass-last" pattern.
+  const groupedChecks = useMemo(() => {
+    const groups: { status: FilterStatus; checks: CheckResult[] }[] = [];
+    const order: FilterStatus[] = ['FAIL', 'WARN', 'MANUAL', 'SKIP', 'PASS'];
+    for (const s of order) {
+      const groupChecks = filteredChecks.filter((c) => c.status === s);
+      if (groupChecks.length > 0) groups.push({ status: s, checks: groupChecks });
+    }
+    return groups;
+  }, [filteredChecks]);
+
+  function isGroupCollapsed(status: FilterStatus): boolean {
+    // PASS and SKIP (N/A) collapse by default — PASS is confirmation noise,
+    // N/A means "convention not met, nothing to do." Everything else is
+    // expanded by default so you see what needs attention.
+    const key = status;
+    if (key in collapsedGroups) return collapsedGroups[key];
+    return status === 'PASS' || status === 'SKIP';
+  }
+
+  function toggleGroup(status: FilterStatus) {
+    const key = status;
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [key]: !isGroupCollapsed(status),
+    }));
+  }
 
   function copyReceipt() {
     if (!result || !scoredUrl) return;
@@ -1077,7 +1112,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </div>
           </div>
 
-          {/* Check Cards Feed */}
+          {/* Check Cards Feed — collapsible by status group, same pattern as
+              the /score verify dashboard. FAIL expands by default (what to
+              fix), PASS + N/A collapse by default (noise / nothing to do). */}
           <div className="score-cards-feed">
             {filteredChecks.length === 0 ? (
               <div className="score-empty-feed">
@@ -1096,54 +1133,114 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </button>
               </div>
             ) : (
-              filteredChecks.map((check, idx) => {
-                const isExpanded = expandedId === check.id;
+              groupedChecks.map((group) => {
+                const collapsed = isGroupCollapsed(group.status);
+                const statusLower = group.status.toLowerCase();
                 return (
                   <div
-                    key={check.id}
-                    className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
-                    onClick={() => setExpandedId(isExpanded ? null : check.id)}
-                    role="button"
-                    tabIndex={0}
-                    style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
+                    key={group.status}
+                    className={`score-check-group is-${statusLower}`}
                   >
-                    <div className="score-card-main">
-                      <div className="score-card-badge-group">
-                        <span className={`score-card-status-pill is-${check.status.toLowerCase()}`}>
-                          {check.status === 'MANUAL' ? 'Manual' :
-                           check.status === 'SKIP' ? 'N/A' :
-                           check.status}
-                        </span>
-                        <span className="score-card-id">{check.id}</span>
-                        <span className="score-card-cat">{check.category}</span>
-                      </div>
-                      <h4 className="score-card-title">{check.item}</h4>
-                    </div>
-
-                    <span className="score-card-right">
+                    <button
+                      type="button"
+                      className="score-check-group-header"
+                      onClick={() => toggleGroup(group.status)}
+                      aria-expanded={!collapsed}
+                      aria-controls={`group-${group.status}`}
+                    >
+                      <span
+                        className={`score-check-group-dot is-${statusLower}`}
+                        aria-hidden="true"
+                      />
+                      <span className="score-check-group-label">
+                        {group.status === 'PASS' ? 'Passing' :
+                         group.status === 'FAIL' ? 'Failing' :
+                         group.status === 'WARN' ? 'Warnings' :
+                         group.status === 'MANUAL' ? 'Manual checks' : 'Not applicable'}
+                      </span>
+                      <span className="score-check-group-count">
+                        {group.checks.length}
+                      </span>
                       <svg
+                        className="score-check-group-chevron"
                         width="14"
                         height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                        style={{
+                          transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s var(--ease-out)',
+                        }}
                       >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
-                    </span>
+                    </button>
+                    {!collapsed && (
+                      <div
+                        id={`group-${group.status}`}
+                        className="score-check-group-body"
+                      >
+                        {group.checks.map((check, idx) => {
+                          const isExpanded = expandedId === check.id;
+                          return (
+                            <div
+                              key={check.id}
+                              className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
+                              onClick={() => setExpandedId(isExpanded ? null : check.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setExpandedId(isExpanded ? null : check.id);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
+                            >
+                              <div className="score-card-main">
+                                <div className="score-card-badge-group">
+                                  <span className={`score-card-status-pill is-${check.status.toLowerCase()}`}>
+                                    {check.status === 'MANUAL' ? 'Manual' :
+                                     check.status === 'SKIP' ? 'N/A' :
+                                     check.status}
+                                  </span>
+                                  <span className="score-card-id">{check.id}</span>
+                                  <span className="score-card-cat">{check.category}</span>
+                                </div>
+                                <h4 className="score-card-title">{check.item}</h4>
+                              </div>
 
-                    {isExpanded && (
-                      <div className="score-card-drawer">
-                        <p className="score-drawer-heading">Technical Finding</p>
-                        <p className="score-drawer-detail">{check.detail}</p>
-                        {check.remediation && (check.status === 'FAIL' || check.status === 'WARN') && (
-                          <>
-                            <p className="score-drawer-heading score-drawer-remediation-heading">How to fix this</p>
-                            <p className="score-drawer-detail score-drawer-remediation">{check.remediation}</p>
-                          </>
-                        )}
+                              <span className="score-card-right">
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </span>
+
+                              {isExpanded && (
+                                <div className="score-card-drawer">
+                                  <p className="score-drawer-heading">Technical Finding</p>
+                                  <p className="score-drawer-detail">{check.detail}</p>
+                                  {check.remediation && (check.status === 'FAIL' || check.status === 'WARN') && (
+                                    <>
+                                      <p className="score-drawer-heading score-drawer-remediation-heading">How to fix this</p>
+                                      <p className="score-drawer-detail score-drawer-remediation">{check.remediation}</p>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
