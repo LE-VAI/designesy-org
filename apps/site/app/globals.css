@@ -13447,6 +13447,25 @@ select {
 
 [data-data-scramble-rotate] [data-word],
 [data-scramble-rotate-words] [data-word] {
+  /* DESCENDER FIX (final — do not regress). background-clip:text paints the
+     gradient ONLY inside the element's background painting area (the
+     padding-box by default), THEN clips to glyph alpha. With zero word
+     padding, glyph pixels below the padding-box bottom — the y tail in
+     "yours", the g descender in "legitimate" — receive no background, and
+     with text-fill-color:transparent they render as nothing: a hard
+     horizontal shear one line-height below the baseline. Inter Variable's
+     descender at wght 340 is ~0.217em (ink bbox) / ~0.242em (font bbox) of
+     font-size, canvas-measured on the live site. The 0.22em padding on
+     .hero-display-line only protects the LINE's overflow:hidden clip — it
+     never widened the WORD's own paint area. Extend the paint area HERE:
+     padding grows what the gradient fills; the negative margin cancels the
+     added block size so line metrics and wrap behavior do not move.
+     em-based, so it scales with the hero clamp() on desktop and the
+     <=720px mobile size. 0.26 = 0.242 worst-case descender + headroom.
+     Applies at rest, mid-scramble, and mid-shimmer in both themes
+     (the light theme inherits this same rule). */
+  padding-bottom: 0.26em;
+  margin-bottom: -0.26em;
   background-image: linear-gradient(
     104deg,
     var(--ink),
@@ -13498,7 +13517,10 @@ select {
 
 /* Settled child spans (no .is-scrambling) inherit color:transparent
    from the parent — no per-span background, no per-span background-clip.
-   The parent's clip box handles descenders. */
+   The parent's clip box handles descenders — but ONLY because the rule
+   above gives the parent a 0.26em padding-bottom that extends its
+   background painting area past every Inter descender. Do not remove
+   that padding: without it this sentence was false and y/g got sheared. */
 
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   [data-scramble-rotate-words] [data-word] {
