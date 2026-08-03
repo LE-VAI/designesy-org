@@ -13450,13 +13450,28 @@ select {
 /* Settled child spans (no .is-scrambling) must let the parent's animated
    background-clip gradient paint through them. Inheriting the background
    image + transparent fill makes each glyph a window into the parent
-   sweep rather than an opaque color stop. */
+   sweep rather than an opaque color stop.
+
+   Descender clip fix: background-clip:text creates a NEW clip context on
+   EACH glyph span, and each span's own 1.02-line box reserves ~zero room
+   below the baseline — so a descender (the "y" in "yours", "p" in
+   "shipped") was sheared off inside its own glyph box BEFORE the parent
+   line's overflow even mattered. (The parent .hero-display-line already
+   pads 0.22em down for its own clip, but that cushion is OUTSIDE each
+   glyph's background-clip paint region.) Give each settled glyph the same
+   cushion: padding-bottom 0.22em extends the per-glyph clip paint box
+   below the baseline. On INLINE-level boxes (which these spans are),
+   padding contributes to the PAINT area but not to the line box height
+   (CSS2.1 §10.6.1, CSS Inline 3 §4.2) — so it fixes the clip without
+   shifting the baseline or line geometry. No negative margin needed:
+   that trick applies to block-level boxes, not inline paint regions. */
 [data-scramble-rotate-words] [data-word] > span:not(.is-scrambling) {
   background: inherit;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  padding-bottom: 0.22em;
 }
 
 @keyframes hero-word-rotate-shimmer {
