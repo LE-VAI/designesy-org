@@ -595,7 +595,7 @@ async function sendAlertEmail(
   alerts: string[],
   currentSnapshot: Snapshot,
   previous: Snapshot | null,
-): Promise<{ attempted: boolean; delivered: boolean; recipient?: string; error?: string }> {
+): Promise<{ attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return { attempted: false, delivered: false };
@@ -668,7 +668,7 @@ async function sendAlertEmail(
     });
 
     if (!brandedError) {
-      return { attempted: true, delivered: true, recipient: email };
+      return { attempted: true, delivered: true, recipient: email, fromAddress: 'monitor@designesy.org' };
     }
 
     // Branded send failed (domain not verified, 422) — retry via the shared
@@ -681,9 +681,9 @@ async function sendAlertEmail(
         html,
       });
       if (!fallbackError) {
-        return { attempted: true, delivered: true, recipient: email };
+        return { attempted: true, delivered: true, recipient: email, fromAddress: 'onboarding@resend.dev' };
       }
-      return { attempted: true, delivered: false, recipient: email, error: `branded: ${brandedError.message}; fallback: ${fallbackError.message}` };
+      return { attempted: true, delivered: false, recipient: email, fromAddress: 'fallback-failed', error: `branded: ${brandedError.message}; fallback: ${fallbackError.message}` };
     }
 
     return { attempted: true, delivered: false, recipient: email, error: brandedError.message };
