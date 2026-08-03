@@ -294,12 +294,14 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
                 </p>
               ))}
               {result.emailAlert && (
-                <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
+                <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : result.emailAlert.fromAddress === 'suppressed (cooldown)' ? 'var(--text-dim)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
                   {result.emailAlert.delivered
                     ? `✉ Drift alert sent to ${result.emailAlert.recipient}${result.emailAlert.fromAddress ? ` (from ${result.emailAlert.fromAddress})` : ''}`
-                    : result.emailAlert.attempted
-                      ? `⚠ Email delivery failed — ${result.emailAlert.error || 'unknown error'}`
-                      : '💡 Add an email above to get drift alerts by mail'}
+                    : result.emailAlert.fromAddress === 'suppressed (cooldown)'
+                      ? '⏸ Alert active — email suppressed (1-hour cooldown, same alert set already delivered)'
+                      : result.emailAlert.attempted
+                        ? `⚠ Email delivery failed — ${result.emailAlert.error || 'unknown error'}`
+                        : '💡 Add an email above to get drift alerts by mail'}
                 </p>
               )}
             </div>
