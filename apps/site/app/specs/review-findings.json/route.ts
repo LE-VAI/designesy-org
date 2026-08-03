@@ -198,7 +198,8 @@ const SCHEMA = {
             pass: { type: 'integer' },
             fail: { type: 'integer' },
             warn: { type: 'integer' },
-            skip: { type: 'integer' },
+            skip: { type: 'integer', description: 'Not applicable — convention not met (no tokens, no buttons, no DESIGN.md). Excluded from score.' },
+            manual: { type: 'integer', description: 'Requires a live browser/CDP trace to verify (Core Web Vitals, sound toggle, overflow). Excluded from score — run the full audit to resolve.' },
           },
         },
         countsBySeverity: {
@@ -209,12 +210,13 @@ const SCHEMA = {
             warning: { type: 'integer', description: 'Maps to designesy WARN, Google warning.' },
             info: { type: 'integer', description: 'Maps to Google info, Lighthouse informative.' },
             pass: { type: 'integer', description: 'Maps to designesy PASS, Lighthouse pass.' },
-            skip: { type: 'integer', description: 'Maps to designesy SKIP, Lighthouse notApplicable/manual.' },
+            skip: { type: 'integer', description: 'Maps to designesy SKIP (N/A), Lighthouse notApplicable.' },
+            manual: { type: 'integer', description: 'Maps to designesy MANUAL, Lighthouse manual — requires browser verification.' },
           },
         },
         scored: {
           type: 'integer',
-          description: 'Number of findings that contributed to the score (excludes SKIP).',
+          description: 'Number of findings that contributed to the score (excludes SKIP and MANUAL).',
         },
         total: {
           type: 'integer',
@@ -238,7 +240,7 @@ const SCHEMA = {
     verdict: {
       type: 'string',
       enum: ['pass', 'fail', 'block', 'needs-changes', 'approve', 'not-scored'],
-      description: 'Overall verdict. pass = no FAIL/error findings; fail = at least one FAIL/error; block = any HIGH (jakubkrehel); needs-changes = only WARN remaining; approve = no actionable findings; not-scored = all SKIP.',
+      description: 'Overall verdict. pass = no FAIL/error findings; fail = at least one FAIL/error; block = any HIGH (jakubkrehel); needs-changes = only WARN remaining; approve = no actionable findings; not-scored = all SKIP and/or MANUAL.',
     },
 
     runtimeError: {
@@ -291,8 +293,8 @@ const SCHEMA = {
         },
         status: {
           type: 'string',
-          enum: ['PASS', 'FAIL', 'WARN', 'SKIP'],
-          description: 'designesy-native status. Equivalent to severity but using designesy terminology.',
+          enum: ['PASS', 'FAIL', 'WARN', 'SKIP', 'MANUAL'],
+          description: 'designesy-native status. MANUAL = requires browser/CDP (excluded from score, run the audit); SKIP = not applicable (excluded from score).',
         },
         message: {
           type: 'string',

@@ -70,7 +70,7 @@ const TOOLS = [
   {
     name: 'designesy_score',
     kind: 'Executable',
-    desc: 'The 40-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 40 automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return SKIP.',
+    desc: 'The 40-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 40 automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return MANUAL — run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A).',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/score',
   },

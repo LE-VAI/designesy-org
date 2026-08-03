@@ -24,6 +24,7 @@ export type ScoreHistoryEntry = {
   fail: number;
   warn: number;
   skip: number;
+  manual: number;
   total: number;
   tokensExtracted: number;
   scoredAt: string; // ISO-8601
@@ -76,6 +77,7 @@ export function saveScore(url: string, result: {
   fail?: number;
   warn?: number;
   skip?: number;
+  manual?: number;
   total?: number;
   tokensExtracted?: number;
 }): ScoreHistoryEntry[] {
@@ -94,6 +96,7 @@ export function saveScore(url: string, result: {
     fail: result.fail ?? 0,
     warn: result.warn ?? 0,
     skip: result.skip ?? 0,
+    manual: result.manual ?? 0,
     total: result.total ?? 0,
     tokensExtracted: result.tokensExtracted ?? 0,
     scoredAt: new Date().toISOString(),

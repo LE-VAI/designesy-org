@@ -9737,6 +9737,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-metric-tile.is-skip .score-metric-val { color: var(--muted); }
 .score-metric-tile.is-skip .score-metric-lbl { color: var(--muted-dim); }
 
+.score-metric-tile.is-manual { border-color: var(--line); }
+.score-metric-tile.is-manual .score-metric-val { color: var(--muted); }
+.score-metric-tile.is-manual .score-metric-lbl { color: var(--muted-dim); }
+
 .score-hero-actions {
   display: flex;
   flex-wrap: wrap;
@@ -9947,7 +9951,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-pwf b.is-warn { color: var(--warn); }
 .score-engine-tile-pwf b.is-fail { color: var(--error); }
 
-/* ── Collapsible check groups (FAIL/WARN/SKIP/PASS bucketing) ────────────────
+/* ── Collapsible check groups (FAIL/WARN/MANUAL/SKIP/PASS bucketing) ──────────
    Mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. Each group has
    a header with status dot, label, count, and chevron. FAIL expanded by
    default; PASS collapsed (confirmation noise, not actionable). */
@@ -9995,6 +9999,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-check-group-dot.is-fail { background: var(--error); }
 .score-check-group-dot.is-warn { background: var(--warn); }
 .score-check-group-dot.is-skip { background: var(--muted-dim); }
+.score-check-group-dot.is-manual { background: var(--muted-dim); }
 
 .score-check-group-label {
   font-size: 0.8rem;
@@ -10475,6 +10480,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-card-status-pill.is-fail { background: rgba(239, 68, 68, 0.15); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
 .score-card-status-pill.is-warn { background: rgba(234, 179, 8, 0.15); color: var(--warn); border: 1px solid rgba(234, 179, 8, 0.3); }
 .score-card-status-pill.is-skip { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+.score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
 .score-card-id {
   font-size: 0.725rem;
@@ -11792,6 +11798,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-count--fail { color: var(--error); background: rgba(248, 113, 113, 0.12); }
 .report-count--warn { color: var(--warn); background: rgba(250, 204, 21, 0.12); }
 .report-count--skip { color: var(--muted); background: var(--surface-soft); }
+.report-count--manual { color: var(--muted); background: var(--surface-soft); }
 
 .report-hero-floor {
   font-size: 0.85rem;
@@ -11971,6 +11978,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-check-status--fail { color: var(--error); background: rgba(248, 113, 113, 0.1); }
 .report-check-status--warn { color: var(--warn); background: rgba(250, 204, 21, 0.1); }
 .report-check-status--skip { color: var(--muted); background: var(--surface-soft); }
+.report-check-status--manual { color: var(--muted); background: var(--surface-soft); }
 
 .report-check-id {
   flex-shrink: 0;
