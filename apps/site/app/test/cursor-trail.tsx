@@ -98,8 +98,23 @@ export default function CursorTrail() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
-    requestAnimationFrame(resize);
-    const ro = new ResizeObserver(() => resize());
+    // Call synchronously so w/h are set before dot seeding below.
+    // If layout isn't ready yet (rect is 0), the ResizeObserver re-fires
+    // and re-seeds via the callback — dots never stay stuck at origin.
+    resize();
+    const ro = new ResizeObserver(() => {
+      const prevW = w;
+      const prevH = h;
+      resize();
+      // Re-seed if the canvas was 0×0 at mount and just got real dimensions.
+      if ((prevW <= 1 || prevH <= 1) && w > 1 && h > 1) {
+        for (const d of dots) {
+          d.x = Math.random() * w;
+          d.y = Math.random() * h;
+        }
+        if (raf === 0) raf = requestAnimationFrame(tick);
+      }
+    });
     if (canvas.parentElement) ro.observe(canvas.parentElement);
 
     const noise = makeNoise();
@@ -219,6 +234,7 @@ export default function CursorTrail() {
     // Kick the loop once so the seeded field paints.
     raf = requestAnimationFrame(tick);
 
+    window.addEventListener('resize', resize, { passive: true });
     window.addEventListener('pointermove', onMove, { passive: true });
     canvas.parentElement?.addEventListener('pointerleave', onLeave, { passive: true });
 
