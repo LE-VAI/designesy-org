@@ -9698,22 +9698,24 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--inner-light);
-  padding: 0.75rem 0.5rem;
-  text-align: center;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .score-metric-val {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .score-metric-lbl {
-  font-size: 0.675rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -9830,6 +9832,247 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 500;
 }
 
+/* ── Engine tiles (4-engine grid on /score) ───────────────────────────────
+   Replaces the old EngineCard that hijacked .score-filter-tab with inline
+   column overrides. These tiles use a 2px top accent bar (not left-border,
+   which the 2026 design research identifies as "the single most reliable
+   AI tell"). Left-aligned content, responsive grid, no equal-weight pill
+   squish on narrow viewports. */
+
+.score-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.score-engine-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem 0.6rem;
+  background: var(--surface-card-gradient), var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--inner-light);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+  overflow: hidden;
+}
+
+.score-engine-tile:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-lifted);
+  transform: translateY(-1px);
+}
+
+.score-engine-tile:active {
+  transform: scale(0.985);
+}
+
+.score-engine-tile.is-active {
+  border-color: var(--signal);
+  box-shadow: var(--inner-light), 0 4px 16px rgba(1, 51, 203, 0.15);
+}
+
+/* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
+.score-engine-tile-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.score-engine-tile-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.score-engine-tile-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.score-engine-tile-count {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--muted-dim);
+}
+
+.score-engine-tile-grade {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.score-engine-tile-grade.is-empty {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.score-engine-tile-score {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.score-engine-tile-pwf {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-engine-tile-pwf b {
+  font-weight: 700;
+}
+
+.score-engine-tile-pwf b.is-pass { color: var(--ok); }
+.score-engine-tile-pwf b.is-warn { color: var(--warn); }
+.score-engine-tile-pwf b.is-fail { color: var(--error); }
+
+/* ── Collapsible check groups (FAIL/WARN/SKIP/PASS bucketing) ────────────────
+   Mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. Each group has
+   a header with status dot, label, count, and chevron. FAIL expanded by
+   default; PASS collapsed (confirmation noise, not actionable). */
+
+.score-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.score-check-group + .score-check-group {
+  margin-top: 0.6rem;
+}
+
+.score-check-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  width: 100%;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+
+.score-check-group-header:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-lifted);
+}
+
+.score-check-group-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.score-check-group-dot.is-pass { background: var(--ok); }
+.score-check-group-dot.is-fail { background: var(--error); }
+.score-check-group-dot.is-warn { background: var(--warn); }
+.score-check-group-dot.is-skip { background: var(--muted-dim); }
+
+.score-check-group-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.score-check-group-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-check-group.is-fail .score-check-group-count {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+}
+
+.score-check-group.is-warn .score-check-group-count {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--warn);
+}
+
+.score-check-group.is-pass .score-check-group-count {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--ok);
+}
+
+.score-check-group-chevron {
+  margin-left: auto;
+  color: var(--muted-dim);
+}
+
+.score-check-group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--line);
+}
+
+/* ── Clickable scored URL link ────────────────────────────────────────────── */
+
+.score-url-link {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+
+.score-url-link:hover {
+  color: var(--signal);
+  border-bottom-color: var(--signal);
+}
+
+/* ── Open-site action button (primary next-step affordance) ───────────────── */
+
+.score-open-site-btn {
+  background: var(--signal) !important;
+  border-color: var(--signal) !important;
+  color: var(--paper-on-signal) !important;
+}
+
+.score-open-site-btn:hover {
+  background: var(--ink) !important;
+  border-color: var(--ink) !important;
+}
+
 .score-note {
   font-size: 0.8rem;
   color: var(--muted);
@@ -9930,8 +10173,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius);
 }
 
-.score-signal-row.is-originality { border-left: 2px solid rgba(52, 211, 153, 0.55); }
-.score-signal-row.is-slop { border-left: 2px solid rgba(248, 113, 113, 0.55); }
+.score-signal-row.is-originality { border-top: 2px solid rgba(52, 211, 153, 0.55); }
+.score-signal-row.is-slop { border-top: 2px solid rgba(248, 113, 113, 0.55); }
 
 .score-signal-points {
   font-size: 0.8rem;
@@ -10380,6 +10623,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-metrics-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
+  }
+
+  .score-engine-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .score-hero-actions {
