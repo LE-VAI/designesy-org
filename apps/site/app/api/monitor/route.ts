@@ -54,6 +54,31 @@ function rateLimited(ip: string): boolean {
   return false;
 }
 
+// ── Email alert cooldown ────────────────────────────────────────────────────
+// Prevents the same (URL + email) pair from receiving more than one alert
+// email per hour. Without this, every monitor request that has alerts fires
+// a fresh email — a cron poll or a user refreshing the page would spam the
+// inbox with identical notifications. The cooldown is content-aware: if the
+// alert *set* changes (new violations, different score), the email fires
+// immediately even within the cooldown window.
+
+const EMAIL_COOLDOWN = 60 * 60 * 1000; // 1 hour
+const emailLog = new Map<string, { time: number; alertHash: string }>();
+
+function emailOnCooldown(url: string, email: string, alerts: string[]): boolean {
+  const key = `${url}::${email}`;
+  const now = Date.now();
+  const alertHash = alerts.join('|||');
+  const entry = emailLog.get(key);
+  if (entry && now - entry.time < EMAIL_COOLDOWN) {
+    // Same alert set within cooldown → suppress
+    if (entry.alertHash === alertHash) return true;
+    // Different alert set within cooldown → allow (something changed)
+  }
+  emailLog.set(key, { time: now, alertHash });
+  return false;
+}
+
 // ── Fetching (mirrors drift/score routes) ─────────────────────────────────────
 
 const BROWSER_HEADERS: Record<string, string> = {
@@ -232,6 +257,7 @@ type MonitorResponse = {
     attempted: boolean;
     delivered: boolean;
     recipient?: string;
+    fromAddress?: string;
     error?: string;
   };
   error?: string;
@@ -569,12 +595,15 @@ async function checkM09ContractVersion(targetUrl: string, previous: Snapshot | n
   return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} detected — version history comparison requires v0.2` };
 }
 
-function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; error?: string }): MonitorCheckResult {
+function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }): MonitorCheckResult {
   if (alerts.length === 0) {
     return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered — no alert needed' };
   }
   if (emailAlert?.delivered) {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} delivered to ${emailAlert.recipient} via email` };
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} delivered to ${emailAlert.recipient} via email${emailAlert.fromAddress ? ` (from ${emailAlert.fromAddress})` : ''}` };
+  }
+  if (emailAlert?.fromAddress === 'suppressed (cooldown)') {
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} active — email suppressed (1-hour cooldown, same alert set already delivered)` };
   }
   if (emailAlert?.attempted && !emailAlert.delivered) {
     return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI — email delivery failed (${emailAlert.error || 'unknown error'})` };
@@ -834,23 +863,29 @@ export async function POST(request: Request) {
   const result = await scoreMonitor(targetUrl, history);
 
   // Send email alert after the cached result returns (outside cache so
-  // the email param doesn't pollute the cache key — email fires on every
-  // request that has alerts + email + RESEND_API_KEY, even on cache hits)
+  // the email param doesn't pollute the cache key). A per-URL+email cooldown
+  // prevents identical alerts from spamming the inbox on repeated requests —
+  // the email only fires if the alert set changed or the cooldown has elapsed.
   if (result.ok && result.alerts && result.alerts.length > 0 && email && result.currentSnapshot) {
-    const emailResult = await sendAlertEmail(
-      targetUrl,
-      email,
-      result.alerts,
-      result.currentSnapshot,
-      result.previous ?? null,
-    );
-    result.emailAlert = emailResult;
+    const suppressed = emailOnCooldown(targetUrl, email, result.alerts);
+    if (suppressed) {
+      result.emailAlert = { attempted: false, delivered: false, fromAddress: 'suppressed (cooldown)' };
+    } else {
+      const emailResult = await sendAlertEmail(
+        targetUrl,
+        email,
+        result.alerts,
+        result.currentSnapshot,
+        result.previous ?? null,
+      );
+      result.emailAlert = emailResult;
+    }
 
     // Update m10 check to reflect email delivery status
     if (result.monitorChecks) {
       const m10Index = result.monitorChecks.findIndex((c) => c.id === 'm10');
       if (m10Index >= 0) {
-        result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts, emailResult);
+        result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts, result.emailAlert);
       }
     }
   }
