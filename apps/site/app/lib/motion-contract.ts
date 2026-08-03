@@ -96,7 +96,7 @@ export const motionContract = {
     'Raw schema URL verification: is it lottie.schema.json appended to the schema path?',
     'Reduced-motion marker convention: should Designesy establish "reduced"/"calm"/"static" name?',
     'GSAP scope: should this contract cover GSAP timeline validation or a separate contract?',
-    'HyperFrames scope: does rule.atlas.hyperframes_quality_gate handle HyperFrames independently?',
+    'HyperFrames scope: does the HyperFrames quality gate handle HyperFrames independently?',
     'Lottie spec stability: should validator warn when file uses features outside approved subset?',
   ],
 } as const;

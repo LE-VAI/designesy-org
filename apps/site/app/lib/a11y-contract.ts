@@ -64,13 +64,13 @@ export const a11yContract = {
       { id: 'a08', item: 'Target Size Minimum 2.5.8 (24x24px or spacing exception)', pass: 'All pass', fail: 'Any fail' },
       { id: 'a09', item: 'Focus Not Obscured 2.4.11 (focused element not hidden)', pass: 'All pass', fail: 'Any fail' },
       { id: 'a10', item: 'prefers-reduced-motion disables animations (core §16.8)', pass: 'Present', fail: 'Missing' },
-      { id: 'a11', item: 'No ATLAS naming on public surfaces (brand boundary)', pass: 'Clean', fail: 'Found' },
+      { id: 'a11', item: 'No internal control-plane names leaked onto public surfaces (brand boundary)', pass: 'Clean', fail: 'Found' },
     ],
     scoring: '11 checks. PASS=1, WARN=0.5, FAIL=0, N/A=excluded. Score = (points/applicable) × 100. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
       primary: "@axe-core/playwright 4.12.1 — AxeBuilder({ page }).withTags(['wcag2a','wcag21aa','wcag22aa']).analyze()",
       cli: "@axe-core/cli — axe --tags wcag2a,wcag21aa,wcag22aa <url>",
-      designesy_specific: 'a10, a11 require custom validator in ATLAS adapter',
+      designesy_specific: 'a10, a11 require custom validator in the control-plane adapter',
     },
   },
   relationship_to_core: {
