@@ -295,7 +295,7 @@ function inferTokensFromCss(
 
 // ── Check Implementations ──────────────────────────────────────────────────
 
-export type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP'; detail: string; remediation?: string };
+export type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL'; detail: string; remediation?: string };
 
 // ── Remediation guidance ────────────────────────────────────────────────────
 // Per-check "how to fix this" guidance, shown in the score drawer for FAIL
@@ -1717,9 +1717,9 @@ async function scoreUrlUncached(targetUrl: string) {
 
   const checks: CheckResult[] = [
     checkPaperToken(tokens),
-    { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'SKIP', detail: 'requires browser viewport trace' },
+    { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace — run the full audit to resolve' },
     checkFocusVisible(css),
-    { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'SKIP', detail: 'requires live DOM interaction' },
+    { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'MANUAL', detail: 'requires live DOM interaction — run the full audit to resolve' },
     checkReducedMotion(css),
     checkContrastReadable(tokens),
     checkNoAtlasNaming(html),
@@ -1736,7 +1736,7 @@ async function scoreUrlUncached(targetUrl: string) {
     checkTextWrap(css),
     checkTabularNums(css),
     checkSelectionStyled(css),
-    { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'SKIP', detail: 'requires CDP trace' },
+    { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'MANUAL', detail: 'requires CDP trace — run the full audit to resolve' },
     checkContrastSignal(tokens),
     checkDurationTokens(tokens),
     checkFontSynthesis(css),
@@ -1765,6 +1765,7 @@ async function scoreUrlUncached(targetUrl: string) {
   const fail = checks.filter((c) => c.status === 'FAIL').length;
   const warn = checks.filter((c) => c.status === 'WARN').length;
   const skip = checks.filter((c) => c.status === 'SKIP').length;
+  const manual = checks.filter((c) => c.status === 'MANUAL').length;
   const total = checks.length;
 
   // ── Anti-slop deduction layer ───────────────────────────────────────────────
@@ -2288,14 +2289,14 @@ async function scoreUrlUncached(targetUrl: string) {
   // (so each category contributes its full weight, split evenly among its checks).
   const categoryCounts: Record<string, number> = {};
   for (const c of checks) {
-    if (c.status === 'SKIP') continue;
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
     categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
   }
 
   let weightedPoints = 0;
   let weightedTotal = 0;
   for (const c of checks) {
-    if (c.status === 'SKIP') continue;
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
     const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
     const checkWeight = catWeight / (categoryCounts[c.category] || 1);
     weightedTotal += checkWeight;
@@ -2329,17 +2330,18 @@ async function scoreUrlUncached(targetUrl: string) {
   // with zero scored checks report null so the client can render them as
   // "unscored" rather than fabricating a 0 or 100. This is the same math the
   // composite uses — one source of truth, no client-side re-derivation.
-  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number }> = {};
+  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
   for (const c of checks) {
-    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0 });
+    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
     if (c.status === 'SKIP') { agg.skip += 1; continue; }
+    if (c.status === 'MANUAL') { agg.manual += 1; continue; }
     const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
     agg.wt += checkWeight;
     if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
     else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
     else agg.fail += 1; // FAIL
   }
-  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number }> = {};
+  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
   for (const [cat, agg] of Object.entries(catAgg)) {
     categoryScores[cat] = {
       score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
@@ -2348,6 +2350,7 @@ async function scoreUrlUncached(targetUrl: string) {
       fail: agg.fail,
       warn: agg.warn,
       skip: agg.skip,
+      manual: agg.manual,
     };
   }
 
@@ -2356,7 +2359,7 @@ async function scoreUrlUncached(targetUrl: string) {
   // still fail enterprise-grade if a11y is 73%. We apply a softer version: if
   // the accessibility category scores below 60%, cap the overall grade at C.
   // This prevents "perfect tokens, zero a11y = A" dishonesty.
-  const a11yChecks = checks.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP');
+  const a11yChecks = checks.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP' && c.status !== 'MANUAL');
   const a11yPass = a11yChecks.filter((c) => c.status === 'PASS').length;
   const a11yWarn = a11yChecks.filter((c) => c.status === 'WARN').length;
   const a11yScored = a11yChecks.length;
@@ -2412,7 +2415,7 @@ async function scoreUrlUncached(targetUrl: string) {
     remediation: REMEDIATION[c.id],
   }));
 
-  return { score, grade, pass, fail, warn, skip, total, scored: total - skip, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
+  return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
@@ -2442,6 +2445,7 @@ function statusToSeverity(status: string): string {
     case 'FAIL': return 'error';
     case 'WARN': return 'warning';
     case 'SKIP': return 'skip';
+    case 'MANUAL': return 'manual';
     default: return status.toLowerCase();
   }
 }
@@ -2450,7 +2454,7 @@ function statusToSeverity(status: string): string {
 function deriveVerdict(result: ScoreResult): string {
   if (result.fail > 0) return 'fail';
   if (result.warn > 0) return 'needs-changes';
-  if (result.pass === 0 && result.skip === result.total) return 'not-scored';
+  if (result.pass === 0 && (result.skip + result.manual) === result.total) return 'not-scored';
   return 'pass';
 }
 
@@ -2476,7 +2480,7 @@ function emitCanonical(url: string, result: ScoreResult) {
       id,
       score: cs.score,
       weight: cs.weight,
-      counts: { pass: cs.pass, fail: cs.fail, warn: cs.warn, skip: cs.skip },
+      counts: { pass: cs.pass, fail: cs.fail, warn: cs.warn, skip: cs.skip, manual: cs.manual },
     })),
     findings: result.checks.map((c) => ({
       id: c.id,
@@ -2492,12 +2496,13 @@ function emitCanonical(url: string, result: ScoreResult) {
     summary: {
       score: result.score,
       grade: result.grade,
-      countsByStatus: { pass: result.pass, fail: result.fail, warn: result.warn, skip: result.skip },
+      countsByStatus: { pass: result.pass, fail: result.fail, warn: result.warn, skip: result.skip, manual: result.manual },
       countsBySeverity: {
         error: result.fail,
         warning: result.warn,
         pass: result.pass,
         skip: result.skip,
+        manual: result.manual,
         info: 0,
       },
       scored: result.scored,
@@ -2535,12 +2540,13 @@ function emitReview(url: string, result: ScoreResult): string {
   lines.push('## Scope and Coverage\n');
   lines.push('| Domain | Evidence inspected | Result |');
   lines.push('|---|---|---|');
-  const domains = new Map<string, { pass: number; fail: number; warn: number; skip: number }>();
+  const domains = new Map<string, { pass: number; fail: number; warn: number; skip: number; manual: number }>();
   for (const c of result.checks) {
-    const d = domains.get(c.category) || { pass: 0, fail: 0, warn: 0, skip: 0 };
+    const d = domains.get(c.category) || { pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 };
     if (c.status === 'PASS') d.pass++;
     else if (c.status === 'FAIL') d.fail++;
     else if (c.status === 'WARN') d.warn++;
+    else if (c.status === 'MANUAL') d.manual++;
     else d.skip++;
     domains.set(c.category, d);
   }
@@ -2557,7 +2563,7 @@ function emitReview(url: string, result: ScoreResult): string {
   lines.push('|---|---|---|---|---|---|---|');
   let num = 0;
   for (const c of result.checks) {
-    if (c.status === 'PASS' || c.status === 'SKIP') continue;
+    if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
     const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
@@ -2577,7 +2583,7 @@ function emitReview(url: string, result: ScoreResult): string {
   else if (verdict === 'needs-changes') lines.push('**Needs changes** — only MEDIUM findings (WARN) remain.');
   else lines.push('**Approve** — no actionable findings remain.');
   lines.push('');
-  lines.push(`**Score: ${result.score}% (Grade ${result.grade})** — ${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.skip} SKIP / ${result.total} total`);
+  lines.push(`**Score: ${result.score}% (Grade ${result.grade})** — ${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.manual} MANUAL / ${result.skip} N/A / ${result.total} total`);
 
   return lines.join('\n');
 }

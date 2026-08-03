@@ -6,7 +6,7 @@ type CheckResult = {
   id: string;
   item: string;
   category: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
   remediation?: string;
 };
@@ -18,6 +18,7 @@ type CategoryScore = {
   fail: number;
   warn: number;
   skip: number;
+  manual?: number;
 };
 
 type SlopFinding = {
@@ -43,6 +44,7 @@ type ScoreResponse = {
   fail?: number;
   warn?: number;
   skip?: number;
+  manual?: number;
   total?: number;
   a11yFloorApplied?: boolean;
   hardFailCeilingApplied?: boolean;
@@ -73,7 +75,7 @@ const CATEGORIES: { key: string; label: string }[] = [
   { key: 'spec', label: 'Spec' },
 ];
 
-const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, SKIP: 2, PASS: 3 };
+const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
 const GRADE_COLOR: Record<string, string> = {
   A: 'var(--ok)',
@@ -170,6 +172,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           fail: catScore?.fail ?? 0,
           warn: catScore?.warn ?? 0,
           skip: catScore?.skip ?? 0,
+          manual: catScore?.manual ?? 0,
           checks: sortedChecks,
         };
       })
@@ -181,7 +184,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     if (!result?.categoryScores) return [];
     return CATEGORIES.filter((c) => {
       const cs = result.categoryScores?.[c.key];
-      return cs && cs.score === null && cs.skip > 0;
+      return cs && cs.score === null && (cs.skip > 0 || (cs.manual ?? 0) > 0);
     }).map((c) => c.label);
   }, [result?.categoryScores]);
 
@@ -214,6 +217,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const fail = result.fail ?? 0;
   const warn = result.warn ?? 0;
   const skip = result.skip ?? 0;
+  const manual = result.manual ?? 0;
   const total = result.total ?? 0;
   const scored = pass + warn + fail;
 
@@ -237,7 +241,8 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             <span className="report-count report-count--pass">{pass} pass</span>
             <span className="report-count report-count--fail">{fail} fail</span>
             <span className="report-count report-count--warn">{warn} warn</span>
-            <span className="report-count report-count--skip">{skip} skip</span>
+            {manual > 0 && <span className="report-count report-count--manual">{manual} manual</span>}
+            {skip > 0 && <span className="report-count report-count--skip">{skip} N/A</span>}
           </div>
           {result.a11yFloorApplied && (
             <p className="report-hero-floor">
@@ -245,7 +250,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </p>
           )}
           <p className="report-hero-scored">
-            {scored} of {total} checks scored · {skip} require a live browser (SKIP)
+            {scored} of {total} checks scored{manual > 0 ? ` · ${manual} require a live browser (Manual)` : ''}{skip > 0 ? ` · ${skip} not applicable (N/A)` : ''}
           </p>
         </div>
       </div>
@@ -284,7 +289,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <span className="report-cat-score report-cat-score--null">—</span>
               )}
               <span className="report-cat-detail">
-                {cat.pass}p/{cat.warn}w/{cat.fail}f/{cat.skip}s
+                {cat.pass}p/{cat.warn}w/{cat.fail}f/{cat.manual || 0}m/{cat.skip}s
               </span>
             </button>
           ))}
@@ -362,14 +367,14 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   Weight {cat.weight}
                 </span>
                 <span className="report-section-counts">
-                  {cat.pass} pass · {cat.warn} warn · {cat.fail} fail · {cat.skip} skip
+                  {cat.pass} pass · {cat.warn} warn · {cat.fail} fail{cat.manual ? ` · ${cat.manual} manual` : ''}{cat.skip ? ` · ${cat.skip} N/A` : ''}
                 </span>
               </div>
             </div>
 
             <div className="report-check-list">
               {cat.checks
-                .filter((c) => c.status !== 'SKIP')
+                .filter((c) => c.status !== 'SKIP' && c.status !== 'MANUAL')
                 .map((check) => (
                   <details
                     key={check.id}
@@ -394,6 +399,36 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 ))}
             </div>
 
+            {cat.checks.some((c) => c.status === 'MANUAL') && (
+              <details className="report-skipped">
+                <summary>
+                  {cat.checks.filter((c) => c.status === 'MANUAL').length} check
+                  {cat.checks.filter((c) => c.status === 'MANUAL').length !== 1
+                    ? 's'
+                    : ''}{' '}
+                  manual (require live browser — run the audit)
+                </summary>
+                <div className="report-check-list">
+                  {cat.checks
+                    .filter((c) => c.status === 'MANUAL')
+                    .map((check) => (
+                      <div
+                        key={check.id}
+                        className="report-check report-check--manual"
+                      >
+                        <span className="report-check-status report-check-status--manual">
+                          MANUAL
+                        </span>
+                        <span className="report-check-id">{check.id}</span>
+                        <span className="report-check-item">{check.item}</span>
+                        <span className="report-check-detail">
+                          {check.detail}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </details>
+            )}
             {cat.checks.some((c) => c.status === 'SKIP') && (
               <details className="report-skipped">
                 <summary>
@@ -401,7 +436,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   {cat.checks.filter((c) => c.status === 'SKIP').length !== 1
                     ? 's'
                     : ''}{' '}
-                  skipped (require live browser)
+                  not applicable (convention not met)
                 </summary>
                 <div className="report-check-list">
                   {cat.checks
@@ -412,7 +447,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                         className="report-check report-check--skip"
                       >
                         <span className="report-check-status report-check-status--skip">
-                          SKIP
+                          N/A
                         </span>
                         <span className="report-check-id">{check.id}</span>
                         <span className="report-check-item">{check.item}</span>

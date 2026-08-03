@@ -40,7 +40,7 @@ function rateLimited(ip: string): boolean {
 type CheckResult = {
   id: string;
   item: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
   category?: string;
 };
@@ -52,6 +52,7 @@ type SubEngineResult = {
   pass?: number;
   warn?: number;
   fail?: number;
+  manual?: number;
   total?: number;
   checks?: CheckResult[];
   error?: string;
@@ -70,6 +71,7 @@ type ReportResponse = {
   totalWarn?: number;
   totalFail?: number;
   totalSkip?: number;
+  totalManual?: number;
   checks?: Array<CheckResult & { engine: string }>;
   synthesis?: CheckResult[];
   error?: string;
@@ -159,12 +161,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
 
   // rp02: Score engine completed
   if (scoreResult?.ok && typeof scoreResult.score === 'number') {
-    const hasSkips = (scoreResult.total || 0) - (scoreResult.pass || 0) - (scoreResult.warn || 0) - (scoreResult.fail || 0) > 0;
+    const hasManual = (scoreResult.manual || 0) > 0;
+    const hasSkips = (scoreResult.total || 0) - (scoreResult.pass || 0) - (scoreResult.warn || 0) - (scoreResult.fail || 0) - (scoreResult.manual || 0) > 0;
+    const hasUnscored = hasManual || hasSkips;
     synthesis.push({
       id: 'rp02',
       item: 'Score engine completed — 40-check audit ran',
-      status: hasSkips ? 'WARN' : 'PASS',
-      detail: `Score engine returned ${scoreResult.grade}/${scoreResult.score} (${scoreResult.pass} pass, ${scoreResult.warn} warn, ${scoreResult.fail} fail${hasSkips ? ', some SKIP' : ''})`,
+      status: hasUnscored ? 'WARN' : 'PASS',
+      detail: `Score engine returned ${scoreResult.grade}/${scoreResult.score} (${scoreResult.pass} pass, ${scoreResult.warn} warn, ${scoreResult.fail} fail${hasManual ? `, ${scoreResult.manual} manual` : ''}${hasSkips ? `, some N/A` : ''})`,
     });
   } else {
     synthesis.push({
@@ -281,12 +285,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
   let totalWarn = 0;
   let totalFail = 0;
   let totalSkip = 0;
+  let totalManual = 0;
 
   for (const check of scoreResult?.checks || []) {
     allChecks.push({ ...check, engine: 'score' });
     if (check.status === 'PASS') totalPass++;
     else if (check.status === 'WARN') totalWarn++;
     else if (check.status === 'FAIL') totalFail++;
+    else if (check.status === 'MANUAL') totalManual++;
     else if (check.status === 'SKIP') totalSkip++;
   }
   for (const check of driftResult?.checks || []) {
@@ -294,6 +300,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     if (check.status === 'PASS') totalPass++;
     else if (check.status === 'WARN') totalWarn++;
     else if (check.status === 'FAIL') totalFail++;
+    else if (check.status === 'MANUAL') totalManual++;
     else if (check.status === 'SKIP') totalSkip++;
   }
   for (const check of readinessResult?.checks || []) {
@@ -301,6 +308,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     if (check.status === 'PASS') totalPass++;
     else if (check.status === 'WARN') totalWarn++;
     else if (check.status === 'FAIL') totalFail++;
+    else if (check.status === 'MANUAL') totalManual++;
     else if (check.status === 'SKIP') totalSkip++;
   }
 
@@ -309,7 +317,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
       id: 'rp07',
       item: 'Check inventory aggregated — all checks across engines collected',
       status: 'PASS',
-      detail: `${allChecks.length} checks aggregated (score: ${scoreResult?.checks?.length || 0}, drift: ${driftResult?.checks?.length || 0}, readiness: ${readinessResult?.checks?.length || 0}) — ${totalPass} pass, ${totalWarn} warn, ${totalFail} fail, ${totalSkip} skip`,
+      detail: `${allChecks.length} checks aggregated (score: ${scoreResult?.checks?.length || 0}, drift: ${driftResult?.checks?.length || 0}, readiness: ${readinessResult?.checks?.length || 0}) — ${totalPass} pass, ${totalWarn} warn, ${totalFail} fail, ${totalManual} manual, ${totalSkip} N/A`,
     });
   } else {
     synthesis.push({
@@ -377,6 +385,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     totalWarn,
     totalFail,
     totalSkip,
+    totalManual,
     checks: allChecks,
     synthesis,
   };

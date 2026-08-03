@@ -4,8 +4,8 @@
 // Without it, cross-listings send traffic to a leaderboard that looks arbitrary.
 //
 // This page documents: the 40 checks, their categories and weights, the scoring
-// math (weighted PASS/WARN/FAIL with SKIP exclusion), grade bands, the a11y floor,
-// and what the engine measures vs. what it cannot measure (SKIP reasons).
+// math (weighted PASS/WARN/FAIL with MANUAL and N/A exclusion), grade bands, the a11y floor,
+// and what the engine measures vs. what it cannot measure (MANUAL and N/A reasons).
 //
 // The CHECKS array below is the human-facing description of the same checks in
 // apps/site/app/api/score/route.ts. The score engine is the source of truth;
@@ -75,12 +75,12 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
   takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
   security: 'Unicode Security — UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks. designesy is the only design verification engine that checks this surface. 5% weight, 1 scored check.',
-  poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (SKIP).',
+  poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (MANUAL).',
   identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness (EU AI Act Art 50). 6% weight, 2 scored checks (v07, v34).',
   interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
-  performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (SKIP in the static engine). 6% weight, 0 scored checks in the current engine.',
-  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 40-check contract verification. 4% weight, 1 check (SKIP if /DESIGN.md is not served).',
-  responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (SKIP in the static engine). 3% weight, 0 scored checks.',
+  performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (MANUAL in the static engine). 6% weight, 0 scored checks in the current engine.',
+  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 40-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).',
+  responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (MANUAL in the static engine). 3% weight, 0 scored checks.',
 };
 
 // ── Check definitions (mirror apps/site/app/api/score/route.ts) ──
@@ -90,6 +90,7 @@ interface CheckDef {
   category: string;
   how: string;
   skipReason?: string;
+  manualReason?: string;
 }
 
 const CHECKS: CheckDef[] = [
@@ -113,7 +114,7 @@ const CHECKS: CheckDef[] = [
     item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
     category: 'responsive',
     how: 'Requires rendering the page at four viewport widths and measuring scrollWidth > clientWidth. The static engine cannot do this.',
-    skipReason: 'Requires a browser viewport trace — the engine fetches CSS, not a rendered DOM.',
+    manualReason: 'Requires a browser viewport trace — the engine fetches CSS, not a rendered DOM.',
   },
 
   // ── Interaction (6%) ──
@@ -130,7 +131,7 @@ const CHECKS: CheckDef[] = [
     item: 'Sound toggle flips aria-pressed and applies the audio preference',
     category: 'poise',
     how: 'Requires clicking a sound toggle and verifying aria-pressed flips and a [data-audio] attribute is applied. The static engine cannot interact with the DOM.',
-    skipReason: 'Requires live DOM interaction — the engine does not execute JavaScript or click elements.',
+    manualReason: 'Requires live DOM interaction — the engine does not execute JavaScript or click elements.',
   },
   {
     id: 'v08',
@@ -182,7 +183,7 @@ const CHECKS: CheckDef[] = [
     id: 'v22',
     item: 'Primary button text passes WCAG AA contrast against --signal fill',
     category: 'accessibility',
-    how: 'Resolves --signal to RGB, then tests --ink and --paper against it. PASS if the best ratio ≥ 4.5:1. WARN if ≥ 3:1 (large-text pass). FAIL if below 3:1. SKIP if --signal is not declared or unresolvable.',
+    how: 'Resolves --signal to RGB, then tests --ink and --paper against it. PASS if the best ratio ≥ 4.5:1. WARN if ≥ 3:1 (large-text pass). FAIL if below 3:1. N/A if --signal is not declared or unresolvable.',
   },
   {
     id: 'v24',
@@ -324,8 +325,8 @@ const CHECKS: CheckDef[] = [
     id: 'v37',
     item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
     category: 'spec',
-    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. SKIP if /DESIGN.md is not served — this is expected, as no public convention requires it yet.',
-    skipReason: 'SKIP if /DESIGN.md is not served at the target origin — no public convention requires it yet.',
+    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served — this is expected, as no public convention requires it yet.',
+    skipReason: 'N/A if /DESIGN.md is not served at the target origin — no public convention requires it yet.',
   },
 
   // ── Copywriting (8%) — v0.4.0 ──
@@ -333,19 +334,19 @@ const CHECKS: CheckDef[] = [
     id: 'v38',
     item: 'Button text is a verb phrase or recognized command — not a bare noun',
     category: 'copywriting',
-    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. SKIP if no buttons found. Heuristic — review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
+    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic — review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
   },
   {
     id: 'v39',
     item: 'No trailing period on button text, labels, or tab text',
     category: 'copywriting',
-    how: 'Searches button/label/tab elements for trailing periods (excludes ellipsis ...). WARN if found. SKIP if no relevant elements. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
+    how: 'Searches button/label/tab elements for trailing periods (excludes ellipsis ...). WARN if found. N/A if no relevant elements. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   },
   {
     id: 'v40',
     item: 'Link text is descriptive — not bare "click here", "learn more", "here"',
     category: 'copywriting',
-    how: 'Parses anchor elements and checks link text against a blocklist of non-descriptive patterns (click here, here, learn more, read more, more, link, this, that, continue, see more, view details). WARN if matched. SKIP if no anchors. WCAG 2.4.4 Link Purpose: link text should describe the destination.',
+    how: 'Parses anchor elements and checks link text against a blocklist of non-descriptive patterns (click here, here, learn more, read more, more, link, this, that, continue, see more, view details). WARN if matched. N/A if no anchors. WCAG 2.4.4 Link Purpose: link text should describe the destination.',
   },
   {
     id: 'v41',
@@ -360,7 +361,7 @@ const CHECKS: CheckDef[] = [
     item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
     category: 'performance',
     how: 'Requires a CDP/Playwright trace to measure LCP, INP, and CLS against the Google thresholds. The static engine cannot do this.',
-    skipReason: 'Requires a CDP trace — the engine fetches HTML/CSS, not a rendered page with timing data.',
+    manualReason: 'Requires a CDP trace — the engine fetches HTML/CSS, not a rendered page with timing data.',
   },
 ];
 
@@ -384,7 +385,8 @@ const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
 }));
 
 const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
-const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason).length;
+const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason && !c.manualReason).length;
+const MANUAL_CHECKS = CHECKS.filter((c) => c.manualReason).length;
 const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
 
 // ── Score distribution from the leaderboard SEED ──
@@ -517,8 +519,12 @@ export default function MethodologyPage() {
               <span className="methodology-stat-label">Scored (PASS/WARN/FAIL)</span>
             </div>
             <div className="methodology-stat">
+              <span className="methodology-stat-num">{MANUAL_CHECKS}</span>
+              <span className="methodology-stat-label">Manual (needs browser)</span>
+            </div>
+            <div className="methodology-stat">
               <span className="methodology-stat-num">{SKIP_CHECKS}</span>
-              <span className="methodology-stat-label">SKIP (needs browser)</span>
+              <span className="methodology-stat-label">N/A (not applicable)</span>
             </div>
             <div className="methodology-stat">
               <span className="methodology-stat-num">{CATEGORIES.length}</span>
@@ -559,17 +565,20 @@ export default function MethodologyPage() {
               <strong>{CHECKS.length} deterministic checks</strong> across{' '}
               <strong>{CATEGORIES.length} weighted categories</strong>.
               Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
-              <code>FAIL</code>, or <code>SKIP</code>. The score is a weighted
+              <code>FAIL</code>, <code>MANUAL</code>, or <code>N/A</code>. The score is a weighted
               average — not a simple count — then adjusted by three further
               layers: anti-slop deduction, originality lift, and hard-fail
               ceilings.
             </p>
             <p>
-              <strong>SKIP</strong> checks are excluded from both numerator and
+              <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and
               denominator (Lighthouse precedent: manual/N/A audits excluded).
               This means a site is not penalized for checks the static engine
-              cannot run. The {SKIP_CHECKS} SKIP checks require a browser
+              cannot run or that do not apply. The {MANUAL_CHECKS} MANUAL checks require a browser
               viewport trace, CDP performance trace, or live DOM interaction.
+              The {SKIP_CHECKS} N/A checks do not apply when the site lacks the
+              elements the check targets (no <code>/DESIGN.md</code>, no buttons,
+              no anchors, no tokens).
             </p>
           </div>
           <div className="methodology-formula">
@@ -579,7 +588,8 @@ export default function MethodologyPage() {
             PASS  &rarr; 1.0 &times; checkWeight<br />
             WARN  &rarr; 0.5 &times; checkWeight<br />
             FAIL  &rarr; 0<br />
-            SKIP  &rarr; excluded (weight &times; 0, not counted in total)<br /><br />
+            MANUAL  &rarr; excluded (weight &times; 0, not counted in total)<br />
+            N/A  &rarr; excluded (weight &times; 0, not counted in total)<br /><br />
             <span className="formula-comment"># Step 1 — Weighted compliance score</span><br />
             weightedScore = round( &sum;(weightedPoints) / &sum;(weightedTotal) &times; 1000 ) / 10<br /><br />
             <span className="formula-comment"># Step 2 — Anti-slop deduction (12 S-rules, up to -20pts)</span><br />
@@ -618,7 +628,7 @@ export default function MethodologyPage() {
               typography discipline is the loudest craft signal. Accessibility
               carries 15% and the a11y floor. Semantic/identity, motion, and
               tokens follow. Performance and responsive are lowest-weighted
-              because their checks are SKIP in the static engine.
+              because their checks are MANUAL in the static engine.
             </p>
           </div>
           <table className="weight-table">
@@ -639,8 +649,8 @@ export default function MethodologyPage() {
                   </td>
                   <td className="wt-num">{g.weight}%</td>
                   <td style={{ color: 'var(--muted-dim)' }}>{g.checks.length}</td>
-                  <td className="wt-num" style={{ color: g.checks.filter(c => !c.skipReason).length > 0 ? 'var(--ink)' : 'var(--muted-dim)' }}>
-                    {g.checks.filter(c => !c.skipReason).length}
+                  <td className="wt-num" style={{ color: g.checks.filter(c => !c.skipReason && !c.manualReason).length > 0 ? 'var(--ink)' : 'var(--muted-dim)' }}>
+                    {g.checks.filter(c => !c.skipReason && !c.manualReason).length}
                   </td>
                 </tr>
               ))}
@@ -902,14 +912,38 @@ export default function MethodologyPage() {
           <h2 className="doctrine-heading">What the engine skips</h2>
           <div className="methodology-prose">
             <p>
-              {SKIP_CHECKS} checks are marked <code>SKIP</code> because they
-              require a capability the static engine does not have:
+              {MANUAL_CHECKS + SKIP_CHECKS} checks are marked{' '}
+              <code>MANUAL</code> or <code>N/A</code> — both excluded from the
+              score. They split into two categories:
+            </p>
+            <p>
+              <strong>MANUAL ({MANUAL_CHECKS} checks)</strong> require a
+              capability the static engine does not have — a rendered browser
+              DOM, a CDP performance trace, or live click interaction. Running
+              the full audit (Playwright/CDP) resolves them.
+            </p>
+            <p>
+              <strong>N/A ({SKIP_CHECKS} checks)</strong> are
+              convention-dependent: the check does not apply when the site
+              lacks the elements it targets (no <code>/DESIGN.md</code> served,
+              no buttons, no anchors, no design tokens).
             </p>
           </div>
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', maxWidth: '66ch' }}>
+            {CHECKS.filter((c) => c.manualReason).map((c) => (
+              <li key={c.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--line-faint)' }}>
+                <span className="check-id">{c.id}</span>
+                <span style={{ fontSize: '0.7rem', fontFamily: 'var(--mono, ui-monospace, monospace)', color: 'var(--signal-light)', marginLeft: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MANUAL</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--ink)', marginLeft: '0.5rem' }}>{c.item}</span>
+                <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '0.3rem', lineHeight: 1.5 }}>
+                  {c.manualReason}
+                </div>
+              </li>
+            ))}
             {CHECKS.filter((c) => c.skipReason).map((c) => (
               <li key={c.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--line-faint)' }}>
                 <span className="check-id">{c.id}</span>
+                <span style={{ fontSize: '0.7rem', fontFamily: 'var(--mono, ui-monospace, monospace)', color: 'var(--muted-dim)', marginLeft: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>N/A</span>
                 <span style={{ fontSize: '0.88rem', color: 'var(--ink)', marginLeft: '0.5rem' }}>{c.item}</span>
                 <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '0.3rem', lineHeight: 1.5 }}>
                   {c.skipReason}
@@ -918,9 +952,11 @@ export default function MethodologyPage() {
             ))}
           </ul>
           <p className="surface-note" style={{ maxWidth: '66ch' }}>
-            SKIP checks are excluded from both numerator and denominator — a site
-            is not penalized for them. Future versions of the engine may run
-            these via a Playwright/CDP trace integration.
+            MANUAL and N/A checks are excluded from both numerator and
+            denominator — a site is not penalized for them. The MANUAL checks
+            may be resolved in future versions of the engine via a
+            Playwright/CDP trace integration; the N/A checks resolve
+            automatically when the site ships the elements they target.
           </p>
         </section>
 
@@ -934,7 +970,7 @@ export default function MethodologyPage() {
               <h2 className="check-group-name">{CATEGORY_LABELS[group.category]}</h2>
               <span className="check-group-weight">
                 {group.weight}% weight · {group.checks.length} check{group.checks.length !== 1 ? 's' : ''} ·{' '}
-                {group.checks.filter((c) => !c.skipReason).length} scored
+                {group.checks.filter((c) => !c.skipReason && !c.manualReason).length} scored
               </span>
             </div>
             <p className="check-group-desc">{CATEGORY_DESCRIPTIONS[group.category]}</p>
@@ -955,8 +991,11 @@ export default function MethodologyPage() {
                     <span className="check-item">{check.item}</span>
                   </div>
                   <p className="check-how">{check.how}</p>
+                  {check.manualReason && (
+                    <span className="check-skip">MANUAL — {check.manualReason}</span>
+                  )}
                   {check.skipReason && (
-                    <span className="check-skip">SKIP — {check.skipReason}</span>
+                    <span className="check-skip">N/A — {check.skipReason}</span>
                   )}
                 </div>
               ))}

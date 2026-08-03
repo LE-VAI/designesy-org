@@ -67,7 +67,7 @@ type CheckResult = {
   id: string;
   item: string;
   category: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
 };
 
@@ -138,7 +138,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
         id: 'v21',
         item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
         category: 'performance',
-        status: 'SKIP',
+        status: 'MANUAL',
         detail: `${reason} (PSI is the primary path; Chromium lab fallback requires Vercel Pro)`,
       };
     }
@@ -197,7 +197,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
       id: 'v21',
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
       category: 'performance',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: `PSI API unreachable: ${msg}`,
     };
   } finally {
@@ -270,7 +270,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string):
       id: 'v21',
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
       category: 'performance',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: `both PSI and Chromium lab failed: ${msg}`,
     };
   } finally {
@@ -312,7 +312,7 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
       id: 'v02',
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
     };
   }
@@ -365,7 +365,7 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
       id: 'v02',
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: `browser launch failed: ${msg}`,
     };
   } finally {
@@ -383,7 +383,7 @@ async function checkSoundToggle(targetUrl: string): Promise<CheckResult> {
       id: 'v04',
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
     };
   }
@@ -441,7 +441,7 @@ async function checkSoundToggle(targetUrl: string): Promise<CheckResult> {
       id: 'v04',
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
-      status: 'SKIP',
+      status: 'MANUAL',
       detail: `browser launch failed: ${msg}`,
     };
   } finally {

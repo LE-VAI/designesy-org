@@ -29,12 +29,12 @@ import { CopyPrompt } from '../lib/copy-prompt';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 type Engine = 'score' | 'drift' | 'readiness' | 'guardrails';
-type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
 type CheckResult = {
   id: string;
   item: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
   category?: string;
   remediation?: string;
@@ -47,6 +47,7 @@ type CategoryScore = {
   fail: number;
   warn: number;
   skip: number;
+  manual?: number;
 };
 
 type SlopFinding = {
@@ -116,6 +117,7 @@ type ReportResponse = {
   totalWarn?: number;
   totalFail?: number;
   totalSkip?: number;
+  totalManual?: number;
   synthesis?: CheckResult[];
   error?: string;
 };
@@ -146,7 +148,7 @@ type GuardrailsResponse = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, SKIP: 2, PASS: 3 };
+const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -584,14 +586,14 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       });
   }, [activeChecks, filterStatus, searchQuery]);
 
-  // Group filtered checks by status — FAIL / WARN / SKIP / PASS sections.
+  // Group filtered checks by status — FAIL / WARN / MANUAL / SKIP / PASS sections.
   // Each group is collapsible. FAIL is expanded by default (you need to see
   // what broke); PASS is collapsed by default (it's noise when you're fixing).
-  // SKIP and WARN are expanded by default. This mirrors Lighthouse's
-  // Passed/Failed/Manual/NA bucketing pattern.
+  // MANUAL is expanded by default (actionable — run the audit to resolve).
+  // SKIP (N/A) is collapsed by default (nothing to do — convention not met).
   const groupedChecks = useMemo(() => {
     const groups: { status: FilterStatus; checks: CheckResult[] }[] = [];
-    const order: FilterStatus[] = ['FAIL', 'WARN', 'SKIP', 'PASS'];
+    const order: FilterStatus[] = ['FAIL', 'WARN', 'MANUAL', 'SKIP', 'PASS'];
     for (const s of order) {
       const checks = filteredChecks.filter((c) => c.status === s);
       if (checks.length > 0) groups.push({ status: s, checks });
@@ -600,11 +602,12 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   }, [filteredChecks]);
 
   function isGroupCollapsed(status: FilterStatus): boolean {
-    // PASS collapses by default — it's confirmation noise, not actionable.
-    // Everything else is expanded by default so you see what needs attention.
+    // PASS and SKIP (N/A) collapse by default — PASS is confirmation noise,
+    // N/A means "convention not met, nothing to do." Everything else is
+    // expanded by default so you see what needs attention.
     const key = `${activeEngine}:${status}`;
     if (key in collapsedGroups) return collapsedGroups[key];
-    return status === 'PASS';
+    return status === 'PASS' || status === 'SKIP';
   }
 
   function toggleGroup(status: FilterStatus) {
@@ -641,7 +644,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         `## Composite Score`,
         `Grade: ${reportResult.compositeGrade} (${fmtPct(reportResult.compositeScore)}%)`,
         `Formula: score×0.5 + drift×0.3 + readiness×0.2`,
-        `Totals: ${reportResult.totalPass || 0} pass · ${reportResult.totalWarn || 0} warn · ${reportResult.totalFail || 0} fail · ${reportResult.totalSkip || 0} skip of ${reportResult.totalChecks || 0}`,
+        `Totals: ${reportResult.totalPass || 0} pass · ${reportResult.totalWarn || 0} warn · ${reportResult.totalFail || 0} fail · ${reportResult.totalManual || 0} manual · ${reportResult.totalSkip || 0} N/A of ${reportResult.totalChecks || 0}`,
       );
     }
     const engines: [string, SubEngineResult | null | undefined][] = [
@@ -928,11 +931,17 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     </span>
                     <span className="score-metric-lbl">Warnings</span>
                   </div>
+                  <div className="score-metric-tile is-manual">
+                    <span className="score-metric-val">
+                      {reportResult.totalManual || 0}
+                    </span>
+                    <span className="score-metric-lbl">Manual</span>
+                  </div>
                   <div className="score-metric-tile is-skip">
                     <span className="score-metric-val">
                       {reportResult.totalSkip || 0}
                     </span>
-                    <span className="score-metric-lbl">Skipped</span>
+                    <span className="score-metric-lbl">N/A</span>
                   </div>
                 </div>
 
@@ -1296,13 +1305,25 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   </span>
                 </button>
               )}
+              {activeChecks.some((c) => c.status === 'MANUAL') && (
+                <button
+                  type="button"
+                  className={`score-filter-tab is-manual ${filterStatus === 'MANUAL' ? 'is-active' : ''}`}
+                  onClick={() => setFilterStatus('MANUAL')}
+                >
+                  Manual{' '}
+                  <span className="score-tab-count">
+                    {activeChecks.filter((c) => c.status === 'MANUAL').length}
+                  </span>
+                </button>
+              )}
               {activeChecks.some((c) => c.status === 'SKIP') && (
                 <button
                   type="button"
                   className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('SKIP')}
                 >
-                  Skip{' '}
+                  N/A{' '}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'SKIP').length}
                   </span>
@@ -1380,7 +1401,8 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span className="score-check-group-label">
                         {group.status === 'PASS' ? 'Passing' :
                          group.status === 'FAIL' ? 'Failing' :
-                         group.status === 'WARN' ? 'Warnings' : 'Skipped'}
+                         group.status === 'WARN' ? 'Warnings' :
+                         group.status === 'MANUAL' ? 'Manual checks' : 'Not applicable'}
                       </span>
                       <span className="score-check-group-count">
                         {group.checks.length}
@@ -1430,7 +1452,9 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                                   <span
                                     className={`score-card-status-pill is-${check.status.toLowerCase()}`}
                                   >
-                                    {check.status}
+                                    {check.status === 'MANUAL' ? 'Manual' :
+                                     check.status === 'SKIP' ? 'N/A' :
+                                     check.status}
                                   </span>
                                   <span className="score-card-id">{check.id}</span>
                                   {check.category && (

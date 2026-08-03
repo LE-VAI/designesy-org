@@ -18,7 +18,7 @@ type CheckResult = {
   id: string;
   item: string;
   category: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
   detail: string;
   remediation?: string;
 };
@@ -30,6 +30,7 @@ type CategoryScore = {
   fail: number;
   warn: number;
   skip: number;
+  manual?: number;
 };
 
 type ScoreResponse = {
@@ -40,6 +41,7 @@ type ScoreResponse = {
   fail?: number;
   warn?: number;
   skip?: number;
+  manual?: number;
   total?: number;
   a11yFloorApplied?: boolean;
   hardFailCeilingApplied?: boolean;
@@ -88,7 +90,7 @@ type AuditResponse = {
   error?: string;
 };
 
-type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
 const CATEGORIES: { key: string; label: string }[] = [
   { key: 'tokens', label: 'Tokens' },
@@ -169,7 +171,7 @@ function fmtPct(value: number | null | undefined): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
-const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, SKIP: 2, PASS: 3 };
+const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
 function normalizeInput(input: string): string {
   let clean = input.trim();
@@ -340,10 +342,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       `Grade: ${result.grade} (${fmtPct(result.score)}%)`,
       ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
       `Assessed: ${new Date().toISOString()}`,
-      `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Skip: ${result.skip}`,
+      `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Manual: ${result.manual || 0} | N/A: ${result.skip}`,
       `Tokens Extracted: ${result.tokensExtracted || 0}`,
       `Contract: Designesy Design System Contract v0.4.0`,
-      `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded), weights below; accessibility < 60% caps grade at C.`,
+      `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, MANUAL and N/A excluded), weights below; accessibility < 60% caps grade at C.`,
     ];
     const cats = result.categoryScores || {};
     const catKeys = CONSTELLATION_ORDER.filter((k) => cats[k]);
@@ -352,7 +354,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       for (const k of catKeys) {
         const v = cats[k];
         const label = CATEGORIES.find((c) => c.key === k)?.label || k;
-        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : fmtPct(v.score) + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.skip}s`);
+        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : fmtPct(v.score) + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.manual || 0}m/${v.skip}s`);
       }
     }
     lines.push(``, `## Check Summary`);
@@ -436,6 +438,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const fail = merged.filter((c) => c.status === 'FAIL').length;
         const warn = merged.filter((c) => c.status === 'WARN').length;
         const skip = merged.filter((c) => c.status === 'SKIP').length;
+        const manual = merged.filter((c) => c.status === 'MANUAL').length;
         const total = merged.length;
         // Weighted scoring (matches server-side CATEGORY_WEIGHTS in route.ts)
         const CATEGORY_WEIGHTS: Record<string, number> = {
@@ -444,14 +447,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         };
         const catCounts: Record<string, number> = {};
         for (const c of merged) {
-          if (c.status === 'SKIP') continue;
+          if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
           catCounts[c.category] = (catCounts[c.category] || 0) + 1;
         }
         let wp = 0, wt = 0;
-        const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number }> = {};
+        const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
         for (const c of merged) {
-          const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0 });
+          const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
           if (c.status === 'SKIP') { agg.skip += 1; continue; }
+          if (c.status === 'MANUAL') { agg.manual += 1; continue; }
           const cw = (CATEGORY_WEIGHTS[c.category] || 5) / (catCounts[c.category] || 1);
           wt += cw; agg.wt += cw;
           if (c.status === 'PASS') { wp += cw; agg.wp += cw; agg.pass += 1; }
@@ -464,11 +468,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           categoryScores[cat] = {
             score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
             weight: CATEGORY_WEIGHTS[cat] || 5,
-            pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip,
+            pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip, manual: agg.manual,
           };
         }
         // a11y floor (matches server)
-        const a11yChecks = merged.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP');
+        const a11yChecks = merged.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP' && c.status !== 'MANUAL');
         const a11yPct = a11yChecks.length === 0 ? 100 : ((a11yChecks.filter((c) => c.status === 'PASS').length + a11yChecks.filter((c) => c.status === 'WARN').length * 0.5) / a11yChecks.length) * 100;
         let a11yFloorApplied = false;
         if (a11yChecks.length > 0 && a11yPct < 60 && score > 70) { score = 70; a11yFloorApplied = true; }
@@ -487,7 +491,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
         }
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-        return { ...prev, checks: merged, pass, fail, warn, skip, total, score, grade, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores };
+        return { ...prev, checks: merged, pass, fail, warn, skip, manual, total, score, grade, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores };
       });
       setAuditStatus('ok');
     } catch {
@@ -745,7 +749,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-rubric-body" id="score-rubric-body">
                   <p className="score-rubric-formula">
                     score = Σ (category<sub>earned</sub> / category<sub>weight</sub>) × 100 —
-                    PASS 1.0 · WARN 0.5 · FAIL 0, SKIP excluded. Each category contributes its
+                    PASS 1.0 · WARN 0.5 · FAIL 0, MANUAL + N/A excluded. Each category contributes its
                     full contract weight, split evenly across its checks. Accessibility &lt; 60% caps the grade at C.
                   </p>
                   <ol className="score-rubric-weights">
@@ -785,9 +789,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <span className="score-metric-val">{result.warn}</span>
                 <span className="score-metric-lbl">Warnings</span>
               </div>
+              <div className="score-metric-tile is-manual">
+                <span className="score-metric-val">{result.manual || 0}</span>
+                <span className="score-metric-lbl">Manual</span>
+              </div>
               <div className="score-metric-tile is-skip">
                 <span className="score-metric-val">{result.skip}</span>
-                <span className="score-metric-lbl">Skipped</span>
+                <span className="score-metric-lbl">N/A</span>
               </div>
             </div>
 
@@ -1009,12 +1017,21 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   Warn <span className="score-tab-count">{result.warn}</span>
                 </button>
               )}
+              {(result.manual || 0) > 0 && (
+                <button
+                  type="button"
+                  className={`score-filter-tab is-manual ${filterStatus === 'MANUAL' ? 'is-active' : ''}`}
+                  onClick={() => setFilterStatus('MANUAL')}
+                >
+                  Manual <span className="score-tab-count">{result.manual}</span>
+                </button>
+              )}
               <button
                 type="button"
                 className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('SKIP')}
               >
-                Skip <span className="score-tab-count">{result.skip}</span>
+                N/A <span className="score-tab-count">{result.skip}</span>
               </button>
             </div>
 
@@ -1093,7 +1110,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     <div className="score-card-main">
                       <div className="score-card-badge-group">
                         <span className={`score-card-status-pill is-${check.status.toLowerCase()}`}>
-                          {check.status}
+                          {check.status === 'MANUAL' ? 'Manual' :
+                           check.status === 'SKIP' ? 'N/A' :
+                           check.status}
                         </span>
                         <span className="score-card-id">{check.id}</span>
                         <span className="score-card-cat">{check.category}</span>
