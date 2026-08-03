@@ -10038,6 +10038,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-check-group-body {
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -10394,6 +10395,9 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-item {
+  /* Block the hero's text-align: center inheritance — check cards are
+     data-dense and read better left-aligned. */
+  text-align: left;
   background: var(--surface-card-gradient), var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -11542,6 +11546,9 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-history-item {
+  /* Left-align history entries — the panel sits inside the centered hero
+     section, so text-align: left is explicit to prevent inheriting center. */
+  text-align: left;
   display: flex;
   align-items: center;
   gap: 0.85rem;
