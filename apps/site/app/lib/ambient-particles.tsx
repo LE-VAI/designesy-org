@@ -5,18 +5,26 @@ import { useEffect, useRef } from 'react';
 /**
  * Ambient particle field — site-wide cursor-follow background.
  *
- * The same clean dot-field aesthetic from /test/cursor-trail.tsx (V3),
- * promoted to a global ambient layer that lives behind every page:
+ * The clean dot-field aesthetic from /test/cursor-trail.tsx (V3),
+ * promoted to a global ambient layer behind every page:
  *
  *  - Fixed full-viewport canvas at z-index 0 (same plane as .ambient-signal)
- *  - ~450 signal-blue dots drifting via Perlin-noise flow field
- *  - Cursor pull within 220px radius (additive glow where they overlap)
- *  - clearRect each frame — no trail build-up, keeps it clean
- *  - On-demand rAF (0% CPU when idle + animation settles)
- *  - Reads CSS-var palette so it swaps with night/day mode
- *  - MutationObserver on <html data-theme> rebuilds sprites on toggle
- *  - Additive blend in dark mode (glow), normal alpha in light mode (ink)
- *  - reduced-motion + coarse-pointer safe
+ *  - ~450 signal-blue dots drift via Perlin-noise flow field
+ *  - Cursor pull strengthens when the cursor DWELLS (hovers in place) —
+ *    dots gather authoritatively, then ease back to randomness when the
+ *    cursor moves on or leaves.
+ *  - Staggered fade-in over the first ~2.5s — dots appear organically,
+ *    not all at once, with random initial velocities for life from frame 0.
+ *  - Two-octave Perlin noise + per-dot phase offsets — less correlated
+ *    drift, more natural randomness over time.
+ *  - clearRect each frame — no trail build-up, keeps it clean.
+ *  - On-demand rAF (0% CPU when idle + animation settles).
+ *  - Reads CSS-var palette so it swaps with night/day mode.
+ *  - MutationObserver on <html data-theme> rebuilds sprites on toggle.
+ *  - Additive blend in dark mode (glow), normal alpha in light mode (ink).
+ *  - Mobile: shows the drift field + touch-drag pull (no pointer: fine gate).
+ *  - reduced-motion safe (skips the effect entirely).
+ *  - Pauses rAF when the tab is hidden (battery).
  *
  * Sits behind all content (z-index 1) but above the opaque body paper,
  * showing through the transparent .site-shell / .surface-page wrappers
@@ -58,11 +66,11 @@ type Dot = {
   size: number;
   baseAlpha: number;
   colorIdx: number;
+  phase: number;     // per-dot phase offset for less correlated drift
+  bornAt: number;    // staggered fade-in start time
 };
 
 // Medium density — one dot per ~4,600 px², capped at 450 for performance.
-// The /test cell had 220 dots in 308K px; this scales to full viewport
-// without the ~1,480-dot extreme that would hurt performance.
 const MAX_COUNT = 450;
 const DENSITY = 4600;
 const FLOW_GRID = 24;
@@ -72,19 +80,27 @@ const PULL_STRENGTH = 0.025;
 const DAMPING = 0.95;
 const SPRITE_SIZE = 24;
 
+// Dwell amplification — when the cursor hovers in place, pull strengthens.
+// dwell ramps up while the cursor is still (~750ms to full), and decays
+// when it moves or leaves. At full dwell the pull is ~4.5× stronger and
+// the radius widens, so dots gather authoritatively around the hover point.
+const DWELL_RAMP_MS = 750;
+const DWELL_MAX_BOOST = 4.5;
+const DWELL_RADIUS_BOOST = 1.5;
+const DWELL_DECAY = 0.92;   // per-frame decay when cursor moves / leaves
+
+// Staggered fade-in — dots appear over ~2.5s, not all at once.
+const FADE_IN_MS = 2500;
+const FADE_IN_SPREAD = 1800;
+
 /**
  * Read the signal palette from CSS variables so it tracks the live theme.
- * Dark and light themes both define --signal / --signal-light /
- * --signal-access; we derive a 4-step palette from those three plus a
- * brighter tint for depth.
  */
 function readPalette(): string[] {
   const styles = getComputedStyle(document.documentElement);
   const signal = styles.getPropertyValue('--signal').trim() || '#0133CB';
   const light = styles.getPropertyValue('--signal-light').trim() || '#3358E8';
   const access = styles.getPropertyValue('--signal-access').trim() || '#5d7bff';
-  // A brighter tint for the softest dots — lighten the access color.
-  // If it's a hex, shift toward white; otherwise reuse access.
   let bright = '#7E9DFF';
   if (access.startsWith('#')) {
     const r = parseInt(access.slice(1, 3), 16);
@@ -123,8 +139,11 @@ export function AmbientParticles() {
     if (!ctx) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
-    if (reduced || !fine.matches) return;
+    if (reduced) return;
+
+    // Mobile/touch support: show the drift field on touch devices too.
+    // The old (hover: hover) and (pointer: fine) gate is removed — touch
+    // devices get the Perlin drift field and pull dots toward touch-drag.
 
     let dpr = window.devicePixelRatio || 1;
     let w = 0;
@@ -140,35 +159,37 @@ export function AmbientParticles() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
-    // Call synchronously so w/h are set before dot seeding below.
     resize();
 
     const noise = makeNoise();
 
-    // Build sprites from the live CSS-var palette (theme-aware).
     let palette = readPalette();
     let sprites = buildSprites(palette);
 
-    // Determine blend mode from current theme: additive glow in dark,
-    // normal alpha in light (so dots don't wash out on white).
     const isDark = () =>
       document.documentElement.getAttribute('data-theme') !== 'light';
     let blendMode: GlobalCompositeOperation = isDark() ? 'lighter' : 'source-over';
 
-    // Dot count scales with viewport area, capped at MAX_COUNT.
     const count = Math.min(MAX_COUNT, Math.floor((w * h) / DENSITY));
 
-    // Seed the dot field — varied sizes + alphas for depth, not uniform.
+    const now = performance.now();
     const dots: Dot[] = [];
     for (let i = 0; i < count; i++) {
+      // Staggered birth time — each dot fades in at a random point over
+      // FADE_IN_SPREAD ms, starting at FADE_IN_MS - FADE_IN_SPREAD so the
+      // first dots appear quickly and the rest trickle in organically.
+      const bornAt = now + Math.random() * FADE_IN_SPREAD - (FADE_IN_SPREAD - FADE_IN_MS);
       dots.push({
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: 0,
-        vy: 0,
+        // Random initial velocity — life from frame 0, no synchronous start.
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
         size: 1 + Math.random() * 2.8,
         baseAlpha: 0.25 + Math.random() * 0.5,
         colorIdx: Math.floor(Math.random() * palette.length),
+        phase: Math.random() * 1000,
+        bornAt,
       });
     }
 
@@ -178,52 +199,94 @@ export function AmbientParticles() {
     let raf = 0;
     let t = 0;
 
+    // Dwell tracking — ramps up when cursor is still, decays when moving.
+    let dwell = 0;
+    let lastMoveTime = 0;
+    let lastMoveX = -9999;
+    let lastMoveY = -9999;
+
     const onMove = (e: PointerEvent) => {
       px = e.clientX;
       py = e.clientY;
       inside = true;
+      // If the cursor barely moved since last event, treat it as dwelling
+      // (the dwell value keeps ramping). If it moved significantly, reset
+      // the dwell ramp start.
+      const movedDist = Math.hypot(px - lastMoveX, py - lastMoveY);
+      if (movedDist > 6) {
+        lastMoveTime = performance.now();
+        lastMoveX = px;
+        lastMoveY = py;
+      }
       if (raf === 0) raf = requestAnimationFrame(tick);
     };
     const onLeave = () => {
       inside = false;
       if (raf === 0) raf = requestAnimationFrame(tick);
     };
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      } else {
+        // Resume — kick the loop if it was running.
+        if (raf === 0) raf = requestAnimationFrame(tick);
+      }
+    };
 
     const tick = () => {
       t += 0.0004;
+      const frameNow = performance.now();
 
-      // Clear each frame — no trail build-up, keeps it clean.
+      // Dwell ramp: if the cursor is inside and hasn't moved significantly
+      // for a while, ramp dwell toward DWELL_MAX_BOOST. Otherwise decay.
+      if (inside && frameNow - lastMoveTime > 80) {
+        const dwellMs = frameNow - lastMoveTime;
+        const ramp = Math.min(1, dwellMs / DWELL_RAMP_MS);
+        dwell = Math.min(DWELL_MAX_BOOST, 1 + ramp * (DWELL_MAX_BOOST - 1));
+      } else if (!inside) {
+        dwell *= DWELL_DECAY;
+        if (dwell < 0.01) dwell = 0;
+      } else {
+        // Cursor is moving — ease dwell back toward 1 (normal pull).
+        dwell = dwell + (1 - dwell) * 0.08;
+      }
+
       ctx.clearRect(0, 0, w, h);
-
-      // Additive blend in dark mode for glow; normal alpha in light mode.
       ctx.globalCompositeOperation = blendMode;
 
       let anyMoving = false;
       for (const d of dots) {
-        // Perlin-noise flow field — gentle ambient drift.
-        const ang = noise(d.x / FLOW_GRID, d.y / FLOW_GRID + t * 2) * Math.PI * 4;
+        // Two-octave Perlin noise + per-dot phase offset — less correlated
+        // drift, more natural randomness over time. The second octave adds
+        // higher-frequency variation so dots don't all flow in the same
+        // direction at once.
+        const nx = d.x / FLOW_GRID + d.phase;
+        const ny = d.y / FLOW_GRID + t * 2 + d.phase;
+        const ang1 = noise(nx, ny) * Math.PI * 4;
+        const ang2 = noise(nx * 2.3 + 50, ny * 2.3 + 50) * Math.PI * 4;
+        const ang = ang1 * 0.7 + ang2 * 0.3;
         d.vx += Math.cos(ang) * FLOW_FORCE;
         d.vy += Math.sin(ang) * FLOW_FORCE;
 
-        // Cursor pull — layered on top of the drift, within a radius.
+        // Cursor pull — amplified by dwell. When hovering, pull is
+        // stronger and the radius widens, so dots gather authoritatively.
         if (inside) {
           const dx = px - d.x;
           const dy = py - d.y;
           const dist = Math.hypot(dx, dy);
-          if (dist < PULL_RADIUS && dist > 0.1) {
-            const pull = (1 - dist / PULL_RADIUS) * PULL_STRENGTH;
+          const radius = PULL_RADIUS * (1 + (dwell - 1) * (DWELL_RADIUS_BOOST - 1));
+          if (dist < radius && dist > 0.1) {
+            const pull = (1 - dist / radius) * PULL_STRENGTH * dwell;
             d.vx += (dx / dist) * pull;
             d.vy += (dy / dist) * pull;
           }
         }
 
-        // Damping
         d.vx *= DAMPING;
         d.vy *= DAMPING;
         d.x += d.vx;
         d.y += d.vy;
 
-        // Wrap edges softly
         if (d.x < -10) d.x = w + 10;
         if (d.x > w + 10) d.x = -10;
         if (d.y < -10) d.y = h + 10;
@@ -232,8 +295,14 @@ export function AmbientParticles() {
         const speed = Math.hypot(d.vx, d.vy);
         if (speed > 0.015) anyMoving = true;
 
-        // Alpha brightens slightly with speed — dots glow when pulled.
-        const alpha = Math.min(0.85, d.baseAlpha + speed * 0.3);
+        // Staggered fade-in — each dot fades in over ~500ms from its
+        // bornAt time. Before birth, skip drawing entirely.
+        const age = frameNow - d.bornAt;
+        if (age < 0) continue;
+        const fadeIn = Math.min(1, age / 500);
+        if (fadeIn <= 0) continue;
+
+        const alpha = Math.min(0.85, (d.baseAlpha + speed * 0.3) * fadeIn);
         const sprite = sprites[d.colorIdx % sprites.length];
         const drawSize = d.size * 6;
         ctx.globalAlpha = alpha;
@@ -243,29 +312,27 @@ export function AmbientParticles() {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
 
-      // Keep the loop alive while the cursor is inside OR dots are still
-      // drifting (let them settle gracefully after the cursor leaves).
-      if (inside || anyMoving) {
+      // Keep the loop alive while the cursor is inside, dots are moving,
+      // dwell is settling, or dots are still fading in.
+      const anyFadingIn = dots.some((d) => frameNow - d.bornAt < 500);
+      if (inside || anyMoving || dwell > 0.01 || anyFadingIn) {
         raf = requestAnimationFrame(tick);
       } else {
         raf = 0;
       }
     };
 
-    // Kick the loop once so the seeded field paints.
     raf = requestAnimationFrame(tick);
 
     window.addEventListener('resize', resize, { passive: true });
     window.addEventListener('pointermove', onMove, { passive: true });
     document.addEventListener('pointerleave', onLeave, { passive: true });
+    document.addEventListener('visibilitychange', onVisibility, { passive: true });
 
-    // Watch for theme toggles — rebuild sprites and flip blend mode
-    // without re-seeding dots (positions/motion preserved, color swaps).
     const themeObserver = new MutationObserver(() => {
       palette = readPalette();
       sprites = buildSprites(palette);
       blendMode = isDark() ? 'lighter' : 'source-over';
-      // Re-distribute color indices across the new palette length.
       for (const d of dots) {
         if (d.colorIdx >= palette.length) d.colorIdx = d.colorIdx % palette.length;
       }
@@ -280,6 +347,7 @@ export function AmbientParticles() {
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibility);
       themeObserver.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
