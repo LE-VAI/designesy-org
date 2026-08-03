@@ -35,9 +35,10 @@ export const guardrailsContract = {
       { component: 'agentRules', description: 'Markdown rules file (AGENTS.md format) with token allowlist, composition rules, and anti-patterns for AI coding agents' },
       { component: 'componentContract', description: 'Allowed component prop patterns derived from the token system — what props agents can use with which token values' },
       { component: 'antiPatterns', description: 'What NOT to do — inline values, fabricated tokens, off-system colors, magic numbers' },
+      { component: 'designMd', description: 'DESIGN.md-format file (Google open spec, google-labs-code/design.md, Apache-2.0) — YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order. The de-facto AI-readable design-context standard' },
     ],
     emission_method:
-      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns.',
+      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (Google open spec).',
   },
   verification: {
     checks: [
@@ -46,11 +47,12 @@ export const guardrailsContract = {
       { id: 'g03', item: 'Agent rules emitted — AGENTS.md format with token allowlist', pass: 'AGENTS.md rules file generated with N token references', fail: 'Could not generate agent rules' },
       { id: 'g04', item: 'Component contract derived — allowed prop patterns', pass: 'Component contract with N patterns generated', fail: 'Could not derive component patterns — no tokens to derive from' },
       { id: 'g05', item: 'Anti-patterns documented — what NOT to do', pass: 'Anti-pattern list generated from detected inline values', fail: 'No anti-patterns detected — possible if the site has no inline values' },
+      { id: 'g06', item: 'DESIGN.md emitted — Google open spec (google-labs-code/design.md)', pass: 'DESIGN.md generated with YAML front matter + markdown body from N tokens', fail: 'Insufficient tokens to generate a DESIGN.md — need ≥5 :root custom properties' },
     ],
-    scoring: '5 checks. PASS=1, FAIL=0. Score = (points/5) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the guardrail emitter is an output generator, not a scoring engine — the score reflects emission completeness, not design quality.',
+    scoring: '6 checks. PASS=1, FAIL=0. Score = (points/6) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the guardrail emitter is an output generator, not a scoring engine — the score reflects emission completeness, not design quality.',
     validation_tools: {
-      primary: 'Designesy guardrails engine — CSS extraction + token-to-lint transformation',
-      method: 'Fetch HTML + CSS, extract :root tokens, generate DTCG tokens, Stylelint config, AGENTS.md, component contract',
+      primary: 'Designesy guardrails engine — CSS extraction + token-to-lint transformation + DESIGN.md generation',
+      method: 'Fetch HTML + CSS, extract :root tokens, generate DTCG tokens, Stylelint config, AGENTS.md, component contract, DESIGN.md',
       browser_only: 'None — all checks are static CSS analysis + generation, no browser needed',
     },
   },

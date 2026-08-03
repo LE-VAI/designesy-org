@@ -32,6 +32,7 @@ type GuardrailsResponse = {
       magicNumbers: { count: number; examples: string[]; rule: string };
       fabricatedTokens: { count: number; examples: string[]; rule: string };
     };
+    designMd: string;
   };
   checks?: CheckResult[];
   error?: string;
@@ -52,7 +53,7 @@ const STATUS_TOKENS: Record<string, string> = {
   FAIL: 'var(--error)',
 };
 
-type Tab = 'tokens' | 'lint' | 'rules' | 'contract' | 'anti';
+type Tab = 'tokens' | 'lint' | 'rules' | 'contract' | 'anti' | 'designmd';
 
 export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
   const [url, setUrl] = useState(initialUrl);
@@ -108,6 +109,8 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
         return JSON.stringify(result.bundle.componentContract, null, 2);
       case 'anti':
         return JSON.stringify(result.bundle.antiPatterns, null, 2);
+      case 'designmd':
+        return result.bundle.designMd || '';
     }
   }
 
@@ -139,6 +142,7 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
     { id: 'rules', label: 'AGENTS.md' },
     { id: 'contract', label: 'Contract' },
     { id: 'anti', label: 'Anti-patterns' },
+    { id: 'designmd', label: 'DESIGN.md' },
   ];
 
   return (

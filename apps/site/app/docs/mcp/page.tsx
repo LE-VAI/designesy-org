@@ -112,7 +112,7 @@ const TOOLS = [
   {
     name: 'designesy_guardrails',
     kind: 'Executable',
-    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL — the product layer. Ingests a site, extracts its :root tokens, and emits 5 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, and anti-pattern documentation. 5 emission checks verify bundle completeness.',
+    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL — the product layer. Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/guardrails',
   },
