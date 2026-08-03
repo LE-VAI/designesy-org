@@ -680,9 +680,12 @@ export function ScrambleEnhancer() {
             s.textContent = g.ch;
             if (!g.done) {
               s.className = 'is-scrambling';
-            } else if (g.color) {
-              s.style.color = g.color;
             }
+            // Settled chars: NO inline color. The CSS [data-word]
+            // background-clip:text gradient + sweep animation paints them with
+            // a continuously moving blue shimmer. Inline colors would override
+            // the clip and freeze the gradient (the "still gradient" report).
+            // The blue→ink blend is preserved in the gradient stops.
             wordSpan.appendChild(s);
           }
         };
