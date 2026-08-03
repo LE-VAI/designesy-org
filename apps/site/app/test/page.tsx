@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import SceneClient from './scene-client';
+import CursorTrail from './cursor-trail';
+import VaiCard from './vai-card';
 
 export const metadata: Metadata = {
   title: 'Test',
@@ -20,7 +22,7 @@ export default function TestPage() {
         gap: '1rem',
       }}
     >
-      {/* Hero cell */}
+      {/* Hero cell — with Concept A: cursor particle trail inside */}
       <div
         style={{
           width: '100%',
@@ -35,8 +37,11 @@ export default function TestPage() {
           justifyContent: 'center',
           gap: '1.35rem',
           position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* Concept A — cursor particle trail. Lives inside the hero cell only. */}
+        <CursorTrail />
         <p
           style={{
             fontSize: '0.75rem',
@@ -92,6 +97,10 @@ export default function TestPage() {
         </p>
         <SceneClient />
       </div>
+
+      {/* Concept B — VAI footer follow-card. The single VAI entry from the
+          Designesy shell. Yellow lives inside the card/panel only. */}
+      <VaiCard />
     </main>
   );
 }
