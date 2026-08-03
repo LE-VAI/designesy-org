@@ -57,7 +57,7 @@ This document locks the Cuelume sound palette into Designesy doctrine. No sound 
 - npm: https://www.npmjs.com/package/cuelume
 - Repo: https://github.com/Danilaa1/cuelume
 - Installed: 2026-07-11 in `designesy-org/apps/site`
-- Consideration packet: `D:\1ATLAS\outputs\docs\2026-07-11_cuelume-interaction-sounds-consideration-packet.md`
+- Consideration packet: internal consideration packet (not for public distribution)
 - Visual token system: `DESIGN.md` §7
 - Design intelligence gate (Interaction Design section): `DESIGN_INTELLIGENCE_GATE.md` (hardened 2026-07-11)
 - v0.1.1: brand sparkle, invite chime, complete success, contact droplet variety pass

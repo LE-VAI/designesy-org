@@ -6,7 +6,7 @@ export const dynamic = 'force-static';
 // Format: v=MCPv1; k=ed25519; p=<base32-pubkey>
 // Required by `mcp-publisher login http` to verify ownership of designesy.org
 // before publishing to the official MCP Registry at registry.modelcontextprotocol.io.
-// See: D:\1ATLAS\outputs\design\designesy-org-audit\artifacts\mcp-registry\SUBMISSION_GUIDE.md
+// See: internal MCP registry submission guide (not for public distribution).
 const MCP_REGISTRY_PUBKEY =
   'KTjVMMx28qGje7bzJZgTDNxfKFvscMhA0Rh96qLPrHE=';
 
