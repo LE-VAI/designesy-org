@@ -6019,6 +6019,57 @@ a.check-cell:hover .check-cell-title {
     min-width: 0;
   }
 
+  /* Breathing-glass tiers — scroll-triggered topbar tightening + search
+     pill expansion. Mobile-only; desktop never hits .scrolled differently
+     than its existing rest→scrolled glass bump. The .cmdk-trigger-label
+     is hidden by the base mobile rule above; .scrolled re-shows it. */
+  .topbar.scrolled {
+    padding: 0.5rem 0;
+  }
+
+  .topbar.scrolled .wordmark {
+    font-size: 0.95rem;
+  }
+
+  .topbar.scrolled .cmdk-trigger {
+    padding: 0 0.55rem 0 0.6rem;
+    border-color: var(--line-strong);
+  }
+
+  .topbar.scrolled .cmdk-trigger-label {
+    display: inline;
+  }
+
+  /* Tier 3 — deep scroll: signal glow ring on the search trigger + a
+     structural hairline under the bar. The user is committed to the page
+     here; the hairline reads as structural, not chrome cruft. */
+  .topbar.deep-scrolled .cmdk-trigger {
+    box-shadow: 0 0 0 1px rgba(51, 88, 232, 0.28);
+  }
+
+  .topbar.deep-scrolled {
+    border-bottom: 1px solid var(--line-faint);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .topbar {
+      transition: padding var(--duration-fast) var(--ease-out),
+        background var(--duration) var(--ease),
+        backdrop-filter var(--duration) var(--ease),
+        border-color var(--duration) var(--ease);
+    }
+    .cmdk-trigger {
+      transition: padding var(--duration-fast) var(--ease-out),
+        border-color var(--duration-fast) var(--ease-out),
+        box-shadow var(--duration-fast) var(--ease-out),
+        color 0.2s var(--ease),
+        background 0.2s var(--ease);
+    }
+    .wordmark {
+      transition: font-size var(--duration-fast) var(--ease-out);
+    }
+  }
+
   .nav-links {
     display: none;
   }
