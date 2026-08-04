@@ -9392,6 +9392,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--signal-access);
   pointer-events: none;
   z-index: 1;          /* above the input's text, below the caret */
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+/* Icon brightens on focus — now that the input owns the chrome, focus is on
+   the input itself, not the wrapper. Uses :focus-within on the wrapper to
+   detect focus on the child input, then shifts the icon to --signal-light. */
+.score-input-flex-box:focus-within .score-input-icon {
+  color: var(--signal-light);
 }
 
 .score-url-input-inner {
