@@ -9354,7 +9354,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-input-flex-box {
   display: flex;
-  align-items: center;
+  /* align-items: stretch (NOT center) — on iOS Safari, align-items:center on a
+     flex container with an input child causes a scroll-offset desync where the
+     input's visual box scrolls but the text node stays at its pre-scroll
+     position. With stretch, the input fills the container height and its
+     own padding handles vertical centering (reliable during scroll). */
+  align-items: stretch;
   width: 100%;
   height: 3.25rem;
   background: var(--surface);
@@ -9387,14 +9392,19 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-url-input-inner {
   flex: 1 1 auto;
   width: 100%;
-  height: 100%;
+  /* height: 100% removed — on iOS Safari, height:100% inside a flex container
+     with align-items:center causes a scroll-offset desync where the input's
+     visual box scrolls but the text node inside it stays at its pre-scroll
+     position (layout-lock + scroll-offset desync). Replaced with explicit
+     padding that matches the flex-box height, so the input centers itself
+     via its own box model rather than relying on flex centering. */
   background: transparent;
   border: none;
   outline: none;
   color: var(--ink);
   font-size: 1rem; /* Cadence 16px input floor — never below 16px (iOS auto-zoom + contract) */
   font-family: inherit;
-  padding: 0 0 0 0.75rem;
+  padding: 0.625rem 0 0.625rem 0.75rem; /* vertical padding centers text without flex */
   margin: 0;
   box-sizing: border-box;
 }
@@ -9438,6 +9448,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
+}
+
+/* Hero variant input padding — taller flex-box (3.75rem) needs more vertical
+   padding to center text without relying on flex align-items:center. */
+.score-hero-input .score-url-input-inner {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
 }
 
 .score-hero-input .score-input-flex-box:focus-within {
@@ -10758,6 +10775,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-url-input-inner {
     font-size: 1rem; /* iOS auto-zoom prevention */
+    /* Mobile flex-box is 3rem (48px). Use padding to center text without
+       flex align-items:center (causes iOS Safari scroll-offset desync). */
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
   }
 
   .score-submit {
@@ -10864,6 +10885,11 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-input-flex-box {
     height: 2.75rem;
+  }
+
+  .score-url-input-inner {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
   }
 
   .score-hero-section {
