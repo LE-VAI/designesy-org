@@ -182,9 +182,17 @@ html {
 
 /* Prevent double-tap zoom on interactive elements — touch-action: manipulation
    disables double-tap-to-zoom on buttons/links while preserving single-tap
-   and pinch-zoom on the page body. WCAG 2.5.8 spacing-friendly. */
-a, button, input, select, textarea, [tabindex]:not([tabindex="-1"]) {
+   and pinch-zoom on the page body. WCAG 2.5.8 spacing-friendly.
+   INPUTS EXCLUDED: touch-action: manipulation on text inputs causes scroll-
+   stick on iOS Safari — the browser treats touch-start on the input as text
+   selection rather than scroll, trapping the gesture. Inputs get pan-y
+   instead (allows vertical scroll + double-tap zoom prevention). */
+a, button, select, textarea, [tabindex]:not([tabindex="-1"]) {
   touch-action: manipulation;
+}
+
+input {
+  touch-action: pan-y;
 }
 
 body {
@@ -5999,6 +6007,19 @@ a.check-cell:hover .check-cell-title {
     gap: 1.5rem;
   }
 
+  /* Mobile topbar: reduce backdrop-filter blur to minimize scroll-compositing
+     cost. Heavy blur (20px) on a sticky element forces re-rasterization on
+     every scroll frame on iOS Safari, causing scroll-stick near the topbar. */
+  .topbar {
+    -webkit-backdrop-filter: blur(8px) saturate(110%);
+    backdrop-filter: blur(8px) saturate(110%);
+  }
+
+  .topbar.scrolled {
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(120%);
+  }
+
   .principle {
     grid-template-columns: 2rem 1fr;
     gap: 0.75rem;
@@ -6127,14 +6148,19 @@ a.check-cell:hover .check-cell-title {
   /* overflow-x: clip (NOT hidden) on html/body — `hidden` creates an
      implicit scroll container that traps position:sticky children, so
      the topbar stops sticking. `clip` prevents horizontal scroll without
-     creating a scroll container. Baseline 2026 (all evergreen browsers). */
+     creating a scroll container. Baseline 2026 (all evergreen browsers).
+     overscroll-behavior-y: none prevents scroll chaining on iOS Safari —
+     without it, scrolling up at the top of the page bounces and can
+     "trap" scroll momentum near sticky elements. */
   html {
     overflow-x: clip;
+    overscroll-behavior-y: none;
   }
 
   body {
     padding-bottom: 4rem;
     overflow-x: clip;
+    overscroll-behavior-y: none;
   }
 
   /* Mobile hamburger trigger */
@@ -7454,9 +7480,12 @@ html:not(.js-ready) .demo-stagger-bar {
 
 .fade-in {
   opacity: 0;
-  /* fill-mode: backwards — same rationale as .fade-up: prevents a persistent
-     compositing layer from the `to` state after animation ends. */
-  animation: fadeIn 0.5s var(--ease) backwards;
+  /* fill-mode: both — unlike .fade-up, fadeIn has no `from` state (only `to:
+     opacity:1`), so `backwards` would leave the element at its base `opacity:0`
+     (invisible) after animation ends. `both` persists the `to` state (opacity:1)
+     which is the desired final visibility. No transform in this keyframe, so
+     no compositing-layer scroll-stick issue. */
+  animation: fadeIn 0.5s var(--ease) both;
 }
 
 @keyframes fadeIn {
