@@ -42,6 +42,12 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
+      // Skip state updates when the command palette (or any modal) has
+      // scroll-locked the body — body.overflow:hidden can reset scrollY
+      // to 0, which would falsely collapse the search pill and cause the
+      // topbar to re-render while the user is interacting with the palette.
+      if (document.body.style.overflow === 'hidden') return;
+
       setIsScrolled(y > 40 || scrolled);
       setDeepScrolled(y > 320);
       // Search pill expansion tracks ACTUAL scroll, not the `scrolled` prop
