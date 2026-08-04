@@ -549,6 +549,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </span>
             <input
               type="text"
+              inputMode="url"
+              enterKeyHint="go"
+              autoComplete="url"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -1078,7 +1081,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </svg>
               </span>
               <input
-                type="text"
+                type="search"
+                inputMode="search"
+                enterKeyHint="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="score-search-input"
                 placeholder="Search 40 verification checks…"
                 value={searchQuery}

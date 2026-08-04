@@ -177,6 +177,14 @@ html {
   scroll-behavior: auto;
   scroll-padding-top: 4.5rem;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent double-tap zoom on interactive elements — touch-action: manipulation
+   disables double-tap-to-zoom on buttons/links while preserving single-tap
+   and pinch-zoom on the page body. WCAG 2.5.8 spacing-friendly. */
+a, button, input, select, textarea, [tabindex]:not([tabindex="-1"]) {
+  touch-action: manipulation;
 }
 
 body {
@@ -194,6 +202,7 @@ body {
   text-decoration-skip-ink: auto;
   text-rendering: optimizeLegibility;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ==========================================================================
@@ -431,7 +440,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 1rem 0 0;
+  padding: max(1rem, env(safe-area-inset-top)) 0 0;
   background: rgba(10, 10, 12, 0.3);
   backdrop-filter: blur(12px) saturate(120%);
   -webkit-backdrop-filter: blur(12px) saturate(120%);
@@ -455,7 +464,7 @@ p {
 .topbar-inner {
   max-width: var(--maxw-wide);
   margin: 0 auto;
-  padding: 0 1.5rem 1rem;
+  padding: 0 max(1.5rem, env(safe-area-inset-right)) 1rem max(1.5rem, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2802,6 +2811,7 @@ button.pillar:hover::before {
   margin: 0 auto;
   padding: 0 1.5rem;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Lift above body's fixed background texture layers (Stage 4) */
   position: relative;
   z-index: 1;
@@ -4476,6 +4486,7 @@ button.pillar:hover::before {
   margin: 0 auto;
   padding: 0 1.5rem;
   min-height: 100vh;
+  min-height: 100dvh;
   /* Lift above body's fixed background texture layers (Stage 4) */
   position: relative;
   z-index: 1;
@@ -5999,7 +6010,7 @@ a.check-cell:hover .check-cell-title {
 
   .topbar-inner {
     gap: 0.75rem;
-    padding: 0 1rem;
+    padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
   }
 
   .topbar-right {
@@ -8318,7 +8329,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     right: 0.6rem;
     left: auto;
     top: auto;
-    bottom: 1.5rem;
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
     width: 2rem;
     height: 2rem;
     transform: none;
@@ -10649,6 +10660,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-submit {
     min-height: 3rem;
     font-size: 0.9rem;
+  }
+
+  /* Lift the score action row above the home indicator on notched devices */
+  .score-hero-input,
+  .score-input-flex-box {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .score-hero-card {
