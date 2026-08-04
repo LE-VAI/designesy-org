@@ -33,6 +33,7 @@ function isActiveRoute(pathname: string, href: string) {
 export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const pathname = usePathname() || '/';
   const [isScrolled, setIsScrolled] = useState(scrolled);
+  const [deepScrolled, setDeepScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeRef = useRef<HTMLAnchorElement | null>(null);
@@ -41,6 +42,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
     const onScroll = () => {
       const y = window.scrollY;
       setIsScrolled(y > 40 || scrolled);
+      setDeepScrolled(y > 320);
 
       const doc = document.documentElement;
       const max = Math.max(doc.scrollHeight - window.innerHeight, 1);
@@ -92,7 +94,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
   return (
     <>
-      <header className={`topbar${isScrolled ? ' scrolled' : ''}`} id="topbar" data-pagefind-ignore>
+      <header className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}`} id="topbar" data-pagefind-ignore>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
