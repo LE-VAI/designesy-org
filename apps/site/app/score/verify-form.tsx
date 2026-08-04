@@ -749,6 +749,9 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </span>
             <input
               type="text"
+              inputMode="url"
+              enterKeyHint="go"
+              autoComplete="url"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -1348,7 +1351,12 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </svg>
               </span>
               <input
-                type="text"
+                type="search"
+                inputMode="search"
+                enterKeyHint="search"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 className="score-search-input"
                 placeholder={`Search ${activeChecks.length} ${activeEngine} checks…`}
                 value={searchQuery}
