@@ -7422,7 +7422,14 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .fade-up {
-  animation: fadeUp var(--duration) var(--ease-out) both;
+  /* fill-mode: backwards (NOT both) — applies the `from` state during the
+     delay period (so the element starts hidden), but does NOT persist the
+     `to` state after the animation ends. This is critical for mobile scroll
+     performance: `both` keeps transform:matrix(1,0,0,1,0,0) on the element
+     forever, creating a persistent compositing layer that causes scroll-
+     stick on iOS Safari. The `to` state (opacity:1, translateY(0) scale(1))
+     is identical to the element's natural CSS state, so there is no flash. */
+  animation: fadeUp var(--duration) var(--ease-out) backwards;
 }
 
 .fade-up-delay-1 {
@@ -7447,7 +7454,9 @@ html:not(.js-ready) .demo-stagger-bar {
 
 .fade-in {
   opacity: 0;
-  animation: fadeIn 0.5s var(--ease) both;
+  /* fill-mode: backwards — same rationale as .fade-up: prevents a persistent
+     compositing layer from the `to` state after animation ends. */
+  animation: fadeIn 0.5s var(--ease) backwards;
 }
 
 @keyframes fadeIn {
@@ -7482,7 +7491,10 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .js-ready [data-reveal] {
-  animation: reveal-slide-up var(--duration) var(--ease-out) both;
+  /* fill-mode: backwards — prevents transform residue (compositing layer)
+     after animation; the .is-revealed state sets animation:none + opacity:1
+     so the element settles to its natural CSS without a persistent transform. */
+  animation: reveal-slide-up var(--duration) var(--ease-out) backwards;
 }
 
 .js-ready [data-reveal].is-revealed {
