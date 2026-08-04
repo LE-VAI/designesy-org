@@ -512,6 +512,11 @@ export function CommandPalette() {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = '';
+      // Dispatch a scroll event so the topbar recalculates its scroll-tier
+      // classes (searchExpanded, deepScrolled). When the palette closes and
+      // unlocks body scroll, no native scroll event fires if scrollY is
+      // already 0 — the topbar's search pill would stay expanded.
+      window.dispatchEvent(new Event('scroll'));
     };
   }, [open]);
 
