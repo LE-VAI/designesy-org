@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
 /**
@@ -613,7 +614,7 @@ export function CommandPalette() {
         </kbd>
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="cmdk-overlay" role="presentation">
           <div
             ref={panelRef}
@@ -689,7 +690,8 @@ export function CommandPalette() {
               <span className="cmdk-footer-hint"><kbd>esc</kbd> close</span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
