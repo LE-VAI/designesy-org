@@ -11136,12 +11136,24 @@ a.lab-card:focus-visible .lab-card-arrow {
   /* 2. Topbar control cluster — all four controls read at 44px hit area on mobile.
      Theme-toggle + cmdk-trigger get the same floor as sense-toggle so the cluster
      stays uniform (sound button was 44px while theme/cmdk stayed 32px — operator
-     feedback: "sound icon is not aligned with the theme switcher/search"). */
+     feedback: "sound icon is not aligned with the theme switcher/search").
+     Borders are stripped on mobile: the 44px hit area + visual gap is enough,
+     and borders on 3 of 4 controls (sense-toggle, theme-toggle, cmdk-trigger
+     had borders; nav-trigger didn't) created a visible misalignment line under
+     the cluster. Borderless = clean. */
   .sense-toggle,
   .theme-toggle,
   .cmdk-trigger {
     width: 2.75rem;
     height: 2.75rem;
+    border: none;
+    border-radius: var(--radius-sm);
+  }
+
+  .sense-toggle[aria-pressed="true"] {
+    /* Active state: keep the signal tint via background only, not border */
+    border: none;
+    background: rgba(51, 88, 232, 0.12);
   }
 
   /* 3. In-text links — vertical padding + negative margin keeps inline flow
