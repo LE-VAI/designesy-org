@@ -6020,9 +6020,10 @@ a.check-cell:hover .check-cell-title {
   }
 
   /* Breathing-glass tiers — scroll-triggered topbar tightening + search
-     pill expansion. Mobile-only; desktop never hits .scrolled differently
-     than its existing rest→scrolled glass bump. The .cmdk-trigger-label
-     is hidden by the base mobile rule above; .scrolled re-shows it. */
+     pill expansion. Mobile-only; desktop untouched. The search expansion
+     keys off .search-expanded (actual scrollY>40), NOT .scrolled, because
+     every page passes the `scrolled` prop as true for the glass tint —
+     using .scrolled would expand the search at the top of every page. */
   .topbar.scrolled {
     padding: 0.5rem 0;
   }
@@ -6031,12 +6032,18 @@ a.check-cell:hover .check-cell-title {
     font-size: 0.95rem;
   }
 
-  .topbar.scrolled .cmdk-trigger {
+  /* Search pill expansion — trigger grows from icon-only to a labelled
+     pill. width:auto + flex:0 0 auto lets the trigger size to its
+     content (icon + gap + label) instead of staying 44px square. */
+  .topbar.search-expanded .cmdk-trigger {
     padding: 0 0.55rem 0 0.6rem;
     border-color: var(--line-strong);
+    width: auto;
+    flex: 0 0 auto;
+    justify-content: flex-start;
   }
 
-  .topbar.scrolled .cmdk-trigger-label {
+  .topbar.search-expanded .cmdk-trigger-label {
     display: inline;
   }
 
@@ -6063,7 +6070,8 @@ a.check-cell:hover .check-cell-title {
         border-color var(--duration-fast) var(--ease-out),
         box-shadow var(--duration-fast) var(--ease-out),
         color 0.2s var(--ease),
-        background 0.2s var(--ease);
+        background 0.2s var(--ease),
+        width var(--duration-fast) var(--ease-out);
     }
     .wordmark {
       transition: font-size var(--duration-fast) var(--ease-out);
@@ -6116,14 +6124,17 @@ a.check-cell:hover .check-cell-title {
   }
 
   /* Mobile body padding — clear bottom-anchored FABs */
-  /* overflow-x on html (not body) — documentElement.scrollWidth is what the contract v02 check measures; the fixed nav-drawer with translateX(100%) inflates it otherwise */
+  /* overflow-x: clip (NOT hidden) on html/body — `hidden` creates an
+     implicit scroll container that traps position:sticky children, so
+     the topbar stops sticking. `clip` prevents horizontal scroll without
+     creating a scroll container. Baseline 2026 (all evergreen browsers). */
   html {
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
     padding-bottom: 4rem;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Mobile hamburger trigger */
