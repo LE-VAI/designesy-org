@@ -9352,61 +9352,75 @@ a.lab-card:focus-visible .lab-card-arrow {
   width: 100%;
 }
 
+/* ── Single-box input pattern (native scroll-safe) ────────────────────────
+   The visible input chrome (border, background, padding) lives ON the <input>
+   element itself — NOT on a parent div. The .score-input-flex-box div is an
+   invisible relative wrapper whose only job is to anchor the absolutely-
+   positioned icon overlay. This eliminates the nested-box structure where a
+   parent container holds the border/background while a child <input> holds
+   the text node — a structure that mobile Safari/Chrome fail to keep
+   vertically centered during scroll reflow (the text node's baseline snaps to
+   the top of its sub-container while the parent's visual box stays centered).
+
+   One box = one border + one text node = native input behavior.
+   ────────────────────────────────────────────────────────────────────────── */
 .score-input-flex-box {
-  display: flex;
-  /* align-items: stretch (NOT center) — on iOS Safari, align-items:center on a
-     flex container with an input child causes a scroll-offset desync where the
-     input's visual box scrolls but the text node stays at its pre-scroll
-     position. With stretch, the input fills the container height and its
-     own padding handles vertical centering (reliable during scroll). */
-  align-items: stretch;
+  position: relative; /* anchor for the absolutely-positioned icon overlay */
+  display: block;     /* NOT flex — the input owns the layout, the icon floats */
   width: 100%;
-  height: 3.25rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0 1rem;
-  box-sizing: border-box;
-  transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+  /* No border, no background, no height, no padding here — this is an
+     invisible wrapper. The <input> below owns all visual chrome. */
 }
 
 .score-input-flex-box:focus-within {
-  border-color: var(--signal-light);
-  box-shadow: 0 0 0 3px var(--signal-dim), var(--signal-glow);
+  /* No visual change on the wrapper — focus styles are on the input itself. */
 }
 
 .score-input-icon {
+  /* Absolutely positioned overlay on top of the input's left padding zone.
+     pointer-events: none so taps pass through to the input. */
+  position: absolute;
+  left: 1rem;          /* aligns with the input's left padding */
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 0.75rem;
-  flex-shrink: 0;
   /* signal-access (#5d7bff dark / #2a4cd8 light) — 5.41:1 / 7.83:1 on the
      input's surface. --signal (#0133cb) was 2.21:1 on near-black, failing
      WCAG 1.4.11 (non-text contrast 3:1) for the decorative URL icon. */
   color: var(--signal-access);
   pointer-events: none;
+  z-index: 1;          /* above the input's text, below the caret */
 }
 
 .score-url-input-inner {
-  flex: 1 1 auto;
+  /* THE input IS the visible box — single-box pattern. The border, background,
+     height, and padding all live here so the text node and the visual chrome
+     are the same box. Mobile browsers can't desync what's already one box. */
+  display: block;
   width: 100%;
-  /* height: 100% removed — on iOS Safari, height:100% inside a flex container
-     with align-items:center causes a scroll-offset desync where the input's
-     visual box scrolls but the text node inside it stays at its pre-scroll
-     position (layout-lock + scroll-offset desync). Replaced with explicit
-     padding that matches the flex-box height, so the input centers itself
-     via its own box model rather than relying on flex centering. */
-  background: transparent;
-  border: none;
+  height: 3.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 1rem 0 2.75rem; /* left 2.75rem clears the icon overlay (1rem + 18px icon + ~0.5rem gap) */
+  box-sizing: border-box;
   outline: none;
   color: var(--ink);
   font-size: 1rem; /* Cadence 16px input floor — never below 16px (iOS auto-zoom + contract) */
   font-family: inherit;
-  padding: 0.625rem 0 0.625rem 0.75rem; /* vertical padding centers text without flex */
   margin: 0;
-  box-sizing: border-box;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+  /* touch-action: pan-y allows vertical scroll through the input on mobile
+     (manipulation would trap the gesture as text selection). */
+  touch-action: pan-y;
+}
+
+.score-url-input-inner:focus {
+  border-color: var(--signal-light);
+  box-shadow: 0 0 0 3px var(--signal-dim), var(--signal-glow);
 }
 
 .score-url-input-inner::placeholder {
@@ -9443,21 +9457,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   box-shadow: var(--shadow-lg), var(--inner-light);
 }
 
-.score-hero-input .score-input-flex-box {
+.score-hero-input .score-url-input-inner {
   height: 3.75rem;
   border-radius: var(--radius);
   background: var(--surface);
   border: 1px solid var(--line);
 }
 
-/* Hero variant input padding — taller flex-box (3.75rem) needs more vertical
-   padding to center text without relying on flex align-items:center. */
-.score-hero-input .score-url-input-inner {
-  padding-top: 0.875rem;
-  padding-bottom: 0.875rem;
-}
-
-.score-hero-input .score-input-flex-box:focus-within {
+.score-hero-input .score-url-input-inner:focus {
   border-color: var(--signal-light);
   box-shadow: 0 0 0 4px var(--signal-dim), var(--signal-glow), var(--shadow-md);
 }
@@ -10769,16 +10776,9 @@ a.lab-card:focus-visible .lab-card-arrow {
     padding: 0.85rem;
   }
 
-  .score-input-flex-box {
-    height: 3rem;
-  }
-
   .score-url-input-inner {
+    height: 3rem;
     font-size: 1rem; /* iOS auto-zoom prevention */
-    /* Mobile flex-box is 3rem (48px). Use padding to center text without
-       flex align-items:center (causes iOS Safari scroll-offset desync). */
-    padding-top: 0.7rem;
-    padding-bottom: 0.7rem;
   }
 
   .score-submit {
@@ -10786,9 +10786,11 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.9rem;
   }
 
-  /* Lift the score action row above the home indicator on notched devices */
-  .score-hero-input,
-  .score-input-flex-box {
+  /* Lift the score action row above the home indicator on notched devices.
+     The visible input now owns its own box, so safe-area padding belongs on
+     the .score-hero-input wrapper (the form container), not the input element
+     (padding-bottom on a border-box input would just make it taller). */
+  .score-hero-input {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -10883,13 +10885,8 @@ a.lab-card:focus-visible .lab-card-arrow {
     font-size: 0.85rem;
   }
 
-  .score-input-flex-box {
-    height: 2.75rem;
-  }
-
   .score-url-input-inner {
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
+    height: 2.75rem;
   }
 
   .score-hero-section {
