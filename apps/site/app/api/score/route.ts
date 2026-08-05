@@ -132,10 +132,15 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
 // ── Token extraction + normalization ────────────────────────────────────────
 
 function extractRootTokens(css: string): Record<string, string> {
+  // Only the BASE unscoped :root is read for contract-value comparison.
+  // Media-query overrides (e.g. @media (prefers-contrast: more) { :root { ... } })
+  // are accessibility enhancements, not contract drift — they must NOT clobber
+  // the base tokens.  Strip @media blocks before extracting :root.
+  const stripped = css.replace(/@media[^{]*\{[^@]*?\}\s*\}/gi, '');
   const tokens: Record<string, string> = {};
   const rootRe = /:root\s*\{([^}]*)\}/g;
   let m;
-  while ((m = rootRe.exec(css)) !== null) {
+  while ((m = rootRe.exec(stripped)) !== null) {
     const block = m[1];
     const propRe = /--([\w-]+)\s*:\s*([^;]+?)(?:;|$)/g;
     let p;
