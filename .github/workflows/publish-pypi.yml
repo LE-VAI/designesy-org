@@ -1,0 +1,56 @@
+name: Publish to PyPI
+
+# Auto-publishes designesy-mcp to PyPI on every version tag, via GitHub OIDC
+# trusted publishing. No stored secrets — uses the workflow's own OIDC token.
+#
+# Package source: packages/designesy-mcp/
+# PyPI project: https://pypi.org/project/designesy-mcp/
+#
+# Prerequisite: PyPI trusted publishing must be configured at
+#   https://pypi.org/manage/project/designesy-mcp/settings/publishing/
+#   Publisher: GitHub, owner LE-VAI, repo designesy-org,
+#   workflow publish-pypi.yml, environment pypi
+#
+# Sister workflow: publish-mcp-registry.yml (same v* tags, republishes
+# server.json to registry.modelcontextprotocol.io via mcp-publisher OIDC).
+
+on:
+  push:
+    tags: ["v*"]            # triggers on version tags like v1.8.0
+  workflow_dispatch:        # allow manual re-publish from the Actions tab
+
+permissions:
+  id-token: write           # REQUIRED for OIDC trusted publishing
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi        # PyPI trusted publishing environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build wheel + sdist
+        run: |
+          cd packages/designesy-mcp
+          python -m build
+
+      - name: Publish to PyPI
+        run: |
+          cd packages/designesy-mcp
+          twine upload --non-interactive dist/*.whl dist/*.tar.gz
+
+      - name: Confirm publication
+        run: |
+          sleep 5
+          VERSION=${GITHUB_REF#refs/tags/v}
+          curl -s "https://pypi.org/pypi/designesy-mcp/$VERSION/json" | python3 -c "import sys,json; d=json.load(sys.stdin); print('PyPI version:', d['info']['version'])" || echo "Version may take a few minutes to appear"

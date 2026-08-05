@@ -15,3 +15,11 @@ package-lock.json
 apps/site/tsconfig.tsbuildinfo
 
 .vercel
+
+# Python (scoped — action/dist/ is tracked, so no blanket dist/)
+__pycache__/
+*.pyc
+*.egg-info/
+packages/*/dist/
+packages/*/build/
+.venv/

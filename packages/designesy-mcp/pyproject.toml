@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "designesy-mcp"
+version = "1.8.0"
+description = "Read-only stdio MCP server exposing designesy.org's design-intelligence infrastructure — 11 tools for design-system contracts, verification scoring, token validation, accessibility, and motion."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Le Vain Bey", email = "hello@designesy.org" },
+]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "design-system",
+    "design-tokens",
+    "dtcg",
+    "wcag",
+    "accessibility",
+    "lottie",
+    "motion",
+    "designesy",
+    "verification",
+    "agent-tools",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://www.designesy.org"
+Documentation = "https://www.designesy.org/contracts/skill"
+Repository = "https://github.com/LE-VAI/designesy-org"
+"Bug Tracker" = "https://github.com/LE-VAI/designesy-org/issues"
+"MCP Registry" = "https://registry.modelcontextprotocol.io/io.github.LE-VAI/designesy-org"
+"Agent Install" = "https://pypi.org/project/designesy-mcp/#quick-start-one-command"
+"Changelog" = "https://github.com/LE-VAI/designesy-org/releases"
+
+[project.scripts]
+designesy-mcp = "designesy_mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["designesy_mcp_server.py"]
+# JS runtime deps spawned via subprocess.run(["node", ...]) using
+# os.path.dirname(__file__) sibling resolution. Must ship as siblings
+# of the .py module so the paths resolve after pip install.
+[tool.hatch.build.targets.wheel.force-include]
+"cdp-viewport-check.js" = "cdp-viewport-check.js"
+"cdp-cwv-expr.js" = "cdp-cwv-expr.js"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "designesy_mcp_server.py",
+    "cdp-viewport-check.js",
+    "cdp-cwv-expr.js",
+    "README.md",
+    "LICENSE",
+]
