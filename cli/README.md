@@ -41,6 +41,27 @@ designesy-score localhost:3000 --api http://localhost:3109
 designesy-score my-app.vercel.app --min-score 90 --quiet
 ```
 
+## Verify a DESIGN.md
+
+Check whether a site serves a valid `/DESIGN.md` at its origin root —
+runs Google's `@google/design.md` linter (11 spec-layer rules) via the
+designesy scoring engine.
+
+```bash
+npx designesy-score verify designesy.org
+npx designesy-score verify linear.app --json
+```
+
+| Result | Meaning | Exit |
+|---|---|---|
+| **PASS** | `/DESIGN.md` served, linted clean (0 errors, 0 warnings) | `0` |
+| **WARN** | `/DESIGN.md` served, lint warnings (0 errors) | `0` |
+| **FAIL** | `/DESIGN.md` served, lint errors | `1` |
+| **SKIP** | `/DESIGN.md` not served (no public convention requires it) | `0` |
+
+This checks the **spec layer** (file format). For the full 40-check
+design-system contract score, use `designesy-score <url>`.
+
 ## Options
 
 | Flag | Default | Description |
