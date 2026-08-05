@@ -184,5 +184,7 @@ MIT
 - [MCP Registry entry](https://registry.modelcontextprotocol.io/io.github.LE-VAI/designesy-org)
 - [Changelog](https://github.com/LE-VAI/designesy-org/releases)
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
-- [Leaderboard](https://www.designesy.org/leaderboard)
+- [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score
+- [Score badge](https://www.designesy.org/badge) — embeddable SVG badge for A/B-graded sites
+- [Live score API](https://www.designesy.org/api/score?url=designesy.org) — JSON, no key, no login
 - [Methodology](https://www.designesy.org/methodology)
