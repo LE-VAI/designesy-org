@@ -39,6 +39,23 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' server.json > server.tmp && mv server.tmp server.json
           echo "Synced server.json version -> $VERSION"
 
+      - name: Wait for PyPI package to appear (avoid publish race)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Waiting for PyPI designesy-mcp@$VERSION to appear..."
+          for i in $(seq 1 24); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/designesy-mcp/$VERSION/json")
+            if [ "$STATUS" = "200" ]; then
+              echo "PyPI designesy-mcp@$VERSION is live (HTTP 200) after ~$((i*5))s"
+              exit 0
+            fi
+            echo "Attempt $i/24: HTTP $STATUS, waiting 5s..."
+            sleep 5
+          done
+          echo "PyPI designesy-mcp@$VERSION did not appear within 120s — proceeding anyway (registry may reject if package is missing)"
+          exit 0
+
       - name: Publish server to MCP Registry
         run: ./mcp-publisher publish
 
