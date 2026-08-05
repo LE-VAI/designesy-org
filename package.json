@@ -2,7 +2,7 @@
   "name": "designesy-score",
   "version": "0.4.2",
   "description": "Score any URL against the Designesy design-system contract — 40 deterministic checks, one grade, no vibe-tax. Zero dependencies.",
-  "license": "SEE LICENSE AT https://www.designesy.org",
+  "license": "MIT",
   "author": "Designesy",
   "homepage": "https://www.designesy.org",
   "repository": {
