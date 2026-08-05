@@ -7,12 +7,24 @@
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.7.0",
+  "version": "1.8.0",
   "websiteUrl": "https://www.designesy.org",
   "remotes": [
     {
       "type": "streamable-http",
       "url": "https://www.designesy.org/api/mcp"
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "designesy-mcp",
+      "version": "1.8.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ],
   "_meta": {
