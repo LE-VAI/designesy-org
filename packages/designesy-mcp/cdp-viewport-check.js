@@ -15,7 +15,8 @@
  * Requires Chrome running with --remote-debugging-port=9222
  */
 const http = require('http');
-const WebSocket = require('ws');
+// Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
+// No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 
 const CDP_HOST = '127.0.0.1';
 const CDP_PORT = 9222;
@@ -74,18 +75,18 @@ function evaluateOnTab(wsUrl, expression, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);
     let msgId = 1;
-    ws.on('open', () => {
+    ws.onopen = () => {
       ws.send(JSON.stringify({
         id: msgId,
         method: 'Runtime.evaluate',
         params: { expression, returnByValue: true, awaitPromise: true },
       }));
-    });
-    ws.on('message', (data) => {
-      const msg = JSON.parse(data);
+    };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
       if (msg.id === msgId) { ws.close(); resolve(msg); }
-    });
-    ws.on('error', reject);
+    };
+    ws.onerror = (err) => reject(err);
     setTimeout(() => { ws.close(); reject(new Error('WS timeout')); }, timeoutMs);
   });
 }
@@ -94,18 +95,18 @@ function setViewport(wsUrl, width, height) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);
     let msgId = 1;
-    ws.on('open', () => {
+    ws.onopen = () => {
       ws.send(JSON.stringify({
         id: msgId,
         method: 'Emulation.setDeviceMetricsOverride',
         params: { width, height, deviceScaleFactor: 1, mobile: false },
       }));
-    });
-    ws.on('message', (data) => {
-      const msg = JSON.parse(data);
+    };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
       if (msg.id === msgId) { ws.close(); resolve(msg); }
-    });
-    ws.on('error', reject);
+    };
+    ws.onerror = (err) => reject(err);
     setTimeout(() => { ws.close(); reject(new Error('WS timeout')); }, 10000);
   });
 }
