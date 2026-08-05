@@ -190,9 +190,39 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   if (status === 'loading') {
     return (
-      <div className="report-loading">
-        <div className="report-loading-spinner" aria-hidden="true" />
-        <p>Evaluating 40 contract checks against {initialUrl}…</p>
+      <div className="report-loading" role="status" aria-live="polite">
+        <span className="sr-only">Evaluating 40 contract checks against {initialUrl}…</span>
+        {/* Hero skeleton: grade circle + score number + meta lines */}
+        <div className="report-skel-hero">
+          <div className="report-skel-circle" aria-hidden="true" />
+          <div className="report-skel-hero-meta">
+            <div className="report-skel-line report-skel-line--lg" aria-hidden="true" />
+            <div className="report-skel-line report-skel-line--md" aria-hidden="true" />
+            <div className="report-skel-line report-skel-line--sm" aria-hidden="true" />
+          </div>
+        </div>
+        {/* Category nav skeleton: row of chips */}
+        <div className="report-skel-nav" aria-hidden="true">
+          <div className="report-skel-chip" />
+          <div className="report-skel-chip" />
+          <div className="report-skel-chip" />
+          <div className="report-skel-chip" />
+          <div className="report-skel-chip" />
+        </div>
+        {/* Section skeleton: header bar + check rows */}
+        <div className="report-skel-section" aria-hidden="true">
+          <div className="report-skel-section-header" />
+          <div className="report-skel-row" />
+          <div className="report-skel-row" />
+          <div className="report-skel-row" />
+          <div className="report-skel-row" />
+        </div>
+        <div className="report-skel-section" aria-hidden="true">
+          <div className="report-skel-section-header" />
+          <div className="report-skel-row" />
+          <div className="report-skel-row" />
+          <div className="report-skel-row" />
+        </div>
       </div>
     );
   }

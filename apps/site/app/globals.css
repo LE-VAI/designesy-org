@@ -9538,10 +9538,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   50%      { opacity: 1;   transform: scale(1.1); }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* ── Score Error Card ──────────────────────────────────────────────────── */
 
 .score-error-card {
@@ -12095,27 +12091,134 @@ a.lab-card:focus-visible .lab-card-arrow {
    Adobe Stardust pattern: scorecard hero at top, sticky category navigation,
    per-dimension sections with evidence pairs. Print-friendly. */
 
+/* ── Report loading skeleton ──────────────────────────────────────────────
+   Replaces the old border-circle spinner with a skeleton scaffold that
+   mimics the actual report layout: hero (grade circle + meta), category
+   nav chips, and per-category section rows. Each block has a shimmer
+   sweep animation — the premium pattern used by Linear, Vercel, Stripe.
+   role="status" + aria-live="polite" on the container; visual blocks are
+   aria-hidden so screen readers only hear the status text. */
 .report-loading {
   display: flex;
   flex-direction: column;
+  gap: 1.75rem;
+  padding: 2rem 0;
+}
+
+/* Shimmer base — all skeleton blocks share this */
+.report-skel-circle,
+.report-skel-line,
+.report-skel-chip,
+.report-skel-section-header,
+.report-skel-row {
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 0%,
+    var(--surface-lifted) 50%,
+    var(--surface-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: reportSkelShimmer 1.8s var(--ease-in-out, ease-in-out) infinite;
+  border-radius: var(--radius-sm);
+}
+
+[data-theme="light"] .report-skel-circle,
+[data-theme="light"] .report-skel-line,
+[data-theme="light"] .report-skel-chip,
+[data-theme="light"] .report-skel-section-header,
+[data-theme="light"] .report-skel-row {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.09) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes reportSkelShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Hero skeleton: grade circle + meta lines */
+.report-skel-hero {
+  display: flex;
   align-items: center;
   gap: 1.5rem;
-  padding: 4rem 1.5rem;
-  text-align: center;
+  flex-wrap: wrap;
 }
 
-.report-loading-spinner {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 3px solid var(--line);
-  border-top-color: var(--signal);
+.report-skel-circle {
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
 
-.report-loading p {
-  color: var(--muted);
-  font-size: 0.95rem;
+.report-skel-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.report-skel-line {
+  height: 0.85rem;
+}
+.report-skel-line--lg { width: 60%; height: 1.1rem; }
+.report-skel-line--md { width: 45%; }
+.report-skel-line--sm { width: 35%; }
+
+/* Category nav skeleton: row of chips */
+.report-skel-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.report-skel-chip {
+  width: 7rem;
+  height: 2.25rem;
+  border-radius: var(--radius);
+}
+
+/* Section skeleton: header bar + check rows */
+.report-skel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-skel-section-header {
+  width: 12rem;
+  height: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.report-skel-row {
+  width: 100%;
+  height: 2.5rem;
+}
+
+/* Reduced-motion: static blocks, no shimmer */
+@media (prefers-reduced-motion: reduce) {
+  .report-skel-circle,
+  .report-skel-line,
+  .report-skel-chip,
+  .report-skel-section-header,
+  .report-skel-row {
+    animation: none;
+    background: var(--surface-raised);
+  }
+  [data-theme="light"] .report-skel-circle,
+  [data-theme="light"] .report-skel-line,
+  [data-theme="light"] .report-skel-chip,
+  [data-theme="light"] .report-skel-section-header,
+  [data-theme="light"] .report-skel-row {
+    background: rgba(0, 0, 0, 0.06);
+  }
 }
 
 .report-error {
