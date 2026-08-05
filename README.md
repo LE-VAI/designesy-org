@@ -72,6 +72,7 @@ No authentication required — all 11 tools are read-only. The server runs on Ve
 ## Contract verification
 
 ![Designesy Score](https://img.shields.io/badge/contract%20score-99.2%25%20A%20grade-brightgreen)
+[![smithery badge](https://smithery.ai/badge/le-vai/designesy)](https://smithery.ai/servers/le-vai/designesy)
 
 The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **99.2% (Grade A)** — 35 passed, 0 failed, 1 warn, 4 skipped (browser-only checks). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
