@@ -9497,13 +9497,45 @@ a.lab-card:focus-visible .lab-card-arrow {
   gap: 0.5rem;
 }
 
+/* ── Loading dot-pulse (replaces the old border-circle spinner) ──────────
+   Used by 8 surfaces: score-form, verify-form, drift, readiness, guardrails,
+   monitor, compare, report. The element renders as 3 breathing dots:
+   ::before (left), the element's radial-gradient background (center), and
+   ::after (right). All 3 pulse in sync — the parent's opacity + transform
+   propagate to the pseudo-elements uniformly, creating a clean "breathing
+   cluster" effect. No JSX change needed — the self-closing
+   <span className="score-spinner" /> in each form just works.
+   currentColor inherits the button text color so dots are visible on both
+   light and dark surfaces. The 18px width reserves space for the full
+   3-dot cluster so flex gap is measured from the visual edge. */
 .score-spinner {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: var(--ink);
+  width: 18px;
+  height: 4px;
+  border: none;
+  border-radius: 0;
+  background: radial-gradient(circle 2px at center, currentColor 100%, transparent 100%);
+  opacity: 0.3;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: scoreSpinnerPulse 1s var(--ease-in-out, ease-in-out) infinite;
+}
+.score-spinner::before,
+.score-spinner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  background: currentColor;
+}
+.score-spinner::before { left: 0; }
+.score-spinner::after  { right: 0; }
+
+@keyframes scoreSpinnerPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1.1); }
 }
 
 @keyframes spin {
@@ -10131,6 +10163,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .audit-progress-step { animation: none; opacity: 1; }
   .audit-progress-dot { animation: none; opacity: 0.7; }
   .audit-progress-bar-fill { animation: none; width: 100%; background: var(--signal-dim); }
+  .score-spinner { animation: none; opacity: 0.7; transform: none; }
 }
 
 .score-tokens-badge {
