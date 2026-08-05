@@ -7,7 +7,9 @@ description: >-
   check. Supports 4 emission formats via the 'format' input: designesy
   (default), canonical (review-findings.json schema), review (jakubkrehel
   markdown), google (design.md-compatible). Posts a summary comment on pull
-  requests when post-comment is enabled.
+  requests when post-comment is enabled. Optionally emits a SARIF v2.1.0 file
+  for GitHub code-scanning integration (sarif-output input) and ratchets
+  against a committed baseline to prevent regressions (baseline input).
 author: "designesy"
 branding:
   icon: "check-circle"
@@ -44,6 +46,14 @@ inputs:
     description: "GitHub token for posting PR comments. Defaults to the workflow GITHUB_TOKEN. Requires pull-requests: write permission."
     required: false
     default: "${{ github.token }}"
+  sarif-output:
+    description: "Path to write a SARIF v2.1.0 file containing design-contract findings. When set, the action writes a SARIF file that can be uploaded to GitHub code-scanning via github/codeql-action/upload-sarif@v4. Only emitted for the 'designesy' format (which carries per-check data). Empty disables SARIF output."
+    required: false
+    default: ""
+  baseline:
+    description: "Path to a committed baseline JSON file (e.g. .designesy-baseline.json with { score, grade, date }). The step fails when the current score regresses below the baseline score, and writes an updated baseline on improvement so the floor only ratchets up. Empty disables the ratchet."
+    required: false
+    default: ""
 outputs:
   score:
     description: "Numeric design-contract score (0–100)."
@@ -55,6 +65,8 @@ outputs:
     description: "Number of checks that returned FAIL."
   result:
     description: "The full scoring result as a JSON string (format depends on the 'format' input)."
+  sarif-file:
+    description: "Absolute path to the written SARIF file (only set when sarif-output is provided)."
 runs:
   using: "node24"
   main: "dist/index.js"
