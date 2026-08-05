@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "designesy-mcp"
-version = "1.8.3"
+version = "1.8.4"
 description = "Read-only stdio MCP server exposing designesy.org's design-intelligence infrastructure — 11 tools for design-system contracts, verification scoring, token validation, accessibility, and motion."
 readme = "README.md"
 requires-python = ">=3.10"
