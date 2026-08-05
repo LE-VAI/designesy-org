@@ -2,12 +2,12 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.LE-VAI/designesy-org",
   "title": "Designesy",
-  "description": "Design-system contract verification, scoring, and review tools for AI agents.",
+  "description": "Verify any live URL against a real design contract — 40 deterministic checks across tokens, motion, accessibility, cadence, takt, typography, and copywriting. Returns a 0-100 score, A-F grade, and per-check breakdown. Also validates DTCG 2025.10 token files and Lottie motion assets.",
   "repository": {
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.8.0",
+  "version": "1.8.1",
   "websiteUrl": "https://www.designesy.org",
   "remotes": [
     {
@@ -20,7 +20,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "designesy-mcp",
-      "version": "1.8.0",
+      "version": "1.8.1",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
