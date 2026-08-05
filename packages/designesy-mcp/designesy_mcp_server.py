@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.8.0"
+SERVER_VERSION = "1.8.1"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -163,8 +163,9 @@ def _fetch_llms_full_txt() -> str:
 # the verification checklist, automated. Future versions expand to the
 # 8 review dimensions.
 #
-# Zero external dependencies: uses urllib + regex only. No CDP, no headless
-# browser. Computed-style checks that require a live DOM (focus-visible
+# Zero external Python dependencies: uses urllib + regex only. CDP checks
+# (v02, v21) use Node's built-in WebSocket (Node 21+) — no npm packages required.
+# Computed-style checks that require a live DOM (focus-visible
 # rendering, prefers-reduced-motion at runtime) are approximated by
 # parsing CSS text for the relevant selectors and media queries.
 
@@ -784,6 +785,92 @@ def _check_press_scale(css: str) -> tuple[str, str]:
     return "PASS", detail
 
 
+# ── Poise / Takt / Cadence checks (ported from Next.js route.ts) ───────────
+#
+# v08, v09, v10, v14 were previously hardcoded SKIPs that claimed to require
+# page-specific checks (e.g. /labs/poise).  The Next.js engine implements these
+# as static CSS/HTML regex checks that work on ANY page's CSS — they verify
+# contract patterns are present, not that a specific route renders them.
+# These ports match the Next.js checkPoiseInteractionRules, checkPoiseKeyboardPath,
+# checkTaktFeelRules, and checkCadenceRules functions exactly.
+
+def _check_poise_interaction_rules(css: str) -> tuple[str, str]:
+    """v08 — Poise interaction rules match contract.interaction.
+
+    Ported from Next.js checkPoiseInteractionRules (route.ts:852-885).
+    3 CSS regex rules; PASS if ≥2 match.
+    """
+    rules = [
+        ("fine-pointer hover guard", r"@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)"),
+        ("press settle scale ~0.97", r"scale\s*\(\s*0?\.9[5-9]\s*\)"),
+        ("opacity-only mark breath", r"@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:"),
+    ]
+    found = [name for name, pattern in rules if re.search(pattern, css, re.IGNORECASE)]
+    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
+    if len(found) >= 2:
+        return "PASS", f"static half verified: {', '.join(found)} (interaction-feel half requires browser)"
+    return "WARN", f"missing: {', '.join(missing)}"
+
+
+def _check_poise_keyboard_path(css: str, html: str) -> tuple[str, str]:
+    """v09 — Poise keyboard-path verification.
+
+    Ported from Next.js checkPoiseKeyboardPath (route.ts:894-929).
+    5 signals (CSS + HTML regex); PASS if ≥3 signals + guard check.
+    """
+    has_focus_visible = bool(re.search(r":focus-visible", css, re.IGNORECASE))
+    has_focus = bool(re.search(r":focus[^-]", css, re.IGNORECASE))
+    strips_outline = bool(re.search(r":focus[^{]*\{[^}]*outline\s*:\s*(?:none|0)\s*[;}]", css, re.IGNORECASE))
+    has_focus_ring = bool(re.search(r":focus[^{]*\{[^}]*(?:box-shadow|outline\s*:\s*[^n0])", css, re.IGNORECASE))
+    has_tabindex = bool(re.search(r"tabindex\s*=", html, re.IGNORECASE))
+    has_aria = bool(re.search(r"aria-(?:label|labelledby|describedby|expanded|selected|pressed)", html, re.IGNORECASE))
+
+    if strips_outline and not has_focus_ring:
+        return "WARN", "focus styles strip outline without replacement ring"
+    signals = sum([has_focus_visible, has_focus, has_focus_ring, has_tabindex, has_aria])
+    if signals >= 3:
+        return "PASS", f"static half verified: {signals} keyboard-affordance signals (tab-order traversal requires browser)"
+    return "WARN", f"only {signals} keyboard-affordance signals found"
+
+
+def _check_takt_feel_rules(css: str) -> tuple[str, str]:
+    """v10 — Takt interface-feel rules match contract.takt.
+
+    Ported from Next.js checkTaktFeelRules (route.ts:939-972).
+    3 CSS regex rules; PASS if ≥2 match.
+    """
+    rules = [
+        ("stagger enter animation-delay", r"animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)"),
+        ("soften exit transform ease-out", r"transition\s*:[^;]*transform[^;]*(?:ease-out|cubic-bezier\([^)]*0[, ])"),
+        ("concentric border-radius set", r"border-radius\s*:\s*\d+"),
+    ]
+    found = [name for name, pattern in rules if re.search(pattern, css, re.IGNORECASE)]
+    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
+    if len(found) >= 2:
+        return "PASS", f"static half verified: {', '.join(found)} (press-behavior + hit-area require browser)"
+    return "WARN", f"missing: {', '.join(missing)}"
+
+
+def _check_cadence_rules(css: str) -> tuple[str, str]:
+    """v14 — Cadence typography rules match contract.cadence (umbrella check).
+
+    Ported from Next.js checkCadenceRules (route.ts:470-486).
+    5 CSS regex rules; PASS if all 5 present. This is the umbrella check —
+    the individual rules are also checked by v15-v19.
+    """
+    rules = [
+        ("font-smoothing", r"font-smoothing\s*:\s*(?:antialiased|grayscale)"),
+        ("rem-based sizes", r"font-size\s*:\s*[\d.]+rem"),
+        ("line-height", r"line-height\s*:\s*[\d.]+"),
+        ("text-wrap", r"text-wrap\s*:\s*(?:balance|pretty)"),
+        ("tabular-nums", r"tabular-nums"),
+    ]
+    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
+    if not missing:
+        return "PASS", "all Cadence rules present"
+    return "WARN", f"missing: {', '.join(missing)}"
+
+
 def _check_token_values_match(
     tokens: dict[str, str],
     contract: dict,
@@ -953,6 +1040,43 @@ def _cdp_available() -> bool:
         return False
 
 
+def _extract_json_from_stdout(stdout: str) -> dict | None:
+    """Extract the last JSON object from Node script stdout.
+
+    The CDP scripts emit debug console.log lines followed by pretty-printed
+    JSON (JSON.stringify(result, null, 2)).  This function finds the last
+    top-level '{' that starts a complete JSON object and extracts it using
+    brace-depth counting.  Handles multi-line pretty-printed JSON.
+    """
+    import json as _json
+    # Search backwards for a line that starts with '{' — the JSON output
+    # is always pretty-printed on its own line after the debug logs.
+    for i in range(len(stdout) - 1, -1, -1):
+        if stdout[i] == '{':
+            # Check if this '{' is at the start of a line (or preceded by newline/whitespace)
+            line_start = i == 0 or stdout[i - 1] == '\n'
+            if not line_start:
+                continue
+            # Try to extract a complete JSON object starting here
+            json_str = stdout[i:]
+            depth = 0
+            end = 0
+            for j, ch in enumerate(json_str):
+                if ch == '{':
+                    depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0:
+                        end = j + 1
+                        break
+            if end > 0:
+                try:
+                    return _json.loads(json_str[:end])
+                except Exception:
+                    continue
+    return None
+
+
 def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
     """Check viewport overflow at 375/720/860/1080px via CDP.
 
@@ -969,30 +1093,16 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_SCRIPT),
         )
-        # Parse the JSON from the last line of stdout
-        lines = result.stdout.strip().split("\n")
-        json_line = None
-        for line in reversed(lines):
-            line = line.strip()
-            if line.startswith("{") and '"widths"' in line:
-                json_line = line
-                break
-        if not json_line:
-            # Try multi-line JSON
-            import json as _json
-            try:
-                data = _json.loads(result.stdout[result.stdout.index("{\n"):])
-                json_line = "parsed"
-            except Exception:
-                pass
-        if json_line == "parsed":
-            widths_data = data.get("widths", [])
-        elif json_line:
-            import json as _json
-            data = _json.loads(json_line)
-            widths_data = data.get("widths", [])
-        else:
+        if result.returncode != 0:
+            return "SKIP", f"CDP viewport script failed: {result.stderr.strip()[:200]}"
+
+        data = _extract_json_from_stdout(result.stdout)
+        if not data:
             return "SKIP", "CDP check failed to parse output"
+
+        widths_data = data.get("widths", [])
+        if not widths_data:
+            return "SKIP", "CDP check returned no width data"
 
         overflows = [w for w in widths_data if w.get("overflow")]
         if not overflows:
@@ -1028,37 +1138,11 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_CWV_SCRIPT),
         )
-        import json as _json
-        stdout = result.stdout.strip()
-        # The CWV script outputs debug lines then pretty-printed JSON.
-        # Find the root JSON object: the first '{' at column 0 of a line
-        # that starts a complete JSON object. We search for '{"url"'
-        # and extract from there to the end.
-        idx = stdout.find('{\n  "url"')
-        if idx == -1:
-            idx = stdout.find('{"url"')
-        if idx == -1:
-            # Fallback: try last '{' that could be root
-            idx = stdout.rfind('\n{')
-            if idx >= 0:
-                idx += 1
-        if idx >= 0:
-            json_str = stdout[idx:]
-            # Strip any trailing non-JSON content
-            # Find the matching closing brace by counting depth
-            depth = 0
-            end = 0
-            for i, ch in enumerate(json_str):
-                if ch == '{':
-                    depth += 1
-                elif ch == '}':
-                    depth -= 1
-                    if depth == 0:
-                        end = i + 1
-                        break
-            json_str = json_str[:end] if end > 0 else json_str
-            data = _json.loads(json_str)
-        else:
+        if result.returncode != 0:
+            return "SKIP", f"CDP CWV script failed: {result.stderr.strip()[:200]}"
+
+        data = _extract_json_from_stdout(result.stdout)
+        if not data:
             return "SKIP", "CDP CWV check failed to find JSON in output"
 
         lcp = data.get("lcp", 0)
@@ -1195,7 +1279,7 @@ def _score_impl(url: str | None = None) -> dict[str, Any]:
             "id": "v04",
             "item": "Sound toggle flips aria-pressed and applies the audio preference",
             "category": "poise",
-            "result": ("SKIP", "requires live DOM interaction — not statically parseable"),
+            "result": ("SKIP", "requires live DOM click — toggle aria-pressed + [data-audio] attribute (both engines agree: not statically parseable)"),
         },
         {
             "id": "v05",
@@ -1219,19 +1303,19 @@ def _score_impl(url: str | None = None) -> dict[str, Any]:
             "id": "v08",
             "item": "Poise interaction rules match live /labs/poise and contract.interaction",
             "category": "poise",
-            "result": ("SKIP", "requires Poise page-specific check — run designesy_score on /labs/poise"),
+            "result": _check_poise_interaction_rules(css),
         },
         {
             "id": "v09",
             "item": "Poise keyboard-path verification remains published and current",
             "category": "poise",
-            "result": ("SKIP", "requires /review/poise page check"),
+            "result": _check_poise_keyboard_path(css, html),
         },
         {
             "id": "v10",
             "item": "Takt interface-feel rules match live CSS and contract.takt",
             "category": "takt",
-            "result": ("SKIP", "requires /labs/takt page check"),
+            "result": _check_takt_feel_rules(css),
         },
         {
             "id": "v11",
@@ -1255,7 +1339,7 @@ def _score_impl(url: str | None = None) -> dict[str, Any]:
             "id": "v14",
             "item": "Cadence typography rules match live CSS and contract.cadence",
             "category": "cadence",
-            "result": ("SKIP", "requires /labs/cadence page check"),
+            "result": _check_cadence_rules(css),
         },
         {
             "id": "v15",
