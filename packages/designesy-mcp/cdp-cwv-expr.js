@@ -8,7 +8,8 @@
 //
 // Usage: node cdp-cwv-expr.js <url> [--throttle]
 const http = require('http');
-const WebSocket = require('ws');
+// Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
+// No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 const fs = require('fs');
 const path = require('path');
 
@@ -71,12 +72,12 @@ async function checkCWV(url, throttle) {
   return new Promise((resolve, reject) => {
     const overallTimeout = setTimeout(() => { ws.close(); cdpRequest(`/json/close/${tab.id}`); reject(new Error('timeout')); }, 40000);
 
-    ws.on('message', (data) => {
-      const msg = JSON.parse(data);
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
       if (pending[msg.id]) { pending[msg.id].resolve(msg); delete pending[msg.id]; }
-    });
+    };
 
-    ws.on('open', async () => {
+    ws.onopen = async () => {
       try {
         await send('Performance.enable');
         await send('Runtime.enable');
@@ -132,9 +133,9 @@ async function checkCWV(url, throttle) {
         await cdpRequest(`/json/close/${tab.id}`);
         reject(err);
       }
-    });
+    };
 
-    ws.on('error', (e) => { clearTimeout(overallTimeout); cdpRequest(`/json/close/${tab.id}`); reject(e); });
+    ws.onerror = (e) => { clearTimeout(overallTimeout); cdpRequest(`/json/close/${tab.id}`); reject(e); };
   });
 }
 
