@@ -10007,6 +10007,132 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 500;
 }
 
+/* ── Audit loading: dot-pulse (in-button) ─────────────────────────────────
+   Replaces the boring border-circle spinner. Three dots pulse in sequence
+   with a deliberate 400ms cadence — feels alive, not mechanical. The scale
+   curve uses --ease-out for an asymmetric snap-in / soft settle. */
+.audit-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.audit-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--paper-on-signal);
+  animation: auditDotPulse 1.2s var(--ease-in-out) infinite;
+}
+.audit-dot:nth-child(2) { animation-delay: 160ms; }
+.audit-dot:nth-child(3) { animation-delay: 320ms; }
+@keyframes auditDotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ── Audit loading: full progress panel ───────────────────────────────────
+   A multi-phase stepper that appears below the action bar while the browser
+   audit runs (10-30s). Mirrors the "Legitimacy engine running" pattern but
+   tailored to the audit's four phases. Each step fades + slides in with a
+   staggered 700ms delay, then its dot pulses continuously. A determinate-
+   style progress bar fills below, using the signal gradient. This is
+   "progress as content" — the user reads what's happening, not just a shape. */
+.audit-progress-panel {
+  margin-top: 1rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: auditPanelIn var(--duration-fast) var(--ease-out) forwards;
+  opacity: 0;
+}
+@keyframes auditPanelIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.audit-progress-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--signal-access);
+}
+.audit-progress-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.audit-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  opacity: 0;
+  animation: auditStepIn var(--duration) var(--ease-out) forwards;
+}
+@keyframes auditStepIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+.audit-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-light);
+  flex-shrink: 0;
+  animation: auditDotBreathe 1.4s var(--ease-in-out) infinite;
+}
+@keyframes auditDotBreathe {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Indeterminate progress bar — fills on a loop with a signal gradient sweep.
+   Not a "freeze at 99%" bar (that's a flagged anti-pattern); this is an honest
+   indeterminate animation that communicates "still working" without lying
+   about completion percentage. */
+.audit-progress-bar {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-faint);
+  overflow: hidden;
+}
+.audit-progress-bar-fill {
+  height: 100%;
+  width: 40%;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--signal-light) 50%,
+    var(--signal-access) 100%
+  );
+  background-size: 200% 100%;
+  animation: auditBarSweep 2s var(--ease-in-out) infinite;
+}
+@keyframes auditBarSweep {
+  0% { background-position: 200% 0; transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { background-position: -200% 0; transform: translateX(250%); }
+}
+
+/* Reduced-motion: kill all animation, show steps statically */
+@media (prefers-reduced-motion: reduce) {
+  .audit-dot { animation: none; opacity: 0.7; }
+  .audit-progress-panel { animation: none; opacity: 1; }
+  .audit-progress-step { animation: none; opacity: 1; }
+  .audit-progress-dot { animation: none; opacity: 0.7; }
+  .audit-progress-bar-fill { animation: none; width: 100%; background: var(--signal-dim); }
+}
+
 .score-tokens-badge {
   font-size: 0.75rem;
   color: var(--muted);

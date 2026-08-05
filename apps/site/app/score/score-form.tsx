@@ -862,7 +862,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               >
                 {auditStatus === 'loading' ? (
                   <span className="score-loading-state">
-                    <span className="score-spinner" />
+                    <span className="audit-dots" aria-hidden="true">
+                      <span className="audit-dot" />
+                      <span className="audit-dot" />
+                      <span className="audit-dot" />
+                    </span>
                     Running browser audit…
                   </span>
                 ) : auditStatus === 'ok' ? (
@@ -950,6 +954,28 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 {result.tokensExtracted || 0} CSS tokens extracted
               </span>
             </div>
+
+            {auditStatus === 'loading' && (
+              <div className="audit-progress-panel" role="status" aria-live="polite" aria-label="Browser audit in progress">
+                <p className="audit-progress-title">Browser audit running</p>
+                <ol className="audit-progress-list">
+                  {[
+                    'Fetching live CSS + computed styles',
+                    'Probing Core Web Vitals (LCP · INP · CLS)',
+                    'Testing responsive overflow at 375 / 720 / 860 / 1080px',
+                    'Merging audit checks into score',
+                  ].map((step, i) => (
+                    <li key={step} className="audit-progress-step" style={{ animationDelay: `${i * 700}ms` }}>
+                      <span className="audit-progress-dot" aria-hidden="true" />
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+                <div className="audit-progress-bar" aria-hidden="true">
+                  <div className="audit-progress-bar-fill" />
+                </div>
+              </div>
+            )}
 
             {auditStatus === 'error' && auditError && (
               <p className="score-audit-error">{auditError}</p>
