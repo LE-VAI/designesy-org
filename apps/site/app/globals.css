@@ -10164,6 +10164,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   .audit-progress-dot { animation: none; opacity: 0.7; }
   .audit-progress-bar-fill { animation: none; width: 100%; background: var(--signal-dim); }
   .score-spinner { animation: none; opacity: 0.7; transform: none; }
+  /* Sliding indicator: snap instantly, no slide animation */
+  .score-filter-segmented::before { transition: none; }
 }
 
 .score-tokens-badge {
@@ -10587,6 +10589,30 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius);
   border: 1px solid var(--line);
   gap: 2px;
+  position: relative;
+  /* Sliding indicator: set by useLayoutEffect in score-form.tsx */
+  --indicator-x: 0px;
+  --indicator-w: 0px;
+}
+
+/* The sliding highlight pill — sits behind the tabs and slides between them
+   with a transform transition. The active tab just changes text color; the
+   highlight provides the visual selection state. */
+.score-filter-segmented::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: calc(2.25rem);
+  width: var(--indicator-w);
+  transform: translateX(calc(var(--indicator-x) - 3px));
+  background: var(--surface-card-gradient), var(--surface-lifted);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inner-light), 0 2px 6px rgba(0, 0, 0, 0.22);
+  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
+              width var(--duration, 0.3s) var(--ease-out, ease-out);
+  pointer-events: none;
+  z-index: 0;
 }
 
 [data-theme="light"] .score-filter-segmented {
@@ -10609,20 +10635,21 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
+  position: relative;
+  z-index: 1;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
 .score-filter-tab:hover {
   color: var(--ink);
 }
 
+/* The active tab no longer carries its own background — the sliding
+   ::before on the container handles the highlight. Just bump the text. */
 .score-filter-tab.is-active {
-  background: var(--surface-card-gradient), var(--surface-lifted);
+  background: none;
   color: var(--ink);
-  /* Floated glass: hairline highlight + small lift, softer than the old
-     opaque drop shadow — keeps the segmented track readable in both themes. */
-  box-shadow: var(--inner-light), 0 2px 6px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 
 .score-tab-count {
