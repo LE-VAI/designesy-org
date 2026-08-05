@@ -5,11 +5,15 @@
 // powers designesy.org). Prints a formatted report to stdout. Exits with code 1
 // when the score drops below --min-score or the grade drops below --min-grade.
 //
+// Subcommands:
+//   verify <url>     Check if a site serves a valid /DESIGN.md (spec-layer only)
+//
 // Zero dependencies — Node built-ins only (matches the action's dist/index.js).
 //
 // Usage:
 //   node cli/designesy-score.mjs <url> [options]
 //   npx designesy-score <url> [options]          (after npm publish)
+//   npx designesy-score verify <url> [options]   (DESIGN.md spec-layer check)
 //
 // Options:
 //   --format <f>      Emission format: designesy (default), canonical, review, google
@@ -70,6 +74,43 @@ Examples:
   designesy-score designesy.org
   designesy-score linear.app --min-score 70 --min-grade B
   designesy-score vercel.com --format canonical --json
+
+Subcommands:
+  verify <url>     Check if a site serves a valid /DESIGN.md (spec-layer only)
+`);
+}
+
+function printVerifyUsage() {
+  console.log(`
+designesy-score verify — Check if a site serves a valid /DESIGN.md.
+
+Usage:
+  designesy-score verify <url> [options]
+
+Options:
+  --api <url>   Scoring engine base URL (default: $SCORE_API or https://www.designesy.org)
+  --json        Output raw JSON (no formatted report)
+  --quiet       Only output on failure
+  --help, -h    Show this help
+
+What it checks:
+  Fetches /DESIGN.md from the target URL's origin and runs Google's
+  @google/design.md linter (11 rules: broken-ref, missing-primary,
+  contrast-ratio, orphaned-tokens, section-order, etc.).
+
+  PASS  — /DESIGN.md served, linted clean (0 errors, 0 warnings)
+  WARN  — /DESIGN.md served, lint warnings (0 errors)
+  FAIL  — /DESIGN.md served, lint errors
+  SKIP  — /DESIGN.md not served (no public convention requires it)
+
+Exit codes:
+  0  PASS, WARN, or SKIP
+  1  FAIL (lint errors) or engine unreachable
+  2  Invalid arguments
+
+Examples:
+  designesy-score verify designesy.org
+  designesy-score verify linear.app --json
 `);
 }
 
@@ -147,8 +188,140 @@ function formatReport(data, url) {
   return lines.join('\n');
 }
 
+async function runVerify(argv) {
+  // Parse verify-specific args (url + --api + --json + --quiet + --help)
+  let url = '';
+  let api = '';
+  let json = false;
+  let quiet = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--api') { api = argv[++i]; continue; }
+    if (a === '--json') { json = true; continue; }
+    if (a === '--quiet') { quiet = true; continue; }
+    if (a === '--help' || a === '-h') {
+      printVerifyUsage();
+      process.exit(0);
+    }
+    if (a.startsWith('--')) {
+      console.error(`Unknown option: ${a}`);
+      process.exit(2);
+    }
+    if (!url) { url = a; } else {
+      console.error(`Error: unexpected argument "${a}". Use --help for usage.`);
+      process.exit(2);
+    }
+  }
+
+  if (!url) {
+    console.error('Error: URL is required. Use "designesy-score verify --help" for usage.');
+    process.exit(2);
+  }
+
+  // Normalize URL — prepend https:// if no scheme
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  const apiBase = (api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
+
+  if (!quiet) {
+    console.log(`${DIM}Verifying /DESIGN.md at ${url} (${apiBase}/api/score, format=google)…${RESET}`);
+  }
+
+  // POST to /api/score with format=google — the response contains
+  // { findings: [{severity, path, message}], summary: {errors, warnings, infos} }
+  // The v37 DESIGN.md check is the finding where path === 'spec'.
+  let res, text;
+  try {
+    res = await fetch(`${apiBase}/api/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ url, format: 'google' }),
+    });
+    text = await res.text();
+  } catch (e) {
+    console.error(`Error: Could not reach ${apiBase}/api/score: ${e.message}`);
+    process.exit(1);
+  }
+
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    console.error(`Error: Non-JSON response (HTTP ${res.status}): ${text.slice(0, 300)}`);
+    process.exit(1);
+  }
+
+  if (!res.ok || body.ok === false) {
+    console.error(`Error: ${body.error || `HTTP ${res.status}`}`);
+    process.exit(1);
+  }
+
+  // Filter for the v37 spec-layer finding
+  const findings = body.findings || [];
+  const specFinding = findings.find(f => f.path === 'spec');
+
+  if (json) {
+    console.log(JSON.stringify({ url, finding: specFinding || null, summary: body.summary || null }, null, 2));
+    // Exit 1 if the spec finding is an error
+    process.exit(specFinding && specFinding.severity === 'error' ? 1 : 0);
+  }
+
+  if (!specFinding) {
+    // No spec finding at all — shouldn't happen, but handle gracefully
+    console.log(`${DIM}No DESIGN.md spec-layer check in the response.${RESET}`);
+    process.exit(0);
+  }
+
+  const msg = specFinding.message || '';
+  const severity = specFinding.severity || 'info';
+
+  // Determine verdict: SKIP (not served), PASS (clean), WARN (warnings), FAIL (errors)
+  const isSkip = msg.includes('not publicly served') || msg.includes('not served');
+  const isFail = severity === 'error';
+  const isWarn = severity === 'warning' && !isFail;
+
+  if (isSkip) {
+    if (!quiet) {
+      console.log(`\n${DIM}SKIP${RESET} — /DESIGN.md not publicly served`);
+      console.log(`${DIM}No public convention requires it yet.${RESET}`);
+    }
+    process.exit(0);
+  }
+
+  if (isFail) {
+    const errors = body.summary?.errors ?? 0;
+    console.log(`\n${BOLD}\x1b[31mFAIL${RESET} — ${errors} error(s) in /DESIGN.md`);
+    console.log(`${DIM}${msg}${RESET}`);
+    process.exit(1);
+  }
+
+  if (isWarn) {
+    const warnings = body.summary?.warnings ?? 0;
+    console.log(`\n${BOLD}\x1b[33mWARN${RESET} — ${warnings} warning(s) in /DESIGN.md`);
+    console.log(`${DIM}${msg}${RESET}`);
+    process.exit(0);
+  }
+
+  // PASS — clean lint
+  const infos = body.summary?.infos ?? 0;
+  if (!quiet) {
+    console.log(`\n${BOLD}\x1b[32mPASS${RESET} — /DESIGN.md linted clean`);
+    console.log(`${DIM}${infos} info(s), 0 errors, 0 warnings${RESET}`);
+    console.log(`${DIM}Google validates the file; designesy validates the design system.${RESET}`);
+  }
+  process.exit(0);
+}
+
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+
+  // Subcommand dispatch — intercept 'verify' before the flat-arg parser,
+  // otherwise 'verify' gets mis-parsed as a URL.
+  if (argv[0] === 'verify') {
+    return runVerify(argv.slice(1));
+  }
+
+  const args = parseArgs(argv);
 
   if (!args.url) {
     console.error('Error: URL is required. Use --help for usage.');
