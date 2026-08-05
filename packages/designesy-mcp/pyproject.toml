@@ -68,12 +68,14 @@ packages = ["designesy_mcp_server.py"]
 [tool.hatch.build.targets.wheel.force-include]
 "cdp-viewport-check.js" = "cdp-viewport-check.js"
 "cdp-cwv-expr.js" = "cdp-cwv-expr.js"
+"cwv-expr.js" = "cwv-expr.js"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "designesy_mcp_server.py",
     "cdp-viewport-check.js",
     "cdp-cwv-expr.js",
+    "cwv-expr.js",
     "README.md",
     "LICENSE",
 ]

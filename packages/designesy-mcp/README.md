@@ -7,6 +7,13 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-2025.06.18-purple.svg)](https://modelcontextprotocol.io)
 
+**One-click install:**
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
+[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D&quality=insiders)
+[![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](https://cursor.com/anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
+[![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
+
 A **read-only stdio MCP server** exposing [designesy.org](https://www.designesy.org)'s design-intelligence infrastructure as native agent tools.
 
 Zero external dependencies. Pure Python stdlib. Implements the [Model Context Protocol](https://modelcontextprotocol.io) JSON-RPC 2.0 over stdio.
@@ -87,7 +94,7 @@ The server exposes 11 tools, all fetched live from `https://www.designesy.org/`:
 ### Executable verification
 | Tool | What it does |
 |---|---|
-| `designesy_score` | Run the 36-check contract verification against a live URL. Fetches HTML + CSS, parses `:root` custom properties, returns PASS/FAIL/WARN/SKIP per check with an overall score, letter grade, and per-category breakdown. Supports 4 emission formats: `designesy` (default), `canonical` (review-findings.json schema), `review` (jakubkrehel markdown), `google` (@google/design.md JSON). |
+| `designesy_score` | Run the 40-check contract verification against a live URL. Fetches HTML + CSS, parses `:root` custom properties, returns PASS/FAIL/WARN/SKIP per check with an overall score, letter grade, and per-category breakdown. Supports 4 emission formats: `designesy` (default), `canonical` (review-findings.json schema), `review` (jakubkrehel markdown), `google` (@google/design.md JSON). |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
 | `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
@@ -106,9 +113,9 @@ The server also exposes 7 MCP resources (read-only URIs):
 | `designesy://llms` | Short agent brief (text) |
 | `designesy://llms-full` | Full agent brief (text) |
 
-## The 36-check verification engine
+## The 40-check verification engine
 
-`designesy_score` runs 36 deterministic checks across 13 weighted categories:
+`designesy_score` runs 40 deterministic checks across 13 weighted categories:
 
 | Category | Weight | What it measures |
 |---|---|---|
