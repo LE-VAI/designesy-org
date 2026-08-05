@@ -135,6 +135,24 @@ The server also exposes 7 MCP resources (read-only URIs):
 
 No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 99.1% A.
 
+## Standards positioning
+
+### DTCG 2025.10 — the spec went stable
+
+The W3C Design Tokens Community Group published the spec's **first stable version** on Oct 28, 2025 — the [Final Community Group Report](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/), classified as a Candidate Recommendation and considered stable. 24+ organizations back it (Adobe, Google, Meta, Figma, Amazon, Microsoft, Shopify, Sketch, Framer). 84% of teams now use design tokens (2026, up from 56% YoY).
+
+`designesy_tokens_score` validates against this stable spec. Every team adopting DTCG 2025.10 needs a validator — designesy is it.
+
+### Motion tokens — the spec's blind spot
+
+The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — there is no standard for motion token structure, reduced-motion markers, or animation accessibility. The [2026 State of Design Systems field report](https://www.thestackstories.com/blog/state-of-design-systems-2026-field-report) confirms this is the remaining friction point.
+
+`designesy_motion_score` fills this gap. It validates Lottie files against the Lottie spec v1.0.1 AND the Designesy §16 Ten Non-Negotiable Motion Standards — the only validator that checks both structural well-formedness and accessibility (reduced-motion markers, no deprecated versions). It is the verification layer for the spec's known blind spot.
+
+### Contract vs. opinion
+
+No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 40-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
+
 ## Caching
 
 All responses are cached with a 5-minute TTL. The server only fetches public, machine-readable exports from `designesy.org` via HTTPS. It does not read local files, credentials, or source roots.
