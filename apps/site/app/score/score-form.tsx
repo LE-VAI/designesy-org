@@ -2,7 +2,7 @@
 // v2026-07-25-history — free-tier local score history (5 most-recent per browser)
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
 import {
   readScoreHistory,
   saveScore,
@@ -203,6 +203,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [delta, setDelta] = useState<number | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const filterSegmentedRef = useRef<HTMLDivElement>(null);
+
+  // Sliding indicator: measure the active filter tab and position a
+  // highlight pill behind it. The ::before pseudo-element on
+  // .score-filter-segmented reads --indicator-x / --indicator-w.
+  // Runs on layout (before paint) so the indicator never flashes at 0,0.
+  useLayoutEffect(() => {
+    const container = filterSegmentedRef.current;
+    if (!container) return;
+    const active = container.querySelector<HTMLElement>('.score-filter-tab.is-active');
+    if (!active) return;
+    container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
+    container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
+  }, [filterStatus, result]);
 
   // Load history on mount (client-only). SSR-safe via the guards inside
   // readScoreHistory.
@@ -1048,7 +1062,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
           {/* Interactive Filter & Search Controls */}
           <div className="score-controls-card">
-            <div className="score-filter-segmented">
+            <div className="score-filter-segmented" ref={filterSegmentedRef}>
               <button
                 type="button"
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
