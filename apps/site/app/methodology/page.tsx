@@ -514,27 +514,27 @@ export default function MethodologyPage() {
           <h2 className="doctrine-heading">At a glance</h2>
           <div className="methodology-grid">
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{CHECKS.length}</span>
+              <span className="methodology-stat-num"><CountUp value={CHECKS.length} /></span>
               <span className="methodology-stat-label">Total checks</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{SCORED_CHECKS}</span>
+              <span className="methodology-stat-num"><CountUp value={SCORED_CHECKS} /></span>
               <span className="methodology-stat-label">Scored (PASS/WARN/FAIL)</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{MANUAL_CHECKS}</span>
+              <span className="methodology-stat-num"><CountUp value={MANUAL_CHECKS} /></span>
               <span className="methodology-stat-label">Manual (needs browser)</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{SKIP_CHECKS}</span>
+              <span className="methodology-stat-num"><CountUp value={SKIP_CHECKS} /></span>
               <span className="methodology-stat-label">N/A (not applicable)</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{CATEGORIES.length}</span>
+              <span className="methodology-stat-num"><CountUp value={CATEGORIES.length} /></span>
               <span className="methodology-stat-label">Categories</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{TOTAL_WEIGHT}%</span>
+              <span className="methodology-stat-num"><CountUp value={TOTAL_WEIGHT} />%</span>
               <span className="methodology-stat-label">Weight total</span>
             </div>
           </div>
