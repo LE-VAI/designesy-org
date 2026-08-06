@@ -50,6 +50,7 @@ const INDEX: SearchItem[] = [
   { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: '8-check diff' },
   { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report synthesis composite score drift readiness unified grade holistic assessment', meta: 'synthesis capstone' },
   { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
+  { title: 'State of Design Compliance', href: '/state-of-compliance', group: 'Verify', keywords: 'annual report compliance cohort material 3 framework rankings independence', meta: 'annual report' },
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
   { title: 'Specs', href: '/specs', group: 'Verify', keywords: 'specification engine checks detail', meta: '' },
@@ -285,7 +286,7 @@ function cleanHref(url: string): string {
 /** Derive a display group from the href so hit rows keep the visual grouping. */
 function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
-  if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/benchmarks')
+  if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
     || href.startsWith('/methodology') || href.startsWith('/specs')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';

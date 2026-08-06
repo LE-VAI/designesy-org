@@ -13,6 +13,7 @@ const SURFACE_LINKS = [
   { href: '/compare', label: 'Compare' },
   { href: '/report', label: 'Report' },
   { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/state-of-compliance', label: 'State of Compliance' },
   { href: '/benchmarks', label: 'Benchmarks' },
   { href: '/specs', label: 'Specs' },
   { href: '/methodology', label: 'Methodology' },
