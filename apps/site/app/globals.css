@@ -14481,3 +14481,24 @@ select {
 .m3-bridge-tool pre {
   tab-size: 2;
 }
+
+/* ── Spring physics validator ─────────────────────────────────────────────── */
+
+.spring-validator input[type='range'] {
+  accent-color: var(--signal);
+}
+
+.spring-validator input[type='range']:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.spring-response-line {
+  transition: stroke 200ms var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spring-response-line {
+    transition: none !important;
+  }
+}
