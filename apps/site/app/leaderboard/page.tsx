@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { SubmitForm } from './submit-form/submit-form';
 import { MiniConstellation } from '../lib/mini-constellation';
+import { CountUp } from '../lib/count-up';
 import {
   SEED,
   LEADERBOARD_POLICY,
@@ -68,7 +69,7 @@ function ScoreCell({ site }: { site: SeedSite }) {
   }
   return (
     <span className="lb-score" data-tabular>
-      {site.score.toFixed(1)}
+      <CountUp value={site.score} decimals={1} />
       <span className="lb-score-pct">%</span>
     </span>
   );
@@ -297,7 +298,9 @@ export default function LeaderboardPage() {
           .lb-histogram-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; padding: 0.5rem 0; }
           .lb-hist-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
           .lb-hist-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; height: 100px; }
-          .lb-hist-bar { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; border: 1px solid var(--line-faint); border-bottom: none; transition: height 200ms var(--ease, ease-out); }
+          .lb-hist-bar { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; border: 1px solid var(--line-faint); border-bottom: none; transform-origin: bottom center; animation: lbBarGrow var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
+          @keyframes lbBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+          @media (prefers-reduced-motion: reduce) { .lb-hist-bar { animation: none; transform: none; } }
           .lb-hist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
           .lb-hist-label { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 0.3rem; border-top: 1px solid var(--line); width: 100%; }
           .lb-hist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.92rem; }
@@ -379,19 +382,19 @@ export default function LeaderboardPage() {
           <h2 className="doctrine-heading">Cohort snapshot</h2>
           <div className="lb-stats">
             <div className="lb-stat">
-              <span className="lb-stat-num">{LEADERBOARD_SCORED_COUNT}</span>
+              <span className="lb-stat-num"><CountUp value={LEADERBOARD_SCORED_COUNT} /></span>
               <span className="lb-stat-label">Scored</span>
             </div>
             <div className="lb-stat">
-              <span className="lb-stat-num">{aCount}</span>
+              <span className="lb-stat-num"><CountUp value={aCount} /></span>
               <span className="lb-stat-label">A grade</span>
             </div>
             <div className="lb-stat">
-              <span className="lb-stat-num">{dCount}</span>
+              <span className="lb-stat-num"><CountUp value={dCount} /></span>
               <span className="lb-stat-label">D grade</span>
             </div>
             <div className="lb-stat">
-              <span className="lb-stat-num">{needsWorkCount}</span>
+              <span className="lb-stat-num"><CountUp value={needsWorkCount} /></span>
               <span className="lb-stat-label">Needs work (&lt;50)</span>
             </div>
             <div className="lb-stat">
@@ -418,7 +421,7 @@ export default function LeaderboardPage() {
             <div className="lb-histogram-bars" role="img" aria-label={`Score distribution: ${aCount} A, ${bCount} B, ${cCount} C, ${dCount} D, ${fCount} F`}>
               {gradeBands.map((band) => (
                 <div key={band.grade} className="lb-hist-col">
-                  <span className="lb-hist-bar-count">{band.count}</span>
+                  <span className="lb-hist-bar-count"><CountUp value={band.count} /></span>
                   <div className="lb-hist-bar-wrap">
                     <div
                       className="lb-hist-bar"
