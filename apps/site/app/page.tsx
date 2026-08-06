@@ -246,7 +246,7 @@ export default function HomePage() {
                 </li>
                 <li className="hero-proof-stat">
                   <span className="hero-proof-num"><CountUp value={COHORT_SCORED_COUNT} /></span>
-                  <span>of {COHORT_TOTAL_COUNT} sites scored</span>
+                  <span>of <CountUp value={COHORT_TOTAL_COUNT} /> sites scored</span>
                 </li>
                 <li className="hero-proof-stat">
                   <span>Self-score </span>
@@ -278,7 +278,7 @@ export default function HomePage() {
                           {s.isSelf && <span className="hero-proof-recent-self">self</span>}
                         </span>
                         <span className="hero-proof-recent-dots" aria-hidden="true" />
-                        <span className="hero-proof-recent-score" data-tabular>{s.score.toFixed(1)}</span>
+                        <span className="hero-proof-recent-score" data-tabular><CountUp value={s.score} decimals={1} /></span>
                         <span className={`hero-proof-recent-grade is-${s.grade.toLowerCase()}`}>{s.grade}</span>
                       </a>
                     </li>

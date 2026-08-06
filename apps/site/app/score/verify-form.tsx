@@ -874,7 +874,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   <div className="score-hero-meta">
                     <div className="score-percent-badge">
                       <span className="score-percent-value">
-                        {fmtPct(reportResult.compositeScore)}%
+                        {fmtPct(animatedScore)}%
                       </span>
                       <span className="score-percent-label">
                         Composite Score
