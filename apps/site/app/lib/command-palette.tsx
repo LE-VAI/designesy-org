@@ -52,6 +52,7 @@ const INDEX: SearchItem[] = [
   { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
   { title: 'State of Design Compliance', href: '/state-of-compliance', group: 'Verify', keywords: 'annual report compliance cohort material 3 framework rankings independence', meta: 'annual report' },
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
+  { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire radar chart axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
   { title: 'Specs', href: '/specs', group: 'Verify', keywords: 'specification engine checks detail', meta: '' },
   // Contract
@@ -287,7 +288,7 @@ function cleanHref(url: string): string {
 function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
   if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
-    || href.startsWith('/methodology') || href.startsWith('/specs')) return 'Verify';
+    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';
   if (href.startsWith('/labs')) return 'Labs';

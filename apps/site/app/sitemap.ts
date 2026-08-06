@@ -108,6 +108,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${BASE}/state-of-compliance`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${BASE}/maturity`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${BASE}/methodology`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
       url: `${BASE}/benchmarks`,
       lastModified: NOW,
       changeFrequency: 'weekly',
