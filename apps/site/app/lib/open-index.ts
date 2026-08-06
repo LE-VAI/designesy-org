@@ -9,14 +9,14 @@
 
 export const openIndex = {
   id: 'designesy.open',
-  version: '0.1.4',
+  version: '0.1.5',
   status: 'public' as const,
   name: 'Open design intelligence',
   lede: 'Designesy publishes portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, and remix.',
   path: '/open',
   public_url: 'https://www.designesy.org/open',
   machine_url: 'https://www.designesy.org/open.json',
-  updated: '2026-08-01',
+  updated: '2026-08-04',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
     'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
@@ -58,6 +58,11 @@ export const openIndex = {
     'design contracts for people and agents',
     'field checks and verification for interfaces',
     'restrained interaction design (Poise)',
+    'spring physics accessibility validation',
+    'Material 3 to DTCG token bridge',
+    'design compliance maturity self-assessment',
+    'framework evaluation and scoring',
+    'contract changelog by design dimension',
     'Designesy',
   ],
   /** How an agent should ingest and cite this origin. */
@@ -357,6 +362,71 @@ export const openIndex = {
       path: '/contracts/motion',
       machine_path: '/contracts/motion.json',
     },
+    {
+      id: 'designesy.maturity',
+      kind: 'tool' as const,
+      number: null,
+      title: 'Maturity self-assessment',
+      version: '0.1',
+      status: 'live',
+      lede: 'Interactive 24-question, 6-axis design compliance maturity questionnaire with radar chart and shareable results. Maps to token discipline, motion consistency, accessibility readiness, platform fit, identity & copy, and verification maturity.',
+      human_url: 'https://www.designesy.org/maturity',
+      machine_url: null,
+      path: '/maturity',
+      machine_path: null,
+    },
+    {
+      id: 'designesy.frameworks',
+      kind: 'tool' as const,
+      number: null,
+      title: 'Framework evaluations',
+      version: '0.1',
+      status: 'live',
+      lede: 'Per-site evaluation pages for 30 scored design frameworks and sites. Each page has a score dial, per-category breakdown, auto-generated narrative, peer comparison, and cohort context.',
+      human_url: 'https://www.designesy.org/frameworks',
+      machine_url: null,
+      path: '/frameworks',
+      machine_path: null,
+    },
+    {
+      id: 'designesy.changelog',
+      kind: 'tool' as const,
+      number: null,
+      title: 'Contract changelog',
+      version: '0.1',
+      status: 'live',
+      lede: 'Contract changes organized by 11 design dimensions (tokens, motion, cadence, accessibility, takt, poise, acoustics, copywriting, identity, security, verification). 16 entries from v0.1.0 to v0.4.0.',
+      human_url: 'https://www.designesy.org/changelog',
+      machine_url: null,
+      path: '/changelog',
+      machine_path: null,
+    },
+    {
+      id: 'designesy.m3-bridge',
+      kind: 'tool' as const,
+      number: null,
+      title: 'M3 → DTCG bridge',
+      version: '0.1',
+      status: 'live',
+      lede: 'Convert Material 3 design tokens to W3C DTCG 2025.10 format. M3 DSP export was archived October 2024 and doesn\'t emit DTCG. Client-side converter with 5-check validation. The neutral bridge between Google\'s two non-interoperating design-data initiatives.',
+      human_url: 'https://www.designesy.org/m3-bridge',
+      machine_url: null,
+      path: '/m3-bridge',
+      machine_path: null,
+    },
+    {
+      id: 'designesy.spring-validator',
+      kind: 'tool' as const,
+      number: null,
+      title: 'Spring physics validator',
+      version: '0.1',
+      status: 'live',
+      lede: 'Validate spring-based motion against an accessibility/reduced-motion contract. Simulates a damped harmonic oscillator, computes damping ratio and overshoot, and renders an accessibility verdict. 8 presets including M3 Expressive, iOS, and Framer Motion. Green-field validation capability no one else offers.',
+      human_url: 'https://www.designesy.org/spring-validator',
+      machine_url: null,
+      path: '/spring-validator',
+      machine_path: null,
+    },
   ],
   machine_exports: [
     {
@@ -445,11 +515,13 @@ If you can fetch URLs:
   1. Fetch https://www.designesy.org/open.json (catalog root)
   2. Optional short brief: https://www.designesy.org/llms.txt
   3. Optional discovery: https://www.designesy.org/.well-known/agent.json
-  4. Choose the package needed (contract, kit, lab, or review).
+  4. Choose the package needed (contract, kit, lab, review, or tool).
   5. If machine_url is present, fetch it for structured rules.
   6. For Design Review, fetch the kit prompt and run the eight dimensions.
   7. Cite contract tokens when proposing UI changes.
   8. If a rule is missing, name an open tension instead of inventing policy.
+  9. For token-format conversion, use the M3→DTCG bridge at /m3-bridge.
+  10. For spring motion validation, use the spring validator at /spring-validator.
 
 If you cannot fetch URLs:
   The human index at designesy.org/open lists all packages.
