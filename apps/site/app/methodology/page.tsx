@@ -661,7 +661,7 @@ export default function MethodologyPage() {
                 <td className="wt-name">Total</td>
                 <td className="wt-num"><CountUp value={TOTAL_WEIGHT} />%</td>
                 <td style={{ color: 'var(--muted-dim)' }}><CountUp value={CHECKS.length} /></td>
-                <td className="wt-num"><CountUp value={SCORED_CHECKS} /></td></td>
+                <td className="wt-num"><CountUp value={SCORED_CHECKS} /></td>
               </tr>
             </tbody>
           </table>
