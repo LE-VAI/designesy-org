@@ -709,6 +709,97 @@ export default function StateOfCompliancePage() {
           </p>
         </section>
 
+        {/* ── §7 The Expanding Surface ──────────────────────────────────── */}
+        <section className="doctrine-section fade-up soc-section">
+          <h2 className="doctrine-heading">The expanding surface</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '66ch' }}>
+            Scoring is the foundation. But verification is bigger than a single
+            number. Edition 1 ships with five tools that expand what Designesy
+            verifies — from a score to a maturity profile, a per-framework
+            evaluation, a format bridge, and frontier physics validation.
+          </p>
+          <div className="soc-cadence-grid">
+            <div className="soc-cadence-card">
+              <p className="soc-cadence-card-label">Maturity</p>
+              <p className="soc-cadence-card-val">
+                <Link href="/maturity" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
+                  Compliance maturity self-assessment
+                </Link>
+              </p>
+              <p className="soc-cadence-card-detail">
+                24 questions across 6 axes — token discipline, motion
+                consistency, accessibility readiness, platform fit, identity &amp;
+                copy, verification maturity. Shareable radar chart. The
+                self-diagnostic that complements the deterministic score.
+              </p>
+            </div>
+            <div className="soc-cadence-card">
+              <p className="soc-cadence-card-label">Evaluations</p>
+              <p className="soc-cadence-card-val">
+                <Link href="/frameworks" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
+                  Per-framework evaluation pages
+                </Link>
+              </p>
+              <p className="soc-cadence-card-detail">
+                Every scored site gets a dedicated page with a score dial,
+                per-category breakdown, auto-generated narrative, peer comparison,
+                and cohort context. 30 evaluations — each one a piece of content.
+              </p>
+            </div>
+            <div className="soc-cadence-card">
+              <p className="soc-cadence-card-label">Changelog</p>
+              <p className="soc-cadence-card-val">
+                <Link href="/changelog" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
+                  Contract changelog by dimension
+                </Link>
+              </p>
+              <p className="soc-cadence-card-detail">
+                16 entries across 11 design dimensions — tokens, motion, cadence,
+                accessibility, takt, poise, acoustics, copywriting, identity,
+                security, verification. Every contract change is traceable to a
+                version bump and a dimension.
+              </p>
+            </div>
+            <div className="soc-cadence-card">
+              <p className="soc-cadence-card-label">M3 Bridge</p>
+              <p className="soc-cadence-card-val">
+                <Link href="/m3-bridge" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
+                  M3 → DTCG token bridge
+                </Link>
+              </p>
+              <p className="soc-cadence-card-detail">
+                M3&rsquo;s DSP export was archived October 2024 and doesn&rsquo;t
+                emit W3C DTCG. This tool converts M3 token CSS or JSON to DTCG
+                2025.10 format with validation. The neutral bridge between
+                Google&rsquo;s two non-interoperating design-data initiatives.
+              </p>
+            </div>
+            <div className="soc-cadence-card">
+              <p className="soc-cadence-card-label">Frontier</p>
+              <p className="soc-cadence-card-val">
+                <Link href="/spring-validator" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
+                  Spring physics accessibility validator
+                </Link>
+              </p>
+              <p className="soc-cadence-card-detail">
+                No one validates spring-based motion against a reduced-motion
+                contract. M3 Expressive ships springs with no published
+                reduced-motion token. This tool simulates the physics, computes
+                overshoot, and renders an accessibility verdict. Green-field.
+              </p>
+            </div>
+          </div>
+          <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
+            The pattern: score → evaluate → bridge → validate. Each tool deepens
+            the verification surface. The maturity assessment turns a score into
+            a diagnostic. The evaluations turn a score into a per-framework
+            article. The M3 bridge turns a format gap into a tool. The spring
+            validator turns a frontier into a check. The scoring engine remains
+            the foundation — but verification is now a platform, not a single
+            number.
+          </p>
+        </section>
+
         <div className="status-note">
           State of Design Compliance · Edition 1 ·{' '}
           {LEADERBOARD_SCORED_COUNT} sites scored against contract{' '}
