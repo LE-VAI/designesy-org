@@ -19,6 +19,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { SEED } from '../leaderboard/seed';
+import { CountUp } from '../lib/count-up';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -453,7 +454,9 @@ export default function MethodologyPage() {
           .methodology-page .score-dist-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
           .methodology-page .score-dist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .methodology-page .score-dist-bar-wrap { width: 100%; height: 100px; display: flex; align-items: flex-end; justify-content: center; }
-          .methodology-page .score-dist-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; border: 1px solid var(--line-faint); border-bottom: none; transition: height 200ms var(--ease, ease-out); }
+          .methodology-page .score-dist-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; border: 1px solid var(--line-faint); border-bottom: none; transform-origin: bottom center; animation: scoreDistBarGrow var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
+          @keyframes scoreDistBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+          @media (prefers-reduced-motion: reduce) { .methodology-page .score-dist-bar { animation: none; transform: none; } }
           .methodology-page .score-dist-label { width: 100%; text-align: center; padding-top: 0.4rem; border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
           .methodology-page .score-dist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.9rem; }
           .methodology-page .score-dist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.68rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; }
@@ -562,8 +565,8 @@ export default function MethodologyPage() {
             <p>
               The engine fetches the target URL&rsquo;s HTML and all linked CSS,
               parses <code>:root</code> custom properties, and runs{' '}
-              <strong>{CHECKS.length} deterministic checks</strong> across{' '}
-              <strong>{CATEGORIES.length} weighted categories</strong>.
+              <strong><CountUp value={CHECKS.length} /> deterministic checks</strong> across{' '}
+              <strong><CountUp value={CATEGORIES.length} /> weighted categories</strong>.
               Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
               <code>FAIL</code>, <code>MANUAL</code>, or <code>N/A</code>. The score is a weighted
               average — not a simple count — then adjusted by three further
@@ -574,9 +577,9 @@ export default function MethodologyPage() {
               <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and
               denominator (Lighthouse precedent: manual/N/A audits excluded).
               This means a site is not penalized for checks the static engine
-              cannot run or that do not apply. The {MANUAL_CHECKS} MANUAL checks require a browser
+              cannot run or that do not apply. The <CountUp value={MANUAL_CHECKS} /> MANUAL checks require a browser
               viewport trace, CDP performance trace, or live DOM interaction.
-              The {SKIP_CHECKS} N/A checks do not apply when the site lacks the
+              The <CountUp value={SKIP_CHECKS} /> N/A checks do not apply when the site lacks the
               elements the check targets (no <code>/DESIGN.md</code>, no buttons,
               no anchors, no tokens).
             </p>
@@ -647,18 +650,18 @@ export default function MethodologyPage() {
                     <span className="weight-bar" style={{ width: `${g.weight * 3}px` }} />
                     {CATEGORY_LABELS[g.category]}
                   </td>
-                  <td className="wt-num">{g.weight}%</td>
-                  <td style={{ color: 'var(--muted-dim)' }}>{g.checks.length}</td>
+                  <td className="wt-num"><CountUp value={g.weight} />%</td>
+                  <td style={{ color: 'var(--muted-dim)' }}><CountUp value={g.checks.length} /></td>
                   <td className="wt-num" style={{ color: g.checks.filter(c => !c.skipReason && !c.manualReason).length > 0 ? 'var(--ink)' : 'var(--muted-dim)' }}>
-                    {g.checks.filter(c => !c.skipReason && !c.manualReason).length}
+                    <CountUp value={g.checks.filter(c => !c.skipReason && !c.manualReason).length} />
                   </td>
                 </tr>
               ))}
               <tr style={{ borderTop: '1px solid var(--line)' }}>
                 <td className="wt-name">Total</td>
-                <td className="wt-num">{TOTAL_WEIGHT}%</td>
-                <td style={{ color: 'var(--muted-dim)' }}>{CHECKS.length}</td>
-                <td className="wt-num">{SCORED_CHECKS}</td>
+                <td className="wt-num"><CountUp value={TOTAL_WEIGHT} />%</td>
+                <td style={{ color: 'var(--muted-dim)' }}><CountUp value={CHECKS.length} /></td>
+                <td className="wt-num"><CountUp value={SCORED_CHECKS} /></td></td>
               </tr>
             </tbody>
           </table>
@@ -691,7 +694,7 @@ export default function MethodologyPage() {
           <div className="methodology-prose">
             <p>
               The histogram below shows the grade distribution across all{' '}
-              <strong>{SCORED_TOTAL} sites</strong> on the{' '}
+              <strong><CountUp value={SCORED_TOTAL} /> sites</strong> on the{' '}
               <Link href="/leaderboard" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>leaderboard</Link>.
               The contract is deliberately demanding — most sites land in D or F because
               they do not ship the contract primitives (token systems, reduced-motion
@@ -701,7 +704,7 @@ export default function MethodologyPage() {
           <div className="score-dist-histogram">
             {HIST_BARS.map((bar) => (
               <div key={bar.grade} className="score-dist-col">
-                <span className="score-dist-bar-count">{bar.count}</span>
+                <span className="score-dist-bar-count"><CountUp value={bar.count} /></span>
                 <div className="score-dist-bar-wrap">
                   <div
                     className="score-dist-bar"
@@ -720,25 +723,25 @@ export default function MethodologyPage() {
             ))}
           </div>
           <p className="score-dist-headline">
-            Of {SCORED_TOTAL} sites scored,{' '}
-            <strong>{GRADE_COUNTS.A} earned an A</strong>,{' '}
-            {GRADE_COUNTS.B} earned a B, {GRADE_COUNTS.C} earned a C,{' '}
-            {GRADE_COUNTS.D} earned a D, and {GRADE_COUNTS.F} earned an F.
-            The mean score is <strong>{MEAN_SCORE}%</strong> with a range of{' '}
-            {MIN_SCORE}%&ndash;{MAX_SCORE}%. The median site lands in D — the
+            Of <CountUp value={SCORED_TOTAL} /> sites scored,{' '}
+            <strong><CountUp value={GRADE_COUNTS.A} /> earned an A</strong>,{' '}
+            <CountUp value={GRADE_COUNTS.B} /> earned a B, <CountUp value={GRADE_COUNTS.C} /> earned a C,{' '}
+            <CountUp value={GRADE_COUNTS.D} /> earned a D, and <CountUp value={GRADE_COUNTS.F} /> earned an F.
+            The mean score is <strong><CountUp value={MEAN_SCORE} />%</strong> with a range of{' '}
+            <CountUp value={MIN_SCORE} />%&ndash;<CountUp value={MAX_SCORE} />%. The median site lands in D — the
             contract requires primitives that most sites do not ship.
           </p>
           <div className="methodology-grid" style={{ marginTop: '1.5rem' }}>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{MEAN_SCORE}%</span>
+              <span className="methodology-stat-num"><CountUp value={MEAN_SCORE} />%</span>
               <span className="methodology-stat-label">Mean score</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{MIN_SCORE}&ndash;{MAX_SCORE}</span>
+              <span className="methodology-stat-num"><CountUp value={MIN_SCORE} />&ndash;<CountUp value={MAX_SCORE} /></span>
               <span className="methodology-stat-label">Score range</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num">{SCORED_TOTAL}</span>
+              <span className="methodology-stat-num"><CountUp value={SCORED_TOTAL} /></span>
               <span className="methodology-stat-label">Sites scored</span>
             </div>
           </div>
