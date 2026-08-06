@@ -200,6 +200,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [auditStatus, setAuditStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [auditError, setAuditError] = useState<string | null>(null);
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [animatedCatScores, setAnimatedCatScores] = useState<Record<string, number>>({});
   const [delta, setDelta] = useState<number | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -231,14 +232,29 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   useEffect(() => {
     if (!result?.score || result.score === 0) {
       setAnimatedScore(0);
+      setAnimatedCatScores({});
       return;
     }
-    // Respect reduced-motion: skip the animation, show final value
+    // Respect reduced-motion: skip the animation, show final values
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setAnimatedScore(result.score);
+      const finalCats: Record<string, number> = {};
+      if (result.categoryScores) {
+        for (const [k, v] of Object.entries(result.categoryScores)) {
+          if (v.score !== null) finalCats[k] = v.score;
+        }
+      }
+      setAnimatedCatScores(finalCats);
       return;
     }
     const target = result.score;
+    // Build target category scores for simultaneous count-up
+    const catTargets: Record<string, number> = {};
+    if (result.categoryScores) {
+      for (const [k, v] of Object.entries(result.categoryScores)) {
+        if (v.score !== null) catTargets[k] = v.score;
+      }
+    }
     const duration = 1200; // Lighthouse PR 17045 "earned" window — long enough to watch the arc fill
     const start = performance.now();
     let rafId: number;
@@ -246,10 +262,17 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       const t = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
       setAnimatedScore(target * eased);
+      // Animate category scores in sync
+      const cats: Record<string, number> = {};
+      for (const [k, v] of Object.entries(catTargets)) {
+        cats[k] = v * eased;
+      }
+      setAnimatedCatScores(cats);
       if (t < 1) {
         rafId = requestAnimationFrame(animate);
       } else {
         setAnimatedScore(target);
+        setAnimatedCatScores(catTargets);
       }
     };
     rafId = requestAnimationFrame(animate);
@@ -706,7 +729,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
               <div className="score-hero-meta">
                 <div className="score-percent-badge">
-                  <span className="score-percent-value">{fmtPct(result.score)}%</span>
+                  <span className="score-percent-value">{Math.round(animatedScore * 10) / 10}%</span>
                   <span className="score-percent-label">Legitimacy Score</span>
                   {delta !== null && delta !== 0 && (
                     <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
@@ -761,10 +784,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span className="score-cat-legend-bar" aria-hidden="true">
                         <span
                           className={`score-cat-legend-fill ${cat.score !== null && cat.score < 60 ? 'is-weak' : ''}`}
-                          style={{ width: `${cat.score ?? 0}%`, ['--bar-i' as string]: i }}
+                          style={{ width: `${animatedCatScores[k] ?? 0}%`, ['--bar-i' as string]: i }}
                         />
                       </span>
-                      <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(cat.score!)}`}</span>
+                      <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
                     </button>
                   </li>
                 );
