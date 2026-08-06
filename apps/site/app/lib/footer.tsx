@@ -16,6 +16,7 @@ const SURFACE_LINKS = [
   { href: '/state-of-compliance', label: 'State of Compliance' },
   { href: '/benchmarks', label: 'Benchmarks' },
   { href: '/specs', label: 'Specs' },
+  { href: '/maturity', label: 'Maturity' },
   { href: '/methodology', label: 'Methodology' },
   { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
