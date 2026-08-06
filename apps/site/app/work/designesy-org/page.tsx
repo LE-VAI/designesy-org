@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
+import { CountUp } from '../../lib/count-up';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org — D to A case study',
@@ -103,7 +104,7 @@ export default function DesignesyOrgCaseStudy() {
                 Before · D · 67.4
               </h3>
               <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                {BEFORE_COUNTS.pass} pass · {BEFORE_COUNTS.fail} fail · {BEFORE_COUNTS.warn} warn · {BEFORE_COUNTS.skip} skip
+                <CountUp value={BEFORE_COUNTS.pass} /> pass · <CountUp value={BEFORE_COUNTS.fail} /> fail · <CountUp value={BEFORE_COUNTS.warn} /> warn · <CountUp value={BEFORE_COUNTS.skip} /> skip
               </p>
             </div>
             <div>
@@ -111,14 +112,14 @@ export default function DesignesyOrgCaseStudy() {
                 After · A · 96.3
               </h3>
               <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                {AFTER_COUNTS.pass} pass · {AFTER_COUNTS.fail} fail · {AFTER_COUNTS.warn} warn · {AFTER_COUNTS.skip} skip
+                <CountUp value={AFTER_COUNTS.pass} /> pass · <CountUp value={AFTER_COUNTS.fail} /> fail · <CountUp value={AFTER_COUNTS.warn} /> warn · <CountUp value={AFTER_COUNTS.skip} /> skip
               </p>
             </div>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            <strong>+{AFTER_COUNTS.pass - BEFORE_COUNTS.pass}</strong> pass ·{' '}
-            <strong>-{BEFORE_COUNTS.fail - AFTER_COUNTS.fail}</strong> fail ·{' '}
-            <strong>-{BEFORE_COUNTS.warn - AFTER_COUNTS.warn}</strong> warn ·{' '}
+            <strong>+<CountUp value={AFTER_COUNTS.pass - BEFORE_COUNTS.pass} /></strong> pass ·{' '}
+            <strong>-<CountUp value={BEFORE_COUNTS.fail - AFTER_COUNTS.fail} /></strong> fail ·{' '}
+            <strong>-<CountUp value={BEFORE_COUNTS.warn - AFTER_COUNTS.warn} /></strong> warn ·{' '}
             skip unchanged (browser-only checks, honestly labeled).
           </p>
         </section>
