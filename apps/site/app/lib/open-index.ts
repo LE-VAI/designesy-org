@@ -487,7 +487,7 @@ export const openIndex = {
       title: 'MCP server',
       path: '/api/mcp',
       url: 'https://www.designesy.org/api/mcp',
-      meta: 'Streamable HTTP MCP endpoint — 8 design-intelligence tools (catalog, contract, review, score). Docs: /docs/mcp',
+      meta: 'Streamable HTTP MCP endpoint — 12 design-intelligence tools (catalog, contract, review, score, tokens, a11y, motion, skill, a11y script, motion score, design review, agent.json). Docs: /docs/mcp',
     },
   ],
   anti_patterns: [
@@ -520,8 +520,13 @@ If you can fetch URLs:
   6. For Design Review, fetch the kit prompt and run the eight dimensions.
   7. Cite contract tokens when proposing UI changes.
   8. If a rule is missing, name an open tension instead of inventing policy.
-  9. For token-format conversion, use the M3→DTCG bridge at /m3-bridge.
-  10. For spring motion validation, use the spring validator at /spring-validator.
+
+  Interactive tools (all client-side, no server required):
+  9.  Maturity self-assessment: /maturity — 24-question compliance diagnostic
+  10. Framework evaluations: /frameworks — per-site score breakdowns (30 sites)
+  11. Contract changelog: /changelog — changes by design dimension, by version
+  12. M3→DTCG bridge: /m3-bridge — convert Material 3 tokens to W3C DTCG format
+  13. Spring physics validator: /spring-validator — spring overshoot + reduced-motion verdict
 
 If you cannot fetch URLs:
   The human index at designesy.org/open lists all packages.
@@ -538,7 +543,12 @@ Primary human index: https://www.designesy.org/open
 Machine catalog: https://www.designesy.org/open.json
 Agent brief: https://www.designesy.org/llms.txt
 Design Review kit: https://www.designesy.org/kits/design-review
-Design system contract: https://www.designesy.org/contracts/design-system`,
+Design system contract: https://www.designesy.org/contracts/design-system
+Maturity self-assessment: https://www.designesy.org/maturity
+Framework evaluations: https://www.designesy.org/frameworks
+Contract changelog: https://www.designesy.org/changelog
+M3→DTCG bridge: https://www.designesy.org/m3-bridge
+Spring physics validator: https://www.designesy.org/spring-validator`,
 } as const;
 
 export type OpenIndex = typeof openIndex;
