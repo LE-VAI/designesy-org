@@ -50,6 +50,7 @@ const INDEX: SearchItem[] = [
   { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: '8-check diff' },
   { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report synthesis composite score drift readiness unified grade holistic assessment', meta: 'synthesis capstone' },
   { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
+  { title: 'Framework evaluations', href: '/frameworks', group: 'Verify', keywords: 'framework evaluation article per site breakdown category score grade dedicated page deep dive', meta: '30 evaluations' },
   { title: 'State of Design Compliance', href: '/state-of-compliance', group: 'Verify', keywords: 'annual report compliance cohort material 3 framework rankings independence', meta: 'annual report' },
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
   { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire radar chart axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
@@ -288,7 +289,7 @@ function cleanHref(url: string): string {
 function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
   if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
-    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity')) return 'Verify';
+    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity') || href.startsWith('/frameworks')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';
   if (href.startsWith('/labs')) return 'Labs';

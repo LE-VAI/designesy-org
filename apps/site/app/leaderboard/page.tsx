@@ -112,6 +112,7 @@ function SiteRow({ site }: { site: SeedSite }) {
   const needsWork = site.score !== null && site.score < 50;
   const scoreHref = `/score?url=${encodeURIComponent(hostOf(site.url))}`;
   const externalHref = site.url;
+  const evalHref = `/frameworks/${site.url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').replace(/[./]/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase()}`;
 
   return (
     <tr className={`lb-row${isSelf ? ' lb-row-self' : ''}${needsWork ? ' lb-row-needs-work' : ''}`}>
@@ -138,6 +139,9 @@ function SiteRow({ site }: { site: SeedSite }) {
             <span className="lb-tier-tag" aria-label={`Tier ${site.tier}: ${TIER_LABEL[site.tier]}`}>
               T{site.tier} · {site.category}
             </span>
+            <Link href={evalHref} className="lb-eval-link" style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textDecoration: 'none' }} data-cuelume-hover="tick">
+              evaluation →
+            </Link>
           </span>
         </div>
       </td>
