@@ -14440,3 +14440,27 @@ select {
     background: var(--surface-raised);
   }
 }
+
+/* ── Maturity self-assessment ────────────────────────────────────────────── */
+
+.maturity-option:hover {
+  border-color: var(--signal) !important;
+  background: var(--surface-hover) !important;
+}
+
+.maturity-option:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.maturity-results .row {
+  cursor: default;
+}
+
+/* Radar chart — reduced motion: no transition on polygon */
+@media (prefers-reduced-motion: reduce) {
+  .maturity-results polygon,
+  .maturity-results circle {
+    transition: none !important;
+  }
+}
