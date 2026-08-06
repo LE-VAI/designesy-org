@@ -9,6 +9,7 @@ import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
 import { HeroConstruction } from './hero-construction';
 import { ContractHealthRack, CONTRACT_HEALTH_DIMS, CONTRACT_HEALTH_MEAN } from './contract-health-rack';
+import { CountUp } from './lib/count-up';
 import {
   ENGINE_CHECK_COUNT,
   CONTRACT_VERSION,
@@ -237,26 +238,26 @@ export default function HomePage() {
                   <span>Live contract <b>{CONTRACT_VERSION}</b></span>
                 </li>
                 <li className="hero-proof-stat">
-                  <span className="hero-proof-num">{ENGINE_CHECK_COUNT}</span>
+                  <span className="hero-proof-num"><CountUp value={ENGINE_CHECK_COUNT} /></span>
                   <span>checks</span>
                 </li>
                 <li className="hero-proof-stat">
                   <span>No login</span>
                 </li>
                 <li className="hero-proof-stat">
-                  <span className="hero-proof-num">{COHORT_SCORED_COUNT}</span>
+                  <span className="hero-proof-num"><CountUp value={COHORT_SCORED_COUNT} /></span>
                   <span>of {COHORT_TOTAL_COUNT} sites scored</span>
                 </li>
                 <li className="hero-proof-stat">
                   <span>Self-score </span>
-                  <span className="hero-proof-num">{SELF_SCORE}%</span>
+                  <span className="hero-proof-num"><CountUp value={SELF_SCORE} suffix="%" /></span>
                   <span className="hero-proof-grade is-a">{SELF_GRADE}</span>
                   <span className="hero-proof-caveat">our own contract</span>
                 </li>
                 {LOWEST_SCORE !== null && (
                   <li className="hero-proof-stat">
                     <span>Lowest: </span>
-                    <span className="hero-proof-num">{LOWEST_SCORE}%</span>
+                    <span className="hero-proof-num"><CountUp value={LOWEST_SCORE} suffix="%" /></span>
                     <span className={`hero-proof-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
                   </li>
                 )}
