@@ -21,6 +21,7 @@ const SURFACE_LINKS = [
   { href: '/methodology', label: 'Methodology' },
   { href: '/changelog', label: 'Changelog' },
   { href: '/m3-bridge', label: 'M3 Bridge' },
+  { href: '/spring-validator', label: 'Spring Validator' },
   { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },

@@ -57,6 +57,7 @@ const INDEX: SearchItem[] = [
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
   { title: 'Contract changelog', href: '/changelog', group: 'Verify', keywords: 'changelog history version dimension tokens motion cadence accessibility takt poise acoustics copywriting identity security verification adopted added modified', meta: 'by dimension' },
   { title: 'M3 → DTCG bridge', href: '/m3-bridge', group: 'Verify', keywords: 'm3 material design 3 dtcg w3c token bridge converter dsp archived google design.md material-foundation', meta: 'token format bridge' },
+  { title: 'Spring physics validator', href: '/spring-validator', group: 'Verify', keywords: 'spring physics damping stiffness mass overshoot reduced-motion accessibility vestibular validation m3 expressive framer motion react spring ios', meta: 'motion frontier' },
   { title: 'Specs', href: '/specs', group: 'Verify', keywords: 'specification engine checks detail', meta: '' },
   // Contract
   { title: 'Design system contract', href: '/contracts/design-system', group: 'Contract', keywords: 'tokens motion acoustic takt cadence typography rules v0.4.0', meta: 'v0.4.0' },
@@ -292,7 +293,7 @@ function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
   if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
     || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity') || href.startsWith('/frameworks')
-    || href.startsWith('/changelog') || href.startsWith('/m3-bridge')) return 'Verify';
+    || href.startsWith('/changelog') || href.startsWith('/m3-bridge') || href.startsWith('/spring-validator')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';
   if (href.startsWith('/labs')) return 'Labs';
