@@ -14464,3 +14464,20 @@ select {
     transition: none !important;
   }
 }
+
+/* ── M3 → DTCG bridge ─────────────────────────────────────────────────────── */
+
+.m3-bridge-tool textarea:focus {
+  border-color: var(--signal);
+  outline: 2px solid var(--signal);
+  outline-offset: 0;
+}
+
+.m3-bridge-tool textarea::placeholder {
+  color: var(--muted-dim);
+  opacity: 0.7;
+}
+
+.m3-bridge-tool pre {
+  tab-size: 2;
+}
