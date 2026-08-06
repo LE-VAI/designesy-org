@@ -120,6 +120,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
     {
+      url: `${BASE}/frameworks`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
       url: `${BASE}/methodology`,
       lastModified: NOW,
       changeFrequency: 'monthly',
