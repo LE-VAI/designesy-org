@@ -164,6 +164,55 @@ export default function PricingPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
+          <div
+            style={{
+              padding: '1.5rem 1.75rem',
+              background: 'var(--surface)',
+              backgroundImage: 'var(--surface-card-gradient)',
+              border: '1px solid var(--line)',
+              borderLeft: '3px solid var(--signal)',
+              borderRadius: '6px',
+              margin: '0 0 2rem',
+              maxWidth: '66ch',
+              boxShadow: 'var(--inner-light)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '0.7rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: 'var(--signal-light)',
+                fontWeight: 700,
+                margin: '0 0 0.75rem',
+                fontFamily: 'var(--mono, ui-monospace, monospace)',
+              }}
+            >
+              Independence firewall
+            </p>
+            <p
+              style={{
+                color: 'var(--muted)',
+                fontSize: '0.95rem',
+                lineHeight: 1.6,
+                margin: 0,
+              }}
+            >
+              <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
+                Designesy does not accept payment for scores, methodology
+                changes, or leaderboard placement.
+              </strong>{' '}
+              Every score is computed by the same deterministic 40-check engine
+              against the same published contract. Enterprise customers pay for
+              private scoring, custom contracts, and CI integration — never for
+              public leaderboard placement. If a scored site is also an
+              enterprise customer, their public score is computed identically to
+              any non-customer&rsquo;s score.
+            </p>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up fade-up-delay-2">
           <div className="pricing-faq">
             <details className="pricing-faq-item">
               <summary className="pricing-faq-q">
