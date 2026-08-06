@@ -784,7 +784,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span className="score-cat-legend-bar" aria-hidden="true">
                         <span
                           className={`score-cat-legend-fill ${cat.score !== null && cat.score < 60 ? 'is-weak' : ''}`}
-                          style={{ width: `${animatedCatScores[k] ?? 0}%`, ['--bar-i' as string]: i }}
+                          style={{ width: `${Math.round(animatedCatScores[k] ?? 0)}%`, ['--bar-i' as string]: i }}
                         />
                       </span>
                       <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
