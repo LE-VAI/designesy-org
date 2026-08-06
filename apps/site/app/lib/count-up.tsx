@@ -8,8 +8,17 @@
 //
 // Accessibility: respects prefers-reduced-motion (jumps to final value).
 // The count-up is decorative — the final value is in the DOM at first paint.
+//
+// Hydration strategy: SSR renders the final value. On client mount,
+// useLayoutEffect resets to 0 before the browser paints, so the user
+// only sees 0 → count-up → final value (no flash of the SSR value).
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+// useLayoutEffect during SSR is a no-op (warnings suppressed by checking
+// typeof window). On the client it runs synchronously before paint.
+const useIsoLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type CountUpProps = {
   /** Target value to count up to */
@@ -24,7 +33,13 @@ type CountUpProps = {
 
 export function CountUp({ value, duration = 1200, suffix = '', className }: CountUpProps) {
   const ref = useRef<HTMLSpanElement>(null);
+  // SSR renders the final value for SEO/no-JS.
   const [display, setDisplay] = useState(value);
+
+  // Reset to 0 before paint on the client (progressive enhancement).
+  useIsoLayoutEffect(() => {
+    setDisplay(0);
+  }, []);
 
   useEffect(() => {
     const el = ref.current;
@@ -36,8 +51,6 @@ export function CountUp({ value, duration = 1200, suffix = '', className }: Coun
       return;
     }
 
-    // If the element is already in view on mount (above the fold), start
-    // after a short delay so the fade-up entrance finishes first.
     let started = false;
     const start = () => {
       if (started) return;
