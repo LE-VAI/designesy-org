@@ -10160,8 +10160,9 @@ a.lab-card:focus-visible .lab-card-arrow {
   .audit-progress-dot { animation: none; opacity: 0.7; }
   .audit-progress-bar-fill { animation: none; width: 100%; background: var(--signal-dim); }
   .score-spinner { animation: none; opacity: 0.7; transform: none; }
-  /* Sliding indicator: snap instantly, no slide animation */
+  /* Sliding indicators: snap instantly, no slide animation */
   .score-filter-segmented::before { transition: none; }
+  .bundle-tabs::before { transition: none; }
 }
 
 .score-tokens-badge {
@@ -10646,6 +10647,82 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: none;
   color: var(--ink);
   box-shadow: none;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Guardrails bundle tabs — sliding underline indicator
+   Same pattern as .score-filter-segmented: a useLayoutEffect measures
+   the active tab's offsetLeft/offsetWidth and sets --indicator-x /
+   --indicator-w on the container; a ::before pseudo-element slides
+   along the bottom border to underline the active tab.
+   ──────────────────────────────────────────────────────────────── */
+.bundle-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  position: relative;
+  --indicator-x: 0px;
+  --indicator-w: 0px;
+}
+
+.bundle-tabs::before {
+  content: '';
+  position: absolute;
+  bottom: -1px; /* sit on top of the container's bottom border */
+  left: 0;
+  height: 2px;
+  width: var(--indicator-w);
+  transform: translateX(var(--indicator-x));
+  background: var(--ink);
+  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
+              width var(--duration, 0.3s) var(--ease-out, ease-out);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bundle-tab {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  z-index: 0;
+  transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+              color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+.bundle-tab:hover {
+  color: var(--ink);
+}
+
+.bundle-tab.is-active {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Copy button — pushed to the right, styled as an outlined button */
+.bundle-tab--copy {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bundle-tab--copy:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 
 .score-tab-count {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -63,6 +63,15 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
   const [activeTab, setActiveTab] = useState<Tab>('tokens');
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bundleTabsRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const container = bundleTabsRef.current;
+    if (!container) return;
+    const active = container.querySelector<HTMLElement>('.bundle-tab.is-active');
+    if (!active) return;
+    container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
+    container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
+  }, [activeTab, result]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -270,25 +279,13 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
           {/* Bundle output — tabbed */}
           {result.bundle && (
             <div className="guardrails-bundle">
-              <div className="bundle-tabs" style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid var(--line)', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <div ref={bundleTabsRef} className="bundle-tabs">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => { setActiveTab(tab.id); setCopied(false); }}
-                    className="bundle-tab"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      background: activeTab === tab.id ? 'var(--surface-2)' : 'transparent',
-                      border: 'none',
-                      borderBottom: activeTab === tab.id ? '2px solid var(--ink)' : '2px solid transparent',
-                      color: activeTab === tab.id ? 'var(--ink)' : 'var(--muted)',
-                      fontSize: '0.85rem',
-                      fontWeight: activeTab === tab.id ? 600 : 400,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      transition: 'background-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), border-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                    }}
+                    className={`bundle-tab${activeTab === tab.id ? ' is-active' : ''}`}
                   >
                     {tab.label}
                   </button>
@@ -296,18 +293,7 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
                 <button
                   type="button"
                   onClick={copyToClipboard}
-                  className="bundle-tab"
-                  style={{
-                    marginLeft: 'auto',
-                    padding: '0.5rem 1rem',
-                    background: 'transparent',
-                    border: '1px solid var(--line)',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    color: 'var(--muted)',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
+                  className="bundle-tab bundle-tab--copy"
                 >
                   {copied ? 'Copied ✓' : 'Copy'}
                 </button>
