@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
+import { CountUp } from '../../lib/count-up';
 
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev — A on arrival case study',
@@ -101,7 +102,7 @@ export default function LovableCaseStudy() {
                 A · 93.2 · before only
               </h3>
               <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                {COUNTS.pass} pass · {COUNTS.fail} fail · {COUNTS.warn} warn · {COUNTS.skip} skip
+                <CountUp value={COUNTS.pass} /> pass · <CountUp value={COUNTS.fail} /> fail · <CountUp value={COUNTS.warn} /> warn · <CountUp value={COUNTS.skip} /> skip
               </p>
             </div>
             <div>

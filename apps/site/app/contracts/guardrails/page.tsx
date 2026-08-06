@@ -4,6 +4,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { guardrailsContract } from '../../lib/guardrails-contract';
 import { pageMeta } from '../../lib/site-meta';
+import { CountUp } from '../../lib/count-up';
 
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails contract',
@@ -74,7 +75,7 @@ export default function GuardrailsContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            {c.verification.checks.length} checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
