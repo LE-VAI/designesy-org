@@ -201,6 +201,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [auditError, setAuditError] = useState<string | null>(null);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [animatedCatScores, setAnimatedCatScores] = useState<Record<string, number>>({});
+  const [animatedCounts, setAnimatedCounts] = useState({ pass: 0, fail: 0, warn: 0, manual: 0, skip: 0, total: 0, origPoints: 0, slopTotal: 0 });
   const [delta, setDelta] = useState<number | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -233,8 +234,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     if (!result?.score || result.score === 0) {
       setAnimatedScore(0);
       setAnimatedCatScores({});
+      setAnimatedCounts({ pass: 0, fail: 0, warn: 0, manual: 0, skip: 0, total: 0, origPoints: 0, slopTotal: 0 });
       return;
     }
+    // Build target integer counts for simultaneous count-up
+    const countTargets = {
+      pass: result.pass || 0,
+      fail: result.fail || 0,
+      warn: result.warn || 0,
+      manual: result.manual || 0,
+      skip: result.skip || 0,
+      total: result.total || 0,
+      origPoints: result.originality?.points || 0,
+      slopTotal: result.slop?.total || 0,
+    };
     // Respect reduced-motion: skip the animation, show final values
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setAnimatedScore(result.score);
@@ -245,6 +258,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         }
       }
       setAnimatedCatScores(finalCats);
+      setAnimatedCounts(countTargets);
       return;
     }
     const target = result.score;
@@ -268,11 +282,23 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         cats[k] = v * eased;
       }
       setAnimatedCatScores(cats);
+      // Animate integer counts in sync — Math.floor so they tick up, not float
+      setAnimatedCounts({
+        pass: Math.floor(countTargets.pass * eased),
+        fail: Math.floor(countTargets.fail * eased),
+        warn: Math.floor(countTargets.warn * eased),
+        manual: Math.floor(countTargets.manual * eased),
+        skip: Math.floor(countTargets.skip * eased),
+        total: Math.floor(countTargets.total * eased),
+        origPoints: Math.floor(countTargets.origPoints * eased),
+        slopTotal: Math.floor(countTargets.slopTotal * eased),
+      });
       if (t < 1) {
         rafId = requestAnimationFrame(animate);
       } else {
         setAnimatedScore(target);
         setAnimatedCatScores(catTargets);
+        setAnimatedCounts(countTargets);
       }
     };
     rafId = requestAnimationFrame(animate);
@@ -853,23 +879,23 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {/* 4 Metrics Cell Grid */}
             <div className="score-metrics-grid">
               <div className="score-metric-tile is-pass">
-                <span className="score-metric-val">{result.pass}</span>
+                <span className="score-metric-val">{animatedCounts.pass}</span>
                 <span className="score-metric-lbl">Passed</span>
               </div>
               <div className="score-metric-tile is-fail">
-                <span className="score-metric-val">{result.fail}</span>
+                <span className="score-metric-val">{animatedCounts.fail}</span>
                 <span className="score-metric-lbl">Failed</span>
               </div>
               <div className="score-metric-tile is-warn">
-                <span className="score-metric-val">{result.warn}</span>
+                <span className="score-metric-val">{animatedCounts.warn}</span>
                 <span className="score-metric-lbl">Warnings</span>
               </div>
               <div className="score-metric-tile is-manual">
-                <span className="score-metric-val">{result.manual || 0}</span>
+                <span className="score-metric-val">{animatedCounts.manual}</span>
                 <span className="score-metric-lbl">Manual</span>
               </div>
               <div className="score-metric-tile is-skip">
-                <span className="score-metric-val">{result.skip}</span>
+                <span className="score-metric-val">{animatedCounts.skip}</span>
                 <span className="score-metric-lbl">N/A</span>
               </div>
             </div>
@@ -1031,10 +1057,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <span className="score-signals-eyebrow">Craft signals & anti-slop audit</span>
                 <span className="score-signals-net">
                   {result.originality && result.originality.points > 0 && (
-                    <span className="score-signals-net-pos">+{result.originality.points}</span>
+                    <span className="score-signals-net-pos">+{animatedCounts.origPoints}</span>
                   )}
                   {result.slop && result.slop.total > 0 && (
-                    <span className="score-signals-net-neg">−{result.slop.total}</span>
+                    <span className="score-signals-net-neg">−{animatedCounts.slopTotal}</span>
                   )}
                 </span>
               </div>
@@ -1043,7 +1069,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-originality">
                     Originality — positive craft signals
-                    <span className="score-signals-group-chip">+{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''}{result.originality.slopGateApplied ? ' · slop-gated ×0.5' : ''}</span>
+                    <span className="score-signals-group-chip">+{animatedCounts.origPoints}pt{result.originality.points !== 1 ? 's' : ''}{result.originality.slopGateApplied ? ' · slop-gated ×0.5' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
                     {result.originality.signals.map((s) => (
@@ -1063,7 +1089,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-slop">
                     Anti-slop — generic/template patterns
-                    <span className="score-signals-group-chip is-neg">−{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''}</span>
+                    <span className="score-signals-group-chip is-neg">−{animatedCounts.slopTotal}pt{result.slop.total !== 1 ? 's' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
                     {result.slop.findings.map((f) => (
@@ -1091,14 +1117,14 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('ALL')}
               >
-                All <span className="score-tab-count">{checks.length}</span>
+                All <span className="score-tab-count">{animatedCounts.total}</span>
               </button>
               <button
                 type="button"
                 className={`score-filter-tab is-pass ${filterStatus === 'PASS' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('PASS')}
               >
-                Pass <span className="score-tab-count">{result.pass}</span>
+                Pass <span className="score-tab-count">{animatedCounts.pass}</span>
               </button>
               {result.fail! > 0 && (
                 <button
@@ -1106,7 +1132,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   className={`score-filter-tab is-fail ${filterStatus === 'FAIL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('FAIL')}
                 >
-                  Fail <span className="score-tab-count">{result.fail}</span>
+                  Fail <span className="score-tab-count">{animatedCounts.fail}</span>
                 </button>
               )}
               {result.warn! > 0 && (
@@ -1115,7 +1141,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   className={`score-filter-tab is-warn ${filterStatus === 'WARN' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('WARN')}
                 >
-                  Warn <span className="score-tab-count">{result.warn}</span>
+                  Warn <span className="score-tab-count">{animatedCounts.warn}</span>
                 </button>
               )}
               {(result.manual || 0) > 0 && (
@@ -1321,7 +1347,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </div>
 
           <p className="score-note">
-            {result.total} checks evaluated against Designesy design system contract v0.4.0.
+            {animatedCounts.total} checks evaluated against Designesy design system contract v0.4.0.
             {result.a11yFloorApplied && (
               <span className="score-a11y-floor-notice"> · Accessibility floor applied: score capped at C (70) because accessibility &lt; 60%.</span>
             )}

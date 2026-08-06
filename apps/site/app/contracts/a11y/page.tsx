@@ -4,6 +4,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { a11yContract } from '../../lib/a11y-contract';
 import { pageMeta } from '../../lib/site-meta';
+import { CountUp } from '../../lib/count-up';
 
 export const metadata: Metadata = pageMeta({
   title: 'Accessibility contract',
@@ -65,7 +66,7 @@ export default function A11yContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification — {c.verification.checks.length} checks</h2>
+          <h2 className="doctrine-heading">Verification — <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
