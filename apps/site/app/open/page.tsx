@@ -29,6 +29,7 @@ const KIND_LABEL: Record<string, string> = {
   kit: 'Kit',
   lab: 'Lab',
   review: 'Review',
+  tool: 'Tool',
 };
 
 export default function OpenPage() {
@@ -83,7 +84,7 @@ export default function OpenPage() {
               </Link>
             </span>
             <span className="lab-meta-item">
-              Stack · contracts · kits · labs · reviews
+              Stack · contracts · kits · labs · reviews · tools
             </span>
           </div>
         </section>
