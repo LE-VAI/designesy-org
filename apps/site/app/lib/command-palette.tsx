@@ -55,6 +55,7 @@ const INDEX: SearchItem[] = [
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
   { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire radar chart axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
+  { title: 'Contract changelog', href: '/changelog', group: 'Verify', keywords: 'changelog history version dimension tokens motion cadence accessibility takt poise acoustics copywriting identity security verification adopted added modified', meta: 'by dimension' },
   { title: 'Specs', href: '/specs', group: 'Verify', keywords: 'specification engine checks detail', meta: '' },
   // Contract
   { title: 'Design system contract', href: '/contracts/design-system', group: 'Contract', keywords: 'tokens motion acoustic takt cadence typography rules v0.4.0', meta: 'v0.4.0' },
@@ -289,7 +290,8 @@ function cleanHref(url: string): string {
 function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
   if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
-    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity') || href.startsWith('/frameworks')) return 'Verify';
+    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity') || href.startsWith('/frameworks')
+    || href.startsWith('/changelog')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';
   if (href.startsWith('/labs')) return 'Labs';

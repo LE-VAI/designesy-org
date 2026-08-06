@@ -19,6 +19,7 @@ const SURFACE_LINKS = [
   { href: '/specs', label: 'Specs' },
   { href: '/maturity', label: 'Maturity' },
   { href: '/methodology', label: 'Methodology' },
+  { href: '/changelog', label: 'Changelog' },
   { href: '/learn', label: 'Learn' },
   { href: '/open', label: 'Open' },
   { href: '/docs', label: 'Docs' },
