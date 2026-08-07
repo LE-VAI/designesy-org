@@ -14,7 +14,7 @@ function slugify(url: string): string {
     .toLowerCase();
 }
 
-export async function OpenGraphImage({
+export default async function OpenGraphImage({
   params,
 }: {
   params: Promise<{ slug: string }>;
