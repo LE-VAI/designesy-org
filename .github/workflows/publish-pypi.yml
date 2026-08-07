@@ -31,6 +31,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      # Sync pyproject.toml version with the tag so builds always produce the
+      # correct version. Previous failures (v1.9.0, v1.9.1) happened because
+      # pyproject.toml was not bumped before tagging — PyPI rejected the
+      # already-uploaded version with 400 Bad Request.
+      - name: Sync pyproject.toml version with tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          cd packages/designesy-mcp
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "Synced pyproject.toml version -> $VERSION"
+          grep '^version' pyproject.toml
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

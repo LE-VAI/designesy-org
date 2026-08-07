@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "designesy": {
+      "command": "uvx",
+      "args": ["designesy-mcp"],
+      "env": {}
+    }
+  }
+}
