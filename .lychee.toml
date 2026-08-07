@@ -25,19 +25,23 @@ exclude_path = [
 #    Verified working manually, but lychee can't follow the native scheme.
 # 3. insiders.vscode.dev/redirect — same pattern as #2.
 # 4. Placeholder domains in code examples.
+# 5. 127.0.0.1 — CDP localhost probe in designesy_mcp_server.py (not a real link).
 exclude = [
   '^cursor://',
   '^https://vscode\.dev/redirect/mcp/install',
   '^https://insiders\.vscode\.dev/redirect/mcp/install',
   '^https://your-site\.com',
   '^https://your-app\.vercel\.app',
+  '^http://127\.0\.0\.1',
+  '^http://localhost',
 ]
 
 # ── Accept these status codes as OK ─────────────────────────────────────────
 # 200 — OK
+# 202 — Accepted (some sites return this for the root path, e.g. cssdesignawards.com)
 # 301/302 — redirect (followed by lychee, final status is what matters)
 # 405 — Method Not Allowed (POST-only endpoints like /api/mcp reject GET)
-accept = ["200", "301", "302", "405"]
+accept = ["200", "202", "301", "302", "405"]
 
 # ── Timeout ──────────────────────────────────────────────────────────────────
 # 20s per request — some badge/shield endpoints are slow under load.
