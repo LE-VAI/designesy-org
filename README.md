@@ -1,5 +1,11 @@
 # Designesy
 
+[![PyPI](https://img.shields.io/pypi/v/designesy-mcp?label=pypi&color=blue)](https://pypi.org/project/designesy-mcp/)
+[![npm](https://img.shields.io/npm/v/designesy-score?label=npm&color=blue)](https://www.npmjs.com/package/designesy-score)
+[![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.LE--VAI%2Fdesignesy--org-purple)](https://registry.modelcontextprotocol.io/v0.1/servers?search=designesy)
+[![smithery badge](https://smithery.ai/badge/le-vai/designesy)](https://smithery.ai/servers/le-vai/designesy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
   <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 99.2% grade A, and the gate passes" width="1280">
@@ -7,7 +13,27 @@
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
 
-**Designesy Contract Check** is a GitHub Action that scores any URL against a **40-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
+## Quick Start
+
+**Score any URL in 5 seconds — no install:**
+
+```bash
+npx designesy-score@latest https://your-site.com
+```
+
+**Add to Claude Desktop, Cursor, or any MCP client:**
+
+```bash
+# Remote (zero install, no auth):
+claude mcp add designesy --transport http https://www.designesy.org/api/mcp
+
+# Or local stdio via PyPI:
+pip install designesy-mcp && designesy-mcp
+```
+
+**Clone this repo?** The `.mcp.json` at root auto-registers the server in Cursor and Claude Code — just open the project.
+
+**Gate your CI on design-contract compliance:**
 
 ```yaml
 - uses: LE-VAI/designesy-org@v1
@@ -18,16 +44,9 @@
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 40-check engine powers an MCP server (11 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 40-check engine powers an MCP server (11 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
-## Install
-
-```bash
-# Add to Claude Desktop, Cursor, or any MCP-compatible client:
-claude mcp add designesy --transport http https://www.designesy.org/api/mcp
-```
-
-No authentication required — all 11 tools are read-only. The server runs on Vercel as a stateless Streamable HTTP endpoint.
+**Designesy Contract Check** is a GitHub Action that scores any URL against a **40-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
 
 ## Tools
 
@@ -72,7 +91,6 @@ No authentication required — all 11 tools are read-only. The server runs on Ve
 ## Contract verification
 
 ![Designesy Score](https://img.shields.io/badge/contract%20score-99.2%25%20A%20grade-brightgreen)
-[![smithery badge](https://smithery.ai/badge/le-vai/designesy)](https://smithery.ai/servers/le-vai/designesy)
 
 The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **99.2% (Grade A)** — 35 passed, 0 failed, 1 warn, 4 skipped (browser-only checks). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
@@ -161,4 +179,4 @@ At [designesy.org/contracts/design-system](https://www.designesy.org/contracts/d
 
 ## License
 
-All rights reserved. The contract is public; the code is not open-source. See [designesy.org](https://www.designesy.org) for usage terms.
+MIT — see [LICENSE](LICENSE). The contract is public; the code is open-source under MIT.
