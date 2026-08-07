@@ -11,5 +11,5 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function BlogPost() {
-  redirect('https://dev.to/levaiinbey/we-scored-57-sites-against-a-real-design-contract-none-of-them-passed-1ff');
+  redirect('https://dev.to/levainbey/we-scored-57-sites-against-a-real-design-contract-none-of-them-passed-1ff');
 }
