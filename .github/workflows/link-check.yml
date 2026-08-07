@@ -1,0 +1,103 @@
+# Link checker — fails CI on any broken external link.
+#
+# Prevents the class of bug that shipped 3 broken install links in the
+# designesy-mcp README (Cursor deeplink 404, MCP Registry detail 404, Smithery
+# badge 500) — all silently broken until a manual audit caught them.
+#
+# Uses lychee (https://github.com/lycheeverse/lychee) with config in
+# .lychee.toml at the repo root. Scans all .md/.json/.yml/.py/.toml files
+# excluding node_modules and install_tmp.
+#
+# Editor install deeplinks (cursor://, vscode.dev/redirect) are excluded
+# in .lychee.toml because they use native URI schemes that HTTP checkers
+# cannot follow — they're verified manually in the link audit instead.
+
+name: link-check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.toml"
+      - "**/*.py"
+      - ".lychee.toml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+      - "**/*.json"
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.toml"
+      - "**/*.py"
+      - ".lychee.toml"
+  schedule:
+    - cron: '0 9 * * 1'   # every Monday 09:00 UTC — catches link rot even with no PRs
+  workflow_dispatch:       # manual trigger from the Actions tab
+
+permissions:
+  contents: read
+  pull-requests: write     # for the PR comment summary
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Restore lychee cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: lychee-cache-${{ github.run_id }}
+          restore-keys: lychee-cache-
+
+      - name: Run lychee link checker
+        id: lychee
+        uses: lycheeverse/lychee-action@v2.9.0
+        with:
+          # Scan all docs + config. Excludes (node_modules, cursor://, vscode
+          # redirects, placeholder domains) are in .lychee.toml.
+          args: >-
+            --config .lychee.toml
+            --cache
+            --verbose
+            -- './*.md'
+            './README.md'
+            './packages/designesy-mcp/README.md'
+            './packages/designesy-mcp/pyproject.toml'
+            './packages/designesy-mcp/server.json'
+            './action/README.md'
+            './action/action.yml'
+            './cli/README.md'
+            './action.yml'
+            './server.json'
+            './package.json'
+            './.github/workflows/*.yml'
+          fail: true
+          format: markdown
+          output: lychee/out.md
+          jobSummary: true
+
+      - name: Comment PR with link-check results
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = 'Link check failed. See the Actions log for details.';
+            try {
+              summary = fs.readFileSync('lychee/out.md', 'utf8');
+            } catch (e) {}
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `### 🔗 Link Check Results\n\n${summary}\n\n---\n_Automated by the [link-check workflow](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/workflows/link-check.yml)._`,
+            });
