@@ -62,24 +62,23 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v2.9.0
         with:
-          # Scan all docs + config. Excludes (node_modules, cursor://, vscode
-          # redirects, placeholder domains) are in .lychee.toml.
+          # Scan repo-level docs + config. Excludes (node_modules, cursor://,
+          # vscode redirects, placeholder domains) are in .lychee.toml.
           args: >-
             --config .lychee.toml
             --cache
             --verbose
-            -- './*.md'
-            './README.md'
-            './packages/designesy-mcp/README.md'
-            './packages/designesy-mcp/pyproject.toml'
-            './packages/designesy-mcp/server.json'
-            './action/README.md'
-            './action/action.yml'
-            './cli/README.md'
-            './action.yml'
-            './server.json'
-            './package.json'
-            './.github/workflows/*.yml'
+            --glob './*.md'
+            --glob './packages/designesy-mcp/README.md'
+            --glob './packages/designesy-mcp/pyproject.toml'
+            --glob './packages/designesy-mcp/server.json'
+            --glob './action/README.md'
+            --glob './action/action.yml'
+            --glob './cli/README.md'
+            --glob './action.yml'
+            --glob './server.json'
+            --glob './package.json'
+            --glob './.github/workflows/*.yml'
           fail: true
           format: markdown
           output: lychee/out.md
