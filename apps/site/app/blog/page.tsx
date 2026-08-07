@@ -11,5 +11,5 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function BlogIndex() {
-  redirect('https://dev.to/levaiinbey');
+  redirect('https://dev.to/levainbey');
 }
