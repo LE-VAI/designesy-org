@@ -11,5 +11,5 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function BlogPost() {
-  redirect('https://dev.to/levaiinbey/we-scored-30-real-websites-against-a-40-check-design-contract-heres-what-we-found-2hf4');
+  redirect('https://dev.to/levainbey/we-scored-30-real-websites-against-a-40-check-design-contract-heres-what-we-found-2hf4');
 }
