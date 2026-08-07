@@ -53,7 +53,7 @@ Homepage = "https://www.designesy.org"
 Documentation = "https://www.designesy.org/contracts/skill"
 Repository = "https://github.com/LE-VAI/designesy-org"
 "Bug Tracker" = "https://github.com/LE-VAI/designesy-org/issues"
-"MCP Registry" = "https://registry.modelcontextprotocol.io/io.github.LE-VAI/designesy-org"
+"MCP Registry" = "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.LE-VAI%2Fdesignesy-org"
 "Agent Install" = "https://pypi.org/project/designesy-mcp/#quick-start-one-command"
 "Changelog" = "https://github.com/LE-VAI/designesy-org/releases"
 
