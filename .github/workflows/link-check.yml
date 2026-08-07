@@ -62,9 +62,11 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v2.9.0
         with:
-          # Scan repo-level docs + config. Excludes (node_modules, cursor://,
-          # vscode redirects, placeholder domains) are in .lychee.toml.
-          args: --config .lychee.toml --cache --verbose ./*.md ./packages/designesy-mcp/README.md ./packages/designesy-mcp/pyproject.toml ./packages/designesy-mcp/server.json ./action/README.md ./action/action.yml ./cli/README.md ./action.yml ./server.json ./package.json ./.github/workflows/*.yml
+          # Scan all md/json/yml/toml in the repo. The entrypoint.sh uses
+          # `eval`, so bash expands globs before lychee — patterns that
+          # match files are passed as literal file paths, not globs.
+          # .lychee.toml exclude_path filters node_modules/install_tmp.
+          args: --config .lychee.toml --cache --verbose ./**/*.md ./**/*.json ./**/*.yml ./**/*.toml ./**/*.py
           fail: true
           format: markdown
           output: lychee/out.md
