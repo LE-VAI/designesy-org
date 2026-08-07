@@ -64,21 +64,22 @@ jobs:
         with:
           # Scan repo-level docs + config. Excludes (node_modules, cursor://,
           # vscode redirects, placeholder domains) are in .lychee.toml.
+          # File globs are positional [inputs] args (no --glob flag in lychee).
           args: >-
             --config .lychee.toml
             --cache
             --verbose
-            --glob './*.md'
-            --glob './packages/designesy-mcp/README.md'
-            --glob './packages/designesy-mcp/pyproject.toml'
-            --glob './packages/designesy-mcp/server.json'
-            --glob './action/README.md'
-            --glob './action/action.yml'
-            --glob './cli/README.md'
-            --glob './action.yml'
-            --glob './server.json'
-            --glob './package.json'
-            --glob './.github/workflows/*.yml'
+            ./*.md
+            ./packages/designesy-mcp/README.md
+            ./packages/designesy-mcp/pyproject.toml
+            ./packages/designesy-mcp/server.json
+            ./action/README.md
+            ./action/action.yml
+            ./cli/README.md
+            ./action.yml
+            ./server.json
+            ./package.json
+            ./.github/workflows/*.yml
           fail: true
           format: markdown
           output: lychee/out.md
