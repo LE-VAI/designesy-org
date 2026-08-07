@@ -5,21 +5,24 @@
 # Catches the class of bug that shipped 3 broken install links (Cursor deeplink,
 # MCP Registry detail URL, Smithery badge) — all silently 404/500 until audited.
 
+# ── Display ────────────────────────────────────────────────────────────────
+# Don't show interactive progress bar (not available in CI).
+no_progress = true
+
 # ── Scoping ────────────────────────────────────────────────────────────────
 # Only scan repo-level docs + config — never node_modules or install_tmp.
-exclude-path = [
+# These are regex patterns matched against file paths.
+exclude_path = [
   "node_modules",
   "install_tmp",
-  ".git",
-  "apps/site/node_modules",
+  "\\.git",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
 # 1. cursor:// — native URI scheme (like vscode://), not an HTTP URL.
-#    Browsers hand it to the Cursor app, curl/lychee can't follow it.
+#    Browsers hand it to the Cursor app; lychee can't follow it.
 # 2. vscode.dev/redirect/mcp/install — returns 302 to vscode: scheme handler.
-#    Verified working manually (302 to vscode:mcp/install), but lychee can't
-#    follow the native scheme redirect.
+#    Verified working manually, but lychee can't follow the native scheme.
 # 3. insiders.vscode.dev/redirect — same pattern as #2.
 # 4. Placeholder domains in code examples.
 exclude = [
@@ -33,7 +36,7 @@ exclude = [
 # ── Accept these status codes as OK ─────────────────────────────────────────
 # 200 — OK
 # 301/302 — redirect (followed by lychee, final status is what matters)
-# 405 — Method Not Allowed (some API endpoints reject GET, e.g. /api/mcp)
+# 405 — Method Not Allowed (POST-only endpoints like /api/mcp reject GET)
 accept = ["200", "301", "302", "405"]
 
 # ── Timeout ──────────────────────────────────────────────────────────────────
@@ -41,8 +44,8 @@ accept = ["200", "301", "302", "405"]
 timeout = 20
 
 # ── Retry ────────────────────────────────────────────────────────────────────
-# 2 retries for flaky endpoints (Smithery, PyPI behind Cloudflare).
-max-retries = 3
+# 3 retries for flaky endpoints (Smithery, PyPI behind Cloudflare).
+max_retries = 3
 
 # ── Cache ────────────────────────────────────────────────────────────────────
 # Cache results for 24h — speeds up re-runs within the same CI day.
@@ -50,7 +53,4 @@ cache = true
 
 # ── User agent ───────────────────────────────────────────────────────────────
 # Identify ourselves so rate-limiting doesn't trigger false 403s.
-user-agent = "designesy-link-checker/1.0 (https://github.com/LE-VAI/designesy-org)"
-
-# ── No progress bar in CI logs ──────────────────────────────────────────────
-no-progress = true
+user_agent = "designesy-link-checker/1.0 (https://github.com/LE-VAI/designesy-org)"
