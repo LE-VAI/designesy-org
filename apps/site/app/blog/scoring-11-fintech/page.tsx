@@ -11,5 +11,5 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function BlogPost() {
-  redirect('https://dev.to/levaiinbey/the-fintech-sites-that-handle-your-money-cant-pass-a-design-contract-klf');
+  redirect('https://dev.to/levainbey/the-fintech-sites-that-handle-your-money-cant-pass-a-design-contract-klf');
 }

@@ -11,5 +11,5 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default function BlogPost() {
-  redirect('https://dev.to/levaiinbey/we-scored-16-more-sites-the-dev-tools-are-worse-than-the-design-awards');
+  redirect('https://dev.to/levainbey/we-scored-16-more-sites-the-dev-tools-are-worse-than-the-design-awards-4fna');
 }
