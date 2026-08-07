@@ -11,7 +11,7 @@
 
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D&quality=insiders)
-[![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](https://cursor.com/anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
+[![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](cursor://anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
 
 A **read-only stdio MCP server** exposing [designesy.org](https://www.designesy.org)'s design-intelligence infrastructure as native agent tools.
@@ -181,7 +181,7 @@ MIT
 - [Homepage](https://www.designesy.org)
 - [Agent Install](https://pypi.org/project/designesy-mcp/#quick-start-one-command) — one-command `uvx designesy-mcp`
 - [Repository](https://github.com/LE-VAI/designesy-org)
-- [MCP Registry entry](https://registry.modelcontextprotocol.io/io.github.LE-VAI/designesy-org)
+- [MCP Registry entry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.LE-VAI%2Fdesignesy-org)
 - [Changelog](https://github.com/LE-VAI/designesy-org/releases)
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
 - [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score

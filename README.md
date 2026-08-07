@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/designesy-mcp?label=pypi&color=blue)](https://pypi.org/project/designesy-mcp/)
 [![npm](https://img.shields.io/npm/v/designesy-score?label=npm&color=blue)](https://www.npmjs.com/package/designesy-score)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.LE--VAI%2Fdesignesy--org-purple)](https://registry.modelcontextprotocol.io/v0.1/servers?search=designesy)
-[![smithery badge](https://smithery.ai/badge/le-vai/designesy)](https://smithery.ai/servers/le-vai/designesy)
+[![Smithery](https://img.shields.io/badge/Smithery-le--vai%2Fdesignesy-blue)](https://smithery.ai/servers/le-vai/designesy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <picture>
