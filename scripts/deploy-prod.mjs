@@ -21,7 +21,7 @@
  *           Project must be linked (.vercel/project.json present).
  */
 
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -42,17 +42,6 @@ function log(msg) { console.log(`  ${msg}`); }
 function ok(msg) { console.log(`  ✓ ${msg}`); }
 function fail(msg) { console.error(`  ✗ ${msg}`); process.exit(1); }
 function step(n, msg) { console.log(`\n[${n}/6] ${msg}`); }
-
-function run(cmd, opts = {}) {
-  const parts = cmd.split(' ');
-  return spawnSync(parts[0], parts.slice(1), {
-    cwd: REPO_ROOT,
-    encoding: 'utf-8',
-    stdio: opts.silent ? 'pipe' : 'inherit',
-    shell: process.platform === 'win32',
-    ...opts,
-  });
-}
 
 // ─── Pipeline ───────────────────────────────────────────────────────────────
 
@@ -85,15 +74,13 @@ async function main() {
 
   // ── Step 2: Git push ──────────────────────────────────────────────────────
   step(2, 'Git push to origin/main');
-  const pushResult = run('git push origin main', {});
+  const pushResult = spawnSync('git', ['push', 'origin', 'main'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf-8',
+    stdio: 'inherit',
+  });
   if (pushResult.status !== 0) {
-    // Check if it's just "everything up to date"
-    const output = (pushResult.stdout || '') + (pushResult.stderr || '');
-    if (output.includes('Everything up-to-date')) {
-      ok('Already up to date — no new commits to push');
-    } else {
-      fail('Git push failed');
-    }
+    fail('Git push failed');
   } else {
     ok('Pushed to origin/main');
   }
@@ -101,14 +88,17 @@ async function main() {
   // ── Step 3: Wait for Vercel build ─────────────────────────────────────────
   step(3, 'Waiting for Vercel deployment');
 
+  // Wait 20s for Vercel to register the new deployment, then poll
+  await new Promise(r => setTimeout(r, 20000));
+
   // Poll `vercel ls` every 10s until the latest production deployment is Ready
   let deploymentUrl = null;
   let attempts = 0;
-  const maxAttempts = 60; // 10 minutes max (10s intervals)
+  const maxAttempts = 48; // 8 minutes max after initial 20s wait (10s intervals)
 
   while (attempts < maxAttempts) {
     attempts++;
-    const lsResult = spawnSync('npx', ['vercel', 'ls', '--yes'], {
+    const lsResult = spawnSync('npx', ['vercel', 'ls'], {
       cwd: REPO_ROOT,
       encoding: 'utf-8',
       stdio: 'pipe',
@@ -121,39 +111,35 @@ async function main() {
       continue;
     }
 
-    // Parse the vercel ls output — find the first Production row
-    const lines = lsResult.stdout.split('\n').filter(l => l.trim());
-    let found = false;
+    // Parse the vercel ls output — find the first Ready Production row
+    const lines = lsResult.stdout.split('\n');
     for (const line of lines) {
-      // Lines look like: "  1m   levais-projects/designesy-org  https://designesy-xxx.vercel.app  ● Ready  Production  1m  levainbey"
-      if (line.includes('Production') && line.includes('designesy')) {
+      if (line.includes('Production') && line.includes('designesy') && line.includes('● Ready')) {
         const urlMatch = line.match(/https:\/\/designesy-[a-z0-9]+-levais-projects\.vercel\.app/);
-        const isReady = line.includes('● Ready');
-        const isBuilding = line.includes('● Building') || line.includes('● Queued') || line.includes('● Initializing');
-
         if (urlMatch) {
           deploymentUrl = urlMatch[0];
-          if (isReady) {
-            ok(`Deployment Ready: ${deploymentUrl}`);
-            found = true;
-            break;
-          } else if (isBuilding) {
-            const status = line.match(/● (\w+)/)?.[1] || 'building';
-            if (attempts === 1) log(`Deployment ${status.toLowerCase()}...`);
-            if (attempts % 6 === 0) log(`Still ${status.toLowerCase()} (${attempts * 10}s)...`);
-          }
+          ok(`Deployment Ready: ${deploymentUrl}`);
+          break;
         }
       }
     }
 
-    if (found) break;
+    if (deploymentUrl) break;
+
+    // Check if it's building
+    const building = lsResult.stdout.includes('● Building') || lsResult.stdout.includes('● Queued');
+    if (building && attempts % 6 === 0) {
+      log(`Still building (${attempts * 10 + 20}s)...`);
+    } else if (attempts === 1) {
+      log('Deployment building...');
+    }
+
     await new Promise(r => setTimeout(r, 10000));
   }
 
   if (!deploymentUrl) {
-    log('Could not auto-detect deployment URL from vercel ls.');
-    log('Check Vercel dashboard and alias manually if needed.');
-    // Continue to smoke test — the production domain may already be pointing to the latest deploy
+    log('Could not auto-detect deployment URL — proceeding to smoke test.');
+    log('The production domain auto-assigns on git-push deploys.');
   }
 
   // ── Step 4: Verify production domains ────────────────────────────────────
