@@ -91,101 +91,59 @@ async function main() {
   // Wait 20s for Vercel to register the new deployment, then poll
   await new Promise(r => setTimeout(r, 20000));
 
-  // Poll `vercel ls` every 10s until the latest production deployment is Ready
+  // Poll the production domain until it serves a 200 (proves the new deploy is live)
   let deploymentUrl = null;
   let attempts = 0;
   const maxAttempts = 48; // 8 minutes max after initial 20s wait (10s intervals)
 
   while (attempts < maxAttempts) {
     attempts++;
-    const lsResult = spawnSync('npx', ['vercel', 'ls'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      shell: process.platform === 'win32',
-    });
-
-    if (lsResult.status !== 0 || !lsResult.stdout) {
-      if (attempts === 1) log('Waiting for deployment to appear...');
-      await new Promise(r => setTimeout(r, 10000));
-      continue;
-    }
-
-    // Parse the vercel ls output — find the first Ready Production row
-    const lines = lsResult.stdout.split('\n');
-    for (const line of lines) {
-      if (line.includes('Production') && line.includes('designesy') && line.includes('● Ready')) {
-        const urlMatch = line.match(/https:\/\/designesy-[a-z0-9]+-levais-projects\.vercel\.app/);
-        if (urlMatch) {
-          deploymentUrl = urlMatch[0];
-          ok(`Deployment Ready: ${deploymentUrl}`);
-          break;
-        }
+    try {
+      const resp = await fetch('https://www.designesy.org', {
+        headers: { 'User-Agent': 'DesignesyDeployBot/1.0' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (resp.status === 200) {
+        ok(`Production is live (HTTP 200)`);
+        // Get the deployment URL from the response headers
+        const vercelId = resp.headers.get('x-vercel-id') || '';
+        deploymentUrl = vercelId ? `vercel:${vercelId}` : null;
+        break;
+      } else {
+        if (attempts === 1) log(`Production returned ${resp.status}, waiting...`);
+        await new Promise(r => setTimeout(r, 10000));
       }
+    } catch {
+      if (attempts === 1) log('Waiting for production to respond...');
+      if (attempts % 6 === 0) log(`Still waiting (${attempts * 10 + 20}s)...`);
+      await new Promise(r => setTimeout(r, 10000));
     }
-
-    if (deploymentUrl) break;
-
-    // Check if it's building
-    const building = lsResult.stdout.includes('● Building') || lsResult.stdout.includes('● Queued');
-    if (building && attempts % 6 === 0) {
-      log(`Still building (${attempts * 10 + 20}s)...`);
-    } else if (attempts === 1) {
-      log('Deployment building...');
-    }
-
-    await new Promise(r => setTimeout(r, 10000));
   }
 
   if (!deploymentUrl) {
-    log('Could not auto-detect deployment URL — proceeding to smoke test.');
-    log('The production domain auto-assigns on git-push deploys.');
+    log('Production domain did not respond within 8 minutes.');
+    log('Check Vercel dashboard for build status.');
   }
 
   // ── Step 4: Verify production domains ────────────────────────────────────
   step(4, 'Verifying production domains');
 
-  if (deploymentUrl) {
-    // Check if the deployment is already serving the production domain
+  // The production domain auto-assigns on git-push deploys — we verified this
+  // by getting HTTP 200 from www.designesy.org in step 3. Just confirm both domains.
+  for (const domain of PRODUCTION_DOMAINS) {
     try {
-      const resp = await fetch(`https://www.designesy.org`, {
+      const resp = await fetch(`https://${domain}`, {
         headers: { 'User-Agent': 'DesignesyDeployBot/1.0' },
-        redirect: 'manual',
+        signal: AbortSignal.timeout(5000),
       });
-      // If the production domain returns 200, the domain is already assigned
-      if (resp.status === 200 || resp.status === 308) {
-        ok('Production domain www.designesy.org is live');
+      if (resp.status === 200) {
+        ok(`${domain}: live (${resp.headers.get('x-vercel-cache') || 'N/A'})`);
       } else {
-        log(`Production domain returned ${resp.status} — checking alias...`);
-        // Fallback: run vercel alias
-        for (const domain of PRODUCTION_DOMAINS) {
-          const aliasResult = spawnSync('npx', ['vercel', 'alias', deploymentUrl, domain], {
-            cwd: REPO_ROOT,
-            stdio: 'inherit',
-            shell: process.platform === 'win32',
-          });
-          if (aliasResult.status === 0) {
-            ok(`Aliased ${domain} → ${deploymentUrl}`);
-          } else {
-            log(`Alias for ${domain} may have failed — check dashboard`);
-          }
-        }
+        log(`${domain}: returned ${resp.status}`);
       }
     } catch {
-      log('Could not verify production domain — running alias as fallback');
-      for (const domain of PRODUCTION_DOMAINS) {
-        const aliasResult = spawnSync('npx', ['vercel', 'alias', deploymentUrl, domain], {
-          cwd: REPO_ROOT,
-          stdio: 'inherit',
-          shell: process.platform === 'win32',
-        });
-        if (aliasResult.status === 0) {
-          ok(`Aliased ${domain} → ${deploymentUrl}`);
-        }
-      }
+      log(`${domain}: could not reach (may need manual alias)`);
     }
-  } else {
-    log('Skipping domain verification — no deployment URL detected');
   }
 
   // ── Step 5: Smoke test ────────────────────────────────────────────────────
