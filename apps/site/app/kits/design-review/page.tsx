@@ -147,7 +147,7 @@ export default function DesignReviewKitPage() {
               <div
                 className="principle"
                 key={d.num}
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
               >
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
@@ -207,7 +207,7 @@ export default function DesignReviewKitPage() {
                 href={item.href}
                 className="row"
                 role="listitem"
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">

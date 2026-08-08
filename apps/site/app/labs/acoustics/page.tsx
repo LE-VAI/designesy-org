@@ -13,13 +13,13 @@ import { acousticTokens } from '../../lib/acoustic-tokens';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
   description:
-    'Lab Four — interaction sound as a token system. Ten cues, ten roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
+    'Lab Four — interaction sound as a token system. Nineteen cues, nineteen roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
   path: '/labs/acoustics',
   ogTitle: 'Acoustics · Lab Four — Designesy',
   ogDescription:
-    'Interaction sound as a token system. Ten cues, ten roles, Cuelume v0.1.0. No sound without a token name and rationale.',
+    'Interaction sound as a token system. Nineteen cues, nineteen roles, Cuelume v0.2.2 + cuelume-extend. No sound without a token name and rationale.',
   twitterDescription:
-    'Interaction sound lab — ten cues, ten roles. designesy.org/labs/acoustics',
+    'Interaction sound lab — nineteen cues, nineteen roles. designesy.org/labs/acoustics',
 });
 
 const ANATOMY_DONE = [
@@ -59,7 +59,7 @@ const ANTI = [
 ];
 
 const PROVENANCE = [
-  'Cuelume v0.1.0 (MIT, Daniel Belyi) — interaction audio engine',
+  'Cuelume v0.2.2 (MIT, Daniel Belyi) + cuelume-extend v0.2.0 — interaction audio engine',
   'W3C Design Tokens Format Module 2025.10 — acoustic type is net-new',
   'Designesy design system contract v0.3.0 — acoustic section adopted',
   'Site-wide integration — data-cuelume-* attributes on every interactive element',
@@ -98,8 +98,8 @@ export default function AcousticsLabPage() {
             Interaction sound as a token system.
           </p>
           <p className="surface-note">
-            Acoustics studies the sound parallel to the visual token system. Ten
-            cues, ten interaction roles, one documented engine. No sound appears
+            Acoustics studies the sound parallel to the visual token system. Nineteen
+            cues, nineteen interaction roles, one documented engine. No sound appears
             on a Designesy surface without a token name and a rationale here. If
             the sound is louder than the action it confirms, it fails.
           </p>
@@ -169,7 +169,7 @@ export default function AcousticsLabPage() {
               <div className="principle-body">
                 <h3>Every sound has a name</h3>
                 <p>
-                  A sound without a token is a contract violation. Ten cues, ten
+                  A sound without a token is a contract violation. Nineteen cues, nineteen
                   roles, documented here. If a new interaction needs audio, add a
                   token before adding the sound.
                 </p>
@@ -234,7 +234,7 @@ export default function AcousticsLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Token reference</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Ten cues, ten interaction roles, one documented engine. Every sound
+            Nineteen cues, nineteen interaction roles, one documented engine. Every sound
             on a Designesy surface traces to a token here.
           </p>
           <div className="principle-list">

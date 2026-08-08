@@ -164,7 +164,7 @@ export default function LovableCaseStudy() {
               href="/score?url=lovable.dev"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -177,7 +177,7 @@ export default function LovableCaseStudy() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -190,7 +190,7 @@ export default function LovableCaseStudy() {
               href="/score/lovable"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -203,7 +203,7 @@ export default function LovableCaseStudy() {
               href="/work"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>

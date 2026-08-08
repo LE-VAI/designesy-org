@@ -2465,7 +2465,7 @@ function deriveVerdict(result: ScoreResult): string {
 
 /** Emission format: designesy (default, native shape — unchanged). */
 function emitDesignesy(result: ScoreResult) {
-  return { ok: true, ...result };
+  return { ok: true, contractVersion: 'v0.4.0', ...result };
 }
 
 /** Emission format: canonical review-findings.json schema (the superset). */

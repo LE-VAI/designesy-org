@@ -448,7 +448,7 @@ export default function HomePage() {
                 href={surface.href}
                 data-reveal
                 key={surface.href}
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="surface-card-meta">{surface.meta}</span>

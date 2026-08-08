@@ -14,7 +14,7 @@ export function DirectorDock() {
       href="https://designesy.ai.studio/"
       target="_blank"
       rel="noopener noreferrer"
-      data-cuelume-hover="whisper"
+      data-cuelume-hover="bloom"
       data-cuelume-press="tick"
       aria-label="Talk to the Director — opens designesy.ai.studio in a new tab"
       title="Talk to the Director"

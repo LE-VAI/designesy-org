@@ -164,7 +164,7 @@ export default function OpenPage() {
                 role="listitem"
                 href={item.path}
                 key={item.path}
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">
@@ -200,7 +200,7 @@ export default function OpenPage() {
               className="row"
               role="listitem"
               href="/contracts/design-system"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -213,7 +213,7 @@ export default function OpenPage() {
               className="row"
               role="listitem"
               href="/kits/design-review"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -228,7 +228,7 @@ export default function OpenPage() {
               className="row"
               role="listitem"
               href="/open/handoff"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -243,7 +243,7 @@ export default function OpenPage() {
               className="row"
               role="listitem"
               href="/review/keyboard"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>
@@ -258,7 +258,7 @@ export default function OpenPage() {
               className="row"
               role="listitem"
               href="/docs"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">05</span>

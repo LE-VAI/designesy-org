@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
-import { play } from 'cuelume';
 import { playExtended } from './cuelume-extend';
 
 /**
@@ -57,7 +56,7 @@ export function Copyable({
         document.body.removeChild(ta);
       }
       setCopied(true);
-      play('success');
+      playExtended('info');
       setTimeout(() => setCopied(false), 1600);
     } catch {
       /* clipboard unavailable — play error sound as feedback */

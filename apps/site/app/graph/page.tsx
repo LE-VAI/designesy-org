@@ -117,7 +117,7 @@ export default function GraphPage() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -130,7 +130,7 @@ export default function GraphPage() {
               href="/review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -143,7 +143,7 @@ export default function GraphPage() {
               href="/work"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -156,7 +156,7 @@ export default function GraphPage() {
               href="/graph.json"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>
@@ -169,7 +169,7 @@ export default function GraphPage() {
               href="/docs"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">05</span>
