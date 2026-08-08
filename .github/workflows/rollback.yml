@@ -121,7 +121,7 @@ jobs:
           echo "HTTP status: $HTTP_CODE"
           echo "Response: $BODY"
 
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ]; then
             echo "✅ Rollback initiated successfully"
             echo "status=success" >> $GITHUB_OUTPUT
           else
