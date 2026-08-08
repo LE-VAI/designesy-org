@@ -54,8 +54,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          # setup-node resolves this path from the repo root, NOT from
+          # working-directory. Must be explicit even though defaults.run
+          # is set to apps/site above.
           cache-dependency-path: apps/site/package-lock.json
 
       # npm ci enforces the lockfile (fails if out of sync) and is faster
