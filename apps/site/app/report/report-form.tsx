@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ShareButton } from '../lib/share-button';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -160,15 +161,12 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
               </p>
             </div>
             <div style={{ marginLeft: 'auto' }}>
-              <a
-                href={shareUrl(result.url || '')}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Share →
-              </a>
+              <ShareButton
+                url={shareUrl(result.url || '')}
+                text={`Designesy composite report — ${result.url || ''}`}
+                label="Share this report"
+                compact
+              />
             </div>
           </div>
 
