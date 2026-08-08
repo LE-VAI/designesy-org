@@ -151,7 +151,7 @@ export default function AcousticTokensPage() {
               href={acousticTokens.provenance.npm}
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
               target="_blank"
               rel="noopener noreferrer"
@@ -166,7 +166,7 @@ export default function AcousticTokensPage() {
               href={acousticTokens.provenance.repo}
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
               target="_blank"
               rel="noopener noreferrer"
@@ -181,7 +181,7 @@ export default function AcousticTokensPage() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -194,7 +194,7 @@ export default function AcousticTokensPage() {
               href="/acoustic-tokens.json"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>

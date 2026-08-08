@@ -335,7 +335,7 @@ export default function PoiseFieldCheckPage() {
                 href={item.href}
                 className="row"
                 role="listitem"
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">
@@ -357,7 +357,7 @@ export default function PoiseFieldCheckPage() {
               href="/labs/poise"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -370,7 +370,7 @@ export default function PoiseFieldCheckPage() {
               href="/review/poise/keyboard"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -383,7 +383,7 @@ export default function PoiseFieldCheckPage() {
               href="/kits/design-review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>

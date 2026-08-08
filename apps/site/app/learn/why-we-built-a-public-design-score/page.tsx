@@ -133,7 +133,7 @@ export default function WhyPublicScorePage() {
               href="/score?url=designesy.org"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -146,7 +146,7 @@ export default function WhyPublicScorePage() {
               href="/score"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -159,7 +159,7 @@ export default function WhyPublicScorePage() {
               href="/learn/what-is-design-verification"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>

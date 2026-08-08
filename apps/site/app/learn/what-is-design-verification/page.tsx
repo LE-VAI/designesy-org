@@ -201,7 +201,7 @@ export default function WhatIsDesignVerificationPage() {
               href="/score"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -214,7 +214,7 @@ export default function WhatIsDesignVerificationPage() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -227,7 +227,7 @@ export default function WhatIsDesignVerificationPage() {
               href="/learn/design-verification-vs-linting-vs-visual-regression"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -240,7 +240,7 @@ export default function WhatIsDesignVerificationPage() {
               href="/learn/why-we-built-a-public-design-score"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>

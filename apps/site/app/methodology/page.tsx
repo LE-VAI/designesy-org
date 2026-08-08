@@ -912,6 +912,20 @@ export default function MethodologyPage() {
               24-hour cache window). If a site changes its CSS, the score changes
               on the next run.
             </p>
+            <p>
+              <strong>Conformance &ne; quality.</strong> A high score means the
+              site ships the contract primitives the engine can detect. It does{' '}
+              <em>not</em> mean the design is good. A site can pass every check
+              and still be mediocre; a site can fail many and still be excellent.
+              The score is a <strong>calibration signal</strong>, not a verdict
+              — the same way a Lighthouse 100 doesn&rsquo;t mean a page is
+              fast, it means Lighthouse can&rsquo;t find anything more to
+              measure (Goodhart&rsquo;s Law). The anti-slop and originality layers
+              exist to push against this limit, but they cannot eliminate it.
+              The dimension profile (per-category scores) is more informative
+              than the letter grade: if modest weight changes reshuffle the
+              leaderboard, the profile matters more than the rank.
+            </p>
           </div>
         </section>
 
@@ -1033,7 +1047,7 @@ export default function MethodologyPage() {
         </section>
 
         <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
-          Methodology v2 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
+          Contract v0.4.0 · Methodology v2 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
           12 slop rules (S1&ndash;S12, up to -20pts) · 7 originality signals
           (O1&ndash;O7, up to +8pts) · 6 hard-fail ceilings · deterministic, no
           LLM · engine source at{' '}

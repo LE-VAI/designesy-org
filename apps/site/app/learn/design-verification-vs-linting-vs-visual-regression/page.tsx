@@ -124,7 +124,7 @@ export default function ComparisonPage() {
               href="/learn/what-is-design-verification"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -137,7 +137,7 @@ export default function ComparisonPage() {
               href="/learn/why-we-built-a-public-design-score"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
