@@ -1177,19 +1177,4 @@ async function compatibilityShim(request: Request): Promise<Response> {
 
 // Stateless protocol: GET (discover/stream) and POST (requests).
 // No DELETE — there are no sessions to close.
-
-// TEMPORARY: trivial POST handler to verify Vercel is serving our latest code.
-// If this returns {"shim":"active"}, the deployment is fresh and our code is running.
-async function postTest(request: Request): Promise<Response> {
-  return new Response(JSON.stringify({
-    shim: 'active',
-    method: request.method,
-    hasModernHeader: request.headers.get('mcp-protocol-version') === '2026-07-28',
-    timestamp: Date.now(),
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', 'X-MCP-Shim': 'test-active' },
-  });
-}
-
-export { handler as GET, postTest as POST };
+export { handler as GET, compatibilityShim as POST };
