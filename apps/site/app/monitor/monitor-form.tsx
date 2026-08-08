@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { ShareButton } from '../lib/share-button';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -264,15 +265,12 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
               </p>
             </div>
             <div style={{ marginLeft: 'auto' }}>
-              <a
-                href={shareUrl(scoredUrl)}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Share →
-              </a>
+              <ShareButton
+                url={shareUrl(scoredUrl)}
+                text={`Designesy continuous monitoring — ${scoredUrl}`}
+                label="Share this monitor result"
+                compact
+              />
             </div>
           </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { ShareButton } from '../../lib/share-button';
 type CheckResult = {
   id: string;
   item: string;
@@ -504,10 +505,18 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </Link>
           <Link
             href="/score"
-            className="score-action-btn score-share-btn"
+            className="score-action-btn"
           >
             Score another site →
           </Link>
+          <ShareButton
+            url={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
+            text={result?.grade
+              ? `Designesy score: Grade ${result.grade} (${result.score}%) — ${scoredUrl}`
+              : `Designesy design verification report — ${scoredUrl}`}
+            label="Share this report"
+            compact
+          />
         </div>
         <p className="report-version">
           Report generated against design system contract v0.4.0 · 40 checks ·{' '}
