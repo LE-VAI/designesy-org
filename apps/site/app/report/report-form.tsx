@@ -145,22 +145,22 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
       )}
 
       {status === 'ok' && result && (
-        <div className="score-result" style={{ marginTop: '2rem' }}>
+        <div className="score-result report-composite" style={{ marginTop: '2rem' }}>
           {/* Composite grade header */}
-          <div className="score-result-header" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+          <div className="report-composite-header">
             <ScoreDial score={result.compositeScore || 0} grade={result.compositeGrade || 'F'} />
-            <div className="score-summary">
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted-dim)', margin: '0 0 0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <div className="score-summary report-composite-summary">
+              <p className="report-composite-eyebrow">
                 Composite design-intelligence grade
               </p>
-              <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.5rem' }}>
+              <p className="report-composite-grade-line">
                 {result.compositeGrade} · {result.compositeScore}/100
               </p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
+              <p className="report-composite-counts">
                 {result.totalPass} pass · {result.totalWarn} warn · {result.totalFail} fail · {result.totalManual || 0} manual · {result.totalSkip} N/A of {result.totalChecks} checks
               </p>
             </div>
-            <div style={{ marginLeft: 'auto' }}>
+            <div className="report-composite-share">
               <ShareButton
                 url={shareUrl(result.url || '')}
                 text={`Designesy composite report — ${result.url || ''}`}
@@ -171,12 +171,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
           </div>
 
           {/* Sub-engine scores */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-          }}>
+          <div className="report-sub-engines">
             <SubEngineCard
               label="Score"
               weight="×0.5"
@@ -198,14 +193,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
           </div>
 
           {/* Engine tabs */}
-          <div style={{
-            display: 'flex',
-            gap: '0.5rem',
-            marginBottom: '1rem',
-            borderBottom: '1px solid var(--line)',
-            paddingBottom: '0.5rem',
-            flexWrap: 'wrap',
-          }}>
+          <div className="report-engine-tabs">
             {([
               { key: 'score', label: 'Score', count: result.score?.checks?.length || 0 },
               { key: 'drift', label: 'Drift', count: result.drift?.checks?.length || 0 },
@@ -215,18 +203,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
               <button
                 key={tab.key}
                 onClick={() => setActiveEngine(tab.key)}
-                style={{
-                  fontSize: '0.8rem',
-                  fontWeight: activeEngine === tab.key ? 600 : 400,
-                  color: activeEngine === tab.key ? 'var(--ink)' : 'var(--muted)',
-                  background: activeEngine === tab.key ? 'var(--surface-hover)' : 'transparent',
-                  border: '1px solid',
-                  borderColor: activeEngine === tab.key ? 'var(--line-strong)' : 'var(--line)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.4rem 0.8rem',
-                  cursor: 'pointer',
-                  transition: 'background-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1)), border-color 150ms var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                }}
+                className={`report-engine-tab${activeEngine === tab.key ? ' active' : ''}`}
                 aria-pressed={activeEngine === tab.key}
               >
                 {tab.label} ({tab.count})
@@ -319,33 +296,28 @@ function SubEngineCard({
   const fillColor = score === undefined ? 'var(--muted-dim)' : score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
 
   return (
-    <div style={{
-      background: 'var(--surface-soft)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--radius)',
-      padding: '1rem 1.25rem',
-    }}>
-      <p style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--muted-dim)', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+    <div className="report-sub-engine-card">
+      <p className="report-sub-engine-label">
         {label} {weight}
       </p>
       {result?.ok && score !== undefined && grade ? (
         <>
-          <p style={{ fontSize: '1.5rem', fontWeight: 700, color: fillColor, margin: '0 0 0.25rem' }}>
+          <p className="report-sub-engine-grade" style={{ color: fillColor }}>
             {grade} · {score}
           </p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: 0 }}>
+          <p className="report-sub-engine-counts">
             {result.pass} pass · {result.warn} warn · {result.fail} fail of {result.total}
           </p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0' }}>
+          <p className="report-sub-engine-desc">
             {description}
           </p>
         </>
       ) : (
         <>
-          <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--muted-dim)', margin: '0 0 0.25rem' }}>
+          <p className="report-sub-engine-grade report-sub-engine-grade--null">
             —
           </p>
-          <p style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: 0 }}>
+          <p className="report-sub-engine-counts">
             {result?.error || 'Engine did not return a score'}
           </p>
         </>
@@ -356,39 +328,110 @@ function SubEngineCard({
 
 function EngineChecks({ checks, emptyText }: { checks: CheckResult[]; emptyText: string }) {
   if (checks.length === 0) {
-    return <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '1rem 0' }}>{emptyText}</p>;
+    return <p className="report-empty">{emptyText}</p>;
   }
+
+  // Separate actionable checks from SKIP/MANUAL
+  const actionable = checks.filter((c) => c.status !== 'SKIP' && c.status !== 'MANUAL');
+  const skipped = checks.filter((c) => c.status === 'SKIP');
+  const manual = checks.filter((c) => c.status === 'MANUAL');
+
+  // Sort: FAIL first, then WARN, then PASS
+  const statusOrder: Record<string, number> = { FAIL: 0, WARN: 1, PASS: 2 };
+  const sorted = [...actionable].sort(
+    (a, b) => (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3)
+  );
+
   return (
-    <div className="row-stack" role="list">
-      {checks.map((check, i) => (
-        <div
-          key={`${check.id}-${i}`}
-          className="row"
-          role="listitem"
-          style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
-        >
-          <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-          <span className="row-body">
-            <span className="row-title">
-              {check.id} · {check.item}{' '}
+    <div className="report-engine-content">
+      {/* Status summary bar */}
+      <StatusSummaryBar checks={checks} />
+
+      {/* Actionable checks as collapsible cards */}
+      <div className="report-check-list">
+        {sorted.map((check) => (
+          <details
+            key={check.id}
+            className={`report-check report-check--${check.status.toLowerCase()}`}
+          >
+            <summary className="report-check-summary">
               <span
-                className={`check-status is-${check.status.toLowerCase()}`}
-                style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: check.status === 'PASS' ? 'var(--ok)' : check.status === 'FAIL' ? 'var(--error)' : check.status === 'WARN' ? 'var(--warn)' : 'var(--muted-dim)',
-                  marginLeft: '0.5rem',
-                }}
+                className={`report-check-status report-check-status--${check.status.toLowerCase()}`}
               >
                 {check.status}
               </span>
-            </span>
-            <span className="row-meta">{check.detail}</span>
-          </span>
-        </div>
-      ))}
+              <span className="report-check-id">{check.id}</span>
+              <span className="report-check-item">{check.item}</span>
+              <span className="report-check-detail">{check.detail}</span>
+            </summary>
+            <div className="report-check-body">
+              <p className="report-check-body-detail">{check.detail}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+
+      {/* Manual checks (collapsed by default) */}
+      {manual.length > 0 && (
+        <details className="report-skipped">
+          <summary>
+            {manual.length} check{manual.length !== 1 ? 's' : ''} manual (require live browser — run the audit)
+          </summary>
+          <div className="report-check-list">
+            {manual.map((check) => (
+              <div key={check.id} className="report-check report-check--manual">
+                <span className="report-check-status report-check-status--manual">MANUAL</span>
+                <span className="report-check-id">{check.id}</span>
+                <span className="report-check-item">{check.item}</span>
+                <span className="report-check-detail">{check.detail}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Skipped checks (collapsed by default) */}
+      {skipped.length > 0 && (
+        <details className="report-skipped">
+          <summary>
+            {skipped.length} check{skipped.length !== 1 ? 's' : ''} not applicable (convention not met)
+          </summary>
+          <div className="report-check-list">
+            {skipped.map((check) => (
+              <div key={check.id} className="report-check report-check--skip">
+                <span className="report-check-status report-check-status--skip">N/A</span>
+                <span className="report-check-id">{check.id}</span>
+                <span className="report-check-item">{check.item}</span>
+                <span className="report-check-detail">{check.detail}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function StatusSummaryBar({ checks }: { checks: CheckResult[] }) {
+  const pass = checks.filter((c) => c.status === 'PASS').length;
+  const warn = checks.filter((c) => c.status === 'WARN').length;
+  const fail = checks.filter((c) => c.status === 'FAIL').length;
+  const skip = checks.filter((c) => c.status === 'SKIP').length;
+  const manual = checks.filter((c) => c.status === 'MANUAL').length;
+  const total = checks.length;
+
+  if (total === 0) return null;
+
+  return (
+    <div className="report-status-bar" role="status" aria-label={`${total} checks: ${pass} passed, ${warn} warnings, ${fail} failed`}>
+      <span className="report-status-bar-total">{total} checks</span>
+      <div className="report-status-bar-pills">
+        {pass > 0 && <span className="report-status-pill report-status-pill--pass">{pass} pass</span>}
+        {warn > 0 && <span className="report-status-pill report-status-pill--warn">{warn} warn</span>}
+        {fail > 0 && <span className="report-status-pill report-status-pill--fail">{fail} fail</span>}
+        {manual > 0 && <span className="report-status-pill report-status-pill--manual">{manual} manual</span>}
+        {skip > 0 && <span className="report-status-pill report-status-pill--skip">{skip} N/A</span>}
+      </div>
     </div>
   );
 }
