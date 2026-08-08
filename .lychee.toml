@@ -16,6 +16,9 @@ exclude_path = [
   "node_modules",
   "install_tmp",
   "\\.git",
+  # package-lock.json contains transitive dep funding URLs (patreon,
+  # opencollective, tidelift) that 403 bots — not our content to fix.
+  "package-lock\\.json",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────

@@ -1,0 +1,114 @@
+# CI — the build gate Vercel was missing.
+#
+# Runs the EXACT command Vercel runs (`npm run build`) on every PR and every
+# push to main, BEFORE the change reaches Vercel. This closes the root cause
+# confirmed by Vercel's AI assistant: "source changes are reaching Vercel
+# before the production build is validated locally or in CI."
+#
+# Failure classes this catches (all sampled from real failed Vercel deploys):
+#   • Missing default export in opengraph-image.tsx (route contract error)
+#   • TSX syntax errors (next build → type collection fails)
+#   • ESLint react/no-unescaped-entities (build-blocking in core-web-vitals)
+#   • scripts/postbuild-pagefind.js syntax errors
+#   • Any TypeScript type error (tsc --noEmit)
+#
+# After this workflow is wired as a required status check on main (see
+# branch protection setup), a broken build cannot merge and cannot reach
+# Vercel's production deploy.
+#
+# Layered with Vercel's promotion gate (Settings → Git → Git Settings →
+# "Block deployment promotion until GitHub Actions pass"), this gives two
+# independent gates: merge gate (this workflow) + production gate (Vercel).
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref — saves CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Job 1: Node / Next.js build gate ──────────────────────────────────────
+  # Runs lint + typecheck + build in the apps/site workspace.
+  build-site:
+    name: Build site
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/site
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          # setup-node resolves this path from the repo root, NOT from
+          # working-directory. Must be explicit even though defaults.run
+          # is set to apps/site above.
+          cache-dependency-path: apps/site/package-lock.json
+
+      # npm ci enforces the lockfile (fails if out of sync) and is faster
+      # than npm install. Never use npm install in CI — it can mutate the
+      # lockfile and break reproducibility.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # This is the exact command Vercel runs: `next build && node scripts/postbuild-pagefind.js`.
+      # If this passes locally in CI, it will pass on Vercel.
+      - name: Build
+        run: npm run build
+
+      # Cache the Next.js build output for faster re-runs on the same PR.
+      - name: Cache .next
+        uses: actions/cache@v4
+        with:
+          path: apps/site/.next
+          key: nextjs-${{ github.sha }}
+          restore-keys: nextjs-
+
+  # ── Job 2: Python MCP package gate ───────────────────────────────────────
+  # The designesy-mcp Python package lives in packages/designesy-mcp and
+  # publishes to PyPI + MCP registry on tag. Verify it builds in CI so a
+  # broken Python change can't merge either.
+  build-mcp:
+    name: Build MCP package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/designesy-mcp
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build
+
+      - name: Build package
+        run: python -m build
