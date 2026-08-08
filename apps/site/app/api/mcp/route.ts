@@ -1066,6 +1066,105 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
   },
 );
 
+// ── Protocol compatibility shim ───────────────────────────────────────────────
+//
+// The SDK's modern path (2026-07-28) strictly requires:
+//   1. MCP-Protocol-Version header naming a modern revision (2026-07-28)
+//   2. A _meta envelope with keys io.modelcontextprotocol/protocolVersion,
+//      io.modelcontextprotocol/clientInfo, io.modelcontextprotocol/clientCapabilities
+//
+// Clients that send the modern header but don't form the envelope correctly
+// (missing _meta, using bare key names like "protocolVersion" instead of the
+// io.modelcontextprotocol/ prefixed names, or omitting clientCapabilities)
+// get a hard 400 rejection from the modern path.
+//
+// This shim intercepts those requests BEFORE they reach the SDK handler and
+// downgrades them to the legacy stateless path by stripping the modern header.
+// The legacy path supports all protocol versions (2025-06-18 through
+// 2026-07-28) and doesn't require the envelope — it uses the 2025-era
+// initialize handshake instead.
+//
+// Requests with a properly-formed envelope pass through untouched.
+// Requests with no MCP-Protocol-Version header pass through untouched
+// (the SDK classifies them as legacy automatically).
+
+const MODERN_PROTOCOL_VERSION = '2026-07-28';
+const META_PROTOCOL_VERSION_KEY = 'io.modelcontextprotocol/protocolVersion';
+const META_CLIENT_CAPABILITIES_KEY = 'io.modelcontextprotocol/clientCapabilities';
+const META_CLIENT_INFO_KEY = 'io.modelcontextprotocol/clientInfo';
+
+/**
+ * Checks whether a JSON-RPC request body carries a valid modern-era _meta envelope.
+ * Returns true only if _meta exists and contains all three required keys.
+ */
+function hasValidModernEnvelope(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
+  const params = (body as { params?: unknown }).params;
+  if (typeof params !== 'object' || params === null || Array.isArray(params)) return false;
+  const meta = (params as Record<string, unknown>)._meta;
+  if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) return false;
+  const m = meta as Record<string, unknown>;
+  return (
+    META_PROTOCOL_VERSION_KEY in m &&
+    META_CLIENT_CAPABILITIES_KEY in m &&
+    META_CLIENT_INFO_KEY in m
+  );
+}
+
+/**
+ * Pre-processes a POST request to downgrade modern-header-without-envelope
+ * requests to the legacy path. Strips the MCP-Protocol-Version header so
+ * the SDK classifies the request as legacy (no-claim) and routes it to the
+ * stateless fallback, which supports all protocol versions.
+ */
+async function compatibilityShim(request: Request): Promise<Response> {
+  const protocolVersionHeader = request.headers.get('mcp-protocol-version');
+
+  // Only intercept POSTs with the modern protocol version header
+  if (
+    request.method !== 'POST' ||
+    !protocolVersionHeader ||
+    protocolVersionHeader !== MODERN_PROTOCOL_VERSION
+  ) {
+    return handler(request);
+  }
+
+  // Read the body to check for a valid envelope
+  const bodyText = await request.text();
+  let body: unknown;
+  try {
+    body = bodyText.length > 0 ? JSON.parse(bodyText) : undefined;
+  } catch {
+    // Invalid JSON — let the SDK handle the error
+    return handler(new Request(request, { body: bodyText }));
+  }
+
+  // If the body has a valid modern envelope, pass through untouched
+  if (hasValidModernEnvelope(body)) {
+    return handler(new Request(request, { body: bodyText }));
+  }
+
+  // The request has the modern header but lacks a valid envelope.
+  // Strip the MCP-Protocol-Version header so the SDK classifies this as
+  // a legacy request (no-claim) and routes it to the stateless fallback.
+  // The legacy path accepts all protocol versions and doesn't require the envelope.
+  const headers = new Headers(request.headers);
+  headers.delete('mcp-protocol-version');
+
+  // If the body has params with _meta using bare key names (protocolVersion
+  // instead of io.modelcontextprotocol/protocolVersion), the legacy path
+  // ignores _meta entirely — it uses the initialize handshake instead.
+  // No body modification needed; just stripping the header is enough.
+
+  const downgradedRequest = new Request(request.url, {
+    method: request.method,
+    headers,
+    body: bodyText,
+  });
+
+  return handler(downgradedRequest);
+}
+
 // Stateless protocol: GET (discover/stream) and POST (requests).
 // No DELETE — there are no sessions to close.
-export { handler as GET, handler as POST };
+export { handler as GET, compatibilityShim as POST };
