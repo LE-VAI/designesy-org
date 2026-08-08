@@ -1,0 +1,161 @@
+# Instant rollback to the previous production deployment.
+#
+# Manual-only (workflow_dispatch) — not automatic. Rollback is a judgment
+# call: you roll back when the latest deploy is broken and the previous one
+# was good. Automating that decision is dangerous.
+#
+# Uses the Vercel REST API v9 rollback endpoint (the same one `vercel rollback`
+# calls). Two API calls:
+#   1. GET /v6/deployments — find the previous READY production deployment
+#   2. POST /v9/projects/{id}/rollback/{deploymentId} — roll back to it
+#
+# Requires VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID as repository
+# secrets. These are safe to add — the token is scoped to the project and
+# only used for rollback. No build-time env vars needed (Vercel handles
+# those).
+#
+# Vercel KB reference:
+# https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel
+# Vercel API reference (undocumented but confirmed):
+# https://github.com/vercel/vercel/discussions/10833
+
+name: Rollback production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Specific deployment UID to roll back to (optional — defaults to previous production)'
+        required: false
+        type: string
+      reason:
+        description: 'Reason for rollback (shown in summary)'
+        required: true
+        type: string
+        default: 'Smoke test failure'
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Roll back production deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+            echo "::error::VERCEL_ORG_ID secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "::error::VERCEL_PROJECT_ID secret is not set"
+            exit 1
+          fi
+
+      - name: Find rollback target
+        id: target
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          INPUT_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+        run: |
+          # If a specific deployment ID is provided, use it directly
+          if [ -n "$INPUT_DEPLOYMENT_ID" ]; then
+            echo "Using specified deployment: $INPUT_DEPLOYMENT_ID"
+            echo "deployment_id=$INPUT_DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Otherwise, find the previous READY production deployment
+          echo "Finding previous production deployment..."
+          RESPONSE=$(curl -s \
+            "https://api.vercel.com/v6/deployments?teamId=${VERCEL_ORG_ID}&projectId=${VERCEL_PROJECT_ID}&limit=2&rollbackCandidate=true&state=READY&target=production" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}")
+
+          # .deployments[1] is the previous one (deployments[0] is current)
+          PREV_UID=$(echo "$RESPONSE" | jq -r '.deployments[1].uid // empty')
+          PREV_URL=$(echo "$RESPONSE" | jq -r '.deployments[1].url // empty')
+          PREV_CREATED=$(echo "$RESPONSE" | jq -r '.deployments[1].created // empty')
+
+          if [ -z "$PREV_UID" ] || [ "$PREV_UID" = "null" ]; then
+            echo "::error::No previous production deployment found to roll back to"
+            echo "API response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "Found previous deployment:"
+          echo "  UID: $PREV_UID"
+          echo "  URL: $PREV_URL"
+          echo "  Created: $PREV_CREATED"
+
+          echo "deployment_id=$PREV_UID" >> $GITHUB_OUTPUT
+          echo "deployment_url=$PREV_URL" >> $GITHUB_OUTPUT
+          echo "deployment_created=$PREV_CREATED" >> $GITHUB_OUTPUT
+
+      - name: Execute rollback
+        id: rollback
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOYMENT_ID: ${{ steps.target.outputs.deployment_id }}
+        run: |
+          echo "Rolling back to deployment: $DEPLOYMENT_ID"
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/rollback/${DEPLOYMENT_ID}?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer ${VERCEL_TOKEN}" \
+            -H "Content-Type: application/json")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "202" ]; then
+            echo "✅ Rollback initiated successfully"
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Rollback failed with HTTP $HTTP_CODE"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Verify rollback
+        env:
+          TARGET_URL: https://www.designesy.org
+        run: |
+          echo "Waiting 10s for rollback to propagate..."
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL" 2>/dev/null)
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Production is responding (HTTP $STATUS)"
+          else
+            echo "⚠ Production returned HTTP $STATUS after rollback — verify manually"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Production Rollback" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason:** ${{ inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.rollback.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target deployment | \`${{ steps.target.outputs.deployment_id }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment URL | ${{ steps.target.outputs.deployment_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Created | ${{ steps.target.outputs.deployment_created }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Production: https://www.designesy.org" >> $GITHUB_STEP_SUMMARY
