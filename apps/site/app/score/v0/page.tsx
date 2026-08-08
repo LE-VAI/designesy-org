@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { pageMeta } from '../../lib/site-meta';
 import { TargetLanding } from '../target-landing';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR — static content that revalidates hourly
+export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
   title: 'Score your v0 site',
