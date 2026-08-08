@@ -5,6 +5,8 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { Toggle } from '../lib/toggle';
+import { LottieHint } from '../lib/lottie-hint';
+import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -167,6 +169,7 @@ const PRINCIPLES = [
 export default function DocsPage() {
   return (
     <>
+      <ReadingProgress />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
@@ -255,9 +258,12 @@ export default function DocsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Operating principles</h2>
           <div className="principle-list">
-            {PRINCIPLES.map((p) => (
+            {PRINCIPLES.map((p, i) => (
               <div className="principle" key={p.num}>
-                <span className="principle-num">{p.num}</span>
+                <span className="principle-num">
+                  {i === 0 && <LottieHint type="orbit" size={16} className="principle-orbit" />}
+                  {p.num}
+                </span>
                 <div className="principle-body">
                   <h3>{p.title}</h3>
                   <p>{p.desc}</p>

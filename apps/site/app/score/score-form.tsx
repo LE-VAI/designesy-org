@@ -11,6 +11,7 @@ import {
   truncateUrl,
   type ScoreHistoryEntry,
 } from '../lib/score-history';
+import { LottieHint, LottieTip } from '../lib/lottie-hint';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -647,6 +648,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       </form>
 
+      {status === 'idle' && !result && (
+        <LottieTip text="No login needed — enter any URL and get a 40-check score in seconds" className="score-tip-hint" />
+      )}
+
       {status === 'error' && result?.error && (
         <div className="score-error-card">
           <span className="score-error-icon">
@@ -686,8 +691,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-results fade-up">
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
-            {/* Verdict line — leads before the number (PSI verdict-first pattern) */}
-            <p className="score-verdict-line">{verdictLine(result)}</p>
+            {/* Verdict line — leads before the number (PSI verdict-first pattern).
+                The LottieHint check draws a one-shot confirmation when results
+                arrive — subtle, 0.4s, removed under reduced-motion. */}
+            <p className="score-verdict-line">
+              <LottieHint type="check" size={20} trigger="visible" className="score-verdict-check" />
+              {verdictLine(result)}
+            </p>
 
             <div className="score-hero-top">
               {/* Constellation gauge — the contract's 10 categories as a fixed

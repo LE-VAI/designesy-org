@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { DemoCell, DemoGrid } from '../lib/demo-cell';
+import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 
 export const metadata: Metadata = pageMeta({
@@ -290,6 +291,7 @@ function TokenTable({
 export default function ContractsPage() {
   return (
     <>
+      <ReadingProgress />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page">

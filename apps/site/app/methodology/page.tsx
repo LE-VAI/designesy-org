@@ -17,6 +17,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
+import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
@@ -424,6 +425,7 @@ const HIST_BARS = GRADE_BANDS.map((band) => {
 export default function MethodologyPage() {
   return (
     <>
+      <ReadingProgress />
       <Topbar scrolled />
 
       <main id="main-content" className="surface-page methodology-page" data-pagefind-meta="priority:high">
