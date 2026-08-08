@@ -150,7 +150,7 @@ const CHANGELOG: ChangelogEntry[] = [
     title: 'Unicode security check (UTS #39)',
     description:
       'One check: UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks.',
-    checks: ['v32'],
+    checks: ['v36'],
     rationale:
       'Designesy is the only design verification engine that checks this surface. Homoglyph attacks in CSS identifiers can spoof brand colors and redirect trust.',
     source: 'Unicode Technical Standard #39',
@@ -207,7 +207,7 @@ const CHANGELOG: ChangelogEntry[] = [
     title: 'Cadence typography rules adopted',
     description:
       'Lab Three typography rules promoted to contract: font-smoothing, rem-based sizes, line-height, text-wrap (balance/pretty), tabular-nums, selection styling, font-synthesis, underline-position, skip-ink. 12 checks — the largest category.',
-    checks: ['v21', 'v22', 'v23', 'v24', 'v25', 'v26', 'v27', 'v28', 'v29', 'v30', 'v31', 'v35'],
+    checks: ['v14', 'v15', 'v16', 'v17', 'v18', 'v19', 'v20', 'v26', 'v28', 'x01', 'x02', 'x03'],
     rationale:
       'Cadence is typography rendering discipline — the difference between type that looks crisp and type that looks fuzzy. 18% weight — the highest-weighted category. Most sites fail here because font-synthesis and text-wrap are rarely declared.',
     source: 'Lab Three — Cadence typography experiments, NY Times editorial reference',
@@ -261,7 +261,7 @@ const CHANGELOG: ChangelogEntry[] = [
     title: 'Spec-layer integration (DESIGN.md)',
     description:
       'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own 40-check contract verification.',
-    checks: ['v33'],
+    checks: ['v37'],
     rationale:
       'DESIGN.md is the AI-agent-facing spec file. Without it, AI coding tools build around your system, not from it. The check validates its presence and structure.',
     source: 'Google @google/design.md CLI linter',
