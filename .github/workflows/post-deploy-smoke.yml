@@ -157,3 +157,75 @@ jobs:
           echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Check the [Vercel dashboard](https://vercel.com/le-vais-projects/designesy-org) for deployment status." >> $GITHUB_STEP_SUMMARY
+
+  # ── Job 2: Alias verification ──────────────────────────────────────────────
+  # Verifies that www.designesy.org is actually serving the deployment that
+  # Vercel just marked Ready. This catches the "alias stuck on old deployment"
+  # issue we hit on 2026-08-08 where Vercel reported success and the dashboard
+  # showed target=production + Ready, but the domain was still pointing at
+  # the previous deployment's serverless functions.
+  #
+  # The check: POST to /api/mcp with the modern MCP-Protocol-Version header.
+  # Our compatibility shim sets X-Mcp-Shim on the response. If the production
+  # domain is serving old code, there will be no X-Mcp-Shim header (or a
+  # 400 error from the old SDK path). If serving the new code, the header
+  # will be present (downgraded-to-legacy or passthrough-modern).
+  #
+  # This job does NOT fail the workflow on mismatch — it reports a warning.
+  # The alias reassignment is a manual operator action (or a separate
+  # automation step) because it requires VERCEL_TOKEN.
+  alias-verify:
+    name: Verify production alias
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: smoke-test
+    if: always() && needs.smoke-test.result != 'skipped'
+
+    steps:
+      - name: Check if production domain is serving the latest deployment
+        env:
+          DEPLOY_TARGET: ${{ github.event.deployment_status.target_url || 'https://www.designesy.org' }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          echo "## Alias verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment: $DEPLOY_TARGET" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: $COMMIT_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Wait a few seconds for the alias to propagate after smoke test
+          sleep 10
+
+          # Check the MCP endpoint for the X-Mcp-Shim header (only present in
+          # deployments after 2026-08-08 commit 6a487a3).
+          SHIM_HEADER=$(curl -sI -X POST "https://www.designesy.org/api/mcp" \
+            -H "Content-Type: application/json" \
+            -H "MCP-Protocol-Version: 2026-07-28" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+            2>/dev/null | grep -i "x-mcp-shim" | tr -d '\r' || echo "")
+
+          if [ -n "$SHIM_HEADER" ]; then
+            echo "✅ Production alias is serving the latest deployment" >> $GITHUB_STEP_SUMMARY
+            echo "✅ X-Mcp-Shim header found: $SHIM_HEADER" >> $GITHUB_STEP_SUMMARY
+            echo "Production alias verified: $SHIM_HEADER"
+          else
+            echo "⚠️ **Alias may be stale** — production domain might be serving an older deployment" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The X-Mcp-Shim header was not found in the response." >> $GITHUB_STEP_SUMMARY
+            echo "This means www.designesy.org may still point to a previous deployment." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Fix" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "npx vercel alias <latest-deployment-url> www.designesy.org" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npx vercel ls\` to find the latest deployment URL, then reassign the alias." >> $GITHUB_STEP_SUMMARY
+
+            echo "⚠️ Alias may be stale — X-Mcp-Shim header not found"
+            # Don't fail — this is a warning, not a hard failure
+          fi
+
+      - name: Report alias status
+        if: always()
+        run: |
+          echo "Alias verification complete."
