@@ -1,7 +1,7 @@
 {
   "name": "designesy-score",
   "version": "0.4.2",
-  "description": "Score any URL against the Designesy design-system contract — 40 deterministic checks, one grade, no vibe-tax. Zero dependencies.",
+  "description": "Score any URL against the Designesy design-system contract \u2014 40 deterministic checks, one grade, no vibe-tax. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy",
   "homepage": "https://www.designesy.org",
@@ -40,6 +40,7 @@
     "dev": "cd apps/site && npm run dev",
     "build": "cd apps/site && npm run build",
     "lint": "cd apps/site && npm run lint",
-    "score": "node cli/designesy-score.mjs"
+    "score": "node cli/designesy-score.mjs",
+    "deploy:prod": "node scripts/deploy-prod.mjs"
   }
 }
