@@ -1138,40 +1138,41 @@ async function compatibilityShim(request: Request): Promise<Response> {
   const headers = new Headers(request.headers);
 
   let body: unknown;
+  let parseFailed = false;
   try {
     body = bodyText.length > 0 ? JSON.parse(bodyText) : undefined;
   } catch {
-    // Invalid JSON — let the SDK handle the error with a fresh request
-    return handler(new Request(request.url, {
-      method: 'POST',
-      headers,
-      body: bodyText,
-    }));
+    parseFailed = true;
+    body = undefined;
   }
 
   // If the body has a valid modern envelope, pass through untouched.
   // Build a fresh Request with the original headers (including the modern
   // protocol version header) so the SDK's modern path handles it correctly.
-  if (hasValidModernEnvelope(body)) {
-    return handler(new Request(request.url, {
+  if (!parseFailed && hasValidModernEnvelope(body)) {
+    const response = await handler(new Request(request.url, {
       method: 'POST',
       headers,
       body: bodyText,
     }));
+    response.headers.set('X-MCP-Shim', 'passthrough-modern');
+    return response;
   }
 
-  // The request has the modern header but lacks a valid envelope.
-  // Strip the MCP-Protocol-Version header so the SDK classifies this as
-  // a legacy request (no-claim) and routes it to the stateless fallback.
-  // The legacy path accepts all protocol versions and doesn't require the
-  // envelope — it uses the 2025-era initialize handshake instead.
+  // The request has the modern header but lacks a valid envelope (or JSON
+  // was unparseable). Strip the MCP-Protocol-Version header so the SDK
+  // classifies this as a legacy request (no-claim) and routes it to the
+  // stateless fallback. The legacy path accepts all protocol versions and
+  // doesn't require the envelope — it uses the 2025-era initialize handshake.
   headers.delete('mcp-protocol-version');
 
-  return handler(new Request(request.url, {
+  const response = await handler(new Request(request.url, {
     method: 'POST',
     headers,
     body: bodyText,
   }));
+  response.headers.set('X-MCP-Shim', 'downgraded-to-legacy');
+  return response;
 }
 
 // Stateless protocol: GET (discover/stream) and POST (requests).
