@@ -1,0 +1,26 @@
+# CODEOWNERS — route review to the right people for sensitive paths.
+#
+# GitHub will require a review from these owners on the paths below when
+# branch protection is enabled with "Require review from Code Owners."
+# Since this is a solo-operator repo (LE-VAI), the owner is the operator's
+# GitHub account. This still adds a visible gate: direct pushes to main
+# on owned paths will be blocked, and PRs touching these paths will show
+# a review request.
+#
+# Format: <path pattern> @<github-username>
+
+# Default — everything
+* @LE-VAI
+
+# Production-critical paths that need extra scrutiny
+/apps/site/app/api/        @LE-VAI
+/apps/site/middleware.ts   @LE-VAI
+/apps/site/next.config.ts  @LE-VAI
+/vercel.json              @LE-VAI
+
+# CI / deployment config — changes here affect the pipeline itself
+/.github/workflows/        @LE-VAI
+/.github/CODEOWNERS        @LE-VAI
+
+# Published packages — changes here publish to PyPI / MCP registry
+/packages/designesy-mcp/   @LE-VAI
