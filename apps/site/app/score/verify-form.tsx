@@ -24,6 +24,7 @@
 
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { CopyPrompt } from '../lib/copy-prompt';
+import { ScoreDial } from '../lib/score-dial';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -265,69 +266,6 @@ function truncateUrl(url: string, maxLen = 48): string {
   const clean = url.replace(/^https?:\/\//i, '');
   if (clean.length <= maxLen) return clean;
   return clean.slice(0, maxLen - 1) + '…';
-}
-
-// ── ScoreDial (inline SVG — same pattern as all forms, r=52) ──────────────────
-
-function ScoreDial({
-  score,
-  grade,
-  size = 120,
-}: {
-  score: number;
-  grade: string;
-  size?: number;
-}) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const offset = c - (score / 100) * c;
-  const fill =
-    score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label={`Grade ${grade}, ${score} percent`}
-    >
-      <circle cx="60" cy="60" r={r} fill="none" stroke="var(--line)" strokeWidth="6" />
-      {/* Score-0 guard: a zero-length round-capped dash paints a phantom dot.
-          Skip the arc entirely at 0 so a fully-failing URL reads as an empty
-          ring, not a dot. (Lighthouse PR fix pattern.) */}
-      {score > 0 && (
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          stroke={fill}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          transform="rotate(-90 60 60)"
-          style={{ transition: 'stroke-dashoffset 0.8s var(--ease-out)' }}
-        />
-      )}
-      <text
-        x="60"
-        y="58"
-        textAnchor="middle"
-        style={{ fontSize: '2rem', fontWeight: 700, fill: 'var(--ink)' }}
-      >
-        {grade}
-      </text>
-      <text
-        x="60"
-        y="78"
-        textAnchor="middle"
-        style={{ fontSize: '0.8rem', fill: 'var(--muted-dim)' }}
-      >
-        {score}/100
-      </text>
-    </svg>
-  );
 }
 
 // ── EngineTile (clickable engine summary — doubles as a tab) ──────────────────
