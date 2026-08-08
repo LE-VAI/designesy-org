@@ -22,3 +22,4 @@ __pycache__/
 packages/*/dist/
 packages/*/build/
 .venv/
+.env*
