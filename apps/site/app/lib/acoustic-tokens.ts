@@ -7,9 +7,9 @@
  * The /acoustic-tokens page and /acoustic-tokens.json route both read from here.
  */
 export const acousticTokens = {
-  version: '0.1.1',
-  updated: '2026-07-12',
-  engine: 'Cuelume v0.1.0 (MIT)',
+  version: '0.2.0',
+  updated: '2026-08-08',
+  engine: 'Cuelume v0.2.2 (MIT) + cuelume-extend v0.2.0',
   engine_repo: 'https://github.com/Danilaa1/cuelume',
   engine_npm: 'https://www.npmjs.com/package/cuelume',
   description:
@@ -94,6 +94,70 @@ export const acousticTokens = {
       interaction_role: 'Contact / outbound mail',
       where_used: 'Footer mail, privacy mail',
     },
+    // ── Extended cues (cuelume-extend.ts v0.2.0, 2026-08-08) ──────────
+    {
+      token: '--cue:error',
+      cuelume_cue: 'error',
+      character: 'Low descending two-note buzz',
+      interaction_role: 'Error / corrective feedback',
+      where_used: 'Copy failure, not-found page, error page',
+    },
+    {
+      token: '--cue:warning',
+      cuelume_cue: 'warning',
+      character: 'Single medium triangle tone',
+      interaction_role: 'Heads up, not blocking',
+      where_used: 'Score warnings, form validation notices',
+    },
+    {
+      token: '--cue:info',
+      cuelume_cue: 'info',
+      character: 'Brief high sine blip',
+      interaction_role: 'Informational notice',
+      where_used: 'Non-blocking status updates',
+    },
+    {
+      token: '--cue:blocked',
+      cuelume_cue: 'blocked',
+      character: 'Two low square pulses, lowpass-filtered',
+      interaction_role: 'Cannot proceed',
+      where_used: 'Blocked operations, access denied',
+    },
+    {
+      token: '--cue:retry',
+      cuelume_cue: 'retry',
+      character: 'Rising sine pair',
+      interaction_role: 'Try again invitation',
+      where_used: 'Retryable failures, timeout recovery',
+    },
+    {
+      token: '--cue:processing',
+      cuelume_cue: 'processing-start / processing-stop',
+      character: 'Low triangle pulse loop, 500ms interval, gain 0.025',
+      interaction_role: 'Analysis in progress (state loop)',
+      where_used: 'Score engine running checks, audit processing',
+    },
+    {
+      token: '--cue:check-pass',
+      cuelume_cue: 'check-pass',
+      character: 'Brief 880Hz sine blip, 40ms',
+      interaction_role: 'One verification check passed',
+      where_used: 'Score engine per-check feedback (reserved for future)',
+    },
+    {
+      token: '--cue:check-fail',
+      cuelume_cue: 'check-fail',
+      character: 'Soft 220→110Hz triangle thud, 60ms',
+      interaction_role: 'One verification check failed',
+      where_used: 'Score engine per-check feedback (reserved for future)',
+    },
+    {
+      token: '--cue:grade-reveal',
+      cuelume_cue: 'grade-reveal',
+      character: 'Grade-mapped arpeggio: A+ ascending 4-note + harmonics with large-room reverb; A ascending 4-note with small-room reverb; B ascending pair; C neutral single; D descending pair; F single low note',
+      interaction_role: 'Score grade reveal — the hero acoustic moment',
+      where_used: 'Score page grade animation completion, report page grade display',
+    },
   ],
   reserved: [
     {
@@ -140,6 +204,8 @@ export const acousticTokens = {
       '0.1.0': 'Initial cue set: tick, press, release, bloom, whisper, toggle, success',
       '0.1.1':
         'Brand sparkle, invite chime, complete success, contact droplet variety pass',
+      '0.2.0':
+        'Extended cues: error, warning, info, blocked, retry, processing loop, check-pass/fail, grade-reveal arpeggios. Cuelume-extend v0.2.0 with ConvolverNode reverb for A/A+ grades.',
     },
   },
 } as const;
