@@ -12,6 +12,24 @@ import {
   type ScoreHistoryEntry,
 } from '../lib/score-history';
 import { LottieHint, LottieTip } from '../lib/lottie-hint';
+import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
+
+/**
+ * Sound gate — mirrors the preference logic in use-sound.tsx.
+ * Returns false under reduced-motion or when the user has muted via toggle.
+ * Prevents score-reveal sounds from firing when sound is off.
+ */
+function soundIsEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  try {
+    const stored = localStorage.getItem('designesy:sound');
+    if (stored === 'false') return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -300,6 +318,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         setAnimatedScore(target);
         setAnimatedCatScores(catTargets);
         setAnimatedCounts(countTargets);
+        // Grade-reveal arpeggio — the hero acoustic moment.
+        // Fires when the score animation reaches its final value.
+        // Respects sound preference + reduced-motion via soundIsEnabled().
+        if (soundIsEnabled() && result?.grade) {
+          playGradeReveal(result.grade);
+        }
       }
     };
     rafId = requestAnimationFrame(animate);
@@ -333,6 +357,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     setAuditError(null);
     setDelta(null);
 
+    // Start the processing sound loop — a gentle pulse while checks run.
+    // Fires only if sound is enabled (respects reduced-motion + toggle).
+    if (soundIsEnabled()) playExtended('processing-start');
+
     try {
       const resp = await fetch('/api/score', {
         method: 'POST',
@@ -340,6 +368,8 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         body: JSON.stringify({ url: targetUrl }),
       });
       const data: ScoreResponse = await resp.json();
+      // Stop the processing loop regardless of outcome.
+      playExtended('processing-stop');
       if (!data.ok) {
         setStatus('error');
         setResult(data);
@@ -361,6 +391,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         }
       }
     } catch {
+      playExtended('processing-stop');
       setStatus('error');
       setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
     }
