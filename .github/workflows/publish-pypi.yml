@@ -29,7 +29,7 @@ jobs:
     environment: pypi        # PyPI trusted publishing environment
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # Sync pyproject.toml version with the tag so builds always produce the
       # correct version. Previous failures (v1.9.0, v1.9.1) happened because
