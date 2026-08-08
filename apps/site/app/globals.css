@@ -2675,6 +2675,10 @@ button.pillar:hover::before {
   min-width: 0;
   overflow: hidden;
   padding: 0.15rem 0 0.55rem;
+  /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
+  touch-action: pan-y;
+  /* Prevent text selection during drag. */
+  user-select: none;
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -2723,6 +2727,9 @@ button.pillar:hover::before {
 }
 .footer-dock:hover .footer-dock-clip {
   cursor: grab;
+}
+.footer-dock-clip--dragging {
+  cursor: grabbing !important;
 }
 
 @keyframes footer-dock-scroll {
@@ -2800,6 +2807,28 @@ button.pillar:hover::before {
 
 .footer-dock-pill--machine:hover::before {
   opacity: 0.8;
+}
+
+/* During an active drag, suppress hover effects and transitions on all
+   pills so they don't flicker as the pointer passes over them. Also
+   disable pointer events on pills so drag pointermove never gets
+   interrupted by a child element stealing the pointer. */
+.footer-dock-clip--dragging .footer-dock-pill {
+  pointer-events: none;
+  transition: none;
+  transform: none !important;
+  background: var(--surface-raised) !important;
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill--machine {
+  color: var(--muted-dim) !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill::before {
+  opacity: 0.5 !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill--machine::before {
+  opacity: 0.4 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4350,6 +4379,10 @@ button.pillar:hover::before {
   min-width: 0;
   overflow: hidden;
   padding: 0.15rem 0 0.55rem;
+  /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
+  touch-action: pan-y;
+  /* Prevent text selection during drag. */
+  user-select: none;
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
@@ -4398,6 +4431,9 @@ button.pillar:hover::before {
 }
 .footer-dock:hover .footer-dock-clip {
   cursor: grab;
+}
+.footer-dock-clip--dragging {
+  cursor: grabbing !important;
 }
 
 @keyframes footer-dock-scroll {
@@ -4475,6 +4511,28 @@ button.pillar:hover::before {
 
 .footer-dock-pill--machine:hover::before {
   opacity: 0.8;
+}
+
+/* During an active drag, suppress hover effects and transitions on all
+   pills so they don't flicker as the pointer passes over them. Also
+   disable pointer events on pills so drag pointermove never gets
+   interrupted by a child element stealing the pointer. */
+.footer-dock-clip--dragging .footer-dock-pill {
+  pointer-events: none;
+  transition: none;
+  transform: none !important;
+  background: var(--surface-raised) !important;
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill--machine {
+  color: var(--muted-dim) !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill::before {
+  opacity: 0.5 !important;
+}
+.footer-dock-clip--dragging .footer-dock-pill--machine::before {
+  opacity: 0.4 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
