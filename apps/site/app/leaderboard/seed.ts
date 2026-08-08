@@ -48,6 +48,18 @@ export interface SeedSite {
    * scored — the MiniConstellation ring then renders the unscored state.
    */
   categoryScores?: Record<string, CategoryBreakdown>;
+  /**
+   * Live score-report link for self-scored entries. When present, the
+   * leaderboard row renders a "View live report" link instead of treating
+   * the score as a static claim. Null for third-party sites (their score
+   * was captured by the same engine but they haven't opted in to a link).
+   */
+  liveScoreUrl?: string | null;
+  /**
+   * Conflict-of-interest disclosure. When present, the leaderboard row
+   * renders a COI badge so viewers know this entry is self-scored.
+   */
+  coiDisclosure?: string | null;
 }
 
 // Unranked seed — re-scored 2026-08-03.
@@ -59,7 +71,7 @@ const RAW_SEED: Omit<SeedSite, 'rank'>[] = [
   { url: 'https://apple.com', name: 'Apple', tier: 1, category: 'Hardware', score: 77.7, grade: 'C', pass: 15, fail: 4, warn: 16, skip: 2, tokens: 90, seededBecause: 'Apple HIG — tiered reduced-motion reference', prevScore: 66.3 },
   { url: 'https://nytimes.com', name: 'The New York Times', tier: 1, category: 'Editorial', score: 66, grade: 'D', pass: 11, fail: 4, warn: 20, skip: 2, tokens: 85, seededBecause: 'Editorial typography — Cadence rules origin', prevScore: 60.9 },
   { url: 'https://mozaika.design', name: 'Mozaika', tier: 2, category: 'Design Systems', score: 52.6, grade: 'F', pass: 6, fail: 3, warn: 23, skip: 5, tokens: 0, seededBecause: 'Closest competitor — 0-100 score comparison', prevScore: 52.6 },
-  { url: 'https://www.designesy.org', name: 'Designesy', tier: 2, category: 'Design Systems', score: 100, grade: 'A', pass: 36, fail: 0, warn: 0, skip: 1, tokens: 50, seededBecause: 'Self-score — transparency earns trust', prevScore: 99.2 },
+  { url: 'https://www.designesy.org', name: 'Designesy', tier: 2, category: 'Design Systems', score: 100, grade: 'A', pass: 36, fail: 0, warn: 0, skip: 1, tokens: 50, seededBecause: 'Self-score — transparency earns trust. Conflict of interest: Designesy operates the scoring engine. Re-run live: /score?url=designesy.org', prevScore: 99.2, liveScoreUrl: '/score/report?url=designesy.org', coiDisclosure: 'Self-scored by the engine operator' },
   { url: 'https://designesy.ai.studio', name: 'Designesy AI Studio', tier: 2, category: 'Design Systems', score: 67.8, grade: 'D', pass: 10, fail: 1, warn: 23, skip: 3, tokens: 28, seededBecause: 'AI Studio mirror — parity relationship', prevScore: 64.8 },
   { url: 'https://getdesy.com', name: 'Desy Guard', tier: 2, category: 'Design Systems', score: 66, grade: 'D', pass: 16, fail: 2, warn: 17, skip: 2, tokens: 61, seededBecause: 'AST-gate competitor', prevScore: 75 },
   { url: 'https://stitch.withgoogle.com', name: 'Google Stitch', tier: 2, category: 'Design Systems', score: 52.5, grade: 'F', pass: 7, fail: 3, warn: 23, skip: 4, tokens: 2, seededBecause: 'DESIGN.md ecosystem', prevScore: 56.5 },
@@ -110,6 +122,6 @@ export const LEADERBOARD_LAST_SCORED = '2026-08-03';
 export const LEADERBOARD_POLICY =
   'Curated seed (30 sites) + open submission. Scores are deterministic — 40 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
 
-export const LEADERBOARD_VERSION = '0.3.0';
+export const LEADERBOARD_VERSION = '0.4.0';
 
 export const LEADERBOARD_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;
