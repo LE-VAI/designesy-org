@@ -1,6 +1,7 @@
 // v2026-07-25-0220-force-left-align-css-recompile
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import '@fontsource-variable/inter';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
@@ -145,6 +146,7 @@ export default function RootLayout({
         <AmbientParticles />
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

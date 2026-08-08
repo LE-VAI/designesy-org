@@ -11,47 +11,50 @@
 //    global `headers()` (which IS ISR-safe — it applies to the route, not
 //    per-request HTML). We do not duplicate them here.
 //
-// Three real jobs:
-//   1. /api/score — stamp a request id + explicit no-store + rate limit.
-//   2. /api/mcp — rate limit (MCP endpoint, expensive serverless calls).
-//   3. Everything else — pass through untouched.
-//
 // Rate limiting uses Upstash Redis (@upstash/ratelimit) — a distributed
 // store that persists across serverless instances. The prior in-memory Map
-// rate limiter in score/route.ts reset on every cold start and differed per
-// instance, so the limit was aspirational, not enforced. This edge-level
-// limiter runs BEFORE the serverless function invokes, saving compute cost.
+// rate limiters in each route reset on every cold start and differed per
+// instance (Fluid Compute runs multiple instances), so the limit was
+// aspirational, not enforced. This edge-level limiter runs BEFORE the
+// serverless function invokes, saving compute cost.
+//
+// All rate-limited API routes are covered here:
+//   /api/score/*      100/min  (burst) — primary scoring endpoint
+//   /api/mcp/*         30/min  — MCP endpoint, expensive (up to 300s)
+//   /api/report/*      20/hr   — 3× fetch amplification (score+drift+readiness)
+//   /api/score/audit   20/hr   — PageSpeed Insights audit, expensive
+//   /api/drift/*       50/hr   — drift detection
+//   /api/guardrails/*  50/hr   — guardrail generation
+//   /api/monitor/*     50/hr   — drift monitoring
+//   /api/readiness/*   50/hr   — AI readiness check
+//   /api/compare/*     30/hr   — design system comparison
 //
 // Graceful degradation: if UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN
 // env vars are not set, rate limiting is skipped (the site still works, just
-// without edge-level rate limiting). The in-memory limiter in score/route.ts
-// remains as a secondary defense.
+// without edge-level rate limiting). The in-memory limiters in route files
+// remain as a secondary defense.
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-// ── Upstash rate limiter (lazy init, edge-compatible) ────────────────────────
+// ── Upstash rate limiters (lazy init, edge-compatible) ──────────────────────
 //
 // Lazy-initialized so the module doesn't crash if env vars aren't set.
 // Vercel reuses edge instances (Fluid Compute), so the limiter is typically
 // initialized once and reused across requests.
 
-let scoreLimiter: Ratelimit | null | undefined;
-let mcpLimiter: Ratelimit | null | undefined;
+const limiters = new Map<string, Ratelimit | null>();
 
-function getScoreLimiter(): Ratelimit | null {
-  if (scoreLimiter !== undefined) return scoreLimiter;
-  scoreLimiter = createLimiter('score', Ratelimit.slidingWindow(100, '60 s'));
-  return scoreLimiter;
-}
-
-function getMcpLimiter(): Ratelimit | null {
-  if (mcpLimiter !== undefined) return mcpLimiter;
-  // MCP endpoint is more expensive (long-running, up to 300s) — tighter limit.
-  mcpLimiter = createLimiter('mcp', Ratelimit.slidingWindow(30, '60 s'));
-  return mcpLimiter;
+function getLimiter(
+  prefix: string,
+  window: ReturnType<typeof Ratelimit.slidingWindow>,
+): Ratelimit | null {
+  if (limiters.has(prefix)) return limiters.get(prefix)!;
+  const limiter = createLimiter(prefix, window);
+  limiters.set(prefix, limiter);
+  return limiter;
 }
 
 // `Ratelimit.slidingWindow()` returns an `Algorithm<RegionContext>` — the
@@ -120,33 +123,57 @@ async function checkRateLimit(
   return null;
 }
 
+// ── Route → limiter mapping ─────────────────────────────────────────────────
+//
+// Each rate-limited API path gets its own Upstash limiter with a limit that
+// matches the prior in-memory RATE_LIMIT values. Burst-prone endpoints use
+// per-minute windows; expensive endpoints use hourly windows.
+
+const API_LIMITERS: Array<{
+  pattern: string;
+  prefix: string;
+  window: ReturnType<typeof Ratelimit.slidingWindow>;
+}> = [
+  // Burst-capable endpoints — per-minute windows
+  { pattern: '/api/score/audit', prefix: 'audit', window: Ratelimit.slidingWindow(20, '1 h') },
+  { pattern: '/api/score', prefix: 'score', window: Ratelimit.slidingWindow(100, '60 s') },
+  { pattern: '/api/mcp', prefix: 'mcp', window: Ratelimit.slidingWindow(30, '60 s') },
+  // Expensive / fetch-amplified endpoints — hourly windows
+  { pattern: '/api/report', prefix: 'report', window: Ratelimit.slidingWindow(20, '1 h') },
+  { pattern: '/api/compare', prefix: 'compare', window: Ratelimit.slidingWindow(30, '1 h') },
+  { pattern: '/api/drift', prefix: 'drift', window: Ratelimit.slidingWindow(50, '1 h') },
+  { pattern: '/api/guardrails', prefix: 'guardrails', window: Ratelimit.slidingWindow(50, '1 h') },
+  { pattern: '/api/monitor', prefix: 'monitor', window: Ratelimit.slidingWindow(50, '1 h') },
+  { pattern: '/api/readiness', prefix: 'readiness', window: Ratelimit.slidingWindow(50, '1 h') },
+];
+
 // ── Middleware (async — Next.js supports async middleware) ──────────────────
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Scoring API — dynamic by design. Rate limit + no-store + request id.
-  if (pathname.startsWith('/api/score')) {
-    const blocked = await checkRateLimit(request, getScoreLimiter(), 'score');
-    if (blocked) return blocked;
+  // 1. Check all rate-limited API routes
+  for (const route of API_LIMITERS) {
+    if (pathname.startsWith(route.pattern)) {
+      const limiter = getLimiter(route.prefix, route.window);
+      const blocked = await checkRateLimit(request, limiter, route.prefix);
+      if (blocked) return blocked;
 
-    const res = NextResponse.next();
-    res.headers.set('x-request-id', crypto.randomUUID());
-    // Defense-in-depth: the route is force-dynamic already; this guarantees
-    // no CDN layer ever caches a score response regardless of future config.
-    res.headers.set('Cache-Control', 'no-store, max-age=0');
-    return res;
+      // Scoring API gets extra headers
+      if (pathname.startsWith('/api/score')) {
+        const res = NextResponse.next();
+        res.headers.set('x-request-id', crypto.randomUUID());
+        // Defense-in-depth: the route is force-dynamic already; this guarantees
+        // no CDN layer ever caches a score response regardless of future config.
+        res.headers.set('Cache-Control', 'no-store, max-age=0');
+        return res;
+      }
+
+      return NextResponse.next();
+    }
   }
 
-  // 2. MCP endpoint — rate limit (expensive, up to 300s function timeout).
-  if (pathname.startsWith('/api/mcp')) {
-    const blocked = await checkRateLimit(request, getMcpLimiter(), 'mcp');
-    if (blocked) return blocked;
-
-    return NextResponse.next();
-  }
-
-  // 3. Public pages (incl. the ISR'd homepage) — no-op. Do NOT set any header
+  // 2. Public pages (incl. the ISR'd homepage) — no-op. Do NOT set any header
   //    that would change cache semantics (no Set-Cookie, no Vary, no rewrite).
   //    This path stays sync-equivalent (no await) for page-view performance.
   return NextResponse.next();

@@ -4,8 +4,8 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// ISR — static content that revalidates hourly
+export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
   title: 'Pricing',
