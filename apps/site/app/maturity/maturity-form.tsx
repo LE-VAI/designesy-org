@@ -420,9 +420,12 @@ function decodeAnswers(hash: string): Record<string, number> | null {
   }
 }
 
-// ── Radar chart (SVG) ───────────────────────────────────────────────────────
+// ── Maturity radar (SVG) ───────────────────────────────────────────────────
+// Distinct from lib/radar-chart.tsx (site-vs-cohort comparison). This is a
+// self-assessment radar: 6 axes, stage labels with colors, ring numbers,
+// no cohort overlay. Purpose-built for the maturity quiz result view.
 
-function RadarChart({ scores }: { scores: number[] }) {
+function MaturityRadar({ scores }: { scores: number[] }) {
   const size = 320;
   const center = size / 2;
   const maxRadius = 120;
@@ -888,7 +891,7 @@ export function MaturityAssessment() {
         borderRadius: 'var(--radius, 12px)',
         border: '1px solid var(--line)',
       }}>
-        <RadarChart scores={scores} />
+        <MaturityRadar scores={scores} />
 
         <div style={{ flex: '1 1 300px' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
