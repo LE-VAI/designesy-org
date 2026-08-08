@@ -14240,7 +14240,7 @@ select {
    the L2 single-line break point, preserving display weight without ragging. */
 @media (max-width: 720px) {
   .hero-display {
-    font-size: clamp(1.4rem, 1.4rem + 4vw, 3.2rem);
+    font-size: clamp(1.4rem, 1.2rem + 1vw, 3.2rem);
     line-height: 1.06;
     letter-spacing: -0.02em;
   }
@@ -14740,7 +14740,7 @@ select {
   .health-rack-numeral {
     /* 24px fixed overflowed the small rings — scale with the gauge via
        container-ish sizing: a clamp tied to viewport so it stays inside. */
-    font-size: clamp(0.9375rem, 0.9375rem + 1.3vw, 1.5rem);
+    font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.5rem);
   }
 
   /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
