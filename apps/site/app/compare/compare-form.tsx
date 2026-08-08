@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { ShareButton } from '../lib/share-button';
+import { ScoreDial } from '../lib/score-dial';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -367,43 +368,6 @@ export function CompareForm({ initialA, initialB }: { initialA: string; initialB
   );
 }
 
-function ScoreDial({ score, grade }: { score: number; grade: string }) {
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
-
-  return (
-    <svg
-      width="120"
-      height="120"
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label={`Grade ${grade}, ${score} percent`}
-    >
-      <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke={fillColor}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 60 60)"
-        style={{ transition: 'stroke-dashoffset 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-      />
-      <text x="60" y="58" textAnchor="middle" style={{ fontSize: '2rem', fontWeight: 700, fill: 'var(--ink)' }}>
-        {grade}
-      </text>
-      <text x="60" y="78" textAnchor="middle" style={{ fontSize: '0.8rem', fill: 'var(--muted-dim)' }}>
-        {score}/100
-      </text>
-    </svg>
-  );
-}
 
 function DiffList({ entries, side, emptyText }: { entries: TokenDiffEntry[]; side: 'A' | 'B'; emptyText: string }) {
   if (entries.length === 0) {

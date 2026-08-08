@@ -21,6 +21,8 @@ import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { PageShareButton } from '../../lib/page-share';
+import { ScoreDial, gradeColor } from '../../lib/score-dial';
+import { RadarChart } from '../../lib/radar-chart';
 import { SEED, type Grade, type CategoryBreakdown } from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES } from '../../leaderboard/batch-data';
 
@@ -43,14 +45,6 @@ function deslugify(slug: string): string {
   const site = SEED.find((s) => slugify(s.url) === slug);
   return site?.url || '';
 }
-
-const GRADE_COLORS: Record<string, string> = {
-  A: 'var(--ok)',
-  B: 'var(--signal)',
-  C: 'var(--warn)',
-  D: 'var(--warn)',
-  F: 'var(--error)',
-};
 
 const CATEGORY_LABELS: Record<string, string> = {
   cadence: 'Cadence',
@@ -188,40 +182,6 @@ function generateNarrative(site: typeof SEED[number]): string {
   return parts.join('\n\n');
 }
 
-// ── Dial component ──────────────────────────────────────────────────────────
-
-function ScoreDial({ score, grade }: { score: number; grade: string }) {
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const fillColor = GRADE_COLORS[grade] || 'var(--warn)';
-
-  return (
-    <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label={`Grade ${grade}, ${score} percent`}>
-      <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke={fillColor}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 60 60)"
-        style={{ transition: 'stroke-dashoffset 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-      />
-      <text x="60" y="58" textAnchor="middle" style={{ fontSize: '2rem', fontWeight: 700, fill: 'var(--ink)' }}>
-        {grade}
-      </text>
-      <text x="60" y="78" textAnchor="middle" style={{ fontSize: '0.8rem', fill: 'var(--muted-dim)' }}>
-        {score}/100
-      </text>
-    </svg>
-  );
-}
-
 // ── Category bar component ──────────────────────────────────────────────────
 
 function CategoryBar({
@@ -236,40 +196,31 @@ function CategoryBar({
   const score = breakdown.score;
   const isScored = score !== null;
   const barWidth = isScored ? score : 0;
-  const barColor = !isScored
-    ? 'var(--line)'
+  const fillClass = !isScored
+    ? 'cat-bar-fill--unscored'
     : score >= 75
-    ? 'var(--ok)'
+    ? 'cat-bar-fill--scored-high'
     : score >= 50
-    ? 'var(--signal)'
-    : 'var(--error)';
+    ? 'cat-bar-fill--scored-mid'
+    : 'cat-bar-fill--scored-low';
 
   return (
-    <div style={{ marginBottom: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--ink)' }}>
-          {label}
-        </span>
-        <span style={{ fontSize: '0.75rem', color: isScored ? 'var(--muted)' : 'var(--muted-dim)' }}>
+    <div className="cat-bar">
+      <div className="cat-bar-header">
+        <span className="cat-bar-label">{label}</span>
+        <span className={`cat-bar-score${isScored ? '' : ' cat-bar-score--unscored'}`}>
           {isScored ? `${score.toFixed(1)}%` : 'unscored'}
           {isScored && cohortAvg !== null && (
-            <span style={{ marginLeft: '0.5rem', color: 'var(--muted-dim)' }}>
+            <span className="cat-bar-cohort">
               (cohort: {cohortAvg.toFixed(1)}%)
             </span>
           )}
         </span>
       </div>
-      <div style={{ height: '6px', background: 'var(--line)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${barWidth}%`,
-            background: barColor,
-            transition: 'width 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-          }}
-        />
+      <div className="cat-bar-track">
+        <div className={`cat-bar-fill ${fillClass}`} style={{ width: `${barWidth}%` }} />
       </div>
-      <div style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', marginTop: '0.25rem' }}>
+      <div className="cat-bar-meta">
         {breakdown.pass} pass · {breakdown.fail} fail · {breakdown.warn} warn · {breakdown.skip} skip
         {breakdown.weight > 0 && ` · ${breakdown.weight}% weight`}
       </div>
@@ -352,7 +303,7 @@ export default async function FrameworkEvaluationPage({
             borderRadius: 'var(--radius, 12px)',
             border: '1px solid var(--line)',
           }}>
-            <ScoreDial score={score} grade={grade} />
+            <ScoreDial score={score} grade={grade} colorMode="grade" />
 
             <div style={{ flex: '1 1 300px' }}>
               <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
@@ -406,6 +357,15 @@ export default async function FrameworkEvaluationPage({
           </p>
           {Object.entries(catScores).length > 0 ? (
             <div>
+              <RadarChart
+                data={Object.entries(catScores)
+                  .sort((a, b) => b[1].weight - a[1].weight)
+                  .map(([cat, breakdown]) => ({
+                    label: CATEGORY_LABELS[cat] || cat,
+                    score: breakdown.score,
+                    cohortAvg: categoryMean(cat),
+                  }))}
+              />
               {Object.entries(catScores)
                 .sort((a, b) => b[1].weight - a[1].weight)
                 .map(([cat, breakdown]) => (
@@ -479,7 +439,7 @@ export default async function FrameworkEvaluationPage({
                           width: '22px',
                           height: '22px',
                           borderRadius: '4px',
-                          background: GRADE_COLORS[peer.grade as Grade] || 'var(--muted)',
+                          background: gradeColor(peer.grade as string) || 'var(--muted)',
                           color: 'var(--paper)',
                           fontSize: '0.65rem',
                           fontWeight: 700,
