@@ -1,22 +1,52 @@
 import type { Metadata } from 'next';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
-import { pageMeta } from '../lib/site-meta';
+import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { ReportForm } from './report-form';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const metadata: Metadata = pageMeta({
-  title: 'Design-intelligence report',
-  description:
-    'Generate a unified design-intelligence report for any URL — score + drift + readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone of the Designesy dynasty.',
-  path: '/report',
-  ogTitle: 'Design-intelligence report · Designesy',
-  ogDescription:
-    'One URL, three engines, one composite grade. Score + drift + readiness in a single report.',
-  twitterDescription: 'Designesy report — designesy.org/report',
-});
+// When ?url= is present, explicitly point social images to the dynamic OG route
+// with the url param so the grade card renders in link previews.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams?: Promise<{ url?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const rawUrl = typeof params?.url === 'string' ? params.url : '';
+  const scoredUrl = rawUrl.trim();
+
+  const base = pageMeta({
+    title: 'Design-intelligence report',
+    description:
+      'Generate a unified design-intelligence report for any URL — score + drift + readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone of the Designesy dynasty.',
+    path: '/report',
+    ogTitle: 'Design-intelligence report · Designesy',
+    ogDescription:
+      'One URL, three engines, one composite grade. Score + drift + readiness in a single report.',
+    twitterDescription: 'Designesy report — designesy.org/report',
+  });
+
+  if (scoredUrl) {
+    const ogImageUrl = `${SITE_BASE}/report/opengraph-image?url=${encodeURIComponent(scoredUrl)}`;
+    const twImageUrl = `${SITE_BASE}/report/twitter-image?url=${encodeURIComponent(scoredUrl)}`;
+    return {
+      ...base,
+      openGraph: {
+        ...base.openGraph,
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Report — One URL, three engines' }],
+      },
+      twitter: {
+        ...base.twitter,
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Report — One URL, three engines' }],
+      },
+    };
+  }
+
+  return base;
+}
 
 export default async function ReportPage({ searchParams }: { searchParams?: Promise<{ url?: string }> }) {
   const params = await searchParams;
