@@ -1120,7 +1120,8 @@ function hasValidModernEnvelope(body: unknown): boolean {
 async function compatibilityShim(request: Request): Promise<Response> {
   const protocolVersionHeader = request.headers.get('mcp-protocol-version');
 
-  // Only intercept POSTs with the modern protocol version header
+  // Only intercept POSTs with the modern protocol version header.
+  // All other requests (GET, no header, old header) pass through untouched.
   if (
     request.method !== 'POST' ||
     !protocolVersionHeader ||
@@ -1129,40 +1130,48 @@ async function compatibilityShim(request: Request): Promise<Response> {
     return handler(request);
   }
 
-  // Read the body to check for a valid envelope
+  // Read the body once. We must reconstruct a fresh Request afterward because
+  // consuming the body via .text() disturbs the original Request — the SDK
+  // can't read it again. We always build from request.url (not from `request`)
+  // to avoid the "disturbed body" TypeError on Vercel's Node.js runtime.
   const bodyText = await request.text();
+  const headers = new Headers(request.headers);
+
   let body: unknown;
   try {
     body = bodyText.length > 0 ? JSON.parse(bodyText) : undefined;
   } catch {
-    // Invalid JSON — let the SDK handle the error
-    return handler(new Request(request, { body: bodyText }));
+    // Invalid JSON — let the SDK handle the error with a fresh request
+    return handler(new Request(request.url, {
+      method: 'POST',
+      headers,
+      body: bodyText,
+    }));
   }
 
-  // If the body has a valid modern envelope, pass through untouched
+  // If the body has a valid modern envelope, pass through untouched.
+  // Build a fresh Request with the original headers (including the modern
+  // protocol version header) so the SDK's modern path handles it correctly.
   if (hasValidModernEnvelope(body)) {
-    return handler(new Request(request, { body: bodyText }));
+    return handler(new Request(request.url, {
+      method: 'POST',
+      headers,
+      body: bodyText,
+    }));
   }
 
   // The request has the modern header but lacks a valid envelope.
   // Strip the MCP-Protocol-Version header so the SDK classifies this as
   // a legacy request (no-claim) and routes it to the stateless fallback.
-  // The legacy path accepts all protocol versions and doesn't require the envelope.
-  const headers = new Headers(request.headers);
+  // The legacy path accepts all protocol versions and doesn't require the
+  // envelope — it uses the 2025-era initialize handshake instead.
   headers.delete('mcp-protocol-version');
 
-  // If the body has params with _meta using bare key names (protocolVersion
-  // instead of io.modelcontextprotocol/protocolVersion), the legacy path
-  // ignores _meta entirely — it uses the initialize handshake instead.
-  // No body modification needed; just stripping the header is enough.
-
-  const downgradedRequest = new Request(request.url, {
-    method: request.method,
+  return handler(new Request(request.url, {
+    method: 'POST',
     headers,
     body: bodyText,
-  });
-
-  return handler(downgradedRequest);
+  }));
 }
 
 // Stateless protocol: GET (discover/stream) and POST (requests).
