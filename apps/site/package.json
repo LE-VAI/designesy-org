@@ -13,6 +13,8 @@
     "@google/design.md": "0.4.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@sparticuz/chromium": "^149.0.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "@vercel/analytics": "^1.5.0",
     "cuelume": "^0.1.0",
     "ipaddr.js": "^1.9.1",
