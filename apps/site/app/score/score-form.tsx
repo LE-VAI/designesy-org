@@ -469,8 +469,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const shareUrl = typeof window !== 'undefined' && scoredUrl
     ? `${window.location.origin}/score?url=${encodeURIComponent(scoredUrl)}`
     : '';
+  // Share text: lead with the Designesy score. The scored URL is intentionally
+  // omitted from the text — the shareable link (shareUrl) already carries it as
+  // the url param in the X/LinkedIn intent URLs. Including the bare scored URL
+  // in the text causes X's crawler to attach a card for the scored brand instead
+  // of the Designesy grade card.
   const shareText = result?.grade
-    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%) — ${scoredUrl}`
+    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%) — see the full design-system audit`
     : `Score any site against the Designesy design system contract`;
 
   function copyShareLink() {

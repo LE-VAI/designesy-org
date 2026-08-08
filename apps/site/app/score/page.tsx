@@ -1,23 +1,59 @@
 import type { Metadata } from 'next';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
-import { pageMeta } from '../lib/site-meta';
+import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// The opengraph-image.tsx in this segment is auto-wired by Next.js as the
-// OG image for /score — it reads searchParams.url and renders the grade card.
-export const metadata: Metadata = pageMeta({
-  title: 'Verify',
-  description:
-    'Four engines. One composite grade. Score (40 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
-  path: '/score',
-  ogTitle: 'Verify any site — Designesy',
-  ogDescription:
-    '68 automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.',
-});
+// When ?url= is present, the auto-wired opengraph-image.tsx does NOT receive
+// the parent page's searchParams — Next.js file-convention OG images get their
+// own searchParams, so the auto-wired meta tag points to /score/opengraph-image
+// with a build hash, NOT the url param. This means Twitterbot/crawlers fetch
+// the default card (no grade) even when sharing /score?url=stripe.com.
+//
+// generateMetadata lets us explicitly set og:image and twitter:image to the
+// dynamic OG route WITH the url param so the scored card renders in previews.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams?: Promise<{ url?: string }>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const rawUrl = typeof params?.url === 'string' ? params.url : '';
+  const scoredUrl = rawUrl.trim();
+
+  const base = pageMeta({
+    title: 'Verify',
+    description:
+      'Four engines. One composite grade. Score (40 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
+    path: '/score',
+    ogTitle: 'Verify any site — Designesy',
+    ogDescription:
+      '68 automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.',
+  });
+
+  // When a URL is being scored, explicitly point social images to the dynamic
+  // OG route with the url param so the grade card renders in link previews.
+  if (scoredUrl) {
+    const ogImageUrl = `${SITE_BASE}/score/opengraph-image?url=${encodeURIComponent(scoredUrl)}`;
+    const twImageUrl = `${SITE_BASE}/score/twitter-image?url=${encodeURIComponent(scoredUrl)}`;
+    return {
+      ...base,
+      openGraph: {
+        ...base.openGraph,
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score — design legitimacy grade' }],
+      },
+      twitter: {
+        ...base.twitter,
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score — design legitimacy grade' }],
+      },
+    };
+  }
+
+  return base;
+}
 
 export default async function ScorePage({
   searchParams,
