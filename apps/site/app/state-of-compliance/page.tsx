@@ -284,13 +284,15 @@ export default function StateOfCompliancePage() {
               <Link href="/docs/mcp">MCP server</Link>.
             </p>
           </div>
-          <p className="surface-note" style={{ marginTop: '0.75rem' }}>
-            This is the structural separation Artificial Analysis and Arena
-            pioneered: the public trust asset is non-monetizable; the consulting
-            and private-scoring layer around it is. The difference is that
-            Designesy&rsquo;s data is deterministic — there is no vote to
-            manipulate, no survey to game, no subjective judge to influence.
-          </p>
+          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
+            <p className="surface-note">
+              This is the structural separation Artificial Analysis and Arena
+              pioneered: the public trust asset is non-monetizable; the consulting
+              and private-scoring layer around it is. The difference is that
+              Designesy&rsquo;s data is deterministic — there is no vote to
+              manipulate, no survey to game, no subjective judge to influence.
+            </p>
+          </div>
         </section>
 
         {/* ── §2 The Cohort ──────────────────────────────────────────────── */}
@@ -379,24 +381,28 @@ export default function StateOfCompliancePage() {
               ))}
             </div>
           </div>
-          <p className="surface-note" style={{ marginTop: '0.75rem', maxWidth: '66ch' }}>
-            <strong>One A-grade site</strong> in a cohort of{' '}
-            {LEADERBOARD_SCORED_COUNT}. The contract is demanding — most sites
-            land in D or F because they don&rsquo;t ship the primitives (token
-            systems, reduced-motion blocks, font-synthesis rules) at{' '}
-            <code style={{ color: 'var(--ink)' }}>{':root'}</code>. That is the
-            point: the gap between what a site <em>documents</em> and what it{' '}
-            <em>ships</em> is exactly what this report surfaces.
-          </p>
+          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
+            <p className="surface-note" style={{ maxWidth: '66ch' }}>
+              <strong>One A-grade site</strong> in a cohort of{' '}
+              {LEADERBOARD_SCORED_COUNT}. The contract is demanding — most sites
+              land in D or F because they don&rsquo;t ship the primitives (token
+              systems, reduced-motion blocks, font-synthesis rules) at{' '}
+              <code style={{ color: 'var(--ink)' }}>{':root'}</code>. That is the
+              point: the gap between what a site <em>documents</em> and what it{' '}
+              <em>ships</em> is exactly what this report surfaces.
+            </p>
+          </div>
 
           <h3 className="doctrine-subheading" style={{ marginTop: '2.5rem' }}>
             Where the cohort struggles
           </h3>
-          <p className="surface-note" style={{ marginBottom: '0.75rem' }}>
-            Average category scores across the scored cohort. The lowest-scoring
-            categories reveal which contract primitives the industry has not yet
-            adopted at the shipped-surface level.
-          </p>
+          <div className="text-cell" style={{ marginBottom: '0.75rem' }}>
+            <p className="surface-note">
+              Average category scores across the scored cohort. The lowest-scoring
+              categories reveal which contract primitives the industry has not yet
+              adopted at the shipped-surface level.
+            </p>
+          </div>
           <div className="soc-struggle-bars">
             {COHORT_STRUGGLES.map((cat) => (
               <div key={cat.category} className="soc-struggle-row">
@@ -542,11 +548,13 @@ export default function StateOfCompliancePage() {
         {/* ── §4 Framework Rankings ──────────────────────────────────────── */}
         <section className="doctrine-section fade-up soc-section">
           <h2 className="doctrine-heading">Framework rankings</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Design-system frameworks and documentation platforms in the cohort,
-            ranked by compliance score. Each framework is a potential case
-            study — each score is a piece of content.
-          </p>
+          <div className="text-cell" style={{ marginBottom: '1rem' }}>
+            <p className="surface-note">
+              Design-system frameworks and documentation platforms in the cohort,
+              ranked by compliance score. Each framework is a potential case
+              study — each score is a piece of content.
+            </p>
+          </div>
           <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             <table className="soc-rank-table">
               <thead>
@@ -607,13 +615,15 @@ export default function StateOfCompliancePage() {
               </tbody>
             </table>
           </div>
-          <p className="surface-note" style={{ marginTop: '0.75rem', maxWidth: '66ch' }}>
-            The spread is <strong>{Math.round((DESIGN_SYSTEMS_SITES[0].score as number) - (DESIGN_SYSTEMS_SITES[DESIGN_SYSTEMS_SITES.length - 1].score as number))} points</strong>{' '}
-            between the highest and lowest design-system framework. Primer leads
-            the non-self cohort at 77.6/C. Material 3 — the most influential
-            system on Earth — scores 59/F. The contract does not grade on a
-            curve.
-          </p>
+          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
+            <p className="surface-note" style={{ maxWidth: '66ch' }}>
+              The spread is <strong>{Math.round((DESIGN_SYSTEMS_SITES[0].score as number) - (DESIGN_SYSTEMS_SITES[DESIGN_SYSTEMS_SITES.length - 1].score as number))} points</strong>{' '}
+              between the highest and lowest design-system framework. Primer leads
+              the non-self cohort at 77.6/C. Material 3 — the most influential
+              system on Earth — scores 59/F. The contract does not grade on a
+              curve.
+            </p>
+          </div>
         </section>
 
         {/* ── §5 Methodology ─────────────────────────────────────────────── */}
