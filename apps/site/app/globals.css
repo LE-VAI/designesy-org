@@ -455,27 +455,46 @@ p {
   flex-direction: column;
   gap: 0;
   padding: max(1rem, env(safe-area-inset-top)) 0 0;
-  background: rgba(10, 10, 12, 0.3);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  transition: background var(--duration) var(--ease),
-    border-color var(--duration) var(--ease),
-    backdrop-filter var(--duration) var(--ease);
+  /* Transparent sticky parent — the glass lives on an absolute child
+     (.topbar-glass) so iOS 26 Safari doesn't tint the toolbar chrome.
+     backdrop-filter on position:sticky triggers the status-bar tint bug. */
+  background: transparent;
   border-bottom: 1px solid transparent;
 }
 
-.topbar.scrolled {
-  background: rgba(10, 10, 12, 0.66);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  /* No bottom border/hairline — the blur + saturation bump already separates
-     the topbar from scrolled content. A 1px line under the buttons read as
-     chrome cruft (operator feedback round 3). */
-  border-bottom-color: transparent;
-  box-shadow: none;
+/* Glass layer — absolute child behind nav content. This is the iOS 26
+   Safari-safe pattern: the sticky parent is transparent, the blur is on
+   an absolute element that Safari ignores for toolbar tinting.
+   translate3d forces GPU compositing — fixes the Safari frozen-blur bug
+   where backdrop-filter stops updating on rapid scroll. */
+.topbar-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(10, 10, 12, 0.45);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transform: translate3d(0, 0, 0);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  /* Animate background-color and box-shadow only — NOT backdrop-filter
+     (per-frame blur re-rasterization is expensive and janks on scroll). */
+  transition: background-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.topbar.scrolled .topbar-glass {
+  background: rgba(10, 10, 12, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .topbar-inner {
+  position: relative;
+  z-index: 1;
   max-width: var(--maxw-wide);
   margin: 0 auto;
   padding: 0 max(1.5rem, env(safe-area-inset-right)) 1rem max(1.5rem, env(safe-area-inset-left));
@@ -489,6 +508,7 @@ p {
 /* Scroll progress hairline — orientation without chrome bloat */
 .scroll-progress {
   position: relative;
+  z-index: 1;
   width: 100%;
   height: 1px;
   background: transparent;
@@ -675,17 +695,39 @@ p {
 /* Light-mode topbar glass: white surface with subtle blur, no saturate
    (saturation boost looks neon on light backgrounds) */
 [data-theme="light"] .topbar {
-  background: rgba(251, 251, 252, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: transparent;
 }
 
-[data-theme="light"] .topbar.scrolled {
-  background: rgba(251, 251, 252, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+[data-theme="light"] .topbar-glass {
+  background: rgba(251, 251, 252, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .topbar.scrolled .topbar-glass {
+  background: rgba(251, 251, 252, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom-color: var(--line);
   box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Light-mode mobile drawer + scrim — glass with white surface, no saturate
+   (saturation boost looks neon on light backgrounds, per topbar convention). */
+@media (max-width: 720px) {
+  [data-theme="light"] .nav-drawer {
+    background: rgba(251, 251, 252, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16),
+      inset 1px 0 0 rgba(255, 255, 255, 0.5);
+  }
+
+  [data-theme="light"] .nav-scrim {
+    background: rgba(0, 0, 0, 0.25);
+  }
 }
 
 /* Light-mode ambient signal wash — subtle blue tint on light surface */
@@ -720,6 +762,13 @@ p {
 
 .nav-scrim {
   display: none;
+}
+
+/* Desktop-only wrapper — children hidden on mobile (≤720px).
+   Used to hide the haptics toggle on mobile, reducing 5 topbar buttons
+   to 4 and giving ~83px of breathing room instead of ~32px. */
+.desktop-only {
+  display: inline-flex;
 }
 
 /* --- Sense toggles (sound + haptics) --- */
@@ -6071,18 +6120,11 @@ a.check-cell:hover .check-cell-title {
     gap: 1.5rem;
   }
 
-  /* Mobile topbar: reduce backdrop-filter blur to minimize scroll-compositing
-     cost. Heavy blur (20px) on a sticky element forces re-rasterization on
-     every scroll frame on iOS Safari, causing scroll-stick near the topbar. */
-  .topbar {
-    -webkit-backdrop-filter: blur(8px) saturate(110%);
-    backdrop-filter: blur(8px) saturate(110%);
-  }
-
-  .topbar.scrolled {
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
-    backdrop-filter: blur(10px) saturate(120%);
-  }
+  /* Mobile topbar: the glass child (.topbar-glass) handles blur/saturate.
+     The old mobile-specific blur overrides (8px/110%, 10px/120%) are
+     removed — the glass child uses 14px/160% resting, 16px/180% scrolled,
+     which is safe on mobile because translate3d(0,0,0) forces GPU
+     compositing, preventing the scroll-stick re-rasterization bug. */
 
   .principle {
     grid-template-columns: 2rem 1fr;
@@ -6139,15 +6181,18 @@ a.check-cell:hover .check-cell-title {
     box-shadow: 0 0 0 1px rgba(51, 88, 232, 0.28);
   }
 
-  .topbar.deep-scrolled {
+  .topbar.deep-scrolled .topbar-glass {
     border-bottom: 1px solid var(--line-faint);
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .topbar {
       transition: padding var(--duration-fast) var(--ease-out),
-        background var(--duration) var(--ease),
-        backdrop-filter var(--duration) var(--ease),
+        border-color var(--duration) var(--ease);
+    }
+    .topbar-glass {
+      transition: background-color var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease),
         border-color var(--duration) var(--ease);
     }
     .cmdk-trigger {
@@ -6181,6 +6226,13 @@ a.check-cell:hover .check-cell-title {
   .sound-toggle,
   .haptics-toggle {
     flex: 0 0 auto;
+  }
+
+  /* Hide desktop-only children on mobile — reduces 5 topbar buttons to 4
+     (sound, search, theme, hamburger), giving ~83px of breathing room
+     instead of ~32px in a 390px viewport. */
+  .desktop-only {
+    display: none;
   }
 
   .surface-page {
@@ -6270,12 +6322,15 @@ a.check-cell:hover .check-cell-title {
     outline-offset: 2px;
   }
 
-  /* Mobile drawer scrim */
+  /* Mobile drawer scrim — frosted dim (not just opaque). The 4px blur
+     reads as a frost layer behind the drawer, not a flat black curtain. */
   .nav-scrim {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 150;
     opacity: 0;
     pointer-events: none;
@@ -6288,7 +6343,10 @@ a.check-cell:hover .check-cell-title {
   }
 
   /* Mobile drawer panel — narrowed from 85vw to 75vw so the scrim is wide
-     enough to read as an obvious tap-target (25% of screen instead of 15%). */
+     enough to read as an obvious tap-target (25% of screen instead of 15%).
+     Glass surface: translucent bg + backdrop-filter blur + saturate, matching
+     the topbar and command palette design language. translate3d promotes
+     to GPU compositing for a smooth slide on low-end mobile. */
   .nav-drawer {
     display: flex;
     flex-direction: column;
@@ -6301,19 +6359,23 @@ a.check-cell:hover .check-cell-title {
     right: 0.5rem;
     bottom: 0.5rem;
     width: min(280px, 75vw);
-    background: var(--surface);
-    border: 1px solid var(--line);
+    background: rgba(10, 10, 12, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4),
+      inset 1px 0 0 rgba(255, 255, 255, 0.06);
     z-index: 200;
-    transform: translateX(calc(100% + 0.5rem));
+    transform: translate3d(calc(100% + 0.5rem), 0, 0);
+    will-change: transform;
     transition: transform var(--duration-slow) var(--ease-drawer);
     padding: 1.25rem 1.25rem 2rem;
     overflow-y: auto;
   }
 
   .nav-drawer.open {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   /* Explicit close control at the drawer's top — users who don't recognize
@@ -6365,11 +6427,12 @@ a.check-cell:hover .check-cell-title {
     display: flex;
     align-items: center;
     min-height: 2.75rem;
-    padding: 0.85rem 0.5rem;
+    padding: 0.85rem 0.75rem;
+    margin-bottom: 0.15rem;
     font-size: 1.1rem;
     font-weight: 500;
     color: var(--muted);
-    border-bottom: 1px solid var(--line-faint);
+    border-radius: var(--radius-sm);
     text-decoration: none;
     transition: color var(--duration-fast) var(--ease),
       background var(--duration-fast) var(--ease);
@@ -6395,11 +6458,11 @@ a.check-cell:hover .check-cell-title {
 @media (prefers-reduced-motion: reduce) and (max-width: 720px) {
   .nav-drawer {
     transition: opacity var(--duration-fast) var(--ease);
-    transform: translateX(calc(100% + 0.5rem));
+    transform: translate3d(calc(100% + 0.5rem), 0, 0);
   }
 
   .nav-drawer.open {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   .nav-trigger-bar {
@@ -15192,9 +15255,36 @@ select {
      blur layer entirely. */
   .topbar,
   .topbar.scrolled {
+    background: var(--surface-raised);
+  }
+  .topbar-glass {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--surface-raised);
+  }
+  .nav-drawer {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--surface);
+  }
+  .nav-scrim {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* @supports fallback — browsers without backdrop-filter (older Firefox,
+   KaiOS, etc.) get solid surfaces instead of a broken translucent look. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar-glass {
+    background: var(--surface-raised);
+  }
+  .nav-drawer {
+    background: var(--surface);
+  }
+  .nav-scrim {
+    background: rgba(0, 0, 0, 0.6);
   }
 }
 

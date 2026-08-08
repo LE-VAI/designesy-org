@@ -107,6 +107,10 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   return (
     <>
       <header className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}${searchExpanded ? ' search-expanded' : ''}`} id="topbar" data-pagefind-ignore>
+        {/* Glass layer — absolute child behind nav content. iOS 26 Safari
+            ignores position:absolute children for toolbar tinting, so the
+            blur lives here instead of on the sticky parent. */}
+        <div className="topbar-glass" aria-hidden="true" />
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
@@ -143,7 +147,9 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             </nav>
             <div className="sense-toggles" role="group" aria-label="Sensory feedback">
               <SoundToggle />
-              <HapticsToggle />
+              <span className="desktop-only">
+                <HapticsToggle />
+              </span>
             </div>
             <CommandPalette />
             <ThemeToggle />
