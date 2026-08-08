@@ -1,0 +1,88 @@
+# Dependabot — automated security updates for the designesy.org repo.
+#
+# Watches both ecosystems in this monorepo:
+#   1. npm (apps/site — the Next.js app deployed on Vercel)
+#   2. pip (packages/designesy-mcp — the Python MCP server published to PyPI)
+#
+# On the weekly schedule, Dependabot opens PRs for each outdated dependency.
+# Each PR triggers the CI workflow (ci.yml), which runs the build gate — so
+# a broken dependency update is caught before merge, not after.
+#
+# GitHub native security alerts (secret scanning, push protection) are
+# enabled separately in Settings → Code security and are free for public repos.
+
+version: 2
+
+updates:
+  # ── npm: the Next.js app ──────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/site
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+    groups:
+      # Group minor/patch updates together to reduce PR noise.
+      # Security updates always get their own PR regardless of grouping.
+      next:
+        patterns:
+          - next
+          - react
+          - react-dom
+          - eslint
+          - eslint-config-next
+      mcp:
+        patterns:
+          - "@modelcontextprotocol/*"
+          - mcp-handler
+      vercel:
+        patterns:
+          - "@vercel/*"
+      browser:
+        patterns:
+          - "@sparticuz/chromium"
+          - playwright-core
+
+  # ── pip: the Python MCP server ───────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: /packages/designesy-mcp
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - python
+    commit-message:
+      prefix: deps
+    groups:
+      mcp:
+        patterns:
+          - mcp
+          - httpx
+          - anyio
+
+  # ── GitHub Actions: keep workflow actions up to date ──────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
