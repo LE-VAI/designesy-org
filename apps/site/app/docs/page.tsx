@@ -224,13 +224,15 @@ export default function DocsPage() {
               tools, and tools become better designed work.
             </p>
           </div>
-          <p className="surface-note">
-            Designesy is an organization first, not merely a company, brand,
-            SaaS product, template shop, prompt library, or content site. It
-            should be able to contain practical products, public resources,
-            agent kits, labs, contracts, research systems, review systems, and
-            creative infrastructure without being reduced to any one of them.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note">
+              Designesy is an organization first, not merely a company, brand,
+              SaaS product, template shop, prompt library, or content site. It
+              should be able to contain practical products, public resources,
+              agent kits, labs, contracts, research systems, review systems, and
+              creative infrastructure without being reduced to any one of them.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -241,11 +243,13 @@ export default function DocsPage() {
               The artifact should feel considered after it becomes functional.
             </p>
           </div>
-          <p className="surface-note">
-            Functional is the baseline. Considered is the bar. Public work on
-            this site is expected to cite a contract token or name an open
-            tension — silence is not quality.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note">
+              Functional is the baseline. Considered is the bar. Public work on
+              this site is expected to cite a contract token or name an open
+              tension — silence is not quality.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -275,11 +279,13 @@ export default function DocsPage() {
                   Artifact → Shipped Work
                 </p>
               </div>
-              <p className="surface-note">
-                The Graph preserves provenance and prevents design knowledge
-                from becoming anonymous taste. Every shipped artifact should
-                trace back through this chain.
-              </p>
+              <div className="text-cell">
+                <p className="surface-note">
+                  The Graph preserves provenance and prevents design knowledge
+                  from becoming anonymous taste. Every shipped artifact should
+                  trace back through this chain.
+                </p>
+              </div>
             </div>
             <div>
               <h3 className="layer-heading">Seven layers</h3>
@@ -306,12 +312,14 @@ export default function DocsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Public voice</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Designesy public language should feel intelligent, precise, useful,
-            soulful but not vague, technical but not cold, ambitious but not
-            delusional, artist-centered, systems-aware, deeply humane,
-            anti-generic, and anti-corporate-slop.
-          </p>
+          <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
+            <p className="surface-note">
+              Designesy public language should feel intelligent, precise, useful,
+              soulful but not vague, technical but not cold, ambitious but not
+              delusional, artist-centered, systems-aware, deeply humane,
+              anti-generic, and anti-corporate-slop.
+            </p>
+          </div>
           <div className="doctrine-cols">
             <div>
               <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
@@ -356,11 +364,13 @@ export default function DocsPage() {
               negates it.
             </p>
           </div>
-          <p className="surface-note">
-            A visitor should feel they are looking at a finished interface —
-            restrained, declarative, complete. Process narration belongs in
-            machine exports, not public prose.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note">
+              A visitor should feel they are looking at a finished interface —
+              restrained, declarative, complete. Process narration belongs in
+              machine exports, not public prose.
+            </p>
+          </div>
         </section>
 
         <div className="status-note">

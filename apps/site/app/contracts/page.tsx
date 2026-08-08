@@ -300,12 +300,14 @@ export default function ContractsPage() {
             Design contracts turn principles into reusable operating rules for
             artifacts, interfaces, and review.
           </p>
-          <p className="surface-note">
-            Designesy Contracts are portable design agreements that let people
-            and agents carry design judgment across tools, sessions, codebases,
-            and artifacts. They make design judgment inspectable — not reliant
-            on slogans or vibes.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note">
+              Designesy Contracts are portable design agreements that let people
+              and agents carry design judgment across tools, sessions, codebases,
+              and artifacts. They make design judgment inspectable — not reliant
+              on slogans or vibes.
+            </p>
+          </div>
           <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
             <Link
               className="button primary"
@@ -595,35 +597,41 @@ export default function ContractsPage() {
               What should I avoid? How do I know if I broke the system?
             </p>
           </div>
-          <p className="surface-note">
-            A useful contract helps a future agent or team member answer all of
-            these without relearning the design system from scratch. Contracts
-            are the operational bridge between philosophy and execution.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note">
+              A useful contract helps a future agent or team member answer all of
+              these without relearning the design system from scratch. Contracts
+              are the operational bridge between philosophy and execution.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Contract contents</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            A Designesy Contract should include all of the following —
-            structured values for machines, rationale for humans, and
-            verification criteria for both.
-          </p>
+          <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
+            <p className="surface-note">
+              A Designesy Contract should include all of the following —
+              structured values for machines, rationale for humans, and
+              verification criteria for both.
+            </p>
+          </div>
           <CheckGrid dense items={checkItemsFromStrings(CONTRACT_CONTENTS)} />
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Contract discipline</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Keep upstream-compatible schema names visible when compatibility
-            matters: <code style={{ color: 'var(--ink)' }}>colors</code>,{' '}
-            <code style={{ color: 'var(--ink)' }}>typography</code>,{' '}
-            <code style={{ color: 'var(--ink)' }}>rounded</code>,{' '}
-            <code style={{ color: 'var(--ink)' }}>spacing</code>,{' '}
-            <code style={{ color: 'var(--ink)' }}>components</code>. Use local
-            extensions for doctrine, review, provenance, agent instructions, and
-            verification — but do not hide the standard contract from tools.
-          </p>
+          <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
+            <p className="surface-note">
+              Keep upstream-compatible schema names visible when compatibility
+              matters: <code style={{ color: 'var(--ink)' }}>colors</code>,{' '}
+              <code style={{ color: 'var(--ink)' }}>typography</code>,{' '}
+              <code style={{ color: 'var(--ink)' }}>rounded</code>,{' '}
+              <code style={{ color: 'var(--ink)' }}>spacing</code>,{' '}
+              <code style={{ color: 'var(--ink)' }}>components</code>. Use local
+              extensions for doctrine, review, provenance, agent instructions, and
+              verification — but do not hide the standard contract from tools.
+            </p>
+          </div>
           <h3
             style={{
               fontSize: '0.9rem',
