@@ -129,9 +129,25 @@ function SiteRow({ site }: { site: SeedSite }) {
             {isSelf && <span className="lb-self-tag">self</span>}
           </Link>
           {isSelf && (
-            <span className="lb-seeded-because" title={site.seededBecause}>
-              {site.seededBecause}
-            </span>
+            <>
+              <span className="lb-seeded-because" title={site.seededBecause}>
+                {site.seededBecause}
+              </span>
+              {site.coiDisclosure && (
+                <span className="lb-coi-badge" title={site.coiDisclosure}>
+                  COI: {site.coiDisclosure}
+                </span>
+              )}
+              {site.liveScoreUrl && (
+                <Link
+                  href={site.liveScoreUrl}
+                  className="lb-live-score-link"
+                  data-cuelume-hover="tick"
+                >
+                  view live report ↗
+                </Link>
+              )}
+            </>
           )}
           <span className="lb-row-meta">
             <a
@@ -297,6 +313,9 @@ export default function LeaderboardPage() {
           .lb-row-self:hover { background: var(--signal-dim); }
           .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
           .lb-seeded-because { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--signal-light); letter-spacing: 0.01em; line-height: 1.4; max-width: 280px; }
+          .lb-coi-badge { display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 3px; letter-spacing: 0.02em; line-height: 1.4; max-width: 280px; }
+          .lb-live-score-link { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; letter-spacing: 0.01em; }
+          .lb-live-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-row-needs-work .lb-name { color: var(--muted); }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
           .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
@@ -421,8 +440,7 @@ export default function LeaderboardPage() {
             <strong>Policy.</strong> {LEADERBOARD_POLICY}{' '}
             Scores re-run weekly. The seed list is curated across five tiers
             (reference, competitors, design-system exemplars, inspiration,
-            high-traffic). Open submission is a follow-up — for now, mail{' '}
-            <a href="mailto:hello@designesy.org">hello@designesy.org</a>.
+            high-traffic). Open submission is live — use the form above.
           </p>
         </section>
 

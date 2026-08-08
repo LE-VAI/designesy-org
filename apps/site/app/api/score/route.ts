@@ -300,7 +300,7 @@ function inferTokensFromCss(
 
 // ── Check Implementations ──────────────────────────────────────────────────
 
-export type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL'; detail: string; remediation?: string };
+export type CheckResult = { id: string; item: string; category: string; status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL'; detail: string; weight?: number; remediation?: string };
 
 // ── Remediation guidance ────────────────────────────────────────────────────
 // Per-check "how to fix this" guidance, shown in the score drawer for FAIL
@@ -2279,7 +2279,8 @@ async function scoreUrlUncached(targetUrl: string) {
   // harm cannot be drowned out by cadence's 8 checks. SKIPs fall out of BOTH
   // numerator and denominator (Lighthouse precedent: manual/N/A audits excluded).
   //
-  // Weight table (sums to 100%, derived from AnySearch research against
+  // Weight table (relative weights, sums to 117 — the scoring formula
+  // normalizes via Σ(points)/Σ(total). Derived from AnySearch research against
   // Lighthouse axe user-impact, design-auditor category %, and DSAF 50/50):
   //   cadence 18, accessibility 15, semantic 12, motion 10, tokens 9,
   //   takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3
@@ -2412,13 +2413,20 @@ async function scoreUrlUncached(targetUrl: string) {
 
   const grade = computeGrade(score);
 
-  // Attach remediation guidance to each check from the lookup table. Every
+  // Attach remediation guidance and per-check weight to each check. Every
   // check id has an entry; the table is the single source of truth for "how
   // to fix this" so guidance stays consistent across PASS/FAIL/WARN/SKIP.
-  const checksWithRemediation = checks.map((c) => ({
-    ...c,
-    remediation: REMEDIATION[c.id],
-  }));
+  // Weight = CATEGORY_WEIGHTS[category] / scoredChecksInCategory (0 for SKIP/MANUAL).
+  const checksWithRemediation = checks.map((c) => {
+    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
+    const isScored = c.status !== 'SKIP' && c.status !== 'MANUAL';
+    const weight = isScored ? catWeight / (categoryCounts[c.category] || 1) : 0;
+    return {
+      ...c,
+      weight: Math.round(weight * 1000) / 1000,
+      remediation: REMEDIATION[c.id],
+    };
+  });
 
   return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
 }

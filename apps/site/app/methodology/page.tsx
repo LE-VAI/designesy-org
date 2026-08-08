@@ -536,8 +536,8 @@ export default function MethodologyPage() {
               <span className="methodology-stat-label">Categories</span>
             </div>
             <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={TOTAL_WEIGHT} />%</span>
-              <span className="methodology-stat-label">Weight total</span>
+              <span className="methodology-stat-num">{SCORED_CHECKS}</span>
+              <span className="methodology-stat-label">Auto-scored checks</span>
             </div>
           </div>
 
@@ -631,11 +631,24 @@ export default function MethodologyPage() {
             <p>
               Weights follow the contract&rsquo;s section emphasis — the contract
               <em>is</em> the scoring basis. Cadence (typography) carries the
-              highest weight at 18% because it has the most checks (11) and
+              highest weight at 18% because it has the most checks (12) and
               typography discipline is the loudest craft signal. Accessibility
               carries 15% and the a11y floor. Semantic/identity, motion, and
               tokens follow. Performance and responsive are lowest-weighted
               because their checks are MANUAL in the static engine.
+            </p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.75rem' }}>
+              <sup>*</sup> Weights are <strong>relative</strong> and sum to 117, not
+              100. The scoring formula normalizes them: each check&rsquo;s
+              contribution is <code>{'categoryWeight / scoredChecksInCategory'}</code>,
+              and the final score is <code>{'Σ(weightedPoints) / Σ(weightedTotal) × 100'}</code>.
+              This means a category&rsquo;s effective influence is{' '}
+              <code>{'weight / 117'}</code> of the total. Raw weight numbers (18, 15,
+              12&hellip;) are kept un-normalized so they stay readable as integers and
+              can grow as new checks are added without recalibrating every existing
+              weight. Three categories — semantic (12), performance (6), responsive
+              (3) — currently have zero scored checks; their weight is held in reserve
+              and does not affect any site&rsquo;s score.
             </p>
           </div>
           <table className="weight-table">
@@ -663,7 +676,7 @@ export default function MethodologyPage() {
               ))}
               <tr style={{ borderTop: '1px solid var(--line)' }}>
                 <td className="wt-name">Total</td>
-                <td className="wt-num"><CountUp value={TOTAL_WEIGHT} />%</td>
+                <td className="wt-num" style={{ color: 'var(--muted-dim)' }}>117<sup>*</sup></td>
                 <td style={{ color: 'var(--muted-dim)' }}><CountUp value={CHECKS.length} /></td>
                 <td className="wt-num"><CountUp value={SCORED_CHECKS} /></td>
               </tr>
@@ -795,14 +808,100 @@ export default function MethodologyPage() {
               patterns.
             </p>
           </div>
-          <div className="methodology-callout" style={{ background: 'var(--surface-soft)', borderColor: 'var(--line)' }}>
-            <strong>S1&ndash;S12 patterns:</strong> overused fonts (Inter/Roboto/etc),
-            full-page gradients, purple/violet gradient overlays, gradient text,
-            Tailwind default palette hexes, repeated identical cards, emoji as
-            icons, &ldquo;AI-powered&rdquo; pill badges, Lorem ipsum, single
-            font family, marketing buzzwords, placeholder/stock image URLs.
-            The full remediation text for each rule lives in the engine source.
-          </div>
+          <p>
+            <strong>Detection formula:</strong> each rule has a{' '}
+            <code>severity</code> (base points) and an{' '}
+            <code>instances</code> count (how many times the pattern was found).
+            The per-rule deduction is{' '}
+            <code>min(severity &times; min(instances, 3), 5)</code>. The{' '}
+            <code>min(instances, 3)</code> cap means the 4th+ occurrence of the
+            same pattern in the same rule does not add further deduction &mdash;
+            three is enough to flag it. Total deduction is capped at 20.
+          </p>
+          <table className="weight-table">
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th>Pattern</th>
+                <th className="wt-num">Sev</th>
+                <th>Trigger</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="wt-name"><code>S1</code> Overused fonts</td>
+                <td style={{ color: 'var(--muted)' }}>Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, Geist in <code>font-family</code></td>
+                <td className="wt-num">5</td>
+                <td style={{ color: 'var(--muted)' }}>1+ match in any <code>font-family</code> declaration</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S2</code> Full-page gradient</td>
+                <td style={{ color: 'var(--muted)' }}>Multi-color <code>linear-gradient</code> on body/html, or fixed/inset:0 overlay (excluding 1px hairlines)</td>
+                <td className="wt-num">5</td>
+                <td style={{ color: 'var(--muted)' }}>Gradient + <code>position:fixed</code> or <code>inset:0</code> or <code>100vw/100vh</code> in same block</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S3</code> Purple/violet gradient</td>
+                <td style={{ color: 'var(--muted)' }}><code>linear-gradient</code> containing any of: #615fff, #8e51ff, #4f39f6, #7f22fe, #a855f7, #9333ea, #7c3aed, #6d28d9, #5b21b6, #4c1d95</td>
+                <td className="wt-num">4</td>
+                <td style={{ color: 'var(--muted)' }}>1+ match in <code>background</code> containing <code>linear-gradient</code></td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S4</code> Gradient text</td>
+                <td style={{ color: 'var(--muted)' }}><code>background-clip: text</code> with gradient spanning 2+ distinct hue families (45&deg; buckets, ignoring <code>var()</code> stops and neutrals)</td>
+                <td className="wt-num">4</td>
+                <td style={{ color: 'var(--muted)' }}>2+ distinct non-neutral hue families in gradient stops</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S5</code> Default palette hexes</td>
+                <td style={{ color: 'var(--muted)' }}>3+ of: #0f172a, #1e293b, #334155, #615fff, #8e51ff, #4f39f6, #7f22fe, #6366f1, #8b5cf6, #a78bfa, #0d6efd, #007bff</td>
+                <td className="wt-num">5</td>
+                <td style={{ color: 'var(--muted)' }}>3+ hex matches in CSS</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S6</code> Repeated card grid</td>
+                <td style={{ color: 'var(--muted)' }}>3+ classes matching <code>.(card|panel|tile|feature|item|box|cell|block)</code> AND repeating grid layout</td>
+                <td className="wt-num">5</td>
+                <td style={{ color: 'var(--muted)' }}>3+ card-like classes + <code>grid-template-columns: repeat(auto-fit|auto-fill|N)</code></td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S7</code> Emoji as icons</td>
+                <td style={{ color: 'var(--muted)' }}>Emoji (Unicode ranges 1F300&ndash;1FAFF, 2600&ndash;27BF, 1F1E6&ndash;1F1FF) inside <code>&lt;button&gt;</code> or <code>&lt;a class=&quot;btn|cta|primary|action&quot;&gt;</code></td>
+                <td className="wt-num">4</td>
+                <td style={{ color: 'var(--muted)' }}>2+ emoji in button/CTA elements</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S8</code> AI-pill badges</td>
+                <td style={{ color: 'var(--muted)' }}>&ldquo;AI-powered&rdquo;, &ldquo;Generate&rdquo;, &ldquo;Chat with AI&rdquo;, &ldquo;Powered by AI&rdquo;, &ldquo;Built with AI&rdquo;, &ldquo;AI-driven&rdquo;</td>
+                <td className="wt-num">3</td>
+                <td style={{ color: 'var(--muted)' }}>1+ match in HTML text</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S9</code> Lorem ipsum</td>
+                <td style={{ color: 'var(--muted)' }}>&ldquo;lorem ipsum&rdquo;, &ldquo;dolor sit amet&rdquo;, &ldquo;consectetur adipiscing&rdquo;, &ldquo;sed do eiusmod&rdquo;, &ldquo;tempor incididunt&rdquo;</td>
+                <td className="wt-num">5</td>
+                <td style={{ color: 'var(--muted)' }}>1+ match in HTML text</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S10</code> Single font family</td>
+                <td style={{ color: 'var(--muted)' }}>Only 1 unique non-generic <code>font-family</code> across entire page (excluding serif/sans-serif/monospace/system-ui)</td>
+                <td className="wt-num">4</td>
+                <td style={{ color: 'var(--muted)' }}>Exactly 1 unique family name</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S11</code> Marketing buzzwords</td>
+                <td style={{ color: 'var(--muted)' }}>2+ of: streamline, empower, supercharge, world-class, enterprise-grade, next-generation, unlock, leverage, seamless, cutting-edge, revolutionize, game-chang, disrupt, synerg</td>
+                <td className="wt-num">3</td>
+                <td style={{ color: 'var(--muted)' }}>2+ buzzwords in body text (tags stripped)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>S12</code> Placeholder images</td>
+                <td style={{ color: 'var(--muted)' }}>URLs from via.placeholder, placehold.co, placeholder.com, dummyimage, picsum.photos, loremflickr, unsplash.com/random|featured</td>
+                <td className="wt-num">4</td>
+                <td style={{ color: 'var(--muted)' }}>1+ match in HTML</td>
+              </tr>
+            </tbody>
+          </table>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="originality-lift">
@@ -824,13 +923,63 @@ export default function MethodologyPage() {
               is framework-driven, not authorial.
             </p>
           </div>
-          <div className="methodology-callout" style={{ background: 'var(--surface-soft)', borderColor: 'var(--line)' }}>
-            <strong>O1&ndash;O7 signals:</strong> bespoke easing curves (incl.
-            spring/overshoot), modern layout primitives (clamp/container
-            queries/subgrid), typographic scale discipline, distinctive color
-            system, custom font stack, motion-system depth, semantic design
-            tokens. Each signal contributes 1&ndash;5 points based on depth.
-          </div>
+          <p>
+            Each signal awards points based on <em>depth</em> &mdash; the number
+            of qualifying features detected in CSS/HTML. A site with one custom
+            easing curve earns 1 point; a site with three or more plus spring
+            physics earns 5. The formulas are deterministic and published below.
+          </p>
+          <table className="weight-table">
+            <thead>
+              <tr>
+                <th>Signal</th>
+                <th>Detection</th>
+                <th className="wt-num">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="wt-name"><code>O1</code> Bespoke easing</td>
+                <td style={{ color: 'var(--muted)' }}>Distinct <code>cubic-bezier()</code> curves not in the preset set (ease, ease-in/out/in-out, Material, Tailwind v4, Bootstrap back-ease). <code>linear()</code> springs with &ge;20-char body count as overshoot.</td>
+                <td className="wt-num">1 (1&ndash;2 curves) &middot; 3 (3+ curves) &middot; +2 if overshoot (y&lt;0 or y&gt;1) &middot; max 5</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O2</code> Modern layout</td>
+                <td style={{ color: 'var(--muted)' }}><code>clamp()</code>, <code>container-type</code>/<code>@container</code>, <code>subgrid</code> &mdash; count of these three primitives present</td>
+                <td className="wt-num">1 (1 primitive) &middot; 2 (2+ primitives)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O3</code> Typographic detail</td>
+                <td style={{ color: 'var(--muted)' }}><code>font-feature-settings</code>, <code>font-variant-numeric</code>, <code>hanging-punctuation</code>, <code>text-underline-offset</code>, <code>font-optical-sizing</code> in CSS</td>
+                <td className="wt-num">1 (1 property) &middot; 2 (2+ properties)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O4</code> Tiered reduced-motion</td>
+                <td style={{ color: 'var(--muted)' }}><code>@media (prefers-reduced-motion)</code> present AND NOT a blanket <code>{'`* { animation: none }`'}</code> kill-switch</td>
+                <td className="wt-num">1 (targeted, not blanket)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O5</code> Motion choreography</td>
+                <td style={{ color: 'var(--muted)' }}>Scroll-driven animations (<code>animation-timeline</code>, <code>view-timeline</code>, <code>animation-range</code>), view transitions (<code>::view-transition</code>), or named <code>@keyframes</code></td>
+                <td className="wt-num">1 (3+ named keyframes) &middot; 2 (scroll-driven or view-transition)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O6</code> Bespoke iconography</td>
+                <td style={{ color: 'var(--muted)' }}>Inline <code>&lt;svg viewBox&gt;</code> or <code>&lt;symbol&gt;</code> elements (hand-placed SVG, not icon-font/CDN)</td>
+                <td className="wt-num">1 (3+ inline SVGs or 2+ symbols)</td>
+              </tr>
+              <tr>
+                <td className="wt-name"><code>O7</code> Semantic tokens</td>
+                <td style={{ color: 'var(--muted)' }}>Semantic custom properties (<code>--surface</code>, <code>--ink</code>, <code>--signal</code>, etc., not <code>--color-blue-500</code>). Shadcn fingerprint (&ge;6 of <code>--background/--foreground/--card/--popover/--ring/--secondary/--muted/--accent/--destructive/--border/--input</code>) zeroed out.</td>
+                <td className="wt-num">2 (4+ semantic tokens) &middot; 4 (8+) &middot; +2 layering (primitive&rarr;semantic) &middot; +2 theming (light-dark/data-theme with 4+ tokens) &middot; max 6</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style={{ marginTop: '0.5rem', color: 'var(--muted)' }}>
+            Total originality is capped at <strong>+8 points</strong>. When slop
+            is heavy (&ge;12 deduction points), the lift is halved (framework-
+            driven originality is not authorial originality).
+          </p>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="hard-fail-ceilings">
