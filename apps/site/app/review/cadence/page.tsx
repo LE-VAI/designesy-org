@@ -354,7 +354,7 @@ export default function CadenceFieldCheckPage() {
                 href={item.href}
                 className="row"
                 role="listitem"
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">
@@ -376,7 +376,7 @@ export default function CadenceFieldCheckPage() {
               href="/labs/cadence"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -389,7 +389,7 @@ export default function CadenceFieldCheckPage() {
               href="/labs/takt"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -402,7 +402,7 @@ export default function CadenceFieldCheckPage() {
               href="/kits/design-review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>

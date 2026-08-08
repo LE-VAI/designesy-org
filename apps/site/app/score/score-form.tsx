@@ -291,6 +291,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const duration = 1200; // Lighthouse PR 17045 "earned" window — long enough to watch the arc fill
     const start = performance.now();
     let rafId: number;
+    // Track previous pass/fail counts so we can fire check-pass/check-fail
+    // micro-ticks as each check "lands" during the count-up animation.
+    let prevPass = 0;
+    let prevFail = 0;
     const animate = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
@@ -302,9 +306,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       }
       setAnimatedCatScores(cats);
       // Animate integer counts in sync — Math.floor so they tick up, not float
+      const curPass = Math.floor(countTargets.pass * eased);
+      const curFail = Math.floor(countTargets.fail * eased);
+      // Fire micro-tick cues as each check lands (only if sound is enabled).
+      // These are intentionally very quiet (gain 0.03, 40-60ms) — they sit
+      // beneath the processing loop as texture, not compete with it.
+      if (soundIsEnabled()) {
+        if (curPass > prevPass) {
+          playExtended('check-pass');
+          prevPass = curPass;
+        }
+        if (curFail > prevFail) {
+          playExtended('check-fail');
+          prevFail = curFail;
+        }
+      }
       setAnimatedCounts({
-        pass: Math.floor(countTargets.pass * eased),
-        fail: Math.floor(countTargets.fail * eased),
+        pass: curPass,
+        fail: curFail,
         warn: Math.floor(countTargets.warn * eased),
         manual: Math.floor(countTargets.manual * eased),
         skip: Math.floor(countTargets.skip * eased),
@@ -373,6 +392,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       if (!data.ok) {
         setStatus('error');
         setResult(data);
+        // Play a feedback cue matched to the error type:
+        // - blocked: rate limit / access denied (HTTP 403/429 analogues)
+        // - warning: soft errors (invalid URL, unknown format)
+        // - retry: fetch failures (502 — could not reach target)
+        const errMsg = typeof data.error === 'string' ? data.error : '';
+        if (soundIsEnabled()) {
+          if (/rate limit|access|forbidden/i.test(errMsg)) {
+            playExtended('blocked');
+          } else if (/could not reach|fetch|timeout/i.test(errMsg)) {
+            playExtended('retry');
+          } else {
+            playExtended('warning');
+          }
+        }
         return;
       }
       setStatus('ok');
@@ -392,6 +425,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       }
     } catch {
       playExtended('processing-stop');
+      if (soundIsEnabled()) playExtended('error');
       setStatus('error');
       setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
     }

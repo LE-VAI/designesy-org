@@ -90,7 +90,10 @@ function makeImpulse(ctx: AudioContext, decay: number, predelayMs: number): Audi
 
 // ── Original: error ──────────────────────────────────────────────────────
 
-/** A low, descending two-note error cue — like a soft "uh-uh". */
+/**
+ * A low, descending two-note error cue — like a soft "uh-uh".
+ * Wider interval (330→196Hz) gives clearer "no" semantics than a narrow drop.
+ */
 function renderError(ctx: AudioContext) {
   const now = ctx.currentTime;
   const master = ctx.createGain();
@@ -109,11 +112,11 @@ function renderError(ctx: AudioContext) {
   osc1.start(now);
   osc1.stop(now + 0.17);
 
-  // Second note: 247 Hz (B3) — lower, descending "no"
+  // Second note: 196 Hz (G3) — wider drop for clearer "no"
   const t2 = now + 0.1;
   const osc2 = ctx.createOscillator();
   osc2.type = 'sine';
-  osc2.frequency.setValueAtTime(247, t2);
+  osc2.frequency.setValueAtTime(196, t2);
   const gain2 = ctx.createGain();
   gain2.gain.setValueAtTime(0.0001, t2);
   gain2.gain.exponentialRampToValueAtTime(0.07, t2 + 0.008);
@@ -130,21 +133,33 @@ function renderError(ctx: AudioContext) {
 
 // ── Feedback family: warning, info, blocked, retry ───────────────────────
 
-/** A single medium tone — "heads up, not blocking". */
+/** A pitch-bent tone — "heads up, not blocking". Bends 440→466Hz over 150ms. */
 function renderWarning(ctx: AudioContext) {
   const master = ctx.createGain();
   master.gain.value = 0.3;
   master.connect(ctx.destination);
-  playNote(ctx, { freq: 440, type: 'triangle', start: 0, duration: 0.15, gain: 0.06, destination: master });
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(440, t0);
+  osc.frequency.linearRampToValueAtTime(466, t0 + 0.15);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.06, t0 + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+  osc.connect(g).connect(master);
+  osc.start(t0);
+  osc.stop(t0 + 0.2);
   setTimeout(() => master.disconnect(), 300);
 }
 
-/** A brief high blip — "you should know this". */
+/** A two-note rising blip (660→880) — "you should know this". */
 function renderInfo(ctx: AudioContext) {
   const master = ctx.createGain();
   master.gain.value = 0.3;
   master.connect(ctx.destination);
-  playNote(ctx, { freq: 660, type: 'sine', start: 0, duration: 0.08, gain: 0.05, destination: master });
+  playNote(ctx, { freq: 660, type: 'sine', start: 0, duration: 0.06, gain: 0.05, destination: master });
+  playNote(ctx, { freq: 880, type: 'sine', start: 0.06, duration: 0.08, gain: 0.05, destination: master });
   setTimeout(() => master.disconnect(), 200);
 }
 
@@ -161,13 +176,15 @@ function renderBlocked(ctx: AudioContext) {
   setTimeout(() => { master.disconnect(); filter.disconnect(); }, 400);
 }
 
-/** A rising pair — "try again". */
+/** A rising pair with timing acceleration — "try again". */
 function renderRetry(ctx: AudioContext) {
   const master = ctx.createGain();
   master.gain.value = 0.3;
   master.connect(ctx.destination);
+  // First note 150ms, second note comes faster (80ms gap) and sustains longer —
+  // the acceleration conveys "go ahead, try again" rather than a flat statement.
   playNote(ctx, { freq: 330, type: 'sine', start: 0, duration: 0.1, gain: 0.05, destination: master });
-  playNote(ctx, { freq: 440, type: 'sine', start: 0.1, duration: 0.1, gain: 0.05, destination: master });
+  playNote(ctx, { freq: 440, type: 'sine', start: 0.08, duration: 0.15, gain: 0.05, destination: master });
   setTimeout(() => master.disconnect(), 300);
 }
 
@@ -179,7 +196,7 @@ function renderRetry(ctx: AudioContext) {
  *
  * F (0-49):  Single 220Hz sine, 400ms, no reverb — somber, restrained.
  * D (50-69): Descending pair 330→220Hz triangle, 300ms — mild disappointment.
- * C (70-84): Neutral single 440Hz sine, 200ms — flat, informational.
+ * C (70-84): Two-note rising 440→554Hz sine, 250ms — "passing, not failing".
  * B (85-94): Ascending pair 440→660Hz triangle, 300ms — positive.
  * A (95-100): Ascending arpeggio C4→E4→G4→C5, triangle, 800ms, small-room reverb.
  * A+ (100):  Same arpeggio + 1320/1760Hz harmonic overtones, sine, 800ms, large-room reverb.
@@ -229,8 +246,9 @@ function renderGradeReveal(ctx: AudioContext, grade: string) {
       break;
 
     case 'C':
-      // Neutral single — flat, informational
-      playNote(ctx, { freq: 440, type: 'sine', start: 0, duration: 0.2, gain: 0.05, destination: master });
+      // Two-note rising 440→554 — "passing, not failing" (C#5 Ab4→C#5)
+      playNote(ctx, { freq: 440, type: 'sine', start: 0, duration: 0.15, gain: 0.05, destination: master });
+      playNote(ctx, { freq: 554, type: 'sine', start: 0.1, duration: 0.2, gain: 0.05, destination: master });
       break;
 
     case 'B':

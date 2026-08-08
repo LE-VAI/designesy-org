@@ -97,7 +97,7 @@ export default function KitsPage() {
               href="/open"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -112,7 +112,7 @@ export default function KitsPage() {
               href="/review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -127,7 +127,7 @@ export default function KitsPage() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -142,7 +142,7 @@ export default function KitsPage() {
               href="/labs/poise"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>
@@ -157,7 +157,7 @@ export default function KitsPage() {
               href="/labs/takt"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">05</span>
@@ -172,7 +172,7 @@ export default function KitsPage() {
               href="/labs/cadence"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">06</span>
@@ -187,7 +187,7 @@ export default function KitsPage() {
               href="/labs/acoustics"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">07</span>

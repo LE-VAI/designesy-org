@@ -335,7 +335,7 @@ export default function AcousticsFieldCheckPage() {
                 href={item.href}
                 className="row"
                 role="listitem"
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">
@@ -357,7 +357,7 @@ export default function AcousticsFieldCheckPage() {
               href="/labs/acoustics"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -370,7 +370,7 @@ export default function AcousticsFieldCheckPage() {
               href="/acoustic-tokens"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -383,7 +383,7 @@ export default function AcousticsFieldCheckPage() {
               href="/review/cadence"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -396,7 +396,7 @@ export default function AcousticsFieldCheckPage() {
               href="/kits/design-review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>

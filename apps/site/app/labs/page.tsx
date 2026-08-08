@@ -153,7 +153,7 @@ export default function LabsPage() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -168,7 +168,7 @@ export default function LabsPage() {
               href="/review/poise"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -183,7 +183,7 @@ export default function LabsPage() {
               href="/review/takt"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -198,7 +198,7 @@ export default function LabsPage() {
               href="/review/cadence"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>
@@ -213,7 +213,7 @@ export default function LabsPage() {
               href="/acoustic-tokens"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">05</span>
@@ -228,7 +228,7 @@ export default function LabsPage() {
               href="/review/acoustics"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">06</span>
@@ -243,7 +243,7 @@ export default function LabsPage() {
               href="/review/designesy-org"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">07</span>
@@ -258,7 +258,7 @@ export default function LabsPage() {
               href="/kits/design-review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">08</span>
@@ -275,7 +275,7 @@ export default function LabsPage() {
               role="listitem"
               target="_blank"
               rel="noopener noreferrer"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">09</span>
@@ -290,7 +290,7 @@ export default function LabsPage() {
               href="/continuity"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">10</span>

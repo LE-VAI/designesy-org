@@ -194,7 +194,7 @@ export default function DesignesyOrgCaseStudy() {
               href="/score?url=designesy.org"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -207,7 +207,7 @@ export default function DesignesyOrgCaseStudy() {
               href="/contracts/design-system"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -220,7 +220,7 @@ export default function DesignesyOrgCaseStudy() {
               href="/learn/why-we-built-a-public-design-score"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -233,7 +233,7 @@ export default function DesignesyOrgCaseStudy() {
               href="/work"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>

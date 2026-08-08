@@ -517,10 +517,27 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             label="Share this report"
             compact
           />
+          <Link
+            href="/methodology"
+            className="score-action-btn"
+            style={{ fontSize: '0.82rem', color: 'var(--muted-dim)' }}
+          >
+            How we score ↗
+          </Link>
         </div>
         <p className="report-version">
           Report generated against design system contract v0.4.0 · 40 checks ·{' '}
           {total} checks evaluated
+        </p>
+        <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>
+          A high score means the site ships the contract primitives the engine can
+          detect — token architecture, motion hygiene, accessibility, typography
+          discipline. It does <strong style={{ color: 'var(--muted)' }}>not</strong> mean the
+          design is good. Conformance &ne; quality. A site can pass every check and
+          still be mediocre, or fail many and still be excellent. The score is a{' '}
+          <em>calibration signal</em>, not a verdict. See the{' '}
+          <a href="/methodology#what-engine-measures" style={{ color: 'var(--signal-light)' }}>methodology</a>{' '}
+          for what the engine can and cannot measure.
         </p>
       </div>
     </div>

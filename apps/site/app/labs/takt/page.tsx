@@ -389,7 +389,7 @@ export default function TaktLabPage() {
           <Link
             className="lab-card"
             href="/review/takt"
-            data-cuelume-hover="whisper"
+            data-cuelume-hover="bloom"
             data-cuelume-press
           >
             <div className="lab-card-top">
@@ -413,7 +413,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/labs/poise"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -426,7 +426,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/contracts/design-system"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -439,7 +439,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/kits/design-review"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
@@ -452,7 +452,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/review/poise"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">04</span>
@@ -465,7 +465,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/labs/cadence"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">05</span>
@@ -478,7 +478,7 @@ export default function TaktLabPage() {
               className="row"
               role="listitem"
               href="/labs/acoustics"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">06</span>

@@ -160,7 +160,7 @@ export function ContinuityWaitlistForm() {
         </button>
         <p className="waitlist-trust">
           No charge. No spam cadence. Used only for Continuity access — see{' '}
-          <a href="/privacy" data-cuelume-hover="whisper">
+          <a href="/privacy" data-cuelume-hover="bloom">
             Privacy
           </a>
           .

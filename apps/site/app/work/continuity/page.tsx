@@ -266,7 +266,7 @@ export default function ContinuityCaseStudyPage() {
                 href={item.href}
                 className="row"
                 role="listitem"
-                data-cuelume-hover="whisper"
+                data-cuelume-hover="bloom"
                 data-cuelume-press
               >
                 <span className="row-index">

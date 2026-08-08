@@ -128,6 +128,11 @@ function SiteRow({ site }: { site: SeedSite }) {
             {site.name}
             {isSelf && <span className="lb-self-tag">self</span>}
           </Link>
+          {isSelf && (
+            <span className="lb-seeded-because" title={site.seededBecause}>
+              {site.seededBecause}
+            </span>
+          )}
           <span className="lb-row-meta">
             <a
               href={externalHref}
@@ -291,6 +296,7 @@ export default function LeaderboardPage() {
           .lb-row-self { background: var(--signal-dim); }
           .lb-row-self:hover { background: var(--signal-dim); }
           .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
+          .lb-seeded-because { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--signal-light); letter-spacing: 0.01em; line-height: 1.4; max-width: 280px; }
           .lb-row-needs-work .lb-name { color: var(--muted); }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
           .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }

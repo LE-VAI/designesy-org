@@ -146,7 +146,7 @@ export default function ContinuityPage() {
               href="/open"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">01</span>
@@ -159,7 +159,7 @@ export default function ContinuityPage() {
               href="/kits/design-review"
               className="row"
               role="listitem"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">02</span>
@@ -174,7 +174,7 @@ export default function ContinuityPage() {
               role="listitem"
               target="_blank"
               rel="noopener noreferrer"
-              data-cuelume-hover="whisper"
+              data-cuelume-hover="bloom"
               data-cuelume-press
             >
               <span className="row-index">03</span>
