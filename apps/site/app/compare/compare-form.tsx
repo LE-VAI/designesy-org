@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { ShareButton } from '../lib/share-button';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -221,15 +222,12 @@ export function CompareForm({ initialA, initialB }: { initialA: string; initialB
               </p>
             </div>
             <div style={{ marginLeft: 'auto' }}>
-              <a
-                href={shareUrl(result.urlA || '', result.urlB || '')}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Share →
-              </a>
+              <ShareButton
+                url={shareUrl(result.urlA || '', result.urlB || '')}
+                text={`Designesy compare — ${result.urlA || ''} vs ${result.urlB || ''}`}
+                label="Share this comparison"
+                compact
+              />
             </div>
           </div>
 

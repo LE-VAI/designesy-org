@@ -12,6 +12,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { CountUp } from '../lib/count-up';
+import { PageShareButton } from '../lib/page-share';
 import { SEED, type Grade } from '../leaderboard/seed';
 
 export const revalidate = 3600;
@@ -69,6 +70,12 @@ export default function FrameworksIndexPage() {
             dedicated page with detailed metrics. Click any framework to read
             its evaluation.
           </p>
+          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
+            <PageShareButton
+              text="30 sites scored against a 40-check design contract — each with its own evaluation page."
+              label="Share the framework evaluations"
+            />
+          </div>
         </section>
 
         {CATEGORIES.map((cat) => {

@@ -20,6 +20,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { PageShareButton } from '../../lib/page-share';
 import { SEED, type Grade, type CategoryBreakdown } from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES } from '../../leaderboard/batch-data';
 
@@ -331,6 +332,12 @@ export default async function FrameworkEvaluationPage({
               {site.url.replace(/^https?:\/\//, '')}
             </a>
           </p>
+          <div className="hero-actions" style={{ marginTop: '1.5rem' }}>
+            <PageShareButton
+              text={`${site.name} · Grade ${site.grade} · ${site.score}/100 on the Designesy 40-check design contract — designesy.org/frameworks/${slug}`}
+              label={`Share ${site.name} evaluation`}
+            />
+          </div>
         </section>
 
         {/* Score summary */}
