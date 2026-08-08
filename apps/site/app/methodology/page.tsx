@@ -610,15 +610,17 @@ export default function MethodologyPage() {
             <span className="formula-comment"># Per-category sub-score (same math, scoped to one category)</span><br />
             categoryScore = round( &sum;(catPoints) / &sum;(catWeight) &times; 1000 ) / 10
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
-            The <code>round(&hellip; &times; 1000) / 10</code> pattern produces a
-            one-decimal-place score (e.g. 95.2, not 95.2347). The full pipeline
-            is five steps: weighted compliance &rarr; anti-slop deduction &rarr;
-            originality lift &rarr; accessibility floor &rarr; hard-fail ceilings.
-            Steps 2-3 are score modifiers (slop/originality); steps 4-5 are
-            protective caps. The per-category sub-scores use only step 1 and are
-            shown as the constellation breakdown on the leaderboard and score pages.
-          </p>
+          <div className="text-cell" style={{ marginTop: '1rem' }}>
+            <p className="surface-note" style={{ maxWidth: '66ch' }}>
+              The <code>round(&hellip; &times; 1000) / 10</code> pattern produces a
+              one-decimal-place score (e.g. 95.2, not 95.2347). The full pipeline
+              is five steps: weighted compliance &rarr; anti-slop deduction &rarr;
+              originality lift &rarr; accessibility floor &rarr; hard-fail ceilings.
+              Steps 2-3 are score modifiers (slop/originality); steps 4-5 are
+              protective caps. The per-category sub-scores use only step 1 and are
+              shown as the constellation breakdown on the leaderboard and score pages.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="category-weights">
@@ -954,13 +956,15 @@ export default function MethodologyPage() {
               </li>
             ))}
           </ul>
-          <p className="surface-note" style={{ maxWidth: '66ch' }}>
-            MANUAL and N/A checks are excluded from both numerator and
-            denominator — a site is not penalized for them. The MANUAL checks
-            may be resolved in future versions of the engine via a
-            Playwright/CDP trace integration; the N/A checks resolve
-            automatically when the site ships the elements they target.
-          </p>
+          <div className="text-cell">
+            <p className="surface-note" style={{ maxWidth: '66ch' }}>
+              MANUAL and N/A checks are excluded from both numerator and
+              denominator — a site is not penalized for them. The MANUAL checks
+              may be resolved in future versions of the engine via a
+              Playwright/CDP trace integration; the N/A checks resolve
+              automatically when the site ships the elements they target.
+            </p>
+          </div>
         </section>
 
         {CHECKS_BY_CATEGORY.map((group) => (
