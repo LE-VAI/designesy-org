@@ -6,6 +6,7 @@ import { pageMeta } from '../lib/site-meta';
 import { SubmitForm } from './submit-form/submit-form';
 import { MiniConstellation } from '../lib/mini-constellation';
 import { CountUp } from '../lib/count-up';
+import { PageShareButton } from '../lib/page-share';
 import {
   SEED,
   LEADERBOARD_POLICY,
@@ -369,6 +370,10 @@ export default function LeaderboardPage() {
             >
               Score a site
             </Link>
+            <PageShareButton
+              text="30 sites scored by the same deterministic 40-check engine. Designesy is the only A-grade site."
+              label="Share the leaderboard"
+            />
           </div>
         </section>
 

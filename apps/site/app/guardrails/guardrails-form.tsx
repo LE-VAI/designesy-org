@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useLayoutEffect } from 'react';
+import { ShareButton } from '../lib/share-button';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -231,15 +232,12 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
               >
                 Download bundle ↓
               </button>
-              <a
-                href={shareUrl(scoredUrl)}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Share →
-              </a>
+              <ShareButton
+                url={shareUrl(scoredUrl)}
+                text={`Designesy guardrails bundle — ${scoredUrl}`}
+                label="Share this guardrails result"
+                compact
+              />
             </div>
           </div>
 

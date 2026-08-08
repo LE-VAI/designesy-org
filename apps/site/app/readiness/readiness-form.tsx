@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { ShareButton } from '../lib/share-button';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -147,15 +148,12 @@ export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
               </p>
             </div>
             <div style={{ marginLeft: 'auto' }}>
-              <a
-                href={shareUrl(scoredUrl)}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Share →
-              </a>
+              <ShareButton
+                url={shareUrl(scoredUrl)}
+                text={`Designesy AI-readiness check — ${scoredUrl}`}
+                label="Share this readiness result"
+                compact
+              />
             </div>
           </div>
 
