@@ -43,18 +43,24 @@ let mcpLimiter: Ratelimit | null | undefined;
 
 function getScoreLimiter(): Ratelimit | null {
   if (scoreLimiter !== undefined) return scoreLimiter;
-  scoreLimiter = createLimiter('score', 100, '60 s');
+  scoreLimiter = createLimiter('score', Ratelimit.slidingWindow(100, '60 s'));
   return scoreLimiter;
 }
 
 function getMcpLimiter(): Ratelimit | null {
   if (mcpLimiter !== undefined) return mcpLimiter;
   // MCP endpoint is more expensive (long-running, up to 300s) — tighter limit.
-  mcpLimiter = createLimiter('mcp', 30, '60 s');
+  mcpLimiter = createLimiter('mcp', Ratelimit.slidingWindow(30, '60 s'));
   return mcpLimiter;
 }
 
-function createLimiter(prefix: string, limit: number, window: string): Ratelimit | null {
+// `Ratelimit.slidingWindow()` returns an `Algorithm<RegionContext>` — the
+// type isn't exported, so we use ReturnType to stay type-safe without
+// reaching into internals.
+function createLimiter(
+  prefix: string,
+  limiter: ReturnType<typeof Ratelimit.slidingWindow>,
+): Ratelimit | null {
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -68,7 +74,7 @@ function createLimiter(prefix: string, limit: number, window: string): Ratelimit
 
   return new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(limit, window),
+    limiter,
     prefix: `designesy:${prefix}`,
     analytics: true,
   });
@@ -86,9 +92,15 @@ async function checkRateLimit(
 ): Promise<NextResponse | null> {
   if (!limiter) return null; // no Upstash configured → skip
 
-  // request.ip is set by Vercel infra and is trustworthy.
-  // Fallback to x-forwarded-for for non-Vercel environments.
-  const ip = request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  // Next.js 15 removed `request.ip` from NextRequest. Vercel sets the
+  // `x-forwarded-for` and `x-real-ip` headers on every edge request — both
+  // are populated by Vercel's proxy layer and are trustworthy on Vercel.
+  // (In local dev, neither may be set; we fall back to 'unknown' which
+  // collapses all local requests into one bucket — acceptable for dev.)
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip')?.trim() ||
+    'unknown';
 
   const { success, limit, remaining, reset } = await limiter.limit(`${identifier}:${ip}`);
 
