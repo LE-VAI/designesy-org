@@ -11,22 +11,125 @@
 //    global `headers()` (which IS ISR-safe — it applies to the route, not
 //    per-request HTML). We do not duplicate them here.
 //
-// Two real jobs:
-//   1. /api/score — stamp a request id + explicit no-store (it must never
-//      be CDN-cached; its result cache lives in the app via unstable_cache).
-//   2. Everything else — pass through untouched.
+// Three real jobs:
+//   1. /api/score — stamp a request id + explicit no-store + rate limit.
+//   2. /api/mcp — rate limit (MCP endpoint, expensive serverless calls).
+//   3. Everything else — pass through untouched.
 //
-// Budget note: middleware runs at the edge on every matched request. Keeping
-// the public-page path a no-op avoids paying compute per page-view.
+// Rate limiting uses Upstash Redis (@upstash/ratelimit) — a distributed
+// store that persists across serverless instances. The prior in-memory Map
+// rate limiter in score/route.ts reset on every cold start and differed per
+// instance, so the limit was aspirational, not enforced. This edge-level
+// limiter runs BEFORE the serverless function invokes, saving compute cost.
+//
+// Graceful degradation: if UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN
+// env vars are not set, rate limiting is skipped (the site still works, just
+// without edge-level rate limiting). The in-memory limiter in score/route.ts
+// remains as a secondary defense.
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-export function middleware(request: NextRequest) {
+// ── Upstash rate limiter (lazy init, edge-compatible) ────────────────────────
+//
+// Lazy-initialized so the module doesn't crash if env vars aren't set.
+// Vercel reuses edge instances (Fluid Compute), so the limiter is typically
+// initialized once and reused across requests.
+
+let scoreLimiter: Ratelimit | null | undefined;
+let mcpLimiter: Ratelimit | null | undefined;
+
+function getScoreLimiter(): Ratelimit | null {
+  if (scoreLimiter !== undefined) return scoreLimiter;
+  scoreLimiter = createLimiter('score', Ratelimit.slidingWindow(100, '60 s'));
+  return scoreLimiter;
+}
+
+function getMcpLimiter(): Ratelimit | null {
+  if (mcpLimiter !== undefined) return mcpLimiter;
+  // MCP endpoint is more expensive (long-running, up to 300s) — tighter limit.
+  mcpLimiter = createLimiter('mcp', Ratelimit.slidingWindow(30, '60 s'));
+  return mcpLimiter;
+}
+
+// `Ratelimit.slidingWindow()` returns an `Algorithm<RegionContext>` — the
+// type isn't exported, so we use ReturnType to stay type-safe without
+// reaching into internals.
+function createLimiter(
+  prefix: string,
+  limiter: ReturnType<typeof Ratelimit.slidingWindow>,
+): Ratelimit | null {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  // Graceful degradation: no Upstash env vars → skip rate limiting.
+  if (!redisUrl || !redisToken) return null;
+
+  const redis = new Redis({
+    url: redisUrl,
+    token: redisToken,
+  });
+
+  return new Ratelimit({
+    redis,
+    limiter,
+    prefix: `designesy:${prefix}`,
+    analytics: true,
+  });
+}
+
+// ── Rate limit check ────────────────────────────────────────────────────────
+//
+// Returns a 429 NextResponse if rate limited, or null if OK (caller continues
+// to the route handler).
+
+async function checkRateLimit(
+  request: NextRequest,
+  limiter: Ratelimit | null,
+  identifier: string,
+): Promise<NextResponse | null> {
+  if (!limiter) return null; // no Upstash configured → skip
+
+  // Next.js 15 removed `request.ip` from NextRequest. Vercel sets the
+  // `x-forwarded-for` and `x-real-ip` headers on every edge request — both
+  // are populated by Vercel's proxy layer and are trustworthy on Vercel.
+  // (In local dev, neither may be set; we fall back to 'unknown' which
+  // collapses all local requests into one bucket — acceptable for dev.)
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip')?.trim() ||
+    'unknown';
+
+  const { success, limit, remaining, reset } = await limiter.limit(`${identifier}:${ip}`);
+
+  if (!success) {
+    const res = NextResponse.json(
+      { ok: false, error: 'Rate limit exceeded. Please try again later.' },
+      { status: 429 },
+    );
+    // Standard rate limit headers (RFC draft-ietf-httpapi-ratelimit-headers).
+    res.headers.set('RateLimit-Limit', limit.toString());
+    res.headers.set('RateLimit-Remaining', '0');
+    res.headers.set('RateLimit-Reset', Math.ceil(reset / 1000).toString());
+    res.headers.set('Retry-After', Math.ceil((reset - Date.now()) / 1000).toString());
+    return res;
+  }
+
+  return null;
+}
+
+// ── Middleware (async — Next.js supports async middleware) ──────────────────
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Scoring API — dynamic by design. No-store + a request id for tracing.
+  // 1. Scoring API — dynamic by design. Rate limit + no-store + request id.
   if (pathname.startsWith('/api/score')) {
+    const blocked = await checkRateLimit(request, getScoreLimiter(), 'score');
+    if (blocked) return blocked;
+
     const res = NextResponse.next();
     res.headers.set('x-request-id', crypto.randomUUID());
     // Defense-in-depth: the route is force-dynamic already; this guarantees
@@ -35,8 +138,17 @@ export function middleware(request: NextRequest) {
     return res;
   }
 
-  // 2. Public pages (incl. the ISR'd homepage) — no-op. Do NOT set any header
+  // 2. MCP endpoint — rate limit (expensive, up to 300s function timeout).
+  if (pathname.startsWith('/api/mcp')) {
+    const blocked = await checkRateLimit(request, getMcpLimiter(), 'mcp');
+    if (blocked) return blocked;
+
+    return NextResponse.next();
+  }
+
+  // 3. Public pages (incl. the ISR'd homepage) — no-op. Do NOT set any header
   //    that would change cache semantics (no Set-Cookie, no Vary, no rewrite).
+  //    This path stays sync-equivalent (no await) for page-view performance.
   return NextResponse.next();
 }
 
