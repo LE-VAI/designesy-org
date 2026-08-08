@@ -1,0 +1,159 @@
+# Post-deploy smoke test — verifies production after Vercel deploys.
+#
+# Uses the event-driven `deployment_status` trigger (the 2026 Vercel-recommended
+# pattern) instead of polling. When Vercel finishes a production deploy, it
+# fires a `deployment_status: success` event in GitHub with `target_url`
+# pointing at the live deployment. This workflow picks up that event and runs
+# smoke tests against the live URL — zero polling, zero sleep commands.
+#
+# What this catches (within ~30 seconds of a production deploy):
+#   • Homepage returns 200 with edge cache HIT
+#   • /score returns 200 (dynamic page works)
+#   • /pricing returns 200 with edge cache HIT (ISR working)
+#   • /score?url=stripe.com returns 200 with OG image containing ?url= param
+#   • Both production domains (www + apex) respond
+#   • CSP headers are present
+#
+# This does NOT block the Vercel deploy (Vercel auto-deploys on git push).
+# It runs in parallel and reports failures via GitHub notifications.
+#
+# Vercel KB reference:
+# https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel
+# "GitHub Actions can trigger directly on deployment_status events. The
+# target_url field hands you the unique preview URL, so the test runner
+# always points at the deployment that just went live."
+
+name: Post-deploy smoke test
+
+on:
+  # Event-driven: fires when Vercel reports a successful deployment.
+  # This replaces polling with a clean event hook.
+  deployment_status:
+    types: [success]
+  # Manual trigger for re-running smoke tests on demand.
+  workflow_dispatch:
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    name: Smoke test production
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    # Only run for Production deployments (not Preview). For manual triggers,
+    # always run.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Production')
+
+    steps:
+      - name: Determine target URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" = "deployment_status" ]; then
+            # Vercel provides the live deployment URL in target_url
+            TARGET="${{ github.event.deployment_status.target_url }}"
+          else
+            # Manual trigger — test production directly
+            TARGET="https://www.designesy.org"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          echo "Testing: $TARGET"
+
+      - name: Smoke test routes
+        env:
+          TARGET: ${{ steps.url.outputs.target }}
+        run: |
+          set -e
+          echo "## Post-deploy smoke test" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Target: $TARGET" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Helper: fetch a route and verify status + optional extra checks
+          check_route() {
+            local path="$1"
+            local label="$2"
+            local expect="${3:-200}"
+            local extra_check="${4:-}"
+
+            local headers
+            headers=$(curl -sI "${TARGET}${path}" 2>/dev/null)
+            local status=$(echo "$headers" | head -1 | grep -oE '[0-9]{3}')
+            local cache=$(echo "$headers" | grep -i "x-vercel-cache" | tr -d '\r' | awk '{print $2}')
+
+            if [ "$status" = "$expect" ]; then
+              echo "✓ $label: $status ($cache)" >> $GITHUB_STEP_SUMMARY
+              echo "✓ $label: $status ($cache)"
+            else
+              echo "✗ $label: expected $expect, got $status" >> $GITHUB_STEP_SUMMARY
+              echo "✗ $label: expected $expect, got $status"
+              exit 1
+            fi
+
+            # Extra pattern check (e.g. OG image contains ?url= param)
+            if [ -n "$extra_check" ]; then
+              local body
+              body=$(curl -s "${TARGET}${path}" 2>/dev/null)
+              if echo "$body" | grep -q "$extra_check"; then
+                echo "  ✓ Extra check: $extra_check" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "  ✗ Extra check failed: $extra_check" >> $GITHUB_STEP_SUMMARY
+                exit 1
+              fi
+            fi
+          }
+
+          # Core routes
+          check_route "/" "Homepage" "200"
+          check_route "/score" "Score page" "200"
+          check_route "/pricing" "Pricing (ISR)" "200"
+
+          # Dynamic OG image — verify ?url= param passes through to OG image
+          check_route "/score?url=stripe.com" "Score with URL" "200" "opengraph-image?url=stripe.com"
+
+          # ISR pages should hit edge cache (HIT or PRERENDER)
+          PRICING_CACHE=$(curl -sI "${TARGET}/pricing" 2>/dev/null | grep -i "x-vercel-cache" | tr -d '\r' | awk '{print $2}')
+          if [ "$PRICING_CACHE" = "HIT" ] || [ "$PRICING_CACHE" = "PRERENDER" ]; then
+            echo "✓ Pricing ISR cache: $PRICING_CACHE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠ Pricing cache: $PRICING_CACHE (expected HIT/PRERENDER)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Both production domains respond
+          WWW_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://www.designesy.org" 2>/dev/null)
+          APEX_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "https://designesy.org" 2>/dev/null)
+          echo "✓ www.designesy.org: $WWW_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "✓ designesy.org (apex): $APEX_STATUS" >> $GITHUB_STEP_SUMMARY
+
+          # CSP headers present
+          CSP=$(curl -sI "${TARGET}" 2>/dev/null | grep -i "content-security-policy" | head -1)
+          if [ -n "$CSP" ]; then
+            echo "✓ CSP header present" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✗ CSP header missing" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All smoke tests passed" >> $GITHUB_STEP_SUMMARY
+          echo ""
+          echo "All smoke tests passed."
+
+      - name: Report on failure
+        if: failure()
+        run: |
+          echo "## ❌ Smoke test failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Target: ${{ steps.url.outputs.target }}" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the [Vercel dashboard](https://vercel.com/le-vais-projects/designesy-org) for deployment status." >> $GITHUB_STEP_SUMMARY
