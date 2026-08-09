@@ -1,5 +1,5 @@
 {
-  "instructions": "Rate each site: does it PASS or FAIL an accessibility review? Judge only what you observe — keyboard operability, contrast, focus visibility, labels. Do NOT open designesy.org/score. Fill humanVerdict: \"PASS\"|\"FAIL\", then run node scripts/blind-comparison.mjs --panel.",
+  "instructions": "BLIND A11Y PANEL \u2014 15 sites, one question each.\nFor every site below: visit the URL and judge ONLY accessibility: keyboard operability (can you tab through everything and see focus?), contrast (can you read text on its background?), focus visibility, and meaningful labels (buttons/links say what they do). Answer PASS (usable by a keyboard + screen reader user) or FAIL (any blocker).\nIMPORTANT: do NOT open designesy.org/score or any Designesy page to check the engine result \u2014 this must stay blind.\nHOW TO RETURN: edit the JSON \u2014 replace each null in humanVerdict with \"PASS\" or \"FAIL\" \u2014 then paste your edited JSON as a comment reply on the dev.to post. That is all. ~45 minutes total.",
   "sites": [
     {
       "id": "SITE-119",
