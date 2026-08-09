@@ -277,14 +277,20 @@ export function initScrollPause(
       // Scroll the clip by the inverse of the drag distance
       clip[scrollProp] = startScroll - delta;
 
-      // Track velocity for the momentum fling (px/ms)
+      // Track velocity for the momentum fling (px/ms). Guard against
+      // dt=0 (back-to-back events in the same frame): a zero delta-time
+      // makes velocity NaN, and scrollLeft += NaN coerces to 0 — wiping
+      // the scroll position. Also cap dt so a long pause between moves
+      // doesn't produce a huge stale velocity.
       const now = performance.now();
       const dt = now - lastMoveTime;
-      if (dt > 0) {
+      if (dt > 0 && dt < 100) {
         const v = (clip[scrollProp] - lastMoveScroll) / dt;
-        lastMoveScroll = clip[scrollProp];
-        lastMoveTime = now;
-        lastVelocity = v;
+        if (Number.isFinite(v)) {
+          lastMoveScroll = clip[scrollProp];
+          lastMoveTime = now;
+          lastVelocity = v;
+        }
       }
 
       // Prevent the browser from doing anything else with this gesture
