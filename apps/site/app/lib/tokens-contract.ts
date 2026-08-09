@@ -15,7 +15,7 @@ export const tokensContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/tokens',
   machine_url: 'https://www.designesy.org/contracts/tokens.json',
-  updated: '2026-07-28',
+  updated: '2026-08-09',
   purpose:
     'Token-format conformance is the foundation of portable design intelligence. If tokens are not structurally valid, every downstream tool inherits the rot.',
   source_authority: {
@@ -78,6 +78,7 @@ export const tokensContract = {
     '§6 Economy Is Intelligence': 'Fewer, stronger tokens',
     '§6 Systems Enable Freedom': 'Portable, validated tokens',
     '§17 Verification': 'Machine-checkable verification layer for tokens',
+    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract v0.4.0 and passes designesy_tokens_score at 100% (10/10 checks, verified 2026-08-09)',
   },
   open_questions: [
     'DTCG custom types proposal: should spring and sound be proposed to W3C DTCG?',

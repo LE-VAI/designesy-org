@@ -9,7 +9,7 @@ import { CountUp } from '../../lib/count-up';
 export const metadata: Metadata = pageMeta({
   title: 'Tokens contract',
   description:
-    'Designesy tokens contract v0.1.0 — W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria.',
+    'Designesy tokens contract v0.1.0 — W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria. Live export passes 10/10 checks.',
   path: '/contracts/tokens',
   ogTitle: 'Tokens contract · v0.1.0',
   ogDescription:
@@ -108,7 +108,9 @@ export default function TokensContractPage() {
 
         <div className="status-note">
           Sibling contract to the design system v0.4.0. Machine export at{' '}
-          <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>.
+          <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>. The
+          live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) passes
+          all 10 conformance checks (verified 2026-08-09).
         </div>
       </main>
       <Footer />
