@@ -1272,6 +1272,42 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up methodology-section" id="rank-bounds">
+          <h2 className="doctrine-heading">Rank-optimal weighting bounds</h2>
+          <div className="methodology-prose">
+            <p>
+              The canonical test after sensitivity analysis is rank-optimal
+              weighting: the OECD Better Life Index analysis (Springer Social
+              Indicators Research) showed 19 of 36 countries can be ranked #1
+              by adversarial weights. We apply the same test to our own
+              leaderboard before anyone else does — every site&rsquo;s score
+              is recomputed under 29 weight scenarios (published weights,
+              uniform, and each category favored &times;2 or disfavored
+              &times;0.5), and the rank band is published. Full report:{' '}
+              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/rank-bounds-report.md">
+                rank-bounds-report.md
+              </a>{' '}
+              (regenerate via{' '}
+              <code>node scripts/rank-bounds.mjs</code>).
+            </p>
+            <p>
+              <strong>The top of the leaderboard is stable.</strong> The top
+              five — designesy.org, apple.com, primer.style, zeroheight.com,
+              vercel.com — stay in the top five under <em>every</em> weight
+              scenario. Zero fragile sites. The #1 spot is absolute (100
+              under every scenario). The widest rank band in the cohort is 9
+              positions (designesy.ai.studio, 7&ndash;16); most sites band
+              within 1&ndash;6 positions.
+            </p>
+            <p>
+              <strong>What this means.</strong> The leaderboard rank is not
+              an artifact of the weight table. A critic cannot reshuffle the
+              ranking by choosing favorable weights — the published bounds
+              make that claim checkable in one command.
+            </p>
+          </div>
+        </section>
+
         {CHECKS_BY_CATEGORY.map((group) => (
           <section
             key={group.category}
