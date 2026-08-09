@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" className="surface-page">
+      <main id="main-content" data-pagefind-body className="surface-page">
         <section className="surface-header fade-up" style={{ minHeight: '50vh' }}>
           <p className="surface-eyebrow">404</p>
           <h1 className="surface-title">Page not found</h1>

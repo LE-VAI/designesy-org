@@ -188,17 +188,18 @@ const FLAGSHIP_HREFS = new Set([
 function loadPagefind(): Promise<PagefindApi | null> {
   if (typeof window === 'undefined') return Promise.resolve(null);
   if (!pagefindPromise) {
-    // Load the Pagefind stub at RUNTIME only. A literal dynamic-import specifier
-    // is type-checked by `next build` (TS resolves the URL and fails on missing
-    // declarations) even with webpackIgnore. Using new Function hides the
-    // specifier from BOTH TypeScript and the webpack bundler, so the build
-    // passes and the import resolves against the deployed static chunk only
-    // when the user actually searches. Zero bundle cost; dev falls back to
-    // the curated INDEX.
-    const runtimeImport = new Function('u', 'return import(u)') as (
-      u: string
-    ) => Promise<unknown>;
-    pagefindPromise = runtimeImport('/_next/static/chunks/app/pagefind/pagefind.js')
+    // Load the Pagefind stub at RUNTIME only. We use a non-literal specifier
+    // (a const variable, not a string literal) so neither TypeScript nor the
+    // Turbopack/webpack bundler tries to resolve or bundle the module at build
+    // time — the import resolves against the deployed static chunk only when
+    // the user actually searches. Zero bundle cost; dev falls back to the
+    // curated INDEX.
+    //
+    // NOTE: Do NOT use `new Function()` here — that requires the CSP directive
+    // 'unsafe-eval' (distinct from 'wasm-unsafe-eval'). A non-literal import()
+    // has no CSP requirement beyond 'self', which we already have.
+    const pagefindUrl = '/_next/static/chunks/app/pagefind/pagefind.js';
+    pagefindPromise = import(/* @vite-ignore */ pagefindUrl)
       .then(async (mod) => {
         const pf = (mod as { default?: PagefindApi }).default ?? (mod as unknown as PagefindApi);
         if (typeof pf.init === 'function') await pf.init();

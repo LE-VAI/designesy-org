@@ -56,7 +56,7 @@ export default async function ScoreReportPage({
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" className="site-shell">
+      <main id="main-content" data-pagefind-body className="site-shell">
         <section className="section">
           <p className="eyebrow">Verification Report</p>
           <h1

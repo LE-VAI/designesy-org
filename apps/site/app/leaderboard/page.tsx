@@ -257,7 +257,7 @@ export default function LeaderboardPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" className="surface-page lb-page">
+      <main id="main-content" data-pagefind-body className="surface-page lb-page">
         <style>{`
           .lb-page .lb-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
           .lb-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
