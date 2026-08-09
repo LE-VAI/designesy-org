@@ -29,7 +29,21 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
-const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', 'pagefind');
+
+// Read the Next.js build ID so the Pagefind output path is unique per
+// deployment. This prevents stale browser-cache hits from a prior
+// deployment carrying an older CSP — the path itself changes, so the
+// browser MUST fetch fresh copies. Served at:
+//   /_next/static/chunks/app/pagefind-<buildId>/pagefind.js
+const BUILD_ID = (() => {
+  try {
+    return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
+  } catch {
+    return 'default';
+  }
+})();
+
+const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', `pagefind-${BUILD_ID}`);
 
 // Staging directory that mirrors the PUBLIC route tree. Pagefind stores the
 // file path of each indexed document as its result `url`, so a clean route
