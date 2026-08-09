@@ -199,16 +199,10 @@ function loadPagefind(): Promise<PagefindApi | null> {
     // 'unsafe-eval' (distinct from 'wasm-unsafe-eval'). A non-literal import()
     // has no CSP requirement beyond 'self', which we already have.
     //
-    // The output directory includes the Next.js build ID (e.g.
-    // pagefind-<BUILD_ID>/) so the path changes every deployment — browsers
-    // cannot serve stale cached copies from a prior deploy that carried an
-    // older CSP. Falls back to the unversioned path if the build ID is
-    // unavailable (e.g. dev mode).
-    const buildId = (window as { __NEXT_DATA__?: { buildId?: string } }).__NEXT_DATA__?.buildId;
-    const pagefindDir = buildId
-      ? `/_next/static/chunks/app/pagefind-${buildId}`
-      : '/_next/static/chunks/app/pagefind';
-    const pagefindUrl = `${pagefindDir}/pagefind.js`;
+    // The postbuild script patches pagefind.js to append ?v=<BUILD_ID> to the
+    // internal Worker URL, so stale browser-cached Workers from prior deploys
+    // (which carried an older CSP) are bypassed on every new deployment.
+    const pagefindUrl = '/_next/static/chunks/app/pagefind/pagefind.js';
     pagefindPromise = import(/* @vite-ignore */ pagefindUrl)
       .then(async (mod) => {
         const pf = (mod as { default?: PagefindApi }).default ?? (mod as unknown as PagefindApi);
