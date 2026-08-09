@@ -1,0 +1,5517 @@
+{
+  "generatedAt": "2026-08-09T03:18:27.284Z",
+  "base": "https://www.designesy.org",
+  "contractVersion": "v0.4.0",
+  "method": "Real check statuses from live /api/score; composite recomputed locally under each perturbation, mirroring engine math.",
+  "sites": 30,
+  "knobs": 27,
+  "perSite": [
+    {
+      "url": "https://www.designesy.org",
+      "baseline": {
+        "score": 100,
+        "grade": "A",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 100,
+      "realGrade": "A",
+      "knobs": {
+        "w-10pct": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://apple.com",
+      "baseline": {
+        "score": 80,
+        "grade": "B",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 80,
+      "realGrade": "B",
+      "knobs": {
+        "w-10pct": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 88,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 75,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 77,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 80,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 78.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 79.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 78.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 79,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 81.2,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 80.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 80.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 80.8,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 80,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 79.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://primer.style",
+      "baseline": {
+        "score": 77.6,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 77.6,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 74.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 80.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 74.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 78.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 77.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 76.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 76.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 76.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 78.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 78.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 78.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 78.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 77,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 78.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://zeroheight.com",
+      "baseline": {
+        "score": 73.8,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 73.8,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 73.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 73.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 64.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 83.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 71.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 70.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 73.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 72.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 73,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 74,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 74.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 74.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 74.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 74,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://vercel.com",
+      "baseline": {
+        "score": 73.6,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 73.6,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 67.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 79.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 70.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 74,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 72.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 71.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 72.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 74.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 74.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 72.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 74.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://x.com",
+      "baseline": {
+        "score": 73.1,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 73.1,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 61.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 84.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 70.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 72,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 73,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 73.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 71,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 72.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 74.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 74,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 73.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 72.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://atlassian.design",
+      "baseline": {
+        "score": 70.2,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 70.2,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 58.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 81.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 70.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 69.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 69.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 68.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 69.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 70.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 70.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 70.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 71.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 71,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 69.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 71.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://linear.app",
+      "baseline": {
+        "score": 68.6,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 68.6,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 61.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 76,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 68.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 67.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 66.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 67.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 67.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 69.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 69.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 68.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 68.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://notion.so",
+      "baseline": {
+        "score": 68.5,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 68.5,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 59.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 65.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 68.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 67,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 68.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 69.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 69.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 69.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 69.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://figma.com",
+      "baseline": {
+        "score": 68.1,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 68.1,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 60.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 75.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 68.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 66.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 67.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 66.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 67,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 69.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 69.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 68.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 68.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 68.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 68.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://designesy.ai.studio",
+      "baseline": {
+        "score": 67.8,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 67.8,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 53.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 82.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 66.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 68,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 69,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 68.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 67.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 67.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 68.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 65.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 68.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://nytimes.com",
+      "baseline": {
+        "score": 66,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 66,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 53.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 78.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 63,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 64.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 65.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 65.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 64.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 66.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 66.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 66.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 67,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 66.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://getdesy.com",
+      "baseline": {
+        "score": 66,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 66,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 55.599999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 76.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 76,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 65,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 63.900000000000006,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 67.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 65,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 66.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 66.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 66.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 65.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 66.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://wikipedia.org",
+      "baseline": {
+        "score": 64.1,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 64.1,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 54,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 61.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 62.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 62.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 63.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 64.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 64.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 65.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 65.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 65.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://vam.ac.uk",
+      "baseline": {
+        "score": 62.6,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 62.6,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 52,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 63.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 61.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 61.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 61.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 60.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 63.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 63,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 63.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 63.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 63.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 63.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://awwwards.com",
+      "baseline": {
+        "score": 62.2,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 62.2,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 49.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 75.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 59.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 62.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 60.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 61.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 61.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 62.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 60.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 63.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 62.9,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://stripe.com",
+      "baseline": {
+        "score": 61.099999999999994,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 61.099999999999994,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 53.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 69.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 58.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 61.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 61.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 59.400000000000006,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 60.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 60,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 62.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 61.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 61.900000000000006,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 61.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 61.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://radix-ui.com",
+      "baseline": {
+        "score": 60.7,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 60.7,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 52.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 69.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 57.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 60.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 59.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 58.599999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 59.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 59.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 62,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 61.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 60.900000000000006,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 61.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 61.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 60.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 61.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://roastbyai.com",
+      "baseline": {
+        "score": 59.3,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 59.3,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 49.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 59.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 59.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 58.599999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 58.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 58.400000000000006,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 58.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 59.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 60.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 60.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 60.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 60.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://m3.material.io",
+      "baseline": {
+        "score": 59,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 59,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 44.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 54,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 61,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 59,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 58.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 58.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 59.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 58.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 58.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 58.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 59.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 57.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 60.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 60.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://github.com",
+      "baseline": {
+        "score": 65.7,
+        "grade": "D",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 65.7,
+      "realGrade": "D",
+      "knobs": {
+        "w-10pct": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 80.7,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 62.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 66.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 64.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 64.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 64.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 66.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 66.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 66.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 66.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 66.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 65.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://mozaika.design",
+      "baseline": {
+        "score": 52.6,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 52.6,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 38,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 47.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 57.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 52.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 52.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 53.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 50.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 53.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 53.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 54.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://stitch.withgoogle.com",
+      "baseline": {
+        "score": 52.5,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 52.5,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 37.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 56.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 52.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 52.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 52.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 51.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 52.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 52.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 53.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 53.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 52.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 54.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://plex.ibm.com",
+      "baseline": {
+        "score": 51,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 51,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 36.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 46,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 56,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 50.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 51.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 48.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 51.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 49.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 52.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 53,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://carbondesignsystem.com",
+      "baseline": {
+        "score": 50.8,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 50.8,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 41.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 60.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 48.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 50.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 50.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 49.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 49,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 51.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 51.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 50.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 51.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 51.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 51.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://geist.dev",
+      "baseline": {
+        "score": 50.3,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 50.3,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 37,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 63.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 49.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 55.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 50.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 47.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 50.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 50.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 48.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 51.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 52.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://spectrum.adobe.com",
+      "baseline": {
+        "score": 49.4,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 49.4,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 36,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 62.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 52.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 50.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 49.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 49.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 49.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 47,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 49.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 49.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 50,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 47.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 49.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 50.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 49.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 51.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://fwa.org",
+      "baseline": {
+        "score": 41.1,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 41.1,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 27.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 55,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 49.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 45.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 41.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 40.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 41.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 40.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 41,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 41,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 41.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 39.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 42.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 41.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://pentagram.com",
+      "baseline": {
+        "score": 42.2,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 42.2,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 30.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 53.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 57.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 43.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 42.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 41.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 41.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 42.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 42.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 40.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 43.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 42.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 43.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
+      "url": "https://cssdesignawards.com",
+      "baseline": {
+        "score": 37.9,
+        "grade": "F",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 37.9,
+      "realGrade": "F",
+      "knobs": {
+        "w-10pct": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 23.299999999999997,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 41.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 42.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 38.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 37.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 37.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 35.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 38,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 38,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 39.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 36.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 39.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 37.9,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 38.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    }
+  ],
+  "leaderboard": {
+    "w-10pct": {
+      "label": "weights −10% (uniform)",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0.1,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "w+10pct": {
+      "label": "weights +10% (uniform)",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0.1,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "w-20pct": {
+      "label": "weights −20% (uniform)",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "w+20pct": {
+      "label": "weights +20% (uniform)",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "warn-0.25": {
+      "label": "WARN credit 0.5 → 0.25",
+      "gradeChanges": 14,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.39,
+      "rankPositionsMoved": 22
+    },
+    "warn-0.75": {
+      "label": "WARN credit 0.5 → 0.75",
+      "gradeChanges": 21,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.31,
+      "rankPositionsMoved": 23
+    },
+    "slop+5": {
+      "label": "slop deduction +5",
+      "gradeChanges": 10,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 4.32,
+      "rankPositionsMoved": 26
+    },
+    "orig+5": {
+      "label": "originality lift +5",
+      "gradeChanges": 6,
+      "maxScoreDelta": 5,
+      "meanScoreDelta": 2.7,
+      "rankPositionsMoved": 20
+    },
+    "bands-tight": {
+      "label": "grade bands tightened 2pts (92/82/72/62)",
+      "gradeChanges": 4,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "bands-loose": {
+      "label": "grade bands loosened 2pts (88/78/68/58)",
+      "gradeChanges": 5,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "a11y-50": {
+      "label": "a11y floor 60% → 50%",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "a11y-70": {
+      "label": "a11y floor 60% → 70%",
+      "gradeChanges": 0,
+      "maxScoreDelta": 3.8,
+      "meanScoreDelta": 0.25,
+      "rankPositionsMoved": 3
+    },
+    "nocaps": {
+      "label": "hard-fail ceilings removed",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "oat-cadence": {
+      "label": "OAT: cadence weight ×1.5",
+      "gradeChanges": 3,
+      "maxScoreDelta": 2.1,
+      "meanScoreDelta": 0.65,
+      "rankPositionsMoved": 9
+    },
+    "oat-accessibility": {
+      "label": "OAT: accessibility weight ×1.5",
+      "gradeChanges": 4,
+      "maxScoreDelta": 2.2,
+      "meanScoreDelta": 0.59,
+      "rankPositionsMoved": 15
+    },
+    "oat-semantic": {
+      "label": "OAT: semantic weight ×1.5",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "oat-motion": {
+      "label": "OAT: motion weight ×1.5",
+      "gradeChanges": 3,
+      "maxScoreDelta": 1.8,
+      "meanScoreDelta": 0.91,
+      "rankPositionsMoved": 19
+    },
+    "oat-tokens": {
+      "label": "OAT: tokens weight ×1.5",
+      "gradeChanges": 3,
+      "maxScoreDelta": 2.5,
+      "meanScoreDelta": 1.23,
+      "rankPositionsMoved": 15
+    },
+    "oat-takt": {
+      "label": "OAT: takt weight ×1.5",
+      "gradeChanges": 0,
+      "maxScoreDelta": 1.3,
+      "meanScoreDelta": 0.59,
+      "rankPositionsMoved": 14
+    },
+    "oat-poise": {
+      "label": "OAT: poise weight ×1.5",
+      "gradeChanges": 0,
+      "maxScoreDelta": 1.1,
+      "meanScoreDelta": 0.46,
+      "rankPositionsMoved": 11
+    },
+    "oat-identity": {
+      "label": "OAT: identity weight ×1.5",
+      "gradeChanges": 1,
+      "maxScoreDelta": 1.6,
+      "meanScoreDelta": 0.67,
+      "rankPositionsMoved": 8
+    },
+    "oat-interaction": {
+      "label": "OAT: interaction weight ×1.5",
+      "gradeChanges": 1,
+      "maxScoreDelta": 1.9,
+      "meanScoreDelta": 1.21,
+      "rankPositionsMoved": 15
+    },
+    "oat-performance": {
+      "label": "OAT: performance weight ×1.5",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "oat-responsive": {
+      "label": "OAT: responsive weight ×1.5",
+      "gradeChanges": 0,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    "oat-security": {
+      "label": "OAT: security weight ×1.5",
+      "gradeChanges": 2,
+      "maxScoreDelta": 1.3,
+      "meanScoreDelta": 0.9,
+      "rankPositionsMoved": 4
+    },
+    "oat-spec": {
+      "label": "OAT: spec weight ×1.5",
+      "gradeChanges": 1,
+      "maxScoreDelta": 0.6,
+      "meanScoreDelta": 0.11,
+      "rankPositionsMoved": 4
+    },
+    "oat-copywriting": {
+      "label": "OAT: copywriting weight ×1.5",
+      "gradeChanges": 3,
+      "maxScoreDelta": 2,
+      "meanScoreDelta": 0.95,
+      "rankPositionsMoved": 13
+    }
+  },
+  "mostSensitive": [
+    {
+      "id": "warn-0.75",
+      "label": "WARN credit 0.5 → 0.75",
+      "gradeChanges": 21,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.31,
+      "rankPositionsMoved": 23
+    },
+    {
+      "id": "warn-0.25",
+      "label": "WARN credit 0.5 → 0.25",
+      "gradeChanges": 14,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.39,
+      "rankPositionsMoved": 22
+    },
+    {
+      "id": "slop+5",
+      "label": "slop deduction +5",
+      "gradeChanges": 10,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 4.32,
+      "rankPositionsMoved": 26
+    },
+    {
+      "id": "orig+5",
+      "label": "originality lift +5",
+      "gradeChanges": 6,
+      "maxScoreDelta": 5,
+      "meanScoreDelta": 2.7,
+      "rankPositionsMoved": 20
+    },
+    {
+      "id": "bands-loose",
+      "label": "grade bands loosened 2pts (88/78/68/58)",
+      "gradeChanges": 5,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    {
+      "id": "oat-accessibility",
+      "label": "OAT: accessibility weight ×1.5",
+      "gradeChanges": 4,
+      "maxScoreDelta": 2.2,
+      "meanScoreDelta": 0.59,
+      "rankPositionsMoved": 15
+    },
+    {
+      "id": "bands-tight",
+      "label": "grade bands tightened 2pts (92/82/72/62)",
+      "gradeChanges": 4,
+      "maxScoreDelta": 0,
+      "meanScoreDelta": 0,
+      "rankPositionsMoved": 0
+    },
+    {
+      "id": "oat-tokens",
+      "label": "OAT: tokens weight ×1.5",
+      "gradeChanges": 3,
+      "maxScoreDelta": 2.5,
+      "meanScoreDelta": 1.23,
+      "rankPositionsMoved": 15
+    }
+  ]
+}
