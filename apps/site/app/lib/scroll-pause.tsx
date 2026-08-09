@@ -35,14 +35,23 @@
  * The 5px drag threshold is the industry standard — small enough to feel
  * responsive, large enough to not trigger on accidental micro-movements.
  * iOS uses ~10px, Android ~8px, Material Design 8dp; 5px is conservative for
- * dense pill lists where precision matters.
+ * dense pill lists where precision matters. Touch uses 8px (iOS standard),
+ * mouse uses 5px.
  */
 
 /** Minimum pointer movement (px) before we consider it a drag, not a click. */
-const DRAG_THRESHOLD = 5;
+const DRAG_THRESHOLD_MOUSE = 5;
+const DRAG_THRESHOLD_TOUCH = 8;
 
 /** Delay before resuming the marquee after the pointer leaves (ms). */
 const RESUME_DELAY = 600;
+
+/** Momentum fling: min velocity (px/ms) to start coasting after a drag. */
+const FLING_MIN_VELOCITY = 0.35;
+/** Momentum fling: per-frame friction multiplier (1 = no decay). */
+const FLING_FRICTION = 0.95;
+/** Momentum fling: stop when velocity drops below this (px/ms). */
+const FLING_STOP_VELOCITY = 0.02;
 
 export function initScrollPause(
   clip: HTMLElement,
@@ -57,6 +66,10 @@ export function initScrollPause(
   let startX = 0;
   let startY = 0;
   let startScroll = 0;
+  let lastMoveScroll = 0;
+  let lastMoveTime = 0;
+  let lastVelocity = 0;
+  let flingRaf: number | null = null;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 
   const isHorizontal = direction === 'horizontal';
@@ -66,6 +79,11 @@ export function initScrollPause(
   const overflowAxis: 'overflowX' | 'overflowY' = isHorizontal
     ? 'overflowX'
     : 'overflowY';
+
+  /** Total travel distance of the marquee loop (track width / 2). */
+  function loopDistance(): number {
+    return Math.max(1, track.scrollWidth / 2);
+  }
 
   /**
    * Pause the CSS animation IN PLACE — no layout mutation. The track freezes
@@ -114,20 +132,59 @@ export function initScrollPause(
     clip[scrollProp] = Math.abs(offset);
   }
 
-  /** Resume the CSS animation from the current scroll position. */
+  /**
+   * Resume the CSS animation from the current scroll position — no jarring
+   * reset to zero. The track's translateX is re-derived from the scroll
+   * offset via a negative animation-delay, so the marquee continues from
+   * exactly where the user left it.
+   */
   function resumeAnimation() {
     if (!isPaused) return;
     isPaused = false;
     isScrollMode = false;
     removeDragClass();
+    stopFling();
+
+    // Read where the user left the track
+    const offset = clip[scrollProp] % loopDistance();
 
     // Back to hidden overflow
     clip.style[overflowAxis] = 'hidden';
     clip[scrollProp] = 0;
 
-    // Resume animation from the start (clean reset)
+    // Resume the animation from the current position: negative
+    // animation-delay starts the keyframes mid-flight. The keyframes
+    // translate 0 → -50% over the loop distance, so the delay that maps
+    // scroll offset `offset` to translateX `-offset` is
+    //   delay = -(offset / loopDistance) * duration
+    const durationMs = parseFloat(getComputedStyle(track).animationDuration) * 1000;
+    track.style.animationDelay = `${-((offset / loopDistance()) * durationMs)}ms`;
     track.style.transform = '';
     track.style.animationPlayState = 'running';
+  }
+
+  /** Momentum fling — coast the track after a fast drag release. */
+  function startFling(velocity: number) {
+    stopFling();
+    if (Math.abs(velocity) < FLING_MIN_VELOCITY) return;
+    let v = velocity;
+    const step = () => {
+      v *= FLING_FRICTION;
+      if (Math.abs(v) < FLING_STOP_VELOCITY) {
+        stopFling();
+        return;
+      }
+      clip[scrollProp] += v * 16; // ~16ms per frame
+      flingRaf = requestAnimationFrame(step);
+    };
+    flingRaf = requestAnimationFrame(step);
+  }
+
+  function stopFling() {
+    if (flingRaf !== null) {
+      cancelAnimationFrame(flingRaf);
+      flingRaf = null;
+    }
   }
 
   /** Delayed resume — gives the user a moment to re-enter the area. */
@@ -163,16 +220,17 @@ export function initScrollPause(
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
     cancelResume();
+    stopFling();
     pointerActive = true;
     pointerId = e.pointerId;
     isDragging = false;
 
-    // Capture the pointer so events keep going to the clip, not child pills
-    try {
-      clip.setPointerCapture(e.pointerId);
-    } catch {
-      // setPointerCapture can throw if the pointerId is invalid — ignore
-    }
+    // NOTE: we deliberately do NOT setPointerCapture here. Pointer capture
+    // retargets the browser-synthesized click event to the capture target
+    // (the clip) instead of the element under the pointer — so a tap on a
+    // pill would fire click on the clip, which has no href, and the link
+    // never navigates. Capture is only taken once the drag threshold is
+    // crossed (see onPointerMove), where no click will resolve.
 
     // Freeze the animation IN PLACE — no layout mutation. The pills stay
     // exactly where the user's finger landed, so a tap's click event
@@ -182,6 +240,8 @@ export function initScrollPause(
     startX = e.clientX;
     startY = e.clientY;
     startScroll = 0;
+    lastMoveScroll = 0;
+    lastMoveTime = performance.now();
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -190,20 +250,42 @@ export function initScrollPause(
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     const delta = isHorizontal ? dx : dy;
+    const threshold = e.pointerType === 'touch' || e.pointerType === 'pen'
+      ? DRAG_THRESHOLD_TOUCH
+      : DRAG_THRESHOLD_MOUSE;
 
     // Enter drag mode if the pointer moved beyond the threshold. Only NOW
     // do the transform→scroll handoff — the pointer is moving, so no click
-    // will resolve against this mutated layout.
-    if (!isDragging && Math.abs(delta) > DRAG_THRESHOLD) {
+    // will resolve against this mutated layout. Capture is taken here too:
+    // during an active drag the pointer may leave the clip bounds, and we
+    // need pointermove/pointerup to keep flowing to the clip.
+    if (!isDragging && Math.abs(delta) > threshold) {
       isDragging = true;
       addDragClass();
+      try {
+        clip.setPointerCapture(e.pointerId);
+      } catch {
+        // setPointerCapture can throw if the pointerId is invalid — ignore
+      }
       handoffToScroll();
       startScroll = clip[scrollProp];
+      lastMoveScroll = startScroll;
+      lastMoveTime = performance.now();
     }
 
     if (isDragging) {
       // Scroll the clip by the inverse of the drag distance
       clip[scrollProp] = startScroll - delta;
+
+      // Track velocity for the momentum fling (px/ms)
+      const now = performance.now();
+      const dt = now - lastMoveTime;
+      if (dt > 0) {
+        const v = (clip[scrollProp] - lastMoveScroll) / dt;
+        lastMoveScroll = clip[scrollProp];
+        lastMoveTime = now;
+        lastVelocity = v;
+      }
 
       // Prevent the browser from doing anything else with this gesture
       // (page scroll, text selection, etc.)
@@ -231,6 +313,10 @@ export function initScrollPause(
 
       removeDragClass();
       isDragging = false;
+
+      // Momentum fling: if the release was fast, coast the track with
+      // friction instead of stopping dead.
+      startFling(lastVelocity);
 
       // Stay in manual scroll mode — don't resume immediately.
       // The user might want to drag again. Resume on mouseleave or after delay.
@@ -339,5 +425,6 @@ export function initScrollPause(
     clip.removeEventListener('mouseleave', onMouseLeave);
     clip.removeEventListener('wheel', onWheel);
     if (resumeTimer) clearTimeout(resumeTimer);
+    stopFling();
   };
 }
