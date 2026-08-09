@@ -1,0 +1,467 @@
+{
+  "generatedAt": "2026-08-09T12:49:34.842Z",
+  "base": "https://www.designesy.org",
+  "method": "Real check statuses from live /api/score; composite recomputed under 29 weight scenarios (baseline, uniform, per-category ×2 and ×0.5). Rank band = best to worst rank across scenarios.",
+  "scenarios": 30,
+  "sites": 30,
+  "top5Stable": [
+    "https://www.designesy.org",
+    "https://apple.com",
+    "https://primer.style",
+    "https://zeroheight.com",
+    "https://vercel.com"
+  ],
+  "top5Fragile": [],
+  "perSite": [
+    {
+      "url": "https://www.designesy.org",
+      "baselineScore": 100,
+      "baselineGrade": "A",
+      "baselineRank": 1,
+      "bestRank": 1,
+      "worstRank": 1,
+      "bandWidth": 0,
+      "scoreRange": [
+        100,
+        100
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://apple.com",
+      "baselineScore": 80,
+      "baselineGrade": "B",
+      "baselineRank": 2,
+      "bestRank": 2,
+      "worstRank": 3,
+      "bandWidth": 1,
+      "scoreRange": [
+        76.6,
+        85.8
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "fav-cadence"
+    },
+    {
+      "url": "https://primer.style",
+      "baselineScore": 77.6,
+      "baselineGrade": "C",
+      "baselineRank": 3,
+      "bestRank": 2,
+      "worstRank": 4,
+      "bandWidth": 2,
+      "scoreRange": [
+        75,
+        79.3
+      ],
+      "bestScenario": "fav-cadence",
+      "worstScenario": "fav-takt"
+    },
+    {
+      "url": "https://zeroheight.com",
+      "baselineScore": 73.8,
+      "baselineGrade": "C",
+      "baselineRank": 4,
+      "bestRank": 4,
+      "worstRank": 6,
+      "bandWidth": 2,
+      "scoreRange": [
+        72.1,
+        78.5
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "fav-poise"
+    },
+    {
+      "url": "https://vercel.com",
+      "baselineScore": 73.6,
+      "baselineGrade": "C",
+      "baselineRank": 5,
+      "bestRank": 3,
+      "worstRank": 6,
+      "bandWidth": 3,
+      "scoreRange": [
+        70.5,
+        75.8
+      ],
+      "bestScenario": "fav-takt",
+      "worstScenario": "uniform"
+    },
+    {
+      "url": "https://x.com",
+      "baselineScore": 73.1,
+      "baselineGrade": "C",
+      "baselineRank": 6,
+      "bestRank": 4,
+      "worstRank": 6,
+      "bandWidth": 2,
+      "scoreRange": [
+        69.2,
+        76
+      ],
+      "bestScenario": "fav-accessibility",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://atlassian.design",
+      "baselineScore": 70.2,
+      "baselineGrade": "C",
+      "baselineRank": 7,
+      "bestRank": 7,
+      "worstRank": 9,
+      "bandWidth": 2,
+      "scoreRange": [
+        67.4,
+        74
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "uniform"
+    },
+    {
+      "url": "https://linear.app",
+      "baselineScore": 68.6,
+      "baselineGrade": "D",
+      "baselineRank": 8,
+      "bestRank": 8,
+      "worstRank": 14,
+      "bandWidth": 6,
+      "scoreRange": [
+        64.4,
+        70
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "fav-accessibility"
+    },
+    {
+      "url": "https://notion.so",
+      "baselineScore": 68.5,
+      "baselineGrade": "D",
+      "baselineRank": 9,
+      "bestRank": 8,
+      "worstRank": 12,
+      "bandWidth": 4,
+      "scoreRange": [
+        65.7,
+        74.4
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-motion"
+    },
+    {
+      "url": "https://figma.com",
+      "baselineScore": 68.1,
+      "baselineGrade": "D",
+      "baselineRank": 10,
+      "bestRank": 7,
+      "worstRank": 12,
+      "bandWidth": 5,
+      "scoreRange": [
+        65,
+        75.2
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-cadence"
+    },
+    {
+      "url": "https://designesy.ai.studio",
+      "baselineScore": 67.8,
+      "baselineGrade": "D",
+      "baselineRank": 11,
+      "bestRank": 7,
+      "worstRank": 16,
+      "bandWidth": 9,
+      "scoreRange": [
+        64,
+        70.5
+      ],
+      "bestScenario": "fav-motion",
+      "worstScenario": "uniform"
+    },
+    {
+      "url": "https://nytimes.com",
+      "baselineScore": 66,
+      "baselineGrade": "D",
+      "baselineRank": 12,
+      "bestRank": 10,
+      "worstRank": 16,
+      "bandWidth": 6,
+      "scoreRange": [
+        62.7,
+        71.5
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-tokens"
+    },
+    {
+      "url": "https://getdesy.com",
+      "baselineScore": 66,
+      "baselineGrade": "D",
+      "baselineRank": 13,
+      "bestRank": 9,
+      "worstRank": 15,
+      "bandWidth": 6,
+      "scoreRange": [
+        62.1,
+        69.4
+      ],
+      "bestScenario": "fav-tokens",
+      "worstScenario": "fav-cadence"
+    },
+    {
+      "url": "https://wikipedia.org",
+      "baselineScore": 64.1,
+      "baselineGrade": "D",
+      "baselineRank": 15,
+      "bestRank": 12,
+      "worstRank": 19,
+      "bandWidth": 7,
+      "scoreRange": [
+        60.4,
+        67.1
+      ],
+      "bestScenario": "disfav-interaction",
+      "worstScenario": "fav-interaction"
+    },
+    {
+      "url": "https://vam.ac.uk",
+      "baselineScore": 62.6,
+      "baselineGrade": "D",
+      "baselineRank": 16,
+      "bestRank": 14,
+      "worstRank": 18,
+      "bandWidth": 4,
+      "scoreRange": [
+        59.1,
+        69.4
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-cadence"
+    },
+    {
+      "url": "https://awwwards.com",
+      "baselineScore": 62.2,
+      "baselineGrade": "D",
+      "baselineRank": 17,
+      "bestRank": 13,
+      "worstRank": 20,
+      "bandWidth": 7,
+      "scoreRange": [
+        58.6,
+        65.9
+      ],
+      "bestScenario": "fav-tokens",
+      "worstScenario": "uniform"
+    },
+    {
+      "url": "https://stripe.com",
+      "baselineScore": 61.1,
+      "baselineGrade": "D",
+      "baselineRank": 18,
+      "bestRank": 16,
+      "worstRank": 21,
+      "bandWidth": 5,
+      "scoreRange": [
+        57.9,
+        65.5
+      ],
+      "bestScenario": "fav-motion",
+      "worstScenario": "fav-copywriting"
+    },
+    {
+      "url": "https://radix-ui.com",
+      "baselineScore": 60.7,
+      "baselineGrade": "D",
+      "baselineRank": 19,
+      "bestRank": 15,
+      "worstRank": 21,
+      "bandWidth": 6,
+      "scoreRange": [
+        56.8,
+        67.8
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-accessibility"
+    },
+    {
+      "url": "https://roastbyai.com",
+      "baselineScore": 59.3,
+      "baselineGrade": "F",
+      "baselineRank": 20,
+      "bestRank": 18,
+      "worstRank": 21,
+      "bandWidth": 3,
+      "scoreRange": [
+        57.4,
+        63.9
+      ],
+      "bestScenario": "disfav-takt",
+      "worstScenario": "disfav-cadence"
+    },
+    {
+      "url": "https://m3.material.io",
+      "baselineScore": 59,
+      "baselineGrade": "F",
+      "baselineRank": 21,
+      "bestRank": 18,
+      "worstRank": 21,
+      "bandWidth": 3,
+      "scoreRange": [
+        55.6,
+        62.5
+      ],
+      "bestScenario": "fav-accessibility",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://github.com",
+      "baselineScore": 65.7,
+      "baselineGrade": "D",
+      "baselineRank": 14,
+      "bestRank": 10,
+      "worstRank": 15,
+      "bandWidth": 5,
+      "scoreRange": [
+        63,
+        69.8
+      ],
+      "bestScenario": "fav-cadence",
+      "worstScenario": "disfav-cadence"
+    },
+    {
+      "url": "https://mozaika.design",
+      "baselineScore": 52.6,
+      "baselineGrade": "F",
+      "baselineRank": 22,
+      "bestRank": 22,
+      "worstRank": 24,
+      "bandWidth": 2,
+      "scoreRange": [
+        48.1,
+        56.3
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "disfav-motion"
+    },
+    {
+      "url": "https://stitch.withgoogle.com",
+      "baselineScore": 52.5,
+      "baselineGrade": "F",
+      "baselineRank": 23,
+      "bestRank": 22,
+      "worstRank": 24,
+      "bandWidth": 2,
+      "scoreRange": [
+        49.2,
+        55.9
+      ],
+      "bestScenario": "disfav-cadence",
+      "worstScenario": "uniform"
+    },
+    {
+      "url": "https://plex.ibm.com",
+      "baselineScore": 51,
+      "baselineGrade": "F",
+      "baselineRank": 24,
+      "bestRank": 24,
+      "worstRank": 26,
+      "bandWidth": 2,
+      "scoreRange": [
+        46.7,
+        54.8
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "fav-cadence"
+    },
+    {
+      "url": "https://carbondesignsystem.com",
+      "baselineScore": 50.8,
+      "baselineGrade": "F",
+      "baselineRank": 26,
+      "bestRank": 22,
+      "worstRank": 28,
+      "bandWidth": 6,
+      "scoreRange": [
+        47.4,
+        54.8
+      ],
+      "bestScenario": "uniform",
+      "worstScenario": "fav-motion"
+    },
+    {
+      "url": "https://geist.dev",
+      "baselineScore": 50.3,
+      "baselineGrade": "F",
+      "baselineRank": 27,
+      "bestRank": 24,
+      "worstRank": 27,
+      "bandWidth": 3,
+      "scoreRange": [
+        45.5,
+        54
+      ],
+      "bestScenario": "fav-accessibility",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://spectrum.adobe.com",
+      "baselineScore": 49.4,
+      "baselineGrade": "F",
+      "baselineRank": 28,
+      "bestRank": 27,
+      "worstRank": 28,
+      "bandWidth": 1,
+      "scoreRange": [
+        44.8,
+        53
+      ],
+      "bestScenario": "fav-motion",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://fwa.org",
+      "baselineScore": 41.1,
+      "baselineGrade": "F",
+      "baselineRank": 30,
+      "bestRank": 29,
+      "worstRank": 30,
+      "bandWidth": 1,
+      "scoreRange": [
+        37.8,
+        43.5
+      ],
+      "bestScenario": "disfav-accessibility",
+      "worstScenario": "baseline"
+    },
+    {
+      "url": "https://pentagram.com",
+      "baselineScore": 42.2,
+      "baselineGrade": "F",
+      "baselineRank": 29,
+      "bestRank": 29,
+      "worstRank": 30,
+      "bandWidth": 1,
+      "scoreRange": [
+        38.6,
+        44.5
+      ],
+      "bestScenario": "baseline",
+      "worstScenario": "disfav-accessibility"
+    },
+    {
+      "url": "https://cssdesignawards.com",
+      "baselineScore": 51,
+      "baselineGrade": "F",
+      "baselineRank": 25,
+      "bestRank": 24,
+      "worstRank": 26,
+      "bandWidth": 2,
+      "scoreRange": [
+        46.7,
+        54.8
+      ],
+      "bestScenario": "fav-cadence",
+      "worstScenario": "uniform"
+    }
+  ]
+}
