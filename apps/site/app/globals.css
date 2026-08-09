@@ -5506,6 +5506,15 @@ button.pillar:hover::before {
   background: var(--surface-hover);
 }
 
+/* Keyboard path — focus ring from the contract's own --focus-ring token.
+   Offset outside the pill so the ring never clips against the marquee's
+   mask gradient. */
+.state-marquee-pill:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--focus-ring);
+}
+
 /* Live — bold signal pills with pulse dot */
 .state-marquee-pill--live {
   color: var(--signal-light);
