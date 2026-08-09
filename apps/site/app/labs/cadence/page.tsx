@@ -514,7 +514,7 @@ export default function CadenceLabPage() {
               <span className="row-index">05</span>
               <span className="row-body">
                 <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">Interaction sound — ten cues, ten roles, Cuelume v0.1.0</span>
+                <span className="row-meta">Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2</span>
               </span>
             </Link>
           </div>

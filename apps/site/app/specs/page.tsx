@@ -12,7 +12,7 @@ export const metadata: Metadata = pageMeta({
     'Designesy Specs — the canonical format for design verification findings. One JSON schema that any verification tool can populate. Agents consuming findings from multiple verifiers need a common schema.',
   path: '/specs',
   ogDescription:
-    'The canonical review-findings schema. designesy, Google design.md, Lighthouse, and jakubkrehel/skills all map into it.',
+    'The canonical review-findings schema. Designesy, Google design.md, Lighthouse, and jakubkrehel/skills all map into it.',
   twitterDescription:
     'Design verification findings schema — designesy.org/specs',
 });

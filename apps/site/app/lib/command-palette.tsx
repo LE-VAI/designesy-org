@@ -71,7 +71,7 @@ const INDEX: SearchItem[] = [
   { title: 'Monitor', href: '/contracts/monitor', group: 'Contract', keywords: 'monitor drift continuous governance watch cadence snapshot delta trend alert', meta: 'v0.1.0' },
   { title: 'Compare', href: '/contracts/compare', group: 'Contract', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: 'v0.1.0' },
   { title: 'Report', href: '/contracts/report', group: 'Contract', keywords: 'report synthesis composite score drift readiness unified grade holistic', meta: 'v0.1.0' },
-  { title: 'Acoustic tokens', href: '/acoustic-tokens', group: 'Contract', keywords: 'sound cues audio cue', meta: '10 cues' },
+  { title: 'Acoustic tokens', href: '/acoustic-tokens', group: 'Contract', keywords: 'sound cues audio cue', meta: '19 cues' },
   // Learn
   { title: 'Docs', href: '/docs', group: 'Learn', keywords: 'orientation mission principles architecture', meta: '' },
   { title: 'Learn', href: '/learn', group: 'Learn', keywords: 'tutorials guides education', meta: '' },

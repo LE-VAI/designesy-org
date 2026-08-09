@@ -123,7 +123,7 @@ export const labs = {
     version: '0.1',
     status: 'live',
     adopted_in_contract: '0.3.0',
-    thesis: 'Interaction sound as a token system — ten cues, ten roles, one documented engine.',
+    thesis: 'Interaction sound as a token system — nineteen cues, nineteen roles, one documented engine.',
     principle: 'If the sound is louder than the action it confirms, it fails.',
     human_url: 'https://www.designesy.org/labs/acoustics',
     machine_url: 'https://www.designesy.org/labs/acoustics.json',
@@ -143,7 +143,7 @@ export const labs = {
       'https://www.designesy.org/acoustic-tokens',
       'https://www.designesy.org/acoustic-tokens.json',
     ],
-    engine: 'Cuelume v0.1.0 (MIT, Daniel Belyi)',
+    engine: 'Cuelume v0.2.2 (MIT, Daniel Belyi)',
     field_check: {
       outcome: 'pass with notes',
       url: 'https://www.designesy.org/review/acoustics',

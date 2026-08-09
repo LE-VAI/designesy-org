@@ -58,7 +58,7 @@ const ANTI = [
 const PROVENANCE = [
   'Designesy design system contract v0.1.1 — live tokens and adopted Poise interaction rules',
   'Live token foundation — accent, ease-out, ease-in-out, duration',
-  'Cuelume v0.1.0 — interaction audio; preference owned by Designesy',
+  'Cuelume v0.2.2 — interaction audio; preference owned by Designesy',
   'Motion stance — short settles, entrance economy, reduced-motion respect',
   'Public naming — human, premium product names; no research-demo vocabulary',
 ];

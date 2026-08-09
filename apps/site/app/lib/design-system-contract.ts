@@ -46,7 +46,7 @@ export const designSystemContract = {
       'Designesy design doctrine — public surface carries operational values only',
     motion_references:
       'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer',
-    interaction_audio: 'Cuelume v0.1.0; preference owned by Designesy',
+    interaction_audio: 'Cuelume v0.2.2; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
       url: 'https://www.designesy.org/labs/poise',
@@ -405,7 +405,7 @@ export const designSystemContract = {
   },
   acoustic: {
     adopted_in: '0.3.0',
-    engine: 'Cuelume v0.1.0 (MIT)',
+    engine: 'Cuelume v0.2.2 (MIT)',
     preference_key: 'designesy:sound',
     reduced_motion_proxy: true,
     token_type: 'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
@@ -644,7 +644,7 @@ export const designSystemContract = {
       version: '0.3.0',
       date: '2026-07-15',
       summary:
-        'Reconciled with on-disk core contract v0.4.0. Spring physics tokens added (default + momentum). Full acoustic cue enumeration added (10 cues via custom $type: sound). Ten Non-Negotiable Motion Standards added as §16. Motion anti-patterns formalized (6 block-on-sight + 4 caution). Entrance scale tokens added (min 0.9, default 0.95). Stagger interval token added (30ms lower bound). font-synthesis: none and text-underline-position: from-font confirmed fixed and removed from open tensions. W3C DTCG 2025.10 token format alignment documented.',
+        'Reconciled with on-disk core contract v0.4.0. Spring physics tokens added (default + momentum). Full acoustic cue enumeration added (19 cues via custom $type: sound). Ten Non-Negotiable Motion Standards added as §16. Motion anti-patterns formalized (6 block-on-sight + 4 caution). Entrance scale tokens added (min 0.9, default 0.95). Stagger interval token added (30ms lower bound). font-synthesis: none and text-underline-position: from-font confirmed fixed and removed from open tensions. W3C DTCG 2025.10 token format alignment documented.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts#design-system-contract',
