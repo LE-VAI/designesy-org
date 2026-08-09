@@ -1197,6 +1197,41 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up methodology-section" id="score-diff">
+          <h2 className="doctrine-heading">Score diff across contract versions</h2>
+          <div className="methodology-prose">
+            <p>
+              A methodology release must never be a surprise regression. Every
+              contract version bump produces an explicit score diff: the same
+              check statuses are recomputed under the previous version&rsquo;s
+              methodology profile (reconstructed from the changelog), and the
+              delta is reported per site with the new checks each site faced.
+              Full report:{' '}
+              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/score-diff-report.md">
+                score-diff-report.md
+              </a>{' '}
+              (regenerate via{' '}
+              <code>node scripts/score-diff.mjs --all</code>).
+            </p>
+            <p>
+              <strong>The v0.3.0 &rarr; v0.4.0 release was not neutral.</strong>{' '}
+              Across 30 leaderboard sites: mean &Delta; &minus;0.68, 12 grade
+              flips (7 up, 5 down), max up +7.2 (m3.material.io), max down
+              &minus;13.2 (pentagram.com). The v0.4.0 additions — the
+              DESIGN.md spec layer (v37), copywriting checks (v38&ndash;v41),
+              the a11y floor, anti-slop deduction, and originality lift —
+              moved 12 of 30 grades, and this diff makes every move explicit
+              and attributable to the methodology change, not to the sites.
+            </p>
+            <p>
+              <strong>For CI.</strong> The contract version is pinned in every
+              score response (<code>contractVersion</code>). When a new
+              version ships, run the score-diff before adopting it — if a
+              site&rsquo;s grade changes, the diff says why.
+            </p>
+          </div>
+        </section>
+
         {CHECKS_BY_CATEGORY.map((group) => (
           <section
             key={group.category}
