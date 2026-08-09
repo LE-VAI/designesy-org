@@ -1145,6 +1145,58 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up methodology-section" id="sensitivity">
+          <h2 className="doctrine-heading">Sensitivity analysis</h2>
+          <div className="methodology-prose">
+            <p>
+              A composite score is only as honest as its sensitivity. We run a
+              perturbation analysis on every leaderboard site: the real check
+              statuses are pulled from the live engine, then the composite is
+              recomputed under 25 knob changes (weight-table scaling, WARN
+              credit, slop deduction, originality lift, grade bands, a11y
+              floor, hard-fail ceilings, and per-category one-at-a-time
+              &times;1.5). The recompute mirrors the engine math exactly —
+              zero drift on all 30 baselines. Full report:{' '}
+              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/sensitivity-report.md">
+                sensitivity-report.md
+              </a>{' '}
+              (regenerated on demand via{' '}
+              <code>node scripts/sensitivity-analysis.mjs</code>).
+            </p>
+            <p>
+              <strong>Uniform weight changes have zero effect.</strong>{' '}
+              Scaling every category weight by &plusmn;10% or &plusmn;20%
+              moves no score by more than 0.1 points and reshuffles no rank —
+              the ratio math (&Sigma;points/&Sigma;total) cancels uniform
+              scaling. The weight table is not a lever.
+            </p>
+            <p>
+              <strong>The WARN credit is the most sensitive knob.</strong>{' '}
+              Moving WARN from 0.5 to 0.75 flips 21 of 30 grades; to 0.25
+              flips 14. The slop deduction (+5) flips 10 grades and moves 26
+              rank positions; the originality lift (+5) flips 6 grades and
+              moves 20. These three layers — WARN credit, slop, originality —
+              carry the real sensitivity, and they are the layers we document
+              as judgment calls.
+            </p>
+            <p>
+              <strong>Category weights are stable.</strong> One-at-a-time
+              &times;1.5 on any single category moves at most 4 grades
+              (accessibility) and at most 2.5 points (tokens). The a11y floor
+              and hard-fail ceilings flip zero grades — they bind consistently
+              across the cohort.
+            </p>
+            <p>
+              <strong>What this means for reading a score.</strong> The letter
+              grade is stable under weight-table changes, so the rank is not
+              an artifact of the weight table. The dimension profile remains
+              the more informative signal — if a site&rsquo;s WARN-heavy
+              categories are where its score lives, that is visible in the
+              per-category breakdown, not hidden in the composite.
+            </p>
+          </div>
+        </section>
+
         {CHECKS_BY_CATEGORY.map((group) => (
           <section
             key={group.category}
