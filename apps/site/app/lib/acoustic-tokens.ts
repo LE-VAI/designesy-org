@@ -195,7 +195,7 @@ export const acousticTokens = {
       'Cuelume synthesizes at fixed gain levels tuned for subtlety. If a user finds sounds too loud, they can mute via the toggle.',
   },
   provenance: {
-    library: 'cuelume@0.1.0 (MIT, Daniel Belyi)',
+    library: 'cuelume@0.2.2 (MIT, Daniel Belyi)',
     npm: 'https://www.npmjs.com/package/cuelume',
     repo: 'https://github.com/Danilaa1/cuelume',
     installed: '2026-07-11 in designesy-org/apps/site',
