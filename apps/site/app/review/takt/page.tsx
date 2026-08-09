@@ -240,7 +240,7 @@ export default function TaktFieldCheckPage() {
               radii holding, stagger at 80ms increments. The lab codifies what
               the site already does. Two rules remain unverified (image
               outlines — no image surfaces yet; mobile hit area — desktop
-              only). Six rules are promoted into contract v0.1.2. Remaining
+              only). Five rules are promoted into contract v0.1.2. Remaining
               work is verification and synchronization, not re-argument.
             </p>
           </div>
