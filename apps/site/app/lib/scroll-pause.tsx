@@ -57,6 +57,7 @@ export function initScrollPause(
   clip: HTMLElement,
   track: HTMLElement,
   direction: 'horizontal' | 'vertical' = 'horizontal',
+  dragClass = 'footer-dock-clip--dragging',
 ) {
   let isPaused = false;
   let isScrollMode = false; // true once the transform→scroll handoff has run
@@ -80,9 +81,12 @@ export function initScrollPause(
     ? 'overflowX'
     : 'overflowY';
 
-  /** Total travel distance of the marquee loop (track width / 2). */
+  /** Total travel distance of the marquee loop (track size / 2).
+   *  Direction-aware: horizontal tracks loop over scrollWidth, vertical
+   *  tracks over scrollHeight. Using the wrong axis makes resume-from-
+   *  position compute a wrong offset → the marquee jumps on resume. */
   function loopDistance(): number {
-    return Math.max(1, track.scrollWidth / 2);
+    return Math.max(1, (isHorizontal ? track.scrollWidth : track.scrollHeight) / 2);
   }
 
   /**
@@ -204,11 +208,11 @@ export function initScrollPause(
 
   /** Add a class to the clip so CSS can suppress hover on child pills. */
   function addDragClass() {
-    clip.classList.add('footer-dock-clip--dragging');
+    clip.classList.add(dragClass);
   }
 
   function removeDragClass() {
-    clip.classList.remove('footer-dock-clip--dragging');
+    clip.classList.remove(dragClass);
   }
 
   // ── Pointer events (unified mouse + touch + pen) ────────────────────────

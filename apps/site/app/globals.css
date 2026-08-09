@@ -5382,6 +5382,10 @@ button.pillar:hover::before {
   border-radius: var(--radius);
   background: var(--surface);
   position: relative;
+  /* Vertical drag is owned by JS (initScrollPause 'vertical'); let the
+     browser handle only horizontal page pan so touch drags don't get
+     hijacked into page scroll. Mirrors the footer dock's pan-y. */
+  touch-action: pan-x;
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
@@ -5444,6 +5448,21 @@ button.pillar:hover::before {
 }
 .state-marquee:hover {
   cursor: grab;
+}
+
+/* During an active drag, suppress hover effects and transitions on all
+   pills so they don't flicker as the pointer passes over them. Also
+   disable pointer events on pills so drag pointermove never gets
+   interrupted by a child element stealing the pointer. Mirrors the
+   footer dock's --dragging behavior. */
+.state-marquee--dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.state-marquee--dragging .state-marquee-pill {
+  pointer-events: none;
+  transition: none;
+  transform: none !important;
 }
 
 @keyframes state-marquee-scroll {

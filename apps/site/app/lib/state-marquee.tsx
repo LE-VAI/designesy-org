@@ -32,7 +32,7 @@ export function StateMarquee() {
   useEffect(() => {
     const clip = clipRef.current;
     if (clip && trackRef.current) {
-      return initScrollPause(clip, trackRef.current, 'vertical');
+      return initScrollPause(clip, trackRef.current, 'vertical', 'state-marquee--dragging');
     }
   }, []);
 
