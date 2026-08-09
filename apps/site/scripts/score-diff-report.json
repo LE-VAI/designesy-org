@@ -1,0 +1,1186 @@
+{
+  "generatedAt": "2026-08-09T09:21:01.805Z",
+  "base": "https://www.designesy.org",
+  "method": "Live v0.4.0 check statuses; v0.3.0 profile reconstructed from changelog (excludes v37/v38-v41, no a11y floor, no slop, no originality, v0.3.0 weight table).",
+  "summary": {
+    "sites": 30,
+    "meanDelta": -0.68,
+    "maxUp": 7.2,
+    "maxDown": -13.2,
+    "gradeFlips": 12,
+    "gradeUp": 17,
+    "gradeDown": 12
+  },
+  "rows": [
+    {
+      "url": "https://www.designesy.org",
+      "v030": {
+        "score": 100,
+        "grade": "A"
+      },
+      "v040": {
+        "score": 100,
+        "grade": "A"
+      },
+      "delta": 0,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "1/20 button(s) may not start with a verb: \"×\". NN/g: \"Lead with verbs or verb ph"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "21 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "175 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://apple.com",
+      "v030": {
+        "score": 72.9,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 80,
+        "grade": "B"
+      },
+      "delta": 7.1,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "8/11 button(s) may not start with a verb: \"Shop and Learn\", \"Account\", \"Entertai"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "20 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "7/134 link(s) have non-descriptive text: \"Learn more\", \"Learn more\", \"Learn more"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "1 element(s) have ALL CAPS text: \"1-800-MY-APPLE\". IBM Carbon: \"All caps has bee"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://primer.style",
+      "v030": {
+        "score": 76.8,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 77.6,
+        "grade": "C"
+      },
+      "delta": 0.8,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "PASS",
+          "detail": "1 button(s) checked — all start with a verb or recognized command"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "1 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "15 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://zeroheight.com",
+      "v030": {
+        "score": 68.2,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 73.8,
+        "grade": "C"
+      },
+      "delta": 5.6,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "8/10 button(s) may not start with a verb: \"Features\", \"Solutions\", \"Book a demo\""
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "10 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "2/102 link(s) have non-descriptive text: \"Read more\", \"Learn more\". WCAG 2.4.4: "
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://vercel.com",
+      "v030": {
+        "score": 71.1,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 73.6,
+        "grade": "C"
+      },
+      "delta": 2.5,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "5/8 button(s) may not start with a verb: \"Brand Guidelines\", \"Products\", \"Resour"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "11 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "162 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "6 element(s) have ALL CAPS text: \"AI SDK\", \"CI/CD\", \"AI SDK\" (+3 more). IBM Carb"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://x.com",
+      "v030": {
+        "score": 68.2,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 73.1,
+        "grade": "C"
+      },
+      "delta": 4.9,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "17 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://atlassian.design",
+      "v030": {
+        "score": 64.9,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 70.2,
+        "grade": "C"
+      },
+      "delta": 5.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "PASS",
+          "detail": "3 button(s) checked — all start with a verb or recognized command"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "3 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "33 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md fetched but linter unavailable: ENOENT: no such file or directory, op"
+        }
+      ]
+    },
+    {
+      "url": "https://linear.app",
+      "v030": {
+        "score": 69.9,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 68.6,
+        "grade": "D"
+      },
+      "delta": -1.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "35/44 button(s) may not start with a verb: \"Product\", \"Resources\", \"Linear\" (+32"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "40 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "73 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://notion.so",
+      "v030": {
+        "score": 63.4,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 68.5,
+        "grade": "D"
+      },
+      "delta": 5.1,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "5/12 button(s) may not start with a verb: \"Product\", \"AI\", \"Solutions\" (+2 more)"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "12 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "99 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://figma.com",
+      "v030": {
+        "score": 71.7,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 68.1,
+        "grade": "D"
+      },
+      "delta": -3.6,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "5/5 button(s) may not start with a verb: \"Products\", \"Solutions\", \"Community\" (+"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "5 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "135 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://designesy.ai.studio",
+      "v030": {
+        "score": 62.2,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 67.8,
+        "grade": "D"
+      },
+      "delta": 5.6,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://nytimes.com",
+      "v030": {
+        "score": 61.9,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 66,
+        "grade": "D"
+      },
+      "delta": 4.1,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "1/1 button(s) may not start with a verb: \"Ir\". NN/g: \"Lead with verbs or verb ph"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "1 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "78 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "2 element(s) have ALL CAPS text: \"SKIP ADVERTISEMENT\", \"SKIP ADVERTISEMENT\". IBM"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://getdesy.com",
+      "v030": {
+        "score": 75,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 66,
+        "grade": "D"
+      },
+      "delta": -9,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "7/9 button(s) may not start with a verb: \"EN\", \"FR\", \"ES\" (+4 more). NN/g: \"Lead"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "9 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "13 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://wikipedia.org",
+      "v030": {
+        "score": 58.6,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 64.1,
+        "grade": "D"
+      },
+      "delta": 5.5,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "1/4 button(s) may not start with a verb: \"Read Wikipedia in your language\". NN/g"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "5 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "376 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://vam.ac.uk",
+      "v030": {
+        "score": 61.3,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 62.6,
+        "grade": "D"
+      },
+      "delta": 1.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "PASS",
+          "detail": "5 button(s) checked — all start with a verb or recognized command"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "5 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "1/107 link(s) have non-descriptive text: \"More\". WCAG 2.4.4: link text should de"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://awwwards.com",
+      "v030": {
+        "score": 57.7,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 62.2,
+        "grade": "D"
+      },
+      "delta": 4.5,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "157 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "4 element(s) have ALL CAPS text: \"BORING\n                                       "
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://stripe.com",
+      "v030": {
+        "score": 70,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 61.099999999999994,
+        "grade": "D"
+      },
+      "delta": -8.9,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "9/20 button(s) may not start with a verb: \"Products\", \"Solutions\", \"Developers\" "
+        },
+        {
+          "id": "v39",
+          "status": "WARN",
+          "detail": "1/20 element(s) have trailing periods: \"Hertz unifies commerce with Stripe.\". Mi"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "3/153 link(s) have non-descriptive text: \"Read more\", \"Read more\", \"Link\". WCAG "
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://radix-ui.com",
+      "v030": {
+        "score": 65.8,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 60.7,
+        "grade": "D"
+      },
+      "delta": -5.1,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "2/12 button(s) may not start with a verb: \"Go to Billing\", \"Sign in\". NN/g: \"Lea"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "29 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "34 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://roastbyai.com",
+      "v030": {
+        "score": 67.6,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 59.3,
+        "grade": "F"
+      },
+      "delta": -8.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "PASS",
+          "detail": "4 button(s) checked — all start with a verb or recognized command"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "5 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "1/52 link(s) have non-descriptive text: \"Learn more\". WCAG 2.4.4: link text shou"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://m3.material.io",
+      "v030": {
+        "score": 51.8,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 59,
+        "grade": "F"
+      },
+      "delta": 7.2,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://github.com",
+      "v030": {
+        "score": 78,
+        "grade": "C"
+      },
+      "v040": {
+        "score": 65.7,
+        "grade": "D"
+      },
+      "delta": -12.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "15/29 button(s) may not start with a verb: \"Platform\", \"Solutions\", \"Resources\" "
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "39 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "139 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "1 element(s) have ALL CAPS text: \"CI/CD\". IBM Carbon: \"All caps has been shown t"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://mozaika.design",
+      "v030": {
+        "score": 48.2,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 52.6,
+        "grade": "F"
+      },
+      "delta": 4.4,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://stitch.withgoogle.com",
+      "v030": {
+        "score": 52.7,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 52.5,
+        "grade": "F"
+      },
+      "delta": -0.2,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://plex.ibm.com",
+      "v030": {
+        "score": 46.4,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 51,
+        "grade": "F"
+      },
+      "delta": 4.6,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "4 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "30 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://carbondesignsystem.com",
+      "v030": {
+        "score": 60.4,
+        "grade": "D"
+      },
+      "v040": {
+        "score": 50.8,
+        "grade": "F"
+      },
+      "delta": -9.6,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "13/14 button(s) may not start with a verb: \"IBM Brand Center\", \"IBM Design Langu"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "1 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "46 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://geist.dev",
+      "v030": {
+        "score": 50,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 50.3,
+        "grade": "F"
+      },
+      "delta": 0.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://spectrum.adobe.com",
+      "v030": {
+        "score": 49.1,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 49.4,
+        "grade": "F"
+      },
+      "delta": 0.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "SKIP",
+          "detail": "no button/label/tab elements found in HTML"
+        },
+        {
+          "id": "v40",
+          "status": "SKIP",
+          "detail": "no anchor elements found in HTML"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    },
+    {
+      "url": "https://fwa.org",
+      "v030": {
+        "score": 51.8,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 41.1,
+        "grade": "F"
+      },
+      "delta": -10.7,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "SKIP",
+          "detail": "no button elements found in HTML"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "2 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "1/66 link(s) have non-descriptive text: \"Learn More\". WCAG 2.4.4: link text shou"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "2 element(s) have ALL CAPS text: \"LOGIN\", \"MUFG\". IBM Carbon: \"All caps has been"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://pentagram.com",
+      "v030": {
+        "score": 55.4,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 42.2,
+        "grade": "F"
+      },
+      "delta": -13.2,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "31/87 button(s) may not start with a verb: \"Newsletter\", \"Books\", \"Brand Identit"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "54 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "PASS",
+          "detail": "306 link(s) checked — all have descriptive text"
+        },
+        {
+          "id": "v41",
+          "status": "PASS",
+          "detail": "No ALL CAPS UI text found outside eyebrow labels"
+        },
+        {
+          "id": "v37",
+          "status": "SKIP",
+          "detail": "/DESIGN.md not publicly served (HTTP 404). No public convention exists — this is"
+        }
+      ]
+    },
+    {
+      "url": "https://cssdesignawards.com",
+      "v030": {
+        "score": 45.2,
+        "grade": "F"
+      },
+      "v040": {
+        "score": 37.9,
+        "grade": "F"
+      },
+      "delta": -7.3,
+      "newChecks": [
+        {
+          "id": "v38",
+          "status": "WARN",
+          "detail": "1/1 button(s) may not start with a verb: \"X\". NN/g: \"Lead with verbs or verb phr"
+        },
+        {
+          "id": "v39",
+          "status": "PASS",
+          "detail": "1 element(s) checked — no trailing periods on buttons, labels, or tabs"
+        },
+        {
+          "id": "v40",
+          "status": "WARN",
+          "detail": "1/42 link(s) have non-descriptive text: \"More\". WCAG 2.4.4: link text should des"
+        },
+        {
+          "id": "v41",
+          "status": "WARN",
+          "detail": "3 element(s) have ALL CAPS text: \"SUBMIT\", \"SUBMIT\", \"AWARDED 2026 AUG 9\". IBM C"
+        },
+        {
+          "id": "v37",
+          "status": "WARN",
+          "detail": "/DESIGN.md served but does not appear to be a valid DESIGN.md (no YAML frontmatt"
+        }
+      ]
+    }
+  ]
+}
