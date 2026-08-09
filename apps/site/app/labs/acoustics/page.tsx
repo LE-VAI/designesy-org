@@ -370,7 +370,7 @@ export default function AcousticsLabPage() {
               },
               {
                 title:
-                  'All ten tokens map to the acoustic-tokens module and /acoustic-tokens.json export',
+                  'All nineteen tokens map to the acoustic-tokens module and /acoustic-tokens.json export',
               },
               {
                 title:
@@ -403,8 +403,8 @@ export default function AcousticsLabPage() {
         </section>
 
         <div className="status-note">
-          Acoustics is Lab Four — a public experiment whose ten-cue token system
-          was adopted into design system contract v0.3.0. The lab remains the
+          Acoustics is Lab Four — a public experiment whose nineteen-cue token
+          system was adopted into design system contract v0.3.0. The lab remains the
           inspectable source demo. Token reference lives at /acoustic-tokens;
           machine export at /acoustic-tokens.json.
         </div>
