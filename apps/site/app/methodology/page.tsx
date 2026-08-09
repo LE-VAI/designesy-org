@@ -1232,6 +1232,46 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        <section className="doctrine-section fade-up methodology-section" id="blind-comparison">
+          <h2 className="doctrine-heading">Blind comparison against an independent assessor</h2>
+          <div className="methodology-prose">
+            <p>
+              Every leaderboard site is scored by two independent raters that
+              never see each other&rsquo;s results: the Designesy engine
+              (accessibility category &ge; 60 = pass) and axe-core 4.10.2,
+              the industry-standard WCAG engine, injected into a real browser
+              via CDP. Full matrix + kappa:{' '}
+              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/blind-comparison-report.md">
+                blind-comparison-report.md
+              </a>
+              . A human-panel packet (anonymized, blank rating form) is also
+              shipped for independent reviewers.
+            </p>
+            <p>
+              <strong>The result is honest divergence, not agreement.</strong>{' '}
+              &kappa; = &minus;0.085 across 30 sites (both pass 8, both fail 5,
+              engine-only pass 12, axe-only pass 5). The two instruments
+              measure different layers: the contract checks what is{' '}
+              <em>declared</em> in shipped CSS (tokens, focus-visible,
+              reduced-motion), axe checks what <em>renders</em> (computed
+              contrast, ARIA structure, button names, image alts). Designesy
+              itself scores a11y 100 yet axe finds a color-contrast violation
+              — the engine measures the primitives the site declares, axe
+              measures the pixels the browser draws. Neither subsumes the
+              other.
+            </p>
+            <p>
+              <strong>What this means.</strong> A single a11y number from one
+              instrument is insufficient — which is why the leaderboard
+              dimension profile reports both the contract score and the
+              category fingerprint, and why the full audit path
+              (<code>/api/score/audit</code>) runs a real browser. The blind
+              comparison makes the boundary explicit instead of pretending
+              one instrument is complete.
+            </p>
+          </div>
+        </section>
+
         {CHECKS_BY_CATEGORY.map((group) => (
           <section
             key={group.category}
