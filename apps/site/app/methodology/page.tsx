@@ -435,11 +435,12 @@ export default function MethodologyPage() {
           .methodology-page .methodology-prose p { color: var(--muted); font-size: 1rem; line-height: 1.6; margin: 0 0 1rem; }
           .methodology-page .methodology-prose strong { color: var(--ink); font-weight: 600; }
           .methodology-page .methodology-prose code { font-family: var(--mono, ui-monospace, monospace); font-size: 0.88rem; background: var(--surface); padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid var(--line-faint); color: var(--ink); }
-          .methodology-page .methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.875rem; margin: 1.5rem 0; }
-          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
+          .methodology-page .methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.875rem; margin: 1.5rem 0; }
+          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); min-width: 0; }
           .methodology-page .methodology-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .methodology-page .methodology-stat-label { display: block; margin-top: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .methodology-page .weight-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.25rem 0; }
+          .methodology-page .weight-table-wrap { overflow-x: auto; margin: 1.25rem 0; -webkit-overflow-scrolling: touch; }
+          .methodology-page .weight-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; min-width: 420px; }
           .methodology-page .weight-table th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
       .methodology-page .weight-table th.wt-num { text-align: right; }
           .methodology-page .weight-table td { padding: 0.625rem; border-bottom: 1px solid var(--line-faint); font-size: 0.88rem; color: var(--muted); vertical-align: top; }
@@ -483,12 +484,16 @@ export default function MethodologyPage() {
           .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; margin: 1.5rem 0; font-size: 0.85rem; }
           .methodology-page .methodology-toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
           .methodology-page .methodology-toc a:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .methodology-page .methodology-toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.3rem 1rem; }
+          .methodology-page .methodology-toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.3rem 1rem; }
           @media (max-width: 560px) {
             .methodology-page .grade-band { grid-template-columns: 2rem 3.5rem 1fr; gap: 0.5rem; }
-            .methodology-page .methodology-grid { grid-template-columns: 1fr 1fr; }
+            .methodology-page .methodology-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
             .methodology-page .score-dist-bar-wrap { height: 70px; }
             .methodology-page .score-dist-range { display: none; }
+          }
+          @media (max-width: 380px) {
+            .methodology-page .methodology-grid { grid-template-columns: 1fr; }
+          }
           }
         `}</style>
 
@@ -651,6 +656,7 @@ export default function MethodologyPage() {
               and does not affect any site&rsquo;s score.
             </p>
           </div>
+          <div className="weight-table-wrap">
           <table className="weight-table">
             <thead>
               <tr>
@@ -682,6 +688,7 @@ export default function MethodologyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="grade-bands">
@@ -818,6 +825,7 @@ export default function MethodologyPage() {
             same pattern in the same rule does not add further deduction &mdash;
             three is enough to flag it. Total deduction is capped at 20.
           </p>
+          <div className="weight-table-wrap">
           <table className="weight-table">
             <thead>
               <tr>
@@ -902,6 +910,7 @@ export default function MethodologyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="originality-lift">
@@ -929,6 +938,7 @@ export default function MethodologyPage() {
             easing curve earns 1 point; a site with three or more plus spring
             physics earns 5. The formulas are deterministic and published below.
           </p>
+          <div className="weight-table-wrap">
           <table className="weight-table">
             <thead>
               <tr>
@@ -975,6 +985,7 @@ export default function MethodologyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
           <p style={{ marginTop: '0.5rem', color: 'var(--muted)' }}>
             Total originality is capped at <strong>+8 points</strong>. When slop
             is heavy (&ge;12 deduction points), the lift is halved (framework-
@@ -994,6 +1005,7 @@ export default function MethodologyPage() {
               floor wins over ceilings).
             </p>
           </div>
+          <div className="weight-table-wrap">
           <table className="weight-table">
             <thead>
               <tr>
@@ -1035,6 +1047,7 @@ export default function MethodologyPage() {
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up methodology-section" id="what-engine-measures">
