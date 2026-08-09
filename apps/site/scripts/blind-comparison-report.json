@@ -1,0 +1,585 @@
+{
+  "generatedAt": "2026-08-09T10:03:45.138Z",
+  "method": "Engine (Designesy a11y category >= 60 = PASS) vs axe-core 4.10.2 (zero serious/critical violations = PASS), independent CDP execution",
+  "a11yPassThreshold": 60,
+  "kappa": {
+    "n": 30,
+    "po": 0.433,
+    "pe": 0.478,
+    "kappa": -0.085,
+    "bothPass": 8,
+    "bothFail": 5,
+    "aPassBFail": 12,
+    "aFailBPass": 5,
+    "label": "no agreement (worse than chance)"
+  },
+  "sites": [
+    {
+      "url": "https://www.designesy.org",
+      "a11yScore": 100,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 0,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "url": "https://apple.com",
+      "a11yScore": 70,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 2,
+        "seriousCritical": 2,
+        "byImpact": {
+          "critical": 1,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "aria-required-children",
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "url": "https://primer.style",
+      "a11yScore": 80,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://zeroheight.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 4,
+        "seriousCritical": 4,
+        "byImpact": {
+          "critical": 1,
+          "serious": 3,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "aria-required-parent",
+          "color-contrast",
+          "nested-interactive",
+          "scrollable-region-focusable"
+        ]
+      }
+    },
+    {
+      "url": "https://vercel.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 6,
+        "seriousCritical": 6,
+        "byImpact": {
+          "critical": 2,
+          "serious": 4,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "aria-hidden-focus",
+          "aria-progressbar-name",
+          "button-name",
+          "link-name",
+          "meta-viewport"
+        ]
+      }
+    },
+    {
+      "url": "https://x.com",
+      "a11yScore": 70,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 1,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "meta-viewport"
+        ]
+      }
+    },
+    {
+      "url": "https://atlassian.design",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://linear.app",
+      "a11yScore": 40,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 4,
+        "seriousCritical": 4,
+        "byImpact": {
+          "critical": 1,
+          "serious": 3,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "button-name",
+          "color-contrast",
+          "link-name",
+          "scrollable-region-focusable"
+        ]
+      }
+    },
+    {
+      "url": "https://notion.so",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 2,
+        "seriousCritical": 2,
+        "byImpact": {
+          "critical": 0,
+          "serious": 2,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast",
+          "list"
+        ]
+      }
+    },
+    {
+      "url": "https://figma.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://designesy.ai.studio",
+      "a11yScore": 66.7,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://nytimes.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 3,
+        "seriousCritical": 3,
+        "byImpact": {
+          "critical": 2,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "aria-required-children",
+          "image-alt",
+          "link-name"
+        ]
+      }
+    },
+    {
+      "url": "https://getdesy.com",
+      "a11yScore": 75,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 0,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "url": "https://wikipedia.org",
+      "a11yScore": 70,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://vam.ac.uk",
+      "a11yScore": 50,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://awwwards.com",
+      "a11yScore": 58.3,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://stripe.com",
+      "a11yScore": 50,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://radix-ui.com",
+      "a11yScore": 40,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://roastbyai.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 4,
+        "seriousCritical": 4,
+        "byImpact": {
+          "critical": 0,
+          "serious": 4,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast",
+          "definition-list",
+          "dlitem",
+          "link-in-text-block"
+        ]
+      }
+    },
+    {
+      "url": "https://m3.material.io",
+      "a11yScore": 50,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://github.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://mozaika.design",
+      "a11yScore": 50,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 0,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast"
+        ]
+      }
+    },
+    {
+      "url": "https://stitch.withgoogle.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://plex.ibm.com",
+      "a11yScore": 50,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 2,
+        "seriousCritical": 2,
+        "byImpact": {
+          "critical": 0,
+          "serious": 2,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "link-in-text-block",
+          "list"
+        ]
+      }
+    },
+    {
+      "url": "https://carbondesignsystem.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 2,
+        "seriousCritical": 2,
+        "byImpact": {
+          "critical": 0,
+          "serious": 2,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "list",
+          "scrollable-region-focusable"
+        ]
+      }
+    },
+    {
+      "url": "https://geist.dev",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "PASS",
+      "axeDetail": {
+        "totalViolations": 0,
+        "seriousCritical": 0,
+        "byImpact": {
+          "critical": 0,
+          "serious": 0,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": []
+      }
+    },
+    {
+      "url": "https://spectrum.adobe.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 0,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "link-in-text-block"
+        ]
+      }
+    },
+    {
+      "url": "https://fwa.org",
+      "a11yScore": 40,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 3,
+        "seriousCritical": 3,
+        "byImpact": {
+          "critical": 0,
+          "serious": 3,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "aria-prohibited-attr",
+          "color-contrast",
+          "link-name"
+        ]
+      }
+    },
+    {
+      "url": "https://pentagram.com",
+      "a11yScore": 60,
+      "designesyVerdict": "PASS",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 1,
+        "seriousCritical": 1,
+        "byImpact": {
+          "critical": 0,
+          "serious": 1,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "link-name"
+        ]
+      }
+    },
+    {
+      "url": "https://cssdesignawards.com",
+      "a11yScore": 40,
+      "designesyVerdict": "FAIL",
+      "axeVerdict": "FAIL",
+      "axeDetail": {
+        "totalViolations": 3,
+        "seriousCritical": 3,
+        "byImpact": {
+          "critical": 0,
+          "serious": 3,
+          "moderate": 0,
+          "minor": 0
+        },
+        "topRules": [
+          "color-contrast",
+          "html-has-lang",
+          "link-name"
+        ]
+      }
+    }
+  ]
+}

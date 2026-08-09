@@ -1,0 +1,80 @@
+{
+  "instructions": "Rate each site: does it PASS or FAIL an accessibility review? Judge only what you observe — keyboard operability, contrast, focus visibility, labels. Do NOT open designesy.org/score. Fill humanVerdict: \"PASS\"|\"FAIL\", then run node scripts/blind-comparison.mjs --panel.",
+  "sites": [
+    {
+      "id": "SITE-119",
+      "url": "https://geist.dev",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-91",
+      "url": "https://x.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-147",
+      "url": "https://pentagram.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-189",
+      "url": "https://cssdesignawards.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-119",
+      "url": "https://apple.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-147",
+      "url": "https://wikipedia.org",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-140",
+      "url": "https://plex.ibm.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-140",
+      "url": "https://primer.style",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-182",
+      "url": "https://spectrum.adobe.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-175",
+      "url": "https://www.designesy.org",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-126",
+      "url": "https://linear.app",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-154",
+      "url": "https://mozaika.design",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-126",
+      "url": "https://stripe.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-210",
+      "url": "https://carbondesignsystem.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-126",
+      "url": "https://vercel.com",
+      "humanVerdict": null
+    }
+  ]
+}
