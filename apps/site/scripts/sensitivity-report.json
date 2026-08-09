@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-09T03:18:27.284Z",
+  "generatedAt": "2026-08-09T12:46:04.430Z",
   "base": "https://www.designesy.org",
   "contractVersion": "v0.4.0",
   "method": "Real check statuses from live /api/score; composite recomputed locally under each perturbation, mirroring engine math.",
   "sites": 30,
-  "knobs": 27,
+  "knobs": 35,
   "perSite": [
     {
       "url": "https://www.designesy.org",
@@ -90,6 +90,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 98.9,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 100,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 100,
           "grade": "A",
           "a11yFloorApplied": false,
@@ -270,6 +318,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 83,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 67,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 88,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 72,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 85,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 88,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 75,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 78.8,
           "grade": "C",
@@ -442,6 +538,54 @@
         "nocaps": {
           "score": 77.6,
           "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 84,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 77.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 74.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 78,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 80.6,
+          "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
@@ -620,6 +764,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 81.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 62.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 83.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 64.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 68.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 80.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 83.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 71.8,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 73.2,
           "grade": "C",
@@ -790,6 +982,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 73.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 79.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 67.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 79.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 67.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 70.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 76.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 79.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 73.6,
           "grade": "C",
           "a11yFloorApplied": false,
@@ -970,6 +1210,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 84.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 61.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 84.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 61.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 70.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 81.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 84.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 72,
           "grade": "C",
@@ -1140,6 +1428,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 70.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 81.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 58.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 81.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 58.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 78.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 81.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 70.2,
           "grade": "C",
           "a11yFloorApplied": false,
@@ -1320,6 +1656,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 66.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 61.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 73,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 76,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 67.9,
           "grade": "D",
@@ -1490,6 +1874,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 68.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 59.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 59.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 65.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 74.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 77.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 68.5,
           "grade": "D",
           "a11yFloorApplied": false,
@@ -1670,6 +2102,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 80.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 75.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 60.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 75.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 75.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 66.4,
           "grade": "D",
@@ -1840,6 +2320,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 67.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 82.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 53.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 82.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 53.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 79.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 82.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 67.8,
           "grade": "D",
           "a11yFloorApplied": false,
@@ -2020,6 +2548,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 78.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 53.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 78.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 53.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 63,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 75.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 78.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 66,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 64.9,
           "grade": "D",
@@ -2195,6 +2771,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 86.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 76.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 55.599999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 75,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 75.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 76.4,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 76,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 63.900000000000006,
           "grade": "D",
@@ -2365,6 +2989,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 64.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 54,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 54,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 61.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 71.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 74.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 64.1,
           "grade": "D",
           "a11yFloorApplied": false,
@@ -2545,6 +3217,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 52,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 52,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 63.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 74.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 73.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 62.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 61.7,
           "grade": "D",
@@ -2715,6 +3435,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 75.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 49.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 75.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 49.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 59.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 72.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 75.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 62.2,
           "grade": "D",
           "a11yFloorApplied": false,
@@ -2895,6 +3663,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 84.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 69.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 53.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 66.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 69.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 61.3,
           "grade": "D",
@@ -3068,6 +3884,54 @@
           "score": 60.7,
           "grade": "D",
           "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 75,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": true
+        },
+        "warn0.25×slop+5": {
+          "score": 62.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 69.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 52.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 67.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 66.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 69.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
           "hardFailCeilingApplied": false
         },
         "oat-cadence": {
@@ -3245,6 +4109,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 79.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 59.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 49.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 69.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 59.099999999999994,
           "grade": "F",
@@ -3416,6 +4328,54 @@
         },
         "nocaps": {
           "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 68.1,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 39.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 44.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 56,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 75.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 73.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 54,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -3595,6 +4555,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 84.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 77.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 66.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 69.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 80.7,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 66.2,
           "grade": "D",
@@ -3770,6 +4778,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 62.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 33,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 38,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 52.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 72.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 67.2,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 47.6,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 52.7,
           "grade": "F",
@@ -3940,6 +4996,54 @@
           "hardFailCeilingApplied": false
         },
         "nocaps": {
+          "score": 52.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 37.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 37.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 56.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 71.5,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 67.5,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
           "score": 52.5,
           "grade": "F",
           "a11yFloorApplied": false,
@@ -4120,6 +5224,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 60.599999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 31.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 36.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 70.6,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 65.6,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 46,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 50.6,
           "grade": "F",
@@ -4295,6 +5447,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 74.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 55.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 60.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 41.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 62.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 58.099999999999994,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 60.099999999999994,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 50.4,
           "grade": "F",
@@ -4466,6 +5666,54 @@
         },
         "nocaps": {
           "score": 50.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 62.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 36,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 63.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 37,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 54.3,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 68.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 63.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 49.3,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -4645,6 +5893,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 65.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 39,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 62.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 36,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 53.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 63.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 62.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 52.4,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 49.1,
           "grade": "F",
@@ -4816,6 +6112,54 @@
         },
         "nocaps": {
           "score": 41.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 63,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 35.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 55,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 27.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 53.1,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 59,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 55,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 49.1,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -4995,6 +6339,54 @@
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "warn0.75×slop+5": {
+          "score": 68.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 45.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 53.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 30.5,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 58.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 54.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 53.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 57.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-cadence": {
           "score": 42.2,
           "grade": "F",
@@ -5084,172 +6476,220 @@
     {
       "url": "https://cssdesignawards.com",
       "baseline": {
-        "score": 37.9,
+        "score": 51,
         "grade": "F",
         "a11yFloorApplied": false,
         "hardFailCeilingApplied": false
       },
-      "realScore": 37.9,
+      "realScore": 51,
       "realGrade": "F",
       "knobs": {
         "w-10pct": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+10pct": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w-20pct": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+20pct": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.25": {
-          "score": 23.299999999999997,
+          "score": 37.2,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.75": {
-          "score": 52.5,
-          "grade": "F",
+          "score": 64.8,
+          "grade": "D",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "slop+5": {
-          "score": 41.9,
+          "score": 46,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "orig+5": {
-          "score": 42.9,
+          "score": 56,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "bands-tight": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "bands-loose": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-50": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-70": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "nocaps": {
-          "score": 37.9,
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 59.8,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 32.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 37.2,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 51,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 69.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 64.8,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 46,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-cadence": {
-          "score": 38.5,
+          "score": 51.3,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-accessibility": {
-          "score": 37.4,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-semantic": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-motion": {
-          "score": 37.4,
+          "score": 51.6,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-tokens": {
-          "score": 35.8,
+          "score": 48.8,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-takt": {
-          "score": 38,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-poise": {
-          "score": 38,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-identity": {
-          "score": 39.5,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-interaction": {
-          "score": 36.5,
+          "score": 49.5,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-performance": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-responsive": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-security": {
-          "score": 39.2,
+          "score": 52.3,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-spec": {
-          "score": 37.9,
+          "score": 51,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-copywriting": {
-          "score": 38.5,
+          "score": 53,
           "grade": "F",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -5290,22 +6730,22 @@
       "label": "WARN credit 0.5 → 0.25",
       "gradeChanges": 14,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 10.39,
+      "meanScoreDelta": 10.36,
       "rankPositionsMoved": 22
     },
     "warn-0.75": {
       "label": "WARN credit 0.5 → 0.75",
-      "gradeChanges": 21,
+      "gradeChanges": 22,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 10.31,
+      "meanScoreDelta": 10.28,
       "rankPositionsMoved": 23
     },
     "slop+5": {
       "label": "slop deduction +5",
       "gradeChanges": 10,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 4.32,
-      "rankPositionsMoved": 26
+      "meanScoreDelta": 4.35,
+      "rankPositionsMoved": 28
     },
     "orig+5": {
       "label": "originality lift +5",
@@ -5349,18 +6789,74 @@
       "meanScoreDelta": 0,
       "rankPositionsMoved": 0
     },
+    "warn0.75×slop+5": {
+      "label": "INTERACTION: WARN 0.75 × slop +5",
+      "gradeChanges": 26,
+      "maxScoreDelta": 26.6,
+      "meanScoreDelta": 12.98,
+      "rankPositionsMoved": 27
+    },
+    "warn0.25×slop+5": {
+      "label": "INTERACTION: WARN 0.25 × slop +5",
+      "gradeChanges": 12,
+      "maxScoreDelta": 19.6,
+      "meanScoreDelta": 9.07,
+      "rankPositionsMoved": 28
+    },
+    "warn0.75×a11y70": {
+      "label": "INTERACTION: WARN 0.75 × a11y floor 70%",
+      "gradeChanges": 22,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 9.98,
+      "rankPositionsMoved": 25
+    },
+    "warn0.25×a11y70": {
+      "label": "INTERACTION: WARN 0.25 × a11y floor 70%",
+      "gradeChanges": 14,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.36,
+      "rankPositionsMoved": 22
+    },
+    "slop+5×orig+5": {
+      "label": "INTERACTION: slop +5 × originality +5",
+      "gradeChanges": 11,
+      "maxScoreDelta": 16,
+      "meanScoreDelta": 4.91,
+      "rankPositionsMoved": 27
+    },
+    "warn0.75×orig+5": {
+      "label": "INTERACTION: WARN 0.75 × originality +5",
+      "gradeChanges": 19,
+      "maxScoreDelta": 19.6,
+      "meanScoreDelta": 9.78,
+      "rankPositionsMoved": 27
+    },
+    "warn0.75×nocaps": {
+      "label": "INTERACTION: WARN 0.75 × ceilings removed",
+      "gradeChanges": 22,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.28,
+      "rankPositionsMoved": 23
+    },
+    "slop+5×nocaps": {
+      "label": "INTERACTION: slop +5 × ceilings removed",
+      "gradeChanges": 10,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 4.35,
+      "rankPositionsMoved": 28
+    },
     "oat-cadence": {
       "label": "OAT: cadence weight ×1.5",
       "gradeChanges": 3,
       "maxScoreDelta": 2.1,
-      "meanScoreDelta": 0.65,
-      "rankPositionsMoved": 9
+      "meanScoreDelta": 0.64,
+      "rankPositionsMoved": 11
     },
     "oat-accessibility": {
       "label": "OAT: accessibility weight ×1.5",
       "gradeChanges": 4,
       "maxScoreDelta": 2.2,
-      "meanScoreDelta": 0.59,
+      "meanScoreDelta": 0.57,
       "rankPositionsMoved": 15
     },
     "oat-semantic": {
@@ -5381,36 +6877,36 @@
       "label": "OAT: tokens weight ×1.5",
       "gradeChanges": 3,
       "maxScoreDelta": 2.5,
-      "meanScoreDelta": 1.23,
-      "rankPositionsMoved": 15
+      "meanScoreDelta": 1.24,
+      "rankPositionsMoved": 16
     },
     "oat-takt": {
       "label": "OAT: takt weight ×1.5",
       "gradeChanges": 0,
       "maxScoreDelta": 1.3,
       "meanScoreDelta": 0.59,
-      "rankPositionsMoved": 14
+      "rankPositionsMoved": 15
     },
     "oat-poise": {
       "label": "OAT: poise weight ×1.5",
       "gradeChanges": 0,
       "maxScoreDelta": 1.1,
       "meanScoreDelta": 0.46,
-      "rankPositionsMoved": 11
+      "rankPositionsMoved": 12
     },
     "oat-identity": {
       "label": "OAT: identity weight ×1.5",
       "gradeChanges": 1,
-      "maxScoreDelta": 1.6,
-      "meanScoreDelta": 0.67,
-      "rankPositionsMoved": 8
+      "maxScoreDelta": 1.3,
+      "meanScoreDelta": 0.61,
+      "rankPositionsMoved": 9
     },
     "oat-interaction": {
       "label": "OAT: interaction weight ×1.5",
       "gradeChanges": 1,
       "maxScoreDelta": 1.9,
       "meanScoreDelta": 1.21,
-      "rankPositionsMoved": 15
+      "rankPositionsMoved": 16
     },
     "oat-performance": {
       "label": "OAT: performance weight ×1.5",
@@ -5444,74 +6940,74 @@
       "label": "OAT: copywriting weight ×1.5",
       "gradeChanges": 3,
       "maxScoreDelta": 2,
-      "meanScoreDelta": 0.95,
+      "meanScoreDelta": 1,
       "rankPositionsMoved": 13
     }
   },
   "mostSensitive": [
     {
+      "id": "warn0.75×slop+5",
+      "label": "INTERACTION: WARN 0.75 × slop +5",
+      "gradeChanges": 26,
+      "maxScoreDelta": 26.6,
+      "meanScoreDelta": 12.98,
+      "rankPositionsMoved": 27
+    },
+    {
       "id": "warn-0.75",
       "label": "WARN credit 0.5 → 0.75",
-      "gradeChanges": 21,
+      "gradeChanges": 22,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 10.31,
+      "meanScoreDelta": 10.28,
       "rankPositionsMoved": 23
+    },
+    {
+      "id": "warn0.75×a11y70",
+      "label": "INTERACTION: WARN 0.75 × a11y floor 70%",
+      "gradeChanges": 22,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 9.98,
+      "rankPositionsMoved": 25
+    },
+    {
+      "id": "warn0.75×nocaps",
+      "label": "INTERACTION: WARN 0.75 × ceilings removed",
+      "gradeChanges": 22,
+      "maxScoreDelta": 15,
+      "meanScoreDelta": 10.28,
+      "rankPositionsMoved": 23
+    },
+    {
+      "id": "warn0.75×orig+5",
+      "label": "INTERACTION: WARN 0.75 × originality +5",
+      "gradeChanges": 19,
+      "maxScoreDelta": 19.6,
+      "meanScoreDelta": 9.78,
+      "rankPositionsMoved": 27
     },
     {
       "id": "warn-0.25",
       "label": "WARN credit 0.5 → 0.25",
       "gradeChanges": 14,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 10.39,
+      "meanScoreDelta": 10.36,
       "rankPositionsMoved": 22
     },
     {
-      "id": "slop+5",
-      "label": "slop deduction +5",
-      "gradeChanges": 10,
+      "id": "warn0.25×a11y70",
+      "label": "INTERACTION: WARN 0.25 × a11y floor 70%",
+      "gradeChanges": 14,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 4.32,
-      "rankPositionsMoved": 26
+      "meanScoreDelta": 10.36,
+      "rankPositionsMoved": 22
     },
     {
-      "id": "orig+5",
-      "label": "originality lift +5",
-      "gradeChanges": 6,
-      "maxScoreDelta": 5,
-      "meanScoreDelta": 2.7,
-      "rankPositionsMoved": 20
-    },
-    {
-      "id": "bands-loose",
-      "label": "grade bands loosened 2pts (88/78/68/58)",
-      "gradeChanges": 5,
-      "maxScoreDelta": 0,
-      "meanScoreDelta": 0,
-      "rankPositionsMoved": 0
-    },
-    {
-      "id": "oat-accessibility",
-      "label": "OAT: accessibility weight ×1.5",
-      "gradeChanges": 4,
-      "maxScoreDelta": 2.2,
-      "meanScoreDelta": 0.59,
-      "rankPositionsMoved": 15
-    },
-    {
-      "id": "bands-tight",
-      "label": "grade bands tightened 2pts (92/82/72/62)",
-      "gradeChanges": 4,
-      "maxScoreDelta": 0,
-      "meanScoreDelta": 0,
-      "rankPositionsMoved": 0
-    },
-    {
-      "id": "oat-tokens",
-      "label": "OAT: tokens weight ×1.5",
-      "gradeChanges": 3,
-      "maxScoreDelta": 2.5,
-      "meanScoreDelta": 1.23,
-      "rankPositionsMoved": 15
+      "id": "warn0.25×slop+5",
+      "label": "INTERACTION: WARN 0.25 × slop +5",
+      "gradeChanges": 12,
+      "maxScoreDelta": 19.6,
+      "meanScoreDelta": 9.07,
+      "rankPositionsMoved": 28
     }
   ]
 }

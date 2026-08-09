@@ -1,36 +1,44 @@
 {
-  "generatedAt": "2026-08-09T10:03:45.138Z",
+  "generatedAt": "2026-08-09T12:48:45.882Z",
   "method": "Engine (Designesy a11y category >= 60 = PASS) vs axe-core 4.10.2 (zero serious/critical violations = PASS), independent CDP execution",
   "a11yPassThreshold": 60,
   "kappa": {
     "n": 30,
-    "po": 0.433,
+    "po": 0.5,
     "pe": 0.478,
-    "kappa": -0.085,
-    "bothPass": 8,
-    "bothFail": 5,
-    "aPassBFail": 12,
-    "aFailBPass": 5,
-    "label": "no agreement (worse than chance)"
+    "kappa": 0.043,
+    "kappaCI95": [
+      -0.3,
+      0.385
+    ],
+    "ppos": 0.545,
+    "pneg": 0.444,
+    "mcc": 0.048,
+    "ac1": 0.01,
+    "baseRateA": 0.667,
+    "baseRateB": 0.433,
+    "bothPass": 9,
+    "bothFail": 6,
+    "aPassBFail": 11,
+    "aFailBPass": 4,
+    "label": "slight agreement"
   },
   "sites": [
     {
       "url": "https://www.designesy.org",
       "a11yScore": 100,
       "designesyVerdict": "PASS",
-      "axeVerdict": "FAIL",
+      "axeVerdict": "PASS",
       "axeDetail": {
-        "totalViolations": 1,
-        "seriousCritical": 1,
+        "totalViolations": 0,
+        "seriousCritical": 0,
         "byImpact": {
           "critical": 0,
-          "serious": 1,
+          "serious": 0,
           "moderate": 0,
           "minor": 0
         },
-        "topRules": [
-          "color-contrast"
-        ]
+        "topRules": []
       }
     },
     {
@@ -121,16 +129,20 @@
       "designesyVerdict": "PASS",
       "axeVerdict": "FAIL",
       "axeDetail": {
-        "totalViolations": 1,
-        "seriousCritical": 1,
+        "totalViolations": 7,
+        "seriousCritical": 7,
         "byImpact": {
-          "critical": 1,
-          "serious": 0,
+          "critical": 6,
+          "serious": 1,
           "moderate": 0,
           "minor": 0
         },
         "topRules": [
-          "meta-viewport"
+          "aria-required-attr",
+          "aria-required-children",
+          "aria-valid-attr-value",
+          "button-name",
+          "label"
         ]
       }
     },
@@ -305,17 +317,19 @@
       "url": "https://awwwards.com",
       "a11yScore": 58.3,
       "designesyVerdict": "FAIL",
-      "axeVerdict": "PASS",
+      "axeVerdict": "FAIL",
       "axeDetail": {
-        "totalViolations": 0,
-        "seriousCritical": 0,
+        "totalViolations": 1,
+        "seriousCritical": 1,
         "byImpact": {
           "critical": 0,
-          "serious": 0,
+          "serious": 1,
           "moderate": 0,
           "minor": 0
         },
-        "topRules": []
+        "topRules": [
+          "link-name"
+        ]
       }
     },
     {
@@ -358,19 +372,18 @@
       "designesyVerdict": "PASS",
       "axeVerdict": "FAIL",
       "axeDetail": {
-        "totalViolations": 4,
-        "seriousCritical": 4,
+        "totalViolations": 3,
+        "seriousCritical": 3,
         "byImpact": {
           "critical": 0,
-          "serious": 4,
+          "serious": 3,
           "moderate": 0,
           "minor": 0
         },
         "topRules": [
           "color-contrast",
           "definition-list",
-          "dlitem",
-          "link-in-text-block"
+          "dlitem"
         ]
       }
     },
@@ -450,17 +463,16 @@
       "designesyVerdict": "FAIL",
       "axeVerdict": "FAIL",
       "axeDetail": {
-        "totalViolations": 2,
-        "seriousCritical": 2,
+        "totalViolations": 1,
+        "seriousCritical": 1,
         "byImpact": {
           "critical": 0,
-          "serious": 2,
+          "serious": 1,
           "moderate": 0,
           "minor": 0
         },
         "topRules": [
-          "link-in-text-block",
-          "list"
+          "link-in-text-block"
         ]
       }
     },
@@ -562,7 +574,7 @@
     },
     {
       "url": "https://cssdesignawards.com",
-      "a11yScore": 40,
+      "a11yScore": 50,
       "designesyVerdict": "FAIL",
       "axeVerdict": "FAIL",
       "axeDetail": {
