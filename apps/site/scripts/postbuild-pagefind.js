@@ -108,6 +108,44 @@ function buildStageIndex() {
     copied++;
   }
   console.log(`[postbuild-pagefind] staged ${copied} route HTML(s) to ${path.relative(ROOT, STAGE_DIR)} (${skipped} internal skipped)`);
+
+  // Also stage JSON contract/endpoint files as searchable HTML wrappers.
+  // Pagefind only indexes HTML, so we wrap each JSON file's content in a
+  // minimal HTML document with data-pagefind-body so token names, values,
+  // and endpoints become searchable in the command palette.
+  let jsonCount = 0;
+  const jsonSrcDir = path.join(SITE_DIR, 'server', 'app');
+  for (const rel of walkFiles(jsonSrcDir)) {
+    if (!rel.endsWith('.json')) continue;
+    // Skip metadata-route JSON (icon, manifest, etc.)
+    if (INTERNAL_PATTERNS.some((re) => re.test(path.basename(rel)))) continue;
+
+    // Read the JSON content
+    let jsonContent;
+    try {
+      jsonContent = fs.readFileSync(path.join(jsonSrcDir, rel), 'utf8');
+    } catch { continue; }
+
+    // Build a minimal HTML wrapper so Pagefind indexes the JSON tokens
+    const title = rel.replace(/\.json$/, '').replace(/\//g, ' · ');
+    const wrapper = `<!DOCTYPE html><html><head><title>${title}</title></head><body data-pagefind-body><pre>${jsonContent.replace(/</g, '&lt;')}</pre></body></html>`;
+
+    // Map to a clean route path (same logic as HTML files above)
+    let routeRel = rel;
+    if (/\/index\.json$/i.test(routeRel)) routeRel = routeRel.replace(/\/index\.json$/i, '.json');
+    else if (routeRel === 'index.json') routeRel = '.json';
+    if (routeRel === '.json') routeRel = 'index.json';
+
+    // Write as .html so Pagefind picks it up
+    const dest = path.join(STAGE_DIR, routeRel.replace(/\.json$/, '.json.html'));
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, wrapper);
+    jsonCount++;
+  }
+  if (jsonCount > 0) {
+    console.log(`[postbuild-pagefind] staged ${jsonCount} JSON endpoint(s) as searchable HTML wrappers`);
+  }
+
   return true;
 }
 
