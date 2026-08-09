@@ -412,7 +412,7 @@ export default function TaktFieldCheckPage() {
         <div className="status-note">
           Field check of Lab Two · Takt using Use Kit One · Design Review.
           Outcome: pass with notes. Live CSS confirms every verifiable rule.
-          Six takt rules adopted into contract v0.1.2. Remaining notes are
+          Five takt rules adopted into contract v0.1.2. Remaining notes are
           image-outline and mobile-hit-area verification, and synchronization
           after adoption.
         </div>

@@ -8,7 +8,7 @@ import { acousticTokens } from '../lib/acoustic-tokens';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustic tokens',
   description:
-    'Designesy acoustic token system — the sound parallel to the visual token system. Net-new relative to the W3C Design Tokens Format Module. Engine: Cuelume v0.1.0.',
+    'Designesy acoustic token system — the sound parallel to the visual token system. Net-new relative to the W3C Design Tokens Format Module. Engine: Cuelume v0.2.2.',
   path: '/acoustic-tokens',
   ogTitle: 'Acoustic tokens · Designesy',
   ogDescription:
@@ -66,7 +66,7 @@ export default function AcousticTokensPage() {
         <section className="doctrine-section fade-up" id="token-reference">
           <h2 className="doctrine-heading">Token reference</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Ten cues, ten interaction roles. Every sound on a Designesy surface
+            Nineteen cues, nineteen interaction roles. Every sound on a Designesy surface
             traces to a token here.
           </p>
           <div className="principle-list">
@@ -158,7 +158,7 @@ export default function AcousticTokensPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Cuelume v0.1.0 (MIT)</span>
+                <span className="row-title">Cuelume v0.2.2 (MIT)</span>
                 <span className="row-meta">{acousticTokens.provenance.library}</span>
               </span>
             </a>

@@ -1127,7 +1127,7 @@ export default function ContractsPage() {
         <div className="status-note">
           Designesy design system contract v0.4.0 — public artifact discipline,
           not legal advice or a client service agreement. Values are taken from
-          the live site tokens. Poise, Takt, Cadence, and Copywriting rules are
+          the live site tokens. Poise, Takt, Cadence, Acoustics, and Copywriting rules are
           adopted. Contract home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>
           {' · '}

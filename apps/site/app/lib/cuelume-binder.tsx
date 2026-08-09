@@ -67,7 +67,7 @@ function playSense(cue: CueName, withHaptic = true) {
  *
  * Mobile fixes:
  * 1. Audio unlock on first pointerdown within user gesture
- * 2. Touch/pen get press/release cues (Cuelume v0.1.0 gap)
+ * 2. Touch/pen get press/release cues (Cuelume v0.2.2 gap)
  * 3. Hover-only targets map to one tap on coarse pointers
  * 4. Middle-click / auto-scroll spam guard
  * 5. Post-touch synthetic mouse guard

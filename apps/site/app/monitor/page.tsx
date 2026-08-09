@@ -36,7 +36,7 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
           </p>
           <p className="surface-note">
             The continuous-governance layer over the drift radar. Every prior
-            designesy surface is a snapshot — this one turns them into a watched
+            Designesy surface is a snapshot — this one turns them into a watched
             series. 10 governance checks plus the 12 drift checks on every run.
           </p>
         </section>

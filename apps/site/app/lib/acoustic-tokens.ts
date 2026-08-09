@@ -1,7 +1,7 @@
 /**
  * Designesy acoustic token system — the sound parallel to the visual token system.
  * Source: docs/acoustic-tokens.md (v0.1.1, 2026-07-12)
- * Engine: Cuelume v0.1.0 (MIT)
+ * Engine: Cuelume v0.2.2 (MIT)
  *
  * This data module is the single source of truth for acoustic tokens.
  * The /acoustic-tokens page and /acoustic-tokens.json route both read from here.

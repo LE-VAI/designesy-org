@@ -764,7 +764,7 @@ export default function StateOfCompliancePage() {
                 </Link>
               </p>
               <p className="soc-cadence-card-detail">
-                16 entries across 11 design dimensions — tokens, motion, cadence,
+                14 entries across 11 design dimensions — tokens, motion, cadence,
                 accessibility, takt, poise, acoustics, copywriting, identity,
                 security, verification. Every contract change is traceable to a
                 version bump and a dimension.

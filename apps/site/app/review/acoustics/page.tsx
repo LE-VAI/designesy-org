@@ -59,7 +59,7 @@ const DIMENSIONS = [
     num: '05',
     title: 'System coherence',
     observation:
-      'Values cite the acoustic token module: ten --cue:* tokens map to ten Cuelume cues. The contract adopted the nine mapping rules in v0.3.0. The token reference page (/acoustic-tokens) and machine export (/acoustic-tokens.json) are the single source. Cuelume v0.1.0 is the documented engine.',
+      'Values cite the acoustic token module: nineteen --cue:* tokens map to nineteen Cuelume cues. The contract adopted the nine mapping rules in v0.3.0. The token reference page (/acoustic-tokens) and machine export (/acoustic-tokens.json) are the single source. Cuelume v0.2.2 is the documented engine.',
     judgment:
       'Strong coherence. Acoustics extends the existing token system into the sound dimension without inventing a second architecture. Every cue traces to a token; every token traces to this document.',
     action: 'Keep lab demo, contract.acoustics, acoustic-tokens module, and live cue grid synchronized after adoption.',
@@ -70,8 +70,8 @@ const DIMENSIONS = [
     observation:
       'Full lab anatomy is present: thesis, live artifact, principle, portable contract, token reference, accessibility, implementation notes, review checklist, provenance, anti-patterns, remix notes, and verification. Builder prompt is remixable. Rules are engine-agnostic in principle — the token model survives a Cuelume upgrade.',
     judgment:
-      'Durable as a lab package and as contract material. Risk is engine coupling — if Cuelume v0.1.0 breaks or is abandoned, the token model survives but the cue synthesis needs a replacement engine.',
-    action: 'When the Cuelume engine upgrades or changes, update the cue grid and verify all ten tokens still fire correctly.',
+      'Durable as a lab package and as contract material. Risk is engine coupling — if Cuelume v0.2.2 breaks or is abandoned, the token model survives but the cue synthesis needs a replacement engine.',
+    action: 'When the Cuelume engine upgrades or changes, update the cue grid and verify all nineteen tokens still fire correctly.',
   },
   {
     num: '07',
@@ -111,7 +111,7 @@ const TENSIONS = [
   },
   {
     title: 'Cuelume engine coupling',
-    meta: 'Token model is portable; cue synthesis depends on Cuelume v0.1.0 — engine upgrade or abandonment requires re-verification of all ten cues',
+    meta: 'Token model is portable; cue synthesis depends on Cuelume v0.2.2 — engine upgrade or abandonment requires re-verification of all nineteen cues',
   },
 ];
 
@@ -169,7 +169,7 @@ const SOURCES = [
   {
     href: '/acoustic-tokens',
     title: 'Acoustic token reference',
-    meta: 'Ten cues, ten roles — the sound parallel to the visual token system',
+    meta: 'Nineteen cues, nineteen roles — the sound parallel to the visual token system',
   },
   {
     href: '/review/poise',
@@ -266,7 +266,7 @@ export default function AcousticsFieldCheckPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.3.0 acoustic section · Kit One Design Review · Cuelume v0.1.0
+                  Contract v0.3.0 acoustic section · Kit One Design Review · Cuelume v0.2.2
                 </span>
               </span>
             </ToggleRow>
@@ -376,7 +376,7 @@ export default function AcousticsFieldCheckPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Acoustic token reference</span>
-                <span className="row-meta">Ten cues, ten roles</span>
+                <span className="row-meta">Nineteen cues, nineteen roles</span>
               </span>
             </Link>
             <Link
