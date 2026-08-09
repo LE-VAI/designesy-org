@@ -1075,14 +1075,44 @@ p {
   white-space: nowrap;
 }
 
+.cmdk-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
 .cmdk-item-meta {
   font-size: 0.72rem;
   color: var(--muted-dim);
-  flex-shrink: 0;
-  max-width: 40%;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.cmdk-item-meta mark {
+  background: transparent;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.cmdk-searching-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent, currentColor);
+  flex-shrink: 0;
+  animation: cmdk-pulse 1s ease-in-out infinite;
+}
+
+@keyframes cmdk-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 .cmdk-item-arrow {
