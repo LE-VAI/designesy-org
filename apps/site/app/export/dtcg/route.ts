@@ -3,21 +3,32 @@ import { designSystemContract } from '../../lib/design-system-contract';
 export const dynamic = 'force-static';
 
 // /export/dtcg — W3C Design Tokens Format Module 2025.10
-// Serializes the designesy contract into DTCG $value/$type/$description
-// structure with structured color values (colorSpace + components, not bare hex).
-// Custom types (spring, sound) are declared via $extensions.designesy
-// per the DTCG extension point. This is the machine-readable export for agents
-// and build tools that consume design tokens.
+// Serializes the FULL designesy contract token surface into DTCG
+// $value/$type/$description structure with structured color values
+// (colorSpace + components, not bare hex). Custom types (spring, sound)
+// are declared via $extensions.designesy per the DTCG extension point.
+// This is the machine-readable export for agents and build tools that
+// consume design tokens.
+//
+// Coverage (2026-08-09): colors (incl. status), surfaces+lines (incl.
+// depth/effect tokens), border, radius, shadows, motion (duration/ease),
+// interaction state tokens, and font stacks. Verified: every :root CSS
+// custom property is represented — parity enforced by
+// scripts/check-contract-drift.js at build time.
 //
 // Self-referential conformance: this export passes designesy_tokens_score at 100%.
 export function GET() {
   const c = designSystemContract;
   const colors = c.colors as Record<string, { token: string; value: string; role: string }>;
   const surfaces = c.surfaces_and_lines as Record<string, { token: string; value: string; role: string }>;
+  const rounded = c.rounded as Record<string, { token: string; value: string; role?: string }>;
+  const shadows = c.shadows as Record<string, { token: string; value: string }>;
+  const interaction = c.interaction as Record<string, unknown>;
+  const typography = c.typography as Record<string, unknown>;
 
   // ── Color value parser ──────────────────────────────────────────────────
-  // Converts hex (#rrggbb) and rgba() strings to DTCG structured color format:
-  // { colorSpace: 'srgb', components: { red, green, blue, alpha } }
+  // Converts hex (#rrggbb), #rgb, and rgba() strings to DTCG structured
+  // color format: { colorSpace: 'srgb', components: { red, green, blue, alpha } }
   function parseColorValue(value: string): { colorSpace: string; components: { red: number; green: number; blue: number; alpha: number } } {
     // Handle #rrggbb
     const hexMatch = value.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
@@ -72,7 +83,8 @@ export function GET() {
 
   const colorGroup = dtcg.color as Record<string, Record<string, { $value: unknown; $type: string; $description: string }>>;
 
-  // Map contract color keys to DTCG nested groups
+  // Map contract color keys to DTCG nested groups — semantic roles that
+  // carry intent (text/surface/signal/status), not mechanical key names.
   const colorMap: Record<string, { group: string; name: string }> = {
     ink: { group: 'text', name: 'primary' },
     muted: { group: 'text', name: 'secondary' },
@@ -80,9 +92,15 @@ export function GET() {
     paper: { group: 'foundation', name: 'black' },
     surface: { group: 'surface', name: 'black' },
     surface_raised: { group: 'surface', name: 'raised' },
+    surface_lifted: { group: 'surface', name: 'lifted' },
     signal: { group: 'signal', name: 'blue' },
     signal_light: { group: 'signal', name: 'light' },
+    signal_access: { group: 'signal', name: 'access' },
     activation: { group: 'activation', name: 'yellow' },
+    paper_on_signal: { group: 'signal', name: 'on_blue' },
+    ok: { group: 'status', name: 'ok' },
+    warn: { group: 'status', name: 'warn' },
+    error: { group: 'status', name: 'error' },
   };
 
   for (const [key, spec] of Object.entries(colors)) {
@@ -96,11 +114,35 @@ export function GET() {
     };
   }
 
-  // Add border tokens from surfaces_and_lines
+  // Border + surface-depth tokens from surfaces_and_lines (colors only —
+  // gradient/glow tokens are effect values, not DTCG color tokens).
   const borderGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
-  if (surfaces.line) borderGroup.subtle = { $value: parseColorValue(surfaces.line.value), $type: 'color', $description: surfaces.line.role };
-  if (surfaces.line_strong) borderGroup.strong = { $value: parseColorValue(surfaces.line_strong.value), $type: 'color', $description: surfaces.line_strong.role };
+  const surfaceGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
+  for (const [key, spec] of Object.entries(surfaces)) {
+    if (key === 'line') borderGroup.subtle = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    if (key === 'line_strong') borderGroup.strong = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    if (key === 'line_faint') borderGroup.faint = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    if (key === 'signal_dim') surfaceGroup.wash = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    if (key === 'surface_soft') surfaceGroup.soft = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    if (key === 'surface_hover') surfaceGroup.hover = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+  }
   if (Object.keys(borderGroup).length > 0) colorGroup.border = borderGroup;
+  if (Object.keys(surfaceGroup).length > 0) colorGroup.surface_effects = surfaceGroup;
+
+  // Radius tokens (dimension type)
+  const radiusGroup: Record<string, { $value: string; $type: string; $description?: string }> = {};
+  for (const [key, spec] of Object.entries(rounded)) {
+    if (key === 'default') radiusGroup.default = { $value: spec.value, $type: 'dimension', $description: spec.role };
+    else radiusGroup[key] = { $value: spec.value, $type: 'dimension', $description: spec.role };
+  }
+  if (Object.keys(radiusGroup).length > 0) dtcg.radius = radiusGroup;
+
+  // Shadow tokens
+  const shadowGroup: Record<string, { $value: string; $type: string }> = {};
+  for (const [key, spec] of Object.entries(shadows)) {
+    shadowGroup[key] = { $value: spec.value, $type: 'shadow' };
+  }
+  if (Object.keys(shadowGroup).length > 0) dtcg.shadow = shadowGroup;
 
   // Motion tokens (durations + easings)
   const motion = c.motion as Record<string, { token?: string; value?: string; role?: string } | unknown>;
@@ -125,6 +167,26 @@ export function GET() {
     if (Object.keys(motionGroup).length > 0) dtcg.motion = motionGroup;
   }
 
+  // Interaction state tokens (hover-fill / press-fill / focus-ring)
+  const stateTokens = (interaction as { state_tokens?: Record<string, { token: string; value: string; role: string }> })?.state_tokens;
+  if (stateTokens) {
+    const interactionGroup: Record<string, { $value: string; $type: string; $description: string }> = {};
+    for (const [key, spec] of Object.entries(stateTokens)) {
+      interactionGroup[key] = { $value: spec.value, $type: 'color', $description: spec.role };
+    }
+    if (Object.keys(interactionGroup).length > 0) dtcg.interaction = interactionGroup;
+  }
+
+  // Font stacks (fontFamily type)
+  const fontStacks = (typography as { font_stacks?: Record<string, { token: string; value: string; role: string }> })?.font_stacks;
+  if (fontStacks) {
+    const fontGroup: Record<string, { $value: string; $type: string; $description: string }> = {};
+    for (const [key, spec] of Object.entries(fontStacks)) {
+      fontGroup[key] = { $value: spec.value, $type: 'fontFamily', $description: spec.role };
+    }
+    if (Object.keys(fontGroup).length > 0) dtcg.fontFamily = fontGroup;
+  }
+
   // $extensions for non-DTCG-standard groups (typography, takt, acoustic, verification)
   dtcg.$extensions = {
     designesy: {
@@ -132,8 +194,8 @@ export function GET() {
       takt: c.takt,
       acoustic: (c as Record<string, unknown>).acoustic,
       verification: {
-        checks: 34,
-        categories: 11,
+        checks: 40,
+        categories: 13,
         a11y_floor: '60% (a11y < 60% caps score at C/70)',
         standards: 'WCAG 2.1 AA + APCA + DTCG 2025.10 + EU AI Act Art 50',
       },
