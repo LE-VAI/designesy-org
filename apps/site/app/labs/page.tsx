@@ -137,9 +137,10 @@ export default function LabsPage() {
               Interaction sound as a token system.
             </p>
             <p className="lab-card-desc">
-              Ten cues, ten interaction roles, one documented engine. The sound
-              parallel to the visual token system — no sound without a token
-              name and rationale. Cuelume v0.1.0, adopted in contract v0.3.0.
+              Nineteen cues, nineteen interaction roles, one documented engine.
+              The sound parallel to the visual token system — no sound without
+              a token name and rationale. Cuelume v0.2.2, adopted in contract
+              v0.3.0.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>

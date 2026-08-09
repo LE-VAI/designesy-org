@@ -134,8 +134,8 @@ export default function ReviewPage() {
                 Kit One output format on the interface-feel lab.
               </p>
               <p className="lab-card-desc">
-                Radii, press scale, outlines, hit areas, stagger — six takt rules
-                adopted into contract v0.1.2.
+                Radii, press scale, outlines, hit areas, stagger — five takt
+                rules adopted into contract v0.1.2.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
@@ -175,8 +175,8 @@ export default function ReviewPage() {
                 Kit One output format on the interaction sound lab.
               </p>
               <p className="lab-card-desc">
-                Ten cues, ten roles, Cuelume v0.1.0 — nine acoustic mapping rules
-                adopted into contract v0.3.0.
+                Nineteen cues, nineteen roles, Cuelume v0.2.2 — nine acoustic
+                mapping rules adopted into contract v0.3.0.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>

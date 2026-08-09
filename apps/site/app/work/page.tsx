@@ -40,7 +40,7 @@ export default function WorkPage() {
             contract.
           </p>
           <p className="surface-note">
-            The pipeline promises tools into better designed work. These are
+            The pipeline promises to turn tools into better designed work. These are
             the artifacts — real tools, real publication, real engagement,
             reviewed with Use Kit One. The review format is the same
             eight-dimension method used on Labs and the public surface itself.
