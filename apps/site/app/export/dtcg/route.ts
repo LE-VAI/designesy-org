@@ -144,15 +144,28 @@ export function GET() {
   }
   if (Object.keys(shadowGroup).length > 0) dtcg.shadow = shadowGroup;
 
-  // Motion tokens (durations + easings)
+  // Motion tokens (durations + easings + springs)
   const motion = c.motion as Record<string, { token?: string; value?: string; role?: string } | unknown>;
   if (motion) {
     const motionGroup: Record<string, Record<string, { $value: string; $type: string; $description?: string }>> = {};
     const durationGroup: Record<string, { $value: string; $type: string; $description?: string }> = {};
     const easeGroup: Record<string, { $value: string; $type: string; $description?: string }> = {};
+    const springGroup: Record<string, { $value: string; $type: string; $description?: string }> = {};
     for (const [key, raw] of Object.entries(motion)) {
       if (typeof raw !== 'object' || raw === null) continue;
       const spec = raw as { token?: string; value?: string; role?: string };
+      if (key === 'springs') {
+        // Custom $type: spring via $extensions.designesy — DTCG has no spring type.
+        const springs = raw as Record<string, { damping: number; response: number; description?: string }>;
+        for (const [sk, sv] of Object.entries(springs)) {
+          springGroup[sk] = {
+            $value: `${sv.response}s response, ${sv.damping} damping`,
+            $type: 'spring',
+            $description: sv.description,
+          };
+        }
+        continue;
+      }
       if (!spec.value) continue;
       if (key.startsWith('duration')) {
         const name = key === 'duration' ? 'default' : key.replace('duration_', '');
@@ -164,6 +177,7 @@ export function GET() {
     }
     if (Object.keys(durationGroup).length > 0) motionGroup.duration = durationGroup;
     if (Object.keys(easeGroup).length > 0) motionGroup.ease = easeGroup;
+    if (Object.keys(springGroup).length > 0) motionGroup.spring = springGroup;
     if (Object.keys(motionGroup).length > 0) dtcg.motion = motionGroup;
   }
 
@@ -185,6 +199,26 @@ export function GET() {
       fontGroup[key] = { $value: spec.value, $type: 'fontFamily', $description: spec.role };
     }
     if (Object.keys(fontGroup).length > 0) dtcg.fontFamily = fontGroup;
+  }
+
+  // Sound cue tokens — custom $type: sound via $extensions.designesy.
+  // DTCG 2025.10 has no sound type; the cues are emitted as first-class
+  // tokens (not just raw metadata) so agents can consume cue→role mappings
+  // as machine-readable design tokens.
+  const acoustic = (c as Record<string, unknown>).acoustic as
+    | { cues?: { token: string; cue: string; role: string }[] }
+    | undefined;
+  if (acoustic?.cues) {
+    const soundGroup: Record<string, { $value: string; $type: string; $description: string }> = {};
+    for (const cue of acoustic.cues) {
+      const name = cue.token.replace('--cue:', '');
+      soundGroup[name] = {
+        $value: cue.cue,
+        $type: 'sound',
+        $description: cue.role,
+      };
+    }
+    if (Object.keys(soundGroup).length > 0) dtcg.sound = soundGroup;
   }
 
   // $extensions for non-DTCG-standard groups (typography, takt, acoustic, verification)
