@@ -172,6 +172,22 @@ function main() {
     } catch (e) {
       console.warn(`[postbuild-pagefind] could not patch pagefind.js: ${e.message}`);
     }
+
+    // Write a version pointer file so the client can append the same
+    // cache-buster to the import() URL for pagefind.js itself. Without this,
+    // the browser serves a stale cached pagefind.js from a prior deploy that
+    // carried an older CSP — the Worker cache-buster inside pagefind.js
+    // would never be reached because the old pagefind.js (without the patch)
+    // would run first.
+    try {
+      fs.writeFileSync(
+        path.join(OUT_DIR, 'pagefind-version.json'),
+        JSON.stringify({ buildId: BUILD_ID })
+      );
+      console.log(`[postbuild-pagefind] wrote pagefind-version.json (buildId: ${BUILD_ID})`);
+    } catch (e) {
+      console.warn(`[postbuild-pagefind] could not write pagefind-version.json: ${e.message}`);
+    }
   } catch (err) {
     // A Pagefind failure must not break the deploy — search degrades to the
     // curated INDEX. Surface the error loudly but exit 0.
