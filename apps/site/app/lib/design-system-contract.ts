@@ -182,6 +182,21 @@ export const designSystemContract = {
       value: '#ffffff',
       role: 'Text on signal fill',
     },
+    ok: {
+      token: '--ok',
+      value: '#4ade80',
+      role: 'Verification status — pass',
+    },
+    warn: {
+      token: '--warn',
+      value: '#facc15',
+      role: 'Verification status — warn',
+    },
+    error: {
+      token: '--error',
+      value: '#f87171',
+      role: 'Verification status — fail',
+    },
   },
   surfaces_and_lines: {
     surface_soft: {
@@ -214,6 +229,31 @@ export const designSystemContract = {
       value: 'rgba(1, 51, 203, 0.14)',
       role: 'Accent wash / badge fill',
     },
+    surface_gradient: {
+      token: '--surface-gradient',
+      value: 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))',
+      role: 'Surface depth wash (card interiors)',
+    },
+    surface_card_gradient: {
+      token: '--surface-card-gradient',
+      value: 'linear-gradient(135deg, #0d0d11 0%, var(--surface) 100%)',
+      role: 'Card interior gradient',
+    },
+    inner_light: {
+      token: '--inner-light',
+      value: 'inset 0 1px 0 rgba(255,255,255,0.055)',
+      role: 'Inner top-edge highlight',
+    },
+    signal_glow: {
+      token: '--signal-glow',
+      value: '0 0 60px rgba(51,88,232,0.18), 0 0 24px rgba(51,88,232,0.28)',
+      role: 'Accent glow (border/focus only — not button fill, v22)',
+    },
+    signal_gradient: {
+      token: '--signal-gradient',
+      value: 'linear-gradient(135deg, var(--signal-light), #6b8aff 130%)',
+      role: 'Accent gradient (borders/focus only)',
+    },
   },
   shadows: {
     sm: {
@@ -236,9 +276,24 @@ export const designSystemContract = {
       value: '4px',
       role: 'Compact controls / nav chips',
     },
+    lg: {
+      token: '--radius-lg',
+      value: '12px',
+      role: 'Cards / panels / large surfaces',
+    },
+    xl: {
+      token: '--radius-xl',
+      value: '16px',
+      role: 'Hero / modal / flagship surfaces',
+    },
   },
   layout: {
     max_width: { token: '--maxw', value: '1080px', role: 'Content shell max width' },
+    max_width_wide: {
+      token: '--maxw-wide',
+      value: '1180px',
+      role: 'Wider shell for hero / section chrome (additive only)',
+    },
     shell_horizontal: '1.5rem (1rem at ≤560px)',
     section_vertical: '3.5rem / 3rem doctrine',
     card_padding: '1.25–1.5rem',
@@ -324,6 +379,23 @@ export const designSystemContract = {
   interaction: {
     source_lab: 'Poise',
     adopted_in: '0.1.1',
+    state_tokens: {
+      hover_fill: {
+        token: '--hover-fill',
+        value: 'var(--surface-hover)',
+        role: 'Interactive hover wash',
+      },
+      press_fill: {
+        token: '--press-fill',
+        value: 'var(--surface-soft)',
+        role: 'Press / active fill',
+      },
+      focus_ring: {
+        token: '--focus-ring',
+        value: 'var(--signal-light)',
+        role: 'Keyboard focus indicator color',
+      },
+    },
     rules: [
       'Wordmark mark may use opacity breath only; never blur, glow, or gradient decoration',
       'Interactive press settle: scale(0.97) at ~160ms with --ease-out',
@@ -390,6 +462,25 @@ export const designSystemContract = {
     ],
   },
   typography: {
+    font_stacks: {
+      sans: {
+        token: '--sans',
+        value:
+          "'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+        role: 'Primary UI and body stack (Inter Variable via @fontsource-variable/inter)',
+      },
+      display: {
+        token: '--display',
+        value: 'var(--sans)',
+        role: 'Display alias — exists so a future serif display face can land without touching component CSS',
+      },
+      mono: {
+        token: '--mono',
+        value:
+          "ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+        role: 'Canonical mono stack for code / tabular surfaces',
+      },
+    },
     body: '16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
     headings: 'weight 700, line-height 1.08, letter-spacing -0.02em',
     hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
@@ -436,7 +527,10 @@ export const designSystemContract = {
     line_roles:
       'line = default structure · line-strong = active/emphasis · line-faint = quiet subdivision',
     accent_roles:
-      'signal = brand action and wordmark mark · signal-light = hover/focus · signal-dim = badge/wash · activation = reserved highlight',
+      'signal = brand action and wordmark mark · signal-light = hover/focus · signal-dim = badge/wash · activation = reserved highlight · signal-glow/signal-gradient = border/focus effects only (never button fill)',
+    status_roles: 'ok = pass · warn = warn · error = fail',
+    state_roles:
+      'hover-fill = interactive hover wash · press-fill = press/active fill · focus-ring = keyboard focus indicator',
     type_roles:
       'ink = primary claim · muted = supporting body · muted-dim = eyebrows, meta, footers',
   },
