@@ -428,7 +428,7 @@ export default function MethodologyPage() {
       <ReadingProgress />
       <Topbar scrolled />
 
-      <main id="main-content" className="surface-page methodology-page" data-pagefind-meta="priority:high">
+      <main id="main-content" data-pagefind-body className="surface-page methodology-page" data-pagefind-meta="priority:high">
         <style>{`
           .methodology-page .methodology-section { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
           .methodology-page .methodology-prose { max-width: 66ch; }

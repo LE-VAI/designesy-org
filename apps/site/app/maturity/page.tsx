@@ -43,7 +43,7 @@ export default function MaturityPage() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
+      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Self-assessment</p>
           <h1 className="surface-title" data-scramble>Design Compliance Maturity</h1>

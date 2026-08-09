@@ -192,7 +192,7 @@ export default function HomePage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" className="site-shell">
+      <main id="main-content" data-pagefind-body className="site-shell">
         {/* --- Product hero — the scoring input is the gravitational center ---
             Layout: eyebrow → editorial display (two-line proof statement) →
             the product (URL input) → a real stats row + recent-scores rail.

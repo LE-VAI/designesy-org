@@ -312,7 +312,7 @@ export default function ChangelogPage() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" className="surface-page" data-pagefind-meta="priority:high">
+      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Contract history</p>
           <h1 className="surface-title" data-scramble>Contract Changelog</h1>
