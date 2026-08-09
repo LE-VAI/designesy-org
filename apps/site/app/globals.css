@@ -5481,7 +5481,29 @@ button.pillar:hover::before {
   border-radius: var(--radius-sm);
   white-space: nowrap;
   letter-spacing: 0.01em;
-  transition: transform 160ms var(--ease-out);
+  text-decoration: none;
+  transition: transform 160ms var(--ease-out),
+    background 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease);
+}
+
+/* Pills are links — hover lifts and brightens like the footer dock */
+.state-marquee-pill:hover {
+  transform: scale(1.04);
+  border-color: var(--line-strong);
+}
+.state-marquee-pill--live:hover {
+  color: var(--signal-light);
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+}
+.state-marquee-pill--adopted:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.state-marquee-pill--info:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
 }
 
 /* Live — bold signal pills with pulse dot */
