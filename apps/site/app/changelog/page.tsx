@@ -447,11 +447,11 @@ export default function ChangelogPage() {
           <h2 className="doctrine-heading">Version summary</h2>
           <div className="row-stack" role="list">
             {[
-              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract — tokens, motion, accessibility, identity, security. Deterministic 40-check engine.' },
+              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract — tokens, motion, accessibility, identity, security. Deterministic engine.' },
               { version: 'v0.1.1', date: '2026-06-28', checks: 24, summary: 'Poise interaction rules adopted from Lab One.' },
               { version: 'v0.1.2', date: '2026-07-05', checks: 26, summary: 'Takt interface-feel rules adopted from Lab Two.' },
               { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks — largest category at 18% weight.' },
-              { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.1.0 sound engine.' },
+              { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
               { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version. Current version.' },
             ].map((v, i) => (
               <div

@@ -239,7 +239,7 @@ export default function BenchmarksPage() {
 
         {/* ── Designesy unique ───────────────────────────────────────────────── */}
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">What designesy catches that they do not</h2>
+          <h2 className="doctrine-heading">What Designesy catches that they do not</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             20 checks with no hallmark or slop-eval equivalent. These are the
             uncontested layers — contract conformance, Unicode security, Core
@@ -251,10 +251,10 @@ export default function BenchmarksPage() {
 
         {/* ── Competitor unique ──────────────────────────────────────────────── */}
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">What they catch that designesy does not</h2>
+          <h2 className="doctrine-heading">What they catch that Designesy does not</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            designesy gaps. These are the AI-slop aesthetic detection,
-            structural-variety, signature, and cohesion checks. designesy does
+            Designesy gaps. These are the AI-slop aesthetic detection,
+            structural-variety, signature, and cohesion checks. Designesy does
             not ask &ldquo;does this look AI-generated&rdquo; — it verifies contract
             conformance.
           </p>
@@ -265,7 +265,7 @@ export default function BenchmarksPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The moat</h2>
           <div className="definition">
-            <p className="definition-label">designesy&rsquo;s uncontested layers</p>
+            <p className="definition-label">Designesy&rsquo;s uncontested layers</p>
             <p>
               The layers no competitor approaches. These are not features —
               they are the category-of-one positioning.
@@ -302,7 +302,7 @@ export default function BenchmarksPage() {
           <p className="surface-note" style={{ marginTop: '1.5rem' }}>
             hallmark and slop-eval are agent skills, not URL-based APIs. They
             cannot score a URL without an LLM agent loading the skill and
-            evaluating. designesy is the only one with a programmatic URL-based
+            evaluating. Designesy is the only one with a programmatic URL-based
             scoring endpoint — a structural advantage for CI/CD integration,
             leaderboards, and automated pipelines.
           </p>
@@ -348,7 +348,7 @@ export default function BenchmarksPage() {
           <div className="definition">
             <p className="definition-label">Sources</p>
             <p>
-              Live research via AnySearch MCP (2026-08-01). designesy live score
+              Live research via AnySearch MCP (2026-08-01). Designesy live score
               verified via POST to https://www.designesy.org/api/score (100% A,
               40 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.

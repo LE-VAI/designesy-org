@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
     'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.4.0 is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract v0.4.0 is live — Poise, Takt, Cadence, and Copywriting rules adopted.',
+    'Portable design agreements for people and agents. Design system contract v0.4.0 is live — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
   twitterDescription:
     'Portable design judgment — designesy.org/contracts/design-system',
 });
@@ -161,9 +161,9 @@ const MOTION_CAUTION = [
 ];
 
 const ACOUSTIC_TOKENS_REF = [
-  'Engine: Cuelume v0.1.0 (MIT) — interaction sound synthesis via Web Audio API',
+  'Engine: Cuelume v0.2.2 (MIT) — interaction sound synthesis via Web Audio API',
   'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
-  '10 cues mapped to 10 interaction roles — see /acoustic-tokens for the full table',
+  '19 cues mapped to 19 interaction roles — see /acoustic-tokens for the full table',
   'Preference key: designesy:sound in localStorage; engine follows Designesy',
   'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
   'No focus sounds — sounds fire on pointer/click, not on focus',
@@ -654,8 +654,8 @@ export default function ContractsPage() {
             <p className="definition-label">Designesy design system · v0.4.0</p>
             <p>
               Public design contract for designesy.org. Derived from the live
-              site token foundation, with Lab One · Poise, Lab Two · Takt, and
-              Lab Three · Cadence rules adopted. Provisional, doctrine-referenced, and
+              site token foundation, with Lab One · Poise, Lab Two · Takt, Lab
+              Three · Cadence, and Lab Four · Acoustics rules adopted. Provisional, doctrine-referenced, and
               meant to be verified against the running site — not a frozen brand
               bible.
             </p>
@@ -697,11 +697,11 @@ export default function ContractsPage() {
               },
               {
                 title: 'Interaction audio',
-                meta: 'Cuelume v0.1.0 — preference owned by Designesy',
+                meta: 'Cuelume v0.2.2 — preference owned by Designesy',
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.4.0 — Poise, Takt, Cadence, and Copywriting rules adopted',
+                meta: 'Public v0.4.0 — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
               },
             ]} />
         </section>
