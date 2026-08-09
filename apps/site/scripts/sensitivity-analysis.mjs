@@ -139,6 +139,16 @@ const KNOBS = [
   { id: 'a11y-50', label: 'a11y floor 60% → 50%', opts: { a11yFloorPct: 50 } },
   { id: 'a11y-70', label: 'a11y floor 60% → 70%', opts: { a11yFloorPct: 70 } },
   { id: 'nocaps', label: 'hard-fail ceilings removed', opts: { hardFailCaps: {} } },
+  // ── Two-factor interactions (Saltelli et al. 2017: OAT alone "leaves the
+  //    space of variation mostly unscathed" — interactions must be tested) ──
+  { id: 'warn0.75×slop+5', label: 'INTERACTION: WARN 0.75 × slop +5', opts: { warnCredit: 0.75, slop: 5 } },
+  { id: 'warn0.25×slop+5', label: 'INTERACTION: WARN 0.25 × slop +5', opts: { warnCredit: 0.25, slop: 5 } },
+  { id: 'warn0.75×a11y70', label: 'INTERACTION: WARN 0.75 × a11y floor 70%', opts: { warnCredit: 0.75, a11yFloorPct: 70 } },
+  { id: 'warn0.25×a11y70', label: 'INTERACTION: WARN 0.25 × a11y floor 70%', opts: { warnCredit: 0.25, a11yFloorPct: 70 } },
+  { id: 'slop+5×orig+5', label: 'INTERACTION: slop +5 × originality +5', opts: { slop: 5, originality: 5 } },
+  { id: 'warn0.75×orig+5', label: 'INTERACTION: WARN 0.75 × originality +5', opts: { warnCredit: 0.75, originality: 5 } },
+  { id: 'warn0.75×nocaps', label: 'INTERACTION: WARN 0.75 × ceilings removed', opts: { warnCredit: 0.75, hardFailCaps: {} } },
+  { id: 'slop+5×nocaps', label: 'INTERACTION: slop +5 × ceilings removed', opts: { slop: 5, hardFailCaps: {} } },
 ];
 
 // Per-category one-at-a-time (OAT): which single category weight matters most?

@@ -170,9 +170,35 @@ function cohensKappa(a, b) {
   const po = (agreeP + agreeF) / n;
   const pe = (aP / n) * (bP / n) + (aF / n) * (bF / n);
   const kappa = pe === 1 ? 1 : (po - pe) / (1 - pe);
+
+  // ── Companion statistics (Feinstein & Cicchetti 1990; Chicco et al. 2021) ──
+  // Kappa alone is depressed by base-rate imbalance (the "kappa paradox").
+  // Report ppos/pneg (proportionate positive/negative agreement), the
+  // Matthews correlation coefficient (prevalence-robust for binary
+  // classification), and Gwet's AC1 (chance-corrected, prevalence-robust).
+  const ppos = agreeP / ((aP + bP) / 2 || 1);
+  const pneg = agreeF / ((aF + bF) / 2 || 1);
+  const tp = agreeP, tn = agreeF, fp = bP - agreeP, fn = aP - agreeP;
+  const mccDenom = Math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn));
+  const mcc = mccDenom === 0 ? 0 : (tp * tn - fp * fn) / mccDenom;
+  // Gwet's AC1: pe_ac1 = 2 * p * (1 - p) where p = overall proportion of PASS
+  const p = (aP + bP) / (2 * n);
+  const peAc1 = 2 * p * (1 - p);
+  const ac1 = peAc1 === 1 ? 1 : (po - peAc1) / (1 - peAc1);
+  // Approx standard error of kappa (Fleiss) for a 95% CI
+  const se = Math.sqrt((po * (1 - po)) / (n * (1 - pe) ** 2));
+  const ci95 = [kappa - 1.96 * se, kappa + 1.96 * se];
+
   return {
     n, po: Math.round(po * 1000) / 1000, pe: Math.round(pe * 1000) / 1000,
     kappa: Math.round(kappa * 1000) / 1000,
+    kappaCI95: [Math.round(ci95[0] * 1000) / 1000, Math.round(ci95[1] * 1000) / 1000],
+    ppos: Math.round(ppos * 1000) / 1000,
+    pneg: Math.round(pneg * 1000) / 1000,
+    mcc: Math.round(mcc * 1000) / 1000,
+    ac1: Math.round(ac1 * 1000) / 1000,
+    baseRateA: Math.round((aP / n) * 1000) / 1000,
+    baseRateB: Math.round((bP / n) * 1000) / 1000,
     bothPass: agreeP, bothFail: agreeF, aPassBFail: aP - agreeP, aFailBPass: bP - agreeP,
   };
 }
@@ -277,11 +303,14 @@ function renderMarkdown(r) {
   lines.push(`- Method: ${r.method}`);
   lines.push('');
   if (r.kappa) {
-    lines.push(`## Cohen\'s kappa`);
+    lines.push(`## Agreement statistics`);
     lines.push('');
-    lines.push(`- κ = **${r.kappa.kappa}** — ${r.kappa.label}`);
+    lines.push(`- **Cohen's κ = ${r.kappa.kappa}** (95% CI ${r.kappa.kappaCI95[0]} to ${r.kappa.kappaCI95[1]}) — ${r.kappa.label}`);
     lines.push(`- n = ${r.kappa.n} sites, po = ${r.kappa.po}, pe = ${r.kappa.pe}`);
-    lines.push(`- Both PASS: ${r.kappa.bothPass} · Both FAIL: ${r.kappa.bothFail} · Engine-only PASS: ${r.kappa.aPassBFail} · Axe-only PASS: ${r.kappa.aFailBPass}`);
+    lines.push(`- Base rates: engine ${Math.round(r.kappa.baseRateA * 100)}% PASS vs independent ${Math.round(r.kappa.baseRateB * 100)}% PASS — the imbalance depresses κ (Feinstein–Cicchetti kappa paradox)`);
+    lines.push(`- **ppos = ${r.kappa.ppos}** (proportionate positive agreement) · **pneg = ${r.kappa.pneg}** (proportionate negative agreement)`);
+    lines.push(`- **MCC = ${r.kappa.mcc}** (Matthews correlation, prevalence-robust) · **Gwet's AC1 = ${r.kappa.ac1}** (prevalence-robust chance-corrected)`);
+    lines.push(`- Both PASS: ${r.kappa.bothPass} · Both FAIL: ${r.kappa.bothFail} · Engine-only PASS: ${r.kappa.aPassBFail} · Independent-only PASS: ${r.kappa.aFailBPass}`);
     lines.push('');
   }
   lines.push(`## Per-site matrix`);
