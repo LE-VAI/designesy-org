@@ -224,7 +224,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Lab Four acoustic mapping rules promoted to contract: interaction sound synthesis via Web Audio API, acoustic tokens for press/hover/settle sounds, sound-toggle aria-pressed, reduced-motion tiering for acoustic events.',
     rationale:
       'Acoustics is the frontier — most design systems have no acoustic layer at all. The contract defines acoustic tokens the same way it defines motion tokens: named, typed, and tiered for reduced-motion.',
-    source: 'Lab Four — Acoustic mapping, Cuelume v0.1.0 engine',
+    source: 'Lab Four — Acoustic mapping, Cuelume v0.2.2 engine',
   },
 
   // ── v0.4.0 — Copywriting adopted + engine upgrades ──

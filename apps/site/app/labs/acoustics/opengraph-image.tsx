@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Labs',
     title: 'Acoustics — Lab Four',
-    lede: 'Interaction sound as a token system. Ten cues, ten roles, Cuelume v0.1.0.',
+    lede: 'Interaction sound as a token system. Nineteen cues, nineteen roles, Cuelume v0.2.2.',
     path: 'designesy.org/labs/acoustics',
     kind: 'lab',
     badge: 'Lab Four',

@@ -221,7 +221,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Acoustic token reference</span>
                 <span className="row-meta">
-                  Ten cues, ten roles — the sound parallel to the visual token system
+                  Nineteen cues, nineteen roles — the sound parallel to the visual token system
                 </span>
               </span>
             </Link>

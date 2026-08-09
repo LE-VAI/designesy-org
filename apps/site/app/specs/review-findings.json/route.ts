@@ -53,7 +53,7 @@ const SCHEMA = {
         },
         version: {
           type: 'string',
-          description: 'Tool version. designesy contract version (v0.4.0), Lighthouse version (12.0.0), etc.',
+          description: 'Tool version. Designesy contract version (v0.4.0), Lighthouse version (12.0.0), etc.',
         },
         userAgent: {
           type: 'string',
@@ -285,7 +285,7 @@ const SCHEMA = {
         severity: {
           type: 'string',
           enum: ['pass', 'fail', 'warn', 'skip', 'error', 'warning', 'info', 'high', 'medium', 'low', 'informative', 'notApplicable', 'manual'],
-          description: 'Normalized severity. designesy uses pass/fail/warn/skip. Google uses error/warning/info. jakubkrehel uses high/medium/low. Lighthouse uses informative/notApplicable/manual.',
+          description: 'Normalized severity. Designesy uses pass/fail/warn/skip. Google uses error/warning/info. jakubkrehel uses high/medium/low. Lighthouse uses informative/notApplicable/manual.',
         },
         severityRaw: {
           type: 'string',
@@ -298,7 +298,7 @@ const SCHEMA = {
         },
         message: {
           type: 'string',
-          description: 'Human-readable finding detail. designesy detail, Google message, Lighthouse explanation.',
+          description: 'Human-readable finding detail. Designesy detail, Google message, Lighthouse explanation.',
         },
         detail: {
           type: 'string',
