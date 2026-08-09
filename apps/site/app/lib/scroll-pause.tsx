@@ -13,15 +13,24 @@
  *   6. Animation reset to zero on mouseleave — scroll position was lost.
  *
  * New approach uses Pointer Events (unified mouse + touch + pen):
- *   - pointerdown: capture the pointer, record start position, pause animation.
+ *   - pointerdown: capture the pointer, record start position, FREEZE the
+ *     animation in place (animation-play-state only — NO layout mutation).
+ *     Mutating the DOM here was the iOS tap-lottery: the transform→scroll
+ *     handoff shifted every pill a few px under the finger, and iOS resolves
+ *     the click target at click-time against the mutated layout, so taps
+ *     landed on the wrong pill. Freezing in place keeps the pills exactly
+ *     where the user's finger landed.
  *   - pointermove: if the pointer moved beyond DRAG_THRESHOLD (5px), enter
- *     drag mode. In drag mode, set scrollLeft = start - delta. Suppress clicks
- *     and hover on all child pills.
+ *     drag mode. Only NOW do the transform→scroll handoff (safe — the pointer
+ *     is moving, no click will resolve against this layout). In drag mode,
+ *     set scrollLeft = start - delta. Suppress clicks and hover on all child
+ *     pills.
  *   - pointerup: release capture. If we never entered drag mode, it was a tap —
- *     let the click fire naturally. If we were dragging, stay in manual scroll
- *     mode (don't restart the animation immediately).
- *   - mouseleave / pointercancel: if not dragging, resume animation from current
- *     scroll position (not from zero).
+ *     let the click fire naturally against the frozen layout, then schedule
+ *     a delayed resume (the click dispatches before the animation restarts).
+ *     If we were dragging, stay in manual scroll mode.
+ *   - mouseleave / pointercancel: if not dragging, resume animation from the
+ *     current scroll position (not from zero).
  *
  * The 5px drag threshold is the industry standard — small enough to feel
  * responsive, large enough to not trigger on accidental micro-movements.
@@ -41,6 +50,7 @@ export function initScrollPause(
   direction: 'horizontal' | 'vertical' = 'horizontal',
 ) {
   let isPaused = false;
+  let isScrollMode = false; // true once the transform→scroll handoff has run
   let isDragging = false;
   let pointerActive = false;
   let pointerId: number | null = null;
@@ -57,12 +67,30 @@ export function initScrollPause(
     ? 'overflowX'
     : 'overflowY';
 
-  /** Pause the CSS animation and switch to manual scroll mode. */
-  function pauseAnimation() {
+  /**
+   * Pause the CSS animation IN PLACE — no layout mutation. The track freezes
+   * exactly where the finger/mouse landed, so the browser resolves a tap's
+   * click event against the layout the user actually saw. (The old code
+   * removed the transform and synced scroll here, shifting every pill a few
+   * px under the finger — the iOS tap-lottery.)
+   */
+  function freezeInPlace() {
     if (isPaused) return;
     isPaused = true;
+    isScrollMode = false;
+    track.style.animationPlayState = 'paused';
+  }
 
-    // Read the current transform from the running animation
+  /**
+   * Hand off from the frozen animation to native scroll mode. Only called
+   * once a drag has actually started (or the user wheels), so the layout
+   * mutation is safe — no click can resolve against this layout mid-drag.
+   */
+  function handoffToScroll() {
+    if (isScrollMode) return;
+    isScrollMode = true;
+
+    // Read the current transform from the frozen animation
     const style = window.getComputedStyle(track);
     const transform = style.transform;
     let offset = 0;
@@ -76,8 +104,7 @@ export function initScrollPause(
       }
     }
 
-    // Pause and remove transform so native scroll takes over
-    track.style.animationPlayState = 'paused';
+    // Remove transform so native scroll takes over
     track.style.transform = 'none';
 
     // Make the clip scrollable
@@ -91,6 +118,7 @@ export function initScrollPause(
   function resumeAnimation() {
     if (!isPaused) return;
     isPaused = false;
+    isScrollMode = false;
     removeDragClass();
 
     // Back to hidden overflow
@@ -146,12 +174,14 @@ export function initScrollPause(
       // setPointerCapture can throw if the pointerId is invalid — ignore
     }
 
-    // Pause the animation immediately so the content doesn't jump
-    pauseAnimation();
+    // Freeze the animation IN PLACE — no layout mutation. The pills stay
+    // exactly where the user's finger landed, so a tap's click event
+    // resolves against the layout they saw (no more iOS tap-lottery).
+    freezeInPlace();
 
     startX = e.clientX;
     startY = e.clientY;
-    startScroll = clip[scrollProp];
+    startScroll = 0;
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -161,10 +191,14 @@ export function initScrollPause(
     const dy = e.clientY - startY;
     const delta = isHorizontal ? dx : dy;
 
-    // Enter drag mode if the pointer moved beyond the threshold
+    // Enter drag mode if the pointer moved beyond the threshold. Only NOW
+    // do the transform→scroll handoff — the pointer is moving, so no click
+    // will resolve against this mutated layout.
     if (!isDragging && Math.abs(delta) > DRAG_THRESHOLD) {
       isDragging = true;
       addDragClass();
+      handoffToScroll();
+      startScroll = clip[scrollProp];
     }
 
     if (isDragging) {
@@ -205,8 +239,16 @@ export function initScrollPause(
         scheduleResume();
       }
       // On mouse, wait for mouseleave to resume
+    } else {
+      // It was a tap. The animation is frozen in place; the browser will now
+      // dispatch a click against the layout the user saw. On touch, schedule
+      // the resume so the animation restarts AFTER the click has resolved.
+      // On mouse, wait for mouseleave — the CSS :hover rule pauses the track,
+      // and an inline resume would defeat it while the mouse is still inside.
+      if (e.pointerType === 'touch') {
+        scheduleResume();
+      }
     }
-    // If not dragging, it was a tap/click — let it fire naturally
   }
 
   function onPointerCancel(e: PointerEvent) {
@@ -261,7 +303,11 @@ export function initScrollPause(
   // ── Wheel (let native scroll handle it, just pause animation) ────────────
 
   function onWheel() {
-    if (!isPaused) pauseAnimation();
+    // Freeze in place, then hand off to native scroll. A wheel gesture means
+    // the user is actively scrolling — no click will resolve against this
+    // layout, so the transform→scroll mutation is safe here.
+    if (!isPaused) freezeInPlace();
+    handoffToScroll();
     cancelResume();
     // Don't schedule resume on wheel — the mouseleave will handle it
     // (wheel events fire while the mouse is still inside the clip)
