@@ -29,21 +29,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
-
-// Read the Next.js build ID so the Pagefind output path is unique per
-// deployment. This prevents stale browser-cache hits from a prior
-// deployment carrying an older CSP — the path itself changes, so the
-// browser MUST fetch fresh copies. Served at:
-//   /_next/static/chunks/app/pagefind-<buildId>/pagefind.js
-const BUILD_ID = (() => {
-  try {
-    return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
-  } catch {
-    return 'default';
-  }
-})();
-
-const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', `pagefind-${BUILD_ID}`);
+const OUT_DIR = path.join(ROOT, '.next', 'static', 'chunks', 'app', 'pagefind');
 
 // Staging directory that mirrors the PUBLIC route tree. Pagefind stores the
 // file path of each indexed document as its result `url`, so a clean route
@@ -160,6 +146,32 @@ function main() {
       const frags = files.filter((f) => f.endsWith('.pf_fragment') || f.endsWith('.pf_index')).length;
       console.log(`[postbuild-pagefind] index written — ${files.length} files, ${frags} shard(s)`);
     } catch { /* index dir may not exist on failure — already logged by pagefind */ }
+
+    // Patch pagefind.js to append a cache-busting query param to the Worker
+    // URL and all WASM shard fetches. Pagefind constructs the Worker URL as
+    // `${basePath}pagefind-worker.js` — without a cache-buster, the browser
+    // serves a stale cached Worker from a prior deployment that carried an
+    // older CSP. We append ?v=<hash> where <hash> is derived from the build
+    // ID so every new deployment gets a unique cache-buster.
+    const BUILD_ID = (() => {
+      try {
+        return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
+      } catch {
+        return String(Date.now());
+      }
+    })();
+    try {
+      const pfJsPath = path.join(OUT_DIR, 'pagefind.js');
+      let pfJs = fs.readFileSync(pfJsPath, 'utf8');
+      pfJs = pfJs.replace(
+        'pagefind-worker.js',
+        `pagefind-worker.js?v=${BUILD_ID}`
+      );
+      fs.writeFileSync(pfJsPath, pfJs);
+      console.log(`[postbuild-pagefind] patched pagefind.js with worker cache-buster ?v=${BUILD_ID}`);
+    } catch (e) {
+      console.warn(`[postbuild-pagefind] could not patch pagefind.js: ${e.message}`);
+    }
   } catch (err) {
     // A Pagefind failure must not break the deploy — search degrades to the
     // curated INDEX. Surface the error loudly but exit 0.
