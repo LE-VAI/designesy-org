@@ -44,7 +44,7 @@ export default function LearnPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" className="surface-page">
+      <main id="main-content" data-pagefind-body className="surface-page">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Learn</p>
           <h1 className="surface-title" data-scramble>Design verification</h1>
