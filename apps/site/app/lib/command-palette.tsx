@@ -346,17 +346,52 @@ export function CommandPalette() {
   // Typed-query search. Prefers Pagefind full-text (body + BM25 ranking);
   // falls back to the curated INDEX filter when Pagefind is unavailable.
   useEffect(() => {
-    const q = normalize(query);
+    let q = normalize(query);
     if (!q) {
       setHits(null);
       setSearching(false);
       return;
     }
 
+    // Faceted search: typing "contract: motion" or "lab: takt" filters
+    // results to that section group. The prefix is stripped before
+    // passing to Pagefind/INDEX scoring.
+    let facetGroup: string | null = null;
+    const facetMatch = q.match(/^([a-z]+):\s*(.*)/);
+    if (facetMatch) {
+      const prefix = facetMatch[1];
+      const FACET_MAP: Record<string, string> = {
+        contract: 'Contract',
+        contracts: 'Contract',
+        lab: 'Lab',
+        labs: 'Lab',
+        review: 'Review',
+        score: 'Score',
+        kit: 'Kit',
+        kits: 'Kit',
+        work: 'Work',
+        company: 'Company',
+        machine: 'Machine',
+        learn: 'Learn',
+      };
+      if (FACET_MAP[prefix]) {
+        facetGroup = FACET_MAP[prefix];
+        q = facetMatch[2].trim();
+        if (!q) {
+          // Just the facet prefix with no query — show all items in that group
+          const facetHits = INDEX.filter((item) => item.group === facetGroup).slice(0, 12);
+          setHits(facetHits);
+          setSearching(false);
+          return;
+        }
+      }
+    }
+
     // Instant local filter FIRST so the UI always shows something with zero
     // perceived latency; Pagefind refines when it resolves.
     const local = INDEX
-      .map((item) => ({ item, s: scoreItem(item, q) }))
+      .map((item) => ({ item, s: scoreItem(item, q), g: item.group }))
+      .filter((r) => facetGroup ? r.g === facetGroup : true)
       .filter((r) => r.s > 0)
       .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
       .map((r) => r.item)
@@ -390,10 +425,15 @@ export function CommandPalette() {
           const href = cleanHref(d.url);
           if (!href) return null; // skip Pagefind internal chunk URLs
           const title = d.meta?.title?.trim() || titleFromHref(href);
-          // excerpt carries matched body context — use it as the row meta so
-          // hits show WHY they matched, not just where they go.
+          // excerpt carries matched body context — preserve <mark> tags
+          // for visual highlighting, strip everything else. Collapse
+          // whitespace and cap at 100 chars so it fits the row meta slot.
           const meta = d.excerpt
-            ? d.excerpt.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 80)
+            ? d.excerpt
+                .replace(/<(?!\/?mark>)[^>]+>/g, '') // keep <mark>, strip rest
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, 100)
             : '';
           return {
             title,
@@ -408,9 +448,13 @@ export function CommandPalette() {
 
       if (cancelled || seq !== searchSeq.current) return;
       const validRows = rows.filter(Boolean) as (SearchItem & { _flagship: boolean })[];
+      // Apply facet filter to Pagefind results too
+      const facetFiltered = facetGroup
+        ? validRows.filter((r) => r.group === facetGroup)
+        : validRows;
       // Flagship surfaces float to the top of their group on exact page hits.
-      validRows.sort((a, b) => Number(b._flagship) - Number(a._flagship));
-      validRows.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
+      facetFiltered.sort((a, b) => Number(b._flagship) - Number(a._flagship));
+      facetFiltered.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
 
       // MERGE — never REPLACE. The local INDEX filter already produced scored,
       // sorted matches (authoritative for our curated routes). Pagefind may
@@ -421,7 +465,7 @@ export function CommandPalette() {
       // keep every local hit, and append ONLY Pagefind rows whose href is not
       // already present locally. Local wins on collision.
       const localHrefs = new Set(local.map((item) => item.href));
-      const pfOnly = validRows.filter((r) => !localHrefs.has(r.href));
+      const pfOnly = facetFiltered.filter((r) => !localHrefs.has(r.href));
       const merged = [
         ...local,
         ...pfOnly.map(({ _flagship, ...rest }) => rest),
@@ -608,11 +652,18 @@ export function CommandPalette() {
       onMouseEnter={() => setActive(index)}
       onClick={() => go(item.href)}
     >
-      <span className="cmdk-item-title">
-        {isZeroState && <span className="cmdk-item-group">{item.group} — </span>}
-        {item.title}
+      <span className="cmdk-item-body">
+        <span className="cmdk-item-title">
+          {isZeroState && <span className="cmdk-item-group">{item.group} — </span>}
+          {item.title}
+        </span>
+        {item.meta && (
+          <span
+            className="cmdk-item-meta"
+            dangerouslySetInnerHTML={{ __html: item.meta }}
+          />
+        )}
       </span>
-      {item.meta && <span className="cmdk-item-meta">{item.meta}</span>}
       <span className="cmdk-item-arrow" aria-hidden="true">→</span>
     </button>
   );
@@ -657,7 +708,7 @@ export function CommandPalette() {
                 ref={inputRef}
                 type="text"
                 className="cmdk-input"
-                placeholder="Search pages, contracts, endpoints…"
+                placeholder="Search pages, contracts, endpoints…  (try “contract: motion”)"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onInputKeyDown}
@@ -670,6 +721,9 @@ export function CommandPalette() {
                 autoComplete="off"
               />
               <kbd className="cmdk-esc" aria-hidden="true">esc</kbd>
+              {searching && results.length > 0 && (
+                <span className="cmdk-searching-dot" aria-hidden="true" title="Searching body content…" />
+              )}
             </div>
 
             <div
