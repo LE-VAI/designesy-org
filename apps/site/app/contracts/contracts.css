@@ -1,0 +1,194 @@
+/* contracts route-only styles — extracted from globals.css.
+   Plain .css imported in contracts/page.tsx — Next.js code-splits
+   this to the /contracts route only. */
+
+.demo-swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.demo-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.demo-swatch-chip {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.demo-swatch-name {
+  font-size: 0.58rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.04em;
+  text-align: center;
+  font-family: var(--mono);
+}
+
+.demo-radius-pair {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.demo-radius-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.demo-radius-box {
+  width: 4.5rem;
+  height: 4.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.demo-radius-box.r-default { border-radius: 6px; }
+
+.demo-radius-box.r-sm { border-radius: 4px; }
+
+.demo-radius-box.r-none { border-radius: 0; }
+
+.demo-radius-tag {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.demo-easing {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.demo-easing-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.demo-easing-row > span:first-child {
+  font-size: 0.58rem;
+  color: var(--muted-dim);
+  font-family: var(--mono);
+  min-width: 5.5rem;
+  white-space: nowrap;
+}
+
+.demo-easing-track {
+  flex: 1;
+  height: 1.5rem;
+  border-radius: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-easing-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--signal-light);
+  transform: translateY(-50%);
+  animation: demo-easing-slide 2.5s var(--ease) infinite;
+}
+
+.demo-easing-row[data-ease="out"] .demo-easing-dot { animation-timing-function: var(--ease-out); }
+
+.demo-easing-row[data-ease="in-out"] .demo-easing-dot { animation-timing-function: var(--ease-in-out); }
+
+.demo-easing-row[data-ease="drawer"] .demo-easing-dot { animation-timing-function: var(--ease-drawer); }
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-easing-dot {
+    animation: none;
+    left: 50%;
+  }
+}
+
+.demo-state-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  align-items: center;
+}
+
+.demo-state-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 16rem;
+}
+
+.demo-state-tag {
+  font-size: 0.58rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-width: 4rem;
+}
+
+.demo-state-btn {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--radius-sm);
+  cursor: default;
+  flex: 1;
+  text-align: center;
+}
+
+.demo-state-btn.s-default {
+  background: var(--signal);
+  color: #fff;
+  border: 1px solid var(--signal);
+}
+
+.demo-state-btn.s-hover {
+  background: var(--signal-light);
+  color: #fff;
+  border: 1px solid var(--signal-light);
+}
+
+.demo-state-btn.s-active {
+  background: var(--signal);
+  color: #fff;
+  border: 1px solid var(--signal);
+  transform: scale(0.97);
+}
+
+.demo-state-btn.s-focus {
+  background: var(--signal);
+  color: #fff;
+  border: 1px solid var(--signal);
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.demo-state-btn.s-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+

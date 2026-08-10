@@ -1,0 +1,86 @@
+/* labs/acoustics route-only styles — extracted from globals.css.
+   Plain .css imported in labs/acoustics/page.tsx — Next.js code-splits
+   this to the /labs/acoustics route only. */
+
+.cue-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  max-width: 100%;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--line-faint);
+}
+
+.cue-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 0.85rem;
+  background: var(--paper);
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+  border: none;
+  font: inherit;
+  min-width: 0;
+  transition: background 0.18s var(--ease), transform 160ms var(--ease-out);
+}
+
+.cue-cell:hover {
+  background: var(--surface-hover);
+}
+
+.cue-cell:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: -2px;
+  background: var(--surface-hover);
+}
+
+.cue-cell:active {
+  transform: scale(0.97);
+}
+
+.cue-cell-num {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cue-cell-token {
+  font-size: 0.8rem;
+  color: var(--signal-light);
+  font-family: var(--mono);
+}
+
+.cue-cell-cue {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.cue-cell-role {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .cue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cue-cell:active {
+    transform: none;
+  }
+  .cue-cell {
+    transition: background 0.15s;
+  }
+}
+

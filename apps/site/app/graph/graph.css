@@ -1,0 +1,251 @@
+/* graph route-only styles — extracted from globals.css.
+   Plain .css imported in graph/page.tsx — Next.js code-splits
+   this to the /graph route only. */
+
+.chain-rail {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+.chain-rail::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: var(--line-faint);
+}
+
+.chain-cell {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.chain-rail-node {
+  position: absolute;
+  left: -1.35rem;
+  top: 1.1rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--line-strong);
+  z-index: 1;
+  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.chain-cell:last-child .chain-rail-node {
+  border-color: var(--signal);
+  background: var(--signal-dim);
+}
+
+.chain-cell-main {
+  position: relative;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.chain-cell-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 30% 0%,
+    var(--signal-dim),
+    transparent 70%
+  );
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 250ms var(--ease-out);
+}
+
+.chain-cell-main::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--signal);
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 400ms var(--ease-out);
+}
+
+.chain-cell-main > * {
+  position: relative;
+  z-index: 1;
+}
+
+.chain-cell:hover .chain-cell-main {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.chain-cell:hover .chain-cell-main::before {
+  opacity: 0.45;
+}
+
+.chain-cell:hover .chain-cell-main::after {
+  transform: translateX(100%);
+}
+
+.chain-cell:hover .chain-rail-node {
+  border-color: var(--signal-light);
+  background: var(--signal-dim);
+}
+
+.chain-cell-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.chain-cell-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--signal);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  transition: color 200ms var(--ease);
+}
+
+.chain-cell:hover .chain-cell-num {
+  color: var(--signal-light);
+}
+
+.chain-cell-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.chain-cell-meter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.chain-cell-meter-bar {
+  width: 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  transition: height 200ms var(--ease-out);
+}
+
+.chain-cell:hover .chain-cell-meter-bar {
+  height: 8px;
+}
+
+.chain-cell-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--signal);
+  box-shadow: 0 0 6px var(--signal-dim);
+  transition: width 400ms var(--ease-out), background 200ms var(--ease);
+}
+
+.chain-cell:hover .chain-cell-meter-fill {
+  background: var(--signal-light);
+}
+
+.chain-cell-meter-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 1rem;
+  text-align: right;
+}
+
+.chain-cell-definition {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 0.65rem;
+}
+
+.chain-cell-examples {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.chain-cell-examples li {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+  line-height: 1.45;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.chain-cell-examples li::before {
+  content: "·";
+  position: absolute;
+  left: 0.35rem;
+  color: var(--signal);
+  font-weight: 700;
+}
+
+.chain-cell-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.65rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal-light);
+  background: var(--signal-dim);
+  border: 1px solid color-mix(in srgb, var(--signal) 15%, transparent);
+  border-radius: 3px;
+}
+
+@media (max-width: 720px) {
+  .chain-cell-header {
+    flex-wrap: wrap;
+  }
+
+  .chain-cell-meter {
+    width: 100%;
+    margin-top: 0.35rem;
+  }
+
+  .chain-cell-meter-bar {
+    flex: 1 1 0;
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chain-cell-main::before,
+  .chain-cell-main::after {
+    display: none;
+  }
+  .chain-cell-meter-fill {
+    transition: none;
+  }
+  .chain-cell:hover .chain-cell-meter-bar {
+    height: 6px;
+  }
+}
+
