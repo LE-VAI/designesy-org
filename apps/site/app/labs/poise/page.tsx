@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './poise.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { HapticsToggle } from '../../lib/haptics-toggle';

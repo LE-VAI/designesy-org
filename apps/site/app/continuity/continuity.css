@@ -1,0 +1,214 @@
+/* continuity route-only styles — extracted from globals.css.
+   Plain .css imported in continuity/page.tsx — Next.js code-splits
+   this to the /continuity route only. */
+
+.continuity-card-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 720px) {
+  .continuity-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.continuity-card {
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.15rem;
+  min-height: 100%;
+}
+
+.continuity-card-tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--signal-light);
+  margin-bottom: 0.55rem;
+}
+
+.continuity-card-title {
+  font-size: 0.98rem;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.4rem;
+  font-weight: 650;
+}
+
+.continuity-card-body {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-wrap: pretty;
+}
+
+.continuity-ladder {
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.continuity-ladder-row {
+  display: grid;
+  gap: 0.35rem 1rem;
+  padding: 1rem 1.1rem;
+  border-top: 1px solid var(--line-faint);
+  background: var(--surface);
+}
+
+.continuity-ladder-row:first-child {
+  border-top: 0;
+}
+
+@media (min-width: 640px) {
+  .continuity-ladder-row {
+    grid-template-columns: 7.5rem 1fr;
+    align-items: baseline;
+  }
+}
+
+.continuity-ladder-name {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--signal-light);
+}
+
+.continuity-ladder-body strong {
+  display: block;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.2rem;
+  font-weight: 650;
+}
+
+.continuity-ladder-body span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-wrap: pretty;
+}
+
+.continuity-panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.35rem 1.25rem 1.5rem;
+}
+
+.waitlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.waitlist-hp {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.waitlist-field {
+  margin-bottom: 0.95rem;
+}
+
+.waitlist-field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.4rem;
+}
+
+.waitlist-optional {
+  color: var(--muted-dim);
+  letter-spacing: 0;
+  text-transform: none;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
+.waitlist-field input,
+.waitlist-field select,
+.waitlist-field textarea {
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.8rem;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition: border-color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease);
+}
+
+.waitlist-field input:hover,
+.waitlist-field select:hover,
+.waitlist-field textarea:hover {
+  border-color: var(--line-strong);
+}
+
+.waitlist-field input:focus,
+.waitlist-field select:focus,
+.waitlist-field textarea:focus {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+  border-color: var(--signal-light);
+}
+
+.waitlist-field input:disabled,
+.waitlist-field select:disabled,
+.waitlist-field textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.waitlist-field textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
+.waitlist-row {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .waitlist-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.waitlist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.waitlist-trust {
+  color: var(--muted-dim);
+  font-size: 0.82rem;
+  max-width: 28rem;
+  text-wrap: pretty;
+}
+
+.waitlist-trust a {
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.waitlist-trust a:hover {
+  color: var(--ink);
+  border-color: var(--signal);
+}
+

@@ -1,0 +1,68 @@
+/* labs/poise route-only styles — extracted from globals.css.
+   Plain .css imported in labs/poise/page.tsx — Next.js code-splits
+   this to the /labs/poise route only. */
+
+.wordmark-hero {
+  font-size: clamp(3.2rem, 3.2rem + 2.5vw, 5.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.poise-wordmark {
+  font-size: clamp(2.4rem, 2.4rem + 1.8vw, 3.8rem);
+  margin-bottom: 0.75rem;
+}
+
+.poise-reduced-demo {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  max-width: 14rem;
+  margin-inline: auto;
+}
+
+.poise-reduced-bar {
+  flex: 1;
+  height: 2rem;
+  border-radius: 2px;
+}
+
+.poise-reduced-bar--on {
+  background: var(--signal-light);
+  opacity: 0.35;
+  animation: poise-breath 3.2s var(--ease-in-out) infinite;
+}
+
+.poise-reduced-bar--off {
+  background: var(--surface-hover);
+  border: 1px solid var(--line);
+  opacity: 0.5;
+}
+
+.poise-reduced-labels {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.poise-reduced-tag {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poise-reduced-bar--on {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+

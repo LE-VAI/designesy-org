@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './acoustics.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { SoundToggle } from '../../lib/sound-toggle';
