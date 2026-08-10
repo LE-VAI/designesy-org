@@ -166,3 +166,10 @@
   }
 }
 
+/* Mobile override — migrated from globals.css (cascade order fix) */
+@media (max-width: 720px) {
+  .badge-gallery {
+    grid-template-columns: 1fr;
+  }
+}
+

@@ -308,3 +308,14 @@
   }
 }
 
+/* Mobile overrides — migrated from globals.css (cascade order fix) */
+@media (max-width: 560px) {
+  .pricing-faq-q {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+  }
+  .pricing-faq-a {
+    padding: 0 1rem 1rem;
+  }
+}
+
