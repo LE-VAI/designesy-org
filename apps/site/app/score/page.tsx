@@ -105,8 +105,7 @@ export default async function ScorePage({
               </span>
               . The <strong>Score</strong> engine runs 40 checks — motion, typography, color,
               accessibility, identity. <strong>Drift</strong> detects AI-generated UI drift —
-              fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong>
-              probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
+              fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong> probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
               <strong> Guardrails</strong> emits a frozen build-contract bundle — DTCG tokens,
               stylelint config, agent rules. The composite grade synthesizes score, drift, and
               readiness into one defensible number.

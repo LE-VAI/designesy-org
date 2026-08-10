@@ -133,7 +133,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | security | 5 | Security headers — CSP, X-Content-Type-Options, referrer policy |
 | spec | 4 | Spec conformance — `lang` attr, `charset`, doctype |
 
-No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 99.1% A.
+No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 99.2% A.
 
 ## Standards positioning
 
