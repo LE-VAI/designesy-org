@@ -1,0 +1,310 @@
+/* pricing route-only styles — extracted from globals.css.
+   Plain .css imported in pricing/page.tsx — Next.js code-splits
+   this to the /pricing route only. */
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .pricing-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pricing-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pricing-card-name {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--signal-light);
+}
+
+.pricing-card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  line-height: 1.05;
+}
+
+.pricing-card-price-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-card-price-suffix {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.pricing-card-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-wrap: pretty;
+  line-height: 1.5;
+}
+
+.pricing-card-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 0 auto;
+}
+
+.pricing-card-bullets li {
+  font-size: 0.875rem;
+  color: var(--ink);
+  line-height: 1.5;
+  text-wrap: pretty;
+  padding-inline-start: 1rem;
+  position: relative;
+}
+
+.pricing-card-bullets li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.55rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: var(--signal-light);
+  opacity: 0.85;
+}
+
+.pricing-card-cta {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.pricing-cta-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--signal);
+  color: var(--paper);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-quick) var(--ease-out);
+}
+
+.pricing-cta-link:hover {
+  background: var(--signal-light);
+}
+
+.pricing-cta-link:active {
+  transform: scale(0.97);
+}
+
+.pricing-cta-link:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.pricing-desk {
+  background: var(--surface);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pricing-desk-lede {
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.5;
+  text-wrap: pretty;
+  letter-spacing: -0.01em;
+}
+
+.pricing-desk-note {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-wrap: pretty;
+  line-height: 1.55;
+}
+
+.pricing-desk-note a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--signal-light);
+  text-decoration-thickness: 1px;
+}
+
+.pricing-desk-note a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.pricing-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.pricing-faq-item {
+  border-top: 1px solid var(--line-faint);
+  background: var(--surface);
+}
+
+.pricing-faq-item:first-child {
+  border-top: 0;
+}
+
+.pricing-faq-q {
+  list-style: none;
+  cursor: pointer;
+  padding: 1rem 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  user-select: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.pricing-faq-q::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-faq-q:hover {
+  background: var(--surface-hover);
+}
+
+.pricing-faq-item[open] .pricing-faq-q {
+  background: var(--surface-raised);
+}
+
+.pricing-faq-a {
+  padding: 0 1.15rem 1.1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+  max-width: 580px;
+}
+
+@media (max-width: 720px) {
+  .pricing-card-price-value {
+    font-size: 1.65rem;
+  }
+  .pricing-desk {
+    padding: 1.25rem 1.1rem;
+  }
+}
+
+.pricing-compare {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 0.875rem;
+}
+
+.pricing-compare thead {
+  background: var(--surface);
+}
+
+.pricing-compare th {
+  padding: 0.85rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line-faint);
+  white-space: nowrap;
+}
+
+.pricing-compare th:first-child {
+  padding-left: 1rem;
+}
+
+.pricing-compare th:not(:first-child) {
+  text-align: center;
+}
+
+.pricing-compare td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--line-faint);
+  color: var(--muted);
+  vertical-align: middle;
+}
+
+.pricing-compare tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pricing-compare td:first-child {
+  color: var(--ink);
+  font-weight: 500;
+  padding-left: 1rem;
+}
+
+.pricing-compare td:not(:first-child) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pricing-compare-check {
+  color: var(--signal-light);
+  font-weight: 600;
+}
+
+.pricing-compare-dash {
+  color: var(--muted-dim);
+}
+
+@media (max-width: 720px) {
+  .pricing-compare {
+    font-size: 0.8rem;
+  }
+  .pricing-compare th,
+  .pricing-compare td {
+    padding: 0.55rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-compare {
+    font-size: 0.75rem;
+  }
+  .pricing-compare th,
+  .pricing-compare td {
+    padding: 0.45rem 0.3rem;
+  }
+}
+
