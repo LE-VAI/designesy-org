@@ -124,6 +124,7 @@ def is_route_only(block, route_unique):
 
 
 def extract_from_at_rule(block, route_unique):
+    """Extract an @media block only if ALL inner rules are route-unique."""
     if not block["inner_blocks"]:
         return False
     for ib in block["inner_blocks"]:
@@ -132,6 +133,45 @@ def extract_from_at_rule(block, route_unique):
         if not is_route_only(ib, route_unique):
             return False
     return True
+
+
+def split_at_rule(block, route_unique):
+    """
+    For @media blocks with MIXED selectors (some route-unique, some shared):
+    extract only the route-unique inner rules, leaving shared rules in globals.css.
+
+    Returns (route_rules_text, remaining_rules_text) or None if nothing to extract.
+    This prevents the cascade-order bug where desktop rules move to route CSS
+    but their mobile @media overrides stay in globals.css (which loads first).
+    """
+    if not block["inner_blocks"]:
+        return None
+
+    # Find the @media selector (e.g. "@media (max-width: 720px)")
+    at_selector = block["text"].split("{")[0].strip()
+
+    route_rules = []
+    remaining_rules = []
+    has_route = False
+    has_remaining = False
+
+    for ib in block["inner_blocks"]:
+        if ib["type"] == "comment":
+            # Keep comments with whichever rules follow them
+            # Simple heuristic: keep in remaining (globals)
+            remaining_rules.append(ib["text"])
+            continue
+        if is_route_only(ib, route_unique):
+            route_rules.append(ib["text"])
+            has_route = True
+        else:
+            remaining_rules.append(ib["text"])
+            has_remaining = True
+
+    if not has_route:
+        return None
+
+    return (route_rules, at_selector, remaining_rules if has_remaining else None)
 
 
 def main():
@@ -157,21 +197,39 @@ def main():
 
     blocks = parse_css_blocks(css_text)
     extract_indices = set()
+    split_blocks = []  # (block_index, route_rules, at_selector, remaining_rules)
     for idx, block in enumerate(blocks):
         if block["type"] == "comment":
             continue
         if block["type"] == "rule" and is_route_only(block, route_unique):
             extract_indices.add(idx)
-        elif block["type"] == "at-rule" and extract_from_at_rule(block, route_unique):
-            extract_indices.add(idx)
+        elif block["type"] == "at-rule":
+            if extract_from_at_rule(block, route_unique):
+                # All inner rules are route-unique — extract whole block
+                extract_indices.add(idx)
+            else:
+                # Mixed @media block — try to split route-unique rules out
+                split_result = split_at_rule(block, route_unique)
+                if split_result:
+                    route_rules, at_selector, remaining_rules = split_result
+                    split_blocks.append((idx, route_rules, at_selector, remaining_rules))
 
     print(f"Marked {len(extract_indices)} blocks for extraction")
+    print(f"Split {len(split_blocks)} mixed @media blocks (route-unique rules extracted, shared rules kept)")
 
-    if not extract_indices:
+    if not extract_indices and not split_blocks:
         print("No blocks to extract.")
         return
 
     extracted_texts = [blocks[idx]["text"] for idx in sorted(extract_indices)]
+
+    # Add split @media blocks: wrap route-unique rules in a new @media block
+    for idx, route_rules, at_selector, _ in split_blocks:
+        media_block = f"{at_selector} {{\n"
+        for rule in route_rules:
+            media_block += f"  {rule}\n"
+        media_block += "}"
+        extracted_texts.append(media_block)
 
     output_path = ROOT / route_dir / output_name
     module_content = f"/* {route_dir} route-only styles — extracted from globals.css.\n"
@@ -180,10 +238,34 @@ def main():
     for text in extracted_texts:
         module_content += text + "\n\n"
 
+    # Build the new globals.css: remove fully-extracted blocks, and for
+    # split @media blocks, replace them with only the shared (remaining) rules
     extract_ranges = sorted(
         [(blocks[idx]["start"], blocks[idx]["end"]) for idx in extract_indices],
         key=lambda r: r[0],
     )
+
+    # For split blocks, we need to replace the block text (not just remove it)
+    # Build a map of block index -> replacement text
+    split_replacements = {}
+    for idx, route_rules, at_selector, remaining_rules in split_blocks:
+        if remaining_rules:
+            # Rebuild the @media block with only the shared rules
+            replacement = f"{at_selector} {{\n"
+            for rule in remaining_rules:
+                replacement += f"  {rule}\n"
+            replacement += "}"
+            split_replacements[idx] = replacement
+        else:
+            # No shared rules left — mark for full removal
+            extract_indices.add(idx)
+
+    # Rebuild extract_ranges (may have changed)
+    extract_ranges = sorted(
+        [(blocks[idx]["start"], blocks[idx]["end"]) for idx in extract_indices],
+        key=lambda r: r[0],
+    )
+
     new_css_parts = []
     last_end = 0
     for start, end in extract_ranges:
@@ -191,6 +273,34 @@ def main():
         last_end = end
     new_css_parts.append(css_text[last_end:])
     new_css = "".join(new_css_parts)
+
+    # Apply split replacements (insert shared-only @media blocks where full blocks were removed)
+    for idx, replacement in split_replacements.items():
+        # Insert the replacement text at the position where the block was
+        # This is a simplification — for now, append at the end
+        pass  # The split block's shared rules are kept by not adding idx to extract_indices
+
+    # Actually, for split blocks with remaining rules, we need a different approach:
+    # replace the block text in-place instead of removing it
+    if split_replacements:
+        # Rebuild: instead of removing split blocks, replace their content
+        new_css_parts = []
+        last_end = 0
+        all_changes = []
+        for idx in extract_indices:
+            all_changes.append((blocks[idx]["start"], blocks[idx]["end"], None))
+        for idx, replacement in split_replacements.items():
+            all_changes.append((blocks[idx]["start"], blocks[idx]["end"], replacement))
+        all_changes.sort(key=lambda x: x[0])
+
+        for start, end, replacement in all_changes:
+            new_css_parts.append(css_text[last_end:start])
+            if replacement:
+                new_css_parts.append(replacement)
+            last_end = end
+        new_css_parts.append(css_text[last_end:])
+        new_css = "".join(new_css_parts)
+
     new_css = re.sub(r"\n{4,}", "\n\n\n", new_css)
 
     print(f"New globals.css: {len(new_css)} bytes (reduction: {len(css_text) - len(new_css)} bytes)")
