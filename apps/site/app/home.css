@@ -1,0 +1,1033 @@
+/* Homepage-only styles — extracted from globals.css.
+   Plain .css imported in page.tsx — Next.js App Router code-splits
+   this to the / route only. Class names are un-hashed.
+   The JSX keeps using className="hero" etc. unchanged. */
+
+.hero {
+  position: relative;
+  /* Optical (not mathematical) vertical centering: more bottom padding than
+     top seats the instrument block slightly above the true midpoint, so the
+     frame reads balanced instead of leaving a dead void under the hero. */
+  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(5.5rem, 12vw, 9rem);
+  /* Dense-hero rhythm (Stage 7 polish): mid-band of the 50–75svh dense-hero
+     range — enough presence to lead, not so tall it strands a void before the
+     pillars. px floor/ceiling (not svh) keep the height stable under browser
+     zoom; svh (not vh) avoids the mobile URL-bar jump. */
+  min-height: clamp(520px, 70svh, 880px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 1.6rem;
+}
+
+.hero-title {
+  margin-bottom: 1.35rem;
+  /* LCP element: ensure it paints immediately, not gated by entrance animation */
+  opacity: 1;
+  animation: none;
+}
+
+.hero-sub {
+  font-size: clamp(1rem, 1rem + 0.1vw, 1.1rem);
+  line-height: 1.45;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+  text-wrap: pretty;
+  max-width: min(100%, 640px);
+}
+
+.hero-hint {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--muted-dim);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.section-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
+  font-weight: 400;
+  letter-spacing: -0.018em;
+  line-height: 1.08;
+  margin-bottom: 2rem;
+  max-width: min(100%, 820px);
+  text-wrap: balance;
+  font-variation-settings: 'opsz' 30;
+}
+
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.pillar {
+  display: grid;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+@supports (grid-template-rows: subgrid) {
+  .pillar {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.75rem;
+  }
+  .pillar-number { grid-row: 1; }
+  .pillar h3 { grid-row: 2; }
+  .pillar p { grid-row: 3; }
+}
+
+.pillar:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.pillar:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pillar:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.pillar-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.pillar h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+
+.pillar p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.surface-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.surface-card-meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.45rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.surface-card-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+  text-wrap: balance;
+}
+
+.surface-card-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.surface-card-arrow {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.surface-card-label,
+.surface-card-desc,
+.surface-card-arrow {
+  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+button.pillar {
+  position: relative;
+  overflow: hidden;
+}
+
+button.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out);
+  z-index: 0;
+}
+
+button.pillar:hover::before {
+  transform: scaleY(1);
+}
+
+.field-card-title,
+.field-card-lede {
+  transition: transform 200ms var(--ease-out);
+}
+
+.principle-layout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 1.6vw, 1.25rem);
+}
+
+.principle-cell {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.85rem, 1.4vw, 1.1rem);
+}
+
+.health-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: clamp(1.05rem, 2vw, 1.5rem);
+}
+
+.health-rack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
+  min-width: 0;
+}
+
+.health-rack-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  transition: opacity 240ms var(--ease-out);
+}
+
+.health-rack-svg {
+  /* Floor set below the smallest target cell width so the gauge scales with
+     the viewport instead of pinning at 70px. At ≤720 the mobile block
+     (below) further tightens this; the floor here just prevents collapse. */
+  width: clamp(48px, 7vw, 88px);
+  height: auto;
+  display: block;
+}
+
+.health-rack-track {
+  stroke: var(--line-faint);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out);
+}
+
+.health-rack-value {
+  stroke: var(--signal-light);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
+}
+
+.health-rack-tip {
+  fill: var(--signal-light);
+  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
+}
+
+.health-rack-numeral {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: fill 240ms var(--ease-out);
+}
+
+.health-rack-unit {
+  font-size: 5.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  fill: var(--muted-dim);
+}
+
+.health-rack-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 240ms var(--ease-out);
+}
+
+@media (max-width: 640px) {
+  .principle-cell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 860px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(1rem, 2.6vw, 2rem);
+  flex-wrap: wrap;
+}
+
+.section-heading-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--surface);
+}
+
+.section-heading-badge-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.section-heading-badge-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.section-heading-badge-numeral {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.section-heading-badge-unit {
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+}
+
+.section-more {
+  margin-top: 2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-rack-module,
+  .health-rack-value,
+  .health-rack-track,
+  .health-rack-tip,
+  .health-rack-numeral,
+  .health-rack-label {
+    transition: none;
+  }
+}
+
+.section-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
+  font-weight: 400;
+  letter-spacing: -0.018em;
+  line-height: 1.08;
+  margin-bottom: 2rem;
+  max-width: min(100%, 820px);
+  text-wrap: balance;
+  font-variation-settings: 'opsz' 30;
+}
+
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.pillar {
+  display: grid;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+@supports (grid-template-rows: subgrid) {
+  .pillar {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0.75rem;
+  }
+  .pillar-number { grid-row: 1; }
+  .pillar h3 { grid-row: 2; }
+  .pillar p { grid-row: 3; }
+}
+
+.pillar:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-raised);
+}
+
+.pillar:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pillar:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.pillar-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.pillar h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+
+.pillar p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.surface-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.surface-card-meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  margin-bottom: 0.45rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.surface-card-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+  text-wrap: balance;
+}
+
+.surface-card-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.surface-card-arrow {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.surface-card-label,
+.surface-card-desc,
+.surface-card-arrow {
+  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+button.pillar {
+  position: relative;
+  overflow: hidden;
+}
+
+button.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 200ms var(--ease-out);
+  z-index: 0;
+}
+
+button.pillar:hover::before {
+  transform: scaleY(1);
+}
+
+.field-card-title,
+.field-card-lede {
+  transition: transform 200ms var(--ease-out);
+}
+
+.principle-layout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 1.6vw, 1.25rem);
+}
+
+.principle-cell {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(0.85rem, 1.4vw, 1.1rem);
+}
+
+.health-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: clamp(1.05rem, 2vw, 1.5rem);
+}
+
+.health-rack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
+  min-width: 0;
+}
+
+.health-rack-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  transition: opacity 240ms var(--ease-out);
+}
+
+.health-rack-svg {
+  width: clamp(48px, 7vw, 88px);
+  height: auto;
+  display: block;
+}
+
+.health-rack-track {
+  stroke: var(--line-faint);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out);
+}
+
+.health-rack-value {
+  stroke: var(--signal-light);
+  stroke-width: 4.5;
+  fill: none;
+  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
+}
+
+.health-rack-tip {
+  fill: var(--signal-light);
+  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
+}
+
+.health-rack-numeral {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: fill 240ms var(--ease-out);
+}
+
+.health-rack-unit {
+  font-size: 5.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  fill: var(--muted-dim);
+}
+
+.health-rack-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 240ms var(--ease-out);
+}
+
+@media (max-width: 640px) {
+  .principle-cell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 860px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.section-more {
+  margin-top: 2rem;
+}
+
+.state-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+button.pillar {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.fade-up-delay-5 {
+  animation-delay: 0.40s;
+}
+
+.fade-in {
+  opacity: 0;
+  /* fill-mode: both — unlike .fade-up, fadeIn has no `from` state (only `to:
+     opacity:1`), so `backwards` would leave the element at its base `opacity:0`
+     (invisible) after animation ends. `both` persists the `to` state (opacity:1)
+     which is the desired final visibility. No transform in this keyframe, so
+     no compositing-layer scroll-stick issue. */
+  animation: fadeIn 0.5s var(--ease) both;
+}
+
+.field-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.field-card-title {
+  font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.field-card-lede {
+  font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.field-card-desc {
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 28rem;
+}
+
+.field-card-arrow {
+  margin-top: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-dim);
+  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.mark-glyph-core,
+.mark-glyph-ring {
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease),
+    background 180ms var(--ease), opacity 180ms var(--ease);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.mark-glyph-core {
+  position: absolute;
+  inset: 9px;
+  background: var(--signal);
+  transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
+}
+
+.mark-glyph-ring {
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--signal-dim);
+  opacity: 0.9;
+  transform: translateZ(0);
+}
+
+.hero-construction {
+  position: absolute;
+  inset: 0;
+  z-index: 0;            /* behind foreground UI (content z-index: 3) */
+  pointer-events: none;  /* decorative layer; content stays interactive above */
+  overflow: hidden;
+}
+
+@media (max-width: 859px) {
+  /* On narrow viewports the construction field would crowd the input — step back. */
+  .hero-construction { display: none; }
+}
+
+.hero-construction-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hc-arc-ghost { stroke: var(--line-strong); opacity: 0.5; stroke-dasharray: 1 0; }
+
+.hc-arc-lit   { stroke: var(--signal-light); opacity: 0.85; }
+
+.hc-arc-tick  { fill: var(--line-strong); opacity: 0.7; }
+
+.hero-architectural {
+  min-height: min(880px, 96vh);
+  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(3.5rem, 7vw, 6rem);
+  text-align: center;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: var(--maxw-wide);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.hero-architectural .hero-eyebrow {
+  color: var(--muted);
+  margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+.hero-display {
+  font-size: clamp(2.35rem, 2.35rem + 3.2vw, 4.9rem);
+  font-weight: 340;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0 0 clamp(1.25rem, 2.6vw, 2rem);
+  /* Null the global h1-h4 text-wrap:balance for THIS title only: balance
+     re-centers each wrapped line's inline box so the two display lines sit
+     optically off-axis against the clean-centered eyebrow and sub. The
+     lines are explicit single-line blocks; plain centered text-align is
+     the correct register. */
+  text-wrap: unset;
+  font-variation-settings: 'opsz' 32;
+}
+
+@media (max-width: 720px) {
+  .hero-display {
+    font-size: clamp(1.4rem, 1.2rem + 1vw, 3.2rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+  }
+}
+
+.hero-display-line {
+  display: block;
+  white-space: nowrap; /* prevent line-wrap during scramble; min-width on the
+    word created dead-air gaps between short words and the period, especially
+    on mobile. nowrap on the line achieves the 2-line guarantee without it. */
+  /* line-height 1.02 reserves ~zero space below the baseline, so descenders
+     (g/y/j/p/q — "yours", "legitimate", "sticky", etc.) render OUTSIDE the
+     content box and overflow:hidden clips them FLAT. padding-bottom extends
+     the clip region down to contain the full descender (~0.22em ≈ 16.6px at
+     the 75px display size, safe for Inter/architecture at wght 340, opsz 32),
+     and the equal negative margin-bottom cancels the added block height so
+     the visual gap between the two lines is unchanged. overflow:hidden still
+     guarantees the 2-line no-wrap during the scramble. */
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
+  /* INLINE (horizontal) clip bleed — the same trick on the left/right axis.
+     The effective line box caps at ~1068px inside the padding chain
+     (site-shell 1180 maxw − 24px pad → hero-content − 32px pad), but at the
+     desktop display size the longest rotator word ("accountable.", now
+     swapped for "liable.") measured ~1135.5px natural nowrap — 67.5px WIDER than the box. white-space:nowrap
+     already guarantees no wrap, so overflow:hidden's only live effect is to
+     SHEAR the trailing glyph: the Commander's "accountabl[e]" cut-off (and
+     the period vanishing with it). Mobile is unaffected (5.9vw auto-scales
+     every word under the box). Extend the clip region 1ch outward on both
+     inline sides with equal negative margins so the widest word renders its
+     final glyph + period inside the clip region; padding keeps the centered
+     text optically unmoved and the negative margins preserve the block's
+     outer footprint (no reflow of the eyebrow/sub around it). 1.6ch ≈
+     77px/side at 78px covers BOTH the ~34px/side longest-word shear AND
+     the trailing period (which sits another ~20px past the word's final
+     glyph) with generous headroom. */
+  padding-inline: 1.6ch;
+  margin-inline: -1.6ch;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.hero-display-line.is-accent { color: var(--ink); }
+
+.hero-word-free {
+  /* No padding-left — the U+00A0 alone gives the natural word space. The old
+     0.14em "optical kern" double-spaced the gap (nbsp ≈ 0.25em + 0.14em pad
+     ≈ 0.39em vs the ~0.25em a real Inter word space holds), and the hard
+     background-clip boundary on the left edge of the f read as a second
+     barrier on top of the space. At rest the gradient band is parked fully
+     off-word (background-size: 250%), so there is no clip artifact to defend
+     against — the padding was dead weight that only widened the gap. */
+  padding-left: 0;
+  /* Flat base face (#f5f5f7-adjacent light gray) with a NARROW pure-white
+     band at 47–53%. With background-size 250% the band lives at container
+     coords 117.5–132.5% — fully off the right edge of the word at rest, so
+     the resting face reads as flat typography, not a gradient. The band is
+     tighter (6% of image) and brighter (pure #ffffff) than the old 12% mix. */
+  background-image: linear-gradient(
+    104deg,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%),
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 47%,
+    #ffffff 50%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 53%,
+    color-mix(in srgb, var(--ink) 70%, #ffffff 30%)
+  );
+  background-size: 250% 100%;
+  background-position: 0% 0; /* band parked fully off the right edge */
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent; /* fallback guard — overridden below where clip is unsupported */
+  /* No glow — the shimmer band alone carries the emphasis. A text-shadow
+     here reads as a static halo that fights the sweep. */
+  /* Sweep left → right on an infinite loop with a built-in dwell. Because
+     the default background-repeat tiles the gradient seamlessly (edge stops
+     match), and both park positions leave the band fully off-word, the loop
+     wrap is invisible and the band is never parked ON the word — the "stuck
+     gradient" failure the old 118%/-118% keyframes produced. */
+  animation: hero-free-shimmer 3.6s cubic-bezier(0.42, 0, 0.2, 1) 1s infinite;
+}
+
+[data-theme="light"] .hero-word-free {
+  background-image: linear-gradient(
+    104deg,
+    var(--ink),
+    var(--ink) 47%,
+    color-mix(in srgb, var(--signal-light) 82%, var(--ink) 18%) 50%,
+    var(--ink) 53%,
+    var(--ink)
+  );
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-word-free {
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+    background-image: none;
+    text-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word-free {
+    animation: none;
+    background-image: none;
+    color: var(--ink);
+    -webkit-text-fill-color: currentColor;
+    text-shadow: none;
+  }
+}
+
+.hero-architectural .hero-sub {
+  margin-inline: auto;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  max-width: 56ch;
+  text-align: center;
+}
+
+.hero-architectural .score-hero-input {
+  max-width: 720px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.hero-proof { margin: clamp(1.75rem, 3vw, 2.5rem) 0 0; }
+
+.hero-proof-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 1.1rem;
+}
+
+.hero-proof-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.hero-proof-stat b { color: var(--ink); font-weight: 600; }
+
+.hero-proof-num { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.hero-proof-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-dim); }
+
+.hero-proof-dot.is-live { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.55); }
+
+.hero-proof-grade {
+  font-family: var(--mono);
+  font-weight: 700;
+  padding: 0.05rem 0.34rem;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+}
+
+.hero-proof-caveat {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.hero-proof-recent {
+  max-width: 460px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  background-image: var(--surface-card-gradient);
+  box-shadow: var(--inner-light);
+  padding: 0.75rem 1.05rem 0.8rem;
+  text-align: left;
+}
+
+.hero-proof-recent-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted-dim);
+  font-weight: 600;
+}
+
+.hero-proof-recent-list { list-style: none; margin: 0; padding: 0; }
+
+.hero-proof-recent-item + .hero-proof-recent-item { border-top: 1px solid var(--line-faint); }
+
+.hero-proof-recent-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  /* WCAG 2.5.5 target size: ensure a 44px-tall hit area on mobile — the row
+     content is ~20px, so 12px of vertical padding on each side. */
+  padding: 0.75rem 0;
+  min-height: 44px;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.hero-proof-recent-link:hover { color: var(--ink); }
+
+.hero-proof-recent-name { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.84rem; color: var(--ink); white-space: nowrap; }
+
+.hero-proof-recent-self {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--signal-dim);
+  padding: 0.03rem 0.3rem;
+  border-radius: 3px;
+}
+
+.hero-proof-recent-dots { flex: 1; border-bottom: 1px dotted var(--line-strong); transform: translateY(-3px); min-width: 1rem; }
+
+.hero-proof-recent-score { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.hero-architectural .hero-hint { margin-top: clamp(1.4rem, 2.6vw, 2rem); }
+
+@media (max-width: 640px) {
+  .hero-proof-stats { gap: 0.4rem 0.9rem; }
+  .hero-proof-recent { max-width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .health-rack-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.75rem;
+  }
+  .health-rack-svg {
+    width: min(100%, 30vw);
+  }
+  .health-rack-numeral {
+    font-size: clamp(0.9375rem, 0.9375rem + 1.5vw, 1.375rem);
+  }
+}
+
