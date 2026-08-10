@@ -1031,3 +1031,107 @@ button.pillar {
   }
 }
 
+/*
+  Mobile responsive overrides — migrated from globals.css.
+  These must live in home.css (not globals.css) because home.css loads
+  after globals.css. Desktop rules in home.css would otherwise override
+  the globals.css mobile media queries on all viewports (cascade order
+  bug: last-loaded wins at equal specificity). Only homepage-affected
+  classes are included here — score-* and other route-specific mobile
+  rules stay in globals.css or their route CSS files.
+*/
+@media (max-width: 860px) {
+  .hero {
+    padding: 3rem 0 2.5rem;
+    min-height: auto;
+  }
+
+  .pillar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .surface-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .surface-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .principle,
+  .health-panel,
+  .field-card {
+    padding: 1rem;
+  }
+
+  .principle-cell,
+  .field-grid,
+  .pillar-grid {
+    gap: 0.75rem;
+  }
+
+  .health-rack-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.875rem 0.5rem;
+  }
+  .health-rack-module {
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .health-rack-svg {
+    width: min(100%, 15vw);
+    height: auto;
+  }
+  .health-rack-numeral {
+    font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.5rem);
+  }
+
+  .principle-body p {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+  .principle-body h3 {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .health-rack-label,
+  .section-heading-badge-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.11em;
+  }
+  .health-rack-unit,
+  .section-heading-badge-unit {
+    font-size: 0.6875rem;
+  }
+
+  .section-heading-row {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .section-heading-badge {
+    align-items: flex-start;
+  }
+
+  .score-hero-input {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 560px) {
+  .pillar-grid,
+  .surface-list {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .button {
+    width: 100%;
+  }
+}
+
