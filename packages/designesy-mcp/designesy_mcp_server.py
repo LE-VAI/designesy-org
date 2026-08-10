@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.9.3"
+SERVER_VERSION = "1.9.4"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -1230,15 +1230,88 @@ def _contrast_ratio(fg: str, bg: str) -> float:
 # ── Main score implementation ──────────────────────────────────────────────
 
 
+def _score_remote(url: str) -> dict[str, Any] | None:
+    """POST to the canonical 40-check engine at /api/score.
+
+    The site API is the single source of truth for the v0.4.0 contract
+    (40 checks, 14 categories). Returns the normalized response, or None
+    if the API is unreachable (caller falls back to the local engine).
+    """
+    try:
+        req = urllib.request.Request(
+            f"{BASE_URL}/api/score",
+            data=json.dumps({"url": url}).encode("utf-8"),
+            headers={**_BROWSER_HEADERS, "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20, context=_SSL_CONTEXT) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+    if not data.get("ok"):
+        return None
+
+    checks = data.get("checks", [])
+    summary = {
+        "total": data.get("total", len(checks)),
+        "pass": data.get("pass", 0),
+        "fail": data.get("fail", 0),
+        "warn": data.get("warn", 0),
+        "skip": data.get("skip", 0),
+        "manual": data.get("manual", 0),
+        "score": round(data.get("score", 0) / 100.0, 4),
+        "score_percent": round(data.get("score", 0), 1),
+        "grade": data.get("grade", "F"),
+    }
+    return {
+        "url": url,
+        "contract_version": data.get("contractVersion", "unknown"),
+        "summary": summary,
+        "tokens_extracted": data.get("tokensExtracted", 0),
+        "checks": [
+            {
+                "id": c.get("id"),
+                "item": c.get("item"),
+                "category": c.get("category"),
+                "status": c.get("status"),
+                "detail": c.get("detail"),
+            }
+            for c in checks
+        ],
+        "note": (
+            f"Canonical 40-check engine (v0.4.0). {data.get('pass', 0)} passed, "
+            f"{data.get('fail', 0)} failed, {data.get('warn', 0)} warned, "
+            f"{data.get('skip', 0)} skipped, {data.get('manual', 0)} manual "
+            f"(browser-only). Score {round(data.get('score', 0), 1)}% "
+            f"({data.get('grade', 'F')})."
+        ),
+    }
+
+
 def _score_impl(url: str | None = None) -> dict[str, Any]:
+    """Score a live URL against the Designesy design contract.
+
+    Primary path: delegate to the canonical 40-check engine at
+    /api/score (same engine the npm CLI and site use). Fallback: the
+    local 26-check subset (v01-v23 + x01-x03) when the API is
+    unreachable, so the tool still works offline.
+    """
+    if not url:
+        url = f"{BASE_URL}/"
+
+    remote = _score_remote(url)
+    if remote is not None:
+        return remote
+    return _score_local_impl(url)
+
+
+def _score_local_impl(url: str) -> dict[str, Any]:
     """Run the 23-item contract verification checklist against a live URL.
 
     This is the executable verification engine. It fetches the page HTML,
     extracts all CSS (inline + linked), and runs each verification item
     automatically with provenance back to contract tokens and rules.
     """
-    if not url:
-        url = f"{BASE_URL}/"
 
     # Fetch page CSS
     css = _fetch_page_css(url)
