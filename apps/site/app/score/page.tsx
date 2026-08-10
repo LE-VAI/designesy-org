@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './score.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
