@@ -152,7 +152,49 @@ export function ScrambleEnhancer() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Defer the whole effect to AFTER first paint. The scramble + reveal
+    // setup (offsetHeight reads, text replacement, IntersectionObservers)
+    // runs on the critical path when mounted eagerly — the hero paints as
+    // random glyphs and the LCP element can't register until the decode
+    // settles. Scramble is progressive enhancement: painting the REAL text
+    // first, then scrambling on idle, preserves the brand signature without
+    // taxing LCP. requestIdleCallback with a rAF double-tick fallback so it
+    // still runs on browsers without idle callback.
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    const run = () => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!cancelled) cleanup = runScramble(pathname);
+        });
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      (window as unknown as {
+        requestIdleCallback: (cb: () => void, opts?: { timeout?: number }) => number;
+      }).requestIdleCallback(run, { timeout: 300 });
+    } else {
+      setTimeout(run, 0);
+    }
+
+    // Route-change cancellation: stop a pending deferral and tear down the
+    // previous run's observers/timers before the new pathname re-scans.
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [pathname]);
+
+  return null;
+}
+
+// Effect body extracted so it can be deferred past first paint. Returns the
+// cleanup function (observers/timers) so the effect can tear it down.
+function runScramble(pathname: string): (() => void) | undefined {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Ensure js-ready is set (inline script in layout.tsx should have
     // already done this, but this covers CSP/SSR edge cases).
@@ -857,7 +899,4 @@ export function ScrambleEnhancer() {
       rotatorTimers.forEach((t) => clearTimeout(t));
       rotatorCancels.forEach((c) => c());
     };
-  }, [pathname]); // Re-run on route change so new page elements get observers
-
-  return null;
 }

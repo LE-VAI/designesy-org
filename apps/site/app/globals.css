@@ -7689,6 +7689,14 @@ html:not(.js-ready) .demo-stagger-bar {
   animation-delay: 0.40s;
 }
 
+/* Hero first-paint (Option A): the hero h1 is the LCP element — it must be
+   an LCP candidate from the first frame. The fade-up entrance stays (brand
+   signature), only the 0.08s hidden delay is removed so the hero is not
+   stuck at opacity:0 (backwards fill) past the first paint. */
+#hero-title.fade-up-delay-1 {
+  animation-delay: 0s;
+}
+
 .fade-in {
   opacity: 0;
   /* fill-mode: both — unlike .fade-up, fadeIn has no `from` state (only `to:
