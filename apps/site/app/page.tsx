@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './home.css';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
