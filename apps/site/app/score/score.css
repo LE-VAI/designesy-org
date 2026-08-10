@@ -1808,3 +1808,104 @@
   }
 }
 
+/* Mobile overrides — migrated from globals.css (cascade order fix).
+   score.css loads after globals.css, so desktop rules here would override
+   the globals.css mobile media queries on all viewports without these. */
+@media (max-width: 859px) {
+  .score-hero-input .score-form {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .score-percent-value {
+    font-size: 1.75rem;
+  }
+  .score-site-url {
+    max-width: 100%;
+  }
+  .score-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .score-engine-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .score-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .score-filter-segmented {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .score-filter-segmented::-webkit-scrollbar {
+    display: none;
+  }
+  .score-controls-card {
+    padding: 0.85rem;
+  }
+  .score-hero-section .score-form {
+    margin-top: 1rem;
+  }
+  .score-history-panel {
+    padding: 1rem;
+  }
+  .score-history-body {
+    order: 2;
+    flex-basis: calc(100% - 3rem);
+  }
+  .score-history-rerun {
+    order: 3;
+    margin-left: auto;
+  }
+  .report-hero {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+    text-align: center;
+  }
+  .report-cat-nav {
+    top: 60px;
+  }
+  .report-section-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .score-hero-section .score-form {
+    margin-top: 0.75rem;
+  }
+  .score-hint {
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
+  }
+  .score-percent-value {
+    font-size: 1.5rem;
+  }
+  .score-metric-val {
+    font-size: 1.1rem;
+  }
+  .score-controls-card {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .score-metrics-grid {
+    gap: 0.4rem;
+  }
+  .score-metric-tile {
+    padding: 0.5rem 0.35rem;
+  }
+  .score-metric-val {
+    font-size: 0.95rem;
+  }
+  .score-metric-lbl {
+    font-size: 0.6rem;
+  }
+}
+
