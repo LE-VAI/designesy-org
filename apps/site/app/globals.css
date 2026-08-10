@@ -7689,12 +7689,14 @@ html:not(.js-ready) .demo-stagger-bar {
   animation-delay: 0.40s;
 }
 
-/* Hero first-paint (Option A): the hero h1 is the LCP element — it must be
-   an LCP candidate from the first frame. The fade-up entrance stays (brand
-   signature), only the 0.08s hidden delay is removed so the hero is not
-   stuck at opacity:0 (backwards fill) past the first paint. */
+/* Hero first-paint (Option B): the hero h1 is the LCP element — it must be
+   an LCP candidate from the first frame. The fadeUp entrance animation
+   (0.6s, backwards fill) starts the hero at opacity:0, so even with the
+   delay removed the element stays hidden for most of the animation and
+   LCP is gated. Kill the entrance on the hero only — the fade-up stays
+   for below-the-fold content. */
 #hero-title.fade-up-delay-1 {
-  animation-delay: 0s;
+  animation: none;
 }
 
 .fade-in {
