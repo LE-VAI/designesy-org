@@ -5018,33 +5018,27 @@ a.check-cell:hover .check-cell-title {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-
   /* Mobile topbar: the glass child (.topbar-glass) handles blur/saturate.
      The old mobile-specific blur overrides (8px/110%, 10px/120%) are
      removed — the glass child uses 14px/160% resting, 16px/180% scrolled,
      which is safe on mobile because translate3d(0,0,0) forces GPU
      compositing, preventing the scroll-stick re-rasterization bug. */
-
   .principle {
     grid-template-columns: 2rem 1fr;
     gap: 0.75rem;
   }
-
   .topbar {
     padding: 0.65rem 0;
   }
-
   .topbar-inner {
     gap: 0.75rem;
     padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
   }
-
   .topbar-right {
     gap: 0.4rem;
     flex: 1 1 auto;
     min-width: 0;
   }
-
   /* Breathing-glass tiers — scroll-triggered topbar tightening + search
      pill expansion. Mobile-only; desktop untouched. The search expansion
      keys off .search-expanded (actual scrollY>40), NOT .scrolled, because
@@ -5053,11 +5047,9 @@ a.check-cell:hover .check-cell-title {
   .topbar.scrolled {
     padding: 0.5rem 0;
   }
-
   .topbar.scrolled .wordmark {
     font-size: 0.95rem;
   }
-
   /* Search pill expansion — trigger grows from icon-only to a labelled
      pill. width:auto + flex:0 0 auto lets the trigger size to its
      content (icon + gap + label) instead of staying 44px square. */
@@ -5068,22 +5060,18 @@ a.check-cell:hover .check-cell-title {
     flex: 0 0 auto;
     justify-content: flex-start;
   }
-
   .topbar.search-expanded .cmdk-trigger-label {
     display: inline;
   }
-
   /* Tier 3 — deep scroll: signal glow ring on the search trigger + a
      structural hairline under the bar. The user is committed to the page
      here; the hairline reads as structural, not chrome cruft. */
   .topbar.deep-scrolled .cmdk-trigger {
     box-shadow: 0 0 0 1px rgba(51, 88, 232, 0.28);
   }
-
   .topbar.deep-scrolled .topbar-glass {
     /* No border-bottom — the scroll-progress bar is the bottom edge */
   }
-
   @media (prefers-reduced-motion: no-preference) {
     .topbar {
       transition: padding var(--duration-fast) var(--ease-out),
@@ -5106,59 +5094,43 @@ a.check-cell:hover .check-cell-title {
       transition: font-size var(--duration-fast) var(--ease-out);
     }
   }
-
   .nav-links {
     display: none;
   }
-
   .nav-links a {
     padding: 0.4rem 0.5rem;
     font-size: 0.8rem;
   }
-
   .wordmark {
     flex: 0 0 auto;
     font-size: 1rem;
   }
-
   .sense-toggles,
   .sound-toggle,
   .haptics-toggle {
     flex: 0 0 auto;
   }
-
   /* Hide desktop-only children on mobile — reduces 5 topbar buttons to 4
      (sound, search, theme, hamburger), giving ~83px of breathing room
      instead of ~32px in a 390px viewport. */
   .desktop-only {
     display: none;
   }
-
   .surface-page {
     padding: 0 1rem;
   }
-
   .surface-header {
     padding: 3rem 0 2rem;
   }
-
-  .layer-item {
-    grid-template-columns: 2rem 1fr;
-    gap: 0.5rem;
-    padding: 0.75rem 0.5rem 0.75rem 0.75rem;
-  }
-
   .row,
   .layer-item {
     grid-template-columns: 2rem minmax(0, 1fr);
     gap: 0.55rem;
     padding: 0.8rem 0.55rem 0.8rem 0.75rem;
   }
-
   .status-note {
     margin-bottom: 2rem;
   }
-
   /* Mobile body padding — clear bottom-anchored FABs */
   /* overflow-x: clip (NOT hidden) on html/body — `hidden` creates an
      implicit scroll container that traps position:sticky children, so
@@ -5171,13 +5143,11 @@ a.check-cell:hover .check-cell-title {
     overflow-x: clip;
     overscroll-behavior-y: none;
   }
-
   body {
     padding-bottom: 4rem;
     overflow-x: clip;
     overscroll-behavior-y: none;
   }
-
   /* Mobile hamburger trigger */
   .nav-trigger {
     display: flex;
@@ -5193,7 +5163,6 @@ a.check-cell:hover .check-cell-title {
     appearance: none;
     -webkit-appearance: none;
   }
-
   .nav-trigger-bar {
     display: block;
     width: 20px;
@@ -5203,24 +5172,19 @@ a.check-cell:hover .check-cell-title {
     transition: transform var(--duration-fast) var(--ease-out),
       opacity var(--duration-fast) var(--ease);
   }
-
   .nav-trigger[aria-expanded='true'] .nav-trigger-bar:nth-child(1) {
     transform: translateY(7px) rotate(45deg);
   }
-
   .nav-trigger[aria-expanded='true'] .nav-trigger-bar:nth-child(2) {
     opacity: 0;
   }
-
   .nav-trigger[aria-expanded='true'] .nav-trigger-bar:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
   }
-
   .nav-trigger:focus-visible {
     outline: 2px solid var(--signal-light);
     outline-offset: 2px;
   }
-
   /* Mobile drawer scrim — frosted dim (not just opaque). The 4px blur
      reads as a frost layer behind the drawer, not a flat black curtain. */
   .nav-scrim {
@@ -5235,12 +5199,10 @@ a.check-cell:hover .check-cell-title {
     pointer-events: none;
     transition: opacity var(--duration-medium) var(--ease);
   }
-
   .nav-scrim.open {
     opacity: 1;
     pointer-events: auto;
   }
-
   /* Mobile drawer panel — narrowed from 85vw to 75vw so the scrim is wide
      enough to read as an obvious tap-target (25% of screen instead of 15%).
      Glass surface: translucent bg + backdrop-filter blur + saturate, matching
@@ -5272,11 +5234,9 @@ a.check-cell:hover .check-cell-title {
     padding: 1.25rem 1.25rem 2rem;
     overflow-y: auto;
   }
-
   .nav-drawer.open {
     transform: translate3d(0, 0, 0);
   }
-
   /* Explicit close control at the drawer's top — users who don't recognize
      the hamburger→X transformation have an obvious labelled escape. */
   .nav-drawer-close {
@@ -5300,28 +5260,23 @@ a.check-cell:hover .check-cell-title {
       border-color var(--duration-fast) var(--ease),
       background var(--duration-fast) var(--ease);
   }
-
   .nav-drawer-close:hover {
     color: var(--ink);
     border-color: var(--line-strong);
     background: var(--surface-hover);
   }
-
   .nav-drawer-close:focus-visible {
     outline: 2px solid var(--signal-light);
     outline-offset: 2px;
   }
-
   .nav-drawer-close-icon {
     font-size: 0.9rem;
     line-height: 1;
   }
-
   .nav-drawer-close-label {
     font-size: 0.85rem;
     letter-spacing: 0.02em;
   }
-
   .nav-drawer a {
     display: flex;
     align-items: center;
@@ -5336,18 +5291,15 @@ a.check-cell:hover .check-cell-title {
     transition: color var(--duration-fast) var(--ease),
       background var(--duration-fast) var(--ease);
   }
-
   .nav-drawer a:hover {
     color: var(--ink);
     background: var(--surface-hover);
   }
-
   .nav-drawer a.is-active,
   .nav-drawer a[aria-current='page'] {
     color: var(--ink);
     font-weight: 600;
   }
-
   .nav-drawer a:focus-visible {
     outline: 2px solid var(--signal-light);
     outline-offset: 2px;
@@ -7361,6 +7313,13 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* ── Score Form ─────────────────────────────────────────────────────────── */
 
+.score-form {
+  width: 100%;
+  max-width: 680px;
+  margin-left: 0;
+  margin-right: auto;
+  box-sizing: border-box;
+}
 
 .score-input-card {
   background: var(--surface-raised);
@@ -7567,9 +7526,46 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* ── Score Error Card ──────────────────────────────────────────────────── */
 
+.score-error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--radius);
+}
+
+.score-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--error);
+}
+
+.score-error-title {
+  font-weight: 600;
+  color: var(--error);
+  margin-bottom: 0.2rem;
+}
+
+.score-error-msg {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
 
 /* ── Score Welcome / Idle State ─────────────────────────────────────────── */
 
+.score-welcome-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+}
 
 /* In the homepage hero, the welcome card is redundant — the hero-hint line
    already says "No login. Real-time. 32 checks…" so the second explanatory
@@ -7581,9 +7577,30 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: none;
 }
 
+.score-welcome-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin-bottom: 0.35rem;
+}
+
+.score-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
 
 /* ── Score Results ─────────────────────────────────────────────────────── */
 
+.score-results {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
 
 .score-hero-card {
   /* True glass — the result hero is the payoff moment; let the surface breathe. */
@@ -7637,6 +7654,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
+.score-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
 
 .score-grade-emblem.is-a { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); color: var(--ok); }
 .score-grade-emblem.is-c { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.3); color: var(--warn); }
@@ -7655,24 +7677,205 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-grade-emblem.is-d .score-grade-glow { background: #f97316; }
 .score-grade-emblem.is-f .score-grade-glow { background: #ef4444; }
 
+.score-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.score-percent-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.score-percent-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.score-percent-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.score-site-url {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  max-width: 100%;
+}
+
+[data-theme="light"] .score-site-url {
+  /* Light theme: replace the dark slab (rgba(0,0,0,0.4)) with a flat surface
+     shade so the URL chip reads as a soft chip, not a foreign dark pill. */
+  background: var(--surface-raised);
+}
+
+.score-url-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+  flex-shrink: 0;
+}
+
+.score-url-text {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Score-scale legend — per Lighthouse PR #8121. Four bands with color dots
    so users can verify what the gauge color means. Sits between the hero-top
    and the metrics grid. */
-
-
+.score-scale-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.5rem 0 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.score-scale-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.score-scale-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.score-scale-band.is-fail .score-scale-dot { background: #ef4444; }
+.score-scale-band.is-warn .score-scale-dot { background: #f59e0b; }
+.score-scale-band.is-pass .score-scale-dot { background: #84cc16; }
 .score-scale-band.is-a .score-scale-dot { background: #22c55e; }
 
 /* Skeleton loading rows — replaces the bare spinner during the 26-check run.
    Per AuditBuffet/CRAIG Four-State Contract: loading must match content shape,
    not be a generic spinner. Shows 6 skeleton rows in the cards-feed shape. */
-
-
+.score-skeleton-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.score-skeleton-row {
+  height: 3.25rem;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 0%,
+    var(--surface) 50%,
+    var(--surface-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s var(--ease-in-out) infinite;
+  border: 1px solid var(--line);
+}
 @keyframes skeletonShimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .score-skeleton-row { animation: none; background: var(--surface-raised); }
+}
 
+.score-a11y-floor-notice {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.score-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.score-metric-tile {
+  background: var(--surface-card-gradient), var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--inner-light);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.score-metric-val {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-metric-lbl {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.score-metric-tile.is-pass { border-color: rgba(34, 197, 94, 0.2); }
+.score-metric-tile.is-pass .score-metric-val { color: var(--ok); }
+.score-metric-tile.is-pass .score-metric-lbl { color: rgba(74, 222, 128, 0.8); }
+
+.score-metric-tile.is-fail { border-color: rgba(239, 68, 68, 0.2); }
+.score-metric-tile.is-fail .score-metric-val { color: var(--error); }
+.score-metric-tile.is-fail .score-metric-lbl { color: rgba(248, 113, 113, 0.8); }
+
+.score-metric-tile.is-warn { border-color: rgba(234, 179, 8, 0.2); }
+.score-metric-tile.is-warn .score-metric-val { color: var(--warn); }
+.score-metric-tile.is-warn .score-metric-lbl { color: rgba(250, 204, 21, 0.8); }
+
+.score-metric-tile.is-skip { border-color: var(--line); }
+.score-metric-tile.is-skip .score-metric-val { color: var(--muted); }
+.score-metric-tile.is-skip .score-metric-lbl { color: var(--muted-dim); }
+
+.score-metric-tile.is-manual { border-color: var(--line); }
+.score-metric-tile.is-manual .score-metric-val { color: var(--muted); }
+.score-metric-tile.is-manual .score-metric-lbl { color: var(--muted-dim); }
+
+.score-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.score-tokens-badge {
+  margin-left: auto;
+}
 
 .score-action-btn {
   display: inline-flex;
@@ -7725,14 +7928,48 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* The browser-audit button is the primary affordance in the action bar —
    give it the signal fill so it reads as the next action, not a peer of
    "Copy Receipt". Disabled + loading states soften to muted. */
+.score-audit-btn {
+  background: var(--signal);
+  border-color: var(--signal);
+  /* --paper-on-signal (additive) — white text on #0133cb is 8.59:1 (AAA);
+     the previous --paper value read as near-black against the signal fill. */
+  color: var(--paper-on-signal);
+}
+.score-audit-btn:hover:not(:disabled) {
+  background: var(--signal);
+  border-color: var(--ink);
+  color: var(--paper-on-signal);
+}
+.score-audit-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
 
+.score-audit-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--warn, #f59e0b);
+  font-weight: 500;
+}
 
 /* ── Audit loading: dot-pulse (in-button) ─────────────────────────────────
    Replaces the boring border-circle spinner. Three dots pulse in sequence
    with a deliberate 400ms cadence — feels alive, not mechanical. The scale
    curve uses --ease-out for an asymmetric snap-in / soft settle. */
-
-
+.audit-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.audit-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--paper-on-signal);
+  animation: auditDotPulse 1.2s var(--ease-in-out) infinite;
+}
+.audit-dot:nth-child(2) { animation-delay: 160ms; }
+.audit-dot:nth-child(3) { animation-delay: 320ms; }
 @keyframes auditDotPulse {
   0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
   40% { opacity: 1; transform: scale(1.15); }
@@ -7745,18 +7982,59 @@ a.lab-card:focus-visible .lab-card-arrow {
    staggered 700ms delay, then its dot pulses continuously. A determinate-
    style progress bar fills below, using the signal gradient. This is
    "progress as content" — the user reads what's happening, not just a shape. */
-
+.audit-progress-panel {
+  margin-top: 1rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: auditPanelIn var(--duration-fast) var(--ease-out) forwards;
+  opacity: 0;
+}
 @keyframes auditPanelIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
-
-
+.audit-progress-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--signal-access);
+}
+.audit-progress-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.audit-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  opacity: 0;
+  animation: auditStepIn var(--duration) var(--ease-out) forwards;
+}
 @keyframes auditStepIn {
   from { opacity: 0; transform: translateX(-4px); }
   to   { opacity: 1; transform: none; }
 }
-
+.audit-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-light);
+  flex-shrink: 0;
+  animation: auditDotBreathe 1.4s var(--ease-in-out) infinite;
+}
 @keyframes auditDotBreathe {
   0%, 100% { opacity: 0.35; transform: scale(0.85); }
   50% { opacity: 1; transform: scale(1.1); }
@@ -7766,8 +8044,25 @@ a.lab-card:focus-visible .lab-card-arrow {
    Not a "freeze at 99%" bar (that's a flagged anti-pattern); this is an honest
    indeterminate animation that communicates "still working" without lying
    about completion percentage. */
-
-
+.audit-progress-bar {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-faint);
+  overflow: hidden;
+}
+.audit-progress-bar-fill {
+  height: 100%;
+  width: 40%;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--signal-light) 50%,
+    var(--signal-access) 100%
+  );
+  background-size: 200% 100%;
+  animation: auditBarSweep 2s var(--ease-in-out) infinite;
+}
 @keyframes auditBarSweep {
   0% { background-position: 200% 0; transform: translateX(-100%); }
   50% { transform: translateX(150%); }
@@ -7787,6 +8082,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   .bundle-tabs::before { transition: none; }
 }
 
+.score-tokens-badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
 
 /* ── Engine tiles (4-engine grid on /score) ───────────────────────────────
    Replaces the old EngineCard that hijacked .score-filter-tab with inline
@@ -7795,6 +8095,11 @@ a.lab-card:focus-visible .lab-card-arrow {
    AI tell"). Left-aligned content, responsive grid, no equal-weight pill
    squish on narrow viewports. */
 
+.score-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
 
 .score-engine-tile {
   position: relative;
@@ -7834,7 +8139,69 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
+.score-engine-tile-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
 
+.score-engine-tile-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.score-engine-tile-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.score-engine-tile-count {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--muted-dim);
+}
+
+.score-engine-tile-grade {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.score-engine-tile-grade.is-empty {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.score-engine-tile-score {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.score-engine-tile-pwf {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-engine-tile-pwf b {
+  font-weight: 700;
+}
+
+.score-engine-tile-pwf b.is-pass { color: var(--ok); }
+.score-engine-tile-pwf b.is-warn { color: var(--warn); }
+.score-engine-tile-pwf b.is-fail { color: var(--error); }
 
 /* ── Collapsible check groups (FAIL/WARN/MANUAL/SKIP/PASS bucketing) ──────────
    Mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. Each group has
@@ -7851,6 +8218,27 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin-top: 0.6rem;
 }
 
+.score-check-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  width: 100%;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+
+.score-check-group-header:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-lifted);
+}
 
 .score-check-group-dot {
   width: 7px;
@@ -7865,6 +8253,26 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-check-group-dot.is-skip { background: var(--muted-dim); }
 .score-check-group-dot.is-manual { background: var(--muted-dim); }
 
+.score-check-group-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.score-check-group-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="light"] .score-check-group-count {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
 
 .score-check-group.is-fail .score-check-group-count {
   background: rgba(239, 68, 68, 0.15);
@@ -7881,12 +8289,64 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ok);
 }
 
+.score-check-group-chevron {
+  margin-left: auto;
+  color: var(--muted-dim);
+}
+
+.score-check-group-body {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--line);
+}
 
 /* ── Clickable scored URL link ────────────────────────────────────────────── */
 
+.score-url-link {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+
+.score-url-link:hover {
+  color: var(--signal);
+  border-bottom-color: var(--signal);
+}
 
 /* ── Open-site action button (primary next-step affordance) ───────────────── */
 
+.score-open-site-btn {
+  background: var(--signal) !important;
+  border-color: var(--signal) !important;
+  color: var(--paper-on-signal) !important;
+}
+
+.score-open-site-btn:hover {
+  background: var(--ink) !important;
+  border-color: var(--ink) !important;
+}
+
+.score-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.score-originality-notice {
+  color: var(--signal, #6ea8fe);
+  font-weight: 500;
+}
 
 /* ── Signals panel — craft signals + anti-slop audit ────────────────────── */
 /* Sits between the dashboard card and the filter controls. Two groups:
@@ -7894,11 +8354,185 @@ a.lab-card:focus-visible .lab-card-arrow {
    Surfaces the taste-separation layers that float around the weighted
    compliance score — "compliant" and "distinctive" are scored separately. */
 
+.score-signals-card {
+  /* Left-align signals panel — data-dense evidence rows expect left
+     alignment, not the hero's center inheritance. */
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.score-signals-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.score-signals-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.score-signals-net {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-signals-net-pos { color: #34d399; }
+.score-signals-net-neg { color: #f87171; }
+
+.score-signals-group-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink, #f5f5f7);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.score-signals-group-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: #34d399;
+}
+
+.score-signals-group-chip.is-neg {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.26);
+  color: #f87171;
+}
+
+.score-signals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.score-signal-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.score-signal-row.is-originality { border-top: 2px solid rgba(52, 211, 153, 0.55); }
+.score-signal-row.is-slop { border-top: 2px solid rgba(248, 113, 113, 0.55); }
+
+.score-signal-points {
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #34d399;
+  min-width: 1.7rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.score-signal-points.is-neg { color: #f87171; }
+
+.score-signal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.score-signal-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink, #f5f5f7);
+}
+
+.score-signal-evidence {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+[data-theme="light"] .score-signal-row { background: rgba(0, 0, 0, 0.02); }
+[data-theme="light"] .score-signals-group-title,
+[data-theme="light"] .score-signal-label { color: #1a1a1e; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .score-signal-row { transition: background var(--duration-fast) var(--ease-out); }
+  .score-signal-row:hover { background: rgba(255, 255, 255, 0.04); }
+  [data-theme="light"] .score-signal-row:hover { background: rgba(0, 0, 0, 0.035); }
+}
+
+
+.score-controls-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.score-filter-segmented {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 3px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  gap: 2px;
+  position: relative;
+  /* Sliding indicator: set by useLayoutEffect in score-form.tsx */
+  --indicator-x: 0px;
+  --indicator-w: 0px;
+}
 
 /* The sliding highlight pill — sits behind the tabs and slides between them
    with a transform transition. The active tab just changes text color; the
    highlight provides the visual selection state. */
+.score-filter-segmented::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: calc(2.25rem);
+  width: var(--indicator-w);
+  transform: translateX(calc(var(--indicator-x) - 3px));
+  background: var(--surface-card-gradient), var(--surface-lifted);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inner-light), 0 2px 6px rgba(0, 0, 0, 0.22);
+  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
+              width var(--duration, 0.3s) var(--ease-out, ease-out);
+  pointer-events: none;
+  z-index: 0;
+}
 
+[data-theme="light"] .score-filter-segmented {
+  /* Light theme: the dark slab (rgba(0,0,0,0.4)) reads as a foreign element
+     against the light page. Use a quiet surface shade instead. */
+  background: var(--surface-raised);
+}
 
 .score-filter-tab {
   flex: 1;
@@ -8007,6 +8641,20 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-color: var(--ink);
 }
 
+.score-tab-count {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted);
+}
+
+[data-theme="light"] .score-tab-count {
+  /* Darken the pill on light surfaces — the hardcoded white disappears,
+     leaving dim text floating. Invert to a dark wash + ink text. */
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--ink);
+}
 
 .score-filter-tab.is-active .score-tab-count {
   background: rgba(255, 255, 255, 0.2);
@@ -8017,6 +8665,49 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: rgba(0, 0, 0, 0.12);
 }
 
+.score-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.score-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.score-search-input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 2rem 0 2.2rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+
+.score-search-input:focus {
+  outline: none;
+  border-color: var(--signal);
+}
+
+.score-search-input::placeholder {
+  color: var(--muted-dim);
+}
+
+.score-category-chips {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
+}
 
 .score-category-chip {
   height: 1.85rem;
@@ -8047,9 +8738,38 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
 }
 
+.score-chip-num {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
 
 /* ── Verification Cards Feed ────────────────────────────────────────────── */
 
+.score-cards-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-empty-feed {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.score-empty-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--ink);
+}
+
+.score-empty-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
 
 .score-card-item {
   /* Block the hero's text-align: center inheritance — check cards are
@@ -8116,6 +8836,17 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
+.score-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.score-card-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 
 .score-card-status-pill {
   font-size: 0.625rem;
@@ -8132,17 +8863,94 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-card-status-pill.is-skip { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
+.score-card-id {
+  font-size: 0.725rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  font-weight: 600;
+}
 
+.score-card-cat {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  /* muted-dim (#7d7d7d) on the card surface (~#19191d) is 4.25:1 — below
+     AA 4.5:1 at 10.4px. --muted (#a0a0a0) reaches ~8:1 on cards. */
+  color: var(--muted);
+  background: var(--surface-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.score-card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.score-card-right {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  /* Same card-surface AA repair as .score-card-cat: muted-dim is 4.25:1
+     at 11.2px on ~#19191d; --muted clears 4.5:1 comfortably. */
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.score-card-drawer {
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /* Soft open — content slides+fades in on expand (opacity/transform only,
+     GPU-safe). Height animation is avoided (layout thrash, per motion craft);
+     the small translate reads as the drawer "arriving", not the card growing. */
+  animation: scoreDrawerOpen var(--duration-fast) var(--ease-drawer) both;
+}
 @keyframes scoreDrawerOpen {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: none; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .score-card-drawer { animation: none; }
+}
 
+.score-drawer-heading {
+  font-size: 0.675rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  /* --signal inside the drawer fails AA at 10.8px; --signal-access is the
+     established repair (5.41:1) and matches the drawer border accent. */
+  color: var(--signal-access);
+  font-weight: 700;
+  margin: 0;
+}
+
+.score-drawer-detail {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
 
 /* Remediation guidance — shown only for FAIL/WARN. Visually distinct from the
    technical finding: amber heading (signal for action, not error), left-border
    treatment to set the "how to fix" block apart from the "what's wrong" block. */
+.score-drawer-remediation-heading {
+  margin-top: 0.6rem;
+  color: #c9a227; /* amber — matches OG grade C/D color, contract-restrained */
+}
 
+.score-drawer-remediation {
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(201, 162, 39, 0.35);
+  color: var(--ink);
+}
 
 /* ── Score Responsive (single consolidated block) ──────────────────────── */
 
@@ -8371,19 +9179,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── /badge mobile responsive ───────────────────────────────────────────── */
 
 @media (max-width: 720px) {
-  .badge-gallery {
-    grid-template-columns: 1fr;
-  }
-
   .badge-grade-row {
     grid-template-columns: 28px 56px 1fr;
     gap: 0.5rem;
     padding: 0.4rem 0.6rem;
-  }
-
-  .badge-steps li {
-    font-size: 0.85rem;
-    padding-left: 1.75rem;
   }
 }
 
@@ -8554,13 +9353,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   .pricing-card {
     padding: 1.2rem 1.1rem 1.3rem;
   }
-  .pricing-faq-q {
-    padding: 0.85rem 1rem;
-    font-size: 0.9rem;
-  }
-  .pricing-faq-a {
-    padding: 0 1rem 1rem;
-  }
 }
 
 /* --- Pricing comparison table --- */
@@ -8584,6 +9376,58 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 /* ── Score History (free-tier local storage) ────────────────────────────── */
 
+.score-history-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.score-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.score-history-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* --signal (#0133cb) is 2.21:1 on the page background — far below AA.
+     --signal-access (#5d7bff) reaches 5.41:1; same hue family. */
+  color: var(--signal-access);
+  margin: 0;
+}
+
+.score-history-clear {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  transition: color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-clear:hover {
+  color: var(--text);
+}
+
+.score-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
 .score-history-item {
   /* Left-align history entries — the panel sits inside the centered hero
@@ -8627,6 +9471,54 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
 .score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
 
+.score-history-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+}
+
+.score-history-url {
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-history-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-history-rerun {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--motion-short) var(--ease-quiet),
+              color var(--motion-short) var(--ease-quiet);
+}
+
+.score-history-rerun:hover {
+  border-color: var(--line-strong);
+}
+
+.score-history-foot {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
 
 .score-history-foot .text-link {
   /* --signal (#0133cb) fails AA (2.21:1) as text on dark; underline signal
@@ -8684,10 +9576,43 @@ a.lab-card:focus-visible .lab-card-arrow {
    sweep animation — the premium pattern used by Linear, Vercel, Stripe.
    role="status" + aria-live="polite" on the container; visual blocks are
    aria-hidden so screen readers only hear the status text. */
-
+.report-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 2rem 0;
+}
 
 /* Shimmer base — all skeleton blocks share this */
+.report-skel-circle,
+.report-skel-line,
+.report-skel-chip,
+.report-skel-section-header,
+.report-skel-row {
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 0%,
+    var(--surface-lifted) 50%,
+    var(--surface-raised) 100%
+  );
+  background-size: 200% 100%;
+  animation: reportSkelShimmer 1.8s var(--ease-in-out, ease-in-out) infinite;
+  border-radius: var(--radius-sm);
+}
 
+[data-theme="light"] .report-skel-circle,
+[data-theme="light"] .report-skel-line,
+[data-theme="light"] .report-skel-chip,
+[data-theme="light"] .report-skel-section-header,
+[data-theme="light"] .report-skel-row {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.09) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  background-size: 200% 100%;
+}
 
 @keyframes reportSkelShimmer {
   0%   { background-position: 200% 0; }
@@ -8695,22 +9620,209 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* Hero skeleton: grade circle + meta lines */
+.report-skel-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
 
+.report-skel-circle {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.report-skel-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.report-skel-line {
+  height: 0.85rem;
+}
+.report-skel-line--lg { width: 60%; height: 1.1rem; }
+.report-skel-line--md { width: 45%; }
+.report-skel-line--sm { width: 35%; }
 
 /* Category nav skeleton: row of chips */
+.report-skel-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 
+.report-skel-chip {
+  width: 7rem;
+  height: 2.25rem;
+  border-radius: var(--radius);
+}
 
 /* Section skeleton: header bar + check rows */
+.report-skel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
+.report-skel-section-header {
+  width: 12rem;
+  height: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.report-skel-row {
+  width: 100%;
+  height: 2.5rem;
+}
 
 /* Reduced-motion: static blocks, no shimmer */
+@media (prefers-reduced-motion: reduce) {
+  .report-skel-circle,
+  .report-skel-line,
+  .report-skel-chip,
+  .report-skel-section-header,
+  .report-skel-row {
+    animation: none;
+    background: var(--surface-raised);
+  }
+  [data-theme="light"] .report-skel-circle,
+  [data-theme="light"] .report-skel-line,
+  [data-theme="light"] .report-skel-chip,
+  [data-theme="light"] .report-skel-section-header,
+  [data-theme="light"] .report-skel-row {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
 
+.report-error {
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.report-error h2 {
+  margin-bottom: 0.75rem;
+}
+
+.report-error p {
+  color: var(--error);
+  margin-bottom: 1.5rem;
+}
 
 /* --- Report hero --- */
 
+.report-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 2.5rem;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--line-faint);
+  flex-wrap: wrap;
+}
+
+.report-hero-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.report-hero-grade {
+  font-size: clamp(3.5rem, 3.5rem + 1.9vw, 5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.report-hero-number {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+}
+
+.report-hero-value {
+  font-size: clamp(2rem, 2rem + 0.9vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-hero-pct {
+  font-size: 1.25rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.report-hero-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-hero-url {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+  word-break: break-all;
+}
+
+.report-hero-contract {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.report-hero-counts {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.report-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-count--pass { color: var(--ok); background: rgba(74, 222, 128, 0.12); }
+.report-count--fail { color: var(--error); background: rgba(248, 113, 113, 0.12); }
+.report-count--warn { color: var(--warn); background: rgba(250, 204, 21, 0.12); }
+.report-count--skip { color: var(--muted); background: var(--surface-soft); }
+.report-count--manual { color: var(--muted); background: var(--surface-soft); }
+
+.report-hero-floor {
+  font-size: 0.85rem;
+  color: var(--warn);
+  margin-top: 0.5rem;
+}
+
+.report-hero-scored {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+  margin-top: 0.5rem;
+}
 
 /* --- Category navigation --- */
 
+.report-cat-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--line-faint);
+  position: sticky;
+  top: 72px;
+  background: var(--paper);
+  z-index: 10;
+}
 
 .report-cat-chip {
   display: flex;
@@ -8739,9 +9851,41 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface-raised);
 }
 
+.report-cat-label {
+  font-weight: 600;
+}
+
+.report-cat-weight {
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+}
+
+.report-cat-score {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-cat-score--null {
+  color: var(--muted-dim);
+}
+
+.report-cat-detail {
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+}
 
 /* --- Not measured notice --- */
 
+.report-not-measured {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.report-not-measured p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
 
 /* --- Report sections --- */
 
@@ -8754,6 +9898,41 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: none;
 }
 
+.report-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.report-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.report-section-score {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-section-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.report-section-weight {
+  font-weight: 600;
+}
 
 /* --- Check list --- */
 
@@ -8824,12 +10003,109 @@ a.lab-card:focus-visible .lab-card-arrow {
   white-space: nowrap;
 }
 
+.report-check-remediation {
+  padding: 0.75rem 0.85rem;
+  border-top: 1px solid var(--line-faint);
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+  background: var(--surface);
+}
+
+.report-check-remediation strong {
+  color: var(--ink);
+}
 
 /* --- Hard-fail ceiling notice --- */
 
+.report-hard-fail {
+  max-width: var(--maxw);
+  margin: 1.5rem auto;
+  padding: 0 2rem;
+}
+
+.report-hard-fail p {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--error);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.report-hard-fail strong {
+  color: var(--ink);
+}
 
 /* --- Slop findings --- */
 
+.report-slop {
+  max-width: var(--maxw);
+  margin: 1.5rem auto;
+  padding: 0 2rem;
+}
+
+.report-slop-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--warn);
+  margin-bottom: 0.25rem;
+}
+
+.report-slop-convergence {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.report-slop-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.report-slop-finding {
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.report-slop-finding-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.report-slop-finding-id {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+  flex-shrink: 0;
+}
+
+.report-slop-finding-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+}
+
+.report-slop-finding-deduction {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--warn);
+  flex-shrink: 0;
+}
+
+.report-slop-finding-evidence {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding-left: 2.5rem;
+}
 
 .report-skipped {
   margin-top: 0.75rem;
@@ -8851,6 +10127,21 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* --- Report footer --- */
 
+.report-footer {
+  padding: 2rem 0;
+}
+
+.report-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.report-version {
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+}
 
 /* --- Report responsive --- */
 
@@ -9397,6 +10688,31 @@ select {
    - PSI verdict-first (one-line human verdict leads, in words not color)
    =========================================================================== */
 
+.score-verdict-line {
+  font-size: clamp(0.95rem, 0.95rem + 0.2vw, 1.075rem);
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  line-height: 1.42;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+  border-left: 2px solid var(--signal);
+  padding-left: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-verdict-check {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.score-tip-hint {
+  margin-top: 0.75rem;
+  display: flex;
+}
+
 
 .principle-num {
   position: relative;
@@ -9404,6 +10720,31 @@ select {
 
 /* ── Constellation gauge ────────────────────────────────────────────────── */
 
+.score-constellation {
+  position: relative;
+  width: clamp(11rem, 34vw, 15.5rem);
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+}
+
+.score-constellation > svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.constel-spoke {
+  stroke: var(--line);
+  stroke-width: 0.35;
+  opacity: 0.6;
+}
+
+.constel-track {
+  stroke: var(--line);
+  stroke-width: 2.4;
+  opacity: 0.55;
+}
 
 .constel-main-fill {
   stroke-width: 2.4;
@@ -9419,6 +10760,16 @@ select {
 .constel-main-fill.is-d { stroke: #fb923c; }
 .constel-main-fill.is-f { stroke: #ef4444; }
 
+.constel-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  pointer-events: none;
+}
 
 .constel-grade {
   font-size: clamp(2.1rem, 2.1rem + 1.1vw, 3rem);
@@ -9433,6 +10784,13 @@ select {
 .constel-grade.is-d { color: #fb923c; }
 .constel-grade.is-f { color: var(--error); }
 
+.constel-pct {
+  font-size: clamp(0.8rem, 0.8rem + 0.3vw, 1rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* Category nodes — each is a micro-arc whose fill equals the category's
    own 0-100 score. Click filters the feed (same affordance as chips). */
@@ -9447,6 +10805,19 @@ select {
   to   { opacity: 1; transform: scale(1); }
 }
 
+.constel-node-track {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  fill: var(--paper);
+}
+
+.constel-node-fill {
+  stroke: var(--signal-light);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--duration-fast) var(--ease-out);
+}
 
 .constel-node:hover .constel-node-track,
 .constel-node.is-active .constel-node-track {
@@ -9459,6 +10830,13 @@ select {
   stroke-width: 2.2;
 }
 
+.constel-node-label {
+  fill: var(--ink);
+  font-size: 4.6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
 
 .constel-node.is-unscored {
   cursor: default;
@@ -9505,9 +10883,41 @@ select {
   border: 1px solid rgba(239, 68, 68, 0.28);
 }
 
+.score-strong-weak {
+  margin: 0.15rem 0 0.45rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.score-strong-weak strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.score-url-time {
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--line);
+  font-size: 0.68rem;
+  color: var(--muted-dim);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
 
 /* ── Category legend (text mirror of the SVG nodes) ─────────────────────── */
 
+.score-cat-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* 11 categories — 3-col puts the orphan in the bottom-right instead of
+     stranding it alone on a 6th row. 3+3+3+2 reads as a deliberate rhythm;
+     2+2+2+2+2+1 reads as a bug. */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem 0.75rem;
+}
 
 .score-cat-legend-row {
   display: flex;
@@ -9548,6 +10958,18 @@ select {
   opacity: 0.55;
 }
 
+.score-cat-legend-name {
+  flex: 0 0 auto;
+  min-width: 5.4rem;
+}
+
+.score-cat-legend-bar {
+  flex: 1 1 auto;
+  height: 3px;
+  background: var(--surface);
+  border-radius: 999px;
+  overflow: hidden;
+}
 
 .score-cat-legend-fill {
   display: block;
@@ -9576,27 +10998,222 @@ select {
   background: var(--warn);
 }
 
+.score-cat-legend-score {
+  /* Fixed right-aligned value column on the shared row axis — tabular-nums
+     keeps digits monospaced so 8 / 88 / 100 all end at the same edge. */
+  flex: 0 0 2.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
 
 /* ── Scoring rubric (published math) ────────────────────────────────────── */
 
+.score-rubric {
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.score-rubric-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.score-rubric-toggle:hover {
+  color: var(--signal-access);
+}
+
+.score-rubric-body {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.score-rubric-formula {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--muted);
+  font-family: var(--mono);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+}
+
+.score-rubric-formula sub {
+  font-size: 0.85em;
+}
+
+.score-rubric-weights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.score-rubric-weight-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+}
+
+.score-rubric-weight-label {
+  flex: 0 0 7.2rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.score-rubric-weight-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  background: var(--surface);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-rubric-weight-fill {
+  display: block;
+  height: 100%;
+  background: var(--signal);
+  border-radius: 999px;
+}
+
+.score-rubric-weight-num {
+  flex: 0 0 2.4rem;
+  text-align: right;
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ── Verification log (loading state) ───────────────────────────────────── */
 
+.score-verify-log {
+  margin-top: 1.75rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.score-verify-log-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--signal-access);
+}
+
+.score-verify-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.score-verify-log-step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  opacity: 0;
+  animation: verifyStepIn var(--duration) var(--ease-out) forwards;
+}
 
 @keyframes verifyStepIn {
   from { opacity: 0; transform: translateX(-4px); }
   to   { opacity: 1; transform: none; }
 }
 
+.score-verify-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-light);
+  flex-shrink: 0;
+  animation: verifyPulse 1.4s var(--ease-in-out) infinite;
+}
 
 @keyframes verifyPulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .score-verify-log-step {
+    animation: none;
+    opacity: 1;
+  }
+  .score-verify-dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}
 
 /* ── Constellation responsive ───────────────────────────────────────────── */
 
+@media (max-width: 720px) {
+  .score-hero-top {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .score-hero-meta {
+    align-items: center;
+  }
+
+  .score-percent-badge {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .score-cat-legend {
+    grid-template-columns: 1fr;
+  }
+
+  .score-verdict-line {
+    font-size: 0.92rem;
+  }
+
+  .score-url-time {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .score-constellation {
+    width: min(13rem, 74vw);
+  }
+
+  .score-rubric-weight-label {
+    flex-basis: 6rem;
+  }
+}
 
 /* ===========================================================================
    HERO SEAM v2 — the living mark grammar
