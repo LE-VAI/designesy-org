@@ -21,18 +21,115 @@ ROOT = Path(__file__).resolve().parent.parent / "apps" / "site" / "app"
 GLOBALS = ROOT / "globals.css"
 
 
+def get_shared_component_files(route_path):
+    """Find .tsx files under route_dir that are imported by files OUTSIDE it.
+
+    These are shared components — their classes must NOT be classified as
+    route-unique, because the component renders on other routes too.
+
+    Example: score/score-form.tsx is imported by page.tsx (homepage).
+    ScoreForm renders .score-constellation, .score-verdict-line, etc. on the
+    homepage, but those className literals only appear in score-form.tsx
+    (under score/). The old code thought they were score-route-unique and
+    extracted them to score.css — breaking the homepage score flow.
+
+    Import tracing catches this: if any file outside route_dir imports a
+    file inside route_dir, that inside file is shared.
+    """
+    route_str = os.path.normpath(str(route_path))
+
+    # Collect all .tsx files inside route_dir
+    inside_files = {}
+    for f in glob.glob(str(route_path / "**" / "*.tsx"), recursive=True):
+        # Normalize to forward-slash relative path from ROOT for matching
+        rel = os.path.relpath(f, ROOT).replace(os.sep, "/")
+        inside_files[rel] = f
+        # Also index by basename (imports often omit the directory prefix)
+        basename = os.path.basename(f)
+        if basename not in inside_files:
+            inside_files[basename] = f
+
+    # Scan all .tsx files OUTSIDE route_dir for imports of inside files
+    shared = set()
+    for f in glob.glob(str(ROOT / "**" / "*.tsx"), recursive=True):
+        if os.path.normpath(f).startswith(route_str):
+            continue
+        text = open(f, encoding="utf-8").read()
+        # Match ES import statements: import ... from './path' or '../path'
+        for m in re.findall(r"""from\s+['"]([^'"]+)['"]""", text):
+            # Normalize the import path — resolve relative to the importing file
+            importer_dir = os.path.dirname(f)
+            resolved = os.path.normpath(os.path.join(importer_dir, m))
+            # Check if this resolved path points to a file inside route_dir
+            if os.path.normpath(resolved).startswith(route_str):
+                # This is an import of a file inside route_dir from outside
+                # Mark the imported file as shared
+                for rel, full_path in inside_files.items():
+                    if os.path.normpath(full_path) == os.path.normpath(resolved):
+                        shared.add(full_path)
+                        break
+            # Also check basename match (for imports like './score-form')
+            import_basename = os.path.basename(m).replace(".tsx", "")
+            for rel, full_path in inside_files.items():
+                fb = os.path.basename(full_path).replace(".tsx", "")
+                if fb == import_basename and os.path.normpath(full_path) != os.path.normpath(f):
+                    # Verify the resolved path actually points to this file
+                    try:
+                        if os.path.normpath(resolved) in (
+                            os.path.normpath(full_path),
+                            os.path.normpath(full_path.replace(".tsx", "")),
+                            os.path.normpath(full_path.replace(".tsx", ".js")),
+                        ):
+                            shared.add(full_path)
+                    except Exception:
+                        pass
+
+    return shared
+
+
 def get_route_classes(route_dir):
-    """Find classes used ONLY in this route, not in any other route."""
+    """Find classes used ONLY in this route, not in any other route.
+
+    Two-step classification:
+    1. Collect classes from this route's tsx files (mine).
+    2. Collect classes from ALL other tsx files (others).
+    3. unique = mine - others.
+
+    BUT: this misses shared components. A component file under route_dir/
+    that is imported by files outside route_dir/ renders on other routes too.
+    Its className literals appear in the component file (inside route_dir),
+    not in the importing files (outside route_dir), so the naive `others`
+    set never includes them. The script would wrongly classify them as
+    route-unique and extract their CSS — breaking the other routes.
+
+    Fix: trace the import graph. Files under route_dir/ that are imported
+    by files outside route_dir/ are shared components. Their classes are
+    excluded from route_unique (treated as if they appeared in `others`).
+    """
     route_path = ROOT / route_dir
 
-    # Collect classes from this route's tsx files
+    # Step 1: Find shared component files (imported from outside route_dir)
+    shared_files = get_shared_component_files(route_path)
+    if shared_files:
+        print(f"  Shared components (imported from outside {route_dir}/):")
+        for sf in sorted(shared_files):
+            print(f"    {os.path.relpath(sf, ROOT)}")
+
+    # Step 2: Collect classes from shared component files — these are NOT unique
+    shared_classes = set()
+    for sf in shared_files:
+        text = open(sf, encoding="utf-8").read()
+        for m in re.findall(r'className="([^"]+)"', text):
+            shared_classes |= set(m.split())
+
+    # Step 3: Collect classes from this route's tsx files
     mine = set()
     for f in glob.glob(str(route_path / "**" / "*.tsx"), recursive=True):
         text = open(f, encoding="utf-8").read()
         for m in re.findall(r'className="([^"]+)"', text):
             mine |= set(m.split())
 
-    # Collect classes from ALL other tsx files
+    # Step 4: Collect classes from ALL other tsx files
     others = set()
     for f in glob.glob(str(ROOT / "**" / "*.tsx"), recursive=True):
         # Skip if this file is in our route dir
@@ -42,7 +139,9 @@ def get_route_classes(route_dir):
         for m in re.findall(r'className="([^"]+)"', text):
             others |= set(m.split())
 
-    unique = mine - others
+    # Step 5: unique = mine - others - shared_classes
+    # Shared component classes are excluded even though they appear in `mine`
+    unique = mine - others - shared_classes
     return unique
 
 
