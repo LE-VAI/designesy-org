@@ -166,10 +166,13 @@
   }
 }
 
-/* Mobile override — migrated from globals.css (cascade order fix) */
 @media (max-width: 720px) {
   .badge-gallery {
     grid-template-columns: 1fr;
+  }
+  .badge-steps li {
+    font-size: 0.85rem;
+    padding-left: 1.75rem;
   }
 }
 
