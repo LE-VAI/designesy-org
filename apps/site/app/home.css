@@ -637,6 +637,42 @@ button.pillar:hover::before {
   gap: 1rem;
 }
 
+/*
+  Desktop enhancement — System state + System signals side-by-side.
+  Migrated from globals.css: home.css loads AFTER globals.css, so the
+  desktop-default `flex-direction: column` above would override this
+  min-width block if it stayed in globals.css (cascade-order bug).
+
+  Uses CSS Grid (not flexbox) for height matching: the marquee's track
+  content (24 pills) is taller than the row-stack (12 rows). With flexbox
+  align-items:stretch, the marquee would inflate the container height,
+  stretching the row-stack with empty space below. Grid solves this:
+  min-height:0 on the marquee lets the row-stack define the row height,
+  and the default align-items:stretch stretches the marquee to match —
+  no hardcoded pixel height. The marquee keeps its floating quality
+  (surface bg, radius, mask gradient). The graceful seam is a 1px
+  --line-faint left border, visually whispering the link between the
+  two panels without a hard divider.
+*/
+@media (min-width: 860px) {
+  .state-layout {
+    display: grid;
+    grid-template-columns: min(100%, 640px) 1fr;
+    gap: 0.75rem;
+  }
+
+  .row-stack {
+    width: auto;
+    max-width: none;
+  }
+
+  .state-marquee {
+    display: block;
+    min-height: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
 button.pillar {
   border: 1px solid var(--line);
   border-radius: var(--radius);
