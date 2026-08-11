@@ -4410,25 +4410,15 @@ a.surface-card:active {
   flex-shrink: 0;
 }
 
+/* Desktop enhancement for .state-layout and .state-marquee was migrated to
+   home.css (it must load AFTER the desktop-default .state-layout rule in
+   home.css to avoid the cascade-order bug — home.css loads after globals.css).
+   .row-stack width constraint moved to home.css too; .layer-stack width
+   stays here since it's a docs-only class not affected by home.css. */
 @media (min-width: 860px) {
-  .state-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .row-stack,
   .layer-stack {
     width: min(100%, 640px);
     max-width: min(100%, 640px);
-  }
-
-  .state-marquee {
-    display: block;
-    /* Match row-stack content height — 10 rows × ~71px = 710px */
-    height: 710px;
-    flex: 1 1 0;
-    align-self: flex-start;
   }
 }
 
