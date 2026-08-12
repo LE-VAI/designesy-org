@@ -9,15 +9,15 @@ import { pageMeta } from '../../lib/site-meta';
 import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Design system contract',
+  title: 'Design system contract — reference format',
   description:
-    `Designesy design system contract v${designSystemContract.version} — human overview and machine export. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics, and Copywriting rules adopted.`,
+    `Designesy design system contract v${designSystemContract.version} — a reference format for AI-readable design contracts. Richer than design.md: 40 verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
   path: '/contracts/design-system',
-  ogTitle: `Design system contract · v${designSystemContract.version}`,
+  ogTitle: `Design system contract · v${designSystemContract.version} — reference format`,
   ogDescription:
-    'Portable design agreement for designesy.org. Poise interaction, Takt interface-feel, Cadence typography, Acoustics cue tokens, and Copywriting rules adopted. Human overview with machine export.',
+    'A reference format for AI-readable design contracts. Input + verification — not just tokens and prose, but 40 automated checks that prove the output passes. Richer than design.md.',
   twitterDescription:
-    'Portable design judgment for agents and builders — designesy.org/contracts/design-system',
+    'A reference format for AI-readable design contracts — input + verification. designesy.org/contracts/design-system',
 });
 
 const SECTIONS = [
@@ -51,10 +51,10 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            'Portable design agreement for designesy.org — tokens, motion, components, and adopted Poise + Takt + Cadence + Acoustics rules.',
+            'A reference format for AI-readable design contracts — tokens, motion, components, 40 verification checks, acoustic cues, takt, copywriting, and adopted Poise + Takt + Cadence + Acoustics rules. Richer than design.md.',
           url: c.public_url,
           version: c.version,
-          related: [c.machine_url, 'https://www.designesy.org/open'],
+          related: [c.machine_url, 'https://www.designesy.org/open', 'https://www.designesy.org/score'],
         })}
       />
       <Topbar scrolled />
@@ -70,12 +70,15 @@ export default function DesignSystemContractPage() {
           </p>
           <h1 className="surface-title" data-scramble>{c.name}</h1>
           <p className="surface-lede">
-            Portable design judgment for designesy.org — version {c.version}.
+            A reference format for AI-readable design contracts — version {c.version}.
           </p>
           <p className="surface-note">
-            This page is the human face of the contract. Exact values, roles, and
-            rules live here in overview form, and in full on the contracts
-            surface. Machines read the JSON export.
+            design.md (Google Labs, 26k+ stars) is the input layer: tokens and
+            prose an agent reads to generate UI. This contract is input{' '}
+            <em>plus</em> verification — 40 automated checks that prove the
+            generated output actually passes. Acoustic cues, takt interface-feel,
+            copywriting principles, anti-generic tells, and provenance tracking
+            have no design.md equivalent.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">v{c.version}</span>
@@ -110,6 +113,90 @@ export default function DesignSystemContractPage() {
               discipline — not legal advice or a client service agreement.
             </p>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">
+            Beyond design.md — the verification layer
+          </h2>
+          <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
+            Google Labs' design.md (alpha, Apache-2.0, 26k+ stars) is a strong
+            input format: YAML tokens + markdown prose that an agent reads to
+            generate UI. Designesy extends that model with layers design.md does
+            not carry. They are complementary — design.md is the brief, this
+            contract is the brief and the proof.
+          </p>
+          <div className="token-table" role="table" aria-label="Designesy contract vs design.md">
+            <div className="token-table-head" role="row">
+              <span role="columnheader">Layer</span>
+              <span role="columnheader">design.md</span>
+              <span role="columnheader">This contract</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Tokens</code>
+              <span role="cell">YAML frontmatter</span>
+              <span role="cell">DTCG 2025.10 JSON + CORS endpoint</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Rationale prose</code>
+              <span role="cell">9 markdown sections</span>
+              <span role="cell">Adoption narratives + lab provenance</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Verification</code>
+              <span role="cell">CLI linter + WCAG contrast</span>
+              <span role="cell">40 automated checks, live score engine</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Anti-generic detection</code>
+              <span role="cell">—</span>
+              <span role="cell">12 anti-generic tells (AI sameness)</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Acoustic cues</code>
+              <span role="cell">—</span>
+              <span role="cell">10 named cue tokens + mapping rules</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Interface-feel (takt)</code>
+              <span role="cell">—</span>
+              <span role="cell">Press scale, hit area, stagger rhythm</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Copywriting</code>
+              <span role="cell">—</span>
+              <span role="cell">16 UX copy principles, 4 as checks (v38–v41)</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Motion</code>
+              <span role="cell">Duration + easing</span>
+              <span role="cell">Spring physics + 3-tier reduced-motion</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Provenance</code>
+              <span role="cell">—</span>
+              <span role="cell">Source labs, adopted_in versions, external ingests</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Live proof</code>
+              <span role="cell">—</span>
+              <span role="cell">designesy.org/sgrade — any URL, live grade</span>
+            </div>
+            <div className="token-table-row" role="row">
+              <code role="cell">Agent skill</code>
+              <span role="cell">Reads the markdown</span>
+              <span role="cell">SKILL.md format + MCP contract endpoint</span>
+            </div>
+          </div>
+          <p className="surface-note" style={{ marginTop: '1.25rem' }}>
+            The gap design.md leaves open is the same gap every AI coding agent
+            leaves open: <strong>generation is not verification</strong>. An
+            agent can read a token file and still ship hardcoded hex, broken
+            contrast, or the AI-default look. The 40-check engine closes that
+            gap. When 42% of committed React is AI-generated, the score is the
+            compliance layer — not whether the agent read the rules, but whether
+            the shipped design passes them.
+          </p>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -335,6 +422,21 @@ export default function DesignSystemContractPage() {
                 </span>
               </span>
             </Link>
+            <Link
+              href="/score"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="whisper"
+              data-cuelume-press
+            >
+              <span className="row-index">14</span>
+              <span className="row-body">
+                <span className="row-title">Live verification</span>
+                <span className="row-meta">
+                  Score any URL against this contract — 40 checks, one grade
+                </span>
+              </span>
+            </Link>
           </div>
         </section>
 
@@ -437,7 +539,9 @@ export default function DesignSystemContractPage() {
         </section>
 
         <div className="status-note">
-          Design system contract v{c.version}. Live styles remain authoritative
+          Design system contract v{c.version} — a reference format for
+          AI-readable design contracts. Input plus verification: 40 automated
+          checks, not just tokens and prose. Live styles remain authoritative
           when they and this contract disagree. Human and machine surfaces stay
           synchronized.
         </div>
