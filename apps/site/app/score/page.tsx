@@ -91,6 +91,7 @@ export default function ScorePage() {
           <p className="surface-lede">
             Four engines. One composite grade. Score (40 checks), drift (12), AI
             readiness (10), and guardrails (6) — all on one URL, one dashboard.
+            The compliance layer for AI-generated UI.
           </p>
           <p className="surface-note">
             The homepage gives you the quick 40-check score. This is the power surface —
