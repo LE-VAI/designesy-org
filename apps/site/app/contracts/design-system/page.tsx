@@ -449,8 +449,11 @@ export default function DesignSystemContractPage() {
             <p>
               Lab One portable rules are contract material: wordmark breath,
               press settle, sound preference ownership, reduced motion, hover
-              media discipline, and human public naming. Silence was not
-              adoption — that version was the explicit order.
+              media discipline, and human public naming. Motion philosophy
+              cross-referenced against Kowalski /emil-design-eng (Linear,
+              ex-Vercel) — frequency gate and unseen-details-compound
+              principle. Silence was not adoption — that version was the
+              explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.interaction.rules)} />

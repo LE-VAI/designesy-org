@@ -45,7 +45,7 @@ export const designSystemContract = {
     doctrine:
       'Designesy design doctrine — public surface carries operational values only',
     motion_references:
-      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer',
+      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer. Frequency gate, press scale 0.97, and unseen-details-compound principle cross-referenced against Kowalski /emil-design-eng (Linear, ex-Vercel).',
     interaction_audio: 'Cuelume v0.2.2; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
@@ -146,6 +146,20 @@ export const designSystemContract = {
         author: 'Jakub Krehel (@jakubkrehel)',
         url: 'https://github.com/jakubkrehel/skills',
         role: 'Structure, grouping, alignment, reading order, progressive disclosure, and breakpoint discipline — cross-referenced against contract layout tokens and grid rules.',
+        license: 'MIT',
+      },
+      {
+        name: 'emil-design-eng skill',
+        author: 'Emil Kowalski (@emilkowalski)',
+        url: 'https://github.com/emilkowalski/skills',
+        role: 'Animation philosophy and motion craft — frequency gate (never animate keyboard-initiated or high-frequency actions), custom Bézier over bare ease, origin-aware animations, press scale 0.97, unseen-details-compound principle. Cross-referenced against contract ten_standards and motion rules. Kowalski is on the Web team at Linear (ex-Vercel design team).',
+        license: 'MIT',
+      },
+      {
+        name: 'review-animations skill',
+        author: 'Emil Kowalski (@emilkowalski)',
+        url: 'https://github.com/emilkowalski/skills',
+        role: 'Strict animation review rules — correct curve selection, duration bounds, property restriction (transform/opacity/filter only), interruptibility, and reduced-motion mandatory handling. Cross-referenced against contract motion verification and anti-patterns. Complements Krehel /better-ui for the motion-specific dimension.',
         license: 'MIT',
       },
     ],
