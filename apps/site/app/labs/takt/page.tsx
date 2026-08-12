@@ -98,6 +98,7 @@ const PROVENANCE = [
   'Emil Kowalski (@emilkowalski) — /emil-design-eng skill, motion craft and press scale 0.97, MIT',
   'Emil Kowalski (@emilkowalski) — /apple-design skill, Apple WWDC spring physics and interruptibility, MIT',
   'Emil Kowalski (@emilkowalski) — /find-animation-opportunities, anti-over-animation Gate (Frequency, Purpose, Speed, Function), MIT',
+  'Emil Kowalski (@emilkowalski) — /animate skill, 7-step build sequence and Never Ship table (13 auto-blocks), MIT',
   'Concentric radius rule — Krehel better-ui principle 1',
   'Press scale 0.96 — Krehel better-ui principle 9; 0.97 — Kowalski emil-design-eng',
   'Image outline rule — Krehel better-ui principle 8',
@@ -107,6 +108,7 @@ const PROVENANCE = [
   'Spare will-change — Krehel better-ui principle 12',
   'Frequency gate — Kowalski emil-design-eng (no motion on keyboard-initiated or high-frequency actions)',
   'Spring physics — Kowalski apple-design (damping 1.0, response 0.3–0.4; matches contract springs)',
+  'Never Ship table — Kowalski animate (13 auto-blocks including scale(0), ease-in on UI, keyframes on toasts, Motion x/y/scale shorthands)',
   'Cross-referenced against Designesy design system contract v0.1.1; adopted into v0.1.2',
 ];
 
@@ -171,9 +173,9 @@ Output format:
 
 Provenance: rules compiled from external design intelligence
 (Amicro, Jakub Krehel /better-ui, Emil Kowalski /emil-design-eng,
-/apple-design, /find-animation-opportunities), cross-referenced
-against contract v0.1.1, and adopted into design system contract
-v0.1.2.
+/apple-design, /find-animation-opportunities, /animate),
+cross-referenced against contract v0.1.1, and adopted into design
+system contract v0.1.2.
 
 Primary lab page: https://www.designesy.org/labs/takt
 Design system contract: https://www.designesy.org/contracts/design-system
@@ -501,9 +503,9 @@ export default function TaktLabPage() {
         <div className="status-note">
           Lab Two · Takt studies interface feel as portable rules. Rules compiled
           from external design intelligence (Amicro, Jakub Krehel /better-ui,
-          Emil Kowalski /emil-design-eng, /apple-design, /find-animation-opportunities)
-          and adopted into design system contract v0.1.2. Field check lives at
-          /review/takt.
+          Emil Kowalski /emil-design-eng, /apple-design, /find-animation-opportunities,
+          /animate) and adopted into design system contract v0.1.2. Field check
+          lives at /review/takt.
         </div>
       </main>
 
