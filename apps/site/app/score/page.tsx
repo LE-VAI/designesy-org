@@ -5,8 +5,25 @@ import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Static /score route — the entire page body is static and prerendered at
+// build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
+//
+// The page used to be `export const dynamic = 'force-dynamic' + revalidate = 0`
+// — forcing full SSR on every visit. That was necessary only because the
+// page body read searchParams.url to pass to VerifyForm. But VerifyForm is
+// already 'use client' — it can read the URL from window.location.search on
+// mount, the same pattern it already uses for the auto-run-on-deep-link
+// useEffect. So the page body has NO dynamic data dependency and can be
+// fully static.
+//
+// Only generateMetadata stays dynamic (it reads searchParams to set OG
+// images for ?url= deep links). Next.js handles metadata generation as a
+// separate render path from the page body — the page itself stays static.
+//
+// Note on PPR: Partial Prerendering would achieve the same result (static
+// shell + dynamic searchParams in Suspense), but PPR is canary-only in
+// Next.js 15.5.x (it ships as stable in Next.js 16 via cacheComponents).
+// This approach gets the TTFB win on stable Next.js 15.5.23 today.
 
 // When ?url= is present, the auto-wired opengraph-image.tsx does NOT receive
 // the parent page's searchParams — Next.js file-convention OG images get their
@@ -56,13 +73,12 @@ export async function generateMetadata({
   return base;
 }
 
-export default async function ScorePage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ url?: string }>;
-}) {
-  const params = await searchParams;
-  const initialUrl = typeof params?.url === 'string' ? params.url : '';
+export default function ScorePage() {
+  // The page body is fully static. VerifyForm (a 'use client' component)
+  // reads ?url= from window.location.search on mount — the same pattern
+  // it already uses for its auto-run-on-deep-link useEffect. No searchParams
+  // read here means no dynamic data dependency → the page prerenders at
+  // build time and is served from the CDN edge.
   return (
     <>
       <Topbar scrolled />
@@ -84,7 +100,7 @@ export default async function ScorePage({
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <VerifyForm initialUrl={initialUrl} />
+          <VerifyForm />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
