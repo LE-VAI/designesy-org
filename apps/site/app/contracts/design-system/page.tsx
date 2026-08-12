@@ -455,7 +455,9 @@ export default function DesignSystemContractPage() {
               principle. Spring physics and interruptibility cross-referenced
               against Kowalski /apple-design (Apple WWDC). Anti-over-animation
               Gate (Frequency, Purpose, Speed, Function) cross-referenced
-              against Kowalski /find-animation-opportunities. Silence was not
+              against Kowalski /find-animation-opportunities. Animation
+              authoring — 7-step build sequence and Never Ship table —
+              cross-referenced against Kowalski /animate. Silence was not
               adoption — that version was the explicit order.
             </p>
           </div>
