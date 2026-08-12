@@ -127,6 +127,27 @@ export const designSystemContract = {
         url: 'https://carbondesignsystem.com/guidelines/content/writing-style/',
         role: 'Sentence case for all UI text, second person (you/your), active voice, no please/thank you, simplest term. Source for sentence-case and voice principles.',
       },
+      {
+        name: 'better-colors skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: 'OKLCH palette generation, contrast checking, gamut mapping, and theming principles — cross-referenced against contract color tokens. Confirms OKLCH-first approach for wide-gamut color discipline.',
+        license: 'MIT',
+      },
+      {
+        name: 'better-accessibility skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: 'Focus management, keyboard navigation, ARIA patterns, form accessibility, screen-reader semantics, hit area floors, and motion reduction — cross-referenced against contract accessibility rules and WCAG 2.2 AA verification checks.',
+        license: 'MIT',
+      },
+      {
+        name: 'better-layout skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: 'Structure, grouping, alignment, reading order, progressive disclosure, and breakpoint discipline — cross-referenced against contract layout tokens and grid rules.',
+        license: 'MIT',
+      },
     ],
     adoption: {
       version: '0.1.1',
@@ -706,7 +727,7 @@ export const designSystemContract = {
       version: '0.1.2',
       date: '2026-07-13',
       summary:
-        'Adopted Lab Two · Takt interface-feel rules: concentric radii, press scale (0.96/0.985), image outlines, hit area floor, stagger rhythm, no transition:all, spare will-change. Rules compiled from external design intelligence (Amicro, Krehel /better-ui) and verified on live CSS.',
+        'Adopted Lab Two · Takt interface-feel rules: concentric radii, press scale (0.96/0.985), image outlines, hit area floor, stagger rhythm, no transition:all, spare will-change. Rules compiled from external design intelligence (Amicro, Krehel /better-ui, /better-accessibility for hit area floors) and verified on live CSS.',
       from_lab: 'Takt',
       evidence: [
         'https://www.designesy.org/labs/takt',
@@ -717,7 +738,7 @@ export const designSystemContract = {
       version: '0.1.3',
       date: '2026-07-13',
       summary:
-        'Adopted Lab Three · Cadence typography rules: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor. Rules compiled from external typography intelligence (Krehel /better-typography) and verified on live CSS. Three open tensions documented: font-synthesis, logical properties, underline-from-font.',
+        'Adopted Lab Three · Cadence typography rules: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor. Rules compiled from external typography intelligence (Krehel /better-typography, /better-layout for reading order and measure) and verified on live CSS. Three open tensions documented: font-synthesis, logical properties, underline-from-font.',
       from_lab: 'Cadence',
       evidence: [
         'https://www.designesy.org/labs/cadence',
