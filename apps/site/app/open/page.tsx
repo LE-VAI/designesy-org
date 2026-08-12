@@ -354,6 +354,23 @@ export default function OpenPage() {
                 <span className="row-meta">Transition gallery (Matthew Antalik) — duration scale cross-referenced in contract</span>
               </span>
             </a>
+            <a
+              href="https://github.com/google-labs-code/design.md"
+              className="row"
+              role="listitem"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cuelume-hover="chime"
+              data-cuelume-press
+            >
+              <span className="row-index">06</span>
+              <span className="row-body">
+                <span className="row-title">design.md (Google Labs)</span>
+                <span className="row-meta">
+                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with 40 verification checks.
+                </span>
+              </span>
+            </a>
           </div>
         </section>
 
