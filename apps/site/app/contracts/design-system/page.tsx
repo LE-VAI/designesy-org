@@ -452,8 +452,11 @@ export default function DesignSystemContractPage() {
               media discipline, and human public naming. Motion philosophy
               cross-referenced against Kowalski /emil-design-eng (Linear,
               ex-Vercel) — frequency gate and unseen-details-compound
-              principle. Silence was not adoption — that version was the
-              explicit order.
+              principle. Spring physics and interruptibility cross-referenced
+              against Kowalski /apple-design (Apple WWDC). Anti-over-animation
+              Gate (Frequency, Purpose, Speed, Function) cross-referenced
+              against Kowalski /find-animation-opportunities. Silence was not
+              adoption — that version was the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.interaction.rules)} />
