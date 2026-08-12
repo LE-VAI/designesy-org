@@ -392,11 +392,25 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     return () => cancelAnimationFrame(rafId);
   }, [reportResult?.compositeScore]);
 
-  // Auto-run on mount when deep-linked via ?url= (same pattern as ScoreForm).
+  // Auto-run on mount when deep-linked via ?url=.
+  //
+  // Two sources for the deep-link URL:
+  //   1. `initialUrl` prop — passed by the homepage ScoreForm (which gets it
+  //      from its own searchParams, since the homepage is a separate route).
+  //   2. `window.location.search` — the /score route's own ?url= param. The
+  //      /score page is now fully static (prerendered at CDN edge), so it
+  //      can't pass searchParams to this component at render time. Instead
+  //      we read the URL bar on mount. This is the same pattern the component
+  //      already used — the useEffect fires on mount either way.
   useEffect(() => {
-    const clean = normalizeInput(initialUrl);
+    let deepLink = initialUrl;
+    if (!deepLink && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      deepLink = params.get('url') || '';
+    }
+    const clean = normalizeInput(deepLink);
     if (clean) {
-      setUrl(initialUrl);
+      setUrl(deepLink);
       void runVerify(clean);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
