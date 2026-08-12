@@ -120,7 +120,7 @@ export default function DesignSystemContractPage() {
             Beyond design.md — the verification layer
           </h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Google Labs' design.md (alpha, Apache-2.0, 26k+ stars) is a strong
+            Google Labs&rsquo; design.md (alpha, Apache-2.0, 26k+ stars) is a strong
             input format: YAML tokens + markdown prose that an agent reads to
             generate UI. Designesy extends that model with layers design.md does
             not carry. They are complementary — design.md is the brief, this
