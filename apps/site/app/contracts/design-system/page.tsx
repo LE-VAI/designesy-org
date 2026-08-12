@@ -467,8 +467,9 @@ export default function DesignSystemContractPage() {
               press scale (0.96 for cells, 0.985 for cards), image outlines,
               hit area floor, stagger rhythm, no transition:all, and spare
               will-change. Rules compiled from external design intelligence
-              (Amicro, Krehel /better-ui) and verified on live CSS. Silence
-              was not adoption — this version is the explicit order.
+              (Amicro, Krehel /better-ui, /better-accessibility for hit area
+              floors) and verified on live CSS. Silence was not adoption —
+              this version is the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.takt.rules)} />
@@ -486,8 +487,9 @@ export default function DesignSystemContractPage() {
               measure cap, text-wrap balance and pretty, tabular numbers,
               ::selection with --signal, user-select on UI chrome, and 16px
               input floor. Rules compiled from external typography intelligence
-              (Krehel /better-typography) and verified on live CSS. Three open
-              tensions documented: font-synthesis, logical properties, and
+              (Krehel /better-typography, /better-layout for reading order and
+              measure) and verified on live CSS. Three open tensions
+              documented: font-synthesis, logical properties, and
               underline-from-font. Silence was not adoption — this version is
               the explicit order.
             </p>
