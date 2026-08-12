@@ -45,7 +45,7 @@ export const designSystemContract = {
     doctrine:
       'Designesy design doctrine — public surface carries operational values only',
     motion_references:
-      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer. Frequency gate, press scale 0.97, and unseen-details-compound principle cross-referenced against Kowalski /emil-design-eng (Linear, ex-Vercel).',
+      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer. Frequency gate, press scale 0.97, and unseen-details-compound principle cross-referenced against Kowalski /emil-design-eng (Linear, ex-Vercel). Spring physics (damping 1.0, response 0.3–0.4) and interruptibility principles cross-referenced against Kowalski /apple-design (Apple WWDC Designing Fluid Interfaces). Anti-over-animation Gate (Frequency, Purpose, Speed, Function) cross-referenced against Kowalski /find-animation-opportunities.',
     interaction_audio: 'Cuelume v0.2.2; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
@@ -160,6 +160,20 @@ export const designSystemContract = {
         author: 'Emil Kowalski (@emilkowalski)',
         url: 'https://github.com/emilkowalski/skills',
         role: 'Strict animation review rules — correct curve selection, duration bounds, property restriction (transform/opacity/filter only), interruptibility, and reduced-motion mandatory handling. Cross-referenced against contract motion verification and anti-patterns. Complements Krehel /better-ui for the motion-specific dimension.',
+        license: 'MIT',
+      },
+      {
+        name: 'apple-design skill',
+        author: 'Emil Kowalski (@emilkowalski)',
+        url: 'https://github.com/emilkowalski/skills',
+        role: 'Apple WWDC design principles distilled for web — spring physics (damping 1.0 critically damped, response 0.3–0.4), interruptibility, velocity handoff, momentum projection, rubber-banding, translucent materials, multimodal feedback (causality + harmony + utility), and reduced-motion as gentler feedback not a kill switch. Spring values cross-referenced against contract springs (default damping 1.0, response 0.4). Source: Designing Fluid Interfaces (WWDC 2018) + Principles of Great Design (WWDC 2026).',
+        license: 'MIT',
+      },
+      {
+        name: 'find-animation-opportunities skill',
+        author: 'Emil Kowalski (@emilkowalski)',
+        url: 'https://github.com/emilkowalski/skills',
+        role: 'Anti-over-animation discipline — the 4-question Gate (Frequency, Purpose, Speed, Function). Frequency gate: 100+/day or keyboard-initiated = never animate. Purpose must be named: feedback, spatial consistency, state indication, preventing jarring change, explanation, or delight (rare-tier only). Speed budget: press 100–160ms, tooltips 125–200ms, dropdowns 150–250ms, modals 200–500ms. Function: decoration on functional data hinders. Cross-referenced against contract ten_standards keyboard-still rule and anti-patterns_caution.',
         license: 'MIT',
       },
     ],
