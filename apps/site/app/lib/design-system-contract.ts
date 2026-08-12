@@ -45,7 +45,7 @@ export const designSystemContract = {
     doctrine:
       'Designesy design doctrine — public surface carries operational values only',
     motion_references:
-      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer. Frequency gate, press scale 0.97, and unseen-details-compound principle cross-referenced against Kowalski /emil-design-eng (Linear, ex-Vercel). Spring physics (damping 1.0, response 0.3–0.4) and interruptibility principles cross-referenced against Kowalski /apple-design (Apple WWDC Designing Fluid Interfaces). Anti-over-animation Gate (Frequency, Purpose, Speed, Function) cross-referenced against Kowalski /find-animation-opportunities.',
+      'Short settle and easing language adapted into --ease-out, --ease-in-out, --ease-drawer. Frequency gate, press scale 0.97, and unseen-details-compound principle cross-referenced against Kowalski /emil-design-eng (Linear, ex-Vercel). Spring physics (damping 1.0, response 0.3–0.4) and interruptibility principles cross-referenced against Kowalski /apple-design (Apple WWDC Designing Fluid Interfaces). Anti-over-animation Gate (Frequency, Purpose, Speed, Function) cross-referenced against Kowalski /find-animation-opportunities. Animation authoring — 7-step build sequence, Never Ship table (13 auto-blocks), tool selection hierarchy, and tooltip-instant pattern cross-referenced against Kowalski /animate (the authoring complement to /review-animations).',
     interaction_audio: 'Cuelume v0.2.2; preference owned by Designesy',
     first_lab: {
       name: 'Poise',
@@ -174,6 +174,13 @@ export const designSystemContract = {
         author: 'Emil Kowalski (@emilkowalski)',
         url: 'https://github.com/emilkowalski/skills',
         role: 'Anti-over-animation discipline — the 4-question Gate (Frequency, Purpose, Speed, Function). Frequency gate: 100+/day or keyboard-initiated = never animate. Purpose must be named: feedback, spatial consistency, state indication, preventing jarring change, explanation, or delight (rare-tier only). Speed budget: press 100–160ms, tooltips 125–200ms, dropdowns 150–250ms, modals 200–500ms. Function: decoration on functional data hinders. Cross-referenced against contract ten_standards keyboard-still rule and anti-patterns_caution.',
+        license: 'MIT',
+      },
+      {
+        name: 'animate skill',
+        author: 'Emil Kowalski (@emilkowalski)',
+        url: 'https://github.com/emilkowalski/skills',
+        role: 'Animation authoring — the 7-step build sequence (should it animate? → purpose → tool → properties → easing/duration → interruption/exit → reduced-motion/hover gating). Tool selection hierarchy: CSS transition → @starting-style → CSS animation → WAAPI → Motion (cheapest that works). Never Ship table: 13 auto-block items including transition:all, scale(0), ease-in on UI, keyframes on rapidly-triggered elements, Motion x/y/scale shorthands (not hardware-accelerated — use full transform string), ungated :hover motion. Tooltip-instant pattern: once one tooltip is open, neighbors open at 0ms duration. RECIPES.md: 12 ready-to-build component implementations (button press, dropdown, tooltip, modal, drawer, toast, accordion, stagger, hold-to-confirm, tab indicator, scroll reveal, drag-to-dismiss). The authoring complement to review-animations (the checking skill).',
         license: 'MIT',
       },
     ],
