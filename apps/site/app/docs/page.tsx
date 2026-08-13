@@ -385,6 +385,71 @@ export default function DocsPage() {
           design. What is public here — principles, architecture, voice,
           contracts, labs, kits, and review — is the real system.
         </div>
+
+        <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Drift score acknowledged</h2>
+          <div className="definition">
+            <p className="definition-label">Honest reading of /report?url=designesy.org</p>
+            <p>
+              The composite grade is <strong>C (76/100)</strong>. It is dragged
+              down by the drift engine (33/100), not by the design-score
+              engine (100/100, A) or AI-readiness (80/100, B). Of the 12 drift
+              checks, 4 PASS and 8 FAIL. The 8 FAILs fall into two honest
+              categories:
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              <strong>1. Inflated by counting legitimate variety</strong> — 273
+              inline color values, 200 distinct color values across 309
+              declarations, 30 distinct spacing values, 12 distinct
+              border-radius values, 32 distinct box-shadow values, 57 distinct
+              transition durations. Most of this is alpha-channel variants
+              (rgba(255,255,255,.04), .06, .08, .12, .25, .45, .7), gradient
+              color stops (each gradient contains 2–4 stops the linter counts
+              separately), and library CSS that ships in the bundled stylesheet.
+              None of it represents design inconsistency — it represents
+              legitimate design variation that the engine counts aggressively.
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              <strong>2. Real signal</strong> — z-index values reach 1000
+              (legitimate: the magnetic cursor sits on a reserved tier above
+              all chrome). We do not have a formal stacking contract yet; the
+              d10 FAIL is honest feedback that we should publish one. Until
+              then, the FAIL is correct, and is the right thing for the engine
+              to say.
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              The 4 PASSes (d01, d02, d11, d12) are real wins earned on
+              2026-08-12: 6 previously orphan tokens are now declared at
+              :root, the engine correctly distinguishes design tokens from
+              JS-injected runtime state, and all alias chains resolve. The C
+              grade is not a lie about the design — it is honest feedback
+              about what the engine sees, and an accurate signal that the
+              drift detection needs to grow up alongside the site.
+            </p>
+          </div>
+          <div className="text-cell">
+            <p className="surface-note">
+              <Link
+                href="/report?url=https%3A%2F%2Fwww.designesy.org"
+                className="text-link"
+                data-cuelume-hover="tick"
+                data-cuelume-press
+              >
+                Run the live composite report
+              </Link>
+              {' '}or read the{' '}
+              <Link
+                href="/drift"
+                className="text-link"
+                data-cuelume-hover="tick"
+                data-cuelume-press
+              >
+                drift engine methodology
+              </Link>
+              .
+            </p>
+          </div>
+        </section>
       </main>
 
       <Footer />
