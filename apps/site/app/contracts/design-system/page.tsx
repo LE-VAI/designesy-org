@@ -542,7 +542,11 @@ export default function DesignSystemContractPage() {
               Copywriting discipline. 16 principles across button text, error
               messages, empty states, link text, general microcopy, and voice &
               tone. 4 codifiable principles are verification checks (v38–v41);
-              12 are governance. Tooling: Vale, textlint, alex.
+              12 are governance. Verb-first buttons, descriptive links, and
+              one capitalization policy cross-referenced against Krehel
+              /better-writing. Empty states, placeholder-as-example, and
+              toggle ON-state labeling from Krehel /better-writing. Tooling:
+              Vale, textlint, alex.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.copywriting.principles)} />
