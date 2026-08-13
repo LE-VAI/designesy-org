@@ -11050,6 +11050,56 @@ select {
   letter-spacing: 0.02em;
 }
 
+/* Scope toggle — segmented control below the URL input */
+.score-scope-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+
+.score-scope-label {
+  font-size: 0.7rem;
+  font-family: var(--mono);
+  color: var(--muted-dim);
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  margin-right: 0.25rem;
+}
+
+.score-scope-option {
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    color var(--duration-quick) var(--ease-out),
+    background var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+.score-scope-option:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.score-scope-option.is-active {
+  color: var(--signal-light);
+  background: color-mix(in oklch, var(--signal) 10%, transparent);
+  border-color: color-mix(in oklch, var(--signal) 25%, transparent);
+}
+
+.score-scope-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── Category legend (text mirror of the SVG nodes) ─────────────────────── */
 
 .score-cat-legend {
