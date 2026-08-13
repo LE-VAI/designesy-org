@@ -5,6 +5,129 @@ import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// ── Scope system: contract vs universal ─────────────────────────────────────
+// The score engine has two scope modes that control how absence (a feature is
+// not present on the scored site) is treated:
+//
+//   scope=contract  (default for designesy.org self-scoring)
+//     - All 40 checks active. Absence of a feature = WARN or FAIL.
+//     - This is the strictest mode: the contract's patterns are mandatory.
+//     - Used when scoring designesy.org itself (we should follow our own rules).
+//
+//   scope=universal  (default for external sites)
+//     - Tier 2 checks (optional features) → SKIP on absence instead of WARN.
+//       A site without sound, font-synthesis, or text-wrap isn't "broken" —
+//       it just doesn't use that pattern. If the feature IS present, it's
+//       verified normally (violation → WARN/FAIL as usual).
+//     - Tier 3 checks (contract-specific tokens) → SKIP on absence instead of
+//       WARN/FAIL. A site without --paper or --signal isn't failing — it just
+//       uses different token names. If tokens ARE present, they're verified.
+//     - Tier 1 checks (universal accessibility/semantics) stay as-is. A site
+//       without :focus-visible or prefers-reduced-motion IS broken — those are
+//       WCAG 2.2 AA requirements, not Designesy preferences.
+//
+// The filter runs AFTER all checks execute, as a post-processing step. It
+// inspects each check's status + detail string to determine if the result is
+// an "absence" outcome (feature not present) vs a "violation" outcome (feature
+// present but wrong). Only absence outcomes are converted to SKIP. This means
+// no check function needs to be modified — the filter is a single function.
+
+export type ScoreScope = 'contract' | 'universal';
+
+// Tier 2: optional features — SKIP on absence when scope=universal.
+// These are Designesy-specific polish patterns, not universal requirements.
+// If the feature IS present and wrong, the original WARN/FAIL stands.
+const TIER2_ABSENCE_PATTERNS: Array<{ id: string; absenceMatch: RegExp }> = [
+  // v08 Poise interaction CSS — Designesy-specific interaction patterns
+  { id: 'v08', absenceMatch: /^missing:/ },
+  // v10 Takt feel CSS — Designesy-specific feel patterns
+  { id: 'v10', absenceMatch: /^missing:/ },
+  // v13 press scale — optional interaction polish (not a WCAG requirement)
+  { id: 'v13', absenceMatch: /^no press-scale|only scale\(0\)|no press-scale \(scale/ },
+  // v15 font-smoothing — platform-specific polish, not a universal requirement
+  { id: 'v15', absenceMatch: /missing complete font-smoothing/ },
+  // v19 tabular-nums — optional numeric typography refinement
+  { id: 'v19', absenceMatch: /^only \d+ instances/ },
+  // v20 ::selection styled — cosmetic brand surface, not a universal requirement
+  { id: 'v20', absenceMatch: /^no ::selection rule found/ },
+  // v23 duration tokens — Designesy contract-specific token set
+  { id: 'v23', absenceMatch: /^only \d+\/5 duration tokens|no.*duration tokens/i },
+  // v28 reading width — only applicable to prose-heavy sites
+  { id: 'v28', absenceMatch: /^no max-width in ch units/ },
+  // x01 font-synthesis — optional typography refinement
+  { id: 'x01', absenceMatch: /^no font-synthesis rule/ },
+  // x02 text-underline-position — optional underline refinement
+  { id: 'x02', absenceMatch: /^no text-underline-position rule/ },
+  // x03 text-decoration-skip-ink — optional underline refinement
+  { id: 'x03', absenceMatch: /^no text-decoration-skip-ink rule/ },
+];
+
+// Tier 3: contract-specific tokens — SKIP all non-PASS when scope=universal.
+// These checks verify Designesy's specific token naming convention. A site
+// with different token names (e.g. --bg instead of --paper) shouldn't fail.
+// If the tokens ARE present and wrong (e.g. bad contrast), that's a real
+// violation that stands even in universal scope.
+const TIER3_CONTRACT_ONLY = new Set([
+  'v01', // --paper token (Designesy naming convention)
+  'v22', // --signal token contrast (Designesy naming convention)
+  'v29', // token layering (Designesy architecture expectation)
+]);
+
+// v04 sound toggle is handled specially: it's MANUAL in static mode (no
+// penalty) and WARN in browser-audit mode when no sound toggle is found.
+// The browser audit route (audit/route.ts) handles scope-awareness for v04.
+
+function applyScopeFilter(
+  checks: CheckResult[],
+  scope: ScoreScope
+): CheckResult[] {
+  if (scope === 'contract') return checks; // no filtering
+
+  return checks.map((c) => {
+    // Tier 3: contract-specific token checks — SKIP any non-PASS result
+    // when the feature is absent (no tokens to verify against).
+    if (TIER3_CONTRACT_ONLY.has(c.id)) {
+      if (c.status === 'FAIL' || c.status === 'WARN') {
+        return {
+          ...c,
+          status: 'SKIP',
+          detail: `${c.detail} (skipped: scope=universal — this check verifies Designesy-specific token naming; the site may use different token names)`,
+        };
+      }
+      return c;
+    }
+
+    // Tier 2: optional features — SKIP only on absence patterns
+    const tier2 = TIER2_ABSENCE_PATTERNS.find((t) => t.id === c.id);
+    if (tier2 && (c.status === 'WARN' || c.status === 'FAIL')) {
+      if (tier2.absenceMatch.test(c.detail)) {
+        return {
+          ...c,
+          status: 'SKIP',
+          detail: `${c.detail} (skipped: scope=universal — this feature is optional; not present on this site)`,
+        };
+      }
+      // If the pattern doesn't match, it's a real violation — keep as-is
+    }
+
+    return c;
+  });
+}
+
+// Auto-detect scope: designesy.org gets contract scope (self-scoring),
+// everything else gets universal scope (fair to external sites).
+function autoDetectScope(targetUrl: string): ScoreScope {
+  try {
+    const host = new URL(targetUrl).hostname.toLowerCase();
+    if (host === 'designesy.org' || host === 'www.designesy.org') {
+      return 'contract';
+    }
+  } catch {
+    // ignore URL parse errors — default to universal
+  }
+  return 'universal';
+}
+
 // ── Score cache ─────────────────────────────────────────────────────────────
 // Score results are stable for ~24h (sites don't redesign daily) and the
 // 26-check run + target-site fetch is expensive (3-8s cold). unstable_cache
@@ -1715,12 +1838,15 @@ function computeGrade(score: number): string {
   return 'F';
 }
 
-async function scoreUrlUncached(targetUrl: string) {
+async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   const { html, css } = await fetchPageResilient(targetUrl);
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
 
-  const checks: CheckResult[] = [
+  // Resolve scope: explicit parameter wins, otherwise auto-detect from URL.
+  const effectiveScope: ScoreScope = scope || autoDetectScope(targetUrl);
+
+  let checks: CheckResult[] = [
     checkPaperToken(tokens),
     { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace — run the full audit to resolve' },
     checkFocusVisible(css),
@@ -1765,6 +1891,14 @@ async function scoreUrlUncached(targetUrl: string) {
   // v37 is async (fetches /DESIGN.md from the target origin and runs Google's
   // linter) — added after the synchronous checks array is built.
   checks.push(await checkDesignMdSpec(targetUrl));
+
+  // ── Scope filter ────────────────────────────────────────────────────────────
+  // Apply the scope filter AFTER all checks execute but BEFORE scoring math.
+  // This converts absence-WARNs/FAILs to SKIPs for tier 2 (optional features)
+  // and tier 3 (contract-specific tokens) when scope=universal. Tier 1 checks
+  // (universal accessibility/semantics) are never filtered — their absence is
+  // a real WCAG 2.2 violation regardless of scope.
+  checks = applyScopeFilter(checks, effectiveScope);
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
   const fail = checks.filter((c) => c.status === 'FAIL').length;
@@ -2428,16 +2562,16 @@ async function scoreUrlUncached(targetUrl: string) {
     };
   });
 
-  return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
+  return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, scope: effectiveScope, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
 // OG image route. unstable_cache serializes the result and serves it from the
-// Vercel Data Cache on subsequent calls with the same targetUrl. Per the Next
-// docs, the cache key is derived from the argument list, so targetUrl is the
-// key. revalidateTag('score') purges all entries; we can add per-URL purge later.
+// Vercel Data Cache on subsequent calls with the same targetUrl+scope. Per the
+// Next docs, the cache key is derived from the argument list, so targetUrl and
+// scope together form the key. revalidateTag('score') purges all entries.
 export const scoreUrl = unstable_cache(
-  scoreUrlUncached,
+  async (targetUrl: string, scope?: ScoreScope) => scoreUrlUncached(targetUrl, scope),
   ['designesy-score'],
   { revalidate: SCORE_TTL_SECONDS, tags: ['score'] }
 );
@@ -2488,6 +2622,7 @@ function emitCanonical(url: string, result: ScoreResult) {
     subject: {
       type: 'url' as const,
       requested: url,
+      scope: result.scope,
     },
     categories: Object.entries(result.categoryScores).map(([id, cs]) => ({
       id,
@@ -2612,7 +2747,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: unknown; format?: unknown };
+  let body: { url?: unknown; format?: unknown; scope?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -2622,6 +2757,14 @@ export async function POST(request: Request) {
   const rawUrl = typeof body.url === 'string' ? body.url : '';
   const url = normalizeInputUrl(rawUrl);
   const format = typeof body.format === 'string' ? body.format.toLowerCase() : 'designesy';
+
+  // Scope: 'contract' (strict, all checks penalize absence) or 'universal'
+  // (fair to external sites — optional features SKIP on absence). If not
+  // provided, auto-detect: designesy.org → contract, everything else → universal.
+  const scopeRaw = typeof body.scope === 'string' ? body.scope.toLowerCase() : '';
+  const scope: ScoreScope = scopeRaw === 'contract' || scopeRaw === 'universal'
+    ? scopeRaw as ScoreScope
+    : autoDetectScope(url);
 
   if (!url || !isValidUrl(url)) {
     return NextResponse.json(
@@ -2639,7 +2782,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await scoreUrl(url);
+    const result = await scoreUrl(url, scope);
 
     if (format === 'review') {
       const markdown = emitReview(url, result);
