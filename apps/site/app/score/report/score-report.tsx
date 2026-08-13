@@ -122,7 +122,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const res = await fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: normalized, format: 'designesy' }),
+          body: JSON.stringify({ url: normalized, format: 'designesy', scope: 'auto' }),
         });
 
         const data: ScoreResponse = await res.json();
