@@ -589,6 +589,44 @@ export const designSystemContract = {
       'hover-fill = interactive hover wash · press-fill = press/active fill · focus-ring = keyboard focus indicator',
     type_roles:
       'ink = primary claim · muted = supporting body · muted-dim = eyebrows, meta, footers',
+    local_scope_aliases: {
+      fg: {
+        token: '--fg',
+        value: 'var(--signal-access)',
+        role: 'Local-scope alias for search-match highlight text in cmdk (alias of --signal-access)',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+      text: {
+        token: '--text',
+        value: 'var(--ink)',
+        role: 'Local-scope alias for default body text where callers expected a separate name (alias of --ink)',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+      ink_soft: {
+        token: '--ink-soft',
+        value: 'var(--muted-dim)',
+        role: 'Local-scope alias for dimmed ink used in tertiary meta (hero proof caveat) — alias of --muted-dim',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+      surface_2: {
+        token: '--surface-2',
+        value: 'var(--surface-raised)',
+        role: 'Local-scope alias for intermediate surface tier (tab-active state) — alias of --surface-raised',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+      motion_short: {
+        token: '--motion-short',
+        value: 'var(--duration-quick)',
+        role: 'Local-scope alias for quick micro-motion duration (150ms) — alias of --duration-quick',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+      ease_quiet: {
+        token: '--ease-quiet',
+        value: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        role: 'Local-scope alias for softer ease used in muted-motion transitions (Material Design standard curve)',
+        added_in: '0.4.0-drift-2026-08-12',
+      },
+    },
   },
   copywriting: {
     adopted_in: '0.4.0',
