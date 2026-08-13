@@ -117,18 +117,29 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
 }
 
 // ── Token extraction ─────────────────────────────────────────────────────────
+//
+// Tokens declared in CSS custom properties can live in three scopes:
+//   1. :root { ... }                    — global theme tokens
+//   2. [data-theme="light"] :root { }   — theme override (still global)
+//   3. .component { --x: ...; }         — component-scoped (CSS spec valid)
+//   4. JS: el.style.setProperty('--x')  — runtime-injected state
+//
+// The original d02 check only scanned :root, which produced a high false-
+// positive count on real CSS that legitimately uses local-scope custom
+// properties (Krehel /better-ui pattern, magnetic-cursor effect, filter
+// segmented controls, grade badges). This now scans ALL custom property
+// declarations in the stylesheet so component-scoped state tokens are
+// recognized as declared, not fabricated.
 
 function extractRootTokens(css: string): Record<string, string> {
   const tokens: Record<string, string> = {};
-  const rootRe = /:root\s*\{([^}]*)\}/g;
-  let m;
-  while ((m = rootRe.exec(css)) !== null) {
-    const block = m[1];
-    const propRe = /(--[\w-]+)\s*:\s*([^;]+?)(?:;|$)/g;
-    let p;
-    while ((p = propRe.exec(block)) !== null) {
-      tokens[p[1]] = p[2].trim();
-    }
+  // All custom property declarations across the whole stylesheet — both
+  // :root blocks and component-scoped. Later declarations win so theme
+  // overrides resolve correctly (matches browser cascade behaviour).
+  const propRe = /(--[\w-]+)\s*:\s*([^;{}]+?)(?:;|$)/g;
+  let p;
+  while ((p = propRe.exec(css)) !== null) {
+    tokens[p[1]] = p[2].trim();
   }
   return tokens;
 }
