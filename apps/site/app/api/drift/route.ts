@@ -21,6 +21,61 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+// ── Scope system (mirrors score engine) ──────────────────────────────────────
+//
+// The drift engine has the same fairness gap as the score engine: some checks
+// penalize ABSENCE of a feature (no CSS custom properties → "no token system")
+// rather than DRIFT (variance within a system that exists). A site that uses
+// Tailwind, Sass variables, or well-organized static CSS has zero :root custom
+// properties but isn't "drifting" — it just doesn't use that particular
+// token mechanism.
+//
+// Scope modes:
+//   contract  — all 12 checks penalize absence (strict, for designesy.org self-scan)
+//   universal — absence-only checks SKIP on absence (fair to external sites)
+//
+// Only d01 is a pure-absence check in the drift engine. d03 has a mild absence
+// component (no color tokens → WARN on inline colors) but its WARN threshold
+// is informative rather than punitive, so it stays in tier 1. All other checks
+// measure genuine variance/consistency, which IS drift by definition.
+
+export type DriftScope = 'contract' | 'universal';
+
+// d01: "Token registry declared" — fails if <5 :root custom properties.
+// In universal scope, a site with no custom properties SKIPs rather than FAILs,
+// because absence of a CSS-custom-property system is an architectural choice,
+// not drift. The check still fires (FAIL) if the site HAS a token system but
+// it's tiny (1-4 tokens) — that's a weak system, not absence.
+const TIER2_ABSENCE_PATTERNS: Array<{ id: string; absenceMatch: RegExp }> = [
+  // Only match the 0-tokens case (pure absence). 1-4 tokens = weak system = real FAIL.
+  { id: 'd01', absenceMatch: /^Only 0 :root custom properties/ },
+];
+
+function applyDriftScopeFilter(checks: CheckResult[], scope: DriftScope): CheckResult[] {
+  if (scope === 'contract') return checks;
+  return checks.map((c) => {
+    const tier2 = TIER2_ABSENCE_PATTERNS.find((t) => t.id === c.id);
+    if (tier2 && (c.status === 'WARN' || c.status === 'FAIL')) {
+      if (tier2.absenceMatch.test(c.detail)) {
+        return {
+          ...c,
+          status: 'SKIP' as CheckResult['status'],
+          detail: `${c.detail} (skipped: scope=universal — absence of CSS custom properties is an architectural choice, not drift)`,
+        };
+      }
+    }
+    return c;
+  });
+}
+
+function autoDetectDriftScope(targetUrl: string): DriftScope {
+  try {
+    const host = new URL(targetUrl).hostname.toLowerCase();
+    if (host === 'designesy.org' || host === 'www.designesy.org') return 'contract';
+  } catch { /* fall through */ }
+  return 'universal';
+}
+
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 
 const RATE_LIMIT = 50;
@@ -193,7 +248,7 @@ type CheckResult = {
   id: string;
   item: string;
   category: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
   detail: string;
 };
 
@@ -409,7 +464,8 @@ function computeGrade(score: number): string {
   return 'F';
 }
 
-async function scoreDriftUncached(targetUrl: string) {
+async function scoreDriftUncached(targetUrl: string, scope?: DriftScope) {
+  const effectiveScope: DriftScope = scope || autoDetectDriftScope(targetUrl);
   const { html, css } = await fetchPageResilient(targetUrl);
 
   if (!html && !css) {
@@ -423,7 +479,7 @@ async function scoreDriftUncached(targetUrl: string) {
   const tokens = extractRootTokens(allCss);
   const varRefs = extractVarRefs(allCss);
 
-  const checks: CheckResult[] = [
+  let checks: CheckResult[] = [
     checkD01TokenRegistry(tokens),
     checkD02FabricatedTokens(tokens, varRefs),
     checkD03InlineColors(allCss, tokens),
@@ -438,21 +494,32 @@ async function scoreDriftUncached(targetUrl: string) {
     checkD12AliasChains(allCss, tokens),
   ];
 
-  const pass = checks.filter((c) => c.status === 'PASS').length;
-  const warn = checks.filter((c) => c.status === 'WARN').length;
-  const fail = checks.filter((c) => c.status === 'FAIL').length;
+  // Apply scope filter AFTER checks run but BEFORE scoring math.
+  // Converts absence-only results to SKIP in universal scope.
+  checks = applyDriftScopeFilter(checks, effectiveScope);
+
+  // SKIP checks are excluded from scoring (not counted in denominator).
+  const scoredChecks = checks.filter((c) => c.status !== 'SKIP');
+  const pass = scoredChecks.filter((c) => c.status === 'PASS').length;
+  const warn = scoredChecks.filter((c) => c.status === 'WARN').length;
+  const fail = scoredChecks.filter((c) => c.status === 'FAIL').length;
+  const skip = checks.length - scoredChecks.length;
   const points = pass + warn * 0.5;
-  const score = Math.round((points / checks.length) * 100);
+  const score = scoredChecks.length > 0
+    ? Math.round((points / scoredChecks.length) * 100)
+    : 0;
   const grade = computeGrade(score);
 
   return {
     ok: true,
     url: targetUrl,
+    scope: effectiveScope,
     score,
     grade,
     pass,
     warn,
     fail,
+    skip,
     total: checks.length,
     tokensExtracted: Object.keys(tokens).length,
     checks,
@@ -479,7 +546,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string };
+  let body: { url?: string; scope?: DriftScope };
   try {
     body = await request.json();
   } catch {
@@ -497,7 +564,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await scoreDrift(targetUrl);
+  // Scope: explicit body.scope wins; otherwise auto-detect (designesy.org → contract, else universal)
+  const scope: DriftScope = body.scope === 'contract' || body.scope === 'universal'
+    ? body.scope
+    : autoDetectDriftScope(targetUrl);
+
+  const result = await scoreDrift(targetUrl, scope);
 
   return NextResponse.json(result, {
     status: result.ok ? 200 : 502,
