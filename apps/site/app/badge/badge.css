@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: center;
   min-height: 80px;
-  padding: 1.5rem 1rem;
+  padding: var(--space-24) var(--space-16);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
@@ -60,11 +60,11 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-8);
 }
 
 .badge-snippet .definition-code {
-  padding: 1rem 1.25rem;
+  padding: var(--space-16) var(--space-20);
   font-size: 0.78rem;
   line-height: 1.55;
   overflow-x: auto;
@@ -81,7 +81,7 @@
 .inline-code {
   font-family: var(--mono);
   font-size: 0.8em;
-  padding: 0.1rem 0.3rem;
+  padding: var(--space-fine-10) var(--space-fine-30);
   background: var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -100,7 +100,7 @@
 
 .badge-steps li {
   position: relative;
-  padding-left: 2rem;
+  padding-left: var(--space-32);
   font-size: 0.875rem;
   line-height: 1.55;
   color: var(--muted);
@@ -127,7 +127,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  margin: 0.75rem 0;
+  margin: var(--space-12) 0;
 }
 
 .badge-grade-letter {
@@ -152,12 +152,12 @@
   font-size: 0.78rem;
   color: var(--muted-dim);
   line-height: 1.5;
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
 }
 
 @media (max-width: 380px) {
   .badge-preview {
-    padding: 1rem 0.75rem;
+    padding: var(--space-16) var(--space-12);
     min-height: 64px;
   }
 
@@ -172,7 +172,7 @@
   }
   .badge-steps li {
     font-size: 0.85rem;
-    padding-left: 1.75rem;
+    padding-left: var(--space-28);
   }
 }
 

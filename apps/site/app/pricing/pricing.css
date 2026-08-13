@@ -78,7 +78,7 @@
   color: var(--ink);
   line-height: 1.5;
   text-wrap: pretty;
-  padding-inline-start: 1rem;
+  padding-inline-start: var(--space-16);
   position: relative;
 }
 
@@ -96,7 +96,7 @@
 
 .pricing-card-cta {
   margin-top: auto;
-  padding-top: 0.5rem;
+  padding-top: var(--space-8);
 }
 
 .pricing-cta-link {
@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   min-height: 40px;
-  padding: 0.55rem 1rem;
+  padding: var(--space-fine-55) var(--space-16);
   border-radius: var(--radius-sm);
   background: var(--signal);
   color: var(--paper);
@@ -134,7 +134,7 @@
   background: var(--surface);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius);
-  padding: 1.5rem 1.35rem;
+  padding: var(--space-24) var(--space-fine-135);
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -188,7 +188,7 @@
 .pricing-faq-q {
   list-style: none;
   cursor: pointer;
-  padding: 1rem 1.15rem;
+  padding: var(--space-16) var(--space-fine-115);
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--ink);
@@ -210,7 +210,7 @@
 }
 
 .pricing-faq-a {
-  padding: 0 1.15rem 1.1rem;
+  padding: 0 var(--space-fine-115) var(--space-fine-110);
   font-size: 0.9rem;
   color: var(--muted);
   line-height: 1.6;
@@ -223,7 +223,7 @@
     font-size: 1.65rem;
   }
   .pricing-desk {
-    padding: 1.25rem 1.1rem;
+    padding: var(--space-20) var(--space-fine-110);
   }
 }
 
@@ -241,7 +241,7 @@
 }
 
 .pricing-compare th {
-  padding: 0.85rem 0.75rem;
+  padding: var(--space-fine-85) var(--space-12);
   text-align: left;
   font-weight: 600;
   color: var(--ink);
@@ -250,7 +250,7 @@
 }
 
 .pricing-compare th:first-child {
-  padding-left: 1rem;
+  padding-left: var(--space-16);
 }
 
 .pricing-compare th:not(:first-child) {
@@ -258,7 +258,7 @@
 }
 
 .pricing-compare td {
-  padding: 0.65rem 0.75rem;
+  padding: var(--space-fine-65) var(--space-12);
   border-bottom: 1px solid var(--line-faint);
   color: var(--muted);
   vertical-align: middle;
@@ -271,7 +271,7 @@
 .pricing-compare td:first-child {
   color: var(--ink);
   font-weight: 500;
-  padding-left: 1rem;
+  padding-left: var(--space-16);
 }
 
 .pricing-compare td:not(:first-child) {
@@ -294,7 +294,7 @@
   }
   .pricing-compare th,
   .pricing-compare td {
-    padding: 0.55rem 0.4rem;
+    padding: var(--space-fine-55) var(--space-fine-40);
   }
 }
 
@@ -304,17 +304,17 @@
   }
   .pricing-compare th,
   .pricing-compare td {
-    padding: 0.45rem 0.3rem;
+    padding: var(--space-fine-45) var(--space-fine-30);
   }
 }
 
 @media (max-width: 560px) {
   .pricing-faq-q {
-    padding: 0.85rem 1rem;
+    padding: var(--space-fine-85) var(--space-16);
     font-size: 0.9rem;
   }
   .pricing-faq-a {
-    padding: 0 1rem 1rem;
+    padding: 0 var(--space-16) var(--space-16);
   }
 }
 

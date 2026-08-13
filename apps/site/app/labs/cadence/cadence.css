@@ -89,7 +89,7 @@
 
 .demo-leading-block {
   border-inline-start: 2px solid var(--line);
-  padding-inline-start: 0.75rem;
+  padding-inline-start: var(--space-12);
 }
 
 .demo-heading-lh {
@@ -112,7 +112,7 @@
   color: var(--muted-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--space-fine-30);
   display: block;
 }
 
@@ -135,7 +135,7 @@
   color: var(--muted-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--space-fine-30);
 }
 
 .demo-num-row {
@@ -168,7 +168,7 @@
   line-height: 1.55;
   user-select: text;
   cursor: text;
-  padding: 0.5rem 0;
+  padding: var(--space-8) 0;
 }
 
 .demo-select-hint {
@@ -176,7 +176,7 @@
   color: var(--muted-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-8);
   width: 100%;
 }
 

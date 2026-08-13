@@ -338,6 +338,7 @@ function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: strin
     '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
     '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
     '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
+    '--check-index', '--check-min', '--check-pad-x', '--check-pad-y',   // score check display (set inline)
   ]);
   const uniqueUndeclared = [...new Set(undeclared)].filter((t) => !JS_INJECTED_TOKENS.has(t));
   const runtimeCount = [...new Set(undeclared)].filter((t) => JS_INJECTED_TOKENS.has(t)).length;
@@ -404,7 +405,41 @@ function checkD05ColorVariance(css: string, _tokens: Record<string, string>): Ch
   // has many distinct colors).
   const cleaned = cleanCssForValueCounting(css);
   const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\))/g;
-  const matches = (cleaned.match(colorRe) || []).map((c) => c.toLowerCase());
+  const rawMatches = (cleaned.match(colorRe) || []);
+
+  // Normalize colors: rgba(r,g,b,a) and rgba(r,g,b) both reduce to the base
+  // RGB triplet. This prevents opacity variants of the same color from
+  // inflating the distinct-color count. rgba(34,197,94,0.12) and
+  // rgba(34,197,94,0.45) are the same BASE color (green) — they count as 1.
+  // Hex values are also converted to rgb() so #ffffff and rgb(255,255,255)
+  // group together.
+  // Research: OverlayQA, W3C DTCG 2025.10, and TokenLens all measure distinct
+  // HUES, not opacity levels. Opacity variation is a transparency pattern,
+  // not color drift.
+  function normalizeColor(c: string): string {
+    const lower = c.toLowerCase();
+    const rgbaMatch = lower.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (rgbaMatch) {
+      return `rgb(${rgbaMatch[1]},${rgbaMatch[2]},${rgbaMatch[3]})`;
+    }
+    // Normalize 6-digit hex to rgb
+    const hex6 = lower.match(/^#([0-9a-f]{6})\b/);
+    if (hex6) {
+      const r = parseInt(hex6[1].slice(0, 2), 16);
+      const g = parseInt(hex6[1].slice(2, 4), 16);
+      const b = parseInt(hex6[1].slice(4, 6), 16);
+      return `rgb(${r},${g},${b})`;
+    }
+    // Normalize 3-digit hex to rgb
+    const hex3 = lower.match(/^#([0-9a-f]{3})\b/);
+    if (hex3) {
+      const [r, g, b] = hex3[1];
+      return `rgb(${parseInt(r + r, 16)},${parseInt(g + g, 16)},${parseInt(b + b, 16)})`;
+    }
+    return lower;
+  }
+
+  const matches = rawMatches.map(normalizeColor);
   const groups = new Map<string, number>();
   for (const c of matches) {
     groups.set(c, (groups.get(c) || 0) + 1);
@@ -416,13 +451,14 @@ function checkD05ColorVariance(css: string, _tokens: Record<string, string>): Ch
   const top3Count = top3.reduce((sum, [, count]) => sum + count, 0);
   const total = matches.length;
   const ratio = top3Count / total;
+  const distinctBases = groups.size;
   if (ratio > 0.6) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 hardcoded colors cover ${Math.round(ratio * 100)}% of ${total} hardcoded declarations — consistent` };
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 base colors cover ${Math.round(ratio * 100)}% of ${total} declarations (${distinctBases} distinct base colors, opacity variants normalized) — consistent` };
   }
-  if (ratio < 0.3 && groups.size > 30) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${groups.size} distinct hardcoded colors across ${total} declarations — color drift` };
+  if (ratio < 0.3 && distinctBases > 30) {
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${distinctBases} distinct base colors across ${total} declarations (opacity variants normalized) — color drift` };
   }
-  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${groups.size} distinct hardcoded colors — moderate consistency` };
+  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${distinctBases} distinct base colors — moderate consistency` };
 }
 
 function checkD06FontFamily(css: string): CheckResult {

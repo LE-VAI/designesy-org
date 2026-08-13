@@ -14,7 +14,7 @@
 
 .poise-wordmark {
   font-size: clamp(2.4rem, 2.4rem + 1.8vw, 3.8rem);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .poise-reduced-demo {
