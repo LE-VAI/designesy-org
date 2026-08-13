@@ -207,14 +207,34 @@ function checkD01TokenRegistry(tokens: Record<string, string>): CheckResult {
 function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[]): CheckResult {
   const declared = new Set(Object.keys(tokens));
   const undeclared = varRefs.filter((r) => !declared.has(r));
-  const uniqueUndeclared = [...new Set(undeclared)];
+  // Filter known JS-injected runtime state tokens — these are real custom
+  // properties set via el.style.setProperty() in components (magnetic-cursor,
+  // grade badges, bundle-tabs indicator). They never appear in CSS source
+  // because they're per-element state, not design tokens. Listing them here
+  // keeps the check honest about what's a real fabrication vs runtime state.
+  const JS_INJECTED_TOKENS = new Set([
+    '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
+    '--bar-i',                                                          // progress bars
+    '--accent',                                                         // magnetic-cursor focus accent
+    '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
+    '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
+    '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
+  ]);
+  const uniqueUndeclared = [...new Set(undeclared)].filter((t) => !JS_INJECTED_TOKENS.has(t));
+  const runtimeCount = [...new Set(undeclared)].filter((t) => JS_INJECTED_TOKENS.has(t)).length;
   if (uniqueUndeclared.length === 0) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'PASS', detail: `All ${varRefs.length} var() references resolve to :root declarations` };
+    return {
+      id: 'd02',
+      item: 'No fabricated tokens',
+      category: 'tokens',
+      status: 'PASS',
+      detail: `All ${varRefs.length} var() references resolve (${runtimeCount} runtime-injected JS tokens excluded — known JS state)`,
+    };
   }
   if (uniqueUndeclared.length <= 2) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (may be third-party)` };
+    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (${runtimeCount} runtime tokens excluded) ${uniqueUndeclared.length === 0 ? '' : '— investigate'}` };
   }
-  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}... — token fabrication detected` };
+  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}... — token fabrication detected (${runtimeCount} runtime tokens excluded)` };
 }
 
 function checkD03InlineColors(css: string, tokens: Record<string, string>): CheckResult {
