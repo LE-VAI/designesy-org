@@ -37,7 +37,7 @@ export const designSystemContract = {
     motion_standards: 'Ten non-negotiable motion standards (§16)',
     springs: 'Spring physics tokens via custom $type: spring',
     acoustic: 'Acoustic cue tokens via custom $type: sound (net-new vs W3C DTCG)',
-    copywriting: 'UX copywriting principles from NN/g, Polaris, Carbon, Fluent, HIG (v0.4.0)',
+    copywriting: 'UX copywriting principles from NN/g, Polaris, Carbon, Fluent, HIG, Krehel /better-writing (v0.4.0)',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -146,6 +146,13 @@ export const designSystemContract = {
         author: 'Jakub Krehel (@jakubkrehel)',
         url: 'https://github.com/jakubkrehel/skills',
         role: 'Structure, grouping, alignment, reading order, progressive disclosure, and breakpoint discipline — cross-referenced against contract layout tokens and grid rules.',
+        license: 'MIT',
+      },
+      {
+        name: 'better-writing skill',
+        author: 'Jakub Krehel (@jakubkrehel)',
+        url: 'https://github.com/jakubkrehel/skills',
+        role: '12 UX writing principles — verb-first buttons (source for copywriting check v38), descriptive link text (source for check v40), one capitalization policy with sentence-case default (source for check v41), errors that say how to fix next to where it broke (no blame, no oops, no exclamation marks), empty states that orient and point forward with one clear next action, placeholders as examples not labels, settings that describe the ON state, consistent flow vocabulary (Get Started → Continue → Done), plain words over clever ones, address the reader directly as you. Cross-referenced against contract copywriting checks v38-v41 and NN/g + Polaris error-message sources. Complements better-typography (which owns how text renders; better-writing owns what text says).',
         license: 'MIT',
       },
       {
