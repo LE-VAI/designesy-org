@@ -136,7 +136,10 @@ function extractRootTokens(css: string): Record<string, string> {
   // All custom property declarations across the whole stylesheet — both
   // :root blocks and component-scoped. Later declarations win so theme
   // overrides resolve correctly (matches browser cascade behaviour).
-  const propRe = /(--[\w-]+)\s*:\s*([^;{}]+?)(?:;|$)/g;
+  // Accepts `;` OR `}` OR end-of-string as the value terminator because
+  // CSS allows omitting the trailing semicolon on the last declaration in
+  // a block (minifiers exploit this aggressively).
+  const propRe = /(--[\w-]+)\s*:\s*([^;{}]+?)(?:;|}|$)/g;
   let p;
   while ((p = propRe.exec(css)) !== null) {
     tokens[p[1]] = p[2].trim();
@@ -216,6 +219,7 @@ function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: strin
     '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
     '--bar-i',                                                          // progress bars
     '--accent',                                                         // magnetic-cursor focus accent
+    '--indicator-w', '--indicator-x',                                   // bundle-tabs / filter segmented
     '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
     '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
     '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
