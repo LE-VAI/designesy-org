@@ -78,28 +78,19 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pillar {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
-}
-
-@supports (grid-template-rows: subgrid) {
-  .pillar {
-    grid-row: span 3;
-    grid-template-rows: subgrid;
-    row-gap: 0.75rem;
-  }
-  .pillar-number { grid-row: 1; }
-  .pillar h3 { grid-row: 2; }
-  .pillar p { grid-row: 3; }
 }
 
 .pillar:hover {
@@ -121,13 +112,11 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
   letter-spacing: 0.05em;
 }
 
 .pillar h3 {
   font-size: 0.95rem;
-  margin-bottom: 0.5rem;
   color: var(--ink);
 }
 
@@ -135,6 +124,7 @@
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.5;
+  margin-top: auto;
 }
 
 .surface-list {
@@ -211,9 +201,16 @@ button.pillar:hover::before {
 }
 
 .principle-layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: clamp(0.9rem, 1.6vw, 1.25rem);
+  align-items: start;
+}
+
+@media (min-width: 880px) {
+  .principle-layout {
+    grid-template-columns: 2fr 1fr;
+  }
 }
 
 .principle-cell {
@@ -397,28 +394,19 @@ button.pillar:hover::before {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pillar {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
-}
-
-@supports (grid-template-rows: subgrid) {
-  .pillar {
-    grid-row: span 3;
-    grid-template-rows: subgrid;
-    row-gap: 0.75rem;
-  }
-  .pillar-number { grid-row: 1; }
-  .pillar h3 { grid-row: 2; }
-  .pillar p { grid-row: 3; }
 }
 
 .pillar:hover {
@@ -440,13 +428,11 @@ button.pillar:hover::before {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
   letter-spacing: 0.05em;
 }
 
 .pillar h3 {
   font-size: 0.95rem;
-  margin-bottom: 0.5rem;
   color: var(--ink);
 }
 
@@ -454,6 +440,7 @@ button.pillar:hover::before {
   font-size: 0.85rem;
   color: var(--muted);
   line-height: 1.5;
+  margin-top: auto;
 }
 
 .surface-list {
@@ -530,9 +517,16 @@ button.pillar:hover::before {
 }
 
 .principle-layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: clamp(0.9rem, 1.6vw, 1.25rem);
+  align-items: start;
+}
+
+@media (min-width: 880px) {
+  .principle-layout {
+    grid-template-columns: 2fr 1fr;
+  }
 }
 
 .principle-cell {

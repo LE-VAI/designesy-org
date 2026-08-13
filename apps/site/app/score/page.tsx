@@ -129,6 +129,80 @@ export default function ScorePage() {
               readiness into one defensible number.
             </p>
           </div>
+
+          <div className="engines-grid" data-reveal-group>
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">01</span>
+                <h3 className="engine-card-title">Score</h3>
+                <span className="engine-card-count" data-tabular>40 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Live design-contract compliance — motion, typography, color, accessibility, identity against the v0.4.0 contract.
+              </p>
+              <ul className="engine-card-list">
+                <li>Token presence and binding</li>
+                <li>Motion standards (10)</li>
+                <li>Cadence typography (cadence)</li>
+                <li>Color in OKLCH</li>
+                <li>Focus and reduced motion</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">02</span>
+                <h3 className="engine-card-title">Drift</h3>
+                <span className="engine-card-count" data-tabular>12 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Detects AI-generated UI drift — fabricated tokens, inline values, off-system variance the Score engine rewards.
+              </p>
+              <ul className="engine-card-list">
+                <li>Inline hex / rgb / hsl values</li>
+                <li>Off-token shadow values</li>
+                <li>Magic-number spacing</li>
+                <li>Duplicate token definitions</li>
+                <li>Stack inconsistency</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">03</span>
+                <h3 className="engine-card-title">AI Readiness</h3>
+                <span className="engine-card-count" data-tabular>10 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Probes machine-readable design context — whether agents can ingest, score, and remix without scraping HTML.
+              </p>
+              <ul className="engine-card-list">
+                <li>llms.txt presence</li>
+                <li>agent.json / .well-known</li>
+                <li>Token export (DTCG)</li>
+                <li>MCP endpoint</li>
+                <li>README / docs surface</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">04</span>
+                <h3 className="engine-card-title">Guardrails</h3>
+                <span className="engine-card-count" data-tabular>6 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Emits a frozen build-contract bundle — DTCG tokens, stylelint config, agent rules — so the score is reproducible.
+              </p>
+              <ul className="engine-card-list">
+                <li>Build contract bundle</li>
+                <li>Stylelint config emit</li>
+                <li>Agent-rule emit</li>
+                <li>Token hash pinning</li>
+                <li>Provenance line</li>
+              </ul>
+            </article>
+          </div>
         </section>
       </main>
       <Footer />
