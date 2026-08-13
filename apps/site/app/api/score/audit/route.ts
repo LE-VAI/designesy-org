@@ -377,7 +377,9 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
 // [aria-pressed] or [data-sound-toggle] or button text matching 'sound',
 // click it, observe aria-pressed flip, observe localStorage[designesy:sound]
 // update. PASS if both state changes occur.
-async function checkSoundToggle(targetUrl: string): Promise<CheckResult> {
+// When scope=universal, absence of a sound toggle is SKIP (not WARN) — a site
+// without sound isn't broken, it just doesn't use audio.
+async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal'): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v04',
@@ -401,12 +403,18 @@ async function checkSoundToggle(targetUrl: string): Promise<CheckResult> {
     const toggle = await page.$('[aria-pressed], [data-sound-toggle], button:has-text("sound" i)');
     if (!toggle) {
       await ctx.close();
+      // scope=universal: absence of sound is SKIP, not WARN — a site without
+      // sound isn't broken, it just doesn't use audio. scope=contract: WARN
+      // (the contract expects a sound toggle on designesy.org).
+      const absenceStatus = scope === 'universal' ? 'SKIP' : 'WARN';
       return {
         id: 'v04',
         item: 'Sound toggle flips aria-pressed and applies the audio preference',
         category: 'poise',
-        status: 'WARN',
-        detail: 'no sound toggle element found on page',
+        status: absenceStatus as 'SKIP' | 'WARN',
+        detail: scope === 'universal'
+          ? 'no sound toggle element found on page (skipped: scope=universal — sound is optional)'
+          : 'no sound toggle element found on page',
       };
     }
     const beforePressed = await toggle.getAttribute('aria-pressed');
@@ -460,7 +468,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: unknown };
+  let body: { url?: unknown; scope?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -469,6 +477,18 @@ export async function POST(request: Request) {
 
   const rawUrl = typeof body.url === 'string' ? body.url : '';
   const url = normalizeInputUrl(rawUrl);
+
+  // Scope: auto-detect from URL (designesy.org → contract, else → universal).
+  const scopeRaw = typeof body.scope === 'string' ? body.scope.toLowerCase() : '';
+  const scope: 'contract' | 'universal' = scopeRaw === 'contract' || scopeRaw === 'universal'
+    ? scopeRaw as 'contract' | 'universal'
+    : (() => {
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        if (host === 'designesy.org' || host === 'www.designesy.org') return 'contract' as const;
+      } catch { /* ignore */ }
+      return 'universal' as const;
+    })();
 
   if (!url || !isValidUrl(url)) {
     return NextResponse.json(
@@ -482,7 +502,7 @@ export async function POST(request: Request) {
     const [v21, v02, v04] = await Promise.all([
       checkCoreWebVitals(url),
       checkResponsiveOverflow(url),
-      checkSoundToggle(url),
+      checkSoundToggle(url, scope),
     ]);
     const checks = [v02, v04, v21];
     return NextResponse.json(

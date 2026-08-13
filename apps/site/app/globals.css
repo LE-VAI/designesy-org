@@ -11034,6 +11034,22 @@ select {
   white-space: nowrap;
 }
 
+/* Scope badge — shows "universal scope" when scoring external sites.
+   Hidden for designesy.org (which uses contract scope, the default). */
+.score-scope-badge {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.62rem;
+  font-family: var(--mono);
+  color: var(--signal-light);
+  background: color-mix(in oklch, var(--signal) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--signal) 20%, transparent);
+  white-space: nowrap;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
 /* ── Category legend (text mirror of the SVG nodes) ─────────────────────── */
 
 .score-cat-legend {

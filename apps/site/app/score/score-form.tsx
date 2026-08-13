@@ -62,6 +62,7 @@ type ScoreResponse = {
   skip?: number;
   manual?: number;
   total?: number;
+  scope?: 'contract' | 'universal';
   a11yFloorApplied?: boolean;
   hardFailCeilingApplied?: boolean;
   hardFailCeilingReason?: string | null;
@@ -384,7 +385,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       const resp = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify({ url: targetUrl, scope: 'auto' }),
       });
       const data: ScoreResponse = await resp.json();
       // Stop the processing loop regardless of outcome.
@@ -502,6 +503,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const lines = [
       `# Designesy Verification Receipt`,
       `Site: ${scoredUrl}`,
+      `Scope: ${result.scope || 'contract'}`,
       `Verdict: ${verdictLine(result)}`,
       `Grade: ${result.grade} (${fmtPct(result.score)}%)`,
       ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
@@ -586,7 +588,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       const resp = await fetch('/api/score/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scoredUrl }),
+        body: JSON.stringify({ url: scoredUrl, scope: 'auto' }),
       });
       const data: AuditResponse = await resp.json();
       if (!data.ok || !data.checks) {
@@ -864,6 +866,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   <span className="score-url-dot" />
                   <span className="score-url-text">{scoredUrl}</span>
                   <span className="score-url-time">{new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
+                  {result.scope && result.scope === 'universal' && (
+                    <span className="score-scope-badge" title="Universal scope: optional features (sound, font-synthesis, text-wrap, etc.) are SKIP on absence instead of WARN. Only universal requirements (accessibility, semantics) are penalized. Designesy.org self-scores in contract scope.">
+                      universal scope
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
