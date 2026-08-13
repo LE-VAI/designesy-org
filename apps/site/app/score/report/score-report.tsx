@@ -82,7 +82,7 @@ const GRADE_COLOR: Record<string, string> = {
   A: 'var(--ok)',
   B: 'var(--signal-light)',
   C: 'var(--warn)',
-  D: '#fb923c',
+  D: 'var(--grade-d)',
   F: 'var(--error)',
 };
 

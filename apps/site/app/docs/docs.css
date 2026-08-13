@@ -6,7 +6,7 @@
   font-size: 1rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .layer-body .layer-desc {
@@ -22,7 +22,7 @@
 
 .layer-state {
   display: block;
-  margin-top: 0.35rem;
+  margin-top: var(--space-fine-35);
   font-size: 0.78rem;
   color: var(--muted-dim);
   line-height: 1.4;
@@ -39,7 +39,7 @@
   .layer-item {
     grid-template-columns: 2rem 1fr;
     gap: 0.5rem;
-    padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+    padding: var(--space-12) var(--space-8) var(--space-12) var(--space-12);
   }
 }
 

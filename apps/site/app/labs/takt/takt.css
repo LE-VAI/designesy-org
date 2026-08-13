@@ -4,7 +4,7 @@
 
 .demo-radius-outer {
   border-radius: var(--radius);
-  padding: 4px;
+  padding: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--line);
   max-width: 11rem;
@@ -36,7 +36,7 @@
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.7rem 1.5rem;
+  padding: var(--space-fine-70) var(--space-24);
   cursor: pointer;
   align-self: center;
   transition: transform 160ms var(--ease-out), background 0.18s var(--ease),
@@ -57,7 +57,7 @@
   max-width: 11rem;
   aspect-ratio: 16 / 9;
   border-radius: 2px;
-  outline: 1px solid rgba(255, 255, 255, 0.1);
+  outline: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   outline-offset: -1px;
   background: var(--surface);
   display: flex;
@@ -111,7 +111,7 @@
   font-size: 0.62rem;
   color: var(--muted-dim);
   text-align: center;
-  margin-top: 0.4rem;
+  margin-top: var(--space-fine-40);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -126,7 +126,7 @@
   align-items: center;
   justify-content: center;
   align-self: center;
-  margin-block-end: 1.25rem;
+  margin-block-end: var(--space-20);
 }
 
 .demo-hit-target {

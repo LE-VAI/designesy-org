@@ -72,6 +72,21 @@
   --error: #f87171;
   --warn: #facc15;
 
+  /* Grade scale colors — five-band semantics for score/badge/constellation.
+     A=green, B=lime, C=yellow, D=orange, F=red.
+     Distinct from --ok/--warn/--error (which are verification status, not
+     grade). --ok is #4ade80 (lighter green) while --grade-a is #22c55e
+     (more saturated, grade-display green). Both are intentional. */
+  --grade-a: #22c55e;
+  --grade-b: #84cc16;
+  --grade-c: #eab308;
+  --grade-d: #fb923c;
+  --grade-f: #ef4444;
+  --grade-b-light: #a3e635;  /* lighter lime for constellation text on dark */
+  --grade-d-glow: #f97316;   /* orange-600 glow variant for D-grade emblem/hero proof */
+  --signal-pos: #34d399;     /* emerald for positive signal points */
+  --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
+
   /* Motion contract tokens (Emil Kowalski / Apple WWDC) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -121,6 +136,91 @@
   --surface-2: var(--surface-raised);
   --motion-short: var(--duration-quick);
   --ease-quiet: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing scale — 4px base, rem units. Used for padding/margin/gap.
+     Extracted from the hardcoded rem values in component CSS to close
+     drift d04. The scale is named by pixel value so the mapping is
+     unambiguous: --space-8 = 8px = 0.5rem. Values not on the 4px grid
+     (5px, 6px, 10px, 14px, 18px, 22px) are included because the site
+     uses them deliberately for specific components. */
+  --space-0: 0;
+  --space-1: 0.0625rem;   /* 1px — hairline borders, micro adjustments */
+  --space-2: 0.125rem;    /* 2px */
+  --space-3: 0.1875rem;   /* 3px */
+  --space-4: 0.25rem;     /* 4px — tight badge/card padding */
+  --space-5: 0.3125rem;   /* 5px */
+  --space-6: 0.375rem;    /* 6px */
+  --space-7: 0.4375rem;   /* 7px — off-grid, used for specific badge padding */
+  --space-8: 0.5rem;      /* 8px — default tight gap, small padding */
+  --space-9: 0.5625rem;   /* 9px — off-grid, specific component spacing */
+  --space-10: 0.625rem;   /* 10px */
+  --space-11: 0.6875rem;  /* 11px — off-grid */
+  --space-12: 0.75rem;    /* 12px — medium padding, card padding */
+  --space-13: 0.8125rem;  /* 13px — off-grid */
+  --space-14: 0.875rem;   /* 14px */
+  --space-15: 0.9375rem;  /* 15px — off-grid */
+  --space-16: 1rem;       /* 16px — base spacing unit, standard padding */
+  --space-17: 1.0625rem;  /* 17px — off-grid */
+  --space-18: 1.125rem;   /* 18px */
+  --space-19: 1.1875rem;  /* 19px — off-grid */
+  --space-20: 1.25rem;    /* 20px — large padding, section gaps */
+  --space-21: 1.3125rem;  /* 21px — off-grid */
+  --space-22: 1.375rem;   /* 22px */
+  --space-24: 1.5rem;     /* 24px — section padding, large gaps */
+  --space-28: 1.75rem;    /* 28px */
+  --space-32: 2rem;       /* 32px — big section gaps */
+  --space-35: 2.1875rem;  /* 35px — off-grid, specific layout spacing */
+  --space-36: 2.25rem;    /* 36px */
+  --space-40: 2.5rem;     /* 40px */
+  --space-44: 2.75rem;    /* 44px — off-grid, large section spacing */
+  --space-48: 3rem;       /* 48px — hero spacing, major section breaks */
+  --space-56: 3.5rem;     /* 56px */
+  --space-64: 4rem;       /* 64px — large vertical rhythm */
+  --space-72: 4.5rem;     /* 72px — extra-large vertical rhythm */
+  --space-88: 5.5rem;     /* 88px — major hero spacing */
+  --space-104: 6.5rem;    /* 104px — large hero section padding */
+  --space-112: 7rem;      /* 112px — maximum vertical rhythm */
+
+  /* Fine spacing — sub-rem micro-adjustments used in specific components.
+     These are not on the 4px grid; they exist because certain UI elements
+     (badges, tabs, indicators) need precise optical alignment that the
+     coarse grid can't provide. Named by rem value for traceability. */
+  --space-fine-02: 0.02rem;
+  --space-fine-10: 0.1rem;
+  --space-fine-12: 0.12rem;
+  --space-fine-15: 0.15rem;
+  --space-fine-20: 0.2rem;
+  --space-fine-30: 0.3rem;
+  --space-fine-32: 0.32rem;
+  --space-fine-35: 0.35rem;
+  --space-fine-40: 0.4rem;
+  --space-fine-42: 0.42rem;
+  --space-fine-45: 0.45rem;
+  --space-fine-55: 0.55rem;
+  --space-fine-60: 0.6rem;
+  --space-fine-65: 0.65rem;
+  --space-fine-68: 0.68rem;
+  --space-fine-70: 0.7rem;
+  --space-fine-80: 0.8rem;
+  --space-fine-85: 0.85rem;
+  --space-fine-95: 0.95rem;
+  --space-fine-110: 1.1rem;
+  --space-fine-120: 1.2rem;
+  --space-fine-130: 1.3rem;
+  --space-fine-135: 1.35rem;
+  --space-fine-140: 1.4rem;
+  --space-fine-220: 2.2rem;
+
+  /* Additional spacing values from component CSS files (non-globals) */
+  --space-fine-03: 0.03rem;   /* 0.48px */
+  --space-fine-05: 0.05rem;   /* 0.8px */
+  --space-fine-22: 0.22rem;   /* 3.52px */
+  --space-fine-34: 0.34rem;   /* 5.44px */
+  --space-fine-105: 1.05rem;  /* 16.8px — clamp min in responsive padding */
+  --space-fine-115: 1.15rem;  /* 18.4px */
+  --space-fine-160: 1.6rem;   /* 25.6px */
+  --space-96: 6rem;           /* 96px */
+  --space-144: 9rem;          /* 144px */
 }
 
 /* --- Light theme — [data-theme="light"] ---
@@ -172,6 +272,18 @@
   --error: #dc2626;
   --warn: #ca8a04;
 
+  /* Grade scale colors — deeper saturation for legibility on light surfaces.
+     Same five-band semantics as dark theme, adjusted for contrast. */
+  --grade-a: #16a34a;
+  --grade-b: #65a30d;
+  --grade-c: #ca8a04;
+  --grade-d: #ea580c;
+  --grade-f: #dc2626;
+  --grade-b-light: #65a30d;
+  --grade-d-glow: #ea580c;
+  --signal-pos: #059669;
+  --live: #16a34a;
+
   /* Surface depth vocabulary adapted for light */
   --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
   --surface-card-gradient: linear-gradient(135deg, #fafafc 0%, var(--surface) 100%);
@@ -199,7 +311,7 @@
 
 html {
   scroll-behavior: auto;
-  scroll-padding-top: 4.5rem;
+  scroll-padding-top: var(--space-72);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   /* Sub-pixel drift safety net — browser zoom scales every CSS px value then
@@ -263,8 +375,8 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 3%, transparent) 1px, transparent 1px);
   background-size: 56px 56px;
   /* Over-faded mask: the ellipse is far larger than any viewport (250%×190%)
      and hits fully-transparent at 55%, well inside its far edge. Because the
@@ -299,8 +411,8 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle 110vmax at 76% 12%, rgba(51, 88, 232, 0.045), transparent 55%),
-    radial-gradient(circle 95vmax at 16% 78%, rgba(51, 88, 232, 0.022), transparent 60%);
+    radial-gradient(circle 110vmax at 76% 12%, color-mix(in srgb, var(--signal-light) 5%, transparent), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78%, color-mix(in srgb, var(--signal-light) 2%, transparent), transparent 60%);
   background-repeat: no-repeat;
 }
 
@@ -344,8 +456,8 @@ p {
 }
 
 .wordmark .dot {
-  /* signal-access (#5d7bff dark / #2a4cd8 light) is the on-surface signal
-     token — 5.41:1 on dark, 7.83:1 on light. --signal (#0133cb) is 2.21:1
+  /* signal-access (var(--signal-access) dark / var(--signal-access) light) is the on-surface signal
+     token — 5.41:1 on dark, 7.83:1 on light. --signal (var(--signal)) is 2.21:1
      on the topbar's near-black surface, below WCAG 1.4.3 (4.5:1) for the
      text "." and below 1.4.11 (3:1) even as a UI component. The breath
      animation (signalPulse) only touches opacity, so the resting color
@@ -377,7 +489,7 @@ p {
     #5b78f0 42%,
     #9eb0ff 46.5%,
     #dce4ff 49%,
-    #ffffff 50.5%,
+    var(--paper-on-signal) 50.5%,
     #dce4ff 52%,
     #9eb0ff 54.5%,
     #5b78f0 58%,
@@ -434,7 +546,7 @@ p {
 .site-shell {
   max-width: var(--maxw-wide);
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--space-24);
   /* Lift above body's fixed background texture layers (Stage 4) */
   position: relative;
   z-index: 1;
@@ -449,7 +561,7 @@ p {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: max(1rem, env(safe-area-inset-top)) 0 0;
+  padding: max(var(--space-16), env(safe-area-inset-top)) 0 0;
   /* Transparent sticky parent — the glass lives on an absolute child
      (.topbar-glass) so iOS 26 Safari doesn't tint the toolbar chrome.
      backdrop-filter on position:sticky triggers the status-bar tint bug. */
@@ -466,7 +578,7 @@ p {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: rgba(10, 10, 12, 0.45);
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   transform: translate3d(0, 0, 0);
@@ -480,11 +592,11 @@ p {
 }
 
 .topbar.scrolled .topbar-glass {
-  background: rgba(10, 10, 12, 0.65);
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent),
+    0 8px 24px color-mix(in srgb, var(--paper) 18%, transparent);
 }
 
 .topbar-inner {
@@ -492,7 +604,7 @@ p {
   z-index: 1;
   max-width: var(--maxw-wide);
   margin: 0 auto;
-  padding: 0 max(1.5rem, env(safe-area-inset-right)) 1rem max(1.5rem, env(safe-area-inset-left));
+  padding: 0 max(var(--space-24), env(safe-area-inset-right)) var(--space-16) max(var(--space-24), env(safe-area-inset-left));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -560,7 +672,7 @@ p {
 .nav-links a {
   flex: 0 0 auto;
   position: relative;
-  padding: 0.5rem 0.65rem;
+  padding: var(--space-8) var(--space-fine-65);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--muted);
@@ -700,47 +812,47 @@ p {
 }
 
 [data-theme="light"] .topbar-glass {
-  background: rgba(251, 251, 252, 0.6);
+  background: color-mix(in srgb, var(--paper) 60%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
 [data-theme="light"] .topbar.scrolled .topbar-glass {
-  background: rgba(251, 251, 252, 0.78);
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper) 3%, transparent);
 }
 
 /* Light-mode mobile drawer + scrim — glass with white surface, no saturate
    (saturation boost looks neon on light backgrounds, per topbar convention). */
 @media (max-width: 720px) {
   [data-theme="light"] .nav-drawer {
-    background: rgba(251, 251, 252, 0.8);
+    background: color-mix(in srgb, var(--paper) 80%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.16),
-      inset 1px 0 0 rgba(255, 255, 255, 0.5);
+    border-color: color-mix(in srgb, var(--paper) 8%, transparent);
+    box-shadow: 0 24px 48px color-mix(in srgb, var(--paper) 16%, transparent),
+      inset 1px 0 0 color-mix(in srgb, var(--ink) 50%, transparent);
   }
 
   [data-theme="light"] .nav-scrim {
-    background: rgba(0, 0, 0, 0.25);
+    background: color-mix(in srgb, var(--paper) 25%, transparent);
   }
 }
 
 /* Light-mode ambient signal wash — subtle blue tint on light surface */
 [data-theme="light"] .ambient-signal {
   background-image:
-    radial-gradient(circle 110vmax at 76% 12%, rgba(1, 51, 203, 0.03), transparent 55%),
-    radial-gradient(circle 95vmax at 16% 78%, rgba(1, 51, 203, 0.015), transparent 60%);
+    radial-gradient(circle 110vmax at 76% 12%, color-mix(in srgb, var(--signal) 3%, transparent), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78%, color-mix(in srgb, var(--signal) 2%, transparent), transparent 60%);
 }
 
 /* Light-mode grid: dark lines instead of white */
 [data-theme="light"] body::before {
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--paper) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--paper) 4%, transparent) 1px, transparent 1px);
 }
 
 /* Light-mode noise: multiply blend with slightly higher opacity for visibility */
@@ -783,7 +895,7 @@ p {
      gradient at the topbar bottom, reading as "two connected vertical
      lines" on the nav (operator feedback 2026-08-02). Remove the divider;
      the instrument register is cleaner without it. */
-  margin-left: 0.4rem;
+  margin-left: var(--space-fine-40);
 }
 
 .sense-toggle {
@@ -819,7 +931,7 @@ p {
      just activated. */
   color: var(--signal-light);
   border-color: var(--signal-dim);
-  background: rgba(51, 88, 232, 0.08);
+  background: color-mix(in srgb, var(--signal-light) 8%, transparent);
 }
 
 /* ===================================================================
@@ -832,7 +944,7 @@ p {
   align-items: center;
   gap: 0.5rem;
   height: 32px;
-  padding: 0 0.55rem 0 0.6rem;
+  padding: 0 var(--space-fine-55) 0 var(--space-fine-60);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -870,7 +982,7 @@ p {
   background: var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: var(--space-1) var(--space-4);
   line-height: 1.4;
 }
 
@@ -899,8 +1011,8 @@ p {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 20vh 1rem 1rem;
-  background: rgba(1, 1, 2, 0.72);
+  padding: 20vh var(--space-16) var(--space-16);
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   animation: cmdk-fade 180ms var(--ease-out);
@@ -916,26 +1028,26 @@ p {
   background: linear-gradient(180deg, rgba(20, 20, 26, 0.86), rgba(12, 12, 16, 0.92));
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 32px 90px rgba(0, 0, 0, 0.55),
-    0 4px 16px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.11),
-    inset 0 20px 40px -20px rgba(255, 255, 255, 0.04);
+    0 32px 90px color-mix(in srgb, var(--paper) 55%, transparent),
+    0 4px 16px color-mix(in srgb, var(--paper) 35%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--paper) 20%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 11%, transparent),
+    inset 0 20px 40px -20px color-mix(in srgb, var(--ink) 4%, transparent);
   overflow: hidden;
   animation: cmdk-pop 200ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-panel {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 250, 252, 0.97));
-  border-color: rgba(0, 0, 0, 0.09);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 94%, transparent), rgba(250, 250, 252, 0.97));
+  border-color: color-mix(in srgb, var(--paper) 9%, transparent);
   box-shadow:
-    0 32px 90px rgba(0, 0, 0, 0.28),
-    0 4px 16px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 20px 40px -20px rgba(255, 255, 255, 0.7);
+    0 32px 90px color-mix(in srgb, var(--paper) 28%, transparent),
+    0 4px 16px color-mix(in srgb, var(--paper) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 95%, transparent),
+    inset 0 20px 40px -20px color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
 @keyframes cmdk-fade {
@@ -954,7 +1066,7 @@ p {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 1.1rem 1.1rem;
+  padding: var(--space-fine-110) var(--space-fine-110);
   border-bottom: 1px solid var(--line);
 }
 
@@ -985,7 +1097,7 @@ p {
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 2px 5px;
+  padding: var(--space-2) var(--space-5);
   line-height: 1;
   flex-shrink: 0;
 }
@@ -996,7 +1108,7 @@ p {
   max-height: min(26rem, calc(100dvh - 36vh));
   overflow-y: auto;
   overscroll-behavior: contain; /* wheel/touch never chains to the page behind */
-  padding: 0.5rem 0.5rem 0.55rem;
+  padding: var(--space-8) var(--space-8) var(--space-fine-55);
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
 }
@@ -1019,7 +1131,7 @@ p {
 }
 
 .cmdk-group + .cmdk-group {
-  margin-top: 0.45rem;
+  margin-top: var(--space-fine-45);
 }
 
 .cmdk-group-label {
@@ -1027,7 +1139,7 @@ p {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  padding: 0.3rem 0.7rem 0.3rem;
+  padding: var(--space-fine-30) var(--space-fine-70) var(--space-fine-30);
   font-weight: 500;
 }
 
@@ -1038,7 +1150,7 @@ p {
   gap: 0.7rem;
   width: 100%;
   text-align: left;
-  padding: 0.68rem 0.75rem 0.68rem 0.85rem;
+  padding: var(--space-fine-68) var(--space-12) var(--space-fine-68) var(--space-fine-85);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1133,14 +1245,14 @@ p {
 }
 
 .cmdk-empty {
-  padding: 2.25rem 1.25rem;
+  padding: var(--space-36) var(--space-20);
   text-align: center;
 }
 
 .cmdk-empty-title {
   color: var(--ink);
   font-size: 0.94rem;
-  margin: 0 0 0.35rem;
+  margin: 0 0 var(--space-fine-35);
   font-weight: 500;
   letter-spacing: -0.005em;
 }
@@ -1158,7 +1270,7 @@ p {
   display: flex;
   align-items: center;
   gap: 1.1rem;
-  padding: 0.6rem 1.1rem;
+  padding: var(--space-fine-60) var(--space-fine-110);
   border-top: 1px solid var(--line);
   background: var(--surface-soft);
 }
@@ -1177,33 +1289,33 @@ p {
   font-size: 0.66rem;
   border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 3px 5px;
+  padding: var(--space-3) var(--space-5);
   line-height: 1;
   background: var(--surface);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 10%, transparent);
 }
 
 /* Small screens: pull the panel higher and give the list more room to
    breathe, so tap targets stay reachable and results read at a glance. */
 @media (max-width: 720px) {
   .cmdk-overlay {
-    padding: 12vh 0.75rem 0.75rem;
+    padding: 12vh var(--space-12) var(--space-12);
   }
   .cmdk-list {
     max-height: min(28rem, calc(100dvh - 30vh));
   }
   .cmdk-input-row {
-    padding: 1rem 0.95rem;
+    padding: var(--space-16) var(--space-fine-95);
   }
   .cmdk-input {
     font-size: 1rem; /* exactly 16px — iOS zoom floor */
   }
   .cmdk-item {
-    padding: 0.75rem 0.75rem 0.75rem 0.85rem;
+    padding: var(--space-12) var(--space-12) var(--space-12) var(--space-fine-85);
     font-size: 0.92rem;
   }
   .cmdk-footer {
-    padding: 0.55rem 0.95rem;
+    padding: var(--space-fine-55) var(--space-fine-95);
     gap: 0.9rem;
   }
 }
@@ -1211,7 +1323,7 @@ p {
 /* Very small screens: pull almost to the top, maximize list room */
 @media (max-width: 480px) {
   .cmdk-overlay {
-    padding: 6vh 0.5rem 0.5rem;
+    padding: 6vh var(--space-8) var(--space-8);
   }
   .cmdk-panel {
     border-radius: calc(var(--radius-lg) * 0.9);
@@ -1227,7 +1339,7 @@ p {
   .cmdk-overlay {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: rgba(1, 1, 2, 0.78);
+    background: color-mix(in srgb, var(--paper) 78%, transparent);
   }
   [data-theme="light"] .cmdk-overlay {
     background: rgba(28, 28, 32, 0.55);
@@ -1477,7 +1589,7 @@ p {
   height: 44px;
   margin: -22px 0 0 -22px;
   border-color: var(--signal-light);
-  background: rgba(51, 88, 232, 0.06);
+  background: color-mix(in srgb, var(--signal-light) 6%, transparent);
 }
 
 .mag-cursor-dot {
@@ -1512,7 +1624,7 @@ p {
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0.65rem 1.25rem;
+  padding: var(--space-fine-65) var(--space-20);
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.005em;
@@ -1528,9 +1640,9 @@ p {
 
 .button.primary {
   background: var(--signal);
-  color: #ffffff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal);
-  box-shadow: var(--inner-light), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  box-shadow: var(--inner-light), 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent) inset;
   transition: background var(--duration-quick) var(--ease-out),
               border-color var(--duration-quick) var(--ease-out),
               box-shadow var(--duration-quick) var(--ease-out),
@@ -1541,7 +1653,7 @@ p {
 .button.primary:hover {
   background: var(--signal-light);
   border-color: var(--signal-light);
-  box-shadow: var(--inner-light), 0 0 32px rgba(51, 88, 232, 0.24);
+  box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
 }
 
 .button.primary:active {
@@ -1559,14 +1671,14 @@ p {
 
 .button.ghost:hover {
   background: var(--surface-hover);
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
 }
 
 /* --- Pipeline diagram — continuous rail, stable across widths --- */
 
 .pipeline {
-  padding: 2.25rem 0 2.75rem;
-  margin-bottom: 1.5rem;
+  padding: var(--space-36) 0 var(--space-44);
+  margin-bottom: var(--space-24);
   border-top: 1px solid var(--line-faint);
   border-bottom: 1px solid var(--line-faint);
 }
@@ -1594,7 +1706,7 @@ p {
   align-items: center;
   text-align: center;
   gap: 0.45rem;
-  padding: 0 0.35rem;
+  padding: 0 var(--space-fine-35);
   min-width: 0;
   position: relative;
   z-index: 1;
@@ -1643,7 +1755,7 @@ p {
 /* --- Sections --- */
 
 .section {
-  padding: clamp(3.5rem, 8vw, 6.5rem) 0;
+  padding: clamp(var(--space-56), 8vw, var(--space-104)) 0;
 }
 
 /* Scroll-driven depth — sections drift up 8px as they enter the viewport,
@@ -1683,7 +1795,7 @@ p {
   display: flex;
   flex-direction: column;
   min-height: 120px;
-  padding: 1.25rem;
+  padding: var(--space-20);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
@@ -1713,7 +1825,7 @@ p {
   border-color: var(--line-strong);
   background: var(--surface-raised);
   background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light), 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--inner-light), 0 8px 24px color-mix(in srgb, var(--paper) 25%, transparent);
 }
 
 a.surface-card:active {
@@ -2328,12 +2440,12 @@ a.surface-card:active {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  padding: var(--space-16) var(--space-20);
   border: 1px solid var(--line);
   border-left: 3px solid var(--signal);
   border-radius: var(--radius);
   background: var(--surface);
-  margin-bottom: 3rem;
+  margin-bottom: var(--space-48);
 }
 
 .status-badge {
@@ -2342,14 +2454,14 @@ a.surface-card:active {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   /* 11.2px uppercase is WCAG 1.4.3 AA-normal (4.5:1) territory. --signal-light
-     (#3358e8) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
+     (var(--signal-light)) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
      the same hue family — clears 4.5:1 while preserving the brand signal
      identity. --signal-access is additive; contract tokens untouched. */
   color: var(--signal-access);
-  padding: 0.25rem 0.6rem;
+  padding: var(--space-4) var(--space-fine-60);
   border: 1px solid var(--signal-dim);
   border-radius: 3px;
-  /* No --signal-dim background fill: rgba(1,51,203,0.14) over surfaces produces
+  /* No --signal-dim background fill: color-mix(in srgb, var(--signal) 14%, transparent) over surfaces produces
      a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
      the badge readable from the border + light text alone. */
   background: transparent;
@@ -2361,8 +2473,8 @@ a.surface-card:active {
 
 .footer {
   border-top: 1px solid var(--line);
-  padding: 3rem 0 2.5rem;
-  margin-top: 2rem;
+  padding: var(--space-48) 0 var(--space-40);
+  margin-top: var(--space-32);
 }
 
 .footer-inner {
@@ -2391,7 +2503,7 @@ a.surface-card:active {
 }
 
 .footer-badge {
-  margin-top: 0.5rem;
+  margin-top: var(--space-8);
   opacity: 0.85;
   transition: opacity var(--duration-fast) var(--ease-out);
   display: inline-flex;
@@ -2415,7 +2527,7 @@ a.surface-card:active {
   - .footer-dock-track: width:max-content, animated translateX (the scroller)
 */
 .footer-docks {
-  margin-top: 1rem;
+  margin-top: var(--space-16);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -2436,7 +2548,7 @@ a.surface-card:active {
 
 .footer-dock-label {
   display: block;
-  padding: 0.4rem 0.75rem 0.3rem;
+  padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -2450,7 +2562,7 @@ a.surface-card:active {
   width: 100%;
   min-width: 0;
   overflow: hidden;
-  padding: 0.15rem 0 0.55rem;
+  padding: var(--space-fine-15) 0 var(--space-fine-55);
   /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
   touch-action: pan-y;
   /* Prevent text selection during drag. */
@@ -2458,15 +2570,15 @@ a.surface-card:active {
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 5%,
-    #000 95%,
+    var(--paper) 5%,
+    var(--paper) 95%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 5%,
-    #000 95%,
+    var(--paper) 5%,
+    var(--paper) 95%,
     transparent 100%
   );
 }
@@ -2476,7 +2588,7 @@ a.surface-card:active {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0 0.75rem;
+  padding: 0 var(--space-12);
   width: max-content;
   animation: footer-dock-scroll 50s linear infinite;
 }
@@ -2518,7 +2630,7 @@ a.surface-card:active {
   align-items: center;
   gap: 0.35rem;
   flex-shrink: 0;
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-fine-30) var(--space-fine-60);
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--muted);
@@ -2628,7 +2740,7 @@ a.surface-card:active {
 .surface-page {
   max-width: var(--maxw-wide);
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--space-24);
   min-height: 100vh;
   min-height: 100dvh;
   /* Lift above body's fixed background texture layers (Stage 4) */
@@ -2643,7 +2755,7 @@ a.surface-card:active {
 }
 
 .surface-header {
-  padding: clamp(4rem, 9vw, 7rem) 0 clamp(2.5rem, 5vw, 3.5rem);
+  padding: clamp(var(--space-64), 9vw, var(--space-112)) 0 clamp(var(--space-40), 5vw, var(--space-56));
   max-width: min(100%, 680px);
 }
 
@@ -2653,7 +2765,7 @@ a.surface-card:active {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .surface-title {
@@ -2661,7 +2773,7 @@ a.surface-card:active {
   font-weight: 400;
   letter-spacing: -0.02em;
   line-height: 1.08;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   text-wrap: balance;
   font-variation-settings: 'opsz' 32;
 }
@@ -2670,7 +2782,7 @@ a.surface-card:active {
   font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
   color: var(--ink);
   line-height: 1.4;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   text-wrap: pretty;
 }
 
@@ -2685,7 +2797,7 @@ a.surface-card:active {
 /* --- Doctrine content (route pages) --- */
 
 .doctrine-section {
-  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  padding: clamp(var(--space-48), 7vw, var(--space-88)) 0;
   border-top: 1px solid var(--line);
 }
 
@@ -2700,7 +2812,7 @@ a.surface-card:active {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-24);
 }
 
 /* Principle list — numbered entries with title + description */
@@ -2722,7 +2834,7 @@ a.surface-card:active {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: clamp(1.05rem, 1.8vw, 1.4rem);
+  padding: clamp(1.05rem, 1.8vw, var(--space-fine-140));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -2741,7 +2853,7 @@ a.surface-card:active {
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.45rem;
+  margin-bottom: var(--space-fine-45);
   text-wrap: balance;
 }
 
@@ -2814,7 +2926,7 @@ a.surface-card:active {
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0.65rem 1.25rem;
+  padding: var(--space-fine-65) var(--space-20);
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.005em;
@@ -2830,9 +2942,9 @@ a.surface-card:active {
 
 .button.primary {
   background: var(--signal);
-  color: #ffffff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal);
-  box-shadow: var(--inner-light), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  box-shadow: var(--inner-light), 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent) inset;
   transition: background var(--duration-quick) var(--ease-out),
               border-color var(--duration-quick) var(--ease-out),
               box-shadow var(--duration-quick) var(--ease-out),
@@ -2843,7 +2955,7 @@ a.surface-card:active {
 .button.primary:hover {
   background: var(--signal-light);
   border-color: var(--signal-light);
-  box-shadow: var(--inner-light), 0 0 32px rgba(51, 88, 232, 0.24);
+  box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
 }
 
 .button.primary:active {
@@ -2861,14 +2973,14 @@ a.surface-card:active {
 
 .button.ghost:hover {
   background: var(--surface-hover);
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
 }
 
 /* --- Pipeline diagram — continuous rail, stable across widths --- */
 
 .pipeline {
-  padding: 2.25rem 0 2.75rem;
-  margin-bottom: 1.5rem;
+  padding: var(--space-36) 0 var(--space-44);
+  margin-bottom: var(--space-24);
   border-top: 1px solid var(--line-faint);
   border-bottom: 1px solid var(--line-faint);
 }
@@ -2896,7 +3008,7 @@ a.surface-card:active {
   align-items: center;
   text-align: center;
   gap: 0.45rem;
-  padding: 0 0.35rem;
+  padding: 0 var(--space-fine-35);
   min-width: 0;
   position: relative;
   z-index: 1;
@@ -2945,7 +3057,7 @@ a.surface-card:active {
 /* --- Sections --- */
 
 .section {
-  padding: clamp(3.5rem, 8vw, 6.5rem) 0;
+  padding: clamp(var(--space-56), 8vw, var(--space-104)) 0;
 }
 
 /* Scroll-driven depth — sections drift up 8px as they enter the viewport,
@@ -2985,7 +3097,7 @@ a.surface-card:active {
   display: flex;
   flex-direction: column;
   min-height: 120px;
-  padding: 1.25rem;
+  padding: var(--space-20);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
@@ -3015,7 +3127,7 @@ a.surface-card:active {
   border-color: var(--line-strong);
   background: var(--surface-raised);
   background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light), 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--inner-light), 0 8px 24px color-mix(in srgb, var(--paper) 25%, transparent);
 }
 
 a.surface-card:active {
@@ -3630,12 +3742,12 @@ a.surface-card:active {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  padding: var(--space-16) var(--space-20);
   border: 1px solid var(--line);
   border-left: 3px solid var(--signal);
   border-radius: var(--radius);
   background: var(--surface);
-  margin-bottom: 3rem;
+  margin-bottom: var(--space-48);
 }
 
 .status-badge {
@@ -3644,14 +3756,14 @@ a.surface-card:active {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   /* 11.2px uppercase is WCAG 1.4.3 AA-normal (4.5:1) territory. --signal-light
-     (#3358e8) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
+     (var(--signal-light)) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
      the same hue family — clears 4.5:1 while preserving the brand signal
      identity. --signal-access is additive; contract tokens untouched. */
   color: var(--signal-access);
-  padding: 0.25rem 0.6rem;
+  padding: var(--space-4) var(--space-fine-60);
   border: 1px solid var(--signal-dim);
   border-radius: 3px;
-  /* No --signal-dim background fill: rgba(1,51,203,0.14) over surfaces produces
+  /* No --signal-dim background fill: color-mix(in srgb, var(--signal) 14%, transparent) over surfaces produces
      a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
      the badge readable from the border + light text alone. */
   background: transparent;
@@ -3663,8 +3775,8 @@ a.surface-card:active {
 
 .footer {
   border-top: 1px solid var(--line);
-  padding: 3rem 0 2.5rem;
-  margin-top: 2rem;
+  padding: var(--space-48) 0 var(--space-40);
+  margin-top: var(--space-32);
 }
 
 .footer-inner {
@@ -3693,7 +3805,7 @@ a.surface-card:active {
 }
 
 .footer-badge {
-  margin-top: 0.5rem;
+  margin-top: var(--space-8);
   opacity: 0.85;
   transition: opacity var(--duration-fast) var(--ease-out);
   display: inline-flex;
@@ -3717,7 +3829,7 @@ a.surface-card:active {
   - .footer-dock-track: width:max-content, animated translateX (the scroller)
 */
 .footer-docks {
-  margin-top: 1rem;
+  margin-top: var(--space-16);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -3738,7 +3850,7 @@ a.surface-card:active {
 
 .footer-dock-label {
   display: block;
-  padding: 0.4rem 0.75rem 0.3rem;
+  padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -3752,7 +3864,7 @@ a.surface-card:active {
   width: 100%;
   min-width: 0;
   overflow: hidden;
-  padding: 0.15rem 0 0.55rem;
+  padding: var(--space-fine-15) 0 var(--space-fine-55);
   /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
   touch-action: pan-y;
   /* Prevent text selection during drag. */
@@ -3760,15 +3872,15 @@ a.surface-card:active {
   mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 5%,
-    #000 95%,
+    var(--paper) 5%,
+    var(--paper) 95%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     90deg,
     transparent 0%,
-    #000 5%,
-    #000 95%,
+    var(--paper) 5%,
+    var(--paper) 95%,
     transparent 100%
   );
 }
@@ -3778,7 +3890,7 @@ a.surface-card:active {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0 0.75rem;
+  padding: 0 var(--space-12);
   width: max-content;
   animation: footer-dock-scroll 50s linear infinite;
 }
@@ -3820,7 +3932,7 @@ a.surface-card:active {
   align-items: center;
   gap: 0.35rem;
   flex-shrink: 0;
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-fine-30) var(--space-fine-60);
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--muted);
@@ -3930,7 +4042,7 @@ a.surface-card:active {
 .surface-page {
   max-width: var(--maxw-wide);
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--space-24);
   min-height: 100vh;
   min-height: 100dvh;
   /* Lift above body's fixed background texture layers (Stage 4) */
@@ -3945,7 +4057,7 @@ a.surface-card:active {
 }
 
 .surface-header {
-  padding: clamp(4rem, 9vw, 7rem) 0 clamp(2.5rem, 5vw, 3.5rem);
+  padding: clamp(var(--space-64), 9vw, var(--space-112)) 0 clamp(var(--space-40), 5vw, var(--space-56));
   max-width: min(100%, 680px);
 }
 
@@ -3955,7 +4067,7 @@ a.surface-card:active {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .surface-title {
@@ -3963,7 +4075,7 @@ a.surface-card:active {
   font-weight: 400;
   letter-spacing: -0.02em;
   line-height: 1.08;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   text-wrap: balance;
   font-variation-settings: 'opsz' 32;
 }
@@ -3972,7 +4084,7 @@ a.surface-card:active {
   font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
   color: var(--ink);
   line-height: 1.4;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   text-wrap: pretty;
 }
 
@@ -3987,7 +4099,7 @@ a.surface-card:active {
 /* --- Doctrine content (route pages) --- */
 
 .doctrine-section {
-  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  padding: clamp(var(--space-48), 7vw, var(--space-88)) 0;
   border-top: 1px solid var(--line);
 }
 
@@ -4002,7 +4114,7 @@ a.surface-card:active {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-24);
 }
 
 /* Principle list — numbered entries with title + description */
@@ -4019,7 +4131,7 @@ a.surface-card:active {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: clamp(1.05rem, 1.8vw, 1.4rem);
+  padding: clamp(1.05rem, 1.8vw, var(--space-fine-140));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -4038,7 +4150,7 @@ a.surface-card:active {
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.45rem;
+  margin-bottom: var(--space-fine-45);
   text-wrap: balance;
 }
 
@@ -4082,7 +4194,7 @@ a.surface-card:active {
   color: var(--ink);
   text-decoration: none;
   border-bottom: 1px solid var(--line-strong);
-  padding-bottom: 0.1rem;
+  padding-bottom: var(--space-fine-10);
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 
@@ -4094,12 +4206,12 @@ a.surface-card:active {
 /* Definition block — standalone statement with left signal border */
 
 .definition {
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-20) var(--space-24);
   border: 1px solid var(--line);
   border-left: 3px solid var(--signal);
   border-radius: var(--radius);
   background: var(--surface);
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-32);
   transition: background 0.2s var(--ease);
 }
 
@@ -4121,7 +4233,7 @@ a.surface-card:active {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-8);
 }
 
 /* Engine breakdown — four cards under "What the engines measure" on /score.
@@ -4134,7 +4246,7 @@ a.surface-card:active {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: var(--space-32);
   align-items: stretch;
 }
 
@@ -4150,7 +4262,7 @@ a.surface-card:active {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1.25rem;
+  padding: var(--space-20);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -4209,7 +4321,7 @@ a.surface-card:active {
 
 .engine-card-list li {
   position: relative;
-  padding-left: 1rem;
+  padding-left: var(--space-16);
   line-height: 1.45;
 }
 
@@ -4261,7 +4373,7 @@ a.surface-card:active {
 .checkmark-list li {
   position: relative;
   display: block;
-  padding-left: 1.75rem;
+  padding-left: var(--space-28);
   font-size: 0.9rem;
   color: var(--muted);
   line-height: 1.5;
@@ -4364,15 +4476,15 @@ a.surface-card:active {
   mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    #000 6%,
-    #000 94%,
+    var(--paper) 6%,
+    var(--paper) 94%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     180deg,
     transparent 0%,
-    #000 6%,
-    #000 94%,
+    var(--paper) 6%,
+    var(--paper) 94%,
     transparent 100%
   );
 }
@@ -4384,7 +4496,7 @@ a.surface-card:active {
   left: 0;
   right: 0;
   z-index: 2;
-  padding: 0.85rem 1rem 0.5rem;
+  padding: var(--space-fine-85) var(--space-16) var(--space-8);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -4398,7 +4510,7 @@ a.surface-card:active {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  padding: 2.25rem 1rem 1rem;
+  padding: var(--space-36) var(--space-16) var(--space-16);
   animation: state-marquee-scroll 30s linear infinite;
 }
 
@@ -4450,7 +4562,7 @@ a.surface-card:active {
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
-  padding: 0.5rem 0.8rem;
+  padding: var(--space-8) var(--space-fine-80);
   font-size: 0.78rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -4566,7 +4678,7 @@ a.surface-card:active {
   grid-template-columns: 2.5rem minmax(0, 1fr);
   gap: 0.75rem;
   align-items: baseline;
-  padding: 0.85rem 0.75rem 0.85rem 1rem;
+  padding: var(--space-fine-85) var(--space-12) var(--space-fine-85) var(--space-16);
   border: 0;
   border-left: 2px solid var(--line);
   background: transparent;
@@ -4610,10 +4722,10 @@ button.row:active {
 .layer-num {
   font-size: 0.75rem;
   font-weight: 700;
-  /* --signal (#0133cb) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
-     --signal-light (#3358e8) is 3.68:1 — passes AA-large (3:1) for the
+  /* --signal (var(--signal)) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
+     --signal-light (var(--signal-light)) is 3.68:1 — passes AA-large (3:1) for the
      0.75rem bold context but still fails AA-normal. Bump to AA-normal safe
-     color: --muted-dim (#7d7d7d) is 5.07:1 on --paper. */
+     color: --muted-dim (var(--muted-dim)) is 5.07:1 on --paper. */
   color: var(--muted-dim);
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
@@ -4638,7 +4750,7 @@ button.row:active {
 .row-meta,
 .layer-desc {
   display: block;
-  margin-top: 0.15rem;
+  margin-top: var(--space-fine-15);
   color: var(--muted-dim);
   font-size: 0.82rem;
   line-height: 1.45;
@@ -4907,7 +5019,7 @@ button.check-cell {
 .check-cell-tail {
   display: flex;
   align-items: start;
-  padding-top: 0.12rem;
+  padding-top: var(--space-fine-12);
   min-width: 0;
 }
 
@@ -5000,7 +5112,7 @@ a.check-cell:hover .check-cell-title {
   font-variant-numeric: tabular-nums;
   color: var(--signal);
   line-height: 1.5;
-  padding-top: 0.12rem;
+  padding-top: var(--space-fine-12);
   user-select: none;
 }
 
@@ -5009,7 +5121,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-direction: column;
   gap: 0.28rem;
-  padding-top: 0.02rem;
+  padding-top: var(--space-fine-02);
 }
 
 .check-cell-title {
@@ -5050,8 +5162,8 @@ a.check-cell:hover .check-cell-title {
 .check-cell-status {
   display: inline-flex;
   align-self: flex-start;
-  margin-top: 0.15rem;
-  padding: 0.12rem 0.42rem;
+  margin-top: var(--space-fine-15);
+  padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.68rem;
@@ -5157,11 +5269,11 @@ a.check-cell:hover .check-cell-title {
     gap: 0.75rem;
   }
   .topbar {
-    padding: 0.65rem 0;
+    padding: var(--space-fine-65) 0;
   }
   .topbar-inner {
     gap: 0.75rem;
-    padding: 0 max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+    padding: 0 max(var(--space-16), env(safe-area-inset-right)) 0 max(var(--space-16), env(safe-area-inset-left));
   }
   .topbar-right {
     gap: 0.4rem;
@@ -5174,7 +5286,7 @@ a.check-cell:hover .check-cell-title {
      every page passes the `scrolled` prop as true for the glass tint —
      using .scrolled would expand the search at the top of every page. */
   .topbar.scrolled {
-    padding: 0.5rem 0;
+    padding: var(--space-8) 0;
   }
   .topbar.scrolled .wordmark {
     font-size: 0.95rem;
@@ -5183,7 +5295,7 @@ a.check-cell:hover .check-cell-title {
      pill. width:auto + flex:0 0 auto lets the trigger size to its
      content (icon + gap + label) instead of staying 44px square. */
   .topbar.search-expanded .cmdk-trigger {
-    padding: 0 0.55rem 0 0.6rem;
+    padding: 0 var(--space-fine-55) 0 var(--space-fine-60);
     border-color: var(--line-strong);
     width: auto;
     flex: 0 0 auto;
@@ -5196,7 +5308,7 @@ a.check-cell:hover .check-cell-title {
      structural hairline under the bar. The user is committed to the page
      here; the hairline reads as structural, not chrome cruft. */
   .topbar.deep-scrolled .cmdk-trigger {
-    box-shadow: 0 0 0 1px rgba(51, 88, 232, 0.28);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal-light) 28%, transparent);
   }
   .topbar.deep-scrolled .topbar-glass {
     /* No border-bottom — the scroll-progress bar is the bottom edge */
@@ -5227,7 +5339,7 @@ a.check-cell:hover .check-cell-title {
     display: none;
   }
   .nav-links a {
-    padding: 0.4rem 0.5rem;
+    padding: var(--space-fine-40) var(--space-8);
     font-size: 0.8rem;
   }
   .wordmark {
@@ -5246,19 +5358,19 @@ a.check-cell:hover .check-cell-title {
     display: none;
   }
   .surface-page {
-    padding: 0 1rem;
+    padding: var(--space-fine-10);
   }
   .surface-header {
-    padding: 3rem 0 2rem;
+    padding: var(--space-48) 0 var(--space-32);
   }
   .row,
   .layer-item {
     grid-template-columns: 2rem minmax(0, 1fr);
     gap: 0.55rem;
-    padding: 0.8rem 0.55rem 0.8rem 0.75rem;
+    padding: var(--space-fine-80) var(--space-fine-55) var(--space-fine-80) var(--space-12);
   }
   .status-note {
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-32);
   }
   /* Mobile body padding — clear bottom-anchored FABs */
   /* overflow-x: clip (NOT hidden) on html/body — `hidden` creates an
@@ -5273,7 +5385,7 @@ a.check-cell:hover .check-cell-title {
     overscroll-behavior-y: none;
   }
   body {
-    padding-bottom: 4rem;
+    padding-bottom: var(--space-64);
     overflow-x: clip;
     overscroll-behavior-y: none;
   }
@@ -5285,7 +5397,7 @@ a.check-cell:hover .check-cell-title {
     gap: 5px;
     min-height: 2.75rem;
     width: 2.75rem;
-    padding: 0.5rem;
+    padding: var(--space-8);
     background: none;
     border: none;
     cursor: pointer;
@@ -5320,7 +5432,7 @@ a.check-cell:hover .check-cell-title {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: color-mix(in srgb, var(--paper) 40%, transparent);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index: 150;
@@ -5349,18 +5461,18 @@ a.check-cell:hover .check-cell-title {
     right: 0.5rem;
     bottom: 0.5rem;
     width: min(280px, 75vw);
-    background: rgba(10, 10, 12, 0.72);
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
     border-radius: var(--radius);
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4),
-      inset 1px 0 0 rgba(255, 255, 255, 0.06);
+    box-shadow: 0 24px 48px color-mix(in srgb, var(--paper) 40%, transparent),
+      inset 1px 0 0 color-mix(in srgb, var(--ink) 6%, transparent);
     z-index: 200;
     transform: translate3d(calc(100% + 0.5rem), 0, 0);
     will-change: transform;
     transition: transform var(--duration-slow) var(--ease-drawer);
-    padding: 1.25rem 1.25rem 2rem;
+    padding: var(--space-20) var(--space-20) var(--space-32);
     overflow-y: auto;
   }
   .nav-drawer.open {
@@ -5374,8 +5486,8 @@ a.check-cell:hover .check-cell-title {
     align-self: flex-end;
     gap: 0.5rem;
     min-height: 2.75rem;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 1rem;
+    padding: var(--space-8) var(--space-12);
+    margin-bottom: var(--space-16);
     background: transparent;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -5410,8 +5522,8 @@ a.check-cell:hover .check-cell-title {
     display: flex;
     align-items: center;
     min-height: 2.75rem;
-    padding: 0.85rem 0.75rem;
-    margin-bottom: 0.15rem;
+    padding: var(--space-fine-85) var(--space-12);
+    margin-bottom: var(--space-fine-15);
     font-size: 1.1rem;
     font-weight: 500;
     color: var(--muted);
@@ -5453,8 +5565,8 @@ a.check-cell:hover .check-cell-title {
 /* Status note — honest positioning at bottom of route pages */
 
 .status-note {
-  margin-top: 2.5rem;
-  padding: 1rem 1.25rem;
+  margin-top: var(--space-40);
+  padding: var(--space-16) var(--space-20);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-soft);
@@ -5480,7 +5592,7 @@ a.check-cell:hover .check-cell-title {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1.25rem;
-  margin-top: 1.75rem;
+  margin-top: var(--space-28);
 }
 
 .lab-meta-item {
@@ -5507,7 +5619,7 @@ a.check-cell:hover .check-cell-title {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.4rem;
-  margin-top: 0.4rem;
+  margin-top: var(--space-fine-40);
 }
 
 .open-package-paths a {
@@ -5535,7 +5647,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.5rem;
+  padding: var(--space-24);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
@@ -5572,7 +5684,7 @@ a.check-cell:hover .check-cell-title {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-8);
 }
 
 .lab-card-status {
@@ -5609,7 +5721,7 @@ a.check-cell:hover .check-cell-title {
 }
 
 .lab-card-arrow {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted-dim);
@@ -5690,7 +5802,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1.5rem;
+  padding: var(--space-24);
   background: var(--paper);
   min-height: 100%;
   min-width: 0;
@@ -5722,7 +5834,7 @@ a.check-cell:hover .check-cell-title {
   color: var(--muted-dim);
   line-height: 1.5;
   border-top: 1px solid var(--line-faint);
-  padding-top: 0.75rem;
+  padding-top: var(--space-12);
 }
 
 .demo-cell-note code {
@@ -5819,7 +5931,7 @@ html:not(.js-ready) .demo-stagger-bar {
   }
 
   .demo-cell {
-    padding: 1.25rem;
+    padding: var(--space-20);
   }
 }
 
@@ -5863,7 +5975,7 @@ html:not(.js-ready) .demo-stagger-bar {
   display: grid;
   grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.1fr) 1.4fr;
   gap: 0.75rem;
-  padding: 0.7rem 1rem;
+  padding: var(--space-fine-70) var(--space-16);
   align-items: baseline;
 }
 
@@ -5894,8 +6006,8 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-row .token-value {
-  /* signal-light (#3358e8) on surface (#0a0a0c) is 3.48:1 — below WCAG 1.4.3
-     AA 4.5:1 for 12.8px text. --signal-access (#5d7bff) reaches 5.41:1. */
+  /* signal-light (var(--signal-light)) on surface (var(--surface)) is 3.48:1 — below WCAG 1.4.3
+     AA 4.5:1 for 12.8px text. --signal-access (var(--signal-access)) reaches 5.41:1. */
   color: var(--signal-access);
   font-variant-numeric: tabular-nums;
 }
@@ -5908,7 +6020,7 @@ html:not(.js-ready) .demo-stagger-bar {
   .token-table-row {
     grid-template-columns: 1fr;
     gap: 0.25rem;
-    padding: 0.85rem 1rem;
+    padding: var(--space-fine-85) var(--space-16);
   }
 
   .token-table-row code:first-child {
@@ -6050,7 +6162,7 @@ html:not(.js-ready) .demo-stagger-bar {
 
 @media (max-width: 860px) {
   .hero {
-    padding: 3rem 0 2.5rem;
+    padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
   }
 
@@ -6104,7 +6216,7 @@ html:not(.js-ready) .demo-stagger-bar {
     justify-content: flex-start;
     text-align: left;
     gap: 0.85rem;
-    padding: 0.85rem 0;
+    padding: var(--space-fine-85) 0;
   }
 
   .pipeline-node {
@@ -6131,7 +6243,7 @@ html:not(.js-ready) .demo-stagger-bar {
 
 @media (max-width: 560px) {
   .site-shell {
-    padding: 0 1rem;
+    padding: var(--space-fine-10);
   }
 
   .pillar-grid,
@@ -6175,7 +6287,7 @@ html:not(.js-ready) .demo-stagger-bar {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  padding: 1.35rem 1.35rem 1.25rem;
+  padding: var(--space-fine-135) var(--space-fine-135) var(--space-20);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
   border-radius: var(--radius);
@@ -6195,7 +6307,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .field-card--kit {
-  border-left-color: rgba(51, 88, 232, 0.75);
+  border-left-color: color-mix(in srgb, var(--signal-light) 75%, transparent);
 }
 
 .field-card:hover {
@@ -6280,13 +6392,13 @@ a.field-card:active {
 
 .status-badge--lab {
   color: var(--ink);
-  border-color: rgba(51, 88, 232, 0.45);
+  border-color: color-mix(in srgb, var(--signal-light) 45%, transparent);
   background: transparent;
 }
 
 .status-badge--kit {
   color: var(--signal-light);
-  border-color: rgba(51, 88, 232, 0.45);
+  border-color: color-mix(in srgb, var(--signal-light) 45%, transparent);
   background: transparent;
 }
 
@@ -6333,7 +6445,7 @@ a.field-card:active {
 
 .mark-glyph--lab .mark-glyph-ring {
   border-radius: 50%;
-  border-color: rgba(51, 88, 232, 0.4);
+  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
   border-top-color: transparent;
   border-right-color: transparent;
   transform: rotate(-18deg) translateZ(0);
@@ -6349,7 +6461,7 @@ a.field-card:active {
 
 .mark-glyph--kit .mark-glyph-ring {
   border-radius: 0 0 10px 0;
-  border-color: rgba(51, 88, 232, 0.4);
+  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
 }
 
 /* Open = origin signal dot */
@@ -6418,7 +6530,7 @@ a.field-card:active {
 /* Agent prompt block on kit pages */
 .kit-prompt {
   margin: 0;
-  padding: 1.25rem 1.35rem;
+  padding: var(--space-20) var(--space-fine-135);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -6452,7 +6564,7 @@ a.field-card:active {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.32rem 0.7rem;
+  padding: var(--space-fine-32) var(--space-fine-70);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
@@ -6567,7 +6679,7 @@ a.field-card:active {
 
 ::selection {
   background: var(--signal);
-  color: #ffffff;
+  color: var(--paper-on-signal);
   text-shadow: none;
 }
 
@@ -6627,7 +6739,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   left: 0.75rem;
   top: 0.75rem;
   z-index: 100;
-  padding: 0.55rem 0.85rem;
+  padding: var(--space-fine-55) var(--space-fine-85);
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
   background: var(--surface-raised);
@@ -6816,7 +6928,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   top: 50%;
   transform: translateY(-50%) translateX(0.5rem);
   white-space: nowrap;
-  padding: 0.5rem 0.85rem;
+  padding: var(--space-8) var(--space-fine-85);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
@@ -6915,7 +7027,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   justify-content: center;
   gap: 0.35rem;
   min-height: 100px;
-  padding: 1rem 0.75rem;
+  padding: var(--space-16) var(--space-12);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--paper);
@@ -7026,7 +7138,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   -webkit-backface-visibility: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 1rem 0.75rem;
+  padding: var(--space-16) var(--space-12);
 }
 .effect-flip-front {
   background: var(--paper);
@@ -7332,8 +7444,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .waitlist-status {
   display: none;
-  margin-top: 0.95rem;
-  padding: 0.75rem 0.85rem;
+  margin-top: var(--space-fine-95);
+  padding: var(--space-12) var(--space-fine-85);
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--surface-soft);
@@ -7347,12 +7459,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .waitlist-status.is-ok {
-  border-color: rgba(51, 88, 232, 0.45);
+  border-color: color-mix(in srgb, var(--signal-light) 45%, transparent);
   color: var(--ink);
 }
 
 .waitlist-status.is-error {
-  border-color: rgba(239, 68, 68, 0.45);
+  border-color: color-mix(in srgb, var(--grade-f) 45%, transparent);
   color: #fecaca;
 }
 
@@ -7437,7 +7549,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 
 .score-hero-section .score-form {
-  margin-top: 2rem;
+  margin-top: var(--space-32);
 }
 
 /* ── Score Form ─────────────────────────────────────────────────────────── */
@@ -7454,7 +7566,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: var(--space-16);
   box-shadow: var(--shadow-md);
   width: 100%;
   box-sizing: border-box;
@@ -7501,8 +7613,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* signal-access (#5d7bff dark / #2a4cd8 light) — 5.41:1 / 7.83:1 on the
-     input's surface. --signal (#0133cb) was 2.21:1 on near-black, failing
+  /* signal-access (var(--signal-access) dark / var(--signal-access) light) — 5.41:1 / 7.83:1 on the
+     input's surface. --signal (var(--signal)) was 2.21:1 on near-black, failing
      WCAG 1.4.11 (non-text contrast 3:1) for the decorative URL icon. */
   color: var(--signal-access);
   pointer-events: none;
@@ -7527,7 +7639,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 0 1rem 0 2.75rem; /* left 2.75rem clears the icon overlay (1rem + 18px icon + ~0.5rem gap) */
+  padding: var(--space-fine-10) 0 var(--space-44); /* left 2.75rem clears the icon overlay (1rem + 18px icon + ~0.5rem gap) */
   box-sizing: border-box;
   outline: none;
   color: var(--ink);
@@ -7576,7 +7688,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background-image: var(--surface-card-gradient);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-xl);
-  padding: 1.25rem;
+  padding: var(--space-20);
   box-shadow: var(--shadow-lg), var(--inner-light);
 }
 
@@ -7659,10 +7771,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  margin-top: 1.25rem;
-  padding: 1rem 1.25rem;
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  margin-top: var(--space-20);
+  padding: var(--space-16) var(--space-20);
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 25%, transparent);
   border-radius: var(--radius);
 }
 
@@ -7677,7 +7789,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-error-title {
   font-weight: 600;
   color: var(--error);
-  margin-bottom: 0.2rem;
+  margin-bottom: var(--space-fine-20);
 }
 
 .score-error-msg {
@@ -7688,8 +7800,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── Score Welcome / Idle State ─────────────────────────────────────────── */
 
 .score-welcome-card {
-  margin-top: 1.5rem;
-  padding: 1.25rem 1.5rem;
+  margin-top: var(--space-24);
+  padding: var(--space-20) var(--space-24);
   background: var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -7712,7 +7824,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--signal);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-fine-35);
 }
 
 .score-hint {
@@ -7725,7 +7837,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── Score Results ─────────────────────────────────────────────────────── */
 
 .score-results {
-  margin-top: 2rem;
+  margin-top: var(--space-32);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -7738,10 +7850,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: var(--space-24);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 12px 32px color-mix(in srgb, var(--paper) 50%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -7755,22 +7867,22 @@ a.lab-card:focus-visible .lab-card-arrow {
   position: absolute;
   inset: 0 0 auto 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 22%, transparent), transparent);
   pointer-events: none;
   z-index: 1;
 }
 
 [data-theme="light"] .score-hero-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(245, 245, 247, 0.78) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ink) 68%, transparent) 0%, color-mix(in srgb, var(--ink) 78%, transparent) 100%);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 12px 32px color-mix(in srgb, var(--paper) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 70%, transparent);
 }
 
 [data-theme="light"] .score-hero-card::before {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 90%, transparent), transparent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -7779,7 +7891,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--surface);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--paper) 50%, transparent);
   }
 }
 
@@ -7789,22 +7901,22 @@ a.lab-card:focus-visible .lab-card-arrow {
   gap: 1.5rem;
 }
 
-.score-grade-emblem.is-a { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); color: var(--ok); }
-.score-grade-emblem.is-c { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.3); color: var(--warn); }
-.score-grade-emblem.is-d { background: rgba(249, 115, 22, 0.12); border-color: rgba(249, 115, 22, 0.3); color: #fb923c; }
-.score-grade-emblem.is-f { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.3); color: var(--error); }
+.score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok); }
+.score-grade-emblem.is-c { background: color-mix(in srgb, var(--grade-c) 12%, transparent); border-color: color-mix(in srgb, var(--grade-c) 30%, transparent); color: var(--warn); }
+.score-grade-emblem.is-d { background: color-mix(in srgb, var(--grade-d-glow) 12%, transparent); border-color: color-mix(in srgb, var(--grade-d-glow) 30%, transparent); color: var(--grade-d); }
+.score-grade-emblem.is-f { background: color-mix(in srgb, var(--grade-f) 12%, transparent); border-color: color-mix(in srgb, var(--grade-f) 30%, transparent); color: var(--error); }
 
 
 /* Grade-colored arc fills — match the emblem grade colors */
-.score-grade-emblem.is-a .score-arc-fill { stroke: #22c55e; }
-.score-grade-emblem.is-c .score-arc-fill { stroke: #eab308; }
-.score-grade-emblem.is-d .score-arc-fill { stroke: #fb923c; }
-.score-grade-emblem.is-f .score-arc-fill { stroke: #ef4444; }
+.score-grade-emblem.is-a .score-arc-fill { stroke: var(--grade-a); }
+.score-grade-emblem.is-c .score-arc-fill { stroke: var(--grade-c); }
+.score-grade-emblem.is-d .score-arc-fill { stroke: var(--grade-d); }
+.score-grade-emblem.is-f .score-arc-fill { stroke: var(--grade-f); }
 
-.score-grade-emblem.is-a .score-grade-glow { background: #22c55e; }
-.score-grade-emblem.is-c .score-grade-glow { background: #eab308; }
-.score-grade-emblem.is-d .score-grade-glow { background: #f97316; }
-.score-grade-emblem.is-f .score-grade-glow { background: #ef4444; }
+.score-grade-emblem.is-a .score-grade-glow { background: var(--grade-a); }
+.score-grade-emblem.is-c .score-grade-glow { background: var(--grade-c); }
+.score-grade-emblem.is-d .score-grade-glow { background: var(--grade-d-glow); }
+.score-grade-emblem.is-f .score-grade-glow { background: var(--grade-f); }
 
 .score-hero-meta {
   display: flex;
@@ -7839,16 +7951,16 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
   border: 1px solid var(--line);
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-fine-30) var(--space-fine-60);
   border-radius: var(--radius-sm);
   width: fit-content;
   max-width: 100%;
 }
 
 [data-theme="light"] .score-site-url {
-  /* Light theme: replace the dark slab (rgba(0,0,0,0.4)) with a flat surface
+  /* Light theme: replace the dark slab (color-mix(in srgb, var(--paper) 40%, transparent)) with a flat surface
      shade so the URL chip reads as a soft chip, not a foreign dark pill. */
   background: var(--surface-raised);
 }
@@ -7878,8 +7990,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1.25rem;
-  padding: 0.5rem 0 0.75rem;
-  margin-top: 0.5rem;
+  padding: var(--space-8) 0 var(--space-12);
+  margin-top: var(--space-8);
   border-top: 1px solid var(--line);
   font-size: 0.72rem;
   color: var(--muted);
@@ -7898,10 +8010,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.score-scale-band.is-fail .score-scale-dot { background: #ef4444; }
-.score-scale-band.is-warn .score-scale-dot { background: #f59e0b; }
-.score-scale-band.is-pass .score-scale-dot { background: #84cc16; }
-.score-scale-band.is-a .score-scale-dot { background: #22c55e; }
+.score-scale-band.is-fail .score-scale-dot { background: var(--grade-f); }
+.score-scale-band.is-warn .score-scale-dot { background: var(--warn); }
+.score-scale-band.is-pass .score-scale-dot { background: var(--grade-b); }
+.score-scale-band.is-a .score-scale-dot { background: var(--grade-a); }
 
 /* Skeleton loading rows — replaces the bare spinner during the 26-check run.
    Per AuditBuffet/CRAIG Four-State Contract: loading must match content shape,
@@ -7910,7 +8022,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+  padding: var(--space-8) 0;
 }
 .score-skeleton-row {
   height: 3.25rem;
@@ -7949,7 +8061,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--inner-light);
-  padding: 0.6rem 0.75rem;
+  padding: var(--space-fine-60) var(--space-12);
   text-align: left;
   display: flex;
   flex-direction: row;
@@ -7972,17 +8084,17 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 600;
 }
 
-.score-metric-tile.is-pass { border-color: rgba(34, 197, 94, 0.2); }
+.score-metric-tile.is-pass { border-color: color-mix(in srgb, var(--grade-a) 20%, transparent); }
 .score-metric-tile.is-pass .score-metric-val { color: var(--ok); }
-.score-metric-tile.is-pass .score-metric-lbl { color: rgba(74, 222, 128, 0.8); }
+.score-metric-tile.is-pass .score-metric-lbl { color: color-mix(in srgb, var(--ok) 80%, transparent); }
 
-.score-metric-tile.is-fail { border-color: rgba(239, 68, 68, 0.2); }
+.score-metric-tile.is-fail { border-color: color-mix(in srgb, var(--grade-f) 20%, transparent); }
 .score-metric-tile.is-fail .score-metric-val { color: var(--error); }
-.score-metric-tile.is-fail .score-metric-lbl { color: rgba(248, 113, 113, 0.8); }
+.score-metric-tile.is-fail .score-metric-lbl { color: color-mix(in srgb, var(--error) 80%, transparent); }
 
-.score-metric-tile.is-warn { border-color: rgba(234, 179, 8, 0.2); }
+.score-metric-tile.is-warn { border-color: color-mix(in srgb, var(--grade-c) 20%, transparent); }
 .score-metric-tile.is-warn .score-metric-val { color: var(--warn); }
-.score-metric-tile.is-warn .score-metric-lbl { color: rgba(250, 204, 21, 0.8); }
+.score-metric-tile.is-warn .score-metric-lbl { color: color-mix(in srgb, var(--warn) 80%, transparent); }
 
 .score-metric-tile.is-skip { border-color: var(--line); }
 .score-metric-tile.is-skip .score-metric-val { color: var(--muted); }
@@ -7996,7 +8108,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding-top: 0.75rem;
+  padding-top: var(--space-12);
   border-top: 1px solid var(--line);
   gap: 0.75rem;
   flex-wrap: wrap;
@@ -8013,7 +8125,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   gap: 0.4rem;
   text-decoration: none;
   height: 2.25rem;
-  padding: 0 1rem;
+  padding: var(--space-fine-10);
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -8060,7 +8172,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-audit-btn {
   background: var(--signal);
   border-color: var(--signal);
-  /* --paper-on-signal (additive) — white text on #0133cb is 8.59:1 (AAA);
+  /* --paper-on-signal (additive) — white text on var(--signal) is 8.59:1 (AAA);
      the previous --paper value read as near-black against the signal fill. */
   color: var(--paper-on-signal);
 }
@@ -8075,7 +8187,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-audit-error {
-  margin: 0.5rem 0 0;
+  margin: var(--space-8) 0 0;
   font-size: 0.75rem;
   color: var(--warn, #f59e0b);
   font-weight: 500;
@@ -8112,8 +8224,8 @@ a.lab-card:focus-visible .lab-card-arrow {
    style progress bar fills below, using the signal gradient. This is
    "progress as content" — the user reads what's happening, not just a shape. */
 .audit-progress-panel {
-  margin-top: 1rem;
-  padding: 1.1rem 1.3rem;
+  margin-top: var(--space-16);
+  padding: var(--space-fine-110) var(--space-fine-130);
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -8236,7 +8348,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.2rem;
-  padding: 0.7rem 0.8rem 0.6rem;
+  padding: var(--space-fine-70) var(--space-fine-80) var(--space-fine-60);
   background: var(--surface-card-gradient), var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -8264,7 +8376,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-engine-tile.is-active {
   border-color: var(--signal);
-  box-shadow: var(--inner-light), 0 4px 16px rgba(1, 51, 203, 0.15);
+  box-shadow: var(--inner-light), 0 4px 16px color-mix(in srgb, var(--signal) 15%, transparent);
 }
 
 /* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
@@ -8344,14 +8456,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-check-group + .score-check-group {
-  margin-top: 0.6rem;
+  margin-top: var(--space-fine-60);
 }
 
 .score-check-group-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-8) var(--space-12);
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -8391,30 +8503,30 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-check-group-count {
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 1px 7px;
+  padding: var(--space-1) var(--space-7);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 [data-theme="light"] .score-check-group-count {
-  background: rgba(0, 0, 0, 0.07);
+  background: color-mix(in srgb, var(--paper) 7%, transparent);
   color: var(--ink);
 }
 
 .score-check-group.is-fail .score-check-group-count {
-  background: rgba(239, 68, 68, 0.15);
+  background: color-mix(in srgb, var(--grade-f) 15%, transparent);
   color: var(--error);
 }
 
 .score-check-group.is-warn .score-check-group-count {
-  background: rgba(234, 179, 8, 0.15);
+  background: color-mix(in srgb, var(--grade-c) 15%, transparent);
   color: var(--warn);
 }
 
 .score-check-group.is-pass .score-check-group-count {
-  background: rgba(34, 197, 94, 0.15);
+  background: color-mix(in srgb, var(--grade-a) 15%, transparent);
   color: var(--ok);
 }
 
@@ -8428,7 +8540,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  padding-left: 0.5rem;
+  padding-left: var(--space-8);
   border-left: 1px solid var(--line);
 }
 
@@ -8490,7 +8602,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1rem 1.1rem;
+  padding: var(--space-16) var(--space-fine-110);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -8519,14 +8631,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-variant-numeric: tabular-nums;
 }
 
-.score-signals-net-pos { color: #34d399; }
-.score-signals-net-neg { color: #f87171; }
+.score-signals-net-pos { color: var(--signal-pos); }
+.score-signals-net-neg { color: var(--error); }
 
 .score-signals-group-title {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--ink, #f5f5f7);
-  margin: 0 0 0.5rem;
+  color: var(--ink, var(--ink));
+  margin: 0 0 var(--space-8);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -8536,17 +8648,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-signals-group-chip {
   font-size: 0.68rem;
   font-weight: 600;
-  padding: 0.1rem 0.45rem;
+  padding: var(--space-fine-10) var(--space-fine-45);
   border-radius: 999px;
-  background: rgba(52, 211, 153, 0.12);
-  border: 1px solid rgba(52, 211, 153, 0.28);
-  color: #34d399;
+  background: color-mix(in srgb, var(--signal-pos) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--signal-pos) 28%, transparent);
+  color: var(--signal-pos);
 }
 
 .score-signals-group-chip.is-neg {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.26);
-  color: #f87171;
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  border-color: color-mix(in srgb, var(--error) 26%, transparent);
+  color: var(--error);
 }
 
 .score-signals-list {
@@ -8562,26 +8674,26 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: baseline;
   gap: 0.65rem;
-  padding: 0.5rem 0.6rem;
-  background: rgba(255, 255, 255, 0.02);
+  padding: var(--space-8) var(--space-fine-60);
+  background: color-mix(in srgb, var(--ink) 2%, transparent);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 
-.score-signal-row.is-originality { border-top: 2px solid rgba(52, 211, 153, 0.55); }
-.score-signal-row.is-slop { border-top: 2px solid rgba(248, 113, 113, 0.55); }
+.score-signal-row.is-originality { border-top: 2px solid color-mix(in srgb, var(--signal-pos) 55%, transparent); }
+.score-signal-row.is-slop { border-top: 2px solid color-mix(in srgb, var(--error) 55%, transparent); }
 
 .score-signal-points {
   font-size: 0.8rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  color: #34d399;
+  color: var(--signal-pos);
   min-width: 1.7rem;
   text-align: right;
   flex-shrink: 0;
 }
 
-.score-signal-points.is-neg { color: #f87171; }
+.score-signal-points.is-neg { color: var(--error); }
 
 .score-signal-body {
   display: flex;
@@ -8593,7 +8705,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-signal-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--ink, #f5f5f7);
+  color: var(--ink, var(--ink));
 }
 
 .score-signal-evidence {
@@ -8603,14 +8715,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   word-break: break-word;
 }
 
-[data-theme="light"] .score-signal-row { background: rgba(0, 0, 0, 0.02); }
+[data-theme="light"] .score-signal-row { background: color-mix(in srgb, var(--paper) 2%, transparent); }
 [data-theme="light"] .score-signals-group-title,
-[data-theme="light"] .score-signal-label { color: #1a1a1e; }
+[data-theme="light"] .score-signal-label { color: var(--ink); }
 
 @media (prefers-reduced-motion: no-preference) {
   .score-signal-row { transition: background var(--duration-fast) var(--ease-out); }
-  .score-signal-row:hover { background: rgba(255, 255, 255, 0.04); }
-  [data-theme="light"] .score-signal-row:hover { background: rgba(0, 0, 0, 0.035); }
+  .score-signal-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+  [data-theme="light"] .score-signal-row:hover { background: color-mix(in srgb, var(--paper) 4%, transparent); }
 }
 
 
@@ -8618,7 +8730,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: var(--space-16);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -8626,8 +8738,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-filter-segmented {
   display: flex;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 3px;
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  padding: var(--space-3);
   border-radius: var(--radius);
   border: 1px solid var(--line);
   gap: 2px;
@@ -8650,7 +8762,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   transform: translateX(calc(var(--indicator-x) - 3px));
   background: var(--surface-card-gradient), var(--surface-lifted);
   border-radius: var(--radius-sm);
-  box-shadow: var(--inner-light), 0 2px 6px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--inner-light), 0 2px 6px color-mix(in srgb, var(--paper) 22%, transparent);
   transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
               width var(--duration, 0.3s) var(--ease-out, ease-out);
   pointer-events: none;
@@ -8658,7 +8770,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 [data-theme="light"] .score-filter-segmented {
-  /* Light theme: the dark slab (rgba(0,0,0,0.4)) reads as a foreign element
+  /* Light theme: the dark slab (color-mix(in srgb, var(--paper) 40%, transparent)) reads as a foreign element
      against the light page. Use a quiet surface shade instead. */
   background: var(--surface-raised);
 }
@@ -8705,7 +8817,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   gap: 0.25rem;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   flex-wrap: wrap;
   position: relative;
   --indicator-x: 0px;
@@ -8728,7 +8840,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .bundle-tab {
-  padding: 0.5rem 1rem;
+  padding: var(--space-8) var(--space-16);
   background: transparent;
   border: none;
   color: var(--muted);
@@ -8755,7 +8867,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Copy button — pushed to the right, styled as an outlined button */
 .bundle-tab--copy {
   margin-left: auto;
-  padding: 0.5rem 1rem;
+  padding: var(--space-8) var(--space-16);
   background: transparent;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm, 6px);
@@ -8772,26 +8884,26 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-tab-count {
   font-size: 0.7rem;
-  padding: 1px 5px;
+  padding: var(--space-1) var(--space-5);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
   color: var(--muted);
 }
 
 [data-theme="light"] .score-tab-count {
   /* Darken the pill on light surfaces — the hardcoded white disappears,
      leaving dim text floating. Invert to a dark wash + ink text. */
-  background: rgba(0, 0, 0, 0.07);
+  background: color-mix(in srgb, var(--paper) 7%, transparent);
   color: var(--ink);
 }
 
 .score-filter-tab.is-active .score-tab-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
   color: var(--ink);
 }
 
 [data-theme="light"] .score-filter-tab.is-active .score-tab-count {
-  background: rgba(0, 0, 0, 0.12);
+  background: color-mix(in srgb, var(--paper) 12%, transparent);
 }
 
 .score-search-wrapper {
@@ -8812,7 +8924,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-search-input {
   width: 100%;
   height: 2.25rem;
-  padding: 0 2rem 0 2.2rem;
+  padding: var(--space-fine-20) 0 var(--space-fine-220);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -8834,13 +8946,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
-  padding-bottom: 0.2rem;
+  padding-bottom: var(--space-fine-20);
   scrollbar-width: thin;
 }
 
 .score-category-chip {
   height: 1.85rem;
-  padding: 0 0.7rem;
+  padding: 0 var(--space-fine-70);
   border-radius: 999px;
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -8862,7 +8974,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-category-chip.is-active {
-  background: rgba(1, 51, 203, 0.15);
+  background: color-mix(in srgb, var(--signal) 15%, transparent);
   border-color: var(--signal);
   color: var(--ink);
 }
@@ -8881,7 +8993,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-empty-feed {
-  padding: 2.5rem 1rem;
+  padding: var(--space-40) var(--space-16);
   text-align: center;
   background: var(--surface-raised);
   border: 1px solid var(--line);
@@ -8890,14 +9002,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-empty-title {
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-4);
   color: var(--ink);
 }
 
 .score-empty-desc {
   font-size: 0.8rem;
   color: var(--muted);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .score-card-item {
@@ -8908,7 +9020,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--inner-light);
-  padding: 0.85rem 1rem;
+  padding: var(--space-fine-85) var(--space-16);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -8946,8 +9058,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-color: var(--signal);
   /* Raised open panel: signal tint over the lifted plane + inner highlight,
      so the expanded drawer reads as one elevated surface, not a recolor. */
-  background: linear-gradient(rgba(1, 51, 203, 0.06), rgba(1, 51, 203, 0.06)), var(--surface-lifted);
-  box-shadow: var(--inner-light), 0 8px 30px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(color-mix(in srgb, var(--signal) 6%, transparent), color-mix(in srgb, var(--signal) 6%, transparent)), var(--surface-lifted);
+  box-shadow: var(--inner-light), 0 8px 30px color-mix(in srgb, var(--paper) 28%, transparent);
 }
 
 /* Press state — contract takt: 0.985 on cards/rows (> 0.95 floor).
@@ -8981,14 +9093,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.625rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  padding: 2px 6px;
+  padding: var(--space-2) var(--space-6);
   border-radius: var(--radius-sm);
   text-transform: uppercase;
 }
 
-.score-card-status-pill.is-pass { background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.3); }
-.score-card-status-pill.is-fail { background: rgba(239, 68, 68, 0.15); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
-.score-card-status-pill.is-warn { background: rgba(234, 179, 8, 0.15); color: var(--warn); border: 1px solid rgba(234, 179, 8, 0.3); }
+.score-card-status-pill.is-pass { background: color-mix(in srgb, var(--grade-a) 15%, transparent); color: var(--ok); border: 1px solid color-mix(in srgb, var(--grade-a) 30%, transparent); }
+.score-card-status-pill.is-fail { background: color-mix(in srgb, var(--grade-f) 15%, transparent); color: var(--error); border: 1px solid color-mix(in srgb, var(--grade-f) 30%, transparent); }
+.score-card-status-pill.is-warn { background: color-mix(in srgb, var(--grade-c) 15%, transparent); color: var(--warn); border: 1px solid color-mix(in srgb, var(--grade-c) 30%, transparent); }
 .score-card-status-pill.is-skip { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
@@ -9003,11 +9115,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  /* muted-dim (#7d7d7d) on the card surface (~#19191d) is 4.25:1 — below
-     AA 4.5:1 at 10.4px. --muted (#a0a0a0) reaches ~8:1 on cards. */
+  /* muted-dim (var(--muted-dim)) on the card surface (~#19191d) is 4.25:1 — below
+     AA 4.5:1 at 10.4px. --muted (var(--muted)) reaches ~8:1 on cards. */
   color: var(--muted);
   background: var(--surface-soft);
-  padding: 1px 5px;
+  padding: var(--space-1) var(--space-5);
   border-radius: 3px;
 }
 
@@ -9030,8 +9142,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-drawer {
-  margin-top: 0.35rem;
-  padding-top: 0.65rem;
+  margin-top: var(--space-fine-35);
+  padding-top: var(--space-fine-65);
   border-top: 1px dashed var(--line);
   display: flex;
   flex-direction: column;
@@ -9071,12 +9183,12 @@ a.lab-card:focus-visible .lab-card-arrow {
    technical finding: amber heading (signal for action, not error), left-border
    treatment to set the "how to fix" block apart from the "what's wrong" block. */
 .score-drawer-remediation-heading {
-  margin-top: 0.6rem;
+  margin-top: var(--space-fine-60);
   color: #c9a227; /* amber — matches OG grade C/D color, contract-restrained */
 }
 
 .score-drawer-remediation {
-  padding-left: 0.75rem;
+  padding-left: var(--space-12);
   border-left: 2px solid rgba(201, 162, 39, 0.35);
   color: var(--ink);
 }
@@ -9085,7 +9197,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 @media (max-width: 720px) {
   .score-input-card {
-    padding: 0.85rem;
+    padding: var(--space-fine-85);
   }
 
   .score-url-input-inner {
@@ -9107,7 +9219,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-hero-card {
-    padding: 1.25rem;
+    padding: var(--space-20);
   }
 
   .score-hero-top {
@@ -9166,26 +9278,26 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-filter-tab {
-    padding: 0 0.6rem;
+    padding: 0 var(--space-fine-60);
     font-size: 0.75rem;
     white-space: nowrap;
   }
 
   .score-controls-card {
-    padding: 0.85rem;
+    padding: var(--space-fine-85);
   }
 
   .score-hero-section {
-    padding-top: 1.5rem;
-    padding-bottom: 1.75rem;
+    padding-top: var(--space-24);
+    padding-bottom: var(--space-28);
   }
 
   .score-hero-section .score-form {
-    margin-top: 1rem;
+    margin-top: var(--space-16);
   }
 
   .score-contract-note {
-    margin-top: 1rem;
+    margin-top: var(--space-16);
     font-size: 0.78rem;
     line-height: 1.5;
   }
@@ -9202,21 +9314,21 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-hero-section {
-    padding-top: 1rem;
-    padding-bottom: 1.25rem;
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-20);
   }
 
   .score-hero-section .score-form {
-    margin-top: 0.75rem;
+    margin-top: var(--space-12);
   }
 
   .score-hint {
     font-size: 0.78rem;
-    margin-top: 0.75rem;
+    margin-top: var(--space-12);
   }
 
   .score-hero-card {
-    padding: 1rem;
+    padding: var(--space-16);
   }
 
   .score-grade-emblem {
@@ -9237,17 +9349,17 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-controls-card {
-    padding: 0.75rem;
+    padding: var(--space-12);
   }
 
   .score-card-item {
-    padding: 0.75rem 0.85rem;
+    padding: var(--space-12) var(--space-fine-85);
   }
 }
 
 @media (max-width: 380px) {
   .score-input-card {
-    padding: 0.75rem;
+    padding: var(--space-12);
   }
 
   .score-submit {
@@ -9269,7 +9381,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-metric-tile {
-    padding: 0.5rem 0.35rem;
+    padding: var(--space-8) var(--space-fine-35);
   }
 
   .score-metric-val {
@@ -9289,19 +9401,19 @@ a.lab-card:focus-visible .lab-card-arrow {
   grid-template-columns: 32px 64px 1fr;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-8) var(--space-12);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
 
 .badge-grade-row.is-qualifying {
-  border-color: rgba(74, 222, 128, 0.25);
-  background: rgba(34, 197, 94, 0.04);
+  border-color: color-mix(in srgb, var(--ok) 25%, transparent);
+  background: color-mix(in srgb, var(--grade-a) 4%, transparent);
 }
 
 
 .badge-grade-row.is-qualifying .badge-grade-status {
-  color: #4ade80;
+  color: var(--ok);
 }
 
 
@@ -9311,7 +9423,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .badge-grade-row {
     grid-template-columns: 28px 56px 1fr;
     gap: 0.5rem;
-    padding: 0.4rem 0.6rem;
+    padding: var(--space-fine-40) var(--space-fine-60);
   }
 }
 
@@ -9353,7 +9465,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .sense-toggle[aria-pressed="true"] {
     /* Active state: keep the signal tint via background only, not border */
     border: none;
-    background: rgba(51, 88, 232, 0.12);
+    background: color-mix(in srgb, var(--signal-light) 12%, transparent);
   }
 
   /* 3. In-text links — vertical padding + negative margin keeps inline flow
@@ -9362,8 +9474,8 @@ a.lab-card:focus-visible .lab-card-arrow {
     display: inline-block;
     min-height: 2.75rem;
     min-width: 2.75rem;
-    padding-top: 0.625rem;
-    padding-bottom: 0.625rem;
+    padding-top: var(--space-10);
+    padding-bottom: var(--space-10);
     margin-top: -0.625rem;
     margin-bottom: -0.625rem;
   }
@@ -9373,7 +9485,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     min-height: 2.75rem;
     display: inline-flex;
     align-items: center;
-    padding: 0.5rem 0.85rem;
+    padding: var(--space-8) var(--space-fine-85);
   }
 
   /* 5. Footer contact link — 19.83px → 44px */
@@ -9421,7 +9533,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius);
-  padding: 1.35rem 1.25rem 1.5rem;
+  padding: var(--space-fine-135) var(--space-20) var(--space-24);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -9480,7 +9592,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 @media (max-width: 560px) {
   .pricing-card {
-    padding: 1.2rem 1.1rem 1.3rem;
+    padding: var(--space-fine-120) var(--space-fine-110) var(--space-fine-130);
   }
 }
 
@@ -9506,8 +9618,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ── Score History (free-tier local storage) ────────────────────────────── */
 
 .score-history-panel {
-  margin-top: 1.5rem;
-  padding: 1.25rem 1.5rem;
+  margin-top: var(--space-24);
+  padding: var(--space-20) var(--space-24);
   background: var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -9527,8 +9639,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  /* --signal (#0133cb) is 2.21:1 on the page background — far below AA.
-     --signal-access (#5d7bff) reaches 5.41:1; same hue family. */
+  /* --signal (var(--signal)) is 2.21:1 on the page background — far below AA.
+     --signal-access (var(--signal-access)) reaches 5.41:1; same hue family. */
   color: var(--signal-access);
   margin: 0;
 }
@@ -9539,7 +9651,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.75rem;
   color: var(--muted);
   cursor: pointer;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-8) var(--space-12);
   min-height: 44px;
   border-radius: var(--radius-sm);
   transition: color var(--motion-short) var(--ease-quiet);
@@ -9565,7 +9677,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.65rem 0.85rem;
+  padding: var(--space-fine-65) var(--space-fine-85);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -9630,7 +9742,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   color: var(--text);
   font-size: 0.75rem;
-  padding: 0.5rem 0.85rem;
+  padding: var(--space-8) var(--space-fine-85);
   min-height: 44px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -9650,7 +9762,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-history-foot .text-link {
-  /* --signal (#0133cb) fails AA (2.21:1) as text on dark; underline signal
+  /* --signal (var(--signal)) fails AA (2.21:1) as text on dark; underline signal
      moves to the border via ::after, so the readable text uses --signal-access. */
   color: var(--signal-access);
   text-decoration: none;
@@ -9665,12 +9777,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Mobile: collapse the history item to two rows so the URL has room. */
 @media (max-width: 720px) {
   .score-history-panel {
-    padding: 1rem;
+    padding: var(--space-16);
   }
   .score-history-item {
     flex-wrap: wrap;
     gap: 0.5rem 0.65rem;
-    padding: 0.55rem 0.65rem;
+    padding: var(--space-fine-55) var(--space-fine-65);
   }
   .score-history-body {
     order: 2;
@@ -9709,7 +9821,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
-  padding: 2rem 0;
+  padding: var(--space-32) 0;
 }
 
 /* Shimmer base — all skeleton blocks share this */
@@ -9736,9 +9848,9 @@ a.lab-card:focus-visible .lab-card-arrow {
 [data-theme="light"] .report-skel-row {
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.05) 0%,
-    rgba(0, 0, 0, 0.09) 50%,
-    rgba(0, 0, 0, 0.05) 100%
+    color-mix(in srgb, var(--paper) 5%, transparent) 0%,
+    color-mix(in srgb, var(--paper) 9%, transparent) 50%,
+    color-mix(in srgb, var(--paper) 5%, transparent) 100%
   );
   background-size: 200% 100%;
 }
@@ -9801,7 +9913,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-skel-section-header {
   width: 12rem;
   height: 1.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-4);
 }
 
 .report-skel-row {
@@ -9824,22 +9936,22 @@ a.lab-card:focus-visible .lab-card-arrow {
   [data-theme="light"] .report-skel-chip,
   [data-theme="light"] .report-skel-section-header,
   [data-theme="light"] .report-skel-row {
-    background: rgba(0, 0, 0, 0.06);
+    background: color-mix(in srgb, var(--paper) 6%, transparent);
   }
 }
 
 .report-error {
-  padding: 3rem 1.5rem;
+  padding: var(--space-48) var(--space-24);
   text-align: center;
 }
 
 .report-error h2 {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .report-error p {
   color: var(--error);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-24);
 }
 
 /* --- Report hero --- */
@@ -9848,7 +9960,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: flex-start;
   gap: 2.5rem;
-  padding: 2rem 0;
+  padding: var(--space-32) 0;
   border-bottom: 1px solid var(--line-faint);
   flex-wrap: wrap;
 }
@@ -9896,47 +10008,47 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--ink);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-4);
   word-break: break-all;
 }
 
 .report-hero-contract {
   font-size: 0.85rem;
   color: var(--muted);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .report-hero-counts {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .report-count {
   font-size: 0.8rem;
   font-weight: 600;
-  padding: 0.25rem 0.65rem;
+  padding: var(--space-4) var(--space-fine-65);
   border-radius: 99px;
   font-variant-numeric: tabular-nums;
 }
 
-.report-count--pass { color: var(--ok); background: rgba(74, 222, 128, 0.12); }
-.report-count--fail { color: var(--error); background: rgba(248, 113, 113, 0.12); }
-.report-count--warn { color: var(--warn); background: rgba(250, 204, 21, 0.12); }
+.report-count--pass { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.report-count--fail { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
+.report-count--warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
 .report-count--skip { color: var(--muted); background: var(--surface-soft); }
 .report-count--manual { color: var(--muted); background: var(--surface-soft); }
 
 .report-hero-floor {
   font-size: 0.85rem;
   color: var(--warn);
-  margin-top: 0.5rem;
+  margin-top: var(--space-8);
 }
 
 .report-hero-scored {
   font-size: 0.8rem;
   color: var(--muted-dim);
-  margin-top: 0.5rem;
+  margin-top: var(--space-8);
 }
 
 /* --- Category navigation --- */
@@ -9945,7 +10057,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 1.25rem 0;
+  padding: var(--space-20) 0;
   border-bottom: 1px solid var(--line-faint);
   position: sticky;
   top: 72px;
@@ -9957,7 +10069,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
+  padding: var(--space-fine-40) var(--space-12);
   background: var(--surface);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
@@ -10006,7 +10118,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* --- Not measured notice --- */
 
 .report-not-measured {
-  padding: 1rem 0;
+  padding: var(--space-16) 0;
   border-bottom: 1px solid var(--line-faint);
 }
 
@@ -10019,7 +10131,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* --- Report sections --- */
 
 .report-section {
-  padding: 1.5rem 0;
+  padding: var(--space-24) 0;
   border-bottom: 1px solid var(--line-faint);
 }
 
@@ -10032,7 +10144,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   flex-wrap: wrap;
 }
 
@@ -10081,7 +10193,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.6rem 0.85rem;
+  padding: var(--space-fine-60) var(--space-fine-85);
   cursor: pointer;
   font-size: 0.85rem;
   transition: background var(--duration-fast) var(--ease);
@@ -10097,13 +10209,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.15rem 0.4rem;
+  padding: var(--space-fine-15) var(--space-fine-40);
   border-radius: 3px;
 }
 
-.report-check-status--pass { color: var(--ok); background: rgba(74, 222, 128, 0.1); }
-.report-check-status--fail { color: var(--error); background: rgba(248, 113, 113, 0.1); }
-.report-check-status--warn { color: var(--warn); background: rgba(250, 204, 21, 0.1); }
+.report-check-status--pass { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.report-check-status--fail { color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+.report-check-status--warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .report-check-status--skip { color: var(--muted); background: var(--surface-soft); }
 .report-check-status--manual { color: var(--muted); background: var(--surface-soft); }
 
@@ -10133,7 +10245,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .report-check-remediation {
-  padding: 0.75rem 0.85rem;
+  padding: var(--space-12) var(--space-fine-85);
   border-top: 1px solid var(--line-faint);
   font-size: 0.85rem;
   color: var(--muted);
@@ -10149,15 +10261,15 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-hard-fail {
   max-width: var(--maxw);
-  margin: 1.5rem auto;
-  padding: 0 2rem;
+  margin: var(--space-24) auto;
+  padding: var(--space-fine-20);
 }
 
 .report-hard-fail p {
-  padding: 1rem 1.25rem;
+  padding: var(--space-16) var(--space-20);
   border: 1px solid var(--error);
   border-radius: var(--radius);
-  background: rgba(248, 113, 113, 0.08);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
   color: var(--error);
   font-size: 0.9rem;
   font-weight: 500;
@@ -10172,8 +10284,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-slop {
   max-width: var(--maxw);
-  margin: 1.5rem auto;
-  padding: 0 2rem;
+  margin: var(--space-24) auto;
+  padding: var(--space-fine-20);
 }
 
 .report-slop-title {
@@ -10181,13 +10293,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--warn);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-4);
 }
 
 .report-slop-convergence {
   font-size: 0.85rem;
   color: var(--muted);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .report-slop-findings {
@@ -10199,7 +10311,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-slop-finding {
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
+  padding: var(--space-12) var(--space-16);
 }
 
 .report-slop-finding-header {
@@ -10230,17 +10342,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .report-slop-finding-evidence {
-  margin-top: 0.25rem;
+  margin-top: var(--space-4);
   font-size: 0.8rem;
   color: var(--muted);
-  padding-left: 2.5rem;
+  padding-left: var(--space-40);
 }
 
 .report-skipped {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
-  padding: 0.75rem 0.85rem;
+  padding: var(--space-12) var(--space-fine-85);
   font-size: 0.85rem;
   color: var(--muted);
 }
@@ -10251,20 +10363,20 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .report-skipped .report-check-list {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
 }
 
 /* --- Report footer --- */
 
 .report-footer {
-  padding: 2rem 0;
+  padding: var(--space-32) 0;
 }
 
 .report-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .report-version {
@@ -10318,7 +10430,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-32);
 }
 
 .report-composite-summary {
@@ -10329,7 +10441,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-composite-eyebrow {
   font-size: 0.8rem;
   color: var(--muted-dim);
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--space-4);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -10338,7 +10450,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--ink);
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-8);
 }
 
 .report-composite-counts {
@@ -10356,21 +10468,21 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-24);
 }
 
 .report-sub-engine-card {
   background: var(--surface-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
+  padding: var(--space-16) var(--space-20);
 }
 
 .report-sub-engine-label {
   font-size: 0.7rem;
   font-weight: 600;
   color: var(--muted-dim);
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-8);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -10378,7 +10490,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-sub-engine-grade {
   font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.25rem;
+  margin: 0 0 var(--space-4);
 }
 
 .report-sub-engine-grade--null {
@@ -10394,16 +10506,16 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-sub-engine-desc {
   font-size: 0.7rem;
   color: var(--muted-dim);
-  margin: 0.25rem 0 0;
+  margin: var(--space-4) 0 0;
 }
 
 /* Engine tab navigation */
 .report-engine-tabs {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
   border-bottom: 1px solid var(--line);
-  padding-bottom: 0.5rem;
+  padding-bottom: var(--space-8);
   flex-wrap: wrap;
 }
 
@@ -10414,7 +10526,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: transparent;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 0.4rem 0.8rem;
+  padding: var(--space-fine-40) var(--space-fine-80);
   cursor: pointer;
   transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
     color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
@@ -10444,7 +10556,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-empty {
   font-size: 0.85rem;
   color: var(--muted);
-  margin: 1rem 0;
+  margin: var(--space-16) 0;
 }
 
 /* Status summary bar — colored pills showing pass/warn/fail counts */
@@ -10453,7 +10565,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  padding: 0.6rem 0.85rem;
+  padding: var(--space-fine-60) var(--space-fine-85);
   background: var(--surface-soft);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
@@ -10477,24 +10589,24 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-status-pill {
   font-size: 0.72rem;
   font-weight: 600;
-  padding: 0.15rem 0.5rem;
+  padding: var(--space-fine-15) var(--space-8);
   border-radius: 3px;
   font-variant-numeric: tabular-nums;
 }
 
 .report-status-pill--pass {
   color: var(--ok);
-  background: rgba(74, 222, 128, 0.12);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
 }
 
 .report-status-pill--warn {
   color: var(--warn);
-  background: rgba(250, 204, 21, 0.12);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
 }
 
 .report-status-pill--fail {
   color: var(--error);
-  background: rgba(248, 113, 113, 0.12);
+  background: color-mix(in srgb, var(--error) 12%, transparent);
 }
 
 .report-status-pill--skip {
@@ -10509,7 +10621,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* Check body — expanded detail inside <details> */
 .report-check-body {
-  padding: 0.75rem 0.85rem;
+  padding: var(--space-12) var(--space-fine-85);
   border-top: 1px solid var(--line-faint);
   background: var(--surface);
 }
@@ -10563,14 +10675,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* --- Category bar (frameworks/[slug]) — replaces inline styles --- */
 
 .cat-bar {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .cat-bar-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-4);
 }
 
 .cat-bar-label {
@@ -10589,7 +10701,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .cat-bar-cohort {
-  margin-left: 0.5rem;
+  margin-left: var(--space-8);
   color: var(--muted-dim);
 }
 
@@ -10614,14 +10726,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 .cat-bar-meta {
   font-size: 0.7rem;
   color: var(--muted-dim);
-  margin-top: 0.25rem;
+  margin-top: var(--space-4);
 }
 
 /* --- Radar chart (frameworks/[slug]) — category polygon visualization --- */
 
 .radar-chart {
   display: block;
-  margin: 1.5rem auto;
+  margin: var(--space-24) auto;
   max-width: 400px;
 }
 
@@ -10676,7 +10788,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   gap: 1.5rem;
   font-size: 0.75rem;
   color: var(--muted);
-  margin-top: 0.5rem;
+  margin-top: var(--space-8);
 }
 
 .radar-chart-legend-item {
@@ -10713,12 +10825,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* --- Text cell — visual containment for long-form supporting text --- */
 
 .text-cell {
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-20) var(--space-24);
   border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   background: var(--surface);
   line-height: 1.55;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-16);
 }
 
 .text-cell p {
@@ -10726,12 +10838,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .text-cell p + p {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
 }
 
 @media (max-width: 640px) {
   .text-cell {
-    padding: 1rem 1.125rem;
+    padding: var(--space-16) var(--space-18);
   }
 }
 
@@ -10826,7 +10938,7 @@ select {
   margin: 0;
   text-wrap: balance;
   border-left: 2px solid var(--signal);
-  padding-left: 0.75rem;
+  padding-left: var(--space-12);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -10838,7 +10950,7 @@ select {
 }
 
 .score-tip-hint {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
   display: flex;
 }
 
@@ -10883,11 +10995,11 @@ select {
 
 /* Grade-colored main arc — same five-band semantics as the retired emblem,
    so OG/badge logic keeps a single grade language. */
-.constel-main-fill.is-a { stroke: #22c55e; }
-.constel-main-fill.is-b { stroke: #84cc16; }
-.constel-main-fill.is-c { stroke: #eab308; }
-.constel-main-fill.is-d { stroke: #fb923c; }
-.constel-main-fill.is-f { stroke: #ef4444; }
+.constel-main-fill.is-a { stroke: var(--grade-a); }
+.constel-main-fill.is-b { stroke: var(--grade-b); }
+.constel-main-fill.is-c { stroke: var(--grade-c); }
+.constel-main-fill.is-d { stroke: var(--grade-d); }
+.constel-main-fill.is-f { stroke: var(--grade-f); }
 
 .constel-center {
   position: absolute;
@@ -10907,10 +11019,10 @@ select {
   line-height: 1;
 }
 
-.constel-grade.is-a { color: #22c55e; }
-.constel-grade.is-b { color: #a3e635; }
+.constel-grade.is-a { color: var(--grade-a); }
+.constel-grade.is-b { color: var(--grade-b-light); }
 .constel-grade.is-c { color: var(--warn); }
-.constel-grade.is-d { color: #fb923c; }
+.constel-grade.is-d { color: var(--grade-d); }
 .constel-grade.is-f { color: var(--error); }
 
 .constel-pct {
@@ -10995,25 +11107,25 @@ select {
   font-size: 0.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  padding: 2px 7px;
+  padding: var(--space-2) var(--space-7);
   border-radius: 999px;
   letter-spacing: 0.01em;
 }
 
 .score-delta-chip.is-up {
   color: var(--ok);
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: color-mix(in srgb, var(--grade-a) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--grade-a) 28%, transparent);
 }
 
 .score-delta-chip.is-down {
   color: var(--error);
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.28);
+  background: color-mix(in srgb, var(--grade-f) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--grade-f) 28%, transparent);
 }
 
 .score-strong-weak {
-  margin: 0.15rem 0 0.45rem;
+  margin: var(--space-fine-15) 0 var(--space-fine-45);
   font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.45;
@@ -11025,8 +11137,8 @@ select {
 }
 
 .score-url-time {
-  margin-left: 0.5rem;
-  padding-left: 0.5rem;
+  margin-left: var(--space-8);
+  padding-left: var(--space-8);
   border-left: 1px solid var(--line);
   font-size: 0.68rem;
   color: var(--muted-dim);
@@ -11037,8 +11149,8 @@ select {
 /* Scope badge — shows "universal scope" when scoring external sites.
    Hidden for designesy.org (which uses contract scope, the default). */
 .score-scope-badge {
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.5rem;
+  margin-left: var(--space-8);
+  padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
   font-size: 0.62rem;
   font-family: var(--mono);
@@ -11055,8 +11167,8 @@ select {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.6rem;
-  padding-top: 0.6rem;
+  margin-top: var(--space-fine-60);
+  padding-top: var(--space-fine-60);
   border-top: 1px solid var(--line);
 }
 
@@ -11066,11 +11178,11 @@ select {
   color: var(--muted-dim);
   text-transform: lowercase;
   letter-spacing: 0.02em;
-  margin-right: 0.25rem;
+  margin-right: var(--space-4);
 }
 
 .score-scope-option {
-  padding: 0.2rem 0.6rem;
+  padding: var(--space-fine-20) var(--space-fine-60);
   border-radius: var(--radius-sm);
   font-size: 0.68rem;
   font-family: var(--mono);
@@ -11123,7 +11235,7 @@ select {
      row — was min-height:2rem, which let taller rows push the score closer to
      the NEXT row's bar (the alignment drift the eye catches). */
   height: 2rem;
-  padding: 0 0.4rem;
+  padding: 0 var(--space-fine-40);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
@@ -11146,7 +11258,7 @@ select {
 .score-cat-legend-row.is-active {
   color: var(--ink);
   border-color: var(--signal);
-  background: rgba(1, 51, 203, 0.1);
+  background: color-mix(in srgb, var(--signal) 10%, transparent);
 }
 
 .score-cat-legend-row.is-unscored {
@@ -11208,7 +11320,7 @@ select {
 
 .score-rubric {
   border-top: 1px solid var(--line);
-  padding-top: 0.65rem;
+  padding-top: var(--space-fine-65);
 }
 
 .score-rubric-toggle {
@@ -11217,7 +11329,7 @@ select {
   gap: 0.4rem;
   background: transparent;
   border: none;
-  padding: 0.25rem 0;
+  padding: var(--space-4) 0;
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 600;
@@ -11232,7 +11344,7 @@ select {
 }
 
 .score-rubric-body {
-  margin-top: 0.75rem;
+  margin-top: var(--space-12);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -11247,7 +11359,7 @@ select {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 0.6rem 0.75rem;
+  padding: var(--space-fine-60) var(--space-12);
 }
 
 .score-rubric-formula sub {
@@ -11302,8 +11414,8 @@ select {
 /* ── Verification log (loading state) ───────────────────────────────────── */
 
 .score-verify-log {
-  margin-top: 1.75rem;
-  padding: 1.25rem 1.4rem;
+  margin-top: var(--space-28);
+  padding: var(--space-20) var(--space-fine-140);
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -11598,11 +11710,11 @@ select {
   transition: stroke-dashoffset 600ms var(--ease-out);
 }
 
-.mini-constel .mini-constel-node-fill.is-a { stroke: #22c55e; }
-.mini-constel .mini-constel-node-fill.is-b { stroke: #84cc16; }
-.mini-constel .mini-constel-node-fill.is-c { stroke: #eab308; }
-.mini-constel .mini-constel-node-fill.is-d { stroke: #fb923c; }
-.mini-constel .mini-constel-node-fill.is-f { stroke: #ef4444; }
+.mini-constel .mini-constel-node-fill.is-a { stroke: var(--grade-a); }
+.mini-constel .mini-constel-node-fill.is-b { stroke: var(--grade-b); }
+.mini-constel .mini-constel-node-fill.is-c { stroke: var(--grade-c); }
+.mini-constel .mini-constel-node-fill.is-d { stroke: var(--grade-d); }
+.mini-constel .mini-constel-node-fill.is-f { stroke: var(--grade-f); }
 
 .mini-constel .mini-constel-node.is-unscored .mini-constel-node-track {
   stroke-dasharray: 2 3;
@@ -11787,9 +11899,9 @@ select {
 
 
 /* Light theme — re-lit shimmer. The dark-mode band is a WHITE flash on a
-   light-gray word; on light paper (#fbfbfc) that inverts the logic: a white
-   band is near-invisible against near-white paper, and color-mix(#1a1a1e 70%,
-   #ffffff 30%) renders the base face as washed light-gray instead of ink.
+   light-gray word; on light paper (var(--paper)) that inverts the logic: a white
+   band is near-invisible against near-white paper, and color-mix(var(--ink) 70%,
+   var(--paper-on-signal) 30%) renders the base face as washed light-gray instead of ink.
    Light-mode "shine" on dark text is a CHROMATIC/dark sweep, not a white one —
    the band is a tight signal-blue flash (--signal-light) that dips below the
    baseline ink in lightness and adds chroma, exactly how Linear/Stripe read
@@ -11954,11 +12066,11 @@ select {
 /* Proof rail — quiet, single cluster, real values only. */
 
 
-.hero-proof-grade.is-a { color: #22c55e; border-color: rgba(34,197,94,0.45); background: rgba(34,197,94,0.08); }
-.hero-proof-grade.is-b { color: #3b82f6; border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.08); }
-.hero-proof-grade.is-c { color: #eab308; border-color: rgba(234,179,8,0.45); background: rgba(234,179,8,0.08); }
-.hero-proof-grade.is-d { color: #f97316; border-color: rgba(249,115,22,0.45); background: rgba(249,115,22,0.08); }
-.hero-proof-grade.is-f { color: #ef4444; border-color: rgba(239,68,68,0.45); background: rgba(239,68,68,0.08); }
+.hero-proof-grade.is-a { color: var(--grade-a); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); background: color-mix(in srgb, var(--grade-a) 8%, transparent); }
+.hero-proof-grade.is-b { color: var(--grade-b-light); border-color: color-mix(in srgb, var(--grade-b-light) 45%, transparent); background: color-mix(in srgb, var(--grade-b-light) 8%, transparent); }
+.hero-proof-grade.is-c { color: var(--grade-c); border-color: color-mix(in srgb, var(--grade-c) 45%, transparent); background: color-mix(in srgb, var(--grade-c) 8%, transparent); }
+.hero-proof-grade.is-d { color: var(--grade-d-glow); border-color: color-mix(in srgb, var(--grade-d-glow) 45%, transparent); background: color-mix(in srgb, var(--grade-d-glow) 8%, transparent); }
+.hero-proof-grade.is-f { color: var(--grade-f); border-color: color-mix(in srgb, var(--grade-f) 45%, transparent); background: color-mix(in srgb, var(--grade-f) 8%, transparent); }
 
 
 /* Recent-scores — the real cohort leaders, hairline ledger rows. */
@@ -11977,11 +12089,11 @@ select {
   border: 1px solid var(--line-strong);
   color: var(--muted);
 }
-.hero-proof-recent-grade.is-a { color: #22c55e; border-color: rgba(34,197,94,0.45); }
-.hero-proof-recent-grade.is-b { color: #84cc16; border-color: rgba(132,204,22,0.4); }
-.hero-proof-recent-grade.is-c { color: #eab308; border-color: rgba(234,179,8,0.4); }
-.hero-proof-recent-grade.is-d { color: #fb923c; border-color: rgba(251,146,60,0.4); }
-.hero-proof-recent-grade.is-f { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+.hero-proof-recent-grade.is-a { color: var(--grade-a); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
+.hero-proof-recent-grade.is-b { color: var(--grade-b); border-color: color-mix(in srgb, var(--grade-b) 40%, transparent); }
+.hero-proof-recent-grade.is-c { color: var(--grade-c); border-color: color-mix(in srgb, var(--grade-c) 40%, transparent); }
+.hero-proof-recent-grade.is-d { color: var(--grade-d); border-color: color-mix(in srgb, var(--grade-d) 40%, transparent); }
+.hero-proof-recent-grade.is-f { color: var(--grade-f); border-color: color-mix(in srgb, var(--grade-f) 35%, transparent); }
 
 
 /* Narrow viewports: construction field hides (see .hero-construction), and
@@ -12003,7 +12115,7 @@ select {
   display: block;
   width: 100%;
   height: 1px;
-  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  margin-bottom: clamp(var(--space-40), 5vw, var(--space-64));
   background: linear-gradient(
     90deg,
     transparent 0%,
@@ -12016,7 +12128,7 @@ select {
 /* The first chapter after the hero gets extra top air so the hero → chapter
    handoff reads as a page turn. */
 .hero-architectural + .section {
-  padding-top: clamp(4rem, 9vw, 7.5rem);
+  padding-top: clamp(var(--space-64), 9vw, 7.5rem);
 }
 
 /* ===========================================================================
@@ -12043,7 +12155,7 @@ select {
   .health-panel,
   .field-card,
   .score-input-card {
-    padding: 1rem;
+    padding: var(--space-16);
   }
 
   /* -- Principle cell grids: even 2-col gutters, consistent gap. ------ -- */
@@ -12201,7 +12313,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-8) var(--space-12);
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -12393,20 +12505,20 @@ select {
     /* Deepen the paper so ink sits further from the surface — the dark-side
        analogue of "increase contrast". On a dark theme "more contrast" means
        further separation, not brighter paper. */
-    --ink: #ffffff;
+    --ink: var(--paper-on-signal);
     --muted: #b8b8b8;
     --muted-dim: #999999;
 
     /* Solidify translucent surfaces — rgba soft surfaces collapse toward
        their lifted neighbor so the ladder keeps its 3 steps instead of
        compressing to 2. */
-    --surface-soft: rgba(255, 255, 255, 0.05);
-    --surface-hover: rgba(255, 255, 255, 0.08);
+    --surface-soft: color-mix(in srgb, var(--ink) 5%, transparent);
+    --surface-hover: color-mix(in srgb, var(--ink) 8%, transparent);
 
     /* Strengthen the two working line tokens; faint stays faint because it
        is a texture cue, not a structural boundary. */
-    --line: rgba(255, 255, 255, 0.18);
-    --line-strong: rgba(255, 255, 255, 0.34);
+    --line: color-mix(in srgb, var(--ink) 18%, transparent);
+    --line-strong: color-mix(in srgb, var(--ink) 34%, transparent);
   }
 }
 
@@ -12416,13 +12528,13 @@ select {
        Under reduce-transparency the blur goes opaque — the chrome reads as
        a solid instrument panel, not a frosted window. This is the exact
        behavior the media feature was designed to trigger. */
-    --surface-soft: #0a0a0c;
-    --surface-hover: #121216;
+    --surface-soft: var(--surface);
+    --surface-hover: var(--surface-raised);
   }
 
   [data-theme="light"] {
-    --surface-soft: #ffffff;
-    --surface-hover: #f5f5f7;
+    --surface-soft: var(--paper-on-signal);
+    --surface-hover: var(--ink);
   }
 
   /* Swap the blurred topbar for the solid topbar. backdrop-filter: none is
@@ -12445,7 +12557,7 @@ select {
   .nav-scrim {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: rgba(0, 0, 0, 0.6);
+    background: color-mix(in srgb, var(--paper) 60%, transparent);
   }
 }
 
@@ -12459,7 +12571,7 @@ select {
     background: var(--surface);
   }
   .nav-scrim {
-    background: rgba(0, 0, 0, 0.6);
+    background: color-mix(in srgb, var(--paper) 60%, transparent);
   }
 }
 
