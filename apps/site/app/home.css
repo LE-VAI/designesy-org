@@ -8,7 +8,7 @@
   /* Optical (not mathematical) vertical centering: more bottom padding than
      top seats the instrument block slightly above the true midpoint, so the
      frame reads balanced instead of leaving a dead void under the hero. */
-  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(5.5rem, 12vw, 9rem);
+  padding: clamp(var(--space-72), 9vw, var(--space-112)) 0 clamp(var(--space-88), 12vw, var(--space-144));
   /* Dense-hero rhythm (Stage 7 polish): mid-band of the 50–75svh dense-hero
      range — enough presence to lead, not so tall it strands a void before the
      pillars. px floor/ceiling (not svh) keep the height stable under browser
@@ -27,11 +27,11 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 1.6rem;
+  margin-bottom: var(--space-fine-160);
 }
 
 .hero-title {
-  margin-bottom: 1.35rem;
+  margin-bottom: var(--space-fine-135);
   /* LCP element: ensure it paints immediately, not gated by entrance animation */
   opacity: 1;
   animation: none;
@@ -41,13 +41,13 @@
   font-size: clamp(1rem, 1rem + 0.1vw, 1.1rem);
   line-height: 1.45;
   color: var(--muted);
-  margin-bottom: 1.75rem;
+  margin-bottom: var(--space-28);
   text-wrap: pretty;
   max-width: min(100%, 640px);
 }
 
 .hero-hint {
-  margin-top: 1.25rem;
+  margin-top: var(--space-20);
   font-size: 0.85rem;
   color: var(--muted-dim);
   line-height: 1.55;
@@ -60,7 +60,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .section-title {
@@ -68,7 +68,7 @@
   font-weight: 400;
   letter-spacing: -0.018em;
   line-height: 1.08;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-32);
   max-width: min(100%, 820px);
   text-wrap: balance;
   font-variation-settings: 'opsz' 30;
@@ -85,7 +85,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.5rem;
+  padding: var(--space-24);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -140,7 +140,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.45rem;
+  margin-bottom: var(--space-fine-45);
   font-variant-numeric: tabular-nums;
 }
 
@@ -148,7 +148,7 @@
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-fine-35);
   text-wrap: balance;
 }
 
@@ -160,7 +160,7 @@
 
 .surface-card-arrow {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: var(--space-12);
   font-size: 0.75rem;
   color: var(--muted-dim);
   transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
@@ -223,7 +223,7 @@ button.pillar:hover::before {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: clamp(1.05rem, 2vw, 1.5rem);
+  padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
 }
 
 .health-rack-grid {
@@ -321,7 +321,7 @@ button.pillar:hover::before {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.2rem;
-  padding: 0.45rem 0.7rem;
+  padding: var(--space-fine-45) var(--space-fine-70);
   border: 1px solid var(--line);
   border-radius: calc(var(--radius) * 0.6);
   background: var(--surface);
@@ -356,7 +356,7 @@ button.pillar:hover::before {
 }
 
 .section-more {
-  margin-top: 2rem;
+  margin-top: var(--space-32);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -376,7 +376,7 @@ button.pillar:hover::before {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-12);
 }
 
 .section-title {
@@ -384,7 +384,7 @@ button.pillar:hover::before {
   font-weight: 400;
   letter-spacing: -0.018em;
   line-height: 1.08;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-32);
   max-width: min(100%, 820px);
   text-wrap: balance;
   font-variation-settings: 'opsz' 30;
@@ -401,7 +401,7 @@ button.pillar:hover::before {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1.5rem;
+  padding: var(--space-24);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -456,7 +456,7 @@ button.pillar:hover::before {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
-  margin-bottom: 0.45rem;
+  margin-bottom: var(--space-fine-45);
   font-variant-numeric: tabular-nums;
 }
 
@@ -464,7 +464,7 @@ button.pillar:hover::before {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-fine-35);
   text-wrap: balance;
 }
 
@@ -476,7 +476,7 @@ button.pillar:hover::before {
 
 .surface-card-arrow {
   margin-top: auto;
-  padding-top: 0.75rem;
+  padding-top: var(--space-12);
   font-size: 0.75rem;
   color: var(--muted-dim);
   transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
@@ -539,7 +539,7 @@ button.pillar:hover::before {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: clamp(1.05rem, 2vw, 1.5rem);
+  padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
 }
 
 .health-rack-grid {
@@ -622,7 +622,7 @@ button.pillar:hover::before {
 }
 
 .section-more {
-  margin-top: 2rem;
+  margin-top: var(--space-32);
 }
 
 .state-layout {
@@ -691,7 +691,7 @@ button.pillar {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-fine-35);
 }
 
 .field-card-title {
@@ -717,7 +717,7 @@ button.pillar {
 }
 
 .field-card-arrow {
-  margin-top: 0.65rem;
+  margin-top: var(--space-fine-65);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted-dim);
@@ -776,7 +776,7 @@ button.pillar {
 
 .hero-architectural {
   min-height: min(880px, 96vh);
-  padding: clamp(4.5rem, 9vw, 7rem) 0 clamp(3.5rem, 7vw, 6rem);
+  padding: clamp(var(--space-72), 9vw, var(--space-112)) 0 clamp(var(--space-56), 7vw, var(--space-96));
   text-align: center;
 }
 
@@ -791,7 +791,7 @@ button.pillar {
 
 .hero-architectural .hero-eyebrow {
   color: var(--muted);
-  margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+  margin-bottom: clamp(var(--space-fine-140), 3vw, var(--space-fine-220));
 }
 
 .hero-display {
@@ -800,7 +800,7 @@ button.pillar {
   line-height: 1.02;
   letter-spacing: -0.03em;
   color: var(--ink);
-  margin: 0 0 clamp(1.25rem, 2.6vw, 2rem);
+  margin: 0 0 clamp(var(--space-20), 2.6vw, var(--space-32));
   /* Null the global h1-h4 text-wrap:balance for THIS title only: balance
      re-centers each wrapped line's inline box so the two display lines sit
      optically off-axis against the clean-centered eyebrow and sub. The
@@ -866,18 +866,18 @@ button.pillar {
      off-word (background-size: 250%), so there is no clip artifact to defend
      against — the padding was dead weight that only widened the gap. */
   padding-left: 0;
-  /* Flat base face (#f5f5f7-adjacent light gray) with a NARROW pure-white
+  /* Flat base face (var(--ink)-adjacent light gray) with a NARROW pure-white
      band at 47–53%. With background-size 250% the band lives at container
      coords 117.5–132.5% — fully off the right edge of the word at rest, so
      the resting face reads as flat typography, not a gradient. The band is
-     tighter (6% of image) and brighter (pure #ffffff) than the old 12% mix. */
+     tighter (6% of image) and brighter (pure var(--paper-on-signal)) than the old 12% mix. */
   background-image: linear-gradient(
     104deg,
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%),
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 47%,
-    #ffffff 50%,
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%) 53%,
-    color-mix(in srgb, var(--ink) 70%, #ffffff 30%)
+    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%),
+    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%) 47%,
+    var(--paper-on-signal) 50%,
+    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%) 53%,
+    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%)
   );
   background-size: 250% 100%;
   background-position: 0% 0; /* band parked fully off the right edge */
@@ -928,7 +928,7 @@ button.pillar {
 
 .hero-architectural .hero-sub {
   margin-inline: auto;
-  margin-bottom: clamp(2rem, 4vw, 3rem);
+  margin-bottom: clamp(var(--space-32), 4vw, var(--space-48));
   max-width: 56ch;
   text-align: center;
 }
@@ -939,7 +939,7 @@ button.pillar {
   width: 100%;
 }
 
-.hero-proof { margin: clamp(1.75rem, 3vw, 2.5rem) 0 0; }
+.hero-proof { margin: clamp(var(--space-28), 3vw, var(--space-40)) 0 0; }
 
 .hero-proof-stats {
   display: flex;
@@ -949,7 +949,7 @@ button.pillar {
   gap: 0.5rem 1.5rem;
   list-style: none;
   margin: 0;
-  padding: 0 0 1.1rem;
+  padding: 0 0 var(--space-fine-110);
 }
 
 .hero-proof-stat {
@@ -967,12 +967,12 @@ button.pillar {
 
 .hero-proof-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-dim); }
 
-.hero-proof-dot.is-live { background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.55); }
+.hero-proof-dot.is-live { background: var(--live); box-shadow: 0 0 10px color-mix(in srgb, var(--live) 55%, transparent); }
 
 .hero-proof-grade {
   font-family: var(--mono);
   font-weight: 700;
-  padding: 0.05rem 0.34rem;
+  padding: var(--space-fine-05) var(--space-fine-34);
   border-radius: 4px;
   border: 1px solid var(--line-strong);
 }
@@ -993,12 +993,12 @@ button.pillar {
   background: var(--surface);
   background-image: var(--surface-card-gradient);
   box-shadow: var(--inner-light);
-  padding: 0.75rem 1.05rem 0.8rem;
+  padding: var(--space-12) var(--space-fine-105) var(--space-fine-80);
   text-align: left;
 }
 
 .hero-proof-recent-label {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-8);
   font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -1016,7 +1016,7 @@ button.pillar {
   gap: 0.6rem;
   /* WCAG 2.5.5 target size: ensure a 44px-tall hit area on mobile — the row
      content is ~20px, so 12px of vertical padding on each side. */
-  padding: 0.75rem 0;
+  padding: var(--space-12) 0;
   min-height: 44px;
   text-decoration: none;
   color: var(--muted);
@@ -1033,7 +1033,7 @@ button.pillar {
   letter-spacing: 0.1em;
   color: var(--ink);
   background: var(--signal-dim);
-  padding: 0.03rem 0.3rem;
+  padding: var(--space-fine-03) var(--space-fine-30);
   border-radius: 3px;
 }
 
@@ -1041,7 +1041,7 @@ button.pillar {
 
 .hero-proof-recent-score { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-.hero-architectural .hero-hint { margin-top: clamp(1.4rem, 2.6vw, 2rem); }
+.hero-architectural .hero-hint { margin-top: clamp(var(--space-fine-140), 2.6vw, var(--space-32)); }
 
 @media (max-width: 640px) {
   .hero-proof-stats { gap: 0.4rem 0.9rem; }
@@ -1072,7 +1072,7 @@ button.pillar {
 */
 @media (max-width: 860px) {
   .hero {
-    padding: 3rem 0 2.5rem;
+    padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
   }
 
@@ -1093,7 +1093,7 @@ button.pillar {
   .principle,
   .health-panel,
   .field-card {
-    padding: 1rem;
+    padding: var(--space-16);
   }
 
   .principle-cell,

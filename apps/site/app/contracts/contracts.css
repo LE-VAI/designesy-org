@@ -152,7 +152,7 @@
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 0.45rem 1.1rem;
+  padding: var(--space-fine-45) var(--space-fine-110);
   border-radius: var(--radius-sm);
   cursor: default;
   flex: 1;
@@ -161,26 +161,26 @@
 
 .demo-state-btn.s-default {
   background: var(--signal);
-  color: #fff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal);
 }
 
 .demo-state-btn.s-hover {
   background: var(--signal-light);
-  color: #fff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal-light);
 }
 
 .demo-state-btn.s-active {
   background: var(--signal);
-  color: #fff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal);
   transform: scale(0.97);
 }
 
 .demo-state-btn.s-focus {
   background: var(--signal);
-  color: #fff;
+  color: var(--paper-on-signal);
   border: 1px solid var(--signal);
   outline: 2px solid var(--signal-light);
   outline-offset: 2px;
