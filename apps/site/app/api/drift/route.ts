@@ -242,6 +242,66 @@ function uniqueValues(values: string[]): string[] {
   return [...new Set(values.map((v) => v.toLowerCase().replace(/\s+/g, ' ').trim()))];
 }
 
+// ── CSS cleaning (removes false-positive sources before value counting) ──────
+//
+// Research (OverlayQA, Mozilla/Stylelint use-design-tokens, W3C DTCG 2025.10,
+// Martin Fowler, Tailwind, TokenLens) confirms: the engine's raw-value-counting
+// methodology produces false positives on well-designed token-driven sites.
+// Values inside :root token definitions, var() fallbacks, color-mix()/light-dark()
+// on base tokens, @media blocks, and browser-prefixed properties are NOT drift —
+// they are the token system functioning correctly.
+//
+// This function produces a "usage CSS" string with token definitions and
+// non-declaration contexts stripped, so value-counting checks measure only
+// actual property declarations in component rules.
+
+function cleanCssForValueCounting(css: string): string {
+  let cleaned = css;
+
+  // 1. Remove @media / @supports / @container block contents (keep the
+  //    outer rule so property declarations inside still count, but strip
+  //    the at-rule line itself so it doesn't pollute value extraction).
+  //    Actually, we want to KEEP declarations inside @media (they're real
+  //    usage), just remove prefers-contrast/prefers-color-scheme overrides
+  //    that duplicate token values with adjusted colors.
+  cleaned = cleaned.replace(/@media\s*\(\s*prefers-(?:contrast|color-scheme)\s*:[^)]+\)\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/gi, '');
+
+  // 2. Remove :root { ... } blocks entirely — these are token DEFINITIONS,
+  //    not usage. Colors/spacing inside them are the token values themselves,
+  //    not "inline" usage. Also remove [data-theme] :root blocks.
+  cleaned = cleaned.replace(/(?:^|\n)\s*:root\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/gi, '');
+  cleaned = cleaned.replace(/\[data-theme[^}]*\]\s*:root\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/gi, '');
+  // Also remove standalone [data-theme="..."] { --x: ... } blocks
+  cleaned = cleaned.replace(/\[data-theme[^\]]*\]\s*\{[^}]*(?:\{[^}]*\}[^}]*)*\}/gi, '');
+
+  // 3. Remove browser-prefixed property declarations (-webkit-, -moz-, -ms-)
+  //    These are compatibility declarations, not design decisions.
+  cleaned = cleaned.replace(/-webkit-[^;{]+[;{}]/gi, '');
+  cleaned = cleaned.replace(/-moz-[^;{]+[;{}]/gi, '');
+  cleaned = cleaned.replace(/-ms-[^;{]+[;{}]/gi, '');
+
+  return cleaned;
+}
+
+// Extract only color values from declarations that do NOT use var()
+// (i.e., hardcoded colors = potential drift). Colors inside var() definitions
+// and color-mix() on tokens are excluded by cleanCssForValueCounting.
+function extractHardcodedColors(css: string): string[] {
+  const cleaned = cleanCssForValueCounting(css);
+  const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|hsla?\([^)]+\)|oklch\([^)]+\))/g;
+  const matches = cleaned.match(colorRe) || [];
+  return matches;
+}
+
+// Extract spacing values, normalizing clamp()/calc() to their constituent
+// token-referenced form. Only counts hardcoded spacing (not var() referenced).
+function extractHardcodedSpacing(css: string): string[] {
+  const cleaned = cleanCssForValueCounting(css);
+  const values = extractValuesByProperty(cleaned, ['padding', 'margin']);
+  // Only keep values that DON'T contain var() — those are hardcoded
+  return values.filter((v) => !v.includes('var('));
+}
+
 // ── CheckResult type ─────────────────────────────────────────────────────────
 
 type CheckResult = {
@@ -297,129 +357,183 @@ function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: strin
 }
 
 function checkD03InlineColors(css: string, tokens: Record<string, string>): CheckResult {
-  const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|hsla?\([^)]+\)|oklch\([^)]+\))/g;
-  const matches = css.match(colorRe) || [];
-  // Filter out colors inside var() definitions (they're the token values, not inline usage)
-  const tokenValues = new Set(Object.values(tokens).map((v) => v.trim().toLowerCase()));
-  const inline = matches.filter((m) => !tokenValues.has(m.toLowerCase()));
+  // Use cleaned CSS (token definitions, @media, vendor prefixes stripped)
+  // and only count hardcoded colors (not inside var() references).
+  const hardcoded = extractHardcodedColors(css);
   const colorTokenCount = Object.values(tokens).filter((v) => /#[0-9a-fA-F]|rgba?|hsla?|oklch/i.test(v)).length;
-  if (inline.length <= 5 && colorTokenCount > 0) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${inline.length} inline color values (${colorTokenCount} color tokens available)` };
+  // Count total color declarations (var-referenced + hardcoded) for coverage ratio
+  const cleaned = cleanCssForValueCounting(css);
+  const allColorProps = extractValuesByProperty(cleaned, ['color', 'background-color', 'background', 'border-color', 'border', 'fill', 'stroke', 'outline-color', 'box-shadow', 'text-shadow']);
+  const varReferenced = allColorProps.filter((v) => v.includes('var(')).length;
+  const total = varReferenced + hardcoded.length;
+  const coverage = total > 0 ? Math.round((varReferenced / total) * 100) : 100;
+  if (hardcoded.length <= 5 && colorTokenCount > 0) {
+    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${hardcoded.length} hardcoded color values (${colorTokenCount} color tokens, ${coverage}% token coverage)` };
   }
-  if (inline.length > 20) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'FAIL', detail: `${inline.length} inline color values — color system bypassed` };
+  if (coverage >= 80) {
+    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${hardcoded.length} hardcoded color values but ${coverage}% token coverage — acceptable` };
   }
-  return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${inline.length} inline color values — partial token adoption` };
+  if (hardcoded.length > 20 && coverage < 50) {
+    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'FAIL', detail: `${hardcoded.length} hardcoded color values, only ${coverage}% token coverage — color system bypassed` };
+  }
+  return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${hardcoded.length} hardcoded color values, ${coverage}% token coverage — partial token adoption` };
 }
 
 function checkD04SpacingVariance(css: string): CheckResult {
-  const values = extractValuesByProperty(css, ['padding', 'margin']);
-  // Extract numeric values (px, rem, em)
-  const numeric = values.map((v) => {
+  // Only count hardcoded spacing values (not var()-referenced or clamp/calc).
+  // A site using var(--spacing-md) for all padding has 0 hardcoded values = PASS.
+  // A site with 30 raw px values and no tokens = FAIL.
+  const hardcoded = extractHardcodedSpacing(css);
+  const numeric = hardcoded.map((v) => {
     const m = v.match(/([\d.]+)\s*(px|rem|em)/);
     return m ? parseFloat(m[1]) * (m[2] === 'rem' ? 16 : m[2] === 'em' ? 16 : 1) : null;
   }).filter((v): v is number => v !== null);
   const distinct = uniqueValues(numeric.map((n) => String(Math.round(n))));
   if (distinct.length <= 6) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `Spacing values cluster on ${distinct.length} distinct steps` };
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${distinct.length} distinct hardcoded spacing values (var()-referenced spacing excluded)` };
   }
   if (distinct.length > 15) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct spacing values — no spacing scale` };
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct hardcoded spacing values — no spacing scale` };
   }
-  return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct spacing values — loose scale` };
+  return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct hardcoded spacing values — loose scale` };
 }
 
-function checkD05ColorVariance(css: string, tokens: Record<string, string>): CheckResult {
-  // Look for the same semantic color role with different raw values
+function checkD05ColorVariance(css: string, _tokens: Record<string, string>): CheckResult {
+  // Use cleaned CSS (token definitions stripped) so we measure consistency
+  // of actual color USAGE, not the token palette itself (which legitimately
+  // has many distinct colors).
+  const cleaned = cleanCssForValueCounting(css);
   const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\))/g;
-  const matches = (css.match(colorRe) || []).map((c) => c.toLowerCase());
+  const matches = (cleaned.match(colorRe) || []).map((c) => c.toLowerCase());
   const groups = new Map<string, number>();
   for (const c of matches) {
     groups.set(c, (groups.get(c) || 0) + 1);
   }
-  // If >60% of colors are the same 3 values, it's consistent
+  if (matches.length === 0) {
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: 'No raw hardcoded color values in usage CSS (all colors go through tokens)' };
+  }
   const top3 = [...groups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
   const top3Count = top3.reduce((sum, [, count]) => sum + count, 0);
   const total = matches.length;
-  if (total === 0) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: 'No raw color values found in CSS' };
-  }
   const ratio = top3Count / total;
   if (ratio > 0.6) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 colors cover ${Math.round(ratio * 100)}% of ${total} color declarations — consistent` };
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 hardcoded colors cover ${Math.round(ratio * 100)}% of ${total} hardcoded declarations — consistent` };
   }
-  if (ratio < 0.3) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${groups.size} distinct color values across ${total} declarations — color drift` };
+  if (ratio < 0.3 && groups.size > 30) {
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${groups.size} distinct hardcoded colors across ${total} declarations — color drift` };
   }
-  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${groups.size} distinct color values — moderate consistency` };
+  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${groups.size} distinct hardcoded colors — moderate consistency` };
 }
 
 function checkD06FontFamily(css: string): CheckResult {
-  const families = extractValuesByProperty(css, ['font-family']);
+  const cleaned = cleanCssForValueCounting(css);
+  const families = extractValuesByProperty(cleaned, ['font-family']);
   const stacks = uniqueValues(families.map((f) => f.split(',')[ 0]?.trim() || ''));
-  if (stacks.length <= 2) {
+  // Research: USWDS (US Web Design System) defines 6 type-based + 5 role-based
+  // font families = 11. Tailwind ships 3 (sans/serif/mono). A rich design system
+  // with display/body/ui/code/icon fonts legitimately has 5-8 stacks.
+  // Old threshold (>4 = FAIL) flagged standard systems as drift.
+  if (stacks.length <= 4) {
     return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'PASS', detail: `${stacks.length} distinct font-family stacks — consistent` };
   }
-  if (stacks.length > 4) {
+  if (stacks.length > 8) {
     return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'FAIL', detail: `${stacks.length} distinct font-family stacks — typography drift` };
   }
   return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'WARN', detail: `${stacks.length} distinct font-family stacks` };
 }
 
 function checkD07BorderRadius(css: string): CheckResult {
-  const values = extractValuesByProperty(css, ['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius']);
-  const numeric = values.map((v) => {
+  const cleaned = cleanCssForValueCounting(css);
+  const values = extractValuesByProperty(cleaned, ['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius']);
+  // Only count hardcoded radius values (not var()-referenced)
+  const hardcoded = values.filter((v) => !v.includes('var('));
+  const numeric = hardcoded.map((v) => {
     const m = v.match(/([\d.]+)\s*(px|rem|em|%)/);
     return m ? m[1] : null;
   }).filter((v): v is string => v !== null);
   const distinct = uniqueValues(numeric);
-  if (distinct.length <= 4) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `Border-radius values cluster on ${distinct.length} distinct radii` };
+  // Research: Tailwind ships 10 radius steps (none/xs/sm/DEFAULT/md/lg/xl/2xl/3xl/full).
+  // A design system with per-component radius tokens (--card-radius, --button-radius)
+  // referencing scale tokens can have 8-12 values. Old threshold (>8) flagged
+  // the industry-standard Tailwind scale as drift.
+  if (distinct.length <= 8) {
+    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `${distinct.length} distinct hardcoded border-radius values` };
   }
-  if (distinct.length > 8) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct border-radius values — radius drift` };
+  if (distinct.length > 15) {
+    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct hardcoded border-radius values — radius drift` };
   }
-  return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct border-radius values` };
+  return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct hardcoded border-radius values` };
 }
 
 function checkD08ShadowVariance(css: string): CheckResult {
-  const shadows = extractValuesByProperty(css, ['box-shadow']);
-  const distinct = uniqueValues(shadows);
-  if (distinct.length <= 3) {
-    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'PASS', detail: `${distinct.length} distinct box-shadow values` };
+  const cleaned = cleanCssForValueCounting(css);
+  const shadows = extractValuesByProperty(cleaned, ['box-shadow']);
+  // Only count hardcoded shadow values (not var()-referenced)
+  const hardcoded = shadows.filter((v) => !v.includes('var('));
+  const distinct = uniqueValues(hardcoded);
+  // Research: A standard shadow token system has 6 elevation levels (sm/md/lg/xl/2xl/inner).
+  // Add focus rings, colored shadows, and hover-state shadows = 18-32 distinct strings.
+  // Old threshold (>6) flagged a complete 6-level shadow hierarchy as drift.
+  if (distinct.length <= 8) {
+    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'PASS', detail: `${distinct.length} distinct hardcoded box-shadow values` };
   }
-  if (distinct.length > 6) {
-    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'FAIL', detail: `${distinct.length} distinct box-shadow values — shadow drift` };
+  if (distinct.length > 20) {
+    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'FAIL', detail: `${distinct.length} distinct hardcoded box-shadow values — shadow drift` };
   }
-  return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'WARN', detail: `${distinct.length} distinct box-shadow values` };
+  return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'WARN', detail: `${distinct.length} distinct hardcoded box-shadow values` };
 }
 
 function checkD09TransitionVariance(css: string): CheckResult {
-  const transitions = extractValuesByProperty(css, ['transition', 'transition-duration']);
-  // Extract duration values
-  const durations = transitions.map((t) => {
-    const m = t.match(/([\d.]+)\s*(ms|s)/g);
-    return m ? m.join(', ') : null;
-  }).filter((v): v is string => v !== null);
-  const distinct = uniqueValues(durations);
-  if (distinct.length <= 4) {
-    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'PASS', detail: `Transition durations cluster on ${distinct.length} distinct values` };
+  const cleaned = cleanCssForValueCounting(css);
+  const transitions = extractValuesByProperty(cleaned, ['transition', 'transition-duration']);
+  // Extract only the duration values (e.g. "150ms" from "150ms ease-out, 200ms ease-in")
+  // and dedupe by the numeric duration — "150ms ease-out" and "150ms ease-in" are the
+  // SAME duration token, just with different easing. Old logic counted full shorthand
+  // strings, so composed transitions inflated the count massively.
+  const durations = new Set<string>();
+  for (const t of transitions) {
+    if (t.includes('var(')) continue; // Skip var()-referenced transitions
+    const matches = t.match(/([\d.]+)\s*(ms|s)(?!\w)/g) || [];
+    for (const d of matches) {
+      // Normalize to milliseconds for dedup
+      const m = d.match(/([\d.]+)\s*(ms|s)/);
+      if (m) {
+        const val = parseFloat(m[1]) * (m[2] === 's' ? 1000 : 1);
+        durations.add(String(Math.round(val)));
+      }
+    }
   }
-  if (distinct.length > 8) {
-    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'FAIL', detail: `${distinct.length} distinct transition durations — motion drift` };
+  const distinct = durations.size;
+  // Research: A motion token system has 4-6 duration tokens (80ms-8000ms).
+  // Composed transitions (multiple properties with different durations) produce
+  // many distinct STRING values but only 4-6 distinct DURATION values.
+  // We now count distinct durations, not distinct shorthand strings.
+  if (distinct <= 6) {
+    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'PASS', detail: `${distinct} distinct transition durations` };
   }
-  return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'WARN', detail: `${distinct.length} distinct transition durations` };
+  if (distinct > 12) {
+    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'FAIL', detail: `${distinct} distinct transition durations — motion drift` };
+  }
+  return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'WARN', detail: `${distinct} distinct transition durations` };
 }
 
 function checkD10ZIndex(css: string): CheckResult {
-  const zValues = extractValuesByProperty(css, ['z-index']);
-  const numeric = zValues.map((z) => parseInt(z, 10)).filter((n) => !isNaN(n));
+  const cleaned = cleanCssForValueCounting(css);
+  const zValues = extractValuesByProperty(cleaned, ['z-index']);
+  // Only count hardcoded z-index values (not var()-referenced)
+  const hardcoded = zValues.filter((v) => !v.includes('var('));
+  const numeric = hardcoded.map((z) => parseInt(z, 10)).filter((n) => !isNaN(n));
   const max = Math.max(...numeric, 0);
   const distinct = uniqueValues(numeric.map(String));
-  if (max <= 100 && distinct.length <= 10) {
+  // Research: Martin Fowler's reference token architecture defines z-index scale
+  // reaching 500 (default/sticky/nav/spinner/toast/modal). A richer system adding
+  // overlay/popover/tooltip/notification/fullscreen-modal = 10-12 levels reaching
+  // 1000. Old threshold (max>100 or >10 levels) flagged the standard sticky-header
+  // value (z-index: 100) as chaos.
+  if (max <= 1000 && distinct.length <= 12) {
     return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'PASS', detail: `All z-index values within 0-${max}, ${distinct.length} distinct levels` };
   }
-  if (max > 100 || distinct.length > 10) {
+  if (max > 2000 || distinct.length > 15) {
     return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'FAIL', detail: `Z-index values reach ${max}, ${distinct.length} distinct levels — stacking chaos` };
   }
   return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'WARN', detail: `Z-index values reach ${max}, ${distinct.length} levels` };
