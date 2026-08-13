@@ -105,6 +105,22 @@
   --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --signal-glow: 0 0 60px rgba(51, 88, 232, 0.18), 0 0 24px rgba(51, 88, 232, 0.28);
   --signal-gradient: linear-gradient(135deg, var(--signal-light), #6b8aff 130%);
+
+  /* Local-scope aliases (declared to close drift d02 — var() refs to undeclared
+     custom properties). Each maps to a semantic role; if the contract grows
+     these can be promoted to first-class tokens without touching call sites.
+     --fg   : search-match highlight in cmdk → alias of --signal-access
+     --text : default body text where it's not just --ink → alias of --ink
+     --ink-soft : dim ink for tertiary meta (hero proof caveat) → mirror of --muted-dim
+     --surface-2 : intermediate surface tier for tab-active state → mirror of --surface-raised
+     --motion-short : quick micro-motion duration (150ms) → alias of --duration-quick
+     --ease-quiet : softer ease for muted motion → custom cubic-bezier 0.4, 0, 0.2, 1 */
+  --fg: var(--signal-access);
+  --text: var(--ink);
+  --ink-soft: var(--muted-dim);
+  --surface-2: var(--surface-raised);
+  --motion-short: var(--duration-quick);
+  --ease-quiet: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- Light theme — [data-theme="light"] ---
@@ -161,6 +177,14 @@
   --surface-card-gradient: linear-gradient(135deg, #fafafc 0%, var(--surface) 100%);
   --inner-light: inset 0 1px 0 rgba(0, 0, 0, 0.04);
   --signal-glow: 0 0 60px rgba(51, 88, 232, 0.08), 0 0 24px rgba(51, 88, 232, 0.12);
+
+  /* Local-scope aliases (mirror the dark :root block) */
+  --fg: var(--signal-access);
+  --text: var(--ink);
+  --ink-soft: var(--muted-dim);
+  --surface-2: var(--surface-raised);
+  --motion-short: var(--duration-quick);
+  --ease-quiet: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- Reset --- */
@@ -1414,14 +1438,19 @@ p {
    A ring lags behind the native cursor (spring lerp in magnetic-cursor.tsx),
    a tiny dot tracks instantly. Over interactive elements the ring grows
    and brightens. Both are pointer-events:none so they never block clicks.
-   Hidden on touch + reduced-motion (component exits early). */
+   Hidden on touch + reduced-motion (component exits early).
+   z-index 1000 places the cursor above the topbar (z-index 90-200 range
+   in the page chrome) and any modal/drawer — the highest reserved tier in
+   the stacking order. Avoid z-index 9999 — it signals "I gave up on
+   stacking discipline" and inflates the drift audit's distinct-z-index
+   count. */
 .mag-cursor-ring,
 .mag-cursor-dot {
   position: fixed;
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 1000;
   border-radius: 50%;
   /* translate(-50%,-50%) centers the element on the transform-origin set
      inline via translate(x,y). The ring uses margin to offset half its
