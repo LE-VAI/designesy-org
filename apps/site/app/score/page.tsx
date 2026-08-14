@@ -1,11 +1,29 @@
 import type { Metadata } from 'next';
+import './score.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Static /score route — the entire page body is static and prerendered at
+// build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
+//
+// The page used to be `export const dynamic = 'force-dynamic' + revalidate = 0`
+// — forcing full SSR on every visit. That was necessary only because the
+// page body read searchParams.url to pass to VerifyForm. But VerifyForm is
+// already 'use client' — it can read the URL from window.location.search on
+// mount, the same pattern it already uses for the auto-run-on-deep-link
+// useEffect. So the page body has NO dynamic data dependency and can be
+// fully static.
+//
+// Only generateMetadata stays dynamic (it reads searchParams to set OG
+// images for ?url= deep links). Next.js handles metadata generation as a
+// separate render path from the page body — the page itself stays static.
+//
+// Note on PPR: Partial Prerendering would achieve the same result (static
+// shell + dynamic searchParams in Suspense), but PPR is canary-only in
+// Next.js 15.5.x (it ships as stable in Next.js 16 via cacheComponents).
+// This approach gets the TTFB win on stable Next.js 15.5.23 today.
 
 // When ?url= is present, the auto-wired opengraph-image.tsx does NOT receive
 // the parent page's searchParams — Next.js file-convention OG images get their
@@ -55,13 +73,12 @@ export async function generateMetadata({
   return base;
 }
 
-export default async function ScorePage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ url?: string }>;
-}) {
-  const params = await searchParams;
-  const initialUrl = typeof params?.url === 'string' ? params.url : '';
+export default function ScorePage() {
+  // The page body is fully static. VerifyForm (a 'use client' component)
+  // reads ?url= from window.location.search on mount — the same pattern
+  // it already uses for its auto-run-on-deep-link useEffect. No searchParams
+  // read here means no dynamic data dependency → the page prerenders at
+  // build time and is served from the CDN edge.
   return (
     <>
       <Topbar scrolled />
@@ -74,6 +91,7 @@ export default async function ScorePage({
           <p className="surface-lede">
             Four engines. One composite grade. Score (40 checks), drift (12), AI
             readiness (10), and guardrails (6) — all on one URL, one dashboard.
+            The compliance layer for AI-generated UI.
           </p>
           <p className="surface-note">
             The homepage gives you the quick 40-check score. This is the power surface —
@@ -83,7 +101,7 @@ export default async function ScorePage({
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <VerifyForm initialUrl={initialUrl} />
+          <VerifyForm />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
@@ -105,12 +123,85 @@ export default async function ScorePage({
               </span>
               . The <strong>Score</strong> engine runs 40 checks — motion, typography, color,
               accessibility, identity. <strong>Drift</strong> detects AI-generated UI drift —
-              fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong>
-              probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
+              fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong> probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
               <strong> Guardrails</strong> emits a frozen build-contract bundle — DTCG tokens,
               stylelint config, agent rules. The composite grade synthesizes score, drift, and
               readiness into one defensible number.
             </p>
+          </div>
+
+          <div className="engines-grid" data-reveal-group>
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">01</span>
+                <h3 className="engine-card-title">Score</h3>
+                <span className="engine-card-count" data-tabular>40 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Live design-contract compliance — motion, typography, color, accessibility, identity against the v0.4.0 contract.
+              </p>
+              <ul className="engine-card-list">
+                <li>Token presence and binding</li>
+                <li>Motion standards (10)</li>
+                <li>Cadence typography (cadence)</li>
+                <li>Color in OKLCH</li>
+                <li>Focus and reduced motion</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">02</span>
+                <h3 className="engine-card-title">Drift</h3>
+                <span className="engine-card-count" data-tabular>12 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Detects AI-generated UI drift — fabricated tokens, inline values, off-system variance the Score engine rewards.
+              </p>
+              <ul className="engine-card-list">
+                <li>Inline hex / rgb / hsl values</li>
+                <li>Off-token shadow values</li>
+                <li>Magic-number spacing</li>
+                <li>Duplicate token definitions</li>
+                <li>Stack inconsistency</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">03</span>
+                <h3 className="engine-card-title">AI Readiness</h3>
+                <span className="engine-card-count" data-tabular>10 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Probes machine-readable design context — whether agents can ingest, score, and remix without scraping HTML.
+              </p>
+              <ul className="engine-card-list">
+                <li>llms.txt presence</li>
+                <li>agent.json / .well-known</li>
+                <li>Token export (DTCG)</li>
+                <li>MCP endpoint</li>
+                <li>README / docs surface</li>
+              </ul>
+            </article>
+
+            <article className="engine-card" data-reveal>
+              <header className="engine-card-head">
+                <span className="engine-card-num">04</span>
+                <h3 className="engine-card-title">Guardrails</h3>
+                <span className="engine-card-count" data-tabular>6 checks</span>
+              </header>
+              <p className="engine-card-desc">
+                Emits a frozen build-contract bundle — DTCG tokens, stylelint config, agent rules — so the score is reproducible.
+              </p>
+              <ul className="engine-card-list">
+                <li>Build contract bundle</li>
+                <li>Stylelint config emit</li>
+                <li>Agent-rule emit</li>
+                <li>Token hash pinning</li>
+                <li>Provenance line</li>
+              </ul>
+            </article>
           </div>
         </section>
       </main>

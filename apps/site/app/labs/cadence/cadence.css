@@ -1,0 +1,182 @@
+/* labs/cadence route-only styles — extracted from globals.css.
+   Plain .css imported in labs/cadence/page.tsx — Next.js code-splits
+   this to the /labs/cadence route only. */
+
+.demo-scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-fine-30);
+  align-items: flex-start;
+  width: 100%;
+}
+
+.demo-scale-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+
+.demo-scale-row > span:first-child {
+  font-size: 0.65rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 3.5rem;
+}
+
+.demo-scale-row > .demo-scale-spec {
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.demo-scale-spec.s1 { font-size: 0.75rem; }
+
+.demo-scale-spec.s2 { font-size: 1rem; }
+
+.demo-scale-spec.s3 { font-size: 1.5rem; }
+
+.demo-scale-spec.s4 { font-size: 2rem; }
+
+.demo-tracking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-fine-60);
+  width: 100%;
+}
+
+.demo-tracking-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+
+.demo-tracking-row > span:first-child {
+  font-size: 0.62rem;
+  color: var(--muted-dim);
+  white-space: nowrap;
+  min-width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-tracking-row > .demo-tracking-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.demo-tracking-row > .demo-tracking-body {
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.demo-tracking-row > .demo-tracking-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.demo-leading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: 100%;
+}
+
+.demo-leading-block {
+  border-inline-start: 2px solid var(--line);
+  padding-inline-start: var(--space-12);
+}
+
+.demo-heading-lh {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.08;
+  color: var(--ink);
+  margin: 0;
+}
+
+.demo-body-lh {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+
+.demo-leading-tag {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-fine-30);
+  display: block;
+}
+
+.demo-numbers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-24);
+  width: 100%;
+}
+
+.demo-num-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-fine-15);
+  min-width: 0;
+}
+
+.demo-num-table-title {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-fine-30);
+}
+
+.demo-num-row {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(3.5rem, 1fr);
+  gap: var(--space-12);
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+.demo-num-row .label {
+  color: var(--muted-dim);
+}
+
+.demo-num-row > span:last-child {
+  text-align: end;
+}
+
+.demo-num-tabular .demo-num-row {
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-num-proportional .demo-num-row {
+  font-variant-numeric: proportional-nums;
+}
+
+.demo-select {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.55;
+  user-select: text;
+  cursor: text;
+  padding: var(--space-8) 0;
+}
+
+.demo-select-hint {
+  font-size: 0.62rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-8);
+  width: 100%;
+}
+

@@ -293,7 +293,7 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
                 </p>
               ))}
               {result.emailAlert && (
-                <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : result.emailAlert.fromAddress === 'suppressed (cooldown)' ? 'var(--text-dim)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
+                <p style={{ fontSize: '0.8rem', color: result.emailAlert.delivered ? 'var(--ok)' : result.emailAlert.fromAddress === 'suppressed (cooldown)' ? 'var(--muted-dim)' : 'var(--warn)', margin: '0.75rem 0 0', paddingTop: '0.5rem', borderTop: '1px solid var(--line)' }}>
                   {result.emailAlert.delivered
                     ? `✉ Drift alert sent to ${result.emailAlert.recipient}${result.emailAlert.fromAddress ? ` (from ${result.emailAlert.fromAddress})` : ''}`
                     : result.emailAlert.fromAddress === 'suppressed (cooldown)'

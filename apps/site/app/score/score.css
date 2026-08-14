@@ -1,0 +1,9 @@
+/* ScoreForm + ScoreReport CSS moved back to globals.css.
+   ScoreForm is a shared component — imported by both homepage page.tsx
+   (line 10: import { ScoreForm } from './score/score-form') and the
+   /score route target-landing.tsx. Its CSS must load on all routes, so
+   it belongs in globals.css, not a route-local file that only loads on
+   /score.
+
+   This file is kept (not deleted) so the import in score/page.tsx doesn't
+   break. It's empty — all score-* and report-* CSS lives in globals.css. */

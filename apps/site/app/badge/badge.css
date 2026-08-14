@@ -1,0 +1,178 @@
+/* badge route-only styles — extracted from globals.css.
+   Plain .css imported in badge/page.tsx — Next.js code-splits
+   this to the /badge route only. */
+
+.badge-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-24);
+}
+
+.badge-variant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.badge-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  padding: var(--space-24) var(--space-16);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.badge-variant-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-fine-20);
+}
+
+.badge-variant-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badge-variant-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.badge-variant-dim {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-snippets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-20);
+}
+
+.badge-snippet-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-8);
+}
+
+.badge-snippet .definition-code {
+  padding: var(--space-16) var(--space-20);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.badge-snippet code,
+.badge-snippet pre code {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.inline-code {
+  font-family: var(--mono);
+  font-size: 0.8em;
+  padding: var(--space-fine-10) var(--space-fine-30);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+
+.badge-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  counter-reset: badge-step;
+}
+
+.badge-steps li {
+  position: relative;
+  padding-left: var(--space-32);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+  counter-increment: badge-step;
+}
+
+.badge-steps li::before {
+  content: counter(badge-step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--signal-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-steps strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.badge-grade-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-fine-40);
+  margin: var(--space-12) 0;
+}
+
+.badge-grade-letter {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.badge-grade-min {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-grade-status {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+}
+
+.definition-note {
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+  line-height: 1.5;
+  margin-top: var(--space-12);
+}
+
+@media (max-width: 380px) {
+  .badge-preview {
+    padding: var(--space-16) var(--space-12);
+    min-height: 64px;
+  }
+
+  .badge-steps li {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .badge-gallery {
+    grid-template-columns: 1fr;
+  }
+  .badge-steps li {
+    font-size: 0.85rem;
+    padding-left: var(--space-28);
+  }
+}
+
