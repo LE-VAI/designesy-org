@@ -124,7 +124,7 @@ export function CountUp({ value, duration = 1200, suffix = '', prefix = '', clas
   const formatted = decimals > 0 ? display.toFixed(decimals) : String(Math.round(display));
 
   return (
-    <span ref={ref} className={className}>
+    <span ref={ref} className={className} style={{ fontVariantNumeric: 'tabular-nums' }}>
       {prefix}{formatted}{suffix}
     </span>
   );
