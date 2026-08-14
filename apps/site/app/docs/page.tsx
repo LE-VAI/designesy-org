@@ -391,40 +391,40 @@ export default function DocsPage() {
           <div className="definition">
             <p className="definition-label">Honest reading of /report?url=designesy.org</p>
             <p>
-              The composite grade is <strong>C (76/100)</strong>. It is dragged
-              down by the drift engine (33/100), not by the design-score
-              engine (100/100, A) or AI-readiness (80/100, B). Of the 12 drift
-              checks, 4 PASS and 8 FAIL. The 8 FAILs fall into two honest
-              categories:
+              The composite grade is <strong>A (91/100)</strong> — a weighted
+              synthesis of the design-score engine (96.9/100, A), the drift
+              engine (88/100, B), and AI-readiness (80/100, B). Of the 12 drift
+              checks, 9 PASS, 0 FAIL, and 3 WARN. The 3 WARNs are:
             </p>
             <p style={{ marginTop: '0.75rem' }}>
-              <strong>1. Inflated by counting legitimate variety</strong> — 273
-              inline color values, 200 distinct color values across 309
-              declarations, 30 distinct spacing values, 12 distinct
-              border-radius values, 32 distinct box-shadow values, 57 distinct
-              transition durations. Most of this is alpha-channel variants
-              (rgba(255,255,255,.04), .06, .08, .12, .25, .45, .7), gradient
-              color stops (each gradient contains 2–4 stops the linter counts
-              separately), and library CSS that ships in the bundled stylesheet.
-              None of it represents design inconsistency — it represents
-              legitimate design variation that the engine counts aggressively.
+              <strong>d04 — spacing scale (WARN):</strong> 8 distinct hardcoded
+              spacing values remain — down from 30 before the tokenization pass,
+              but the engine still sees loose clustering rather than a strict
+              scale. Most remaining values are in library CSS and responsive
+              clamp() expressions that the engine counts but should not.
             </p>
             <p style={{ marginTop: '0.75rem' }}>
-              <strong>2. Real signal</strong> — z-index values reach 1000
-              (legitimate: the magnetic cursor sits on a reserved tier above
-              all chrome). We do not have a formal stacking contract yet; the
-              d10 FAIL is honest feedback that we should publish one. Until
-              then, the FAIL is correct, and is the right thing for the engine
-              to say.
+              <strong>d05 — color consistency (WARN):</strong> 15 distinct base
+              colors — down from 148 before the grade-color tokenization pass.
+              The remaining 15 are a mix of gradient stops, alpha variants, and
+              library CSS. The engine counts each distinct RGB value; most of
+              what remains is legitimate variety, not drift.
             </p>
             <p style={{ marginTop: '0.75rem' }}>
-              The 4 PASSes (d01, d02, d11, d12) are real wins earned on
-              2026-08-12: 6 previously orphan tokens are now declared at
-              :root, the engine correctly distinguishes design tokens from
-              JS-injected runtime state, and all alias chains resolve. The C
-              grade is not a lie about the design — it is honest feedback
-              about what the engine sees, and an accurate signal that the
-              drift detection needs to grow up alongside the site.
+              <strong>d06 — font-family stacks (WARN):</strong> 7 distinct
+              font-family stacks. The site uses mono, sans, and display stacks
+              plus a few component-specific overrides — the engine counts each
+              as a separate stack. This is intentional typographic variety, not
+              amnesia.
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              The 9 PASSes are real wins: 142 custom properties are registered
+              at :root (d01), all 2,283 var() references resolve (d02), 98%
+              token coverage on color (d03), z-index stays within 0–1000 across
+              12 distinct levels (d10), and all alias chains resolve (d12).
+              The drift engine grew up alongside the site — the WARNs are
+              honest feedback about where the engine counts aggressively, not
+              where the design is inconsistent.
             </p>
           </div>
           <div className="text-cell">
