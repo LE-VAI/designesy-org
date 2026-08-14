@@ -229,7 +229,12 @@ function extractVarChains(css: string): { primary: string; fallback?: string }[]
 function extractValuesByProperty(css: string, props: string[]): string[] {
   const values: string[] = [];
   for (const prop of props) {
-    const re = new RegExp(`${prop}\\s*:\\s*([^;]+?)(?:;|$)`, 'gi');
+    // Terminate at ;, }, or end-of-string. In minified CSS, the last
+    // declaration in a block has no trailing semicolon (minifiers strip it
+    // to save bytes), so `margin:0}.foo{font-size:.8rem` would otherwise
+    // capture `0}.foo{font-size:.8rem` as the value. Stopping at `}` keeps
+    // the value bounded to its own declaration block.
+    const re = new RegExp(`${prop}\\s*:\\s*([^;{}]+?)(?:[;{}]|$)`, 'gi');
     let m;
     while ((m = re.exec(css)) !== null) {
       values.push(m[1].trim());
