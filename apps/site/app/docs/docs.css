@@ -38,7 +38,7 @@
 @media (max-width: 720px) {
   .layer-item {
     grid-template-columns: 2rem 1fr;
-    gap: 0.5rem;
+    gap: var(--space-8);
     padding: var(--space-12) var(--space-8) var(--space-12) var(--space-12);
   }
 }

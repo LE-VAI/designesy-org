@@ -5,7 +5,7 @@
 .demo-swatch-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-8);
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
 }
 
 .demo-swatch-chip {
@@ -35,7 +35,7 @@
 
 .demo-radius-pair {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-24);
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -45,7 +45,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .demo-radius-box {
@@ -71,14 +71,14 @@
 .demo-easing {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: var(--space-fine-65);
   width: 100%;
 }
 
 .demo-easing-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 .demo-easing-row > span:first-child {
@@ -127,7 +127,7 @@
 .demo-state-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   width: 100%;
   align-items: center;
 }
@@ -135,7 +135,7 @@
 .demo-state-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   width: 100%;
   max-width: 16rem;
 }
