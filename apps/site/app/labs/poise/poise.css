@@ -19,7 +19,7 @@
 
 .poise-reduced-demo {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-12);
   align-items: center;
   width: 100%;
   max-width: 14rem;

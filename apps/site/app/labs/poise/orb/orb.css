@@ -34,7 +34,7 @@
   font-weight: 500;
   letter-spacing: -0.018em;
   line-height: 1.08;
-  margin: 0 0 1.25rem;
+  margin: 0 0 var(--space-20);
   color: var(--ink);
   /* No gradient, no animated reveal — per the lab's restraint doctrine */
 }
@@ -98,7 +98,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: var(--space-24);
   font-size: 0.85rem;
   color: var(--muted);
   text-align: center;
@@ -111,14 +111,14 @@
 .orb-controls {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-20);
   padding-top: 0.5rem;
 }
 
 .orb-param {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
 }
 
 .orb-param-label {
@@ -206,7 +206,7 @@
 .orb-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-12);
   margin-top: 0.75rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--line-faint);
@@ -217,7 +217,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   letter-spacing: 0;
-  padding: 0.625rem 1.125rem;
+  padding: var(--space-10) var(--space-18);
   border-radius: 999px; /* 100px pill — Vercel-ism per the brief */
   cursor: pointer;
   transition: transform 160ms var(--ease-out), background-color 200ms var(--ease),
