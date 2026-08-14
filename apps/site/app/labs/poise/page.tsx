@@ -350,6 +350,28 @@ export default function PoiseLabPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          <h2 className="doctrine-heading">Experiments in this lab</h2>
+          <div className="row-stack" role="list" style={{ marginBottom: '1.5rem' }}>
+            <Link
+              href="/labs/poise/orb"
+              className="row"
+              role="listitem"
+              data-cuelume-hover="bloom"
+              data-cuelume-press
+            >
+              <span className="row-index">01</span>
+              <span className="row-body">
+                <span className="row-title">Orb · WebGL2 in Designesy blue</span>
+                <span className="row-meta">
+                  32KB shader, six parameters, one-line embed · painted from
+                  Martin Štrba's editor at postgeneric.com
+                </span>
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Field check</h2>
           <Link
             href="/review/poise"
