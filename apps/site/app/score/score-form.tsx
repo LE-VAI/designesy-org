@@ -62,6 +62,7 @@ type ScoreResponse = {
   skip?: number;
   manual?: number;
   total?: number;
+  scope?: 'contract' | 'universal';
   a11yFloorApplied?: boolean;
   hardFailCeilingApplied?: boolean;
   hardFailCeilingReason?: string | null;
@@ -204,6 +205,7 @@ function normalizeInput(input: string): string {
 export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState(initialUrl);
+  const [scopeMode, setScopeMode] = useState<'auto' | 'contract' | 'universal'>('auto');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
@@ -384,7 +386,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       const resp = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: targetUrl }),
+        body: JSON.stringify({ url: targetUrl, scope: scopeMode }),
       });
       const data: ScoreResponse = await resp.json();
       // Stop the processing loop regardless of outcome.
@@ -502,6 +504,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const lines = [
       `# Designesy Verification Receipt`,
       `Site: ${scoredUrl}`,
+      `Scope: ${result.scope || 'contract'}`,
       `Verdict: ${verdictLine(result)}`,
       `Grade: ${result.grade} (${fmtPct(result.score)}%)`,
       ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
@@ -586,7 +589,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       const resp = await fetch('/api/score/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scoredUrl }),
+        body: JSON.stringify({ url: scoredUrl, scope: scopeMode }),
       });
       const data: AuditResponse = await resp.json();
       if (!data.ok || !data.checks) {
@@ -715,6 +718,35 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               'Score it'
             )}
           </button>
+        </div>
+
+        {/* Scope toggle — controls how absence is treated.
+            auto: designesy.org → contract, everything else → universal (default)
+            contract: all 40 checks penalize absence (strictest, for self-scoring)
+            universal: optional features SKIP on absence (fair to external sites) */}
+        <div className="score-scope-toggle" role="radiogroup" aria-label="Scoring scope">
+          <span className="score-scope-label">Scope:</span>
+          {(['auto', 'universal', 'contract'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={scopeMode === mode}
+              className={`score-scope-option ${scopeMode === mode ? 'is-active' : ''}`}
+              onClick={() => setScopeMode(mode)}
+              disabled={status === 'loading'}
+              data-cuelume-hover="tick"
+              title={
+                mode === 'auto'
+                  ? 'Auto-detect: designesy.org uses contract scope, all other sites use universal scope'
+                  : mode === 'universal'
+                    ? 'Universal: optional features (sound, font-synthesis, text-wrap, etc.) are SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
+                    : 'Contract: all 40 checks penalize absence. The strictest mode — Designesy patterns are mandatory.'
+              }
+            >
+              {mode}
+            </button>
+          ))}
         </div>
       </form>
 
@@ -864,6 +896,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   <span className="score-url-dot" />
                   <span className="score-url-text">{scoredUrl}</span>
                   <span className="score-url-time">{new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
+                  {result.scope && (
+                    <span className="score-scope-badge" title={
+                      result.scope === 'universal'
+                        ? 'Universal scope: optional features SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
+                        : 'Contract scope: all 40 checks penalize absence. Designesy patterns are mandatory.'
+                    }>
+                      {result.scope} scope
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

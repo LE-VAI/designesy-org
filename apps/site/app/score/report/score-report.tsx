@@ -82,7 +82,7 @@ const GRADE_COLOR: Record<string, string> = {
   A: 'var(--ok)',
   B: 'var(--signal-light)',
   C: 'var(--warn)',
-  D: '#fb923c',
+  D: 'var(--grade-d)',
   F: 'var(--error)',
 };
 
@@ -122,7 +122,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
         const res = await fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: normalized, format: 'designesy' }),
+          body: JSON.stringify({ url: normalized, format: 'designesy', scope: 'auto' }),
         });
 
         const data: ScoreResponse = await res.json();

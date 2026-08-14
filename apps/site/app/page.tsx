@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './home.css';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
@@ -32,37 +33,37 @@ import {
 export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
-  title: 'Designesy — Score any site against the design contract',
+  title: 'Designesy — The AI UI compliance layer',
   description:
-    'AI makes execution free. We make execution yours. Score any site against the Designesy design system contract — 40 checks, one grade, real-time. The design legitimacy standard.',
+    'AI makes execution free. We make execution yours. Verify any site against the Designesy design system contract — 40 checks, one grade, real-time. The compliance layer for AI-generated UI.',
   path: '/',
-  ogTitle: 'Designesy — The design legitimacy standard',
+  ogTitle: 'Designesy — The AI UI compliance layer',
   ogDescription:
-    '40 automated verification checks against a real design contract. Enter a URL, get a grade. AI makes execution free. We make execution yours.',
+    '40 automated verification checks against a real design contract. The compliance layer for AI-generated UI. AI makes execution free. We make execution yours.',
   twitterDescription:
-    'Score any site against the Designesy design contract. 40 checks. One grade. designesy.org',
+    'Verify any site against the Designesy design contract. 40 checks. One grade. The AI UI compliance layer. designesy.org',
 });
 
 const PILLARS = [
   {
     number: '01',
     title: 'Taste codified',
-    text: 'The contract encodes design judgment — tokens, motion, acoustic, takt, cadence — so taste survives any tool, any team, any AI.',
+    text: 'The contract encodes design judgment — tokens, motion, acoustic, takt, cadence — so taste survives any tool, any team, any AI that generates your UI.',
   },
   {
     number: '02',
     title: 'Verification as proof',
-    text: '40 automated checks prove the contract is met. The score is the output metric — not whether you read the rules, but whether your design passes them.',
+    text: '40 automated checks prove the contract is met. When 42% of committed React is AI-generated, the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
   },
   {
     number: '03',
     title: 'Anti-generic by design',
-    text: 'Twelve anti-generic tells detect when a surface has defaulted to the mean. No generator has this. The contract is the structural defense against AI sameness.',
+    text: 'Twelve anti-generic tells detect when a surface has defaulted to the AI mean. No generator has this. The contract is the structural defense against AI sameness.',
   },
   {
     number: '04',
     title: 'Multi-surface hardening',
-    text: 'Every new surface that ingests the contract stress-tests it. Each failure closes a gap. The contract gets stronger with every tool that touches it.',
+    text: 'Every new surface that ingests the contract stress-tests it. Each failure closes a gap the AI tools left open. The contract gets stronger with every generation.',
   },
 ];
 
@@ -220,8 +221,8 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="hero-sub fade-up fade-up-delay-2">
-              Score any site against a real design contract. {ENGINE_CHECK_COUNT}{' '}
-              checks. One grade. No vibe-tax.
+              Verify any site against a real design contract. {ENGINE_CHECK_COUNT}{' '}
+              checks. One grade. The compliance layer for AI-generated UI.
             </p>
 
             {/* THE PRODUCT — the URL input, the visual center of gravity */}
@@ -308,10 +309,11 @@ export default function HomePage() {
             Brand legitimacy infrastructure.
           </h2>
           <p className="surface-lede">
-            When execution is free, design coherence becomes the new legitimacy
-            signal. A site that is visually consistent, motion-coherent, and
-            takt-disciplined reads as real. The contract is what makes that
-            verifiable.
+            When execution is free and AI generates your UI, design coherence
+            becomes the new legitimacy signal. A site that is visually
+            consistent, motion-coherent, and takt-disciplined reads as real.
+            The contract is what makes that verifiable — not by taste, but by
+            40 checks that pass or fail.
           </p>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (

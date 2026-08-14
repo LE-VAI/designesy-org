@@ -10,18 +10,20 @@ type CheckResult = {
   id: string;
   item: string;
   category: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
   detail: string;
 };
 
 type DriftResponse = {
   ok: boolean;
   url?: string;
+  scope?: 'contract' | 'universal';
   score?: number;
   grade?: string;
   pass?: number;
   warn?: number;
   fail?: number;
+  skip?: number;
   total?: number;
   tokensExtracted?: number;
   checks?: CheckResult[];
@@ -42,6 +44,7 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<DriftResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
+  const [scopeMode, setScopeMode] = useState<'auto' | 'contract' | 'universal'>('auto');
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,7 +59,7 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
       const resp = await fetch('/api/drift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: normalized }),
+        body: JSON.stringify({ url: normalized, scope: scopeMode }),
       });
       const data: DriftResponse = await resp.json();
       if (!data.ok) {
@@ -120,6 +123,31 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
         </div>
       </form>
 
+      <div className="score-scope-toggle" role="radiogroup" aria-label="Drift scoring scope">
+        <span className="score-scope-label">Scope:</span>
+        {(['auto', 'universal', 'contract'] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            role="radio"
+            aria-checked={scopeMode === mode}
+            className={`score-scope-option ${scopeMode === mode ? 'is-active' : ''}`}
+            onClick={() => setScopeMode(mode)}
+            disabled={status === 'loading'}
+            data-cuelume-hover="tick"
+            title={
+              mode === 'auto'
+                ? 'Auto-detect: designesy.org → contract, everything else → universal'
+                : mode === 'universal'
+                  ? 'Universal: absence of CSS custom properties is SKIP, not FAIL (fair to external sites)'
+                  : 'Contract: all 12 checks penalize absence (strictest, for designesy.org self-scan)'
+            }
+          >
+            {mode}
+          </button>
+        ))}
+      </div>
+
       {status === 'error' && result && (
         <div className="score-result" style={{ marginTop: '2rem' }}>
           <div className="score-result-error" style={{ color: 'var(--muted)' }}>
@@ -137,12 +165,18 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
             <div className="score-summary">
               <p style={{ fontSize: '0.8rem', color: 'var(--muted-dim)', margin: '0 0 0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Drift score
+                {result.scope && (
+                  <span className="score-scope-badge" style={{ marginLeft: '0.5rem' }}>
+                    {result.scope}
+                  </span>
+                )}
               </p>
               <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.5rem' }}>
                 {result.grade} · {result.score}/100
               </p>
               <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
-                {result.pass} pass · {result.warn} warn · {result.fail} fail of {result.total} checks
+                {result.pass} pass · {result.warn} warn · {result.fail} fail
+                {result.skip ? ` · ${result.skip} skip` : ''} of {result.total} checks
               </p>
               {result.tokensExtracted !== undefined && (
                 <p style={{ fontSize: '0.8rem', color: 'var(--muted-dim)', margin: '0.5rem 0 0' }}>
@@ -179,7 +213,7 @@ export function DriftForm({ initialUrl }: { initialUrl: string }) {
                         fontWeight: 600,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        color: check.status === 'PASS' ? 'var(--ok)' : check.status === 'FAIL' ? 'var(--error)' : 'var(--warn)',
+                        color: check.status === 'PASS' ? 'var(--ok)' : check.status === 'FAIL' ? 'var(--error)' : check.status === 'SKIP' ? 'var(--muted-dim)' : 'var(--warn)',
                         marginLeft: '0.5rem',
                       }}
                     >

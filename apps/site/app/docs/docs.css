@@ -1,0 +1,45 @@
+/* docs route-only styles — extracted from globals.css.
+   Plain .css imported in docs/page.tsx — Next.js code-splits
+   this to the /docs route only. */
+
+.layer-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--space-16);
+}
+
+.layer-body .layer-desc {
+  display: inline;
+  margin-top: 0;
+  color: var(--muted);
+  font-size: inherit;
+}
+
+.layer-body .layer-name {
+  display: inline;
+}
+
+.layer-state {
+  display: block;
+  margin-top: var(--space-fine-35);
+  font-size: 0.78rem;
+  color: var(--muted-dim);
+  line-height: 1.4;
+}
+
+.principle-orbit {
+  position: absolute;
+  top: -2px;
+  left: -6px;
+  opacity: 0.5;
+}
+
+@media (max-width: 720px) {
+  .layer-item {
+    grid-template-columns: 2rem 1fr;
+    gap: var(--space-8);
+    padding: var(--space-12) var(--space-8) var(--space-12) var(--space-12);
+  }
+}
+
