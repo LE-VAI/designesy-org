@@ -364,7 +364,7 @@ export default function PoiseLabPage() {
                 <span className="row-title">Orb · WebGL2 in Designesy blue</span>
                 <span className="row-meta">
                   32KB shader, six parameters, one-line embed · painted from
-                  Martin Štrba's editor at postgeneric.com
+                  Martin Štrba&rsquo;s editor at postgeneric.com
                 </span>
               </span>
             </Link>
