@@ -4,7 +4,7 @@
 
 .continuity-card-grid {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
 }
 
 @media (min-width: 720px) {
@@ -51,7 +51,7 @@
 
 .continuity-ladder-row {
   display: grid;
-  gap: 0.35rem 1rem;
+  gap: var(--space-fine-35) var(--space-16);
   padding: var(--space-16) var(--space-fine-110);
   border-top: 1px solid var(--line-faint);
   background: var(--surface);
@@ -100,7 +100,7 @@
 .waitlist-form {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--space-fine-15);
 }
 
 .waitlist-hp {
@@ -178,7 +178,7 @@
 
 .waitlist-row {
   display: grid;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
 }
 
 @media (min-width: 640px) {
@@ -190,7 +190,7 @@
 .waitlist-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
+  gap: var(--space-12) var(--space-16);
   align-items: center;
   margin-top: var(--space-4);
 }

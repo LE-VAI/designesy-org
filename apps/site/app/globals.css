@@ -86,6 +86,16 @@
   --grade-d-glow: #f97316;   /* orange-600 glow variant for D-grade emblem/hero proof */
   --signal-pos: #34d399;     /* emerald for positive signal points */
   --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
+  --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
+  --amber-notice: #c9a227;   /* amber for score-drawer remediation heading */
+
+  /* Wordmark shimmer gradient stops — decorative animation, not semantic.
+     These 6 colors define the light sweep across the wordmark text. */
+  --shimmer-1: #f4f6ff;
+  --shimmer-2: #e8ecff;
+  --shimmer-3: #5b78f0;
+  --shimmer-4: #9eb0ff;
+  --shimmer-5: #dce4ff;
 
   /* Motion contract tokens (Emil Kowalski / Apple WWDC) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -219,6 +229,8 @@
   --space-fine-105: 1.05rem;  /* 16.8px — clamp min in responsive padding */
   --space-fine-115: 1.15rem;  /* 18.4px */
   --space-fine-160: 1.6rem;   /* 25.6px */
+  --space-fine-28: 0.28rem;   /* 4.48px — off-grid, specific component gap */
+  --space-fine-90: 0.9rem;    /* 14.4px — off-grid, specific component gap */
   --space-96: 6rem;           /* 96px */
   --space-144: 9rem;          /* 144px */
 }
@@ -292,6 +304,8 @@
   --grade-d-glow: #ea580c;
   --signal-pos: #059669;
   --live: #15803d;
+  --error-text: #dc2626;
+  --amber-notice: #b07d04;
 
   /* Surface depth vocabulary adapted for light */
   --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
@@ -492,22 +506,22 @@ p {
 .wordmark-shimmer * {
   background-image: linear-gradient(
     100deg,
-    #f4f6ff 0%,
-    #e8ecff 12%,
+    var(--shimmer-1) 0%,
+    var(--shimmer-2) 12%,
     var(--ink) 22%,
     var(--ink) 34%,
-    #5b78f0 42%,
-    #9eb0ff 46.5%,
-    #dce4ff 49%,
+    var(--shimmer-3) 42%,
+    var(--shimmer-4) 46.5%,
+    var(--shimmer-5) 49%,
     var(--paper-on-signal) 50.5%,
-    #dce4ff 52%,
-    #9eb0ff 54.5%,
-    #5b78f0 58%,
+    var(--shimmer-5) 52%,
+    var(--shimmer-4) 54.5%,
+    var(--shimmer-3) 58%,
     var(--signal) 64%,
     var(--ink) 72%,
     var(--ink) 84%,
-    #e8ecff 92%,
-    #f4f6ff 100%
+    var(--shimmer-2) 92%,
+    var(--shimmer-1) 100%
   );
   background-size: 320% 100%;
   background-position: 100% 50%;
@@ -618,7 +632,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: var(--space-24);
   width: 100%;
 }
 
@@ -656,7 +670,7 @@ p {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   min-width: 0;
   flex: 1 1 auto;
   justify-content: flex-end;
@@ -666,7 +680,7 @@ p {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 0.15rem;
+  gap: var(--space-fine-15);
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
@@ -897,7 +911,7 @@ p {
 .sense-toggles {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   flex-shrink: 0;
   /* No border-left divider: the preceding nav-links gap + consistent 32px
      control heights already separate the clusters cleanly. The previous
@@ -952,7 +966,7 @@ p {
 .cmdk-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   height: 32px;
   padding: 0 var(--space-fine-55) 0 var(--space-fine-60);
   border: 1px solid var(--line);
@@ -1075,7 +1089,7 @@ p {
 .cmdk-input-row {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: var(--space-fine-65);
   padding: var(--space-fine-110) var(--space-fine-110);
   border-bottom: 1px solid var(--line);
 }
@@ -1157,7 +1171,7 @@ p {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: var(--space-fine-70);
   width: 100%;
   text-align: left;
   padding: var(--space-fine-68) var(--space-12) var(--space-fine-68) var(--space-fine-85);
@@ -1279,7 +1293,7 @@ p {
 .cmdk-footer {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
+  gap: var(--space-fine-110);
   padding: var(--space-fine-60) var(--space-fine-110);
   border-top: 1px solid var(--line);
   background: var(--surface-soft);
@@ -1288,7 +1302,7 @@ p {
 .cmdk-footer-hint {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   font-size: 0.68rem;
   color: var(--muted-dim);
   line-height: 1;
@@ -1326,7 +1340,7 @@ p {
   }
   .cmdk-footer {
     padding: var(--space-fine-55) var(--space-fine-95);
-    gap: 0.9rem;
+    gap: var(--space-fine-90);
   }
 }
 
@@ -1624,7 +1638,7 @@ p {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-12);
   align-items: center;
 }
 
@@ -1726,7 +1740,7 @@ p {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.45rem;
+  gap: var(--space-fine-45);
   padding: 0 var(--space-fine-35);
   min-width: 0;
   position: relative;
@@ -1834,7 +1848,7 @@ p {
     display: grid;
     grid-row: span 3;
     grid-template-rows: subgrid;
-    row-gap: 0.45rem;
+    row-gap: var(--space-fine-45);
   }
   .surface-card-meta { grid-row: 1; }
   .surface-card-label { grid-row: 2; }
@@ -2460,7 +2474,7 @@ a.surface-card:active {
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-16) var(--space-20);
   border: 1px solid var(--line);
   border-left: 3px solid var(--signal);
@@ -2503,7 +2517,7 @@ a.surface-card:active {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--space-16);
   max-width: 100%;
   overflow: hidden;
 }
@@ -2511,7 +2525,7 @@ a.surface-card:active {
 .footer-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   font-size: 0.8rem;
   color: var(--muted-dim);
   min-width: 0;
@@ -2551,7 +2565,7 @@ a.surface-card:active {
   margin-top: var(--space-16);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   max-width: 100%;
   min-width: 0;
 }
@@ -2608,7 +2622,7 @@ a.surface-card:active {
 .footer-dock-track {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   padding: 0 var(--space-12);
   width: max-content;
   animation: footer-dock-scroll 50s linear infinite;
@@ -2649,7 +2663,7 @@ a.surface-card:active {
 .footer-dock-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   flex-shrink: 0;
   padding: var(--space-fine-30) var(--space-fine-60);
   font-size: 0.72rem;
@@ -2854,7 +2868,7 @@ a.surface-card:active {
 .principle {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: clamp(1.05rem, 1.8vw, var(--space-fine-140));
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -2937,7 +2951,7 @@ a.surface-card:active {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 /* --- Buttons --- */
@@ -3028,7 +3042,7 @@ a.surface-card:active {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.45rem;
+  gap: var(--space-fine-45);
   padding: 0 var(--space-fine-35);
   min-width: 0;
   position: relative;
@@ -3136,7 +3150,7 @@ a.surface-card:active {
     display: grid;
     grid-row: span 3;
     grid-template-rows: subgrid;
-    row-gap: 0.45rem;
+    row-gap: var(--space-fine-45);
   }
   .surface-card-meta { grid-row: 1; }
   .surface-card-label { grid-row: 2; }
@@ -3762,7 +3776,7 @@ a.surface-card:active {
 .status-bar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-16) var(--space-20);
   border: 1px solid var(--line);
   border-left: 3px solid var(--signal);
@@ -3805,7 +3819,7 @@ a.surface-card:active {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--space-16);
   max-width: 100%;
   overflow: hidden;
 }
@@ -3813,7 +3827,7 @@ a.surface-card:active {
 .footer-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   font-size: 0.8rem;
   color: var(--muted-dim);
   min-width: 0;
@@ -3853,7 +3867,7 @@ a.surface-card:active {
   margin-top: var(--space-16);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   max-width: 100%;
   min-width: 0;
 }
@@ -3910,7 +3924,7 @@ a.surface-card:active {
 .footer-dock-track {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   padding: 0 var(--space-12);
   width: max-content;
   animation: footer-dock-scroll 50s linear infinite;
@@ -3951,7 +3965,7 @@ a.surface-card:active {
 .footer-dock-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   flex-shrink: 0;
   padding: var(--space-fine-30) var(--space-fine-60);
   font-size: 0.72rem;
@@ -4151,7 +4165,7 @@ a.surface-card:active {
 .principle {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: clamp(1.05rem, 1.8vw, var(--space-fine-140));
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4209,7 +4223,7 @@ a.surface-card:active {
 .text-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: var(--space-fine-15);
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--ink);
@@ -4266,7 +4280,7 @@ a.surface-card:active {
 .engines-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: var(--space-16);
   margin-top: var(--space-32);
   align-items: stretch;
 }
@@ -4282,7 +4296,7 @@ a.surface-card:active {
 .engine-card {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-20);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -4292,7 +4306,7 @@ a.surface-card:active {
 .engine-card-head {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   flex-wrap: wrap;
 }
 
@@ -4335,7 +4349,7 @@ a.surface-card:active {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   font-size: 0.82rem;
   color: var(--ink);
 }
@@ -4381,7 +4395,7 @@ a.surface-card:active {
 .checkmark-list {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: var(--space-fine-65);
   list-style: none;
 }
 
@@ -4447,7 +4461,7 @@ a.surface-card:active {
 .doctrine-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2.5rem;
+  gap: var(--space-40);
 }
 
 /* Row stack — universal classification rows (Seven Layers lineage)
@@ -4530,7 +4544,7 @@ a.surface-card:active {
 .state-marquee-track {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: var(--space-fine-55);
   padding: var(--space-36) var(--space-16) var(--space-16);
   animation: state-marquee-scroll 30s linear infinite;
 }
@@ -4581,7 +4595,7 @@ a.surface-card:active {
 .state-marquee-pill {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   flex-shrink: 0;
   padding: var(--space-8) var(--space-fine-80);
   font-size: 0.78rem;
@@ -4697,7 +4711,7 @@ a.surface-card:active {
 .layer-item {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: var(--space-12);
   align-items: baseline;
   padding: var(--space-fine-85) var(--space-12) var(--space-fine-85) var(--space-16);
   border: 0;
@@ -4891,7 +4905,7 @@ button.layer-item {
 button.row {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  gap: var(--space-12);
   align-items: baseline;
 }
 
@@ -5003,7 +5017,7 @@ button.row {
 .check-cell {
   display: grid;
   grid-template-columns: var(--check-index) minmax(0, 1fr) auto;
-  gap: 0.7rem;
+  gap: var(--space-fine-70);
   align-items: start;
   align-content: start;
   position: relative;
@@ -5141,7 +5155,7 @@ a.check-cell:hover .check-cell-title {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.28rem;
+  gap: var(--space-fine-28);
   padding-top: var(--space-fine-02);
 }
 
@@ -5249,7 +5263,7 @@ a.check-cell:hover .check-cell-title {
 
   .check-cell {
     grid-template-columns: 1.55rem minmax(0, 1fr) auto;
-    gap: 0.6rem;
+    gap: var(--space-fine-60);
   }
 
   .check-cell-title {
@@ -5278,7 +5292,7 @@ a.check-cell:hover .check-cell-title {
 @media (max-width: 720px) {
   .doctrine-cols {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: var(--space-24);
   }
   /* Mobile topbar: the glass child (.topbar-glass) handles blur/saturate.
      The old mobile-specific blur overrides (8px/110%, 10px/120%) are
@@ -5287,17 +5301,17 @@ a.check-cell:hover .check-cell-title {
      compositing, preventing the scroll-stick re-rasterization bug. */
   .principle {
     grid-template-columns: 2rem 1fr;
-    gap: 0.75rem;
+    gap: var(--space-12);
   }
   .topbar {
     padding: var(--space-fine-65) 0;
   }
   .topbar-inner {
-    gap: 0.75rem;
+    gap: var(--space-12);
     padding: 0 max(var(--space-16), env(safe-area-inset-right)) 0 max(var(--space-16), env(safe-area-inset-left));
   }
   .topbar-right {
-    gap: 0.4rem;
+    gap: var(--space-fine-40);
     flex: 1 1 auto;
     min-width: 0;
   }
@@ -5387,7 +5401,7 @@ a.check-cell:hover .check-cell-title {
   .row,
   .layer-item {
     grid-template-columns: 2rem minmax(0, 1fr);
-    gap: 0.55rem;
+    gap: var(--space-fine-55);
     padding: var(--space-fine-80) var(--space-fine-55) var(--space-fine-80) var(--space-12);
   }
   .status-note {
@@ -5505,7 +5519,7 @@ a.check-cell:hover .check-cell-title {
     display: inline-flex;
     align-items: center;
     align-self: flex-end;
-    gap: 0.5rem;
+    gap: var(--space-8);
     min-height: 2.75rem;
     padding: var(--space-8) var(--space-12);
     margin-bottom: var(--space-16);
@@ -5612,7 +5626,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1.25rem;
+  gap: var(--space-12) var(--space-20);
   margin-top: var(--space-28);
 }
 
@@ -5639,7 +5653,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 0.4rem;
+  gap: var(--space-4) var(--space-fine-40);
   margin-top: var(--space-fine-40);
 }
 
@@ -5667,7 +5681,7 @@ a.check-cell:hover .check-cell-title {
 .lab-card {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-24);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
@@ -5680,7 +5694,7 @@ a.check-cell:hover .check-cell-title {
 .lab-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--space-16);
   max-width: min(100%, 980px);
 }
 
@@ -5704,7 +5718,7 @@ a.check-cell:hover .check-cell-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-16);
   margin-bottom: var(--space-8);
 }
 
@@ -5822,7 +5836,7 @@ a.check-cell:hover .check-cell-title {
 .demo-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-24);
   background: var(--paper);
   min-height: 100%;
@@ -5844,7 +5858,7 @@ a.check-cell:hover .check-cell-title {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   min-height: 5rem;
   min-width: 0;
   width: 100%;
@@ -5995,7 +6009,7 @@ html:not(.js-ready) .demo-stagger-bar {
 .token-table-row {
   display: grid;
   grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.1fr) 1.4fr;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-fine-70) var(--space-16);
   align-items: baseline;
 }
@@ -6040,7 +6054,7 @@ html:not(.js-ready) .demo-stagger-bar {
 
   .token-table-row {
     grid-template-columns: 1fr;
-    gap: 0.25rem;
+    gap: var(--space-4);
     padding: var(--space-fine-85) var(--space-16);
   }
 
@@ -6236,7 +6250,7 @@ html:not(.js-ready) .demo-stagger-bar {
     align-items: center;
     justify-content: flex-start;
     text-align: left;
-    gap: 0.85rem;
+    gap: var(--space-fine-85);
     padding: var(--space-fine-85) 0;
   }
 
@@ -6296,7 +6310,7 @@ html:not(.js-ready) .demo-stagger-bar {
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--space-16);
 }
 
 /*
@@ -6307,7 +6321,7 @@ html:not(.js-ready) .demo-stagger-bar {
 .field-card {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: var(--space-fine-45);
   padding: var(--space-fine-135) var(--space-fine-135) var(--space-20);
   border: 1px solid var(--line);
   border-left: 2px solid var(--line);
@@ -6584,7 +6598,7 @@ a.field-card:active {
   right: 0.6rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-fine-30);
   padding: var(--space-fine-32) var(--space-fine-70);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -7037,7 +7051,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .effect-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
 }
 
 .effect-cell {
@@ -7046,7 +7060,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   min-height: 100px;
   padding: var(--space-16) var(--space-12);
   border: 1px solid var(--line);
@@ -7486,7 +7500,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .waitlist-status.is-error {
   border-color: color-mix(in srgb, var(--grade-f) 45%, transparent);
-  color: #fecaca;
+  color: var(--error-text);
 }
 
 /* ===========================================================================
@@ -7596,7 +7610,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-input-col {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-12);
   width: 100%;
 }
 
@@ -7742,7 +7756,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-loading-state {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 /* ── Loading dot-pulse (replaces the old border-circle spinner) ──────────
@@ -7791,7 +7805,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-error-card {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: var(--space-12);
   margin-top: var(--space-20);
   padding: var(--space-16) var(--space-20);
   background: color-mix(in srgb, var(--error) 10%, transparent);
@@ -7861,7 +7875,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin-top: var(--space-32);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-20);
 }
 
 .score-hero-card {
@@ -7877,7 +7891,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     inset 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-20);
   position: relative;
   overflow: hidden;
 }
@@ -7919,7 +7933,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-hero-top {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-24);
 }
 
 .score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok); }
@@ -7942,7 +7956,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-hero-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   flex: 1;
   min-width: 0;
 }
@@ -7950,7 +7964,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-percent-badge {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-percent-value {
@@ -7971,7 +7985,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-site-url {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   background: color-mix(in srgb, var(--paper) 40%, transparent);
   border: 1px solid var(--line);
   padding: var(--space-fine-30) var(--space-fine-60);
@@ -8010,7 +8024,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-scale-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
+  gap: var(--space-12) var(--space-20);
   padding: var(--space-8) 0 var(--space-12);
   margin-top: var(--space-8);
   border-top: 1px solid var(--line);
@@ -8021,7 +8035,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-scale-band {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   white-space: nowrap;
 }
 .score-scale-dot {
@@ -8042,7 +8056,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-skeleton-feed {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-8) 0;
 }
 .score-skeleton-row {
@@ -8074,7 +8088,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 .score-metric-tile {
@@ -8088,7 +8102,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   flex-direction: row;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-metric-val {
@@ -8131,7 +8145,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   padding-top: var(--space-12);
   border-top: 1px solid var(--line);
-  gap: 0.75rem;
+  gap: var(--space-12);
   flex-wrap: wrap;
 }
 
@@ -8143,7 +8157,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   text-decoration: none;
   height: 2.25rem;
   padding: var(--space-fine-10);
@@ -8179,7 +8193,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-share-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   text-decoration: none;
 }
 .score-share-btn[disabled] {
@@ -8210,7 +8224,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-audit-error {
   margin: var(--space-8) 0 0;
   font-size: 0.75rem;
-  color: var(--warn, #f59e0b);
+  color: var(--warn);
   font-weight: 500;
 }
 
@@ -8252,7 +8266,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
   animation: auditPanelIn var(--duration-fast) var(--ease-out) forwards;
   opacity: 0;
 }
@@ -8274,12 +8288,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: var(--space-fine-45);
 }
 .audit-progress-step {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-fine-55);
   font-size: 0.82rem;
   color: var(--muted);
   opacity: 0;
@@ -8360,7 +8374,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-engine-tile {
@@ -8368,7 +8382,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.2rem;
+  gap: var(--space-fine-20);
   padding: var(--space-fine-70) var(--space-fine-80) var(--space-fine-60);
   background: var(--surface-card-gradient), var(--surface-raised);
   border: 1px solid var(--line);
@@ -8413,7 +8427,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-head {
   display: flex;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   width: 100%;
 }
 
@@ -8473,7 +8487,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-check-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
 }
 
 .score-check-group + .score-check-group {
@@ -8483,7 +8497,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-check-group-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-8) var(--space-12);
   background: var(--surface-raised);
   border: 1px solid var(--line);
@@ -8560,7 +8574,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
 }
@@ -8606,7 +8620,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-originality-notice {
-  color: var(--signal, #6ea8fe);
+  color: var(--signal);
   font-weight: 500;
 }
 
@@ -8626,14 +8640,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: var(--space-16) var(--space-fine-110);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-16);
 }
 
 .score-signals-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-16);
 }
 
 .score-signals-eyebrow {
@@ -8646,7 +8660,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-signals-net {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-8);
   font-size: 0.95rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -8662,7 +8676,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0 0 var(--space-8);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   flex-wrap: wrap;
 }
 
@@ -8688,13 +8702,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
 }
 
 .score-signal-row {
   display: flex;
   align-items: baseline;
-  gap: 0.65rem;
+  gap: var(--space-fine-65);
   padding: var(--space-8) var(--space-fine-60);
   background: color-mix(in srgb, var(--ink) 2%, transparent);
   border: 1px solid var(--line);
@@ -8719,7 +8733,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-signal-body {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: var(--space-fine-10);
   min-width: 0;
 }
 
@@ -8754,7 +8768,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: var(--space-16);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
 }
 
 .score-filter-segmented {
@@ -8802,7 +8816,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
@@ -8836,7 +8850,7 @@ a.lab-card:focus-visible .lab-card-arrow {
    ──────────────────────────────────────────────────────────────── */
 .bundle-tabs {
   display: flex;
-  gap: 0.25rem;
+  gap: var(--space-4);
   border-bottom: 1px solid var(--line);
   margin-bottom: var(--space-16);
   flex-wrap: wrap;
@@ -8965,7 +8979,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-category-chips {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   overflow-x: auto;
   padding-bottom: var(--space-fine-20);
   scrollbar-width: thin;
@@ -8984,7 +8998,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-fine-30);
   transition: border-color var(--duration-fast) var(--ease-out),
               color var(--duration-fast) var(--ease-out);
 }
@@ -9010,7 +9024,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-cards-feed {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-empty-feed {
@@ -9044,7 +9058,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: var(--space-fine-85) var(--space-16);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
   cursor: pointer;
   transition: border-color var(--duration-fast) var(--ease-out),
               background var(--duration-fast) var(--ease-out),
@@ -9101,13 +9115,13 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-card-main {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--space-fine-35);
 }
 
 .score-card-badge-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-card-status-pill {
@@ -9168,7 +9182,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-top: 1px dashed var(--line);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-4);
   /* Soft open — content slides+fades in on expand (opacity/transform only,
      GPU-safe). Height animation is avoided (layout thrash, per motion craft);
      the small translate reads as the drawer "arriving", not the card growing. */
@@ -9205,7 +9219,7 @@ a.lab-card:focus-visible .lab-card-arrow {
    treatment to set the "how to fix" block apart from the "what's wrong" block. */
 .score-drawer-remediation-heading {
   margin-top: var(--space-fine-60);
-  color: #c9a227; /* amber — matches OG grade C/D color, contract-restrained */
+  color: var(--amber-notice); /* amber — matches OG grade C/D color, contract-restrained */
 }
 
 .score-drawer-remediation {
@@ -9246,7 +9260,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .score-hero-top {
     flex-direction: column;
     text-align: center;
-    gap: 1rem;
+    gap: var(--space-16);
   }
 
   .score-hero-meta {
@@ -9276,7 +9290,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .score-metrics-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+    gap: var(--space-8);
   }
 
   .score-engine-grid {
@@ -9398,7 +9412,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-metrics-grid {
-    gap: 0.4rem;
+    gap: var(--space-fine-40);
   }
 
   .score-metric-tile {
@@ -9421,7 +9435,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: grid;
   grid-template-columns: 32px 64px 1fr;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-8) var(--space-12);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -9443,7 +9457,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 @media (max-width: 720px) {
   .badge-grade-row {
     grid-template-columns: 28px 56px 1fr;
-    gap: 0.5rem;
+    gap: var(--space-8);
     padding: var(--space-fine-40) var(--space-fine-60);
   }
 }
@@ -9557,7 +9571,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   padding: var(--space-fine-135) var(--space-20) var(--space-24);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-16);
   min-height: 100%;
   /* Takt press scale 0.985 on cards/rows — never below 0.95. */
   transition:
@@ -9646,7 +9660,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
 }
 
 .score-history-head {
@@ -9688,7 +9702,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-history-item {
@@ -9697,7 +9711,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   text-align: left;
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: var(--space-fine-85);
   padding: var(--space-fine-65) var(--space-fine-85);
   background: var(--surface);
   border: 1px solid var(--line);
@@ -9738,7 +9752,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--space-fine-15);
   overflow: hidden;
 }
 
@@ -9802,7 +9816,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
   .score-history-item {
     flex-wrap: wrap;
-    gap: 0.5rem 0.65rem;
+    gap: var(--space-8) var(--space-fine-65);
     padding: var(--space-fine-55) var(--space-fine-65);
   }
   .score-history-body {
@@ -9841,7 +9855,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-loading {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: var(--space-28);
   padding: var(--space-32) 0;
 }
 
@@ -9885,7 +9899,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-skel-hero {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-24);
   flex-wrap: wrap;
 }
 
@@ -9899,7 +9913,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-skel-hero-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   flex: 1;
   min-width: 200px;
 }
@@ -9914,7 +9928,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Category nav skeleton: row of chips */
 .report-skel-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-8);
   flex-wrap: wrap;
 }
 
@@ -9928,7 +9942,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-skel-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .report-skel-section-header {
@@ -9980,7 +9994,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-hero {
   display: flex;
   align-items: flex-start;
-  gap: 2.5rem;
+  gap: var(--space-40);
   padding: var(--space-32) 0;
   border-bottom: 1px solid var(--line-faint);
   flex-wrap: wrap;
@@ -9990,7 +10004,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   flex-shrink: 0;
 }
 
@@ -10004,7 +10018,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-hero-number {
   display: flex;
   align-items: baseline;
-  gap: 0.1rem;
+  gap: var(--space-fine-10);
 }
 
 .report-hero-value {
@@ -10041,7 +10055,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-hero-counts {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-12);
   flex-wrap: wrap;
   margin-bottom: var(--space-12);
 }
@@ -10077,7 +10091,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-cat-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-20) 0;
   border-bottom: 1px solid var(--line-faint);
   position: sticky;
@@ -10089,7 +10103,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-cat-chip {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-fine-40) var(--space-12);
   background: var(--surface);
   border: 1px solid var(--line-faint);
@@ -10164,7 +10178,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-16);
   margin-bottom: var(--space-16);
   flex-wrap: wrap;
 }
@@ -10175,7 +10189,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
   display: flex;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 .report-section-score {
@@ -10187,7 +10201,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-section-meta {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-16);
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -10201,7 +10215,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-check-list {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: var(--space-6);
 }
 
 .report-check {
@@ -10213,7 +10227,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-check-summary {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   padding: var(--space-fine-60) var(--space-fine-85);
   cursor: pointer;
   font-size: 0.85rem;
@@ -10326,7 +10340,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-slop-findings {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .report-slop-finding {
@@ -10338,7 +10352,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-slop-finding-header {
   display: flex;
   align-items: baseline;
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 .report-slop-finding-id {
@@ -10395,7 +10409,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-12);
   flex-wrap: wrap;
   margin-bottom: var(--space-16);
 }
@@ -10410,7 +10424,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 @media (max-width: 720px) {
   .report-hero {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--space-24);
     align-items: center;
     text-align: center;
   }
@@ -10421,7 +10435,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
   .report-section-header {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-8);
   }
 
   .report-check-detail {
@@ -10449,7 +10463,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-composite-header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-24);
   flex-wrap: wrap;
   margin-bottom: var(--space-32);
 }
@@ -10488,7 +10502,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-sub-engines {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
+  gap: var(--space-12);
   margin-bottom: var(--space-24);
 }
 
@@ -10533,7 +10547,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Engine tab navigation */
 .report-engine-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-8);
   margin-bottom: var(--space-16);
   border-bottom: 1px solid var(--line);
   padding-bottom: var(--space-8);
@@ -10570,7 +10584,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-engine-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-16);
 }
 
 /* Empty state */
@@ -10584,7 +10598,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-status-bar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-12);
   flex-wrap: wrap;
   padding: var(--space-fine-60) var(--space-fine-85);
   background: var(--surface-soft);
@@ -10603,7 +10617,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .report-status-bar-pills {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   flex-wrap: wrap;
 }
 
@@ -10673,7 +10687,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .report-composite-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--space-16);
   }
 
   .report-composite-share {
@@ -10806,7 +10820,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .radar-chart-legend {
   display: flex;
   justify-content: center;
-  gap: 1.5rem;
+  gap: var(--space-24);
   font-size: 0.75rem;
   color: var(--muted);
   margin-top: var(--space-8);
@@ -10815,7 +10829,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .radar-chart-legend-item {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: var(--space-6);
 }
 
 .radar-chart-legend-swatch {
@@ -10962,7 +10976,7 @@ select {
   padding-left: var(--space-12);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
 }
 
 .score-verdict-check {
@@ -11029,7 +11043,7 @@ select {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.05rem;
+  gap: var(--space-fine-05);
   pointer-events: none;
 }
 
@@ -11124,7 +11138,7 @@ select {
 .score-delta-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: var(--space-fine-20);
   font-size: 0.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -11187,7 +11201,7 @@ select {
 .score-scope-toggle {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   margin-top: var(--space-fine-60);
   padding-top: var(--space-fine-60);
   border-top: 1px solid var(--line);
@@ -11244,13 +11258,13 @@ select {
      stranding it alone on a 6th row. 3+3+3+2 reads as a deliberate rhythm;
      2+2+2+2+2+1 reads as a bug. */
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.25rem 0.75rem;
+  gap: var(--space-4) var(--space-12);
 }
 
 .score-cat-legend-row {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-fine-55);
   width: 100%;
   /* Fixed row height so name, bar, and score share one center axis on every
      row — was min-height:2rem, which let taller rows push the score closer to
@@ -11347,7 +11361,7 @@ select {
 .score-rubric-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   background: transparent;
   border: none;
   padding: var(--space-4) 0;
@@ -11368,7 +11382,7 @@ select {
   margin-top: var(--space-12);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-12);
 }
 
 .score-rubric-formula {
@@ -11393,13 +11407,13 @@ select {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: var(--space-fine-30);
 }
 
 .score-rubric-weight-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-fine-60);
   font-size: 0.72rem;
 }
 
@@ -11442,7 +11456,7 @@ select {
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-16);
 }
 
 .score-verify-log-title {
@@ -11460,13 +11474,13 @@ select {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: var(--space-fine-45);
 }
 
 .score-verify-log-step {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--space-fine-55);
   font-size: 0.82rem;
   color: var(--muted);
   opacity: 0;
@@ -12183,7 +12197,7 @@ select {
   .principle-cell,
   .field-grid,
   .pillar-grid {
-    gap: 0.75rem; /* 12px — Material dense mobile gutter */
+    gap: var(--space-12);
   }
 
   /* -- Contract-health rack: even 4-col modules inside the panel so the 8
@@ -12195,10 +12209,10 @@ select {
      overflows the ring. -- */
   .health-rack-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.875rem 0.5rem; /* 14px row / 8px column */
+    gap: var(--space-14) var(--space-8);
   }
   .health-rack-module {
-    gap: 0.5rem;
+    gap: var(--space-8);
     min-width: 0;
   }
   .health-rack-svg {
@@ -12243,7 +12257,7 @@ select {
      two-line h2. -- */
   .section-heading-row {
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--space-12);
   }
   .section-heading-badge {
     align-items: flex-start;
@@ -12333,7 +12347,7 @@ select {
 .lottie-tip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-8);
   padding: var(--space-8) var(--space-12);
   background: var(--surface-raised);
   border: 1px solid var(--line);

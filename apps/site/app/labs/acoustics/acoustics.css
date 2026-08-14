@@ -16,7 +16,7 @@
 .cue-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-fine-40);
   padding: var(--space-16) var(--space-fine-85);
   background: var(--paper);
   cursor: pointer;

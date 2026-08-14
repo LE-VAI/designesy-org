@@ -305,6 +305,41 @@ export const designSystemContract = {
       value: '#22c55e',
       role: '"is-live" status dot indicator (same value as --grade-a)',
     },
+    error_text: {
+      token: '--error-text',
+      value: '#fecaca',
+      role: 'Light red-200 for error text on dark error surfaces',
+    },
+    amber_notice: {
+      token: '--amber-notice',
+      value: '#c9a227',
+      role: 'Amber for score-drawer remediation heading — contract-restrained',
+    },
+    shimmer_1: {
+      token: '--shimmer-1',
+      value: '#f4f6ff',
+      role: 'Wordmark shimmer gradient stop 1 — decorative animation',
+    },
+    shimmer_2: {
+      token: '--shimmer-2',
+      value: '#e8ecff',
+      role: 'Wordmark shimmer gradient stop 2 — decorative animation',
+    },
+    shimmer_3: {
+      token: '--shimmer-3',
+      value: '#5b78f0',
+      role: 'Wordmark shimmer gradient stop 3 — decorative animation',
+    },
+    shimmer_4: {
+      token: '--shimmer-4',
+      value: '#9eb0ff',
+      role: 'Wordmark shimmer gradient stop 4 — decorative animation',
+    },
+    shimmer_5: {
+      token: '--shimmer-5',
+      value: '#dce4ff',
+      role: 'Wordmark shimmer gradient stop 5 — decorative animation',
+    },
   },
   surfaces_and_lines: {
     surface_soft: {
@@ -488,6 +523,8 @@ export const designSystemContract = {
       space_fine_105: { token: '--space-fine-105', value: '1.05rem', role: 'Fine micro-adjustment (16.8px) — clamp min' },
       space_fine_115: { token: '--space-fine-115', value: '1.15rem', role: 'Fine micro-adjustment (18.4px)' },
       space_fine_160: { token: '--space-fine-160', value: '1.6rem', role: 'Fine micro-adjustment (25.6px)' },
+      space_fine_28: { token: '--space-fine-28', value: '0.28rem', role: 'Fine micro-adjustment (4.48px) — off-grid component gap' },
+      space_fine_90: { token: '--space-fine-90', value: '0.9rem', role: 'Fine micro-adjustment (14.4px) — off-grid component gap' },
       space_96: { token: '--space-96', value: '6rem', role: '96px — large vertical spacing' },
       space_144: { token: '--space-144', value: '9rem', role: '144px — extra-large vertical spacing' },
     },
