@@ -80,7 +80,7 @@ jobs:
 
       # Cache the Next.js build output for faster re-runs on the same PR.
       - name: Cache .next
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/site/.next
           key: nextjs-${{ github.sha }}
