@@ -93,6 +93,14 @@
     background 0.2s var(--ease);
 }
 
+/* Push the last paragraph to fill the remaining vertical space so cards
+   with shorter copy don't leave a dead zone at the bottom — keeps the
+   bottom edges visually aligned across the row of 4 cards even when
+   content lengths differ. */
+.pillar p:last-of-type {
+  flex: 1 1 auto;
+}
+
 .pillar:hover {
   border-color: var(--line-strong);
   background: var(--surface-raised);
@@ -409,6 +417,14 @@ button.pillar:hover::before {
     background 0.2s var(--ease);
 }
 
+/* Push the last paragraph to fill the remaining vertical space so cards
+   with shorter copy don't leave a dead zone at the bottom — keeps the
+   bottom edges visually aligned across the row of 4 cards even when
+   content lengths differ. */
+.pillar p:last-of-type {
+  flex: 1 1 auto;
+}
+
 .pillar:hover {
   border-color: var(--line-strong);
   background: var(--surface-raised);
@@ -653,11 +669,26 @@ button.pillar:hover::before {
     display: grid;
     grid-template-columns: min(100%, 640px) 1fr;
     gap: 0.75rem;
+    align-items: stretch;
   }
 
   .row-stack {
     width: auto;
     max-width: none;
+    /* Match the marquee track's top/bottom padding so the first row aligns
+       vertically with the first visible pill, and the last row bottom
+       aligns with the last visible pill — both columns start and end
+       their content at the same Y, eliminating the awkward gap. */
+    padding-top: var(--space-36);
+    padding-bottom: var(--space-16);
+    /* Stretch the last row to fill any remaining vertical space so the
+       bottom edges align — both columns end at the same Y. */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row-stack > .row:last-child {
+    flex: 1 1 auto;
   }
 
   .state-marquee {
@@ -972,7 +1003,17 @@ button.pillar {
 .hero-proof-grade {
   font-family: var(--mono);
   font-weight: 700;
-  padding: var(--space-fine-05) var(--space-fine-34);
+  /* Fixed square box with flex centering — the letter sits at the optical
+     center of the box, not the baseline. Without this, the letter renders
+     slightly low because the default inline alignment uses the baseline. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  font-size: 0.74rem;
+  line-height: 1;
   border-radius: 4px;
   border: 1px solid var(--line-strong);
 }

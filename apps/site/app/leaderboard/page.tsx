@@ -198,7 +198,7 @@ function SiteRow({ site }: { site: SeedSite }) {
               }
             />
             <span className="lb-breakdown-counts">
-              {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}s
+              {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}sk
             </span>
           </span>
         ) : (
