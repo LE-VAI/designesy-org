@@ -76,15 +76,15 @@ pip install designesy-mcp
 
 No arguments needed. The server speaks JSON-RPC 2.0 over stdin/stdout.
 
-## Tools (11)
+## Tools (17)
 
-The server exposes 11 tools, all fetched live from `https://www.designesy.org/`:
+The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 
 ### Read-only discovery
 | Tool | What it does |
 |---|---|
 | `designesy_catalog` | Get the 12-package catalog (versions, URLs, statuses) from `/open.json` |
-| `designesy_contract` | Get the full design-system contract v0.3.0 (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section |
+| `designesy_contract` | Get the full design-system contract v0.4.0 (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section |
 | `designesy_design_review` | Get the Design Review kit (8 dimensions, agent prompt, output format, verification checklist) |
 | `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns |
 | `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) — identity, authority, ingest protocol |
@@ -98,6 +98,16 @@ The server exposes 11 tools, all fetched live from `https://www.designesy.org/`:
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
 | `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
+
+### Executable engines (new in v1.10.0)
+| Tool | What it does |
+|---|---|
+| `designesy_drift_score` | 12-check AI-drift radar — detects token fabrication, within-session drift, between-session amnesia, and silent breaking changes. |
+| `designesy_readiness_score` | 10-check AI readiness probe — tests for DTCG tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots, OG meta. |
+| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. |
+| `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas, trend slope, and email alerts via Resend. |
+| `designesy_compare` | Diff two design systems from live URLs — 8-dimension structured diff (added, removed, renamed, value-changed, scale, contrast, structure, score). |
+| `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. |
 
 ## Resources (7)
 
