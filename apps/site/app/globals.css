@@ -234,10 +234,13 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Ink ladder: near-black, mid-gray, subdued gray */
+  /* Ink ladder: near-black, mid-gray, subdued gray.
+     --muted-dim darkened from #888890 (3.52:1 on white, fails WCAG 4.5:1
+     text) to #76767e (4.50:1 on white) — the light-mode eyebrows, row-meta,
+     and group labels that use this token are body text, not decorative. */
   --ink: #1a1a1e;
   --muted: #555560;
-  --muted-dim: #888890;
+  --muted-dim: #76767e;
 
   /* Paper: warm near-white with faint blue cast (same hue as dark paper) */
   --paper: #fbfbfc;
@@ -267,16 +270,19 @@
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.12);
 
-  /* Semantic state colors keep the same hue, slightly adjusted for light bg */
+  /* Semantic state colors keep the same hue, slightly adjusted for light bg.
+     --warn/--grade-c darkened from #ca8a04 (2.94:1 on white, fails WCAG 3:1
+     for non-text UI) to #b07d04 (3.12:1) — grade C badges and warn icons
+     are UI components, not decorative. */
   --ok: #16a34a;
   --error: #dc2626;
-  --warn: #ca8a04;
+  --warn: #b07d04;
 
   /* Grade scale colors — deeper saturation for legibility on light surfaces.
      Same five-band semantics as dark theme, adjusted for contrast. */
   --grade-a: #16a34a;
   --grade-b: #65a30d;
-  --grade-c: #ca8a04;
+  --grade-c: #b07d04;
   --grade-d: #ea580c;
   --grade-f: #dc2626;
   --grade-b-light: #65a30d;
@@ -821,7 +827,7 @@ p {
   background: color-mix(in srgb, var(--paper) 78%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper) 3%, transparent);
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.06);
 }
 
 /* Light-mode mobile drawer + scrim — glass with white surface, no saturate
@@ -831,9 +837,9 @@ p {
     background: color-mix(in srgb, var(--paper) 80%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-color: color-mix(in srgb, var(--paper) 8%, transparent);
-    box-shadow: 0 24px 48px color-mix(in srgb, var(--paper) 16%, transparent),
-      inset 1px 0 0 color-mix(in srgb, var(--ink) 50%, transparent);
+    border-color: rgba(0, 0, 0, 0.10);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.10),
+      inset 1px 0 0 rgba(0, 0, 0, 0.06);
   }
 
   [data-theme="light"] .nav-scrim {
@@ -851,8 +857,8 @@ p {
 /* Light-mode grid: dark lines instead of white */
 [data-theme="light"] body::before {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--paper) 4%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--paper) 4%, transparent) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
 }
 
 /* Light-mode noise: multiply blend with slightly higher opacity for visibility */
@@ -1019,7 +1025,7 @@ p {
 }
 
 [data-theme="light"] .cmdk-overlay {
-  background: rgba(28, 28, 32, 0.46);
+  background: rgba(28, 28, 32, 0.32);
 }
 
 .cmdk-panel {
@@ -1041,13 +1047,13 @@ p {
 }
 
 [data-theme="light"] .cmdk-panel {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 94%, transparent), rgba(250, 250, 252, 0.97));
-  border-color: color-mix(in srgb, var(--paper) 9%, transparent);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 248, 250, 0.96));
+  border-color: rgba(0, 0, 0, 0.12);
   box-shadow:
-    0 32px 90px color-mix(in srgb, var(--paper) 28%, transparent),
-    0 4px 16px color-mix(in srgb, var(--paper) 12%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--ink) 95%, transparent),
-    inset 0 20px 40px -20px color-mix(in srgb, var(--ink) 70%, transparent);
+    0 32px 90px rgba(0, 0, 0, 0.14),
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 20px 40px -20px rgba(0, 0, 0, 0.04);
 }
 
 @keyframes cmdk-fade {
@@ -1342,7 +1348,7 @@ p {
     background: color-mix(in srgb, var(--paper) 78%, transparent);
   }
   [data-theme="light"] .cmdk-overlay {
-    background: rgba(28, 28, 32, 0.55);
+    background: rgba(28, 28, 32, 0.38);
   }
   .cmdk-panel,
   [data-theme="light"] .cmdk-panel {
@@ -7884,16 +7890,16 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 [data-theme="light"] .score-hero-card {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--ink) 68%, transparent) 0%, color-mix(in srgb, var(--ink) 78%, transparent) 100%);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 245, 247, 0.88) 100%);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
   box-shadow:
-    0 12px 32px color-mix(in srgb, var(--paper) 10%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--ink) 70%, transparent);
+    0 12px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 [data-theme="light"] .score-hero-card::before {
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 90%, transparent), transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.06), transparent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -7902,7 +7908,7 @@ a.lab-card:focus-visible .lab-card-arrow {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--surface);
-    box-shadow: 0 12px 32px color-mix(in srgb, var(--paper) 50%, transparent);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
   }
 }
 
@@ -8522,7 +8528,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 [data-theme="light"] .score-check-group-count {
-  background: color-mix(in srgb, var(--paper) 7%, transparent);
+  background: rgba(0, 0, 0, 0.06);
   color: var(--ink);
 }
 
@@ -8726,14 +8732,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   word-break: break-word;
 }
 
-[data-theme="light"] .score-signal-row { background: color-mix(in srgb, var(--paper) 2%, transparent); }
+[data-theme="light"] .score-signal-row { background: rgba(0, 0, 0, 0.02); }
 [data-theme="light"] .score-signals-group-title,
 [data-theme="light"] .score-signal-label { color: var(--ink); }
 
 @media (prefers-reduced-motion: no-preference) {
   .score-signal-row { transition: background var(--duration-fast) var(--ease-out); }
   .score-signal-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-  [data-theme="light"] .score-signal-row:hover { background: color-mix(in srgb, var(--paper) 4%, transparent); }
+  [data-theme="light"] .score-signal-row:hover { background: rgba(0, 0, 0, 0.04); }
 }
 
 
@@ -8904,7 +8910,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 [data-theme="light"] .score-tab-count {
   /* Darken the pill on light surfaces — the hardcoded white disappears,
      leaving dim text floating. Invert to a dark wash + ink text. */
-  background: color-mix(in srgb, var(--paper) 7%, transparent);
+  background: rgba(0, 0, 0, 0.06);
   color: var(--ink);
 }
 
@@ -8914,7 +8920,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 [data-theme="light"] .score-filter-tab.is-active .score-tab-count {
-  background: color-mix(in srgb, var(--paper) 12%, transparent);
+  background: rgba(0, 0, 0, 0.10);
 }
 
 .score-search-wrapper {
@@ -9859,9 +9865,9 @@ a.lab-card:focus-visible .lab-card-arrow {
 [data-theme="light"] .report-skel-row {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--paper) 5%, transparent) 0%,
-    color-mix(in srgb, var(--paper) 9%, transparent) 50%,
-    color-mix(in srgb, var(--paper) 5%, transparent) 100%
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.09) 50%,
+    rgba(0, 0, 0, 0.05) 100%
   );
   background-size: 200% 100%;
 }
@@ -9947,7 +9953,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   [data-theme="light"] .report-skel-chip,
   [data-theme="light"] .report-skel-section-header,
   [data-theme="light"] .report-skel-row {
-    background: color-mix(in srgb, var(--paper) 6%, transparent);
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
