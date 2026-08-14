@@ -7639,7 +7639,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: var(--space-fine-10) 0 var(--space-44); /* left 2.75rem clears the icon overlay (1rem + 18px icon + ~0.5rem gap) */
+  padding: var(--space-fine-10) 0 var(--space-fine-10) var(--space-44); /* left 2.75rem clears the icon overlay (1rem + 18px icon + ~0.5rem gap); vertical centered via box-sizing */
   box-sizing: border-box;
   outline: none;
   color: var(--ink);
