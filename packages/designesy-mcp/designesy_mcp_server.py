@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.9.4"
+SERVER_VERSION = "1.10.0"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -1975,6 +1975,249 @@ TOOLS = [
             },
         },
     },
+    {
+        "name": "designesy_drift_score",
+        "description": (
+            "Score a live URL for AI-generated UI drift — 12 checks "
+            "detect the four documented 2026 drift failure modes: token "
+            "fabrication (var() to undeclared custom properties), "
+            "within-session drift (spacing/color/radius value variance), "
+            "between-session amnesia (inconsistent font stacks, shadows, "
+            "transitions), and silent breaking changes (z-index chaos, "
+            "dangling alias chains). Use this when you need to verify "
+            "whether a site (especially an AI-generated one) is drifting "
+            "off its own declared token system. When NOT to use: for a "
+            "full 40-check design-contract score, use designesy_score; "
+            "for token-file format validation, use "
+            "designesy_tokens_score. Executable — fetches the URL "
+            "server-side, extracts all CSS (inline + linked stylesheets), "
+            "parses :root custom properties and var() references, runs "
+            "12 drift checks. No browser needed. Returns JSON: { ok, "
+            "url, score (0-100), grade (A-F), pass, warn, fail, total, "
+            "tokensExtracted, checks[{id, item, category, status, "
+            "detail}] }. Results cached ~24h per URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.",
+                },
+            },
+        },
+    },
+    {
+        "name": "designesy_readiness_score",
+        "description": (
+            "Score a URL for design-system AI readiness — the 6th "
+            "maturity axis (zeroheight 2026). 10 checks probe the "
+            "target origin for machine-readable artifacts: DTCG token "
+            "files, llms.txt, agent.json, MCP endpoint (tools/list), "
+            "DESIGN.md, token $description, component schemas, "
+            "sitemap.xml, robots.txt, and Open Graph/Twitter meta. Use "
+            "this to verify whether a design system is the default "
+            "context AI tools build from, or whether AI is silently "
+            "working around it. When NOT to use: for full "
+            "design-contract scoring, use designesy_score; for AI-drift "
+            "detection, use designesy_drift_score. Executable — fetches "
+            "the URL and probes the origin via HEAD/GET for each "
+            "artifact. No browser needed. Returns JSON: { ok, url, "
+            "score (0-100), grade (A-F), pass, warn, fail, total, "
+            "checks[{id, item, category, status, detail}] }. Results "
+            "cached ~24h per URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to score for AI readiness. Defaults to https://www.designesy.org/ if not provided.",
+                },
+            },
+        },
+    },
+    {
+        "name": "designesy_guardrails",
+        "description": (
+            "Generate a frozen build-contract bundle for AI coding "
+            "agents from any design system URL — the product layer. "
+            "Ingests a site, extracts its :root tokens, and emits 6 "
+            "outputs: (1) DTCG-format token file, (2) Stylelint config "
+            "generated from token values, (3) AGENTS.md-format rules "
+            "with token allowlist, (4) component contract with allowed "
+            "prop patterns, (5) anti-pattern documentation, (6) DESIGN.md "
+            "file (Google open spec, google-labs-code/design.md) — YAML "
+            "front matter + markdown body, the de-facto AI-readable "
+            "design-context standard. Use this when you need to turn a "
+            "design system into the file AI agents read and the lint "
+            "that enforces it. When NOT to use: for design-contract "
+            "scoring, use designesy_score; for token-file validation, "
+            "use designesy_tokens_score; for drift detection, use "
+            "designesy_drift_score. Executable — fetches the URL, "
+            "extracts CSS + :root custom properties, generates the "
+            "bundle. No browser needed. Returns JSON: { ok, url, score "
+            "(0-100, emission completeness), grade, pass, warn, fail, "
+            "total, tokensExtracted, bundle: { tokens, lintConfig, "
+            "agentRules, componentContract, antiPatterns, designMd }, "
+            "checks[{id, item, category, status, detail}] }. Results "
+            "cached ~24h per URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.",
+                },
+            },
+        },
+    },
+    {
+        "name": "designesy_monitor_score",
+        "description": (
+            "Score a URL for continuous design-drift governance — the "
+            "temporal layer over the drift radar. Re-runs the 12 drift "
+            "checks (d01-d12) on the URL and computes 10 monitor checks "
+            "(m01-m10): schedule registered, last run fresh, drift "
+            "delta vs baseline, trend slope (3-run trajectory), new "
+            "violations since last run, resolved since last run (the "
+            "healing signal), score degradation threshold, token-set "
+            "mutation, contract version drift, and alert delivered. "
+            "When alerts fire and an email address is provided, sends "
+            "an HTML drift-alert email via Resend (requires "
+            "RESEND_API_KEY env var). Pass a history array of prior "
+            "snapshots to compute deltas; omit it for a first-run "
+            "baseline. Use this to watch a design system over time — "
+            "'weekly audits at cents per report' (Into Design Systems "
+            "2026). When NOT to use: for a single point-in-time drift "
+            "check, use designesy_drift_score; for design-contract "
+            "scoring, use designesy_score. Executable — fetches the "
+            "URL, extracts CSS + :root tokens, runs checks, computes "
+            "deltas. No browser needed. Returns JSON: { ok, url, score "
+            "(0-100, governance health), grade (A-F), pass, warn, fail, "
+            "total, currentSnapshot, baseline, previous, driftChecks, "
+            "monitorChecks, alerts, emailAlert }. Results cached ~24h "
+            "per URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.",
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional — without it, alerts surface in-UI only.",
+                },
+                "history": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "timestamp": {"type": "string"},
+                            "score": {"type": "number"},
+                            "grade": {"type": "string"},
+                            "tokensExtracted": {"type": "number"},
+                            "checks": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {"type": "string"},
+                                        "item": {"type": "string"},
+                                        "category": {"type": "string"},
+                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN"]},
+                                        "detail": {"type": "string"},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
+                },
+            },
+        },
+    },
+    {
+        "name": "designesy_compare",
+        "description": (
+            "Diff two design systems from live URLs — the only "
+            "URL-scoped design-token diff engine. Fetches both URLs in "
+            "parallel, extracts their :root custom properties, and "
+            "produces a structured diff across 8 dimensions: tokens "
+            "added (in A not B), removed (in B not A), renamed "
+            "(heuristic Levenshtein ≤ 2), value-changed (same name, "
+            "different value), scale-stop-changed (spacing/radius/color "
+            "scale steps), contrast-drift-per-pair (WCAG contrast ratio "
+            "change for shared color tokens), structure-delta (token "
+            "count + category distribution), and score-delta (runs "
+            "/score on both URLs and diffs). Use this to answer 'what "
+            "actually changed between two design systems' or 'how does "
+            "our design system differ from a reference'. When NOT to "
+            "use: for single-site drift detection, use "
+            "designesy_drift_score; for continuous monitoring, use "
+            "designesy_monitor_score. Executable — fetches both URLs, "
+            "extracts CSS + tokens, computes diff. No browser needed. "
+            "Returns JSON: { ok, urlA, urlB, score (0-100, diff "
+            "completeness), grade, pass, warn, fail, total, tokensA, "
+            "tokensB, added[], removed[], renamed[], valueChanged[], "
+            "scaleDiff, structureDelta, contrastDrift[], scoreDelta, "
+            "checks[] }. Results cached ~24h per URL pair."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "urlA": {
+                    "type": "string",
+                    "description": "First URL to compare (e.g. your design system).",
+                },
+                "urlB": {
+                    "type": "string",
+                    "description": "Second URL to compare (e.g. a reference or competitor).",
+                },
+            },
+            "required": ["urlA", "urlB"],
+        },
+    },
+    {
+        "name": "designesy_report",
+        "description": (
+            "Generate a unified design-intelligence report for a single "
+            "URL — the synthesis capstone of the Designesy dynasty. "
+            "Fires /score (40-check audit), /drift (12-check drift "
+            "radar), and /readiness (10-check AI readiness) in "
+            "parallel, then computes a weighted composite: score × 0.5 "
+            "+ drift × 0.3 + readiness × 0.2. One input, one output, "
+            "one composite grade. Use this when you need a single "
+            "holistic assessment instead of three separate scans, or "
+            "when sharing a design-intelligence verdict (the report is "
+            "the most shareable surface). When NOT to use: for just "
+            "the audit score, use designesy_score; for just drift, use "
+            "designesy_drift_score; for just AI readiness, use "
+            "designesy_readiness_score. Executable — fires 3 internal "
+            "APIs in parallel, each fetches the target URL. No browser "
+            "needed. Returns JSON: { ok, url, compositeScore (0-100), "
+            "compositeGrade (A-F), score { sub-result }, drift { "
+            "sub-result }, readiness { sub-result }, totalChecks, "
+            "totalPass, totalWarn, totalFail, totalSkip, checks[] (all "
+            "checks across all engines, tagged with engine), "
+            "synthesis[] (8 synthesis checks verifying the report ran "
+            "correctly), appUrl (standalone interactive dashboard URL) "
+            "}. Results cached ~24h per URL."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "Public URL to generate a design-intelligence report for.",
+                },
+            },
+            "required": ["url"],
+        },
+    },
 ]
 
 TOOL_MAP = {t["name"]: t for t in TOOLS}
@@ -2347,6 +2590,84 @@ def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -
     }
 
 
+# ── HTTP-proxy tool implementations ─────────────────────────────────────────
+#
+# The 6 executable engines (drift, readiness, guardrails, monitor, compare,
+# report) run server-side on designesy.org. The stdio package proxies to the
+# same API endpoints the TS HTTP MCP uses — no need to reimplement the check
+# logic in Python. This keeps the Python package feature-parity with the HTTP
+# endpoint with zero external dependencies.
+
+
+def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
+    """POST to a designesy.org API endpoint and return the JSON result."""
+    url = f"{BASE_URL}/api/{endpoint}"
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": f"designesy-mcp/{SERVER_VERSION}",
+        },
+        method="POST",
+    )
+    try:
+        opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
+    except Exception as exc:
+        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
+            opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
+        else:
+            raise
+    with opener as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _drift_score_impl(url: str | None = None) -> dict[str, Any]:
+    """Proxy to /api/drift — 12-check AI-drift radar."""
+    target = url or f"{BASE_URL}/"
+    return _post_api("drift", {"url": target})
+
+
+def _readiness_score_impl(url: str | None = None) -> dict[str, Any]:
+    """Proxy to /api/readiness — 10-check AI readiness probe."""
+    target = url or f"{BASE_URL}/"
+    return _post_api("readiness", {"url": target})
+
+
+def _guardrails_impl(url: str | None = None) -> dict[str, Any]:
+    """Proxy to /api/guardrails — generate build-contract bundle."""
+    target = url or f"{BASE_URL}/"
+    return _post_api("guardrails", {"url": target})
+
+
+def _monitor_score_impl(
+    url: str | None = None,
+    email: str | None = None,
+    history: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Proxy to /api/monitor — continuous drift governance."""
+    target = url or f"{BASE_URL}/"
+    body: dict[str, Any] = {"url": target, "history": history or []}
+    if email:
+        body["email"] = email
+    return _post_api("monitor", body)
+
+
+def _compare_impl(url_a: str, url_b: str) -> dict[str, Any]:
+    """Proxy to /api/compare — diff two design systems from URLs."""
+    return _post_api("compare", {"urlA": url_a, "urlB": url_b})
+
+
+def _report_impl(url: str) -> dict[str, Any]:
+    """Proxy to /api/report — composite score+drift+readiness synthesis."""
+    data = _post_api("report", {"url": url})
+    # Attach the standalone app URL (same as the TS endpoint does)
+    data["appUrl"] = f"{BASE_URL}/api/report/app?url={urllib.parse.quote(url, safe='')}"
+    return data
+
+
 # ── Tool dispatch ───────────────────────────────────────────────────────────
 
 
@@ -2382,6 +2703,25 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
         )
     elif name == "designesy_motion_score":
         return _motion_score_impl(url=args.get("url"), lottie_file=args.get("lottie_file"))
+    elif name == "designesy_drift_score":
+        return _drift_score_impl(url=args.get("url"))
+    elif name == "designesy_readiness_score":
+        return _readiness_score_impl(url=args.get("url"))
+    elif name == "designesy_guardrails":
+        return _guardrails_impl(url=args.get("url"))
+    elif name == "designesy_monitor_score":
+        return _monitor_score_impl(
+            url=args.get("url"),
+            email=args.get("email"),
+            history=args.get("history"),
+        )
+    elif name == "designesy_compare":
+        return _compare_impl(
+            url_a=args.get("urlA", ""),
+            url_b=args.get("urlB", ""),
+        )
+    elif name == "designesy_report":
+        return _report_impl(url=args.get("url", ""))
     else:
         return {"success": False, "error": f"Unknown tool: {name}"}
 
