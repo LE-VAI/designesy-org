@@ -46,15 +46,15 @@ function point(index: number, total: number, r: number) {
 function gradeStroke(grade: string): string {
   switch (grade.toUpperCase()) {
     case 'A':
-      return '#22c55e';
+      return 'var(--grade-a)';
     case 'B':
-      return '#84cc16';
+      return 'var(--grade-b)';
     case 'C':
-      return '#eab308';
+      return 'var(--grade-c)';
     case 'D':
-      return '#fb923c';
+      return 'var(--grade-d)';
     default:
-      return '#ef4444';
+      return 'var(--grade-f)';
   }
 }
 
