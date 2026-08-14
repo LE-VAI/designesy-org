@@ -273,14 +273,17 @@
   /* Semantic state colors keep the same hue, slightly adjusted for light bg.
      --warn/--grade-c darkened from #ca8a04 (2.94:1 on white, fails WCAG 3:1
      for non-text UI) to #b07d04 (3.12:1) — grade C badges and warn icons
-     are UI components, not decorative. */
-  --ok: #16a34a;
+     are UI components, not decorative.
+     --ok/--grade-a darkened from #16a34a (3.30:1 on white, fails WCAG 4.5:1
+     for text) to #15803d (5.02:1) — used as text color in score results,
+     report counts, check statuses, and grade letters. */
+  --ok: #15803d;
   --error: #dc2626;
   --warn: #b07d04;
 
   /* Grade scale colors — deeper saturation for legibility on light surfaces.
      Same five-band semantics as dark theme, adjusted for contrast. */
-  --grade-a: #16a34a;
+  --grade-a: #15803d;
   --grade-b: #65a30d;
   --grade-c: #b07d04;
   --grade-d: #ea580c;
@@ -288,7 +291,7 @@
   --grade-b-light: #65a30d;
   --grade-d-glow: #ea580c;
   --signal-pos: #059669;
-  --live: #16a34a;
+  --live: #15803d;
 
   /* Surface depth vocabulary adapted for light */
   --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
@@ -450,6 +453,7 @@ h4 {
 
 p {
   margin: 0;
+  text-wrap: pretty;
 }
 
 /* --- Wordmark (CSS-only signal-dot) --- */
