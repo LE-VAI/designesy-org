@@ -4,6 +4,28 @@ All notable changes to `designesy-score` are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [1.0.1] — 2026-08-14
+
+### Fixed
+
+- **SSRF redirect bypass (critical).** The SSRF guard now re-validates every HTTP
+  redirect target with `isValidUrl()` before following it. Previously, only the
+  initial URL was validated — an attacker could redirect from a safe URL to
+  `http://169.254.169.254/` (AWS IMDS) and the engine would follow it. The
+  CHANGELOG previously claimed "SSRF guard runs on every fetch, including
+  redirect hops" — this is now actually true.
+- **CHANGELOG links fixed.** Version comparison links now point to the correct
+  monorepo tag names (`designesy-score@1.0.0` instead of `v1.0.0`).
+
+### Added
+
+- **Runtime deprecation warning.** Using `--api` or `$SCORE_API` now emits a
+  `DeprecationWarning` to stderr, directing users to the local engine.
+- **MIGRATION.md shipped in tarball.** The migration guide is now included in the
+  npm package so users who install via npm can read it without visiting GitHub.
+
 ## [1.0.0] — 2026-08-14
 
 ### ⚠️ BREAKING CHANGES
@@ -80,5 +102,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Initial API client release
 - 40-check engine running server-side at designesy.org
 
-[1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/v1.0.0
-[0.4.2]: https://github.com/LE-VAI/designesy-org/releases/tag/v0.4.2
+[1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.0
+[0.4.2]: https://github.com/LE-VAI/designesy-org/compare/v0.4.0...designesy-score%401.0.0

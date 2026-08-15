@@ -1,6 +1,6 @@
 {
   "name": "designesy-score",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Score any URL against the Designesy 40-check design-contract engine — runs locally, no server required. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy",
@@ -33,6 +33,7 @@
     "cli/designesy-score.mjs",
     "cli/README.md",
     "CHANGELOG.md",
+    "MIGRATION.md",
     "packages/score/dist/engine.js",
     "packages/score/dist/engine.d.ts"
   ],
