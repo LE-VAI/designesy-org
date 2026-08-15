@@ -37,6 +37,9 @@ exclude = [
   '^https://your-app\.vercel\.app',
   '^http://127\.0\.0\.1',
   '^http://localhost',
+  # awwwards.com — consistently times out under lychee's bot user-agent
+  # (Cloudflare bot protection). It's a reference link, not our content.
+  '^https://awwwards\.com',
 ]
 
 # ── Accept these status codes as OK ─────────────────────────────────────────

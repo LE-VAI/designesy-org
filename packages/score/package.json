@@ -4,7 +4,7 @@
   "description": "Standalone 40-check design-contract scoring engine — fetches a URL, extracts CSS + tokens, runs all checks locally. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
-  "homepage": "https://www.designesy.org/contracts/score",
+  "homepage": "https://www.designesy.org/score",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LE-VAI/designesy-org.git",
