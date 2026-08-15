@@ -5,6 +5,13 @@ All notable changes to @designesy/stylelint-plugin-dtcg-tokens are documented he
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] — 2026-08-15
+
+### Changed
+
+- Switched from two-pass `RootExit` visitor to single-pass `Declaration` visitor — simpler architecture, same behavior
+- Published with npm provenance attestation (GitHub OIDC + Sigstore keyless signing)
+
 ## [0.1.0] — 2026-08-15
 
 ### Initial release
