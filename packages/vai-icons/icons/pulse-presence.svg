@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- frame brackets: 4 corners showing the icon being marked 'live' -->
+  <path d="M3 6 V3 H8" opacity="0.7" />
+  <path d="M16 3 H21 V8" opacity="0.7" />
+  <path d="M21 16 V21 H16" opacity="0.7" />
+  <path d="M8 21 H3 V16" opacity="0.7" />
+  <!-- pulsing dot top-right corner -->
+  <circle class="vai-pulse" cx="18" cy="6" r="2" fill="currentColor" stroke="none" />
+</svg>

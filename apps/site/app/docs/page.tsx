@@ -393,35 +393,29 @@ export default function DocsPage() {
             <p>
               The composite grade is <strong>A (91/100)</strong> — a weighted
               synthesis of the design-score engine (95.3/100, A), the drift
-              engine (88/100, B), and AI-readiness (80/100, B). Of the 12 drift
-              checks, 9 PASS, 0 FAIL, and 3 WARN. The 3 WARNs are:
+              engine (92/100, A), and AI-readiness (80/100, B). Of the 12 drift
+              checks, 10 PASS, 0 FAIL, and 2 WARN. The 2 WARNs are:
             </p>
             <p style={{ marginTop: '0.75rem' }}>
-              <strong>d04 — spacing scale (WARN):</strong> 8 distinct hardcoded
-              spacing values remain — down from 30 before the tokenization pass,
-              but the engine still sees loose clustering rather than a strict
-              scale. Most remaining values are in library CSS and responsive
-              clamp() expressions that the engine counts but should not.
-            </p>
-            <p style={{ marginTop: '0.75rem' }}>
-              <strong>d05 — color consistency (WARN):</strong> 15 distinct base
-              colors — down from 148 before the grade-color tokenization pass.
-              The remaining 15 are a mix of gradient stops, alpha variants, and
-              library CSS. The engine counts each distinct RGB value; most of
-              what remains is legitimate variety, not drift.
-            </p>
-            <p style={{ marginTop: '0.75rem' }}>
-              <strong>d06 — font-family stacks (WARN):</strong> 7 distinct
+              <strong>d06 — font-family stacks (WARN):</strong> 5 distinct
               font-family stacks. The site uses mono, sans, and display stacks
               plus a few component-specific overrides — the engine counts each
               as a separate stack. This is intentional typographic variety, not
               amnesia.
             </p>
             <p style={{ marginTop: '0.75rem' }}>
-              The 9 PASSes are real wins: 142 custom properties are registered
-              at :root (d01), all 2,283 var() references resolve (d02), 98%
-              token coverage on color (d03), z-index stays within 0–1000 across
-              12 distinct levels (d10), and all alias chains resolve (d12).
+              <strong>d07 — border-radius values (WARN):</strong> 9 distinct
+              hardcoded border-radius values. The contract defines a 9-step
+              radius scale, but the engine counts each literal value rather
+              than mapping to scale stops. Most values align with the scale —
+              the WARN is an engine-counting artifact, not real drift.
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              The 10 PASSes are real wins: 152 custom properties are registered
+              at :root (d01), all 2,477 var() references resolve (d02), 97%
+              token coverage on color (d03), spacing clusters tightly on 4
+              values (d04), z-index stays within 0–200 across 11 distinct
+              levels (d10), and all alias chains resolve (d12).
               The drift engine grew up alongside the site — the WARNs are
               honest feedback about where the engine counts aggressively, not
               where the design is inconsistent.

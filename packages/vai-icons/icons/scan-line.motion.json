@@ -1,0 +1,17 @@
+{
+  "name": "scan-line",
+  "principle": "waveform-trace",
+  "tier": "tier1",
+  "reduce": "remove",
+  "durationMs": 1600,
+  "easing": "linear",
+  "trigger": "mount",
+  "triggerCount": "once-per-mount",
+  "geometry": "1px horizontal line at 60% opacity sweeps top-to-bottom across a 24x24 area in 1.6s.",
+  "rationale": "The icon's geometry is the content; the sweep is decoration.",
+  "antiPatterns": [
+    "Continuous looping scan (every AI default does this)",
+    "Scan beam that lingers",
+    "Scan that emits sound or particle"
+  ]
+}

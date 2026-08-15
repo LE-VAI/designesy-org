@@ -1,0 +1,19 @@
+{
+  "name": "pulse-presence",
+  "principle": "field-breath",
+  "tier": "tier3",
+  "reduce": "keep",
+  "durationMs": 2000,
+  "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+  "trigger": "presence",
+  "triggerCount": "always-on-while-live",
+  "geometry": "An 8px dot in the corner of an icon pulses scale 1.00 → 1.25 → 1.00 every 2s, signaling 'live' state. Under reduce-motion, the dot STILL pulses — but at a slower rhythm (4s) and without the scale interpolation, using only opacity 0.6 → 1.0. The rhythm IS the meaning; collapsing the rhythm would erase the live/offline distinction.",
+  "rationale": "Tier 3 is non-negotiable: the motion IS the information. Without it, the live indicator becomes a static dot indistinguishable from a settings glyph. This is the strongest test of the tier system.",
+  "antiPatterns": [
+    "Tier-3 collapse to opacity-only under reduce (the lossy version)",
+    "Tier-3 remove under reduce (the wrong version — erases meaning)",
+    "Continuous pulse without a context (every AI default does this)"
+  ],
+  "keystone": true,
+  "testNote": "If the reduce strategy is not 'keep', the tier system is broken and the whole contract must be redesigned before v0.1.0 ships."
+}

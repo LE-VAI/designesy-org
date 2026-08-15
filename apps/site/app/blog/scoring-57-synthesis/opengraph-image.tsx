@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Blog',
     title: '57 sites. None passed.',
-    lede: '57 websites scored against a 26-check design contract. 88% scored D or F. Zero scored a B.',
+    lede: '57 websites scored against a 40-check design contract. 88% scored D or F. Zero scored a B.',
     path: 'designesy.org/blog/scoring-57-synthesis',
     kind: 'review',
     badge: '57 sites',

@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VAI Motion Lab — five authored principles</title>
+<meta name="description" content="Five authored, named motion principles from the VAI command surface. Not components — principles. Contract-backed, tiered reduced-motion." />
+<link rel="stylesheet" href="../styles/vai-motion.css" />
+<style>
+  :root {
+    --vai-yellow: #FFC400;
+    --vai-yellow-dim: rgba(255, 196, 0, 0.55);
+    --graphite-950: #0A0A0C;
+    --graphite-900: #111114;
+    --graphite-850: #16161B;
+    --graphite-800: #1A1A1F;
+    --graphite-700: #25252C;
+    --graphite-500: #6B6B73;
+    --graphite-300: #A0A0A8;
+    --graphite-100: #ECECEF;
+    --graphite-050: #F7F7F8;
+    --mono: "IBM Plex Mono", "JetBrains Mono", "Space Mono", monospace;
+    --sans: "Inter", "Geist", "IBM Plex Sans", "Space Grotesk", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--graphite-950);
+    color: var(--graphite-100);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { max-width: 1080px; margin: 0 auto; padding: 64px 32px 120px; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--vai-yellow);
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 44px;
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .lede {
+    color: var(--graphite-300);
+    font-size: 17px;
+    line-height: 1.6;
+    max-width: 640px;
+    margin-bottom: 56px;
+  }
+
+  .card {
+    background: var(--graphite-900);
+    border: 1px solid var(--graphite-800);
+    border-radius: 14px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .card h2 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--vai-yellow);
+    flex: 0 0 auto;
+  }
+  .tier {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 5px 10px;
+    border: 1px solid var(--graphite-700);
+    border-radius: 999px;
+    color: var(--graphite-300);
+    background: var(--graphite-850);
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .tier--tier1 { color: var(--vai-yellow); border-color: rgba(255, 196, 0, 0.35); }
+  .tier--tier2 { color: var(--graphite-100); }
+  .card__desc {
+    color: var(--graphite-300);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    max-width: 100%;
+  }
+
+  .stage {
+    position: relative;
+    min-height: 180px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--graphite-950);
+  }
+  .stage--tall { min-height: 220px; }
+
+  .waveform-demo { width: 72%; padding: 24px 0; }
+  .waveform-demo svg { width: 100%; height: 96px; display: block; }
+  #wave-path { stroke: var(--vai-yellow); fill: none; }
+  .waveform-frame { position: relative; }
+  .waveform-ticks {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    top: 50%;
+    height: 1px;
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(255, 196, 0, 0.15) 0 1px,
+        transparent 1px 28px);
+    transform: translateY(-0.5px);
+    pointer-events: none;
+  }
+
+  .field-stage {
+    background:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 100% 32px,
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 32px 100%,
+      radial-gradient(circle at 50% 50%, var(--graphite-800) 0%, var(--graphite-950) 70%);
+  }
+  .field {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .field-cell {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--vai-yellow);
+    opacity: 0.18;
+  }
+  .field-dot {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--vai-yellow);
+    border: 1px solid rgba(255, 196, 0, 0.4);
+  }
+
+  .mark-stage {
+    background:
+      radial-gradient(circle at 50% 50%, var(--graphite-850) 0%, var(--graphite-950) 70%);
+  }
+  .mark-composition { text-align: center; }
+  /* Neutral focal shape — not a VAI mark. A placeholder object that demos
+     the blur-to-sharp settle principle without claiming brand identity. */
+  .mark {
+    width: 168px;
+    height: 168px;
+    border-radius: 36px;
+    background:
+      linear-gradient(135deg, var(--vai-yellow) 0%, rgba(255, 196, 0, 0.65) 100%);
+    margin: 0 auto 16px;
+    position: relative;
+    border: 1px solid rgba(255, 196, 0, 0.4);
+  }
+  /* Inner brackets — gives the shape structure to settle into */
+  .mark::before,
+  .mark::after {
+    content: '';
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--graphite-950);
+    opacity: 0.85;
+  }
+  .mark::before {
+    top: 18px; left: 18px;
+    border-right: none;
+    border-bottom: none;
+  }
+  .mark::after {
+    bottom: 18px; right: 18px;
+    border-left: none;
+    border-top: none;
+  }
+  .mark-caption {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--graphite-500);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 90%;
+  }
+  .grid > article {
+    background: var(--graphite-800);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    padding: 16px 14px;
+    text-align: left;
+  }
+  .grid-kicker {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--vai-yellow);
+    margin-bottom: 8px;
+    opacity: 0.85;
+  }
+  .grid-h {
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--graphite-100);
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .grid-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--graphite-500);
+    letter-spacing: 0.04em;
+  }
+
+  .grain-stage {
+    background:
+      linear-gradient(135deg, var(--graphite-700) 0%, var(--graphite-800) 60%, var(--graphite-950) 100%);
+    position: relative;
+  }
+  .grain-material { text-align: center; color: var(--graphite-100); }
+  .grain-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--vai-yellow);
+    margin-bottom: 10px;
+  }
+  .grain-headline {
+    font-family: var(--mono);
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--graphite-050);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    background: transparent;
+    color: var(--graphite-100);
+    border: 1px solid var(--graphite-700);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 150ms cubic-bezier(0.22, 0.61, 0.36, 1), color 150ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  button:hover { border-color: var(--vai-yellow); color: var(--vai-yellow); }
+  button:focus-visible { outline: 2px solid var(--vai-yellow); outline-offset: 2px; }
+
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--graphite-800);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--graphite-500);
+  }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 32px; }
+    .mark { width: 132px; height: 132px; font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="kicker">VAI Motion · @vai/motion v0.1.0</div>
+  <h1>Five principles. Not components.</h1>
+  <p class="lede">
+    Authored, named motion from the VAI command surface — the counter-library to
+    AI-default motion. Each principle carries its contract backing, its provenance,
+    and its reduced-motion tier. Enable reduced motion in your OS and reload:
+    watch the tiers behave.
+  </p>
+
+  <div class="card" id="waveform-card">
+    <div class="card__top">
+      <h2>01 · waveform-trace</h2>
+      <span class="tier tier--tier1">tier 1 · remove</span>
+    </div>
+    <p class="card__desc">
+      A data line plots itself across the surface — signal arrives, then rests.
+      Retired scan-beam and signal-sweep: every AI generator produces scanner
+      beams by default. SETI/radio-wave inspired.
+    </p>
+    <div class="stage waveform-frame">
+      <span class="waveform-ticks"></span>
+      <svg class="waveform-demo" viewBox="0 0 640 96" fill="none" aria-hidden="true">
+        <path id="wave-path"
+          d="M0 48 H120 Q 140 48 150 20 Q 160 -8 170 30 Q 180 70 195 38 Q 210 6 225 44 Q 240 82 258 40 Q 276 -2 294 42 Q 312 86 330 40 Q 348 -6 366 42 Q 384 90 402 44 Q 420 -2 438 40 Q 456 82 474 38 Q 490 -2 505 30 Q 520 62 535 34 Q 550 6 570 44 Q 590 82 640 48"
+          stroke-width="2.5" stroke-linecap="round" fill="none" />
+      </svg>
+    </div>
+    <div class="controls">
+      <button data-action="waveform-plot">Plot the trace</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__top">
+      <h2>02 · field-breath</h2>
+      <span class="tier tier--tier2">tier 2 · soften</span>
+    </div>
+    <p class="card__desc">
+      The ambient atmosphere breathes — a slow opacity swell and release.
+      Background presence, never a demand. Retired the fake-liveness pulse.
+    </p>
+    <div class="stage field-stage">
+      <div class="field" id="field">
+        <div class="field-dot" id="field-dot"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button data-action="field-start">Start breathing</button>
+      <button data-action="field-stop">Stop</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__top">
+      <h2>03 · mark-settle</h2>
+      <span class="tier tier--tier2">tier 2 · soften</span>
+    </div>
+    <p class="card__desc">
+      An object resolves — blur-to-sharp iris settle. Arrive sharp, then rest.
+      One authored moment, then stillness.
+    </p>
+    <div class="stage mark-stage">
+      <div class="mark-composition">
+        <div class="mark" id="mark-el"></div>
+        <div class="mark-caption">focal · object</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button data-action="mark-settle">Settle the object</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__top">
+      <h2>04 · block-settle</h2>
+      <span class="tier tier--tier2">tier 2 · soften</span>
+    </div>
+    <p class="card__desc">
+      Content blocks settle into place — one composed, weighted drop onto the
+      grid. Not scattered identical entrances.
+    </p>
+    <div class="stage">
+      <div class="grid" id="block-grid">
+        <article>
+          <div class="grid-kicker">01 · thesis</div>
+          <div class="grid-h">Name the behavior before the building.</div>
+          <div class="grid-meta">§th · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">02 · principle</div>
+          <div class="grid-h">One rule, present tense, ship-shaped.</div>
+          <div class="grid-meta">§p · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">03 · artifact</div>
+          <div class="grid-h">Make the principle visible in five seconds.</div>
+          <div class="grid-meta">§a · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">04 · contract</div>
+          <div class="grid-h">Tokens, names, and a promotion path.</div>
+          <div class="grid-meta">§c · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">05 · review</div>
+          <div class="grid-h">Checklists earn the right to ship.</div>
+          <div class="grid-meta">§r · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">06 · provenance</div>
+          <div class="grid-h">Every value cites its source.</div>
+          <div class="grid-meta">§pr · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">07 · anti-pattern</div>
+          <div class="grid-h">The thing this replaced, named honestly.</div>
+          <div class="grid-meta">§ap · 0.6s · settle</div>
+        </article>
+        <article>
+          <div class="grid-kicker">08 · verification</div>
+          <div class="grid-h">Receipts over attestations.</div>
+          <div class="grid-meta">§v · 0.6s · settle</div>
+        </article>
+      </div>
+    </div>
+    <div class="controls">
+      <button data-action="block-settle">Settle the blocks</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card__top">
+      <h2>05 · grain-shift</h2>
+      <span class="tier tier--tier1">tier 1 · remove</span>
+    </div>
+    <p class="card__desc">
+      Ambient grain shifts over the surface — material, not decoration.
+      Film-grain honesty for a digital command surface.
+    </p>
+    <div class="stage grain-stage">
+      <div class="grain-material" id="grain-el">
+        <div class="grain-eyebrow">vai · ambient</div>
+        <div class="grain-headline">Grain / Shift</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button data-action="grain-on">Shift the grain</button>
+      <button data-action="grain-off">Still</button>
+    </div>
+  </div>
+
+  <footer>@vai/motion · contract-backed · provenance: VAI aesthetic audit 2026-08-09</footer>
+</div>
+
+<script type="module">
+  import { waveformTrace, fieldBreath, markSettle, blockSettle, grainShift } from '../src/index.js';
+
+  let plottedOnce = false;
+  document.querySelector('[data-action="waveform-plot"]').addEventListener('click', async () => {
+    const path = document.getElementById('wave-path');
+    const len = path.getTotalLength();
+    path.style.strokeDasharray = `${len}`;
+    path.style.strokeDashoffset = `${len}`;
+    // issue #3 fix: explicit brand yellow (don't inherit currentColor)
+    const brandYellow = getComputedStyle(document.documentElement).getPropertyValue('--vai-yellow').trim() || '#FFC400';
+    await waveformTrace.plotPath(path, { stroke: brandYellow });
+    plottedOnce = true;
+  });
+
+  const field = document.getElementById('field');
+  const fieldDot = document.getElementById('field-dot');
+  const positions = [
+    [-180, -40], [-100, 60], [-40, -120],
+    [40, -120], [120, 60], [180, -40],
+    [-200, 90], [200, 90], [-60, 160], [60, 160],
+  ];
+  let stopBreath = null;
+
+  for (const [x, y] of positions) {
+    const cell = document.createElement('span');
+    cell.className = 'field-cell';
+    cell.style.transform = `translate(${x}px, ${y}px)`;
+    cell.style.opacity = '0.28';
+    field.appendChild(cell);
+  }
+
+  document.querySelector('[data-action="field-start"]').addEventListener('click', () => {
+    if (stopBreath) return;
+    stopBreath = fieldBreath.loop(fieldDot, { minOpacity: 0.45, maxOpacity: 0.95 });
+  });
+  document.querySelector('[data-action="field-stop"]').addEventListener('click', () => {
+    if (stopBreath) { stopBreath(); stopBreath = null; fieldDot.style.opacity = '0.7'; }
+  });
+
+  document.querySelector('[data-action="mark-settle"]').addEventListener('click', async () => {
+    await markSettle.settle(document.getElementById('mark-el'), { fromScale: 0.92 });
+  });
+
+  document.querySelector('[data-action="block-settle"]').addEventListener('click', async () => {
+    await blockSettle.settleAll([...document.querySelectorAll('#block-grid > article')]);
+  });
+
+  const grainStage = document.querySelector('.grain-stage');
+  document.querySelector('[data-action="grain-on"]').addEventListener('click', () => {
+    grainShift.apply(grainStage);
+  });
+  document.querySelector('[data-action="grain-off"]').addEventListener('click', () => {
+    grainShift.remove(grainStage);
+  });
+
+  blockSettle.settle(document.querySelector('h1'));
+</script>
+</body>
+</html>

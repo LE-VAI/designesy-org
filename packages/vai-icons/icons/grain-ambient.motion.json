@@ -1,0 +1,17 @@
+{
+  "name": "grain-ambient",
+  "principle": "grain-shift",
+  "tier": "tier1",
+  "reduce": "remove",
+  "durationMs": 12000,
+  "easing": "steps(20, end)",
+  "trigger": "mount",
+  "triggerCount": "always-on",
+  "geometry": "0.5% opacity noise texture under icon group; 20-step keyframe translation over 12s.",
+  "rationale": "Pure ambient material. Never carries content. Under reduce, remove the noise layer; icons render on a flat background.",
+  "antiPatterns": [
+    "Heavy grain that competes with content",
+    "Static noise that calls attention to itself",
+    "Layered grain over already-textured surfaces"
+  ]
+}

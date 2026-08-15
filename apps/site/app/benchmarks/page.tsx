@@ -116,7 +116,7 @@ const DESIGNESY_MOAT = [
   'Forced-colors readiness — @media (forced-colors: active) block presence',
   'AI-disclosure compliance — EU AI Act Art 50 readiness, effective 2026-08-02',
   'Token-to-live contract conformance — verify shipped CSS against a versioned contract',
-  'Cadence typography suite — 15 checks neither competitor covers',
+  'Cadence typography suite — 12 checks neither competitor covers',
   'Token architecture maturity — primitive → semantic → component layers (DSAF A1.1)',
   'MCP delivery — agent-invocable tools, not just a skill loaded into one IDE',
 ];
@@ -338,7 +338,7 @@ export default function BenchmarksPage() {
             81 design-related MCP servers are now indexed at mcpservers.org
             (2026-08-01). The category is expanding from skills into
             agent-invocable tooling — the space designesy pioneered with its
-            12-tool MCP server and URL-based scoring API.
+            17-tool MCP server and URL-based scoring API.
           </p>
         </section>
 
@@ -360,7 +360,7 @@ export default function BenchmarksPage() {
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },
             { title: 'slop-eval upstream law', meta: 'pols.dev/slop.md' },
-            { title: '@google/design.md', meta: 'npmjs.com/package/@google/design.md — v0.4.0, Apache 2.0, 26.8k stars' },
+            { title: '@google/design.md', meta: 'npmjs.com/package/@google/design.md — v0.4.0, Apache 2.0, 26k+ stars' },
           ]} />
         </section>
 

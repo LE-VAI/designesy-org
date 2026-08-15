@@ -39,7 +39,7 @@ export const COHORT_TOTAL_COUNT = SEED.length;
 export const COHORT_LAST_SCORED = LEADERBOARD_LAST_SCORED;
 
 // "Recent scores" rail — the REAL seeded sites, ranked, top 5. These are
-// real engine batch results (2026-07-28 seed + 2026-07-29 category batch),
+// real engine batch results (refreshed weekly via rescore-leaderboard workflow),
 // not a fabricated ticker. Ordered by seed rank (composite score desc).
 export const RECENT_SCORES = SEED.filter((s) => s.score !== null && s.rank !== null)
   .sort((a, b) => (a.rank as number) - (b.rank as number))

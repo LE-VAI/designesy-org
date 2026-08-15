@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VAI Icons — authored, contract-backed icons on five principles</title>
+<meta name="description" content="Eight hand-authored, motion-bearing icons for the VAI command surface. Each icon carries its motion contract (principle, tier, reduce strategy). Built on @vai/motion. Contract-backed, tiered accessibility, zero dependencies." />
+<link rel="stylesheet" href="../styles/vai-icons.css" />
+<style>
+  /* ------------------------------------------------------------------ */
+  /*  @vai/icons demo — token-bound layout                               */
+  /* ------------------------------------------------------------------ */
+  :root {
+    /* Color — graphite depth scale + brand yellow */
+    --vai-yellow: #FFC400;
+    --vai-yellow-soft: rgba(255, 196, 0, 0.55);
+    --graphite-950: #0A0A0C;
+    --graphite-900: #111114;
+    --graphite-850: #16161B;
+    --graphite-800: #1A1A1F;
+    --graphite-700: #25252C;
+    --graphite-500: #6B6B73;
+    --graphite-300: #A0A0A8;
+    --graphite-100: #ECECEF;
+    --graphite-050: #F7F7F8;
+    /* Spacing — 4px base, 11-step scale (ATLAS_DESIGN_TOKENS.md) */
+    --space-050: 2px;
+    --space-100: 4px;
+    --space-150: 6px;
+    --space-200: 8px;
+    --space-300: 12px;
+    --space-400: 16px;
+    --space-500: 24px;
+    --space-600: 32px;
+    --space-700: 48px;
+    --space-800: 64px;
+    /* Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    /* Type */
+    --mono: "IBM Plex Mono", "JetBrains Mono", "Space Mono", monospace;
+    --sans: "Inter", "Geist", "IBM Plex Sans", "Space Grotesk", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--graphite-950); }
+  body {
+    color: var(--graphite-100);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  /* Page shell — max-width aligned to the design grammar */
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: var(--space-700) var(--space-500) var(--space-800);
+  }
+
+  /* ===== Hero strip (80px tall, signal-tab aesthetic) ===== */
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: var(--space-400);
+    padding-bottom: var(--space-500);
+    border-bottom: 1px solid var(--graphite-800);
+  }
+  .hero__chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: var(--space-100) var(--space-300);
+    border: 1px solid var(--graphite-700);
+    border-radius: 999px;
+    color: var(--graphite-300);
+    background: var(--graphite-850);
+    flex: 0 0 auto;
+  }
+  .hero__chip .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--vai-yellow);
+    margin-right: var(--space-200);
+    vertical-align: middle;
+  }
+  .hero__title {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--graphite-100);
+  }
+  .hero__meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--graphite-500);
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  /* ===== Filter bar ===== */
+  .filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-400);
+    padding: var(--space-500) 0;
+    border-bottom: 1px solid var(--graphite-800);
+  }
+  .filters__group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-150);
+  }
+  .filters__label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--graphite-500);
+    margin-right: var(--space-100);
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: var(--space-100) var(--space-300);
+    background: transparent;
+    color: var(--graphite-300);
+    border: 1px solid var(--graphite-700);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 150ms cubic-bezier(0.22, 0.61, 0.36, 1), color 150ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .pill:hover, .pill:focus-visible { border-color: var(--vai-yellow); color: var(--vai-yellow); outline: none; }
+  .pill[aria-pressed="true"] {
+    border-color: var(--vai-yellow);
+    color: var(--graphite-950);
+    background: var(--vai-yellow);
+  }
+  .pill[data-icon][aria-pressed="true"] {
+    background: var(--graphite-800);
+    color: var(--vai-yellow);
+    border-color: var(--vai-yellow);
+  }
+  .filters__toggle {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-300);
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-200);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--graphite-300);
+    cursor: pointer;
+  }
+  .toggle input { accent-color: var(--vai-yellow); }
+
+  /* ===== Grid (6-up bento at desktop) ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: minmax(170px, auto);
+    gap: var(--space-400);
+    margin-top: var(--space-500);
+  }
+  /* Focal panel: 2 cols × 2 rows */
+  .tile--focal {
+    grid-column: span 2;
+    grid-row: span 2;
+    background: var(--graphite-900);
+    border: 1px solid var(--graphite-800);
+    border-left: 3px solid var(--vai-yellow);
+    border-radius: var(--radius-lg);
+    padding: var(--space-500);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .tile {
+    background: var(--graphite-900);
+    border: 1px solid var(--graphite-800);
+    border-radius: var(--radius-md);
+    padding: var(--space-400);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: border-color 200ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .tile:hover {
+    border-color: var(--graphite-700);
+  }
+  .tile::before {
+    content: "";
+    position: absolute;
+    left: 0; top: var(--space-300); bottom: var(--space-300);
+    width: 2px;
+    background: transparent;
+  }
+  .tile:hover::before { background: var(--vai-yellow); }
+
+  .tile__stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    margin: var(--space-300) 0;
+    border-top: 1px solid var(--graphite-800);
+    border-bottom: 1px solid var(--graphite-800);
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px) 0 0 / 100% 16px,
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px) 0 0 / 16px 100%;
+  }
+  .tile__icon {
+    width: 48px;
+    height: 48px;
+    color: var(--graphite-100);
+  }
+  .tile__icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .tile__meta { display: flex; flex-direction: column; gap: var(--space-100); }
+  .tile__name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--graphite-100);
+    letter-spacing: 0.02em;
+  }
+  .tile__tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--graphite-500);
+    letter-spacing: 0.04em;
+  }
+  .tile__tag .principle { color: var(--vai-yellow); }
+  .tile__tag .tier--1 { color: var(--graphite-300); }
+  .tile__tag .tier--3 { color: var(--vai-yellow); }
+
+  /* ===== Focal panel internals ===== */
+  .focal__head { display: flex; flex-direction: column; gap: var(--space-200); }
+  .focal__eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--vai-yellow);
+    margin: 0;
+  }
+  .focal__name {
+    font-family: var(--mono);
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--graphite-050);
+    margin: 0;
+  }
+  .focal__demo {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid var(--graphite-800);
+    border-bottom: 1px solid var(--graphite-800);
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 100% 16px,
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 16px 100%;
+  }
+  .focal__demo .focal__icon {
+    width: 120px;
+    height: 120px;
+    color: var(--vai-yellow);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .focal__demo .focal__icon svg { width: 100%; height: 100%; overflow: visible; }
+  .focal__quote {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--graphite-300);
+    border-left: 2px solid var(--graphite-700);
+    padding-left: var(--space-300);
+  }
+  .focal__spec { display: flex; flex-direction: column; gap: var(--space-100); }
+  .focal__spec dt {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--graphite-500);
+    display: inline-block;
+    min-width: 90px;
+  }
+  .focal__spec dd {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--graphite-100);
+    margin: 0;
+    display: inline;
+  }
+  .focal__spec dl > div {
+    display: flex;
+    gap: var(--space-300);
+    padding: var(--space-200) 0;
+    align-items: baseline;
+    border-bottom: 1px solid var(--graphite-800);
+  }
+  .focal__spec dl > div:last-child { border-bottom: 0; }
+
+  /* ===== Footer ===== */
+  footer {
+    margin-top: var(--space-800);
+    padding-top: var(--space-400);
+    border-top: 1px solid var(--graphite-800);
+    display: flex;
+    align-items: center;
+    gap: var(--space-500);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--graphite-500);
+  }
+  footer code {
+    font-family: var(--mono);
+    background: var(--graphite-900);
+    border: 1px solid var(--graphite-800);
+    padding: var(--space-100) var(--space-300);
+    border-radius: var(--radius-sm);
+    color: var(--graphite-100);
+  }
+  footer a { color: var(--graphite-300); text-decoration: none; }
+  footer a:hover { color: var(--vai-yellow); }
+  footer .right { margin-left: auto; display: flex; gap: var(--space-500); }
+
+  /* Responsive */
+  @media (max-width: 1080px) { .grid { grid-template-columns: repeat(4, 1fr); } .tile--focal { grid-column: span 4; grid-row: span 1; } }
+  @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, 1fr); } .tile--focal { grid-column: span 2; } .filters { flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HERO STRIP — 80px tall, signal-tab aesthetic, no big headline -->
+  <div class="hero">
+    <span class="hero__chip"><span class="dot"></span>@vai/icons · v0.1.0 · MIT</span>
+    <span class="hero__title">eight authored icons · five principles · three reduce tiers</span>
+    <span class="hero__meta">contract: <code style="font-family:inherit;background:transparent;border:0;padding:0;color:var(--vai-yellow-soft);">designesy.org/contract</code></span>
+  </div>
+
+  <!-- FILTER BAR — principle + tier chips -->
+  <div class="filters" role="toolbar" aria-label="Filter icons">
+    <div class="filters__group" id="principle-filters">
+      <span class="filters__label">Principle</span>
+      <button class="pill" data-principle="all" aria-pressed="true">All</button>
+      <button class="pill" data-principle="waveform-trace" aria-pressed="false">waveform</button>
+      <button class="pill" data-principle="field-breath" aria-pressed="false">breath</button>
+      <button class="pill" data-principle="mark-settle" aria-pressed="false">settle</button>
+      <button class="pill" data-principle="block-settle" aria-pressed="false">block</button>
+      <button class="pill" data-principle="grain-shift" aria-pressed="false">grain</button>
+    </div>
+    <div class="filters__group">
+      <span class="filters__label">Tier</span>
+      <button class="pill" data-tier="all" aria-pressed="true">All</button>
+      <button class="pill" data-tier="tier1" aria-pressed="false">1 · remove</button>
+      <button class="pill" data-tier="tier2" aria-pressed="false">2 · soften</button>
+      <button class="pill" data-tier="tier3" aria-pressed="false">3 · keep</button>
+    </div>
+    <div class="filters__toggle">
+      <label class="toggle">
+        <input type="checkbox" id="reduced-toggle" />
+        force reduce-motion
+      </label>
+    </div>
+  </div>
+
+  <!-- GRID — bento with focal panel -->
+  <div class="grid" id="grid"></div>
+
+  <!-- FOOTER -->
+  <footer>
+    <code>npm install @vai/icons</code>
+    <div class="right">
+      <a href="../DESIGN.md">DESIGN.md</a>
+      <span>MIT · contract-backed · zero-dep</span>
+    </div>
+  </footer>
+</div>
+
+<script type="module">
+  import { manifest, iconContract, resolveTier, mountIcon, counts } from '../src/index.js';
+
+  const grid = document.getElementById('grid');
+  let activePrinciple = 'all';
+  let activeTier = 'all';
+  let forcedReduced = null; // null = follow OS
+
+  // ---------- focal tile content (keystone icon, pulse-presence) ----------
+  function focalTileHtml(c) {
+    return `
+      <div class="focal__head">
+        <span class="focal__eyebrow">keystone · tier 3 · keep</span>
+        <h2 class="focal__name">pulse-presence</h2>
+        <p class="focal__quote">
+          The motion IS the meaning. Under reduce, the live indicator collapses
+          to opacity-only at 4s rhythm — but it still pulses. The reduction strategy
+          is the contract: <em>tier 3 must keep, or the tier system is broken</em>.
+        </p>
+      </div>
+      <div class="focal__demo" id="focal-demo"><span class="focal__icon" id="focal-icon"></span></div>
+      <dl class="focal__spec">
+        <div><dt>principle</dt><dd>field-breath</dd></div>
+        <div><dt>duration</dt><dd>2000ms · 4000ms under reduce</dd></div>
+        <div><dt>easing</dt><dd>cubic-bezier(0.77, 0, 0.175, 1)</dd></div>
+        <div><dt>reduce</dt><dd>keep — non-negotiable</dd></div>
+      </dl>
+    `;
+  }
+
+  // ---------- regular tile ----------
+  function tileHtml(c) {
+    return `
+      <div class="tile__meta">
+        <span class="tile__name">${c.name}</span>
+        <span class="tile__tag"><span class="principle">${c.principle}</span> · <span class="tier--${c.tier.replace('tier','')}">${c.tier} · ${c.reduce.split('-')[0]}</span></span>
+      </div>
+      <div class="tile__stage"><div class="tile__icon" data-icon-name="${c.name}"></div></div>
+    `;
+  }
+
+  // ---------- render ----------
+  async function render() {
+    grid.innerHTML = '';
+    // focal panel first (keystone)
+    const focal = manifest.icons.find((i) => i.keystone);
+    if (focal) {
+      const focalEl = document.createElement('div');
+      focalEl.className = 'tile tile--focal';
+      focalEl.innerHTML = focalTileHtml(focal);
+      grid.appendChild(focalEl);
+      const focalHost = focalEl.querySelector('#focal-icon');
+      await mountIcon(focal.name, focalHost);
+    }
+    // tile list (filtered)
+    const filtered = manifest.icons.filter((c) =>
+      (activePrinciple === 'all' || c.principle === activePrinciple) &&
+      (activeTier === 'all' || c.tier === activeTier)
+    );
+    for (const c of filtered) {
+      if (c.keystone && activePrinciple === 'all' && activeTier === 'all') continue; // already focal
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.innerHTML = tileHtml(c);
+      grid.appendChild(el);
+      const host = el.querySelector('[data-icon-name]');
+      if (host) await mountIcon(c.name, host);
+    }
+    applyReducedState();
+  }
+
+  function applyReducedState() {
+    document.documentElement.style.setProperty('--test-reduce', forcedReduced ? 'reduce' : 'no-preference');
+    // The cleanest way to simulate reduce without OS hooks: re-mount all icons
+    //   with the override key on each .vai-icon container.
+    const icons = document.querySelectorAll('.vai-icon');
+    icons.forEach((el) => {
+      if (forcedReduced) el.dataset.vaiOverride = 'reduced';
+      else delete el.dataset.vaiOverride;
+      // Re-add a class hint that lets us re-trigger CSS keyframes.
+      el.classList.add('vai-replay');
+      // Force reflow then remove → animations restart.
+      void el.offsetWidth;
+      el.classList.remove('vai-replay');
+    });
+  }
+
+  // ---------- filter wiring ----------
+  document.getElementById('principle-filters').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-principle]');
+    if (!btn) return;
+    document.querySelectorAll('[data-principle]').forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    activePrinciple = btn.dataset.principle;
+    await render();
+  });
+  document.querySelectorAll('[data-tier]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      document.querySelectorAll('[data-tier]').forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+      activeTier = btn.dataset.tier;
+      await render();
+    });
+  });
+  document.getElementById('reduced-toggle').addEventListener('change', (e) => {
+    forcedReduced = e.target.checked;
+    // Mark the document root so the CSS companion query matches.
+    document.documentElement.dataset.vaiReduce = forcedReduced ? 'reduce' : 'no-preference';
+    applyReducedState();
+  });
+
+  // initial render
+  render();
+
+  // render counts in console for receipts
+  console.log('@vai/icons — counts:', counts());
+</script>
+</body>
+</html>

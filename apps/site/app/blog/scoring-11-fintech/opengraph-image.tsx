@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Blog · Fintech',
     title: 'Fintech can\'t pass',
-    lede: '11 fintech sites scored against a 26-check design contract. All failed. The best was a D.',
+    lede: '11 fintech sites scored against a 40-check design contract. All failed. The best was a D.',
     path: 'designesy.org/blog/scoring-11-fintech',
     kind: 'review',
     badge: '11 sites',
