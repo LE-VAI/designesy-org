@@ -1,14 +1,15 @@
 name: Publish to npm
 
-# Auto-publishes @designesy/tokens to npmjs.org on version tags, with
+# Auto-publishes @designesy/* packages to npmjs.org on version tags, with
 # cryptographically signed build provenance (npm --provenance).
 #
 # Provenance uses GitHub OIDC + Sigstore keyless signing — no stored secrets.
 # Consumers can verify the package was built from this exact source:
-#   gh attestation verify @designesy/tokens@0.2.0 -o LE-VAI
+#   gh attestation verify @designesy/tokens@0.2.1 -o LE-VAI
 #
-# Package source: packages/tokens/
-# npm package: https://www.npmjs.com/package/@designesy/tokens
+# Supported tag patterns:
+#   tokens-v*        → packages/tokens       → @designesy/tokens
+#   stylelint-v*     → packages/stylelint-plugin-dtcg-tokens → @designesy/stylelint-plugin-dtcg-tokens
 #
 # Prerequisites:
 #   - npm provenance requires a PUBLIC repo (this one is public ✓)
@@ -19,7 +20,9 @@ name: Publish to npm
 
 on:
   push:
-    tags: ["tokens-v*"]      # triggers on tags like tokens-v0.2.0
+    tags:
+      - "tokens-v*"
+      - "stylelint-v*"
   workflow_dispatch:         # allow manual re-publish from the Actions tab
 
 permissions:
@@ -41,28 +44,50 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Determine package directory and name from tag
+        id: pkg
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          if [[ "$TAG" == tokens-v* ]]; then
+            echo "dir=packages/tokens" >> "$GITHUB_OUTPUT"
+            echo "name=@designesy/tokens" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#tokens-v}" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == stylelint-v* ]]; then
+            echo "dir=packages/stylelint-plugin-dtcg-tokens" >> "$GITHUB_OUTPUT"
+            echo "name=@designesy/stylelint-plugin-dtcg-tokens" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#stylelint-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Unknown tag prefix: $TAG"
+            exit 1
+          fi
+
       - name: Sync package version with tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION=${GITHUB_REF#refs/tags/tokens-v}
-          cd packages/tokens
-          npm version "$VERSION" --no-git-tag-version --no-commit-hooks
+          VERSION=${{ steps.pkg.outputs.version }}
+          cd ${{ steps.pkg.outputs.dir }}
+          # --allow-same-version handles the case where package.json already has this version
+          npm version "$VERSION" --no-git-tag-version --no-commit-hooks --allow-same-version
           echo "Synced package.json version -> $VERSION"
 
       - name: Build
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd packages/tokens
+          cd ${{ steps.pkg.outputs.dir }}
           npm ci
           npm run build
 
       - name: Run tests
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd packages/tokens
+          cd ${{ steps.pkg.outputs.dir }}
           npm test
 
       - name: Publish to npm with provenance
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd packages/tokens
+          cd ${{ steps.pkg.outputs.dir }}
           # --provenance signs the package with GitHub OIDC + Sigstore.
           # --access public ensures scoped packages are publicly readable.
           npm publish --provenance --access public
@@ -70,7 +95,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Confirm publication
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           sleep 5
-          VERSION=${GITHUB_REF#refs/tags/tokens-v}
-          npm view @designesy/tokens@$VERSION version || echo "Version may take a few minutes to appear"
+          VERSION=${{ steps.pkg.outputs.version }}
+          NAME=${{ steps.pkg.outputs.name }}
+          npm view "$NAME@$VERSION" version || echo "Version may take a few minutes to appear"
