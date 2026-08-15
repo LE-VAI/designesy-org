@@ -1,0 +1,146 @@
+{
+  "color": {
+    "$type": "color",
+    "primitive": {
+      "bareHex": {
+        "$value": "#ff0000"
+      },
+      "badColorSpace": {
+        "$value": {
+          "colorSpace": "rgb",
+          "components": [255, 0, 0]
+        },
+        "$description": "Invalid colorSpace"
+      },
+      "badComponents": {
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.5, 0.2]
+        },
+        "$description": "Wrong component count"
+      },
+      "badAlpha": {
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.5, 0.2, 200],
+          "alpha": 1.5
+        },
+        "$description": "Alpha out of range"
+      }
+    },
+    "semantic": {
+      "danglingAlias": {
+        "$value": "{color.nonexistent.token}",
+        "$description": "Points to nothing"
+      },
+      "typeMismatch": {
+        "$type": "dimension",
+        "$value": "{color.primitive.bareHex}",
+        "$description": "Claims to be dimension but aliases a color"
+      }
+    }
+  },
+  "$badProperty": "this should be caught by t08",
+  "dimension": {
+    "$type": "dimension",
+    "badUnit": {
+      "$value": "10vw",
+      "$description": "vw is not px or rem"
+    },
+    "notAString": {
+      "$value": 42,
+      "$description": "Dimension value must be string or object"
+    }
+  },
+  "duration": {
+    "$type": "duration",
+    "badUnit": {
+      "$value": { "value": 100, "unit": "ns" },
+      "$description": "ns is not a valid duration unit"
+    }
+  },
+  "cubicBezier": {
+    "$type": "cubicBezier",
+    "wrongLength": {
+      "$value": [0, 0, 1],
+      "$description": "Only 3 numbers, needs 4"
+    },
+    "xOutOfRange": {
+      "$value": [1.5, 0, 0.5, 1],
+      "$description": "x1 > 1"
+    }
+  },
+  "number": {
+    "$type": "number",
+    "notANumber": {
+      "$value": "42",
+      "$description": "String instead of number"
+    }
+  },
+  "boolean": {
+    "$type": "boolean",
+    "notABoolean": {
+      "$value": "true",
+      "$description": "String instead of boolean"
+    }
+  },
+  "fontWeight": {
+    "$type": "fontWeight",
+    "outOfRange": {
+      "$value": 1500,
+      "$description": "Weight > 1000"
+    }
+  },
+  "$badName": {
+    "$type": "string",
+    "$value": "this name starts with $"
+  },
+  "nameWith{": {
+    "$type": "string",
+    "$value": "this name contains {"
+  },
+  "nameWith.dot": {
+    "$type": "string",
+    "$value": "this name contains ."
+  },
+  "invalidType": {
+    "$type": "colour",
+    "$value": "#ff0000",
+    "$description": "Typo in type name"
+  },
+  "missingType": {
+    "$value": "#ff0000",
+    "$description": "No $type at all"
+  },
+  "missingValue": {
+    "$type": "color",
+    "$description": "No $value"
+  },
+  "badDeprecated": {
+    "$type": "string",
+    "$value": "test",
+    "$deprecated": 42,
+    "$description": "Deprecated must be boolean or string"
+  },
+  "shadow": {
+    "$type": "shadow",
+    "missingField": {
+      "$value": {
+        "color": "#ff0000",
+        "offsetX": "0px",
+        "offsetY": "2px"
+      },
+      "$description": "Missing blur and spread"
+    }
+  },
+  "circularA": {
+    "$type": "color",
+    "$value": "{circularB}",
+    "$description": "Circular ref A"
+  },
+  "circularB": {
+    "$type": "color",
+    "$value": "{circularA}",
+    "$description": "Circular ref B"
+  }
+}
