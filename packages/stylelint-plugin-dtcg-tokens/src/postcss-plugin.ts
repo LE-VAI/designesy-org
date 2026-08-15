@@ -31,6 +31,9 @@ import {
   extractHexValues,
   isMagicNumber,
   extractMagicNumbers,
+  buildReverseMap,
+  resolveToken,
+  type FlattenedToken,
 } from './tokens.js';
 
 export interface DtcgTokenCheckOptions {
@@ -42,6 +45,15 @@ export interface DtcgTokenCheckOptions {
     magicNumber?: boolean;
     undeclaredVar?: boolean;
   };
+  /**
+   * When true, auto-fix unambiguous violations in-place:
+   *   - bare hex → var(--color-token) when the hex maps to exactly 1 color token
+   *   - magic number → var(--token) when the value maps to exactly 1 token
+   *     after property-semantic disambiguation
+   * Undeclared-var violations are never auto-fixed (can't infer intent).
+   * Ambiguous matches (multiple candidate tokens) are warned, not fixed.
+   */
+  fix?: boolean;
 }
 
 const DEFAULT_RULES = {
@@ -62,14 +74,14 @@ const DEFAULT_RULES = {
  */
 function dtcgTokenCheck(opts: DtcgTokenCheckOptions = {}): Plugin {
   const rules = { ...DEFAULT_RULES, ...opts.rules };
+  const fix = opts.fix === true;
 
   return {
     postcssPlugin: 'postcss-dtcg-token-check',
     prepare(result: Result) {
-      // Load the token file synchronously if provided.
-      // PostCSS's prepare() is called once per file — sync loading is fast
-      // and avoids the async-await race that caused warnings to be missed.
       const declaredNames = new Set<string>();
+      let reverseMap: Map<string, FlattenedToken[]> | null = null;
+
       if (opts.tokensFile) {
         try {
           const resolved = resolve(process.cwd(), opts.tokensFile);
@@ -79,39 +91,65 @@ function dtcgTokenCheck(opts: DtcgTokenCheckOptions = {}): Plugin {
           for (const name of tokens.keys()) {
             declaredNames.add(name);
           }
+          if (fix) {
+            reverseMap = buildReverseMap(tokens);
+          }
         } catch (e) {
-          // Don't crash the build — warn and continue without token validation
           result.warn(`DTCG token check: could not load tokens file "${opts.tokensFile}": ${(e as Error).message}`);
         }
       }
 
       return {
         Declaration(node: Declaration) {
-          // Collect CSS-declared custom properties (also valid var() targets)
           if (node.prop.startsWith('--')) {
             declaredNames.add(node.prop);
-            // Custom property definitions are token declarations, not usages.
-            // Don't flag hex/magic-number inside the :root token block itself.
             return;
+          }
+
+          // Rule 2 runs before Rule 1 in fix mode: hex fixes inject var()
+          // into the value, which would cause the magic-number check's
+          // var() guard to skip the declaration. Checking magic numbers
+          // first ensures both rules can fire on the same declaration.
+
+          // Rule 2: magic numbers on token-enforced properties
+          if (rules.magicNumber && isMagicNumber(node.prop, node.value)) {
+            const magics = extractMagicNumbers(node.prop, node.value);
+            for (const magic of magics) {
+              if (fix && reverseMap) {
+                const res = resolveToken(magic, node.prop, reverseMap, false);
+                if (res.token) {
+                  node.value = node.value.replace(magic, `var(${res.token.name})`);
+                  continue;
+                }
+                if (res.ambiguous) {
+                  node.warn(result, `Use a design token instead of magic number "${magic}" for "${node.prop}" (ambiguous: matches ${res.ambiguous.map((t) => t.name).join(', ')})`);
+                  continue;
+                }
+              }
+              node.warn(result, `Use a design token instead of magic number "${magic}" for "${node.prop}"`);
+            }
           }
 
           // Rule 1: bare hex colors
           if (rules.bareHex && isBareHex(node.value)) {
             const hexes = extractHexValues(node.value);
             for (const hex of hexes) {
+              if (fix && reverseMap) {
+                const res = resolveToken(hex, node.prop, reverseMap, true);
+                if (res.token) {
+                  node.value = node.value.replace(hex, `var(${res.token.name})`);
+                  continue; // fixed — no warning
+                }
+                if (res.ambiguous) {
+                  node.warn(result, `Use a design token instead of bare hex color "${hex}" (ambiguous: matches ${res.ambiguous.map((t) => t.name).join(', ')})`);
+                  continue;
+                }
+              }
               node.warn(result, `Use a design token (var(--token)) instead of bare hex color "${hex}"`);
             }
           }
 
-          // Rule 2: magic numbers on token-enforced properties
-          if (rules.magicNumber && isMagicNumber(node.prop, node.value)) {
-            const magics = extractMagicNumbers(node.prop, node.value);
-            for (const magic of magics) {
-              node.warn(result, `Use a design token instead of magic number "${magic}" for "${node.prop}"`);
-            }
-          }
-
-          // Rule 3: var() references to undeclared custom properties
+          // Rule 3: var() references to undeclared custom properties (never auto-fixed)
           if (rules.undeclaredVar && declaredNames.size > 0) {
             const refs = extractVarRefs(node.value);
             for (const ref of refs) {

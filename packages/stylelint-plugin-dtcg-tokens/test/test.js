@@ -12,6 +12,10 @@ import {
   isMagicNumber,
   extractMagicNumbers,
   TOKEN_ENFORCED_PROPERTIES,
+  normalizeHex,
+  buildReverseMap,
+  resolveToken,
+  PROPERTY_TOKEN_PREFIX,
 } from '../dist/tokens.js';
 
 import dtcgTokenCheck from '../dist/postcss-plugin.js';
@@ -292,5 +296,410 @@ describe('PostCSS plugin integration', () => {
     const warnings = result.warnings();
     assert.ok(warnings.some((w) => w.text.includes('bare hex')));
     assert.ok(!warnings.some((w) => w.text.includes('magic number')));
+  });
+});
+
+// ── normalizeHex tests ─────────────────────────────────────────────────────────
+
+describe('normalizeHex', () => {
+  test('expands 3-digit hex to 6-digit', () => {
+    assert.equal(normalizeHex('#fff'), '#ffffff');
+    assert.equal(normalizeHex('#abc'), '#aabbcc');
+  });
+
+  test('expands 4-digit hex to 8-digit', () => {
+    assert.equal(normalizeHex('#fffa'), '#ffffffaa');
+  });
+
+  test('passes through 6-digit hex lowercased', () => {
+    assert.equal(normalizeHex('#3B82F6'), '#3b82f6');
+    assert.equal(normalizeHex('#3b82f6'), '#3b82f6');
+  });
+
+  test('passes through 8-digit hex lowercased', () => {
+    assert.equal(normalizeHex('#3B82F6AA'), '#3b82f6aa');
+  });
+});
+
+// ── buildReverseMap tests ──────────────────────────────────────────────────────
+
+describe('buildReverseMap', () => {
+  test('builds reverse map from token file', async () => {
+    const raw = await readFile(join(FIXTURES, 'tokens.json'), 'utf8');
+    const json = JSON.parse(raw);
+    const flat = flattenTokens(json);
+    const reverseMap = buildReverseMap(flat);
+
+    // #3b82f6 → --color-primary (unique)
+    const blue = reverseMap.get('#3b82f6');
+    assert.ok(blue && blue.length === 1);
+    assert.equal(blue[0].name, '--color-primary');
+
+    // 16px → --space-md, --radius-lg, --font-size-md (collision)
+    const sixteenPx = reverseMap.get('16px');
+    assert.ok(sixteenPx && sixteenPx.length === 3);
+    const names16 = sixteenPx.map((t) => t.name);
+    assert.ok(names16.includes('--space-md'));
+    assert.ok(names16.includes('--radius-lg'));
+    assert.ok(names16.includes('--font-size-md'));
+  });
+
+  test('excludes alias tokens (var() values)', () => {
+    const json = {
+      color: {
+        base: { red: { $type: 'color', $value: '#ff0000' } },
+        brand: { $type: 'color', $value: '{color.base.red}' },
+      },
+    };
+    const flat = flattenTokens(json);
+    const reverseMap = buildReverseMap(flat);
+
+    // #ff0000 should map to --color-base-red only, not --color-brand
+    // (brand is an alias with value var(--color-base-red))
+    const red = reverseMap.get('#ff0000');
+    assert.ok(red && red.length === 1);
+    assert.equal(red[0].name, '--color-base-red');
+  });
+
+  test('includes normalized hex keys', async () => {
+    const raw = await readFile(join(FIXTURES, 'tokens.json'), 'utf8');
+    const json = JSON.parse(raw);
+    const flat = flattenTokens(json);
+    const reverseMap = buildReverseMap(flat);
+
+    // #ffffff is stored as #ffffff in tokens — lookup with #fff should also work
+    // because normalizeHex expands #fff → #ffffff
+    const white = reverseMap.get(normalizeHex('#fff'));
+    assert.ok(white);
+    assert.equal(white[0].name, '--color-surface');
+  });
+});
+
+// ── resolveToken tests ─────────────────────────────────────────────────────────
+
+describe('resolveToken', () => {
+  let reverseMap;
+
+  test.before(async () => {
+    const raw = await readFile(join(FIXTURES, 'tokens.json'), 'utf8');
+    const json = JSON.parse(raw);
+    const flat = flattenTokens(json);
+    reverseMap = buildReverseMap(flat);
+  });
+
+  test('resolves unique hex to a single token', () => {
+    const res = resolveToken('#3b82f6', 'color', reverseMap, true);
+    assert.ok(res.token);
+    assert.equal(res.token.name, '--color-primary');
+    assert.ok(!res.ambiguous);
+  });
+
+  test('resolves 3-digit hex via normalization', () => {
+    const res = resolveToken('#fff', 'background-color', reverseMap, true);
+    assert.ok(res.token);
+    assert.equal(res.token.name, '--color-surface');
+  });
+
+  test('returns empty for unknown hex', () => {
+    const res = resolveToken('#abcdef', 'color', reverseMap, true);
+    assert.ok(!res.token);
+    assert.ok(!res.ambiguous);
+  });
+
+  test('disambiguates 16px on padding → --space-md', () => {
+    const res = resolveToken('16px', 'padding', reverseMap, false);
+    assert.ok(res.token);
+    assert.equal(res.token.name, '--space-md');
+  });
+
+  test('disambiguates 16px on border-radius → --radius-lg', () => {
+    const res = resolveToken('16px', 'border-radius', reverseMap, false);
+    assert.ok(res.token);
+    assert.equal(res.token.name, '--radius-lg');
+  });
+
+  test('disambiguates 16px on font-size → --font-size-md', () => {
+    const res = resolveToken('16px', 'font-size', reverseMap, false);
+    assert.ok(res.token);
+    assert.equal(res.token.name, '--font-size-md');
+  });
+
+  test('returns ambiguous when no property affinity exists', () => {
+    // 'border' is in TOKEN_ENFORCED_PROPERTIES but not in PROPERTY_TOKEN_PREFIX
+    // 4px maps to --space-xs AND --radius-sm — can't disambiguate
+    const res = resolveToken('4px', 'border', reverseMap, false);
+    assert.ok(!res.token);
+    assert.ok(res.ambiguous);
+    assert.ok(res.ambiguous.length >= 2);
+  });
+
+  test('returns empty for unknown dimension value', () => {
+    const res = resolveToken('99px', 'padding', reverseMap, false);
+    assert.ok(!res.token);
+    assert.ok(!res.ambiguous);
+  });
+});
+
+// ── PostCSS fix mode tests ─────────────────────────────────────────────────────
+
+describe('PostCSS plugin fix mode', () => {
+  test('auto-fixes bare hex to var(--color-*)', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { color: #3b82f6; background-color: #10b981; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(css, { from: 'test.css' });
+
+    assert.ok(result.css.includes('var(--color-primary)'), `expected var(--color-primary) in: ${result.css}`);
+    assert.ok(result.css.includes('var(--color-secondary)'), `expected var(--color-secondary) in: ${result.css}`);
+    // No warnings for fixed values
+    const hexWarnings = result.warnings().filter((w) => w.text.includes('bare hex'));
+    assert.equal(hexWarnings.length, 0, `expected 0 bare-hex warnings after fix, got: ${hexWarnings.map((w) => w.text).join('; ')}`);
+  });
+
+  test('auto-fixes magic numbers using property-semantic disambiguation', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { padding: 16px; border-radius: 16px; font-size: 16px; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(css, { from: 'test.css' });
+
+    assert.ok(result.css.includes('var(--space-md)'), `expected var(--space-md) for padding in: ${result.css}`);
+    assert.ok(result.css.includes('var(--radius-lg)'), `expected var(--radius-lg) for border-radius in: ${result.css}`);
+    assert.ok(result.css.includes('var(--font-size-md)'), `expected var(--font-size-md) for font-size in: ${result.css}`);
+    const magicWarnings = result.warnings().filter((w) => w.text.includes('magic number'));
+    assert.equal(magicWarnings.length, 0, `expected 0 magic-number warnings after fix, got: ${magicWarnings.map((w) => w.text).join('; ')}`);
+  });
+
+  test('auto-fixes bad-fixable.css to match expected-fixed.css', async () => {
+    const postcss = (await import('postcss')).default;
+    const inputCss = await readFile(join(FIXTURES, 'bad-fixable.css'), 'utf8');
+    const expectedCss = await readFile(join(FIXTURES, 'expected-fixed.css'), 'utf8');
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(inputCss, { from: 'bad-fixable.css' });
+
+    // Compare declaration values (ignoring whitespace/formatting differences)
+    // by extracting all "prop: value;" pairs from both
+    const extractDecls = (css) => {
+      const decls = [];
+      const re = /([\w-]+):\s*([^;]+);/g;
+      let m;
+      while ((m = re.exec(css)) !== null) {
+        if (!m[1].startsWith('--')) {
+          decls.push(`${m[1]}: ${m[2].trim()}`);
+        }
+      }
+      return decls;
+    };
+
+    const actualDecls = extractDecls(result.css);
+    const expectedDecls = extractDecls(expectedCss);
+    assert.deepEqual(actualDecls, expectedDecls,
+      `fixed CSS declarations don't match expected.\nActual: ${JSON.stringify(actualDecls, null, 2)}\nExpected: ${JSON.stringify(expectedDecls, null, 2)}`);
+  });
+
+  test('does NOT fix ambiguous values — warns with "(ambiguous: ...)" instead', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { border: 4px solid #3b82f6; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(css, { from: 'test.css' });
+
+    // 4px on border is ambiguous (maps to --space-xs AND --radius-sm, no affinity)
+    // Should warn but NOT fix the 4px
+    assert.ok(result.css.includes('4px'), `expected 4px to remain unfixed in: ${result.css}`);
+    const ambigWarnings = result.warnings().filter((w) => w.text.includes('ambiguous'));
+    assert.ok(ambigWarnings.length >= 1, `expected ≥1 ambiguous warning, got: ${result.warnings().map((w) => w.text).join('; ')}`);
+    // But #3b82f6 IS fixable (unique hex) — should be fixed
+    assert.ok(result.css.includes('var(--color-primary)'), `expected #3b82f6 to be fixed to var(--color-primary) in: ${result.css}`);
+  });
+
+  test('does NOT fix undeclared var() refs — only warns', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { color: var(--unknown-token); padding: 12px; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(css, { from: 'test.css' });
+
+    // var(--unknown-token) should remain unfixed
+    assert.ok(result.css.includes('var(--unknown-token)'), `expected var(--unknown-token) to remain in: ${result.css}`);
+    // 12px has no matching token → should remain unfixed
+    assert.ok(result.css.includes('12px'), `expected 12px to remain unfixed in: ${result.css}`);
+    // But there should be warnings for both
+    const warnings = result.warnings();
+    assert.ok(warnings.some((w) => w.text.includes('not declared')));
+    assert.ok(warnings.some((w) => w.text.includes('magic number')));
+  });
+
+  test('fix: false (default) does not modify CSS', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { color: #3b82f6; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json') }),
+    ]).process(css, { from: 'test.css' });
+
+    assert.ok(result.css.includes('#3b82f6'), `expected #3b82f6 to remain when fix is not enabled: ${result.css}`);
+    const hexWarnings = result.warnings().filter((w) => w.text.includes('bare hex'));
+    assert.ok(hexWarnings.length >= 1);
+  });
+
+  test('fixes hex in compound values (e.g. "1px solid #ef4444")', async () => {
+    const postcss = (await import('postcss')).default;
+    const css = '.x { border: 1px solid #ef4444; }';
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: join(FIXTURES, 'tokens.json'), fix: true }),
+    ]).process(css, { from: 'test.css' });
+
+    assert.ok(result.css.includes('var(--color-danger)'), `expected var(--color-danger) in: ${result.css}`);
+    assert.ok(!result.css.includes('#ef4444'), `expected #ef4444 to be replaced in: ${result.css}`);
+  });
+});
+
+// ── stylelint plugin tests ─────────────────────────────────────────────────────
+
+describe('stylelint plugin', () => {
+  const STYLELINT_CONFIG = {
+    plugins: [join(__dirname, '..', 'dist', 'index.js')],
+    rules: {
+      'designesy/no-bare-hex': [true, { tokensFile: join(FIXTURES, 'tokens.json') }],
+      'designesy/no-magic-number': [true, { tokensFile: join(FIXTURES, 'tokens.json') }],
+      'designesy/no-undeclared-var': [true, { tokensFile: join(FIXTURES, 'tokens.json') }],
+    },
+  };
+
+  test('detects bare hex via stylelint', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { color: #3b82f6; background: #10b981; }',
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(results.errored, 'expected stylelint to error on bare hex');
+  });
+
+  test('detects magic numbers via stylelint', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { padding: 16px; margin: 24px; }',
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(results.errored, 'expected stylelint to error on magic numbers');
+  });
+
+  test('detects undeclared var() refs via stylelint', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { color: var(--nonexistent-token); }',
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(results.errored, 'expected stylelint to error on undeclared var()');
+  });
+
+  test('produces no errors for good CSS', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const goodCss = await readFile(join(FIXTURES, 'good.css'), 'utf8');
+    const results = await stylelint.lint({
+      code: goodCss,
+      codeFilename: 'good.css',
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(!results.errored, `expected no errors for good.css, got: ${results.output}`);
+  });
+
+  test('stylelint --fix auto-replaces bare hex with var(--token)', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { color: #3b82f6; background-color: #10b981; }',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(!results.errored, 'expected no errors after fix');
+    const fixedCode = results.code;
+    assert.ok(fixedCode.includes('var(--color-primary)'), `expected var(--color-primary) in fixed code: ${fixedCode}`);
+    assert.ok(fixedCode.includes('var(--color-secondary)'), `expected var(--color-secondary) in fixed code: ${fixedCode}`);
+    assert.ok(!fixedCode.includes('#3b82f6'), `expected #3b82f6 to be removed: ${fixedCode}`);
+  });
+
+  test('stylelint --fix auto-replaces magic numbers with var(--token)', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { padding: 16px; border-radius: 16px; font-size: 16px; }',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(!results.errored, 'expected no errors after fix');
+    const fixedCode = results.code;
+    assert.ok(fixedCode.includes('var(--space-md)'), `expected var(--space-md) for padding: ${fixedCode}`);
+    assert.ok(fixedCode.includes('var(--radius-lg)'), `expected var(--radius-lg) for border-radius: ${fixedCode}`);
+    assert.ok(fixedCode.includes('var(--font-size-md)'), `expected var(--font-size-md) for font-size: ${fixedCode}`);
+  });
+
+  test('stylelint --fix does NOT fix undeclared var() refs', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { color: var(--nonexistent-token); }',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(results.errored, 'expected undeclared-var to still error after fix attempt');
+    assert.ok(results.code.includes('var(--nonexistent-token)'), `expected var(--nonexistent-token) to remain: ${results.code}`);
+  });
+
+  test('stylelint --fix does NOT fix ambiguous values', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { border: 4px solid #3b82f6; }',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+    const fixedCode = results.code;
+    // 4px on border is ambiguous (maps to --space-xs AND --radius-sm, no affinity)
+    assert.ok(fixedCode.includes('4px'), `expected 4px to remain unfixed: ${fixedCode}`);
+    // But #3b82f6 IS fixable — should be fixed
+    assert.ok(fixedCode.includes('var(--color-primary)'), `expected #3b82f6 to be fixed: ${fixedCode}`);
+  });
+
+  test('stylelint --fix fixes duration values', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: '.x { transition-duration: 150ms; }',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+    assert.ok(!results.errored, 'expected no errors after fixing duration');
+    assert.ok(results.code.includes('var(--duration-fast)'), `expected var(--duration-fast): ${results.code}`);
+  });
+
+  test('stylelint --fix on the full bad-fixable fixture matches expected-fixed', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const inputCss = await readFile(join(FIXTURES, 'bad-fixable.css'), 'utf8');
+    const expectedCss = await readFile(join(FIXTURES, 'expected-fixed.css'), 'utf8');
+    const results = await stylelint.lint({
+      code: inputCss,
+      codeFilename: 'bad-fixable.css',
+      fix: true,
+      config: STYLELINT_CONFIG,
+    });
+
+    // Extract declarations for comparison
+    const extractDecls = (css) => {
+      const decls = [];
+      const re = /([\w-]+):\s*([^;]+);/g;
+      let m;
+      while ((m = re.exec(css)) !== null) {
+        if (!m[1].startsWith('--')) {
+          decls.push(`${m[1]}: ${m[2].trim()}`);
+        }
+      }
+      return decls;
+    };
+
+    const actualDecls = extractDecls(results.code);
+    const expectedDecls = extractDecls(expectedCss);
+    // Note: border has "2px" which is ambiguous and stays — so border line
+    // will differ (expected has "2px solid var(--color-danger)" and actual
+    // should also have that since 2px doesn't match any token)
+    assert.deepEqual(actualDecls, expectedDecls,
+      `stylelint fixed CSS doesn't match expected.\nActual: ${JSON.stringify(actualDecls, null, 2)}\nExpected: ${JSON.stringify(expectedDecls, null, 2)}`);
   });
 });

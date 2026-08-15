@@ -1,0 +1,8 @@
+/* Ambiguous CSS — values that match multiple tokens with no property-semantic disambiguation */
+
+.ambiguous {
+  /* 4px on border → 'border' is not in PROPERTY_TOKEN_PREFIX, so 4px
+     (which maps to --space-xs AND --radius-sm) can't be disambiguated.
+     Should warn with "(ambiguous: ...)" but NOT auto-fix. */
+  border: 4px solid #3b82f6;
+}

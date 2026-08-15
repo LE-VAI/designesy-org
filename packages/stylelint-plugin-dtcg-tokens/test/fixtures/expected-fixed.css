@@ -1,0 +1,24 @@
+/* Fixable CSS — each violation maps to exactly 1 token (after disambiguation) */
+
+/* Bare hex → var(--color-*) — all unique hex values */
+.btn {
+  color: var(--color-primary);
+  background-color: var(--color-secondary);
+  border: 2px solid var(--color-danger);
+}
+
+/* Magic number → var(--space-*) — disambiguated by property affinity */
+.card {
+  padding: var(--space-md);
+  margin: var(--space-lg);
+}
+
+/* Magic number → var(--radius-*) — disambiguated by property affinity */
+.rounded {
+  border-radius: var(--radius-lg);
+}
+
+/* Magic number → var(--duration-*) — unique duration values */
+.transition {
+  transition-duration: var(--duration-fast);
+}
