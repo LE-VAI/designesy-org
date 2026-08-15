@@ -343,26 +343,22 @@ html {
   -webkit-tap-highlight-color: transparent;
   /* Reserve scrollbar gutter space even on pages without overflow.
      Without this, navigating from a tall page (homepage, scrollbar visible)
-     to a short page (leaderboard, contract, kits, docs — no scrollbar) makes
-     the scrollbar disappear and shifts all content leftward by ~15-17px.
+     to a short page (no scrollbar) makes the scrollbar disappear and shifts
+     all content leftward by ~15px.
 
-     Set on html only. Do NOT also set scrollbar-gutter or --scrollbar-width
-     padding on body — that causes double-reservation (each reserves its own
-     gutter, adding ~26-34px of unnecessary right padding). */
+     overflow-y: auto is required here — without it, overflow-y defaults to
+     visible, and scrollbar-gutter: stable has no effect because the browser
+     treats the scrollbar as belonging to the viewport, not the html element.
+     With overflow-y: auto, the html element "owns" the scrollbar and
+     scrollbar-gutter: stable reserves the gutter space on every page.
+
+     Do NOT also set scrollbar-gutter on body — that causes double-reservation. */
+  overflow-y: auto;
   scrollbar-gutter: stable;
-  /* Sub-pixel drift safety net — browser zoom scales every CSS px value then
-     floors to integer. At zoom-OUT (25–75%), flooring always loses pixels,
-     so children can sum wider than their container → horizontal scroll.
-     overflow-x: clip (NOT hidden) catches that drift without creating a
-     scroll container. This is critical: overflow-x:hidden makes html a
-     scroll container, which breaks scrollbar-gutter:stable propagation to
-     the viewport — the gutter is applied to html's own (hidden) scrollbar
-     instead of the viewport scrollbar, causing a 13-17px layout shift on
-     route navigation when the viewport scrollbar appears/disappears.
-     overflow-x:clip prevents horizontal scroll WITHOUT creating a scroll
-     container, so scrollbar-gutter:stable correctly propagates to the
-     viewport and reserves the gutter regardless of scrollbar visibility.
-     Supported: Chrome 90+, Firefox 81+, Safari 16+ — all evergreen 2026. */
+  /* overflow-x: clip prevents horizontal scroll from sub-pixel drift at
+     browser zoom-out. Use clip (NOT hidden) — hidden creates a scroll
+     container that breaks scrollbar-gutter propagation. clip does not.
+     Supported: Chrome 90+, Firefox 81+, Safari 16+. */
   overflow-x: clip;
 }
 
