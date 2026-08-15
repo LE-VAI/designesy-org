@@ -334,7 +334,7 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                100% A
+                95.3% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
                 /export/dtcg · 10/10 checks pass · self-verified
@@ -358,10 +358,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                100% A
+                95.3% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                40-check engine · v01–v41 all pass
+                40-check engine · 33 PASS / 0 FAIL / 3 WARN / 1 SKIP / 3 MANUAL
               </p>
             </div>
           </div>
