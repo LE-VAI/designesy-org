@@ -6,6 +6,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-08-15
+
+### Fixed
+
+- **Critical: safeLookup did not honor `options.all` (Node v24 regression).**
+  Node v24's `net` layer passes `{ all: true }` to the custom `lookup` function,
+  expecting the callback to receive an array of `{ address, family }` objects.
+  The previous `safeLookup` always returned a single `(address, family)` tuple,
+  causing `ERR_INVALID_IP_ADDRESS: Invalid IP address: undefined` on every fetch.
+  This made every `httpsFetch` fail silently, returning empty HTML/CSS, which
+  caused all CSS-text and token-based checks to report false FAILs/WARNs against
+  empty input (0 tokens extracted, no `<h1>` found, no `:focus-visible` found,
+  no `prefers-reduced-motion` found, no duration tokens found).
+  The fix: `safeLookup` now checks `options.all` and returns an array when true.
+  Impact: designesy.org contract score went from 59.4 F (0 tokens) to 78.1 C
+  (146 tokens extracted) with the same source CSS — the engine was blind, not
+  the site.
+
+## [1.0.2] — 2026-08-14
+
+### Security
+
+- **DNS rebinding SSRF mitigation (TOCTOU-safe).** The SSRF guard now validates
+  resolved IP addresses *inside the connection path* via a custom `lookup`
+  function (`safeLookup`). This eliminates the time-of-check/time-of-use race
+  (CWE-367) that made the previous resolve-then-fetch approach vulnerable to
+  DNS rebinding attacks. A hostname like `localtest.me` (which resolves to
+  `127.0.0.1`) is now blocked before the socket connects. References: OWASP
+  SSRF Prevention Cheat Sheet (DNS pinning), CVE-2026-27826.
+
+### Added
+
+- **`node:test` automated test suite (36 tests, zero dependencies).** Three
+  test files covering SSRF guard unit tests (12), scoring engine contract
+  tests (8), CLI integration tests (8), and engine parity tests (4). Uses
+  `node --test` discovery with `node:assert/strict`. Run via `npm test` in
+  `packages/score`.
+- **Engine parity test.** Compares the npm engine output against the live
+  `designesy.org/api/score` endpoint — catches structural drift (check IDs,
+  check count, grade) and score drift (> 5 points triggers a sync warning).
+
+### Changed
+
+- **`@designesy/cli` path resolution refactored.** Replaced the 6-candidate
+  filesystem path heuristic with `createRequire(import.meta.url).resolve()`,
+  which uses Node's built-in module resolution. Handles npm flat-hoisting,
+  pnpm virtual stores, and yarn PnP correctly. Bumped to 0.2.0.
+- **`@designesy/score` bumped to 0.2.0.** Includes the safeLookup fix and
+  test suite.
+
 ## [1.0.1] — 2026-08-14
 
 ### Fixed
@@ -102,5 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Initial API client release
 - 40-check engine running server-side at designesy.org
 
+[1.0.3]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.3
+[1.0.2]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.2
+[1.0.1]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.1
 [1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.0
 [0.4.2]: https://github.com/LE-VAI/designesy-org/compare/v0.4.0...designesy-score%401.0.0

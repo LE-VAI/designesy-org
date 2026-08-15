@@ -1,6 +1,6 @@
 {
   "name": "designesy-score",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Score any URL against the Designesy 40-check design-contract engine — runs locally, no server required. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy",
