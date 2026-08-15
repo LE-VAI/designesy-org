@@ -14,7 +14,6 @@ import { EffectEnhancer } from './lib/effect-enhancer';
 import { MagneticCursor } from './lib/magnetic-cursor';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
-import { ScrollbarCompensation } from './lib/scrollbar-compensation';
 import {
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
@@ -140,7 +139,6 @@ export default function RootLayout({
       </head>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-        <ScrollbarCompensation />
         <CuelumeBinder />
         <BackButton />
         <DirectorDock />
