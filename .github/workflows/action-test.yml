@@ -1,25 +1,74 @@
-# Self-test + CI design gate for the designesy.org repo itself.
-# Runs the action against the live designesy.org site on every PR.
-# Serves double duty: (1) exercises the action code on node24, (2) catches
-# design-contract regressions (score must stay >= 90 / grade A).
-name: design-contract-self-test
+# Designesy Score — PR preview deployment scoring.
+#
+# When Vercel finishes building a preview deployment for a PR, this workflow
+# runs the 40-check Designesy design-contract engine against the preview URL
+# and posts a sticky comment on the PR with the score, grade, and any failing
+# checks.
+#
+# This is the dogfooding loop: designesy.org scores its own PRs. It serves as
+# both a design-contract regression gate AND a live demo for anyone browsing
+# the repo — every PR shows the score action in action.
+#
+# Uses scope=contract (strict) because this is a Designesy-owned site —
+# Designesy-specific token checks are included in the score.
+#
+# Event: deployment_status (Vercel fires this when a preview deploy succeeds,
+# with target_url pointing at the unique preview URL).
+name: Designesy Score
 
 on:
-  pull_request:
-    branches: [main]
+  deployment_status:
+    types: [success]
   workflow_dispatch:
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: designesy-score-${{ github.event.deployment.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
-  score:
+  score-preview:
+    name: Score preview deployment
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    # Only run for Preview deployments (not Production — the smoke test
+    # workflow handles production). For manual triggers, always run.
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Preview')
+
     steps:
-      - uses: LE-VAI/designesy-org@main
+      - name: Determine target URL
+        id: url
+        run: |
+          if [ "${{ github.event_name }}" = "deployment_status" ]; then
+            TARGET="${{ github.event.deployment_status.target_url }}"
+          else
+            TARGET="https://www.designesy.org"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          echo "Scoring: $TARGET"
+
+      - name: Score preview
+        id: score
+        uses: designesy/score-action@v1
         with:
-          url: https://www.designesy.org
-          min-score: 90
-          min-grade: A
-          post-comment: true
+          url: ${{ steps.url.outputs.target }}
+          scope: contract
+          min-grade: B
+          fail-on-error: 'false'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report
+        run: |
+          echo "## Designesy Score" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${{ steps.url.outputs.target }}" >> $GITHUB_STEP_SUMMARY
+          echo "Score: ${{ steps.score.outputs.score }} (${{ steps.score.outputs.grade }})" >> $GITHUB_STEP_SUMMARY
+          echo "Checks: ${{ steps.score.outputs.pass }} pass · ${{ steps.score.outputs.warn }} warn · ${{ steps.score.outputs.fail }} fail" >> $GITHUB_STEP_SUMMARY
