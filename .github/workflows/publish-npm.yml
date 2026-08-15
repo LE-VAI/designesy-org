@@ -1,0 +1,76 @@
+name: Publish to npm
+
+# Auto-publishes @designesy/tokens to npmjs.org on version tags, with
+# cryptographically signed build provenance (npm --provenance).
+#
+# Provenance uses GitHub OIDC + Sigstore keyless signing — no stored secrets.
+# Consumers can verify the package was built from this exact source:
+#   gh attestation verify @designesy/tokens@0.2.0 -o LE-VAI
+#
+# Package source: packages/tokens/
+# npm package: https://www.npmjs.com/package/@designesy/tokens
+#
+# Prerequisites:
+#   - npm provenance requires a PUBLIC repo (this one is public ✓)
+#   - Node >= 18, npm >= 9.5 (we use Node 22 ✓)
+#   - The package must be public in package.json (not private)
+#   - NPM_TOKEN secret must be set (automation token or granular access token)
+#   - id-token: write enables the --provenance flag (OIDC → Sigstore keyless)
+
+on:
+  push:
+    tags: ["tokens-v*"]      # triggers on tags like tokens-v0.2.0
+  workflow_dispatch:         # allow manual re-publish from the Actions tab
+
+permissions:
+  contents: read
+  id-token: write            # REQUIRED for npm provenance (OIDC + Sigstore)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Sync package version with tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/tokens-v}
+          cd packages/tokens
+          npm version "$VERSION" --no-git-tag-version --no-commit-hooks
+          echo "Synced package.json version -> $VERSION"
+
+      - name: Build
+        run: |
+          cd packages/tokens
+          npm ci
+          npm run build
+
+      - name: Run tests
+        run: |
+          cd packages/tokens
+          npm test
+
+      - name: Publish to npm with provenance
+        run: |
+          cd packages/tokens
+          # --provenance signs the package with GitHub OIDC + Sigstore.
+          # --access public ensures scoped packages are publicly readable.
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Confirm publication
+        run: |
+          sleep 5
+          VERSION=${GITHUB_REF#refs/tags/tokens-v}
+          npm view @designesy/tokens@$VERSION version || echo "Version may take a few minutes to appear"

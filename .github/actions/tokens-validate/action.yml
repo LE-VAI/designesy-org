@@ -1,5 +1,5 @@
 name: 'Designesy Tokens Validator'
-description: 'Validate a DTCG 2025.10 design token file against 10 conformance checks. Zero dependencies, works offline.'
+description: 'Validate a DTCG 2025.10 design token file against 20 conformance checks. Zero dependencies, works offline.'
 author: 'Designesy'
 branding:
   icon: 'check-circle'
@@ -45,4 +45,4 @@ runs:
           ARGS="$ARGS --min-score ${{ inputs.min-score }}"
         fi
 
-        npx --yes @designesy/tokens@latest $ARGS
+        npx --yes @designesy/tokens@0.2.0 $ARGS

@@ -29,6 +29,15 @@ updates:
     commit-message:
       prefix: deps
       prefix-development: deps-dev
+    # Cooldown (shipped July 2025) — delay PR creation until a version has
+    # been published for N days. Most compromised packages are yanked within
+    # days, so a 3-5 day cooldown quietly filters a class of supply-chain
+    # attacks. Security updates always bypass cooldown.
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      semver-major-days: 60
     groups:
       # Group minor/patch updates together to reduce PR noise.
       # Security updates always get their own PR regardless of grouping.
@@ -77,6 +86,11 @@ updates:
       - python
     commit-message:
       prefix: deps
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      semver-major-days: 60
     groups:
       mcp:
         patterns:
@@ -98,3 +112,8 @@ updates:
       - github-actions
     commit-message:
       prefix: ci
+    # SHA-pinned actions still get bump PRs because every pin has a trailing
+    # "# vN" tag comment that Dependabot recognizes. Cooldown adds a buffer
+    # so a compromised action tag doesn't get auto-PR'd same-day.
+    cooldown:
+      default-days: 5

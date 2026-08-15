@@ -57,7 +57,7 @@ jobs:
 
       - name: Score preview
         id: score
-        uses: designesy/score-action@v1
+        uses: designesy/score-action@699c744ea7edf04f2ba25d82019eafc9cb750ca8 # v1
         with:
           url: ${{ steps.url.outputs.target }}
           scope: contract
