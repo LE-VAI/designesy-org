@@ -5,6 +5,39 @@ All notable changes to @designesy/stylelint-plugin-dtcg-tokens are documented he
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-08-15
+
+### Added — Auto-fix mode
+
+Both the stylelint plugin and the standalone PostCSS plugin now support `--fix`:
+
+- **stylelint**: `stylelint --fix` natively auto-replaces unambiguous bare hex and magic numbers with `var(--token)` references. Uses the real stylelint plugin API (`createPlugin`, `report({ fix })`, `meta.fixable`).
+- **PostCSS**: pass `{ fix: true }` to the plugin options to mutate values in-place.
+
+### Auto-fix behavior
+
+| Rule | Fixable? | How |
+|---|---|---|
+| no-bare-hex | ✅ When hex maps to exactly 1 color token | `#3b82f6` → `var(--color-primary)` |
+| no-magic-number | ✅ When value maps to exactly 1 token after property-semantic disambiguation | `16px` on `padding` → `var(--space-md)`, `16px` on `border-radius` → `var(--radius-lg)` |
+| no-undeclared-var | ❌ Never — can't infer what the author meant to reference |
+
+When a value maps to multiple tokens even after disambiguation, the violation is **warned but not fixed** — the human decides.
+
+### New exports
+
+- `normalizeHex()` — normalizes hex for lookup (lowercase + 3-digit → 6-digit expansion)
+- `buildReverseMap()` — builds a reverse value→token map from flattened tokens
+- `resolveToken()` — resolves a CSS value to a single token using property-semantic disambiguation
+- `PROPERTY_TOKEN_PREFIX` — maps CSS property names to expected token-group prefixes
+
+### Other changes
+
+- Added `ms` (milliseconds) to magic number detection — `transition-duration: 150ms` is now flagged
+- stylelint plugin rewritten to use `createPlugin` + `report()` + `meta.fixable` (was ad-hoc `result.warn()`)
+- Added `stylelint` as a devDependency for testing
+- 61 tests (up from 29) — added reverse-map unit tests, PostCSS fix tests, and stylelint fix tests
+
 ## [0.1.1] — 2026-08-15
 
 ### Changed

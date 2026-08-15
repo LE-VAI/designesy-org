@@ -7,7 +7,7 @@
 [![DTCG](https://img.shields.io/badge/DTCG-2025.10-blue)](https://www.designtokens.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-green)](./package.json)
 
-stylelint + PostCSS plugin that enforces DTCG 2025.10 design token usage in CSS. Catches bare hex colors, magic numbers, and undeclared `var()` references at lint time — before they reach production.
+stylelint + PostCSS plugin that enforces DTCG 2025.10 design token usage in CSS. Catches bare hex colors, magic numbers, and undeclared `var()` references at lint time — before they reach production. Supports `--fix` to auto-replace unambiguous bare values with `var(--token)` references.
 
 ## Why
 
@@ -108,6 +108,43 @@ export default {
 ```
 
 Warnings are emitted via PostCSS's `node.warn()` — they appear in your build output and can be collected by downstream tools.
+
+## Auto-fix (`--fix`)
+
+Both the stylelint plugin and the standalone PostCSS plugin support auto-fixing unambiguous violations:
+
+### stylelint
+
+```bash
+npx stylelint --fix "**/*.css"
+```
+
+### PostCSS
+
+```js
+dtcgTokenCheck({
+  tokensFile: './design-tokens.json',
+  fix: true,  // ← auto-replace bare values in-place
+})
+```
+
+### What gets fixed
+
+| Rule | Auto-fixed? | How |
+|---|---|---|
+| no-bare-hex | ✅ When the hex maps to exactly 1 color token | `#3b82f6` → `var(--color-primary)` |
+| no-magic-number | ✅ When the value maps to exactly 1 token after property-semantic disambiguation | `16px` on `padding` → `var(--space-md)`, `16px` on `border-radius` → `var(--radius-lg)` |
+| no-undeclared-var | ❌ Never — can't infer what the author meant to reference |
+
+### Property-semantic disambiguation
+
+Dimension values often collide across token groups — `16px` might be `--space-md`, `--radius-lg`, AND `--font-size-md`. The fix engine uses the CSS property name to pick the right group:
+
+- `padding: 16px` → space group → `var(--space-md)`
+- `border-radius: 16px` → radius group → `var(--radius-lg)`
+- `font-size: 16px` → font-size group → `var(--font-size-md)`
+
+When a value maps to multiple tokens even after disambiguation (e.g. `4px` on the `border` shorthand, which could be space or radius), the violation is **warned but not fixed** — you decide which token to use.
 
 ### Framework integrations
 
@@ -228,7 +265,10 @@ Both DTCG alias forms are supported:
 ## Programmatic API
 
 ```typescript
-import { flattenTokens, extractVarRefs, isBareHex, isMagicNumber } from '@designesy/stylelint-plugin-dtcg-tokens/tokens';
+import {
+  flattenTokens, extractVarRefs, isBareHex, isMagicNumber,
+  normalizeHex, buildReverseMap, resolveToken,
+} from '@designesy/stylelint-plugin-dtcg-tokens/tokens';
 
 // Flatten a DTCG token file into CSS custom property names
 const tokens = flattenTokens(parsedTokenJson);
@@ -244,6 +284,18 @@ isBareHex('var(--color-danger)'); // false
 // Check if a value is a magic number on an enforced property
 isMagicNumber('padding', '12px'); // true
 isMagicNumber('padding', 'var(--space-sm)'); // false
+
+// Build a reverse value→token map for auto-fix lookups
+const reverseMap = buildReverseMap(tokens);
+reverseMap.get('#3b82f6'); // [FlattenedToken] — color tokens matching this hex
+
+// Resolve a CSS value to a single token using property-semantic disambiguation
+resolveToken('16px', 'padding', reverseMap, false); // { token: { name: '--space-md', ... } }
+resolveToken('16px', 'border-radius', reverseMap, false); // { token: { name: '--radius-lg', ... } }
+resolveToken('4px', 'border', reverseMap, false); // { ambiguous: [...] } — can't disambiguate
+
+// Normalize hex for lookup (lowercase + expand 3-digit to 6-digit)
+normalizeHex('#FFF'); // '#ffffff'
 ```
 
 ## GitHub Actions

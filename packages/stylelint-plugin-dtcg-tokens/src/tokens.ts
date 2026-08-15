@@ -234,8 +234,8 @@ export function isMagicNumber(prop: string, value: string): boolean {
   if (/^(inherit|initial|unset|revert|auto|none|currentcolor|transparent)$/i.test(value.trim())) return false;
   // Skip if it's a function call (calc, clamp, min, max — these are intentional)
   if (/^(calc|clamp|min|max|env|constant)\s*\(/i.test(value.trim())) return false;
-  // Check for bare px or rem values
-  return /\b\d+(?:\.\d+)?(?:px|rem)\b/.test(value);
+  // Check for bare px, rem, or ms values
+  return /\b\d+(?:\.\d+)?(?:px|rem|ms)\b/.test(value);
 }
 
 /**
@@ -244,10 +244,133 @@ export function isMagicNumber(prop: string, value: string): boolean {
 export function extractMagicNumbers(prop: string, value: string): string[] {
   if (!TOKEN_ENFORCED_PROPERTIES.has(prop)) return [];
   const matches: string[] = [];
-  const re = /\b(\d+(?:\.\d+)?(?:px|rem))\b/g;
+  const re = /\b(\d+(?:\.\d+)?(?:px|rem|ms))\b/g;
   let m;
   while ((m = re.exec(value)) !== null) {
     matches.push(m[0]);
   }
   return matches;
+}
+
+// ── Auto-fix support: reverse value→token map ─────────────────────────────────
+
+/**
+ * Normalize a hex color for reverse-map lookup.
+ * Lowercases and expands 3-digit hex to 6-digit (#fff → #ffffff),
+ * 4-digit to 8-digit (#fffa → #ffffffaa).
+ */
+export function normalizeHex(hex: string): string {
+  let h = hex.toLowerCase();
+  if (/^#[0-9a-f]{3}$/.test(h)) {
+    h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  }
+  if (/^#[0-9a-f]{4}$/.test(h)) {
+    h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3] + h[4] + h[4];
+  }
+  return h;
+}
+
+/** Normalize a token value for reverse-map lookup. */
+function normalizeValueForLookup(value: string, type?: string): string {
+  if (type === 'color' || /^#[0-9a-fA-F]{3,8}$/.test(value)) {
+    return normalizeHex(value);
+  }
+  return value.trim().toLowerCase();
+}
+
+/**
+ * Maps CSS property names to the token-group prefixes they expect.
+ * Used to disambiguate dimension values that map to multiple token groups
+ * (e.g. 16px → --space-md, --radius-lg, --font-size-md).
+ *
+ * When a property's affinity prefixes are known, only tokens whose names
+ * start with one of those prefixes are considered for auto-fix.
+ */
+export const PROPERTY_TOKEN_PREFIX: Record<string, string[]> = {
+  'padding': ['space'], 'padding-top': ['space'], 'padding-right': ['space'],
+  'padding-bottom': ['space'], 'padding-left': ['space'],
+  'margin': ['space'], 'margin-top': ['space'], 'margin-right': ['space'],
+  'margin-bottom': ['space'], 'margin-left': ['space'],
+  'gap': ['space'], 'row-gap': ['space'], 'column-gap': ['space'],
+  'top': ['space'], 'right': ['space'], 'bottom': ['space'], 'left': ['space'],
+  'width': ['space'], 'height': ['space'],
+  'min-width': ['space'], 'min-height': ['space'],
+  'max-width': ['space'], 'max-height': ['space'],
+  'line-height': ['space'], 'letter-spacing': ['space'], 'word-spacing': ['space'],
+  'border-radius': ['radius'],
+  'border-top-left-radius': ['radius'], 'border-top-right-radius': ['radius'],
+  'border-bottom-left-radius': ['radius'], 'border-bottom-right-radius': ['radius'],
+  'font-size': ['font-size'],
+  'transition-duration': ['duration'], 'animation-duration': ['duration'],
+};
+
+/** Result of attempting to resolve a CSS value to a design token. */
+export interface TokenResolution {
+  token?: FlattenedToken;
+  ambiguous?: FlattenedToken[];
+}
+
+/**
+ * Build a reverse value→token map from flattened tokens.
+ * Keys are normalized values; values are arrays of FlattenedToken
+ * (multiple tokens may share the same value, e.g. 16px → space-md + radius-lg).
+ *
+ * Alias tokens (values starting with `var(`) are excluded — their
+ * underlying target is already in the map under its own value.
+ */
+export function buildReverseMap(
+  tokens: Map<string, FlattenedToken>,
+): Map<string, FlattenedToken[]> {
+  const reverseMap = new Map<string, FlattenedToken[]>();
+
+  for (const token of tokens.values()) {
+    if (token.value.startsWith('var(')) continue;
+    const key = normalizeValueForLookup(token.value, token.type);
+    if (!key) continue;
+
+    const existing = reverseMap.get(key);
+    if (existing) {
+      existing.push(token);
+    } else {
+      reverseMap.set(key, [token]);
+    }
+  }
+
+  return reverseMap;
+}
+
+/**
+ * Resolve a CSS value to a single design token for auto-fix.
+ *
+ * For hex colors: normalizes and looks up directly. Color hex values are
+ * typically unique, so disambiguation is rarely needed.
+ *
+ * For dimensions/durations: looks up the raw value, then filters by
+ * the property's token-group affinity (PROPERTY_TOKEN_PREFIX) when
+ * multiple candidates exist.
+ *
+ * Returns { token } when unambiguous, { ambiguous } when multiple
+ * candidates remain after disambiguation, or {} when no match.
+ */
+export function resolveToken(
+  value: string,
+  prop: string,
+  reverseMap: Map<string, FlattenedToken[]>,
+  isHex: boolean,
+): TokenResolution {
+  const key = isHex ? normalizeHex(value) : value.trim().toLowerCase();
+  const candidates = reverseMap.get(key);
+  if (!candidates || candidates.length === 0) return {};
+  if (candidates.length === 1) return { token: candidates[0] };
+
+  // Multiple candidates — try property-semantic disambiguation
+  const prefixes = PROPERTY_TOKEN_PREFIX[prop];
+  if (prefixes) {
+    const filtered = candidates.filter((t) =>
+      prefixes.some((p) => t.name === `--${p}` || t.name.startsWith(`--${p}-`)),
+    );
+    if (filtered.length === 1) return { token: filtered[0] };
+  }
+
+  return { ambiguous: candidates };
 }
