@@ -1238,7 +1238,7 @@ export default function MethodologyPage() {
             <p>
               Every leaderboard site is scored by two independent raters that
               never see each other&rsquo;s results: the Designesy engine
-              (accessibility category &ge; 60 = pass) and axe-core 4.10.2,
+              (accessibility category &ge; 60 = pass) and axe-core 4.12.1,
               the industry-standard WCAG engine, injected into a real browser
               via CDP. Full matrix + kappa:{' '}
               <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/blind-comparison-report.md">

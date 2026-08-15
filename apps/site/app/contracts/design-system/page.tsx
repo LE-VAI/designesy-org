@@ -180,7 +180,7 @@ export default function DesignSystemContractPage() {
             <div className="token-table-row" role="row">
               <code role="cell">Live proof</code>
               <span role="cell">—</span>
-              <span role="cell">designesy.org/sgrade — any URL, live grade</span>
+              <span role="cell">designesy.org/score — any URL, live grade</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Agent skill</code>
