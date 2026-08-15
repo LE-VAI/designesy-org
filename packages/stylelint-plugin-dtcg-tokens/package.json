@@ -1,0 +1,86 @@
+{
+  "name": "@designesy/stylelint-plugin-dtcg-tokens",
+  "version": "0.1.0",
+  "description": "stylelint + PostCSS plugin that enforces DTCG 2025.10 design token usage in CSS — no bare hex, no magic numbers, no undeclared var() references.",
+  "license": "MIT",
+  "author": "Designesy <hello@designesy.org>",
+  "maintainers": [
+    {
+      "name": "Designesy",
+      "email": "le@designesy.org"
+    },
+    {
+      "name": "LE-VAI",
+      "email": "281449961+LE-VAI@users.noreply.github.com"
+    }
+  ],
+  "homepage": "https://www.designesy.org/contracts/tokens",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/stylelint-plugin-dtcg-tokens"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "stylelint",
+    "stylelint-plugin",
+    "postcss",
+    "postcss-plugin",
+    "design-tokens",
+    "dtcg",
+    "w3c",
+    "design-tokens-community-group",
+    "token-validation",
+    "design-system",
+    "lint",
+    "css",
+    "designesy"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./postcss": {
+      "import": "./dist/postcss-plugin.js",
+      "types": "./dist/postcss-plugin.d.ts"
+    },
+    "./tokens": {
+      "import": "./dist/tokens.js",
+      "types": "./dist/tokens.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "postcss": ">=8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "stylelint": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "postcss": "^8.4.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {},
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/test.js",
+    "prepublishOnly": "npm run build"
+  }
+}
