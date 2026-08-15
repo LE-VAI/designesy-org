@@ -1,0 +1,48 @@
+name: 'Designesy Tokens Validator'
+description: 'Validate a DTCG 2025.10 design token file against 10 conformance checks. Zero dependencies, works offline.'
+author: 'Designesy'
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  file:
+    description: 'Path to a local DTCG token file (JSON) to validate'
+    required: false
+  url:
+    description: 'URL of a remote DTCG token file to validate'
+    required: false
+  min-score:
+    description: 'Minimum score (0-100) to pass. Exit 1 if below. Default: 0 (no gate)'
+    required: false
+    default: '0'
+  json:
+    description: 'Output raw JSON result instead of formatted table'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate tokens
+      shell: bash
+      run: |
+        ARGS=""
+        if [ -n "${{ inputs.file }}" ]; then
+          ARGS="${{ inputs.file }}"
+        elif [ -n "${{ inputs.url }}" ]; then
+          ARGS="${{ inputs.url }}"
+        else
+          echo "::error::Either 'file' or 'url' input is required"
+          exit 2
+        fi
+
+        if [ "${{ inputs.json }}" = "true" ]; then
+          ARGS="$ARGS --json"
+        fi
+
+        if [ "${{ inputs.min-score }}" != "0" ]; then
+          ARGS="$ARGS --min-score ${{ inputs.min-score }}"
+        fi
+
+        npx --yes @designesy/tokens@latest $ARGS

@@ -1,0 +1,60 @@
+{
+  "name": "@designesy/cli",
+  "version": "0.1.3",
+  "description": "Unified CLI for Designesy design verification — dispatches to tokens (DTCG validation) and score (40-check engine) subcommands.",
+  "license": "MIT",
+  "author": "Designesy <hello@designesy.org>",
+  "homepage": "https://www.designesy.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "design-contract",
+    "design-verification",
+    "dtcg",
+    "accessibility",
+    "wcag",
+    "ci",
+    "quality-gate",
+    "designesy",
+    "cli"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "designesy": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@designesy/tokens": "^0.1.0",
+    "@designesy/score": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  }
+}

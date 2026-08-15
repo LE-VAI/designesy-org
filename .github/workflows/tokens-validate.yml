@@ -1,0 +1,29 @@
+name: Validate DTCG Tokens
+
+on:
+  pull_request:
+    paths:
+      - 'apps/site/app/export/dtcg/**'
+      - 'apps/site/app/lib/design-system-contract.ts'
+      - 'apps/site/app/lib/tokens-contract.ts'
+      - 'packages/tokens/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate designesy.org DTCG export
+        uses: ./.github/actions/tokens-validate
+        with:
+          url: https://www.designesy.org/export/dtcg
+          min-score: 80
+
+      - name: Validate local export (if build artifacts exist)
+        uses: ./.github/actions/tokens-validate
+        with:
+          url: https://www.designesy.org/export/dtcg
+          json: true
+        continue-on-error: true

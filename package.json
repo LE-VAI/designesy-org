@@ -1,7 +1,7 @@
 {
   "name": "designesy-score",
-  "version": "0.4.2",
-  "description": "Score any URL against the Designesy design-system contract \u2014 40 deterministic checks, one grade, no vibe-tax. Zero dependencies.",
+  "version": "1.0.0",
+  "description": "Score any URL against the Designesy 40-check design-contract engine — runs locally, no server required. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy",
   "homepage": "https://www.designesy.org",
@@ -25,12 +25,16 @@
     "quality-gate",
     "designesy"
   ],
+  "type": "module",
   "bin": {
     "designesy-score": "cli/designesy-score.mjs"
   },
   "files": [
     "cli/designesy-score.mjs",
-    "cli/README.md"
+    "cli/README.md",
+    "CHANGELOG.md",
+    "packages/score/dist/engine.js",
+    "packages/score/dist/engine.d.ts"
   ],
   "engines": {
     "node": ">=18"
@@ -38,7 +42,8 @@
   "private": false,
   "scripts": {
     "dev": "cd apps/site && npm run dev",
-    "build": "cd apps/site && npm run build",
+    "build": "cd apps/site && npm run build && cd packages/score && npx tsc -p tsconfig.json",
+    "build:score": "cd packages/score && npx tsc -p tsconfig.json",
     "lint": "cd apps/site && npm run lint",
     "score": "node cli/designesy-score.mjs",
     "deploy:prod": "node scripts/deploy-prod.mjs"

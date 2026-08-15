@@ -1,0 +1,54 @@
+{
+  "name": "@designesy/tokens",
+  "version": "0.1.0",
+  "description": "Standalone DTCG 2025.10 design token validator — 10 conformance checks, zero dependencies, works offline.",
+  "license": "MIT",
+  "author": "Designesy <hello@designesy.org>",
+  "homepage": "https://www.designesy.org/contracts/tokens",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/tokens"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "design-tokens",
+    "dtcg",
+    "w3c",
+    "design-tokens-community-group",
+    "token-validation",
+    "design-system",
+    "ci",
+    "lint",
+    "designesy"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/validator.js",
+      "types": "./dist/validator.d.ts"
+    }
+  },
+  "main": "./dist/validator.js",
+  "types": "./dist/validator.d.ts",
+  "bin": {
+    "designesy-tokens": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  }
+}
