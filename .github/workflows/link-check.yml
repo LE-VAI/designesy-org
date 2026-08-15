@@ -49,10 +49,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Restore lychee cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: .lycheecache
           key: lychee-cache-${{ github.run_id }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: Run lychee link checker
         id: lychee
-        uses: lycheeverse/lychee-action@v2.9.0
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           # Scan all md/json/yml/toml in the repo. The entrypoint.sh uses
           # `eval`, so bash expands globs before lychee — patterns that
@@ -74,7 +74,7 @@ jobs:
 
       - name: Comment PR with link-check results
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             const fs = require('fs');
