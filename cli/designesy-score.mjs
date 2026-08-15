@@ -1,132 +1,46 @@
 #!/usr/bin/env node
-// designesy-score — CLI for the Designesy design-contract verification engine.
+// designesy-score v1.0.0 — CLI for the Designesy 40-check design-contract engine.
 //
-// Scores a URL against the 40-check engine at /api/score (same engine that
-// powers designesy.org). Prints a formatted report to stdout. Exits with code 1
-// when the score drops below --min-score or the grade drops below --min-grade.
+// v1.0.0 BREAKING CHANGE: the engine now runs LOCALLY — no server required.
+// Fetches the target URL, extracts CSS + :root tokens, runs all 40 checks
+// in-process, and prints a formatted report. Zero dependencies (Node built-ins only).
+//
+// The --api flag and $SCORE_API env var remain as a REMOTE FALLBACK for anyone
+// who relied on the old API client behavior (pre-1.0.0). When --api is set,
+// the CLI POSTs to the remote /api/score endpoint instead of running locally.
 //
 // Subcommands:
-//   verify <url>     Check if a site serves a valid /DESIGN.md (spec-layer only)
-//
-// Zero dependencies — Node built-ins only (matches the action's dist/index.js).
+//   verify <url>     Run the v37 DESIGN.md spec-layer check (local or remote)
 //
 // Usage:
 //   node cli/designesy-score.mjs <url> [options]
-//   npx designesy-score <url> [options]          (after npm publish)
-//   npx designesy-score verify <url> [options]   (DESIGN.md spec-layer check)
+//   npx designesy-score <url> [options]
+//   npx designesy-score verify <url> [options]
 //
 // Options:
 //   --format <f>      Emission format: designesy (default), canonical, review, google
-//   --api <url>       Scoring engine base URL (default: https://www.designesy.org
-//                     or $SCORE_API if set)
+//   --scope <s>       Scoring scope: contract (strict) or universal (fair, default auto)
+//                     [NEW in 1.0.0 — only for local engine]
+//   --api <url>       Remote fallback: use a scoring server instead of local engine
+//                     (default: $SCORE_API or disabled. Set to use the old API client mode)
 //   --min-score <n>   Fail (exit 1) if score < n (default: 0 = disabled)
 //   --min-grade <g>   Fail (exit 1) if grade is worse than g (default: "" = disabled)
 //   --json            Output raw JSON (no formatted report)
 //   --quiet           Only output on failure (for CI noise reduction)
 
+import { scoreUrl, normalizeInputUrl, isValidUrl, emitDesignesy, emitCanonical, emitGoogle, emitReview } from '../packages/score/dist/engine.js';
+import https from 'node:https';
+
 const GRADE_RANK = { A: 5, B: 4, C: 3, D: 2, F: 1 };
-
-function parseArgs(argv) {
-  const args = { url: '', format: 'designesy', api: '', minScore: 0, minGrade: '', json: false, quiet: false };
-  const rest = [];
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--format') { args.format = argv[++i]; continue; }
-    if (a === '--api') { args.api = argv[++i]; continue; }
-    if (a === '--min-score') { args.minScore = parseFloat(argv[++i]) || 0; continue; }
-    if (a === '--min-grade') { args.minGrade = (argv[++i] || '').toUpperCase().charAt(0); continue; }
-    if (a === '--json') { args.json = true; continue; }
-    if (a === '--quiet') { args.quiet = true; continue; }
-    if (a === '--help' || a === '-h') {
-      printUsage();
-      process.exit(0);
-    }
-    if (a.startsWith('--')) {
-      console.error(`Unknown option: ${a}`);
-      process.exit(2);
-    }
-    rest.push(a);
-  }
-  if (rest.length > 0) args.url = rest[0];
-  return args;
-}
-
-function printUsage() {
-  console.log(`
-designesy-score — Score a URL against the Designesy 40-check engine.
-
-Usage:
-  designesy-score <url> [options]
-
-Options:
-  --format <f>      Emission format: designesy (default), canonical, review, google
-  --api <url>       Scoring engine base URL (default: $SCORE_API or https://www.designesy.org)
-  --min-score <n>   Exit 1 if score < n (default: 0 = disabled)
-  --min-grade <g>   Exit 1 if grade worse than g (A/B/C/D/F, default: disabled)
-  --json            Output raw JSON (no formatted report)
-  --quiet           Only output on failure
-  --help, -h        Show this help
-
-Environment:
-  SCORE_API         Base URL override (same env var as rescore-leaderboard.mjs)
-
-Examples:
-  designesy-score designesy.org
-  designesy-score linear.app --min-score 70 --min-grade B
-  designesy-score vercel.com --format canonical --json
-
-Subcommands:
-  verify <url>     Check if a site serves a valid /DESIGN.md (spec-layer only)
-`);
-}
-
-function printVerifyUsage() {
-  console.log(`
-designesy-score verify — Check if a site serves a valid /DESIGN.md.
-
-Usage:
-  designesy-score verify <url> [options]
-
-Options:
-  --api <url>   Scoring engine base URL (default: $SCORE_API or https://www.designesy.org)
-  --json        Output raw JSON (no formatted report)
-  --quiet       Only output on failure
-  --help, -h    Show this help
-
-What it checks:
-  Fetches /DESIGN.md from the target URL's origin and runs Google's
-  @google/design.md linter (11 rules: broken-ref, missing-primary,
-  contrast-ratio, orphaned-tokens, section-order, etc.).
-
-  PASS  — /DESIGN.md served, linted clean (0 errors, 0 warnings)
-  WARN  — /DESIGN.md served, lint warnings (0 errors)
-  FAIL  — /DESIGN.md served, lint errors
-  SKIP  — /DESIGN.md not served (no public convention requires it)
-
-Exit codes:
-  0  PASS, WARN, or SKIP
-  1  FAIL (lint errors) or engine unreachable
-  2  Invalid arguments
-
-Examples:
-  designesy-score verify designesy.org
-  designesy-score verify linear.app --json
-`);
-}
-
-function normalizeGrade(g) {
-  return String(g || '').trim().toUpperCase().charAt(0);
-}
-
-function gradeColor(grade) {
-  // ANSI colors for terminal output
-  const colors = { A: '\x1b[32m', B: '\x1b[36m', C: '\x1b[33m', D: '\x1b[35m', F: '\x1b[31m' };
-  return colors[grade] || '\x1b[0m';
-}
 
 const RESET = '\x1b[0m';
 const DIM = '\x1b[2m';
 const BOLD = '\x1b[1m';
+
+function gradeColor(grade) {
+  const colors = { A: '\x1b[32m', B: '\x1b[36m', C: '\x1b[33m', D: '\x1b[35m', F: '\x1b[31m' };
+  return colors[grade] || '\x1b[0m';
+}
 
 function statusIcon(status) {
   switch (status) {
@@ -134,33 +48,36 @@ function statusIcon(status) {
     case 'FAIL': return '\x1b[31m✗\x1b[0m';
     case 'WARN': return '\x1b[33m⚠\x1b[0m';
     case 'SKIP': return '\x1b[2m○\x1b[0m';
+    case 'MANUAL': return '\x1b[2m?\x1b[0m';
     default: return '?';
   }
 }
 
-function formatReport(data, url) {
-  const lines = [];
-  const score = data.score;
-  const grade = data.grade;
-  const pass = data.pass ?? 0;
-  const fail = data.fail ?? 0;
-  const warn = data.warn ?? 0;
-  const skip = data.skip ?? 0;
-  const total = data.total ?? 40;
-  const a11yFloor = data.a11yFloorApplied;
+function normalizeGrade(g) {
+  return String(g || '').trim().toUpperCase().charAt(0);
+}
 
+function formatReport(result, url) {
+  const lines = [];
   lines.push(`${BOLD}Designesy Contract Check${RESET}`);
   lines.push(`${DIM}URL:${RESET}    ${url}`);
-  lines.push(`${DIM}Score:${RESET}  ${gradeColor(grade)}${BOLD}${score}${RESET} ${gradeColor(grade)}${BOLD}${grade}${RESET}`);
-  lines.push(`${DIM}Checks:${RESET} ${pass} pass · ${warn} warn · ${fail} fail · ${skip} skip ${DIM}(of ${total})${RESET}`);
-  if (a11yFloor) lines.push(`${DIM}a11y floor applied (score capped at C)${RESET}`);
+  lines.push(`${DIM}Score:${RESET}  ${gradeColor(result.grade)}${BOLD}${result.score}${RESET} ${gradeColor(result.grade)}${BOLD}${result.grade}${RESET}`);
+  lines.push(`${DIM}Checks:${RESET} ${result.pass} pass · ${result.warn} warn · ${result.fail} fail · ${result.skip} skip ${DIM}(of ${result.total})${RESET}`);
+  if (result.a11yFloorApplied) lines.push(`${DIM}a11y floor applied (score capped at C)${RESET}`);
+
+  // Slop + originality
+  if (result.slop && result.slop.total > 0) {
+    lines.push(`${DIM}Anti-slop:${RESET} -${result.slop.total}pts (${result.slop.convergences || 'none'})`);
+  }
+  if (result.originality && result.originality.points > 0) {
+    lines.push(`${DIM}Originality:${RESET} +${result.originality.points}pts (${result.originality.summary})`);
+  }
 
   // Category breakdown
-  if (data.categoryScores) {
+  if (result.categoryScores) {
     lines.push('');
     lines.push(`${BOLD}Categories${RESET}`);
-    const cats = data.categoryScores;
-    const catEntries = Object.entries(cats).sort((a, b) => (b[1]?.weight ?? 0) - (a[1]?.weight ?? 0));
+    const catEntries = Object.entries(result.categoryScores).sort((a, b) => (b[1]?.weight ?? 0) - (a[1]?.weight ?? 0));
     for (const [cat, info] of catEntries) {
       if (!info || info.score === null) continue;
       const catScore = info.score;
@@ -172,8 +89,8 @@ function formatReport(data, url) {
   }
 
   // Per-check detail (only show FAIL and WARN; PASS/SKIP are noise)
-  if (data.checks && Array.isArray(data.checks)) {
-    const issues = data.checks.filter(c => c.status === 'FAIL' || c.status === 'WARN');
+  if (result.checks && Array.isArray(result.checks)) {
+    const issues = result.checks.filter(c => c.status === 'FAIL' || c.status === 'WARN');
     if (issues.length > 0) {
       lines.push('');
       lines.push(`${BOLD}Findings${RESET}`);
@@ -188,8 +105,159 @@ function formatReport(data, url) {
   return lines.join('\n');
 }
 
+function parseArgs(argv) {
+  const args = { url: '', format: 'designesy', scope: '', api: '', minScore: 0, minGrade: '', json: false, quiet: false };
+  const rest = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--format') { args.format = argv[++i]; continue; }
+    if (a === '--scope') { args.scope = argv[++i]; continue; }
+    if (a === '--api') { args.api = argv[++i]; continue; }
+    if (a === '--min-score') { args.minScore = parseFloat(argv[++i]) || 0; continue; }
+    if (a === '--min-grade') { args.minGrade = (argv[++i] || '').toUpperCase().charAt(0); continue; }
+    if (a === '--json') { args.json = true; continue; }
+    if (a === '--quiet') { args.quiet = true; continue; }
+    if (a === '--help' || a === '-h') { printUsage(); process.exit(0); }
+    if (a.startsWith('--')) { console.error(`Unknown option: ${a}`); process.exit(2); }
+    rest.push(a);
+  }
+  if (rest.length > 0) args.url = rest[0];
+  return args;
+}
+
+function printUsage() {
+  console.log(`
+designesy-score v1.0.0 — 40-check design-contract scoring engine.
+
+Runs LOCALLY — no server required. Fetches the URL, extracts CSS + tokens,
+and runs all 40 checks in one process. Zero dependencies.
+
+Usage:
+  designesy-score <url> [options]
+
+Options:
+  --format <f>      Emission format: designesy (default), canonical, review, google
+  --scope <s>       Scoring scope: contract (strict) or universal (fair, default auto)
+                    [NEW in 1.0.0]
+  --api <url>       Remote fallback: use a scoring server instead of local engine
+                    (default: $SCORE_API or disabled — set to use old API client mode)
+  --min-score <n>   Exit 1 if score < n (default: 0 = disabled)
+  --min-grade <g>   Exit 1 if grade worse than g (A/B/C/D/F, default: disabled)
+  --json            Output raw JSON (no formatted report)
+  --quiet           Only output on failure
+  --help, -h        Show this help
+
+Environment:
+  SCORE_API         If set, uses remote API client mode (same as --api)
+
+Examples:
+  designesy-score designesy.org
+  designesy-score linear.app --min-score 70 --min-grade B
+  designesy-score vercel.com --format canonical --json
+  designesy-score stripe.com --format review
+  designesy-score example.com --scope universal
+
+Subcommands:
+  verify <url>     Run the v37 DESIGN.md spec-layer check
+
+What's new in 1.0.0:
+  • Local engine — no server dependency, no rate limits, works offline*
+  • --scope flag (contract vs universal) for strict or fair scoring
+  • Anti-slop deductions + originality lifts in the report
+  • Zero dependencies (Node built-ins only)
+  * The target URL is fetched over the network; the engine itself runs locally.
+ `);
+}
+
+function printVerifyUsage() {
+  console.log(`
+designesy-score verify — Check if a site serves a valid /DESIGN.md.
+
+Runs the local engine's v37 spec-layer check. Fetches /DESIGN.md from the
+target URL's origin and lints it (YAML frontmatter + optional Google linter).
+
+Usage:
+  designesy-score verify <url> [options]
+
+Options:
+  --api <url>   Remote fallback (default: $SCORE_API or local)
+  --json        Output raw JSON (no formatted report)
+  --quiet       Only output on failure
+  --help, -h    Show this help
+
+What it checks:
+  Fetches /DESIGN.md and checks for YAML frontmatter. If
+  @google/design.md/linter is installed, runs 11 lint rules
+  (broken-ref, missing-primary, contrast-ratio, orphaned-tokens, etc.).
+
+  PASS  — /DESIGN.md served, linted clean (0 errors, 0 warnings)
+  WARN  — /DESIGN.md served, lint warnings (0 errors)
+  FAIL  — /DESIGN.md served, lint errors
+  SKIP  — /DESIGN.md not served (no public convention requires it)
+
+Exit codes:
+  0  PASS, WARN, or SKIP
+  1  FAIL (lint errors) or fetch error
+  2  Invalid arguments
+
+Examples:
+  designesy-score verify designesy.org
+  designesy-score verify linear.app --json
+`);
+}
+
+// ── Remote fallback (pre-1.0.0 API client mode) ───────────────────────────
+// Uses node:https (not fetch) to avoid the Windows libuv crash:
+//   Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), src\win\async.c
+
+function httpsPost(apiBase, body, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(`${apiBase}/api/score`);
+    const payload = JSON.stringify(body);
+    const req = https.request({
+      hostname: url.hostname,
+      port: url.port || 443,
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/markdown',
+        'Content-Length': Buffer.byteLength(payload),
+      },
+      timeout: timeoutMs,
+    }, (res) => {
+      let text = '';
+      res.setEncoding('utf-8');
+      res.on('data', (chunk) => { text += chunk; });
+      res.on('end', () => resolve({ ok: (res.statusCode || 0) < 400, status: res.statusCode || 0, text }));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out')); });
+    req.write(payload);
+    req.end();
+  });
+}
+
+async function scoreRemote(apiBase, url, format) {
+  const res = await httpsPost(apiBase, { url, format });
+  if (format === 'review') return { ok: res.ok, markdown: res.text, json: null };
+  let body;
+  try { body = JSON.parse(res.text); } catch { throw new Error(`Non-JSON response (HTTP ${res.status}): ${res.text.slice(0, 300)}`); }
+  if (!res.ok || body.ok === false) throw new Error(body.error || `HTTP ${res.status}`);
+  return { ok: true, json: body, markdown: null };
+}
+
+async function verifyRemote(apiBase, url) {
+  const res = await httpsPost(apiBase, { url, format: 'google' });
+  let body;
+  try { body = JSON.parse(res.text); } catch { throw new Error(`Non-JSON response (HTTP ${res.status}): ${res.text.slice(0, 300)}`); }
+  if (!res.ok || body.ok === false) throw new Error(body.error || `HTTP ${res.status}`);
+  return body;
+}
+
+// ── Verify subcommand ──────────────────────────────────────────────────────
+
 async function runVerify(argv) {
-  // Parse verify-specific args (url + --api + --json + --quiet + --help)
   let url = '';
   let api = '';
   let json = false;
@@ -199,18 +267,9 @@ async function runVerify(argv) {
     if (a === '--api') { api = argv[++i]; continue; }
     if (a === '--json') { json = true; continue; }
     if (a === '--quiet') { quiet = true; continue; }
-    if (a === '--help' || a === '-h') {
-      printVerifyUsage();
-      process.exit(0);
-    }
-    if (a.startsWith('--')) {
-      console.error(`Unknown option: ${a}`);
-      process.exit(2);
-    }
-    if (!url) { url = a; } else {
-      console.error(`Error: unexpected argument "${a}". Use --help for usage.`);
-      process.exit(2);
-    }
+    if (a === '--help' || a === '-h') { printVerifyUsage(); process.exit(0); }
+    if (a.startsWith('--')) { console.error(`Unknown option: ${a}`); process.exit(2); }
+    if (!url) { url = a; } else { console.error(`Error: unexpected argument "${a}".`); process.exit(2); }
   }
 
   if (!url) {
@@ -218,56 +277,66 @@ async function runVerify(argv) {
     process.exit(2);
   }
 
-  // Normalize URL — prepend https:// if no scheme
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-
-  const apiBase = (api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
-
-  if (!quiet) {
-    console.log(`${DIM}Verifying /DESIGN.md at ${url} (${apiBase}/api/score, format=google)…${RESET}`);
+  const normalized = normalizeInputUrl(url);
+  if (!normalized || !isValidUrl(normalized)) {
+    console.error(`Error: Invalid URL "${url}".`);
+    process.exit(2);
   }
 
-  // POST to /api/score with format=google — the response contains
-  // { findings: [{severity, path, message}], summary: {errors, warnings, infos} }
-  // The v37 DESIGN.md check is the finding where path === 'spec'.
-  let res, text;
+  // Remote fallback mode
+  if (api || process.env.SCORE_API) {
+    const apiBase = (api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
+    if (!quiet) console.log(`${DIM}Verifying /DESIGN.md at ${url} (remote: ${apiBase}/api/score)…${RESET}`);
+    let body;
+    try {
+      body = await verifyRemote(apiBase, url);
+    } catch (e) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+    const findings = body.findings || [];
+    const specFinding = findings.find(f => f.path === 'spec');
+    if (json) {
+      console.log(JSON.stringify({ url, finding: specFinding || null, summary: body.summary || null }, null, 2));
+      process.exit(specFinding && specFinding.severity === 'error' ? 1 : 0);
+    }
+    outputSpecFinding(specFinding, body.summary, quiet);
+    process.exit(0);
+  }
+
+  // Local mode — run the full engine and extract the v37 spec check
+  if (!quiet) console.log(`${DIM}Verifying /DESIGN.md at ${url} (local engine)…${RESET}`);
+  let result;
   try {
-    res = await fetch(`${apiBase}/api/score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ url, format: 'google' }),
-    });
-    text = await res.text();
+    result = await scoreUrl(normalized);
   } catch (e) {
-    console.error(`Error: Could not reach ${apiBase}/api/score: ${e.message}`);
+    console.error(`Error: Could not verify ${url}: ${e.message}`);
     process.exit(1);
   }
 
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    console.error(`Error: Non-JSON response (HTTP ${res.status}): ${text.slice(0, 300)}`);
-    process.exit(1);
+  const specCheck = result.checks.find(c => c.id === 'v37');
+  if (!specCheck) {
+    console.log(`${DIM}No DESIGN.md spec-layer check found.${RESET}`);
+    process.exit(0);
   }
 
-  if (!res.ok || body.ok === false) {
-    console.error(`Error: ${body.error || `HTTP ${res.status}`}`);
-    process.exit(1);
-  }
-
-  // Filter for the v37 spec-layer finding
-  const findings = body.findings || [];
-  const specFinding = findings.find(f => f.path === 'spec');
+  const finding = {
+    severity: specCheck.status === 'FAIL' ? 'error' : specCheck.status === 'WARN' ? 'warning' : 'info',
+    path: 'spec',
+    message: specCheck.detail || '',
+  };
 
   if (json) {
-    console.log(JSON.stringify({ url, finding: specFinding || null, summary: body.summary || null }, null, 2));
-    // Exit 1 if the spec finding is an error
-    process.exit(specFinding && specFinding.severity === 'error' ? 1 : 0);
+    console.log(JSON.stringify({ url, finding, summary: { errors: result.fail, warnings: result.warn, infos: result.pass } }, null, 2));
+    process.exit(finding.severity === 'error' ? 1 : 0);
   }
 
+  outputSpecFinding(finding, { errors: result.fail, warnings: result.warn, infos: result.pass }, quiet);
+}
+
+function outputSpecFinding(specFinding, summary, quiet) {
   if (!specFinding) {
-    // No spec finding at all — shouldn't happen, but handle gracefully
     console.log(`${DIM}No DESIGN.md spec-layer check in the response.${RESET}`);
     process.exit(0);
   }
@@ -275,7 +344,6 @@ async function runVerify(argv) {
   const msg = specFinding.message || '';
   const severity = specFinding.severity || 'info';
 
-  // Determine verdict: SKIP (not served), PASS (clean), WARN (warnings), FAIL (errors)
   const isSkip = msg.includes('not publicly served') || msg.includes('not served');
   const isFail = severity === 'error';
   const isWarn = severity === 'warning' && !isFail;
@@ -289,21 +357,21 @@ async function runVerify(argv) {
   }
 
   if (isFail) {
-    const errors = body.summary?.errors ?? 0;
+    const errors = summary?.errors ?? 0;
     console.log(`\n${BOLD}\x1b[31mFAIL${RESET} — ${errors} error(s) in /DESIGN.md`);
     console.log(`${DIM}${msg}${RESET}`);
     process.exit(1);
   }
 
   if (isWarn) {
-    const warnings = body.summary?.warnings ?? 0;
+    const warnings = summary?.warnings ?? 0;
     console.log(`\n${BOLD}\x1b[33mWARN${RESET} — ${warnings} warning(s) in /DESIGN.md`);
     console.log(`${DIM}${msg}${RESET}`);
     process.exit(0);
   }
 
-  // PASS — clean lint
-  const infos = body.summary?.infos ?? 0;
+  // PASS
+  const infos = summary?.infos ?? 0;
   if (!quiet) {
     console.log(`\n${BOLD}\x1b[32mPASS${RESET} — /DESIGN.md linted clean`);
     console.log(`${DIM}${infos} info(s), 0 errors, 0 warnings${RESET}`);
@@ -312,11 +380,12 @@ async function runVerify(argv) {
   process.exit(0);
 }
 
+// ── Main ───────────────────────────────────────────────────────────────────
+
 async function main() {
   const argv = process.argv.slice(2);
 
-  // Subcommand dispatch — intercept 'verify' before the flat-arg parser,
-  // otherwise 'verify' gets mis-parsed as a URL.
+  // Subcommand dispatch
   if (argv[0] === 'verify') {
     return runVerify(argv.slice(1));
   }
@@ -339,93 +408,107 @@ async function main() {
     process.exit(2);
   }
 
-  const api = (args.api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
-  const url = args.url;
-
-  if (!args.quiet) {
-    console.log(`${DIM}Scoring ${url} against the Designesy 40-check engine (${api}/api/score, format=${args.format})…${RESET}`);
-  }
-
-  let res, text;
-  try {
-    res = await fetch(`${api}/api/score`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown' },
-      body: JSON.stringify({ url, format: args.format }),
-    });
-    text = await res.text();
-  } catch (e) {
-    console.error(`Error: Could not reach ${api}/api/score: ${e.message}`);
-    process.exit(1);
-  }
-
-  // review format returns markdown, not JSON
-  if (args.format === 'review') {
-    if (args.json) {
-      console.log(JSON.stringify({ ok: true, markdown: text }));
-    } else {
-      console.log(text);
+  // Remote fallback mode (pre-1.0.0 behavior)
+  if (args.api || process.env.SCORE_API) {
+    const apiBase = (args.api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
+    const url = args.url;
+    if (!args.quiet) console.log(`${DIM}Scoring ${url} (remote: ${apiBase}/api/score, format=${args.format})…${RESET}`);
+    let res;
+    try {
+      res = await scoreRemote(apiBase, url, args.format);
+    } catch (e) {
+      console.error(`Error: Could not reach ${apiBase}/api/score: ${e.message}`);
+      process.exit(1);
     }
+    if (args.format === 'review') {
+      if (args.json) console.log(JSON.stringify({ ok: true, markdown: res.markdown }));
+      else console.log(res.markdown);
+      process.exit(0);
+    }
+    const body = res.json;
+    const score = typeof body.score === 'number' ? body.score
+      : (body.summary && typeof body.summary.score === 'number') ? body.summary.score : NaN;
+    const grade = normalizeGrade(body.grade) || (body.summary && body.summary.grade ? normalizeGrade(body.summary.grade) : '');
+    if (args.json) console.log(JSON.stringify(body, null, 2));
+    else if (!args.quiet || (args.minScore > 0 && score < args.minScore) || (args.minGrade && grade && GRADE_RANK[grade] < GRADE_RANK[args.minGrade])) {
+      if (args.format === 'google') {
+        console.log(`${BOLD}Designesy Contract Check${RESET}`);
+        console.log(`${DIM}URL:${RESET}    ${url}`);
+        console.log(`${DIM}Format:${RESET} google (design.md-compatible)`);
+        console.log(`${DIM}Result:${RESET} ${body.summary?.errors ?? 0} errors · ${body.summary?.warnings ?? 0} warnings · ${body.summary?.infos ?? 0} infos`);
+      } else if (!Number.isNaN(score) && grade) {
+        console.log(formatReport(body, url));
+      } else {
+        console.log(JSON.stringify(body, null, 2));
+      }
+    }
+    if (!Number.isNaN(score) && grade) {
+      if (args.minScore > 0 && score < args.minScore) { console.error(`\n${BOLD}Quality gate failed${RESET}: score ${score} below ${args.minScore}.`); process.exit(1); }
+      if (args.minGrade && GRADE_RANK[grade] < GRADE_RANK[args.minGrade]) { console.error(`\n${BOLD}Quality gate failed${RESET}: grade ${grade} worse than ${args.minGrade}.`); process.exit(1); }
+    }
+    if (!args.quiet) console.log(`\n${BOLD}Quality gate passed${RESET}`);
     process.exit(0);
   }
 
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    console.error(`Error: Non-JSON response (HTTP ${res.status}): ${text.slice(0, 300)}`);
-    process.exit(1);
+  // Local engine mode (v1.0.0 default)
+  const normalized = normalizeInputUrl(args.url);
+  if (!normalized || !isValidUrl(normalized)) {
+    console.error(`Error: Invalid URL "${args.url}". Enter a valid domain like designesy.org or nike.com.`);
+    process.exit(2);
   }
 
-  if (!res.ok || body.ok === false) {
-    console.error(`Error: ${body.error || `HTTP ${res.status}`}`);
-    process.exit(1);
-  }
-
-  // Extract score/grade across designesy/canonical/google formats
-  const score = typeof body.score === 'number' ? body.score
-    : (body.summary && typeof body.summary.score === 'number') ? body.summary.score
-    : NaN;
-  const grade = normalizeGrade(body.grade)
-    || (body.summary && body.summary.grade ? normalizeGrade(body.summary.grade) : '');
-
-  if (args.json) {
-    console.log(JSON.stringify(body, null, 2));
-  } else if (!args.quiet || (args.minScore > 0 && score < args.minScore) || (args.minGrade && grade && GRADE_RANK[grade] < GRADE_RANK[args.minGrade])) {
-    // Print formatted report (always in non-quiet mode, or on failure in quiet mode)
-    if (args.format === 'google') {
-      const gErr = body.summary?.errors ?? 0;
-      const gWarn = body.summary?.warnings ?? 0;
-      const gInfo = body.summary?.infos ?? 0;
-      console.log(`${BOLD}Designesy Contract Check${RESET}`);
-      console.log(`${DIM}URL:${RESET}    ${url}`);
-      console.log(`${DIM}Format:${RESET} google (design.md-compatible)`);
-      console.log(`${DIM}Result:${RESET} ${gErr} errors · ${gWarn} warnings · ${gInfo} infos`);
-    } else if (!Number.isNaN(score) && grade) {
-      console.log(formatReport(body, url));
-    } else {
-      console.log(JSON.stringify(body, null, 2));
-    }
-  }
-
-  // Gate check (exit code)
-  if (!Number.isNaN(score) && grade) {
-    if (args.minScore > 0 && score < args.minScore) {
-      console.error(`\n${BOLD}Quality gate failed${RESET}: score ${score} is below the ${args.minScore} floor.`);
-      process.exit(1);
-    }
-    if (args.minGrade && GRADE_RANK[grade] < GRADE_RANK[args.minGrade]) {
-      console.error(`\n${BOLD}Quality gate failed${RESET}: grade ${grade} is worse than the ${args.minGrade} minimum.`);
-      process.exit(1);
-    }
-  }
+  let scope;
+  if (args.scope === 'contract' || args.scope === 'universal') scope = args.scope;
 
   if (!args.quiet) {
-    console.log(`\n${BOLD}Quality gate passed${RESET}`);
+    console.log(`${DIM}Scoring ${normalized} locally (40-check engine, scope=${scope || 'auto'})…${RESET}`);
   }
+
+  let result;
+  try {
+    result = await scoreUrl(normalized, scope);
+  } catch (e) {
+    console.error(`Error: Could not score ${normalized}: ${e.message}`);
+    process.exit(1);
+  }
+
+  // Output by format
+  if (args.format === 'review') {
+    const markdown = emitReview(normalized, result);
+    if (args.json) console.log(JSON.stringify({ ok: true, markdown }));
+    else console.log(markdown);
+  } else if (args.format === 'google') {
+    const out = emitGoogle(result);
+    if (args.json || !args.quiet) console.log(JSON.stringify(out, null, 2));
+  } else if (args.format === 'canonical') {
+    const out = emitCanonical(normalized, result);
+    if (args.json || !args.quiet) console.log(JSON.stringify(out, null, 2));
+  } else {
+    // designesy (default)
+    if (args.json) {
+      const out = emitDesignesy(result);
+      console.log(JSON.stringify(out, null, 2));
+    } else if (!args.quiet) {
+      console.log(formatReport(result, normalized));
+    }
+  }
+
+  // Gate check
+  const score = result.score;
+  const grade = result.grade;
+  if (args.minScore > 0 && score < args.minScore) {
+    console.error(`\n${BOLD}Quality gate failed${RESET}: score ${score} is below the ${args.minScore} floor.`);
+    process.exit(1);
+  }
+  if (args.minGrade && GRADE_RANK[grade] < GRADE_RANK[args.minGrade]) {
+    console.error(`\n${BOLD}Quality gate failed${RESET}: grade ${grade} is worse than the ${args.minGrade} minimum.`);
+    process.exit(1);
+  }
+
+  if (!args.quiet) console.log(`\n${BOLD}Quality gate passed${RESET}`);
 }
 
 main().catch((e) => {
-  console.error(`Unhandled error: ${e.message}`);
+  console.error(`Unhandled error: ${e instanceof Error ? e.message : String(e)}`);
   process.exit(1);
 });
