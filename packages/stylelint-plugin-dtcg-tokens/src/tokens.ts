@@ -87,11 +87,30 @@ function isGroupNode(node: Record<string, unknown>): boolean {
 }
 
 /**
- * Resolve a DTCG alias reference "{path.to.token}" to a CSS var() reference.
- * "color.primary" → "var(--color-primary)"
+ * Resolve a DTCG alias reference to a CSS var() reference.
+ *
+ * Handles three DTCG 2025.10 reference forms:
+ *   - Curly brace: "{color.primary}" → var(--color-primary)
+ *   - Dot-path (bare $ref): "color.primary" → var(--color-primary)
+ *   - JSON Pointer ($ref): "#/color/primary/$value" → var(--color-primary)
+ *
+ * The JSON Pointer form is the spec-mandated $ref syntax from the
+ * 2025.10 final report (PR #298, October 2025). It uses "#/" prefix,
+ * "/" as the path separator, and may end with "/$value" or "/$ref".
  */
 function aliasToVar(ref: string): string {
-  const clean = ref.replace(/[{}]/g, '').trim();
+  let clean = ref.replace(/[{}]/g, '').trim();
+
+  // JSON Pointer form: "#/color/primary/$value"
+  if (clean.startsWith('#/')) {
+    clean = clean.slice(2); // remove "#/"
+    // Remove trailing "/$value" or "/$ref" (the $-prefix is a DTCG property key, not a path segment)
+    clean = clean.replace(/\/\$(value|ref)$/, '');
+    // Replace "/" path separators with hyphens
+    return `var(--${clean.replace(/\//g, '-')})`;
+  }
+
+  // Dot-path form: "color.primary"
   return `var(--${clean.replace(/\./g, '-')})`;
 }
 
