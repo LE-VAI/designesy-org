@@ -1,0 +1,85 @@
+{
+  "name": "@vai/icons",
+  "version": "0.1.0",
+  "principles": {
+    "waveform-trace": "data line that plots itself — signal arrives, then rests",
+    "field-breath": "ambient atmosphere breathes — slow opacity swell and release",
+    "mark-settle": "object resolves — blur-to-sharp iris settle, then stillness",
+    "block-settle": "items settle left-to-right — staggered weighted drop",
+    "grain-shift": "ambient material drift — texture, not decoration"
+  },
+  "tiers": {
+    "tier1": "remove — decoration; the static glyph carries the meaning",
+    "tier2": "soften — collapse to ≤200ms; transform/opacity only",
+    "tier3": "keep — motion IS the meaning; do not collapse"
+  },
+  "icons": [
+    {
+      "name": "cursor-trace",
+      "principle": "waveform-trace",
+      "tier": "tier1",
+      "reduce": "remove",
+      "file": "cursor-trace.svg",
+      "size": 24
+    },
+    {
+      "name": "signal-bell",
+      "principle": "field-breath",
+      "tier": "tier2",
+      "reduce": "soften-to-200ms-once",
+      "file": "signal-bell.svg",
+      "size": 24
+    },
+    {
+      "name": "brand-mark",
+      "principle": "mark-settle",
+      "tier": "tier2",
+      "reduce": "remove-entrance",
+      "file": "brand-mark.svg",
+      "size": 24,
+      "notes": "Generic focal object. NOT a VAI mark."
+    },
+    {
+      "name": "tab-row",
+      "principle": "block-settle",
+      "tier": "tier2",
+      "reduce": "single-frame-render",
+      "file": "tab-row.svg",
+      "size": 24
+    },
+    {
+      "name": "grain-ambient",
+      "principle": "grain-shift",
+      "tier": "tier1",
+      "reduce": "remove",
+      "file": "grain-ambient.svg",
+      "size": 24
+    },
+    {
+      "name": "scan-line",
+      "principle": "waveform-trace",
+      "tier": "tier1",
+      "reduce": "remove",
+      "file": "scan-line.svg",
+      "size": 24
+    },
+    {
+      "name": "pulse-presence",
+      "principle": "field-breath",
+      "tier": "tier3",
+      "reduce": "keep",
+      "keystone": true,
+      "file": "pulse-presence.svg",
+      "size": 24,
+      "testNote": "If this isn't 'keep' under reduce, the tier system is broken."
+    },
+    {
+      "name": "menu-to-x",
+      "principle": "mark-settle",
+      "tier": "tier2",
+      "reduce": "collapse-to-120ms-opacity-crossfade",
+      "file": "menu-to-x.svg",
+      "size": 24
+    }
+  ]
+}

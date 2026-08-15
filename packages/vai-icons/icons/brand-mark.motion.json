@@ -1,0 +1,18 @@
+{
+  "name": "brand-mark",
+  "principle": "mark-settle",
+  "tier": "tier2",
+  "reduce": "remove-entrance",
+  "durationMs": 600,
+  "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+  "trigger": "mount",
+  "triggerCount": "once-per-mount",
+  "geometry": "Object enters scale(0.94) → scale(1.02) → scale(1.00) with opacity 0 → 1 and a 6px blur resolving to 0.",
+  "rationale": "The object is the content. The entrance is decoration; the rest state is the meaning. On reduce, render directly at rest.",
+  "antiPatterns": [
+    "Bounce on every render",
+    "Spin-in from scale(0) (contract forbids < scale(0.9))",
+    "Glow pulse following the entrance"
+  ],
+  "notes": "This icon is a generic focal object, NOT a VAI mark. Use it as a placeholder; do not substitute unapproved glyphs."
+}

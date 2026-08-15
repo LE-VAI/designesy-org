@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Blog',
     title: 'Design verification findings',
-    lede: '57 sites scored against a 26-check deterministic design contract. 88% scored D or F.',
+    lede: '57 sites scored against a 40-check deterministic design contract. 88% scored D or F.',
     path: 'designesy.org/blog',
     badge: 'Field reports',
   });

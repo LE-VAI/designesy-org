@@ -1,0 +1,247 @@
+/* @vai/icons — base + tiered reduced-motion
+ *
+ * Token values pulled from live designesy.org contract (motion section):
+ *   --duration: 600ms | 150ms-quick | 250ms-fast | 350ms-medium | 400ms-slow
+ *   --ease: cubic-bezier(0.22, 0.61, 0.36, 1)
+ *   --ease-out: cubic-bezier(0.23, 1, 0.32, 1)
+ *   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)
+ *
+ * Reduced-motion tiering per @vai/motion doctrine:
+ *   tier1 — REMOVE (the static glyph carries the meaning)
+ *   tier2 — SOFTEN (≤200ms, transform/opacity only)
+ *   tier3 — KEEP (motion IS the meaning; do not collapse)
+ */
+
+.vai-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: inherit;
+}
+
+.vai-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* --- keyframes: per-principle at full duration --------------------- */
+
+/* waveform-trace: a scanning line top-to-bottom (16-frame sweep) */
+@keyframes vai-scan-sweep {
+  0%   { transform: translateY(0); opacity: 0.0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(18px); opacity: 0.0; }
+}
+
+/* field-breath: dome/scale 1.00 → 1.04 → 1.00 */
+@keyframes vai-breath-cycle {
+  0%, 100% { transform: scale(1.00); }
+  50%      { transform: scale(1.04); }
+}
+
+/* field-breath for pulse-presence (keystone, tier 3) — stronger pulse */
+@keyframes vai-pulse-cycle {
+  0%, 100% { transform: scale(1.00); opacity: 0.65; }
+  50%      { transform: scale(1.25); opacity: 1.00; }
+}
+
+/* mark-settle: object enters from blur + slightly-scaled rest */
+@keyframes vai-settle-once {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1.00);
+  }
+}
+
+/* block-settle: items enter staggered */
+@keyframes vai-settle-step {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1.00);
+  }
+}
+
+/* grain-shift: 20-step translation */
+@keyframes vai-grain-drift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-1px, 1px); }
+  50%  { transform: translate(1px, -1px); }
+  75%  { transform: translate(-1px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* menu-to-x morph: rotate top bar +45deg, bottom bar -45deg, mid fades */
+@keyframes vai-bar-top-morph {
+  from { transform: rotate(0deg); }
+  to   { transform: translateY(5px) rotate(45deg); }
+}
+@keyframes vai-bar-bottom-morph {
+  from { transform: rotate(0deg); }
+  to   { transform: translateY(-5px) rotate(-45deg); }
+}
+@keyframes vai-bar-mid-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-top {
+  animation: vai-bar-top-morph 220ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+.vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-bottom {
+  animation: vai-bar-bottom-morph 220ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+.vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-mid {
+  animation: vai-bar-mid-fade 220ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+/* --- per-icon bindings (full duration) ----------------------------- */
+
+.vai-icon[data-vai-icon="cursor-trace"] .vai-trace {
+  stroke-dashoffset: 26;
+  animation: vai-trace-slide 600ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes vai-trace-slide {
+  to { stroke-dashoffset: 0; }
+}
+
+.vai-icon[data-vai-icon="signal-bell"] .vai-breath {
+  transform-origin: 12px 12px;
+  animation: vai-breath-cycle 2400ms cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+.vai-icon[data-vai-icon="brand-mark"] .vai-settle {
+  animation: vai-settle-once 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.vai-icon[data-vai-icon="tab-row"] rect {
+  animation: vai-settle-step 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.vai-icon[data-vai-icon="tab-row"] .vai-settle-1 { animation-delay: 0ms; }
+.vai-icon[data-vai-icon="tab-row"] .vai-settle-2 { animation-delay: 60ms; }
+.vai-icon[data-vai-icon="tab-row"] .vai-settle-3 { animation-delay: 120ms; }
+.vai-icon[data-vai-icon="tab-row"] .vai-settle-4 { animation-delay: 180ms; }
+.vai-icon[data-vai-icon="tab-row"] .vai-settle-5 { animation-delay: 240ms; }
+
+.vai-icon[data-vai-icon="scan-line"] .vai-scan {
+  animation: vai-scan-sweep 1600ms linear both;
+}
+
+.vai-icon[data-vai-icon="grain-ambient"] .vai-grain-shift {
+  animation: vai-grain-drift 12000ms steps(20, end) infinite;
+}
+
+.vai-icon[data-vai-icon="pulse-presence"] .vai-pulse {
+  transform-origin: 18px 6px;
+  animation: vai-pulse-cycle 2000ms cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* --- tiered reduced-motion (the contract surface) ------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  /* tier 1 — REMOVE: full animation cancellation */
+  .vai-icon[data-vai-tier="tier1"] *,
+  .vai-icon[data-vai-icon="cursor-trace"] *,
+  .vai-icon[data-vai-icon="scan-line"] *,
+  .vai-icon[data-vai-icon="grain-ambient"] * {
+    animation: none !important;
+  }
+  /* restore the static glyph endpoints */
+  .vai-icon[data-vai-icon="cursor-trace"] .vai-trace {
+    stroke-dashoffset: 0;
+  }
+  .vai-icon[data-vai-icon="scan-line"] .vai-scan {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+
+  /* tier 2 — SOFTEN: collapse to 200ms, transform/opacity only */
+  .vai-icon[data-vai-tier="tier2"] *,
+  .vai-icon[data-vai-icon="brand-mark"] .vai-settle,
+  .vai-icon[data-vai-icon="tab-row"] rect {
+    animation-duration: 200ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    filter: none !important;
+  }
+  /* signal-bell: collapse to ONE 200ms pulse on first paint, then end. */
+  .vai-icon[data-vai-icon="signal-bell"] .vai-breath {
+    animation-duration: 200ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  /* menu-to-x: 120ms opacity crossfade instead of rotate */
+  .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-top,
+  .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-bottom {
+    animation: none !important;
+    opacity: 0.5;
+  }
+  .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-mid {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  /* tier 3 — KEEP: pulse-presence STAYS, but becomes opacity-only at 4s rhythm.
+     This is the keystone test. The motion IS the meaning. */
+  .vai-icon[data-vai-icon="pulse-presence"] .vai-pulse {
+    animation: vai-pulse-op-only 4000ms cubic-bezier(0.77, 0, 0.175, 1) infinite !important;
+  }
+}
+@keyframes vai-pulse-op-only {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1.0; }
+}
+
+/* --- mirror block: same tiered reduce behavior, driven by html attr
+       so the demo's "force reduce-motion" toggle works without OS hooks. ----- */
+
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-tier="tier1"] *,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="cursor-trace"] *,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="scan-line"] *,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="grain-ambient"] * {
+  animation: none !important;
+}
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="cursor-trace"] .vai-trace { stroke-dashoffset: 0; }
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="scan-line"] .vai-scan {
+  transform: translateY(18px); opacity: 0;
+}
+
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-tier="tier2"] *,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="brand-mark"] .vai-settle,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="tab-row"] rect {
+  animation-duration: 200ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0s !important;
+  filter: none !important;
+}
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="signal-bell"] .vai-breath {
+  animation-duration: 200ms !important;
+  animation-iteration-count: 1 !important;
+}
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-top,
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-bottom {
+  animation: none !important;
+  opacity: 0.5;
+}
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="menu-to-x"][data-vai-open="true"] .vai-bar-mid {
+  animation: none !important;
+  opacity: 0;
+}
+
+/* keystone (tier 3 — keep) — STILL pulses, just slower and opacity-only */
+html[data-vai-reduce="reduce"] .vai-icon[data-vai-icon="pulse-presence"] .vai-pulse {
+  animation: vai-pulse-op-only 4000ms cubic-bezier(0.77, 0, 0.175, 1) infinite !important;
+}
