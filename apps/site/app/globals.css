@@ -341,18 +341,30 @@ html {
   scroll-padding-top: var(--space-72);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
-  /* Reserve scrollbar gutter space even on pages without overflow. Without
-     this, navigating from a tall page (homepage, scrollbar visible) to a
-     short page (leaderboard, contract, kits, docs — no scrollbar) makes the
-     scrollbar disappear and shifts all content leftward by ~15-17px. The
-     graceful fix: reserve the gutter up front so layout never reflows. */
+  /* Reserve scrollbar gutter space even on pages without overflow.
+     Without this, navigating from a tall page (homepage, scrollbar visible)
+     to a short page (leaderboard, contract, kits, docs — no scrollbar) makes
+     the scrollbar disappear and shifts all content leftward by ~15-17px.
+
+     Set on html only — body uses the JS-driven --scrollbar-width padding
+     (see ScrollbarCompensation component). Having scrollbar-gutter on BOTH
+     html and body caused double-reservation (each reserved its own gutter,
+     adding ~26-34px of unnecessary right padding). */
   scrollbar-gutter: stable;
   /* Sub-pixel drift safety net — browser zoom scales every CSS px value then
      floors to integer. At zoom-OUT (25–75%), flooring always loses pixels,
      so children can sum wider than their container → horizontal scroll.
-     overflow-x: hidden catches that drift without hiding intentional
-     overflow (vertical scroll lives on body, not html). */
-  overflow-x: hidden;
+     overflow-x: clip (NOT hidden) catches that drift without creating a
+     scroll container. This is critical: overflow-x:hidden makes html a
+     scroll container, which breaks scrollbar-gutter:stable propagation to
+     the viewport — the gutter is applied to html's own (hidden) scrollbar
+     instead of the viewport scrollbar, causing a 13-17px layout shift on
+     route navigation when the viewport scrollbar appears/disappears.
+     overflow-x:clip prevents horizontal scroll WITHOUT creating a scroll
+     container, so scrollbar-gutter:stable correctly propagates to the
+     viewport and reserves the gutter regardless of scrollbar visibility.
+     Supported: Chrome 90+, Firefox 81+, Safari 16+ — all evergreen 2026. */
+  overflow-x: clip;
 }
 
 /* Prevent double-tap zoom on interactive elements — touch-action: manipulation
@@ -386,6 +398,18 @@ body {
   text-rendering: optimizeLegibility;
   min-height: 100vh;
   min-height: 100dvh;
+  /* JS-driven scrollbar gutter — ScrollbarCompensation measures the actual
+     viewport scrollbar width and writes it to --scrollbar-width. This
+     padding reserves the exact gutter dynamically: zero when there's no
+     scrollbar, ~13-17px when there is one. This is the PRIMARY mechanism
+     (not a fallback) because overflow-x:clip on html (which is required
+     to prevent horizontal scroll) can interact poorly with
+     scrollbar-gutter:stable on the same element in some browsers.
+     scrollbar-gutter:stable on html handles the CSS-native path; this
+     padding handles the JS-driven path. Only ONE should actually reserve
+     space to avoid double-padding — the JS path wins because it measures
+     the real scrollbar width rather than guessing. */
+  padding-inline-end: var(--scrollbar-width, 0px);
 }
 
 /* ==========================================================================
