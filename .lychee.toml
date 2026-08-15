@@ -40,6 +40,9 @@ exclude = [
   # awwwards.com — consistently times out under lychee's bot user-agent
   # (Cloudflare bot protection). It's a reference link, not our content.
   '^https://awwwards\.com',
+  # npmjs.com package pages — return 403 to lychee's bot user-agent.
+  # Verified manually; these are our own published packages.
+  '^https://www\.npmjs\.com/package/',
 ]
 
 # ── Accept these status codes as OK ─────────────────────────────────────────
