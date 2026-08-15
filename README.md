@@ -8,7 +8,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
-  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 99.2% grade A, and the gate passes" width="1280">
+  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 95.3% grade A, and the gate passes" width="1280">
 </picture>
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
@@ -44,7 +44,7 @@ pip install designesy-mcp && designesy-mcp
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 40-check engine powers an MCP server (11 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
 **Designesy Contract Check** is a GitHub Action that scores any URL against a **40-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
 
@@ -90,9 +90,9 @@ The same 40-check engine powers an MCP server (11 tools for AI agents), a zero-d
 
 ## Contract verification
 
-![Designesy Score](https://img.shields.io/badge/contract%20score-99.2%25%20A%20grade-brightgreen)
+![Designesy Score](https://img.shields.io/badge/contract%20score-95.3%25%20A%20grade-brightgreen)
 
-The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **99.2% (Grade A)** — 35 passed, 0 failed, 1 warn, 4 skipped (browser-only checks). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
+The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **95.3% (Grade A)** — 33 passed, 0 failed, 3 warned, 1 skipped, 3 manual (browser-only checks). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
 ## Contract v0.4.0
 
@@ -163,7 +163,7 @@ Designesy is a system.
 ## FAQ
 
 **Does it need an API key?**
-No — all 11 tools are read-only. The MCP endpoint is stateless Streamable HTTP with no authentication.
+No — all 17 tools are read-only. The MCP endpoint is stateless Streamable HTTP with no authentication.
 
 **Is it deterministic?**
 Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.
