@@ -20,6 +20,7 @@
 
 import { get as httpsGet } from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
+import type { LookupOptions, LookupAddress } from 'node:dns';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,72 @@ function isPrivateIPv4(host: string): boolean {
 
 // ── Zero-dep HTTPS fetch (avoids Windows libuv crash) ───────────────────────
 
+/**
+ * TOCTOU-safe SSRF guard: custom DNS lookup that validates every resolved IP
+ * against the private-range blocklist BEFORE the socket connects. This runs
+ * inside the connection's resolution step — there is no window between
+ * validation and connection for DNS rebinding to exploit.
+ *
+ * The synchronous `isValidUrl` remains for fast initial filtering (protocol,
+ * IPv6, encoded IPs, IP-literal private ranges). This lookup function adds
+ * the DNS-resolution layer that catches hostnames that resolve to private IPs.
+ *
+ * References:
+ *   OWASP SSRF Prevention Cheat Sheet (DNS pinning — resolve A+AAAA, validate every address)
+ *   CWE-367 (Time-of-check Time-of-use race condition)
+ *   CVE-2026-27826 (MCP Atlassian DNS-rebinding TOCTOU bypass)
+ */
+function safeLookup(
+  hostname: string,
+  options: LookupOptions,
+  callback: (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family: number) => void,
+): void {
+  const host = hostname.toLowerCase();
+  const all = options.all === true;
+
+  // Fast path: IP literal — validate directly without DNS resolution
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+    if (isPrivateIPv4(host)) {
+      callback(new Error(`SSRF blocked: private IP ${host}`), '', 4);
+      return;
+    }
+    if (all) {
+      callback(null, [{ address: host, family: 4 }], 4);
+    } else {
+      callback(null, host, 4);
+    }
+    return;
+  }
+
+  // Hostname: resolve all addresses and validate each (fail-closed)
+  dnsLookup(host, { all: true })
+    .then((addresses) => {
+      for (const addr of addresses) {
+        const ip = addr.address.toLowerCase();
+        if (isPrivateIPv4(ip)) {
+          callback(new Error(`SSRF blocked: ${host} resolves to private IP ${ip}`), '', addr.family);
+          return;
+        }
+        if (addr.family === 6) {
+          if (ip === '::1' || ip === '::' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd')) {
+            callback(new Error(`SSRF blocked: ${host} resolves to private IPv6 ${ip}`), '', 6);
+            return;
+          }
+        }
+      }
+      // Return validated addresses — honor options.all for Node v24 compat
+      if (all) {
+        callback(null, addresses, addresses[0]?.family ?? 4);
+      } else {
+        const first = addresses[0];
+        callback(null, first.address, first.family);
+      }
+    })
+    .catch((err: NodeJS.ErrnoException) => {
+      callback(err, '', 4);
+    });
+}
+
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -183,7 +250,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
       resolve(r);
     };
     try {
-      const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs }, (res) => {
+      const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
         // Follow one redirect manually (3xx → Location)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           try {

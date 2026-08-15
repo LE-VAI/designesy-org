@@ -1,6 +1,6 @@
 {
   "name": "@designesy/score",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "Standalone 40-check design-contract scoring engine — fetches a URL, extracts CSS + tokens, runs all checks locally. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
@@ -49,6 +49,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "node --test",
     "prepublishOnly": "npm run build"
   }
 }
