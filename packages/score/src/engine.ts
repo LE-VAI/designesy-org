@@ -189,6 +189,11 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
           try {
             const next = new URL(res.headers.location, url).href;
             res.resume();
+            // SSRF guard: re-validate every redirect target before following it
+            if (!isValidUrl(next)) {
+              done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
+              return;
+            }
             // Follow up to 3 redirects
             httpsFetch(next, headers, timeoutMs).then(done);
             return;

@@ -287,6 +287,7 @@ async function runVerify(argv) {
   // Remote fallback mode
   if (api || process.env.SCORE_API) {
     const apiBase = (api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
+    process.emitWarning('--api / SCORE_API is deprecated and will be removed in 2.0.0. Use the local engine (default) instead.', { type: 'DeprecationWarning' });
     if (!quiet) console.log(`${DIM}Verifying /DESIGN.md at ${url} (remote: ${apiBase}/api/score)…${RESET}`);
     let body;
     try {
@@ -412,6 +413,7 @@ async function main() {
   if (args.api || process.env.SCORE_API) {
     const apiBase = (args.api || process.env.SCORE_API || 'https://www.designesy.org').replace(/\/$/, '');
     const url = args.url;
+    process.emitWarning('--api / SCORE_API is deprecated and will be removed in 2.0.0. Use the local engine (default) instead.', { type: 'DeprecationWarning' });
     if (!args.quiet) console.log(`${DIM}Scoring ${url} (remote: ${apiBase}/api/score, format=${args.format})…${RESET}`);
     let res;
     try {
