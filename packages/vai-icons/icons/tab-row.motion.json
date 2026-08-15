@@ -1,0 +1,17 @@
+{
+  "name": "tab-row",
+  "principle": "block-settle",
+  "tier": "tier2",
+  "reduce": "single-frame-render",
+  "durationMs": 600,
+  "easing": "cubic-bezier(0.23, 1, 0.32, 1)",
+  "trigger": "mount",
+  "triggerCount": "once-per-mount",
+  "geometry": "Six tabs each settle from y(8px) + scale(0.97) + opacity 0 → rest, staggered 60ms.",
+  "rationale": "A tab row's identity is its contents; the choreography is decoration. Under reduce, all six render at rest in a single frame.",
+  "antiPatterns": [
+    "Cascading fade-up across all surfaces (scatter)",
+    "Identical entrance on every item (tells)",
+    "Per-tab interval > 100ms (overlong stagger)"
+  ]
+}

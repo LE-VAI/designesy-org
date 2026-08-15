@@ -1,0 +1,17 @@
+{
+  "name": "menu-to-x",
+  "principle": "mark-settle",
+  "tier": "tier2",
+  "reduce": "collapse-to-120ms-opacity-crossfade",
+  "durationMs": 220,
+  "easing": "cubic-bezier(0.65, 0, 0.35, 1)",
+  "trigger": "toggle",
+  "triggerCount": "user-driven",
+  "geometry": "Hamburger (three bars) → X morph. Top bar rotates +45° toward center, bottom rotates -45° toward center, middle bar fades. Both endpoints (closed/open) exist as static glyphs; the rotation is the choreography.",
+  "rationale": "The end states are the content (menu = closed, X = open). The rotation between is decoration. Under reduce, the endpoints still exist; the transition is a 120ms opacity crossfade, preserving the affordance without the rotation.",
+  "antiPatterns": [
+    "Crossfade both endpoints simultaneously with no shared frame",
+    "Endless rotation that never resolves",
+    "Rotation that lags behind a state change for > 80ms"
+  ]
+}

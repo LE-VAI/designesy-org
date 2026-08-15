@@ -1,0 +1,48 @@
+{
+  "name": "@designesy/lab-builder",
+  "version": "0.1.0",
+  "description": "Turn a design thesis into a remixable, reviewable experiment that compiles into contract material. Scaffolds the full Designesy Lab anatomy — the missing layer between experiment and contract.",
+  "license": "MIT",
+  "author": "Designesy",
+  "homepage": "https://www.designesy.org/labs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/lab-builder"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "design-system",
+    "design-labs",
+    "design-experiments",
+    "scaffolding",
+    "design-contract",
+    "design-tokens",
+    "cli",
+    "designesy",
+    "anti-slop"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "bin": {
+    "lab-builder": "bin/lab-builder.mjs"
+  },
+  "main": "src/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node bin/lab-builder.mjs --help"
+  },
+  "private": false
+}

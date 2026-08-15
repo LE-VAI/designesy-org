@@ -130,7 +130,7 @@ function autoDetectScope(targetUrl: string): ScoreScope {
 
 // ── Score cache ─────────────────────────────────────────────────────────────
 // Score results are stable for ~24h (sites don't redesign daily) and the
-// 26-check run + target-site fetch is expensive (3-8s cold). unstable_cache
+// 40-check run + target-site fetch is expensive (3-8s cold). unstable_cache
 // persists results across requests on Vercel's Data Cache, keyed automatically
 // by the targetUrl argument. Tag 'score' allows future revalidation via
 // revalidateTag. Both the POST handler and the OG image route import `scoreUrl`

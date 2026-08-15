@@ -8052,7 +8052,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-scale-band.is-pass .score-scale-dot { background: var(--grade-b); }
 .score-scale-band.is-a .score-scale-dot { background: var(--grade-a); }
 
-/* Skeleton loading rows — replaces the bare spinner during the 26-check run.
+/* Skeleton loading rows — replaces the bare spinner during the 40-check run.
    Per AuditBuffet/CRAIG Four-State Contract: loading must match content shape,
    not be a generic spinner. Shows 6 skeleton rows in the cards-feed shape. */
 .score-skeleton-feed {

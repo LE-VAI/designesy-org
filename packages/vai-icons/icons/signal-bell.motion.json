@@ -1,0 +1,17 @@
+{
+  "name": "signal-bell",
+  "principle": "field-breath",
+  "tier": "tier2",
+  "reduce": "soften-to-200ms-once",
+  "durationMs": 2400,
+  "easing": "cubic-bezier(0.77, 0, 0.175, 1)",
+  "trigger": "presence",
+  "triggerCount": "loop-while-unread",
+  "geometry": "Dome scales 1.00 → 1.04 → 1.00. No blur, glow, or gradient. Just breath.",
+  "rationale": "Presence is the content. The rhythm is decoration; collapsing it to a single 200ms pulse on first paint preserves the notification without sustaining the trigger.",
+  "antiPatterns": [
+    "Wobble or shake on every render",
+    "Scale-pulse as a fake-liveness tell",
+    "Continuous breath even when no unread state exists"
+  ]
+}

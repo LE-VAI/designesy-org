@@ -1,0 +1,17 @@
+{
+  "name": "cursor-trace",
+  "principle": "waveform-trace",
+  "tier": "tier1",
+  "reduce": "remove",
+  "durationMs": 600,
+  "easing": "cubic-bezier(0.22, 0.61, 0.36, 1)",
+  "trigger": "movement",
+  "triggerCount": "continuous",
+  "geometry": "1px stroke line that follows the cursor's real path",
+  "rationale": "The cursor's position is the content. The trace is decoration; the meaning survives without it.",
+  "antiPatterns": [
+    "Generic spinning trail on hover",
+    "Sparkle burst on click",
+    "Continuous animation that draws attention to the cursor"
+  ]
+}

@@ -371,10 +371,12 @@ export default function McpDocsPage() {
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Seven read-only tools fetch public machine exports from
-            designesy.org. One executable tool runs the 40-check verification
-            engine live. Three living-systems validators check DTCG token
-            files, WCAG 2.2 accessibility, and Lottie motion conformance. All
-            tools return JSON.
+            designesy.org. Nine executable tools run live verification — the
+            40-check score engine, DTCG token validation, Lottie motion
+            validation, drift scoring, AI-readiness scoring, guardrails
+            generation, monitor scoring, design-system comparison, and the
+            composite report. One accessibility framework provides the WCAG
+            2.2 Playwright + axe-core script template. All tools return JSON.
           </p>
           <div className="row-stack" role="list">
             {TOOLS.map((tool, i) => (

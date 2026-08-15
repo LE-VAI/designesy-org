@@ -1,0 +1,54 @@
+{
+  "name": "@vai/motion",
+  "version": "0.1.0",
+  "description": "Five authored, named motion principles from the VAI command surface — the counter-library to AI-default motion. Contract-backed, tiered reduced-motion, zero dependencies.",
+  "license": "MIT",
+  "author": "Designesy",
+  "homepage": "https://www.designesy.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/vai-motion"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "motion",
+    "animation",
+    "design-system",
+    "motion-design",
+    "reduced-motion",
+    "accessibility",
+    "wcag",
+    "waapi",
+    "design-tokens",
+    "anti-slop",
+    "vai",
+    "designesy"
+  ],
+  "files": [
+    "src",
+    "styles",
+    "README.md"
+  ],
+  "main": "src/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./styles.css": "./styles/vai-motion.css",
+    "./principles": "./src/principles/index.js",
+    "./reduced-motion": "./src/reduced-motion.js",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "./styles/vai-motion.css"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "demo": "node demo/serve.mjs"
+  },
+  "private": false
+}

@@ -1,0 +1,55 @@
+{
+  "name": "@vai/icons",
+  "version": "0.1.0",
+  "description": "Authored, named, motion-bearing icons for the VAI command surface. Contract-backed, tiered reduced-motion, zero dependencies. Built on @vai/motion.",
+  "license": "MIT",
+  "author": "Designesy",
+  "homepage": "https://www.designesy.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/vai-icons"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "icons",
+    "animated-icons",
+    "design-system",
+    "motion",
+    "reduced-motion",
+    "accessibility",
+    "wcag",
+    "design-tokens",
+    "anti-slop",
+    "vai",
+    "designesy",
+    "svg"
+  ],
+  "files": [
+    "src",
+    "icons",
+    "styles",
+    "README.md"
+  ],
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./manifest": "./icons/_index.json",
+    "./styles.css": "./styles/vai-icons.css",
+    "./core": "./src/core.js",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "peerDependencies": {
+    "@vai/motion": "^0.1.0"
+  },
+  "scripts": {
+    "demo": "node demo/serve.mjs"
+  },
+  "private": false,
+  "type": "module"
+}

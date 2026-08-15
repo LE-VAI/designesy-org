@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <!-- bell dome: M6 16 starts the dome, arc rises to (18, 16) via top peak -->
+  <path class="vai-breath" d="M6 16 V11 a6 6 0 0 1 12 0 V16" />
+  <!-- skirt connecting the dome to the base line -->
+  <path d="M4 16 H20" />
+  <!-- clapper (small mark at base center) -->
+  <circle cx="12" cy="19" r="1" fill="currentColor" stroke="none" opacity="0.7" />
+</svg>
