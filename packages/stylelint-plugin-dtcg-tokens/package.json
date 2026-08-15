@@ -1,6 +1,6 @@
 {
   "name": "@designesy/stylelint-plugin-dtcg-tokens",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "stylelint + PostCSS plugin that enforces DTCG 2025.10 design token usage in CSS — no bare hex, no magic numbers, no undeclared var() references.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",

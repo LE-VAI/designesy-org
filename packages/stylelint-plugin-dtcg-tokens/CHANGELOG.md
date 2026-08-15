@@ -5,6 +5,17 @@ All notable changes to @designesy/stylelint-plugin-dtcg-tokens are documented he
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] — 2026-08-15
+
+### Fixed — DTCG 2025.10 JSON Pointer $ref support
+
+The `$ref` alias handler now supports all three DTCG 2025.10 reference syntaxes:
+- **Curly brace**: `$value: "{color.primary}"` (already supported)
+- **Dot-path**: `$ref: "color.primary"` (already supported)
+- **JSON Pointer**: `$ref: "#/color/primary/$value"` (now supported — was producing broken `var(--#/color/primary/$value)`)
+
+The JSON Pointer form is the spec-mandated `$ref` syntax from the 2025.10 final report (PR #298, October 2025). The `#/path/to/token/$value` format is now correctly resolved to `var(--path-to-token)`.
+
 ## [0.2.0] — 2026-08-15
 
 ### Added — Auto-fix mode
