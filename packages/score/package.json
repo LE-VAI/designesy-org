@@ -1,0 +1,54 @@
+{
+  "name": "@designesy/score",
+  "version": "0.1.0",
+  "description": "Standalone 40-check design-contract scoring engine — fetches a URL, extracts CSS + tokens, runs all checks locally. Zero dependencies.",
+  "license": "MIT",
+  "author": "Designesy <hello@designesy.org>",
+  "homepage": "https://www.designesy.org/contracts/score",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LE-VAI/designesy-org.git",
+    "directory": "packages/score"
+  },
+  "bugs": {
+    "url": "https://github.com/LE-VAI/designesy-org/issues"
+  },
+  "keywords": [
+    "design-system",
+    "design-contract",
+    "design-verification",
+    "accessibility",
+    "wcag",
+    "core-web-vitals",
+    "ci",
+    "quality-gate",
+    "designesy"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/engine.js",
+      "types": "./dist/engine.d.ts"
+    }
+  },
+  "main": "./dist/engine.js",
+  "types": "./dist/engine.d.ts",
+  "bin": {
+    "designesy-score": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  }
+}
