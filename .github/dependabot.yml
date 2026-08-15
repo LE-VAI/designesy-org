@@ -50,6 +50,18 @@ updates:
         patterns:
           - "@sparticuz/chromium"
           - playwright-core
+    # Defer major version bumps for packages that require migration work.
+    # These will still get minor/patch updates; only major bumps are suppressed.
+    # When ready to migrate, remove the ignore block and Dependabot will open the PR.
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # ── pip: the Python MCP server ───────────────────────────────────────────
   - package-ecosystem: pip

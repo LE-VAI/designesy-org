@@ -625,13 +625,23 @@ function checkNoAtlasNaming(html: string): CheckResult {
 }
 
 function checkPressScale(css: string): CheckResult {
-  const scales = css.match(/scale\((\d*\.?\d+)\)/gi) || [];
-  const pressScales = scales.map((s) => parseFloat(s.replace(/scale\(|\)/gi, '')));
-  const active = css.match(/:active[^{]*\{[^}]*scale/gi);
-  if (!active || active.length === 0) return { id: 'v13', item: 'Press scale on interactive elements (0.96 cells, 0.985 cards)', category: 'takt', status: 'WARN', detail: 'no press-scale (:active with scale()) found' };
+  // Extract only scale() values that appear inside :active rule bodies.
+  // The previous implementation extracted ALL scale() from the entire CSS and
+  // used :active as a boolean gate — decorative @keyframes animations (scale(0.3),
+  // scale(0.001), etc.) were incorrectly flagged as press-feedback failures.
+  const activeBlocks = css.match(/:active[^{]*\{[^}]*\}/gi) || [];
+  const pressScales: number[] = [];
+  for (const block of activeBlocks) {
+    const blockScales = block.match(/scale\((\d*\.?\d+)\)/gi) || [];
+    for (const s of blockScales) {
+      const val = parseFloat(s.replace(/scale\(|\)/gi, ''));
+      if (val > 0) pressScales.push(val);
+    }
+  }
+  if (pressScales.length === 0) return { id: 'v13', item: 'Press scale on interactive elements (0.96 cells, 0.985 cards)', category: 'takt', status: 'WARN', detail: 'no press-scale (:active with scale()) found' };
   const below = pressScales.filter((s) => s < 0.95 && s > 0);
   if (below.length > 0) return { id: 'v13', item: 'Press scale on interactive elements (0.96 cells, 0.985 cards)', category: 'takt', status: 'FAIL', detail: `${below.length} scale(s) below 0.95 floor: ${below.join(', ')}` };
-  return { id: 'v13', item: 'Press scale on interactive elements (0.96 cells, 0.985 cards)', category: 'takt', status: 'PASS', detail: `${active.length} press-scale rule(s) found, all above 0.95 floor` };
+  return { id: 'v13', item: 'Press scale on interactive elements (0.96 cells, 0.985 cards)', category: 'takt', status: 'PASS', detail: `${pressScales.length} press-scale rule(s) found, all above 0.95 floor` };
 }
 
 function checkLineHeightByRole(css: string): CheckResult {
@@ -708,11 +718,38 @@ function checkFontFamilyCount(css: string): CheckResult {
 }
 
 function checkInputFontFloor(css: string): CheckResult {
-  const inputs = css.match(/(?:input|textarea|select)[^{]*\{[^}]*font-size\s*:\s*([0-9.]+)/gi) || [];
-  const sizes = inputs.map((m) => parseFloat(m.match(/font-size\s*:\s*([0-9.]+)/i)?.[1] || '0'));
-  const below = sizes.filter((s) => s > 0 && s < 16);
+  // Strip CSS comments to avoid matching the word "input" inside /* ... */ blocks.
+  const cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Match element selectors (input/textarea/select) — not class names containing
+  // "input" as a substring. Require the element name at a selector boundary:
+  // start of line, whitespace, comma, combinator, or opening brace.
+  const ruleRegex = /(^|[\s,>+~])(input|textarea|select)(\s*[,{:.\[#]|$)/gi;
+  const fontRegex = /font-size\s*:\s*([0-9.]+)\s*(rem|em|px)?/i;
+
+  // Find all rule blocks that contain an element selector for input/textarea/select
+  // and have a font-size declaration. Extract the full rule body to check.
+  const fullRules = cleanCss.match(/(?:^|[\s,>+~])(?:input|textarea|select)[^{]*\{[^}]*\}/gi) || [];
+
+  const sizesPx: number[] = [];
+  for (const rule of fullRules) {
+    // Verify this rule actually targets an element selector (not a class)
+    if (!ruleRegex.test(rule)) continue;
+    ruleRegex.lastIndex = 0; // reset regex state
+
+    const fontMatch = rule.match(fontRegex);
+    if (!fontMatch) continue;
+
+    const value = parseFloat(fontMatch[1]);
+    const unit = (fontMatch[2] || 'px').toLowerCase();
+    // Convert to px: rem and em multiply by 16 (root font-size), px stays
+    const px = unit === 'rem' || unit === 'em' ? value * 16 : value;
+    if (px > 0) sizesPx.push(px);
+  }
+
+  const below = sizesPx.filter((s) => s < 16);
   if (below.length > 0) return { id: 'v27', item: 'Input font-size ≥ 16px (prevent iOS auto-zoom)', category: 'responsive', status: 'FAIL', detail: `${below.length} input(s) below 16px: ${below.join(', ')}px` };
-  if (sizes.length > 0) return { id: 'v27', item: 'Input font-size ≥ 16px (prevent iOS auto-zoom)', category: 'responsive', status: 'PASS', detail: `${sizes.length} input(s) all ≥16px` };
+  if (sizesPx.length > 0) return { id: 'v27', item: 'Input font-size ≥ 16px (prevent iOS auto-zoom)', category: 'responsive', status: 'PASS', detail: `${sizesPx.length} input(s) all ≥16px` };
   return { id: 'v27', item: 'Input font-size ≥ 16px (prevent iOS auto-zoom)', category: 'responsive', status: 'PASS', detail: 'no input font-size rules found (likely using rem from body)' };
 }
 
