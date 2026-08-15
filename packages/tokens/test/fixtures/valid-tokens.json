@@ -1,0 +1,202 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "color": {
+    "$type": "color",
+    "primitive": {
+      "blue": {
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.62, 0.17, 243],
+          "alpha": 1
+        },
+        "$description": "Primitive blue in OKLCH"
+      },
+      "red": {
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.57, 0.22, 27],
+          "alpha": 1
+        },
+        "$description": "Primitive red in OKLCH"
+      }
+    },
+    "semantic": {
+      "primary": {
+        "$value": "{color.primitive.blue}",
+        "$description": "Primary brand color"
+      },
+      "danger": {
+        "$value": "{color.primitive.red}",
+        "$description": "Danger/error color"
+      }
+    }
+  },
+  "dimension": {
+    "$type": "dimension",
+    "space": {
+      "sm": {
+        "$value": "0.5rem",
+        "$description": "Small spacing"
+      },
+      "md": {
+        "$value": "1rem",
+        "$description": "Medium spacing"
+      },
+      "lg": {
+        "$value": "2rem",
+        "$description": "Large spacing"
+      }
+    },
+    "border": {
+      "radius": {
+        "$value": "8px",
+        "$description": "Default border radius",
+        "$deprecated": "Use --radius-md instead"
+      }
+    }
+  },
+  "duration": {
+    "$type": "duration",
+    "fast": {
+      "$value": { "value": 150, "unit": "ms" },
+      "$description": "Fast animation"
+    },
+    "slow": {
+      "$value": { "value": 300, "unit": "ms" },
+      "$description": "Slow animation"
+    }
+  },
+  "cubicBezier": {
+    "$type": "cubicBezier",
+    "easeOut": {
+      "$value": [0, 0, 0.2, 1],
+      "$description": "Standard ease-out"
+    },
+    "easeIn": {
+      "$value": [0.4, 0, 1, 1],
+      "$description": "Standard ease-in"
+    }
+  },
+  "number": {
+    "$type": "number",
+    "opacity": {
+      "full": {
+        "$value": 1,
+        "$description": "Full opacity"
+      },
+      "half": {
+        "$value": 0.5,
+        "$description": "Half opacity"
+      }
+    }
+  },
+  "string": {
+    "$type": "string",
+    "fontStack": {
+      "$value": "Geist, system-ui, sans-serif",
+      "$description": "Sans-serif font stack"
+    }
+  },
+  "fontFamily": {
+    "$type": "fontFamily",
+    "sans": {
+      "$value": ["Geist", "system-ui", "sans-serif"],
+      "$description": "Sans-serif family"
+    }
+  },
+  "fontWeight": {
+    "$type": "fontWeight",
+    "regular": {
+      "$value": 400,
+      "$description": "Regular weight"
+    },
+    "bold": {
+      "$value": "bold",
+      "$description": "Bold keyword"
+    }
+  },
+  "boolean": {
+    "$type": "boolean",
+    "darkMode": {
+      "$value": false,
+      "$description": "Dark mode flag"
+    }
+  },
+  "shadow": {
+    "$type": "shadow",
+    "elevation1": {
+      "$value": {
+        "color": "{color.primitive.blue}",
+        "offsetX": "0px",
+        "offsetY": "2px",
+        "blur": "4px",
+        "spread": "0px"
+      },
+      "$description": "Low elevation shadow"
+    },
+    "elevation2": {
+      "$value": [
+        {
+          "color": "{color.primitive.blue}",
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "8px",
+          "spread": "0px"
+        },
+        {
+          "color": "{color.primitive.red}",
+          "offsetX": "0px",
+          "offsetY": "8px",
+          "blur": "16px",
+          "spread": "0px"
+        }
+      ],
+      "$description": "Multi-layer shadow"
+    }
+  },
+  "border": {
+    "$type": "border",
+    "default": {
+      "$value": {
+        "color": "{color.primitive.blue}",
+        "width": "1px",
+        "style": "solid"
+      },
+      "$description": "Default border"
+    }
+  },
+  "transition": {
+    "$type": "transition",
+    "default": {
+      "$value": {
+        "duration": "{duration.fast}",
+        "delay": "{duration.fast}",
+        "timingFunction": "{cubicBezier.easeOut}"
+      },
+      "$description": "Default transition"
+    }
+  },
+  "gradient": {
+    "$type": "gradient",
+    "brand": {
+      "$value": [
+        { "color": "{color.primitive.blue}", "position": 0 },
+        { "color": "{color.primitive.red}", "position": 1 }
+      ],
+      "$description": "Brand gradient"
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "{fontFamily.sans}",
+        "fontSize": "1rem",
+        "fontWeight": 400,
+        "letterSpacing": "0em",
+        "lineHeight": 1.5
+      },
+      "$description": "Body typography"
+    }
+  }
+}

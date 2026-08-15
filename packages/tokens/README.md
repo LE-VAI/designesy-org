@@ -1,6 +1,6 @@
 # @designesy/tokens
 
-Standalone DTCG 2025.10 design token validator. 10 conformance checks. Zero dependencies. Works offline.
+Standalone DTCG 2025.10 design token validator. 20 conformance checks. Zero dependencies. Works offline.
 
 ## Why
 
@@ -32,7 +32,7 @@ Designesy Tokens Validator — DTCG 2025.10
 Source: tokens.json
 Tokens: 47
 
-Score: 90/100  Grade: A  —  9 pass, 1 warn, 0 fail
+Score: 90/100  Grade: A  —  18 pass, 2 warn, 0 fail
 
   ✓ t01  PASS  Every token has $type (direct or inherited)
   ✓ t02  PASS  Every token has $value
@@ -45,8 +45,18 @@ Score: 90/100  Grade: A  —  9 pass, 1 warn, 0 fail
   ✓ t08  PASS  DTCG 2025.10 structural validation
   ✓ t09  PASS  No type drift between themes
   ✓ t10  PASS  Dimension units are px or rem only
+  ✓ t11  PASS  $type is one of 15 valid spec types
+  ✓ t12  PASS  Token names don't start with $ (except $root)
+  ✓ t13  PASS  Token names don't contain {, }, or .
+  ✓ t14  PASS  $value matches $type structure (primitives)
+  ✓ t15  PASS  Color value well-formedness
+  ✓ t16  PASS  Composite type structure
+  ✓ t17  PASS  Canonical $value:"{ref}" alias syntax
+  ✓ t18  PASS  Alias type compatibility
+  ✓ t19  PASS  Circular reference detection
+  ✓ t20  PASS  $deprecated value valid
 
-Result: PASS with 1 warning(s)
+Result: PASS with 2 warning(s)
 ```
 
 ### Validate a remote URL
@@ -74,7 +84,7 @@ npx @designesy/tokens tokens.json --json
 npx @designesy/tokens tokens.json --quiet
 ```
 
-## The 10 Checks
+## The 20 Checks
 
 | ID | Check | PASS | WARN | FAIL |
 |----|-------|------|------|------|
@@ -83,17 +93,27 @@ npx @designesy/tokens tokens.json --quiet
 | t03 | Semantic tokens have `$description` | All described | Primitive missing | Semantic missing |
 | t04 | Color tokens use OKLCH or Display-P3 | All structured | Legacy hex primitives | Semantic uses bare hex |
 | t05 | Custom types namespaced under `$extensions` | Namespaced | — | Bare custom type |
-| t06 | Aliases (`$ref`) resolve to valid typed tokens | All resolve | — | Dangling reference |
+| t06 | Aliases resolve to valid typed tokens | All resolve | — | Dangling reference |
 | t07 | `$schema` property present | Present | Missing (no editor validation) | — |
 | t08 | DTCG 2025.10 structural validation | Passes | — | Schema violation |
 | t09 | No type drift between themes | Consistent | — | Drift detected |
 | t10 | Dimension units are px or rem only | Valid units | — | Invalid unit |
+| t11 | `$type` is one of 15 valid spec types | All valid | — | Invalid type name |
+| t12 | Token names don't start with `$` (except `$root`) | All valid | — | Name starts with `$` |
+| t13 | Token names don't contain `{`, `}`, or `.` | All valid | — | Forbidden character |
+| t14 | `$value` matches `$type` structure (primitives) | All conform | — | Value/type mismatch |
+| t15 | Color value well-formedness | All well-formed | — | Malformed color |
+| t16 | Composite type structure | All valid | — | Missing required child |
+| t17 | Canonical `$value:"{ref}"` alias syntax | All valid | — | Invalid alias syntax |
+| t18 | Alias type compatibility | All compatible | — | Type mismatch |
+| t19 | Circular reference detection | No cycles | — | Circular chain detected |
+| t20 | `$deprecated` value valid | All valid | — | Invalid value type |
 
 ## Scoring
 
-10 checks. PASS = 1 point, WARN = 0.5 points, FAIL = 0 points.
+20 checks. PASS = 1 point, WARN = 0.5 points, FAIL = 0 points.
 
-Score = (points / 10) × 100
+Score = (points / 20) × 100
 
 | Grade | Score |
 |-------|-------|
@@ -143,7 +163,7 @@ jobs:
 
 - [W3C Design Tokens Format Module 2025.10](https://www.designtokens.org/)
 - [DTCG JSON Schema](https://www.designtokens.org/schemas/2025.10/format.json)
-- [Designesy Tokens Contract](https://www.designesy.org/contracts/tokens)
+- [Designesy Tokens Contract](https://www.designesy.org/tokens)
 
 ## License
 

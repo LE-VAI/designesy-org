@@ -38,7 +38,7 @@ function printUsage() {
   console.log(`
 @designesy/tokens — DTCG 2025.10 token validator
 
-Validate a design token file against 10 conformance checks from the
+Validate a design token file against 20 conformance checks from the
 W3C Design Tokens Format Module 2025.10 stable spec.
 
 Usage:
@@ -48,19 +48,29 @@ Usage:
   npx @designesy/tokens <file> --min-score 80   Exit 1 if score < 80
   npx @designesy/tokens <file> --quiet   Only output on failure
 
-Checks (t01-t10):
+Checks (t01-t20):
   t01  Every token has $type (direct or inherited)
   t02  Every token has $value
   t03  Semantic tokens have $description
   t04  Color tokens use OKLCH or Display-P3
   t05  Custom types namespaced under $extensions
-  t06  Aliases ($ref) resolve to valid typed tokens
+  t06  Aliases resolve to valid typed tokens
   t07  $schema property present
   t08  DTCG 2025.10 structural validation
   t09  No type drift between themes
   t10  Dimension units are px or rem only
+  t11  $type is one of 15 valid spec types
+  t12  Token names don't start with $ (except $root)
+  t13  Token names don't contain {, }, or .
+  t14  $value matches $type structure (primitives)
+  t15  Color value well-formedness
+  t16  Composite type structure
+  t17  Canonical $value:"{ref}" alias syntax
+  t18  Alias type compatibility
+  t19  Circular reference detection
+  t20  $deprecated value valid
 
-Scoring: 10 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/10) × 100.
+Scoring: 20 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/20) × 100.
 Grades: A≥90, B≥80, C≥70, D≥60, F<60.
 
 Options:
