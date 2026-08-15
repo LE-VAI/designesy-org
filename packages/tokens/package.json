@@ -1,10 +1,10 @@
 {
   "name": "@designesy/tokens",
-  "version": "0.1.0",
-  "description": "Standalone DTCG 2025.10 design token validator — 10 conformance checks, zero dependencies, works offline.",
+  "version": "0.2.0",
+  "description": "Standalone DTCG 2025.10 design token validator — 20 conformance checks, zero dependencies, works offline.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
-  "homepage": "https://www.designesy.org/contracts/tokens",
+  "homepage": "https://www.designesy.org/tokens",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LE-VAI/designesy-org.git",
@@ -49,6 +49,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "node --test test/test.js",
     "prepublishOnly": "npm run build"
   }
 }
