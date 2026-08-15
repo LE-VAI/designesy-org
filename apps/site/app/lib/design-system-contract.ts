@@ -690,29 +690,35 @@ export const designSystemContract = {
       sans: {
         token: '--sans',
         value:
-          "'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
-        role: 'Primary UI and body stack (Inter Variable via @fontsource-variable/inter)',
+          "'Geist Variable', 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+        role: 'Primary UI and body stack (Geist Variable — Vercel house font, "deliberately set not defaulted". Inter kept as CJK/safety fallback.)',
+      },
+      serif: {
+        token: '--serif',
+        value:
+          "'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
+        role: 'Editorial serif for headlines — the trust/authority signal. Fraunces Variable with opsz + SOFT axes for dark-mode tuning.',
       },
       display: {
         token: '--display',
-        value: 'var(--sans)',
-        role: 'Display alias — exists so a future serif display face can land without touching component CSS',
+        value: 'var(--serif)',
+        role: 'Display/headline face — Fraunces Variable (aliased to --serif). Hybrid system: serif headlines + sans UI.',
       },
       mono: {
         token: '--mono',
         value:
-          "ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
-        role: 'Canonical mono stack for code / tabular surfaces',
+          "'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+        role: 'Mono stack for check IDs, score readouts, token names (Geist Mono Variable — system-thinking signal)',
       },
     },
-    body: '16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
-    headings: 'weight 700, line-height 1.08, letter-spacing -0.02em',
+    body: '16px / 1.55, Geist Variable (Inter fallback for CJK)',
+    headings: 'Fraunces Variable, weight 700, line-height 1.08, letter-spacing -0.02em',
     hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
     eyebrows:
       '0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
     lede: '1.1–1.5rem, weight 500, ink — one clear claim',
     supporting_note: '0.85–0.95rem, muted, max-width ~520–580px',
-    rule: 'Never invent decorative display fonts for public UI; system stack is the contract',
+    rule: 'Hybrid system: Fraunces serif for headlines (authority), Geist sans for UI (precision), Geist Mono for data (systems). No single-sans — the 2026 anti-pattern.',
     cadence_adopted: 'v0.1.3 — font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
     font_synthesis: 'none set on :root — prevents fake browser weights (fixed 2026-07-15)',
     text_underline_position: 'from-font set on :root — aligns underlines to font metrics (fixed 2026-07-15)',
