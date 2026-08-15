@@ -163,7 +163,7 @@ jobs:
 
 - [W3C Design Tokens Format Module 2025.10](https://www.designtokens.org/)
 - [DTCG JSON Schema](https://www.designtokens.org/schemas/2025.10/format.json)
-- [Designesy Tokens Contract](https://www.designesy.org/tokens)
+- [Designesy Tokens Contract](https://www.designesy.org/contracts/tokens)
 
 ## License
 

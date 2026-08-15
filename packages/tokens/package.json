@@ -4,7 +4,7 @@
   "description": "Standalone DTCG 2025.10 design token validator — 20 conformance checks, zero dependencies, works offline.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
-  "homepage": "https://www.designesy.org/tokens",
+  "homepage": "https://www.designesy.org/contracts/tokens",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LE-VAI/designesy-org.git",
