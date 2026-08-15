@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.4] — 2026-08-15
+
+### Fixed
+
+- **v13 check: false FAILs from decorative animations.** The press-scale check
+  extracted ALL `scale()` values from the entire CSS and used `:active` only as a
+  boolean gate. Decorative `@keyframes` animations (`scale(0.3)` for checkmark
+  pop-in, `scale(0.001)` for ripple start, `scale(0.85)` for spinner pulse) were
+  incorrectly flagged as press-feedback failures. The check now extracts `scale()`
+  values only from inside `:active` rule bodies, eliminating 9 false positives.
+- **v27 check: false FAILs from unit blindness and substring matching.** The
+  input font-size check dropped the CSS unit (`1rem` became `1`, compared against
+  `16` as px) and matched "input" as a substring inside class names (`.cmdk-input`,
+  `.score-url-input-inner`). The check now captures and converts units (rem/em × 16
+  = px) and requires element selectors at selector boundaries. Eliminates 6 false
+  positives.
+
+### Changed
+
+- **Real CSS fix: `.score-search-input` font-size raised from 0.8rem to 1rem.**
+  The score page check search input was at 12.8px, which triggers iOS Safari
+  auto-zoom on focus. Now at 16px (1rem), the WCAG 2.5.8 floor.
+- **Dependabot ignore blocks added** for `next`, `eslint`, `eslint-config-next`,
+  and `typescript` major version bumps. These require migration work (Next 16
+  removes `next lint`, TS 6 requires CSS module declarations) and will be handled
+  in a dedicated session. Minor/patch updates still flow.
+
 ## [1.0.3] — 2026-08-15
 
 ### Fixed
@@ -152,6 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Initial API client release
 - 40-check engine running server-side at designesy.org
 
+[1.0.4]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.4
 [1.0.3]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.3
 [1.0.2]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.2
 [1.0.1]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.1

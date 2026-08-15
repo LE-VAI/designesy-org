@@ -108,16 +108,20 @@
   --duration-medium: 350ms;  /* panel close, toast */
   --duration-slow: 400ms;    /* panel open, skeleton reveal */
 
-  /* Typography tokens — Inter Variable via @fontsource-variable/inter.
-     --sans holds the full stack with robust fallbacks; --display aliases
-     --sans for now (single-family system) but exists so a future serif
-     display face can land without touching component CSS.
-     --mono is defined here for the first time: previously 14 sites called
-     var(--mono, ...) and every one fell through to its own fallback stack.
-     Now the token carries the canonical stack. */
-  --sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-  --display: var(--sans);
-  --mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  /* Typography tokens — hybrid system (2026 standard for trust-products).
+     --sans: Geist Variable (Vercel's house font — "deliberately set, not
+       defaulted"). Inter Variable kept as fallback for CJK and safety.
+     --serif: Fraunces Variable (editorial authority for headlines — the
+       "we verify design" signal). Optical-size + soft axes for dark-mode
+       tuning.
+     --display: Fraunces Variable — brand/headline face, aliased to --serif.
+     --mono: Geist Mono Variable for check IDs, score readouts, token names.
+     The serif/sans split is the 2026 hybrid system: serifs for brand-level
+     communication (trust/authority), sans for UI/data (efficiency). */
+  --sans: 'Geist Variable', 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+  --serif: 'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+  --display: var(--serif);
+  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
@@ -459,6 +463,7 @@ h1,
 h2,
 h3,
 h4 {
+  font-family: var(--display);
   line-height: 1.08;
   letter-spacing: -0.02em;
   font-weight: 700;
@@ -1545,7 +1550,6 @@ p {
   }
 }
 
-.hero-eyebrow,
 .hero-title,
 .hero-lede,
 .hero-body,
@@ -1568,60 +1572,6 @@ p {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* --- Magnetic cursor — the Linear/Arc/Vercel-tier micro-detail ---
-   A ring lags behind the native cursor (spring lerp in magnetic-cursor.tsx),
-   a tiny dot tracks instantly. Over interactive elements the ring grows
-   and brightens. Both are pointer-events:none so they never block clicks.
-   Hidden on touch + reduced-motion (component exits early).
-   z-index 1000 places the cursor above the topbar (z-index 90-200 range
-   in the page chrome) and any modal/drawer — the highest reserved tier in
-   the stacking order. Avoid z-index 9999 — it signals "I gave up on
-   stacking discipline" and inflates the drift audit's distinct-z-index
-   count. */
-.mag-cursor-ring,
-.mag-cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 1000;
-  border-radius: 50%;
-  /* translate(-50%,-50%) centers the element on the transform-origin set
-     inline via translate(x,y). The ring uses margin to offset half its
-     size; the dot the same. */
-  margin: -12px 0 0 -12px;
-  will-change: transform;
-}
-
-.mag-cursor-ring {
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--line-strong);
-  background: transparent;
-  transition: width 0.2s var(--ease-out),
-              height 0.2s var(--ease-out),
-              margin 0.2s var(--ease-out),
-              border-color 0.2s var(--ease-out),
-              background 0.2s var(--ease-out),
-              opacity 0.2s var(--ease-out);
-}
-
-.mag-cursor-ring.is-hovering {
-  width: 44px;
-  height: 44px;
-  margin: -22px 0 0 -22px;
-  border-color: var(--signal-light);
-  background: color-mix(in srgb, var(--signal-light) 6%, transparent);
-}
-
-.mag-cursor-dot {
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
-  background: var(--ink);
-  opacity: 0.7;
 }
 
 
@@ -2810,7 +2760,9 @@ a.surface-card:active {
   line-height: 1.08;
   margin-bottom: var(--space-16);
   text-wrap: balance;
-  font-variation-settings: 'opsz' 32;
+  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
+     dark-mode contrast. */
+  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
 }
 
 .surface-lede {
@@ -2885,7 +2837,7 @@ a.surface-card:active {
 }
 
 .principle-body h3 {
-  font-size: 1.02rem;
+  font-size: 1.0875rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
@@ -4112,7 +4064,9 @@ a.surface-card:active {
   line-height: 1.08;
   margin-bottom: var(--space-16);
   text-wrap: balance;
-  font-variation-settings: 'opsz' 32;
+  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
+     dark-mode contrast. */
+  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
 }
 
 .surface-lede {
@@ -4182,7 +4136,7 @@ a.surface-card:active {
 }
 
 .principle-body h3 {
-  font-size: 1.02rem;
+  font-size: 1.0875rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
@@ -4551,6 +4505,45 @@ a.surface-card:active {
 
 .state-marquee:hover .state-marquee-track {
   animation-play-state: paused;
+}
+
+/* User-controlled pause (WCAG 2.2.2) — the toggle button adds
+   .state-marquee--user-paused to the aside. This freezes the
+   track regardless of hover state, giving the user full control. */
+.state-marquee--user-paused .state-marquee-track {
+  animation-play-state: paused;
+}
+
+.state-marquee-toggle {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted-dim);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.state-marquee-toggle:hover,
+.state-marquee-toggle:focus-visible {
+  opacity: 1;
+  border-color: var(--line-strong);
+  color: var(--ink);
+  outline: 2px solid var(--signal-light);
+  outline-offset: 1px;
 }
 
 /* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
@@ -6291,6 +6284,15 @@ html:not(.js-ready) .demo-stagger-bar {
   }
 
   .button {
+    width: 100%;
+  }
+
+  /* Match the score-share-btn width to the primary CTA in a column
+     hero-actions so they read as a peer pair on mobile. Without this the
+     Share button keeps its inline shrink-to-fit width (~100px) and sits
+     orphaned below a full-width primary — the size disparity reads as
+     mismatched, not as primary+secondary. */
+  .hero-actions .score-share-btn {
     width: 100%;
   }
 
@@ -8159,8 +8161,9 @@ a.lab-card:focus-visible .lab-card-arrow {
   justify-content: center;
   gap: var(--space-fine-40);
   text-decoration: none;
+  min-width: 6.5rem;
   height: 2.25rem;
-  padding: var(--space-fine-10);
+  padding: var(--space-fine-10) var(--space-12);
   font-size: 0.8rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -8959,12 +8962,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-search-input {
   width: 100%;
   height: 2.25rem;
-  padding: var(--space-fine-20) 0 var(--space-fine-220);
+  padding: 0 0.625rem 0 2.25rem;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-family: inherit;
 }
 
@@ -12347,8 +12350,8 @@ select {
 .lottie-tip {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-8) var(--space-12);
+  gap: var(--space-10);
+  padding: var(--space-10) var(--space-14);
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -12356,7 +12359,7 @@ select {
   color: var(--muted);
   line-height: 1.4;
   position: relative;
-  max-width: min(100%, 320px);
+  max-width: min(100%, 440px);
 }
 
 .lottie-tip-dot-wrapper {
@@ -12399,20 +12402,25 @@ select {
 
 .lottie-tip-close {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
   background: none;
   border: none;
   color: var(--muted-dim);
-  font-size: 1rem;
+  font-size: 0.75rem;
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: color var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
     background var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+.lottie-tip-close-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .lottie-tip-close:hover {
