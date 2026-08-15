@@ -60,6 +60,23 @@ describe('flattenTokens', () => {
     assert.equal(flat.get('--color-brand')?.value, 'var(--color-base-blue)');
   });
 
+  test('handles $ref JSON Pointer syntax (DTCG 2025.10)', () => {
+    const json = {
+      color: {
+        base: {
+          red: { $type: 'color', $value: '#ff0000' },
+        },
+        brand: {
+          $ref: '#/color/base/red/$value',
+        },
+      },
+    };
+    const flat = flattenTokens(json);
+    assert.ok(flat.has('--color-base-red'));
+    assert.ok(flat.has('--color-brand'));
+    assert.equal(flat.get('--color-brand')?.value, 'var(--color-base-red)');
+  });
+
   test('handles $value: "{ref}" alias form', () => {
     const json = {
       color: {
