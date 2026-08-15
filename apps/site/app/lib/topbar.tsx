@@ -95,13 +95,20 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
     }
   }, [drawerOpen]);
 
+  // Scroll the active nav link into view — only needed when the nav-links
+  // container actually overflows (mobile). On desktop the nav fits without
+  // overflow, so scrollIntoView is a no-op there. Guarded to avoid triggering
+  // a smooth-scroll animation that could cause a visual shift on route change.
   useEffect(() => {
     if (!activeRef.current) return;
-    activeRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
+    const nav = activeRef.current.parentElement;
+    if (nav && nav.scrollWidth > nav.clientWidth) {
+      activeRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
   }, [pathname]);
 
   return (
