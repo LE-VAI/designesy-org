@@ -1,0 +1,24 @@
+/* Bad CSS — should trigger all three rules */
+
+/* Bare hex colors (no-bare-hex) */
+.button {
+  color: #ff0000;
+  background-color: #00ff00;
+  border: 1px solid #0000ff;
+}
+
+/* Magic numbers on token-enforced properties (no-magic-number) */
+.card {
+  padding: 12px;
+  margin-top: 20px;
+  border-radius: 6px;
+  font-size: 18px;
+  gap: 10px;
+}
+
+/* var() to undeclared custom properties (no-undeclared-var) */
+.modal {
+  color: var(--color-unknown);
+  padding: var(--space-xxl);
+  background: var(--completely-made-up);
+}
