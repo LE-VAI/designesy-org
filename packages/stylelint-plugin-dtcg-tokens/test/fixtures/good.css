@@ -1,0 +1,49 @@
+/* Good CSS — uses var() references to declared tokens */
+
+:root {
+  --color-primary: #3b82f6;
+  --color-secondary: #10b981;
+  --color-danger: #ef4444;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+}
+
+.button {
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-secondary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  transition: color var(--duration-fast) ease;
+}
+
+.card {
+  padding: var(--space-md);
+  margin-top: var(--space-lg);
+  border-radius: var(--radius-md);
+  gap: var(--space-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* CSS-declared custom property not in token file — valid */
+:root {
+  --component-local-token: 100px;
+}
+
+.sidebar {
+  width: var(--component-local-token);
+}
