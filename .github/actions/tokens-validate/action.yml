@@ -45,4 +45,4 @@ runs:
           ARGS="$ARGS --min-score ${{ inputs.min-score }}"
         fi
 
-        npx --yes @designesy/tokens@0.2.0 $ARGS
+        npx --yes @designesy/tokens@0.2.1 $ARGS
