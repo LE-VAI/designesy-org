@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-score-gate.png">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 99.2% grade A, and the gate passes" width="960">
+  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 95.3% grade A, and the gate passes" width="960">
 </picture>
 
 Score any URL against the **Designesy design-system contract** — 40 deterministic checks, one grade, no vibe-tax. **Runs locally — no server required.** Zero dependencies.
@@ -110,7 +110,7 @@ Node built-ins only (`node:https`, `node:dns`, `node:net`, `process`). No instal
 ## Related
 
 - [GitHub Action](https://github.com/LE-VAI/designesy-org/tree/main/action) — same engine as a CI quality gate
-- [MCP server](https://www.designesy.org/api/mcp) — 11 tools for AI agents
+- [MCP server](https://www.designesy.org/api/mcp) — 17 tools for AI agents
 - [Contract](https://www.designesy.org/contracts/design-system) — the design-system contract
 - [@designesy/score](https://www.npmjs.com/package/@designesy/score) — the engine as a library package
 - [@designesy/cli](https://www.npmjs.com/package/@designesy/cli) — unified CLI (tokens + score)

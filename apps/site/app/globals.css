@@ -126,7 +126,7 @@
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
      VALUES for --surface / --surface-raised / --surface-lifted are untouched
-     so the 34-check engine still matches the published contract.
+     so the 40-check engine still matches the published contract.
      --signal-glow uses the existing --signal-light value in rgba form.
      --signal-gradient is for borders/focus only, NOT button fill (v22). */
   --surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
@@ -341,6 +341,12 @@ html {
   scroll-padding-top: var(--space-72);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* Reserve scrollbar gutter space even on pages without overflow. Without
+     this, navigating from a tall page (homepage, scrollbar visible) to a
+     short page (leaderboard, contract, kits, docs — no scrollbar) makes the
+     scrollbar disappear and shifts all content leftward by ~15-17px. The
+     graceful fix: reserve the gutter up front so layout never reflows. */
+  scrollbar-gutter: stable;
   /* Sub-pixel drift safety net — browser zoom scales every CSS px value then
      floors to integer. At zoom-OUT (25–75%), flooring always loses pixels,
      so children can sum wider than their container → horizontal scroll.
@@ -7846,7 +7852,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* In the homepage hero, the welcome card is redundant — the hero-hint line
-   already says "No login. Real-time. 32 checks…" so the second explanatory
+   already says "No login. Real-time. 40 checks…" so the second explanatory
    block adds noise. Per AnySearch research (shadcn hero-search pattern):
    keep the hero minimal so the input is the only thing competing for
    attention. The welcome card stays visible on /score where there's no
