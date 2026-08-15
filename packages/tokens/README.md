@@ -1,5 +1,13 @@
 # @designesy/tokens
 
+[![npm version](https://img.shields.io/npm/v/@designesy/tokens?color=blue&label=npm)](https://www.npmjs.com/package/@designesy/tokens)
+[![npm downloads](https://img.shields.io/npm/dw/@designesy/tokens)](https://www.npmjs.com/package/@designesy/tokens)
+[![license](https://img.shields.io/npm/l/@designesy/tokens?color=green)](./LICENSE)
+[![CI](https://github.com/LE-VAI/designesy-org/actions/workflows/ci.yml/badge.svg)](https://github.com/LE-VAI/designesy-org/actions/workflows/ci.yml)
+[![dependencies](https://img.shields.io/badge/dependencies-0-blue)](./package.json)
+[![DTCG](https://img.shields.io/badge/DTCG-2025.10-blue)](https://www.designtokens.org/)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-green)](./package.json)
+
 Standalone DTCG 2025.10 design token validator. 20 conformance checks. Zero dependencies. Works offline.
 
 ## Why
@@ -143,20 +151,34 @@ if ('error' in result2) {
 
 ## GitHub Actions
 
-Use this package as a CI gate to validate your design tokens on every PR:
+Use this package as a CI gate to validate your design tokens on every PR.
+The example below uses SHA-pinned actions — the 2026 supply-chain security
+best practice. Dependabot bumps the SHAs when new versions land.
 
 ```yaml
 name: Validate design tokens
 on: [pull_request]
+permissions:
+  contents: read
 jobs:
   tokens:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # SHA-pinned (replace with current SHAs from the action repos)
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af573 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '20'
-      - run: npx @designesy/tokens tokens.json --min-score 80
+          node-version: '22'
+      - run: npx @designesy/tokens@0.2.1 tokens.json --min-score 80
+```
+
+Or use the composite action (no Node setup needed):
+
+```yaml
+- uses: LE-VAI/designesy-org/.github/actions/tokens-validate@main
+  with:
+    url: https://example.com/tokens.json
+    min-score: 80
 ```
 
 ## Spec Reference
