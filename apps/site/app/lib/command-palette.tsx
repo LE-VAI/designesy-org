@@ -80,8 +80,8 @@ const INDEX: SearchItem[] = [
   { title: 'Graph', href: '/graph', group: 'Learn', keywords: 'relationships map nodes', meta: '' },
   // Labs
   { title: 'Labs', href: '/labs', group: 'Labs', keywords: 'experiments research poise takt cadence', meta: '' },
-  { title: 'Takt lab', href: '/labs/takt', group: 'Labs', keywords: 'interface feel experiments', meta: '' },
-  { title: 'Cadence lab', href: '/labs/cadence', group: 'Labs', keywords: 'text rhythm typography', meta: '' },
+  { title: 'Takt lab', href: '/labs/takt', group: 'Labs', keywords: 'interface feel experiments touch target hit area button size tap feel spacing', meta: '' },
+  { title: 'Cadence lab', href: '/labs/cadence', group: 'Labs', keywords: 'text rhythm typography line-height font type', meta: '' },
   // Kits
   { title: 'Kits', href: '/kits', group: 'Kits', keywords: 'instruction packages agents people', meta: '' },
   { title: 'Design Review kit', href: '/kits/design-review', group: 'Kits', keywords: 'review critique eight dimensions rubric', meta: 'Kit One' },
@@ -96,8 +96,8 @@ const INDEX: SearchItem[] = [
   // Company
   { title: 'Work', href: '/work', group: 'Company', keywords: 'case studies tile continuity', meta: '' },
   { title: 'Continuity case study', href: '/work/continuity', group: 'Company', keywords: 'continuity case study work artifact live', meta: 'case study' },
-  { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost plans continuity free', meta: '' },
-  { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current', meta: 'waitlist' },
+  { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost price how much plans continuity free subscribe upgrade tiers', meta: '' },
+  { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current monitoring alerts scheduled scans recurring paid subscription cost price how much', meta: 'waitlist' },
   { title: 'Badge', href: '/badge', group: 'Company', keywords: 'verified badge embed svg', meta: '' },
   { title: 'Privacy', href: '/privacy', group: 'Company', keywords: 'data policy', meta: '' },
 ];
