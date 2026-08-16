@@ -15,6 +15,12 @@
 //      is private, loopback, link-local, cloud-metadata, or unspecified.
 //   3. Per-redirect-hop validation: safeFetch follows redirects manually and
 //      re-runs the full guard (validation + DNS resolution) on every hop.
+//   4. Connection-level IP pinning (TOCTOU fix): the actual connection is made
+//      through node:http(s) with a custom `lookup` that resolves once, filters
+//      to public addresses only, and hands the socket a single validated IP. So
+//      undici/node never re-resolves at connect time — a DNS-rebinding race
+//      cannot insert a private IP between validation and socket open. This closes
+//      the resolve-then-fetch gap (CVE-2026-10546 / CVE-2026-54353 / CVE-2026-27826).
 //
 // Why DNS resolution matters: the prior guard validated hostname strings only.
 // An adversary who registers evil.com -> 127.0.0.1 bypassed the hostname check
@@ -25,12 +31,11 @@
 // alias.
 //
 // DNS-rebinding (TOCTOU) note: fetch() re-resolves DNS at connect time, so a
-// resolve-then-fetch sequence has a millisecond-scale TOCTOU window where the
-// DNS answer could change. The gold-standard mitigation is a custom undici
-// dispatcher that validates the IP inside the connect hook. This guard uses
-// the OWASP-recommended pre-check pattern (resolve + validate before fetch)
-// which closes the hostname-string bypass but leaves the TOCTOU window. A
-// custom undici dispatcher is a future hardening pass.
+// resolve-then-fetch sequence has a millisecond-scale TOCTOU window. The
+// gold-standard mitigation is to PIN the validated IP into the connection hook
+// (custom node:http(s) `lookup`), which this module now does in pinnedFetch().
+// The pre-check in isValidUrl/resolveAndValidateHost remains as a fast-fail
+// first line, but the socket-level pin is what actually closes the window.
 //
 // Usage:
 //   import { normalizeInputUrl, isValidUrl, safeFetch } from '@/app/lib/url-guard';
@@ -39,6 +44,8 @@
 // app/score/opengraph-image.tsx and app/score/badge/route.ts.
 
 import { lookup as dnsLookup } from 'node:dns/promises';
+import * as https from 'node:https';
+import * as http from 'node:http';
 import ipaddr from 'ipaddr.js';
 
 // ── Normalization ────────────────────────────────────────────────────────────
@@ -259,6 +266,143 @@ function isPrivateAddress(addr: string): boolean {
 
 const MAX_REDIRECTS = 5;
 
+// ── Connection-level IP pinning (closes DNS-rebinding TOCTOU) ─────────────────
+//
+// The prior safeFetch used a resolve-then-fetch pre-check: validate the hostname's
+// IPs, then call fetch(). But undici re-resolves DNS at connect time, so a second
+// resolution could flip the answer to a private IP between our pre-check and the
+// socket open (the CVE-2026-10546 / CVE-2026-54353 / CVE-2026-27826 class).
+//
+// Fix (same pattern Ghost CMS used for CVE-2026-53945): pass a custom `lookup`
+// callback to node:http(s) that resolves the hostname ONCE, validates EVERY
+// resolved address against the private-range blocklist, and returns ONLY the
+// public addresses. node:http(s) calls `lookup` at connect time and connects to
+// the exact address(es) we hand back — there is no second resolution, so a DNS
+// rebinding race cannot insert a private IP after validation. Each request also
+// re-validates (isValidUrl) and re-resolves via the same pinned lookup, so every
+// redirect hop and every call closes the window.
+//
+// Addresses that fail the public-range check are filtered OUT, and if the host
+// resolves to nothing public, we throw (fail closed). ipaddr.range() returns
+// anything not 'unicast' as non-public (loopback, linkLocal, private, ULA,
+// multicast, reserved, unspecified) — mirrors isPrivateAddress().
+function pinnedLookup(
+  hostname: string,
+  options: { all?: boolean; family?: number },
+  callback: (
+    err: NodeJS.ErrnoException | null,
+    address: string | LookupAddress[],
+    family: number,
+  ) => void,
+): void {
+  // Honor options.all like the proven engine safeLookup: node:http(s) passes
+  // { all: true, family: 0 } when no family is pinned, and expects an ARRAY of
+  // addresses back. Every returned address is validated public-only, so a DNS
+  // rebinding to a private IP is filtered out before the socket can connect.
+  const all = options.all === true;
+  dnsLookup(hostname, { all: true, family: 0 })
+    .then((addresses) => {
+      const safe = addresses.filter(
+        // Keep ONLY publicly routable addresses. Anything non-unicast is private/
+        // reserved and must not be reachable — including IPv4-mapped IPv6, cloud
+        // metadata, link-local, ULA (fd00:ec2::254 AWS IMDS), loopback.
+        (a: { address: string; family: number }) => {
+          try {
+            return ipaddr.parse(a.address).range() === 'unicast';
+          } catch {
+            return false;
+          }
+        },
+      );
+      if (safe.length === 0) {
+        callback(new Error(`SSRF guard: ${hostname} has no public address`), '', 4);
+        return;
+      }
+      if (all) {
+        callback(null, safe as LookupAddress[], safe[0].family === 6 ? 6 : 4);
+      } else {
+        // Pin to the first validated public address so the socket connects to
+        // exactly one IP (no second resolution).
+        callback(null, safe[0].address, safe[0].family === 6 ? 6 : 4);
+      }
+    })
+    .catch((err: NodeJS.ErrnoException) => callback(err, '', 4));
+}
+
+type LookupAddress = { address: string; family: number };
+
+/**
+ * HTTP(S) GET with connection-level IP pinning. Returns a WHATWG `Response` so
+ * it is a drop-in replacement for `fetch(url, { redirect: 'manual' })`.
+ *
+ * The connection is made through node:http(s) with the `pinnedLookup` above, so
+ * the socket can only ever reach a validated public IP — DNS rebinding (TOCTOU)
+ * is closed at connect time. `redirect: 'manual'` is honored explicitly: 3xx is
+ * returned as-is (with a Location header) for the caller to re-validate + follow.
+ */
+function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch (e) {
+      reject(e as Error);
+      return;
+    }
+    const isHttps = parsed.protocol === 'https:';
+    const headers: Record<string, string> = {};
+    // Copy init headers if any.
+    for (const [k, v] of Object.entries(init?.headers ?? {})) {
+      if (v !== undefined) headers[k] = String(v);
+    }
+    const reqFn = isHttps ? https.request : http.request;
+    const req = reqFn(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port || (isHttps ? 443 : 80),
+        path: parsed.pathname + parsed.search,
+        method: init?.method || 'GET',
+        headers,
+        lookup: pinnedLookup as typeof import('node:dns').lookup,
+        timeout: init?.signal ? undefined : 15000,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => {
+          const body = Buffer.concat(chunks);
+          // Build a WHATWG Response from the node IncomingMessage.
+          const rsHeaders = new Headers();
+          const raw = res.headers as Record<string, string | string[] | undefined>;
+          for (const [k, v] of Object.entries(raw)) {
+            if (v === undefined) continue;
+            if (Array.isArray(v)) v.forEach((x) => rsHeaders.append(k, x));
+            else rsHeaders.append(k, v);
+          }
+          resolve(
+            new Response(body, {
+              status: res.statusCode || 0,
+              statusText: res.statusMessage || '',
+              headers: rsHeaders,
+            }),
+          );
+        });
+        res.on('error', (e) => reject(e as Error));
+      },
+    );
+    req.on('timeout', () => {
+      req.destroy(new Error('SSRF guard: fetch timeout'));
+    });
+    req.on('error', (e) => reject(e as Error));
+    // Honor AbortSignal (route handlers pass controller.signal).
+    if (init?.signal && typeof (init.signal as AbortSignal).addEventListener === 'function') {
+      const onAbort = () => req.destroy(new Error('aborted'));
+      (init.signal as AbortSignal).addEventListener('abort', onAbort, { once: true });
+    }
+    req.end();
+  });
+}
+
 export async function safeFetch(
   url: string,
   init?: RequestInit & { headers?: Record<string, string> },
@@ -277,7 +421,10 @@ export async function safeFetch(
       throw new Error(`SSRF guard: blocked DNS resolution for ${parsed.hostname} (resolves to private/internal IP)`);
     }
 
-    const resp = await fetch(currentUrl, { ...init, redirect: 'manual' });
+    // Connection-level pinned fetch (node:http(s) with IP-pinned lookup), so a
+    // DNS-rebinding TOCTOU cannot insert a private IP after validation. Returns
+    // the Response with redirect left 'manual' — the loop below follows 3xx.
+    const resp = await pinnedFetch(currentUrl, init);
     // Not a redirect — return the response (success, 4xx, 5xx, etc.)
     if (resp.status < 300 || resp.status >= 400) return resp;
     // 3xx redirect — extract Location header and resolve against current URL.
