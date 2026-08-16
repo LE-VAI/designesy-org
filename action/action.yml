@@ -30,6 +30,10 @@ inputs:
     description: "Emission format for the result JSON. designesy (default, native shape), canonical (review-findings.json schema — see /specs/review-findings.json), review (jakubkrehel better-interface markdown), google (@google/design.md-compatible {findings, summary, designSystem})."
     required: false
     default: "designesy"
+  scope:
+    description: "Scoring scope. 'universal' (default) — scores any URL; absence of Designesy-specific features is SKIP. 'contract' — strict mode for Designesy-owned sites; absence of contract tokens is WARN/FAIL."
+    required: false
+    default: "universal"
   api:
     description: "Base URL of the scoring engine (the /api/score endpoint). Defaults to the public designesy.org engine."
     required: false

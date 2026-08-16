@@ -122,6 +122,7 @@ jobs:
 | `min-score` | no | `0` | Minimum acceptable score (0–100). `0` disables the score floor. |
 | `min-grade` | no | `""` | Minimum letter grade: `A`, `B`, `C`, `D`, or `F`. Empty disables the grade floor. |
 | `format` | no | `designesy` | Emission format: `designesy` (native shape with score/grade/checks), `canonical` (review-findings.json schema), `review` (jakubkrehel markdown — no gating), `google` (design.md-compatible — no gating). |
+| `scope` | no | `universal` | Scoring scope: `universal` (default — scores any URL; absence of Designesy-specific features is SKIP) or `contract` (strict — for Designesy-owned sites; absence of contract tokens is WARN/FAIL). |
 | `api` | no | `https://www.designesy.org` | Base URL of the scoring engine (`/api/score` is appended). |
 | `fail-on-error` | no | `true` | Fail the step when the engine is unreachable. Set `false` to warn instead. |
 | `post-comment` | no | `true` | Post a summary comment on the pull request with the score and gate verdict. Only acts on `pull_request` events. Requires `pull-requests: write` permission. |
