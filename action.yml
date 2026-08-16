@@ -1,5 +1,5 @@
 name: "Designesy Contract Check"
-description: "Score a URL against the Designesy 40-check design contract; fail CI on score or grade regression. Optional SARIF output + baseline ratchet."
+description: "Score any URL against a 40-check design contract; fail CI on regression. SARIF + baseline ratchet supported."
 author: "designesy"
 branding:
   icon: "radio"
