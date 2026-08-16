@@ -744,7 +744,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     : 'Contract: all 40 checks penalize absence. The strictest mode — Designesy patterns are mandatory.'
               }
             >
-              {mode}
+              {mode === 'auto' ? 'Detect' : mode === 'universal' ? 'Assess' : 'Enforce'}
             </button>
           ))}
         </div>
