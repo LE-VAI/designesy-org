@@ -10,7 +10,6 @@ import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { AmbientParticles } from './lib/ambient-particles';
 import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
-import { MagneticCursor } from './lib/magnetic-cursor';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
 import {
@@ -130,7 +129,6 @@ export default function RootLayout({
         <DefinitionCopyEnhancer />
         <FireworkBurst />
         <EffectEnhancer />
-        <MagneticCursor />
         <ScrambleEnhancer />
         <ScrollDepth />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits
