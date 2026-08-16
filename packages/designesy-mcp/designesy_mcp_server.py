@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.10.0"
+SERVER_VERSION = "1.10.1"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -92,9 +92,47 @@ _SSL_CONTEXT_LENIENT = ssl.create_default_context()
 _SSL_CONTEXT_LENIENT.check_hostname = False
 _SSL_CONTEXT_LENIENT.verify_mode = ssl.CERT_NONE
 
+# ── SSRF protection ──────────────────────────────────────────────────────────
+# Block URLs that could reach internal services when a user supplies an
+# arbitrary URL to _fetch().  _post_api() is inherently safe — it constructs
+# its own URL from BASE_URL — so only _fetch() calls _validate_url().
+
+_BLOCKED_HOSTS = frozenset({
+    "127.0.0.1", "localhost", "0.0.0.0",
+    "169.254.169.254", "metadata.google.internal",
+    "::1",
+})
+
+
+def _validate_url(url: str) -> None:
+    """Reject URLs that could reach internal services (SSRF protection)."""
+    from urllib.parse import urlparse
+    import ipaddress
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"Blocked: non-http(s) scheme '{parsed.scheme}'")
+
+    host = parsed.hostname or ""
+    if not host:
+        raise ValueError("Blocked: no hostname in URL")
+
+    if host.lower() in _BLOCKED_HOSTS:
+        raise ValueError(f"Blocked: internal host '{host}'")
+
+    # If the host is an IP literal, reject private/reserved ranges.
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        pass  # hostname, not an IP — allowed
+    else:
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+            raise ValueError(f"Blocked: private/reserved IP '{host}'")
+
 
 def _fetch(url: str, as_json: bool = True) -> Any:
     """Fetch a URL with in-memory caching. Returns parsed JSON or text."""
+    _validate_url(url)
     now = time.time()
     cached = _cache.get(url)
     if cached and (now - cached[0]) < CACHE_TTL:
@@ -111,6 +149,7 @@ def _fetch(url: str, as_json: bool = True) -> Any:
     except Exception as exc:
         # SSLCertVerificationError often wraps inside URLError — catch broadly.
         if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
+            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
             opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT_LENIENT)
         else:
             raise
@@ -1842,7 +1881,7 @@ TOOLS = [
             "designesy_motion_score; for a qualitative critique, use "
             "designesy_design_review. Executable — fetches the URL "
             "server-side, extracts CSS, runs 40 checks. Results cached "
-            "~24h per URL. Checks needing a live browser (Core Web "
+            "~24h server-side per URL. Checks needing a live browser (Core Web "
             "Vitals, sound toggle, overflow) return MANUAL, not FAIL — "
             "run the full audit (/api/score/audit) to resolve them. "
             "Checks that are not applicable to the site (no tokens, no "
@@ -1995,7 +2034,7 @@ TOOLS = [
             "12 drift checks. No browser needed. Returns JSON: { ok, "
             "url, score (0-100), grade (A-F), pass, warn, fail, total, "
             "tokensExtracted, checks[{id, item, category, status, "
-            "detail}] }. Results cached ~24h per URL."
+            "detail}] }. Results cached ~24h server-side per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2025,7 +2064,7 @@ TOOLS = [
             "artifact. No browser needed. Returns JSON: { ok, url, "
             "score (0-100), grade (A-F), pass, warn, fail, total, "
             "checks[{id, item, category, status, detail}] }. Results "
-            "cached ~24h per URL."
+            "cached ~24h server-side per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2061,7 +2100,7 @@ TOOLS = [
             "total, tokensExtracted, bundle: { tokens, lintConfig, "
             "agentRules, componentContract, antiPatterns, designMd }, "
             "checks[{id, item, category, status, detail}] }. Results "
-            "cached ~24h per URL."
+            "cached ~24h server-side per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2098,7 +2137,7 @@ TOOLS = [
             "(0-100, governance health), grade (A-F), pass, warn, fail, "
             "total, currentSnapshot, baseline, previous, driftChecks, "
             "monitorChecks, alerts, emailAlert }. Results cached ~24h "
-            "per URL."
+            "server-side per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2164,7 +2203,7 @@ TOOLS = [
             "completeness), grade, pass, warn, fail, total, tokensA, "
             "tokensB, added[], removed[], renamed[], valueChanged[], "
             "scaleDiff, structureDelta, contrastDrift[], scoreDelta, "
-            "checks[] }. Results cached ~24h per URL pair."
+            "checks[] }. Results cached ~24h server-side per URL pair."
         ),
         "inputSchema": {
             "type": "object",
@@ -2205,7 +2244,7 @@ TOOLS = [
             "checks across all engines, tagged with engine), "
             "synthesis[] (8 synthesis checks verifying the report ran "
             "correctly), appUrl (standalone interactive dashboard URL) "
-            "}. Results cached ~24h per URL."
+            "}. Results cached ~24h server-side per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2302,14 +2341,37 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
         "detail": f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}",
     })
 
-    # Walk tokens for t03-t05
+    # Walk tokens for t03-t10
     type_pass_count = 0
     value_pass_count = 0
     color_structured_count = 0
     color_bare_hex_count = 0
     total_tokens = 0
+    all_types: set[str] = set()
+    dimension_values: list[tuple[str, str]] = []  # (token_path, $value)
+    deprecated_patterns: list[str] = []
 
-    def _walk(obj: dict[str, Any]) -> None:
+    DTCG_STANDARD_TYPES = {
+        "color", "dimension", "fontFamily", "fontWeight", "duration",
+        "number", "string", "boolean", "link", "gradient", "shadow",
+        "border", "transition", "typography", "strokeStyle",
+        "borderStyle", "borderWeight", "radius", "spacing",
+    }
+
+    VALID_DIMENSION_UNITS = {
+        "px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
+        "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
+        "cm", "mm", "in", "pt", "pc", "fr",
+    }
+
+    def _extract_unit(v: str) -> str:
+        """Extract the unit suffix from a dimension value string."""
+        for unit in sorted(VALID_DIMENSION_UNITS, key=len, reverse=True):
+            if v.endswith(unit):
+                return unit
+        return ""
+
+    def _walk(obj: dict[str, Any], path: str = "") -> None:
         nonlocal type_pass_count, value_pass_count, color_structured_count, color_bare_hex_count, total_tokens
         for key, val in obj.items():
             if key.startswith("$"):
@@ -2317,17 +2379,37 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
             if isinstance(val, dict):
                 if "$value" in val:
                     total_tokens += 1
+                    token_path = f"{path}.{key}" if path else key
+                    t = val.get("$type")
+                    v = val.get("$value")
+
                     if "$type" in val:
                         type_pass_count += 1
+                        if isinstance(t, str):
+                            all_types.add(t)
                     value_pass_count += 1
-                    if val.get("$type") == "color":
-                        v = val.get("$value")
+
+                    if t == "color":
                         if isinstance(v, dict) and "colorSpace" in v:
                             color_structured_count += 1
                         elif isinstance(v, str) and v.startswith("#"):
                             color_bare_hex_count += 1
+                            deprecated_patterns.append(f"Color token '{token_path}' uses bare hex (pre-2025.10 pattern)")
+
+                    if t == "dimension":
+                        if isinstance(v, str):
+                            dimension_values.append((token_path, v))
+                            if not _extract_unit(v):
+                                deprecated_patterns.append(f"Dimension token '{token_path}' has unrecognized or missing unit: '{v}'")
+                        elif isinstance(v, (int, float)):
+                            dimension_values.append((token_path, str(v)))
+                            deprecated_patterns.append(f"Dimension token '{token_path}' uses bare number (should include unit string)")
+
+                    # Check for deprecated $ref syntax (DTCG 2025.10 uses {path} references)
+                    if "$ref" in val:
+                        deprecated_patterns.append(f"Token '{token_path}' uses deprecated $ref syntax (use {{path}} in $value)")
                 else:
-                    _walk(val)
+                    _walk(val, f"{path}.{key}" if path else key)
 
     if isinstance(token_groups, dict):
         _walk(token_groups)
@@ -2359,12 +2441,75 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
     else:
         results.append({"id": "t05", "name": "Structured color format", "status": "SKIP", "detail": "No color tokens found"})
 
-    # t06-t10: structural checks
-    results.append({"id": "t06", "name": "Standard type names", "status": "PASS", "detail": "Standard types verified: color, dimension, fontFamily, fontWeight, duration, number, string, boolean"})
-    results.append({"id": "t07", "name": "Custom type extension", "status": "PASS", "detail": "Custom types use $type prefix convention"})
-    results.append({"id": "t08", "name": "Dimension units", "status": "PASS", "detail": "Dimension tokens use unit references (px, rem, em, %)"})
-    results.append({"id": "t09", "name": "Token naming hierarchy", "status": "PASS" if len(group_keys) > 0 else "WARN", "detail": "Token names follow dot-notation hierarchy"})
-    results.append({"id": "t10", "name": "No deprecated patterns", "status": "PASS", "detail": "No deprecated DTCG patterns detected"})
+    # t06: Standard type names — verify all $type values are in the DTCG 2025.10 set
+    non_standard_types = all_types - DTCG_STANDARD_TYPES
+    if total_tokens == 0:
+        t06_status = "SKIP"
+        t06_detail = "No tokens found"
+    elif type_pass_count == 0:
+        t06_status = "FAIL"
+        t06_detail = "No tokens have $type — cannot verify standard type names"
+    elif not non_standard_types:
+        t06_status = "PASS"
+        t06_detail = f"All {len(all_types)} unique type(s) are DTCG 2025.10 standard: {', '.join(sorted(all_types))}"
+    else:
+        t06_status = "WARN"
+        t06_detail = f"Non-standard type(s) found: {', '.join(sorted(non_standard_types))}. These may be valid custom types (see t07)."
+    results.append({"id": "t06", "name": "Standard type names", "status": t06_status, "detail": t06_detail})
+
+    # t07: Custom type extension — non-standard types should follow namespacing convention
+    custom_types = [t for t in all_types if t not in DTCG_STANDARD_TYPES]
+    if not custom_types:
+        t07_status = "SKIP"
+        t07_detail = "No custom types found"
+    else:
+        bare_customs = [t for t in custom_types if "." not in t]
+        if not bare_customs:
+            t07_status = "PASS"
+            t07_detail = f"All {len(custom_types)} custom type(s) use dot-namespacing: {', '.join(sorted(custom_types))}"
+        else:
+            t07_status = "WARN"
+            t07_detail = f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(sorted(bare_customs))}"
+    results.append({"id": "t07", "name": "Custom type extension", "status": t07_status, "detail": t07_detail})
+
+    # t08: Dimension units — verify dimension tokens have valid CSS length units
+    if not dimension_values:
+        t08_status = "SKIP"
+        t08_detail = "No dimension tokens found"
+    else:
+        bad_units: list[str] = []
+        for token_path, v in dimension_values:
+            unit = _extract_unit(v)
+            if not unit:
+                bad_units.append(f"{token_path}='{v}'")
+        if not bad_units:
+            t08_status = "PASS"
+            t08_detail = f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)"
+        else:
+            t08_status = "WARN" if len(bad_units) < len(dimension_values) else "FAIL"
+            t08_detail = f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}"
+    results.append({"id": "t08", "name": "Dimension units", "status": t08_status, "detail": t08_detail})
+
+    # t09: Token naming hierarchy — groups should exist (dot-notation is implicit in nesting)
+    if total_tokens == 0:
+        t09_status = "FAIL"
+        t09_detail = "No tokens found — cannot assess naming hierarchy"
+    elif len(group_keys) > 0:
+        t09_status = "PASS"
+        t09_detail = f"{len(group_keys)} token group(s) with nested hierarchy: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}"
+    else:
+        t09_status = "WARN"
+        t09_detail = "No token groups found — tokens should be organized into groups (e.g., color, spacing, typography)"
+    results.append({"id": "t09", "name": "Token naming hierarchy", "status": t09_status, "detail": t09_detail})
+
+    # t10: No deprecated patterns — check for pre-2025.10 patterns
+    if not deprecated_patterns:
+        t10_status = "PASS"
+        t10_detail = "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+    else:
+        t10_status = "WARN"
+        t10_detail = f"{len(deprecated_patterns)} deprecated pattern(s) found: {'; '.join(deprecated_patterns[:3])}{'...' if len(deprecated_patterns) > 3 else ''}"
+    results.append({"id": "t10", "name": "No deprecated patterns", "status": t10_status, "detail": t10_detail})
 
     pass_count = sum(1 for r in results if r["status"] == "PASS")
     fail_count = sum(1 for r in results if r["status"] == "FAIL")
@@ -2617,6 +2762,7 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
         opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
     except Exception as exc:
         if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
+            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
             opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
         else:
             raise
