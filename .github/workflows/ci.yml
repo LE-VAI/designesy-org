@@ -88,10 +88,10 @@ jobs:
 
   # ── Job 2: Python MCP package gate ───────────────────────────────────────
   # The designesy-mcp Python package lives in packages/designesy-mcp and
-  # publishes to PyPI + MCP registry on tag. Verify it builds in CI so a
-  # broken Python change can't merge either.
+  # publishes to PyPI + MCP registry on tag. Verify it builds AND passes
+  # its test suite in CI so a broken Python change can't merge.
   build-mcp:
-    name: Build MCP package
+    name: Build & test MCP package
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -112,3 +112,39 @@ jobs:
 
       - name: Build package
         run: python -m build
+
+      - name: Install package with test dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run test suite
+        run: python -m pytest test/ -v
+
+  # ── Job 3: npm package test gate ─────────────────────────────────────────
+  # Both @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens have
+  # test suites that only ran at publish time. This job runs them on every PR
+  # so a broken test can't merge. The pretest hook runs `npm run build`
+  # automatically before `npm test`.
+  test-packages:
+    name: Test ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        package: [tokens, stylelint-plugin-dtcg-tokens]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: packages/${{ matrix.package }}
+        run: npm ci
+
+      - name: Build & test
+        working-directory: packages/${{ matrix.package }}
+        run: npm test
