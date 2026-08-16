@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Pricing',
     title: 'Open core, free forever',
-    lede: 'Score Pass for volume. Continuity for work that continues. Priced for teams that ship.',
+    lede: 'Free forever. Continuity at $29/site/month. Enterprise for CI gates and on-prem.',
     path: 'designesy.org/pricing',
   });
 }

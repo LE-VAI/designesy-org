@@ -112,9 +112,8 @@ export function ContinuityWaitlistForm() {
             disabled={status === 'loading'}
           >
             <option value="">Select…</option>
-            <option value="score-pass">Score Pass (credits + export)</option>
-            <option value="continuity">Continuity (history + drift)</option>
-            <option value="both">Both</option>
+            <option value="continuity">Continuity ($29/site/mo — scans + alerts)</option>
+            <option value="enterprise">Enterprise (CI gates + on-prem)</option>
             <option value="unsure">Not sure yet</option>
           </select>
         </div>

@@ -13,7 +13,7 @@ export const metadata: Metadata = pageMeta({
   path: '/continuity',
   ogTitle: 'Continuity · Designesy',
   ogDescription:
-    'Design judgment that stays current. Early access for Score Pass and Continuity — history, re-score, and drift on work you ship with agents.',
+    'Design judgment that stays current. Early access for Continuity — scheduled scans, drift alerts, and score history on work you ship with agents.',
   twitterDescription:
     'Design judgment that stays current — early access waitlist. designesy.org/continuity',
 });
@@ -45,17 +45,17 @@ const LADDER = [
   {
     name: 'Open',
     title: 'Free forever',
-    body: 'Contract, Kit One, labs, open feed, Director Q&A, score + export.',
-  },
-  {
-    name: 'Score Pass',
-    title: 'Credits when you need volume',
-    body: 'Higher score throughput, richer exports, history — priced after early access.',
+    body: '40-check score, drift radar, AI readiness, DTCG validation. No credit card. 5 local score history.',
   },
   {
     name: 'Continuity',
-    title: 'Seat for work that continues',
-    body: 'Saved projects, scheduled re-score, drift alerts, private contract host.',
+    title: '$29 / site / month',
+    body: 'Scheduled scans (daily/weekly), email drift alerts, 30-day score history + trend charts, baseline snapshots, multi-site dashboard (5 sites included).',
+  },
+  {
+    name: 'Enterprise',
+    title: 'Custom',
+    body: 'API access, CI/CD gates, custom contract scoring, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
   },
 ];
 
@@ -77,17 +77,9 @@ export default function ContinuityPage() {
             ship — so taste does not reset every sprint or every agent run.
           </p>
           <p className="surface-note">
-            Open core stays free: contract, kits, labs, and the Director on{' '}
-            <a
-              href="https://designesy.ai.studio/"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-            >
-              designesy.ai.studio
-            </a>{' '}
-            (including portable score export). Continuity is the layer that
-            remembers.
+            Open core stays free: 40-check scoring, drift radar, AI readiness,
+            DTCG validation. Continuity is the layer that remembers — scheduled
+            scans, drift alerts, and score history at $29/site/month.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Waitlist</span>
