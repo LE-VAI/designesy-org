@@ -1,15 +1,7 @@
 name: "Designesy Contract Check"
 description: >-
-  Score a URL against the Designesy design-system contract (40 deterministic
-  checks) and fail the workflow when the score or grade drops below your
-  threshold. A design-contract quality gate for CI — token, motion,
-  accessibility, cadence, takt, typography, and copywriting compliance as a PR
-  check. Supports 4 emission formats via the 'format' input: designesy
-  (default), canonical (review-findings.json schema), review (jakubkrehel
-  markdown), google (design.md-compatible). Posts a summary comment on pull
-  requests when post-comment is enabled. Optionally emits a SARIF v2.1.0 file
-  for GitHub code-scanning integration (sarif-output input) and ratchets
-  against a committed baseline to prevent regressions (baseline input).
+  Score any URL against a 40-check design contract; fail CI on regression.
+  SARIF + baseline ratchet supported.
 author: "designesy"
 branding:
   icon: "check-circle"
