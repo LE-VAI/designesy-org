@@ -96,18 +96,21 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   }, [drawerOpen]);
 
   // Scroll the active nav link into view — only needed when the nav-links
-  // container actually overflows (mobile). On desktop the nav fits without
-  // overflow, so scrollIntoView is a no-op there. Guarded to avoid triggering
-  // a smooth-scroll animation that could cause a visual shift on route change.
+  // container actually overflows (narrow desktop windows between 720px and
+  // ~1100px). Below 720px the nav is hidden (hamburger drawer takes over);
+  // above ~1100px the nav fits without overflow. We use behavior:'instant'
+  // (not 'smooth') because a smooth scroll on route change animates the
+  // entire nav-links row, which looks like the nav bar is sliding sideways.
+  // The active-link underline provides enough visual feedback.
   useEffect(() => {
     if (!activeRef.current) return;
     const nav = activeRef.current.parentElement;
     if (nav && nav.scrollWidth > nav.clientWidth) {
       activeRef.current.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'instant',
         block: 'nearest',
         inline: 'center',
-      });
+      } as ScrollIntoViewOptions);
     }
   }, [pathname]);
 

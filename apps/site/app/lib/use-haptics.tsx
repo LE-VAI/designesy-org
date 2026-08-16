@@ -14,13 +14,33 @@ import {
  * Default: on when the Vibration API is available, unless reduced-motion
  * is set (non-essential motion proxy) or the visitor opted out.
  * Unsupported devices never show UI and never call the engine.
+ *
+ * Module-level cache: the Topbar remounts on every client-side navigation
+ * (it's per-page, not in the root layout). Without caching the support
+ * check, `ready` resets to false on each remount, causing the HapticsToggle
+ * to flash from visibility:hidden → visible — a blink on every nav click.
+ * After the first mount resolves the check, subsequent mounts read the
+ * cached values as their initial state, so `ready` starts true and there's
+ * no hidden→visible transition.
  */
+let cachedSupported: boolean | null = null;
+let cachedEnabled: boolean | null = null;
+
 export function useHapticsPreference() {
-  const [supported, setSupported] = useState(false);
-  const [enabled, setEnabledState] = useState(true);
-  const [ready, setReady] = useState(false);
+  const [supported, setSupported] = useState(cachedSupported ?? false);
+  const [enabled, setEnabledState] = useState(cachedEnabled ?? true);
+  const [ready, setReady] = useState(cachedSupported !== null);
 
   useEffect(() => {
+    // Already resolved on a previous mount — use cached values.
+    if (cachedSupported !== null) {
+      setSupported(cachedSupported);
+      setEnabledState(cachedEnabled ?? true);
+      setHapticsEnabled(cachedEnabled ?? true);
+      setReady(true);
+      return;
+    }
+
     const can = isHapticsSupported();
     setSupported(can);
 
@@ -39,6 +59,9 @@ export function useHapticsPreference() {
 
     // Unsupported: keep engine off so stray calls are quiet.
     if (!can) initial = false;
+
+    cachedSupported = can;
+    cachedEnabled = initial;
 
     setEnabledState(initial);
     setHapticsEnabled(initial);
