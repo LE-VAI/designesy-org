@@ -690,8 +690,8 @@ export const designSystemContract = {
       sans: {
         token: '--sans',
         value:
-          "'Geist Variable', 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
-        role: 'Primary UI and body stack (Geist Variable — Vercel house font, "deliberately set not defaulted". Inter kept as CJK/safety fallback.)',
+          "'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+        role: 'Primary UI and body stack (Geist Variable — Vercel house font, "deliberately set not defaulted". System fonts cover fallback.)',
       },
       serif: {
         token: '--serif',

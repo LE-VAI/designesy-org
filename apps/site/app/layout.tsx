@@ -2,7 +2,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import '@fontsource-variable/inter';
 import './globals.css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
@@ -122,20 +121,6 @@ export default function RootLayout({
         {/* Theme detection — stamps data-theme before first paint (no FOUC),
             keeps the RSC render path free of dynamic APIs so ISR can cache. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        {/* Font preload — the Inter Variable latin woff2 is the LCP
-            critical-path gate. Without this, the font is only discovered
-            after the stylesheet parses, adding ~1s to first paint on cold
-            visits. Preload starts the download in parallel with the CSS.
-            crossorigin is required for woff2. Hash is content-addressed
-            (stable for the pinned @fontsource-variable/inter version; a
-            stale hash 404s harmlessly and the CSS still loads the font). */}
-        <link
-          rel="preload"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-          href="/_next/static/media/inter-latin-wght-normal.6c596dfc.woff2"
-        />
       </head>
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
