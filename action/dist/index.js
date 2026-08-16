@@ -178,7 +178,7 @@ function buildSarif(scoreBody, url) {
         tool: {
           driver: {
             name: 'Designesy',
-            semanticVersion: '1.8.3',
+            semanticVersion: '1.10.2',
             informationUri: 'https://www.designesy.org',
             rules,
           },
@@ -232,6 +232,7 @@ async function main() {
   const minScore = parseFloat(readInput('min-score', '0'));
   const minGradeRaw = normalizeGrade(readInput('min-grade', ''));
   const format = readInput('format', 'designesy') || 'designesy';
+  const scope = readInput('scope', 'universal') || 'universal';
   const api = readInput('api', 'https://www.designesy.org').replace(/\/$/, '');
   const failOnError = String(readInput('fail-on-error', 'true')) !== 'false';
   const postComment = String(readInput('post-comment', 'true')) !== 'false';
@@ -254,14 +255,14 @@ async function main() {
     return;
   }
 
-  console.log(`Scoring ${url} against the Designesy design contract (${api}/api/score, format=${format})…`);
+  console.log(`Scoring ${url} against the Designesy design contract (${api}/api/score, format=${format}, scope=${scope})…`);
 
   let body;
   try {
     const res = await fetch(`${api}/api/score`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown' },
-      body: JSON.stringify({ url, format }),
+      body: JSON.stringify({ url, format, scope }),
     });
     const text = await res.text();
     // 'review' format returns markdown, not JSON — emit it as the result verbatim.
@@ -423,7 +424,7 @@ async function main() {
     md.push(`📋 **SARIF** — ${sarifResultCount} finding(s) written to \`${sarifOutput}\`. Upload with \`github/codeql-action/upload-sarif@v4\`.`);
     md.push(``);
   }
-  md.push(`<sub>Engine: ${api} · 40-check deterministic design-contract verification · format: ${format} · full result in the \`result\` step output.</sub>`);
+  md.push(`<sub>Engine: ${api} · 40-check deterministic design-contract verification · format: ${format} · scope: ${scope} · full result in the \`result\` step output.</sub>`);
   appendSummary(md.join('\n'));
   if (postComment) await postPrComment(md, ghToken);
 
