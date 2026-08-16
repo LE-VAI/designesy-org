@@ -1544,7 +1544,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </ul>
           <p className="score-history-foot">
             Free tier keeps your last 5 scores in this browser.{' '}
-            <a href="/pricing" className="text-link">Score Pass</a> unlocks 90-day history + export.
+            <a href="/pricing" className="text-link">Continuity</a> adds 30-day server-side history + drift alerts.
           </p>
         </section>
       )}

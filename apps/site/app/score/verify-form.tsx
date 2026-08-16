@@ -1570,9 +1570,9 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-history-foot">
             Free tier keeps your last 5 verifications in this browser.{' '}
             <a href="/pricing" className="text-link">
-              Score Pass
+              Continuity
             </a>{' '}
-            unlocks 90-day history + export.
+            adds 30-day server-side history + drift alerts.
           </p>
         </section>
       )}

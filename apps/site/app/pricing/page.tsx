@@ -11,11 +11,11 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Pricing',
   description:
-    'Designesy pricing — open core stays free. Score Pass adds credits and export. Continuity adds saved projects, re-score, and drift. Priced after early access.',
+    'Designesy pricing — open core stays free. Continuity adds scheduled scans, drift alerts, and score history at $29/site/month. Enterprise for CI/CD gates and on-prem scoring.',
   path: '/pricing',
   ogTitle: 'Pricing · Designesy',
   ogDescription:
-    'Open core free forever. Score Pass for volume. Continuity for work that continues. Priced after early access.',
+    'Open core free forever. Continuity at $29/site/month for scheduled scans and drift alerts. Enterprise for CI gates and on-prem.',
 });
 
 const TIERS = [
@@ -23,58 +23,46 @@ const TIERS = [
     name: 'Open',
     price: 'Free',
     suffix: 'forever',
-    sub: 'Contract, Kit One, labs, open feed, Director Q&A, score + export.',
+    sub: 'Score any URL with the full 40-check engine, drift radar, AI readiness, DTCG validation.',
     bullets: [
       '40-check score on any URL',
+      '12-check drift radar',
+      '10-check AI readiness score',
+      'DTCG token file validation',
       'Score history (5 most recent, local)',
-      'Embeddable SVG badge',
-      'Verification receipt export',
-      'Open contract + machine feed',
+      'Embeddable SVG badge + receipt export',
     ],
     cta: { label: 'Start scoring', href: '/score' },
     primary: true,
   },
   {
-    name: 'Score Pass',
-    price: 'TBD',
-    suffix: 'after early access',
-    sub: 'Higher score throughput, richer exports, 90-day server-side history.',
-    bullets: [
-      '90-day server-side score history',
-      'Higher daily score throughput',
-      'Richer per-check export (CSV + JSON)',
-      'Drift comparison between scores',
-      'Priority score queue',
-    ],
-    cta: { label: 'Join Score Pass waitlist', href: '/continuity' },
-    primary: false,
-  },
-  {
     name: 'Continuity',
-    price: 'TBD',
-    suffix: 'after early access',
-    sub: 'Saved projects, scheduled re-score, drift alerts, private contract host.',
+    price: '$29',
+    suffix: '/site / month',
+    sub: 'Scheduled scans, email drift alerts, score history, baseline snapshots. 5 sites included.',
     bullets: [
-      'Everything in Score Pass',
-      'Saved projects with re-score schedule',
-      'Drift alerts when a score changes',
-      'Private contract host (your own rules)',
-      'Team seats',
+      'Everything in Open',
+      'Scheduled scans (daily or weekly)',
+      'Email drift alerts when a score changes',
+      'Score history + trend charts (30-day)',
+      'Baseline snapshots for comparison',
+      'Multi-site dashboard (5 sites included)',
     ],
     cta: { label: 'Join Continuity waitlist', href: '/continuity' },
     primary: false,
   },
   {
     name: 'Enterprise',
-    price: 'Talk to us',
+    price: 'Custom',
     suffix: '',
-    sub: 'Private contract instances, SSO, audit trail, on-prem scoring.',
+    sub: 'API access, CI/CD gates, custom contract scoring, SSO, on-prem. For teams shipping with agents at scale.',
     bullets: [
       'Everything in Continuity',
-      'Private contract instances',
-      'SSO + audit trail',
-      'On-prem scoring engine',
-      'SLA + dedicated support',
+      'API access + CI/CD gates (GitHub Actions, GitLab CI)',
+      'Custom contract scoring (your rules)',
+      'SSO/SAML + audit trail',
+      'Unlimited sites + 1-year history',
+      'On-prem scoring engine + dedicated CSM + SLA',
     ],
     cta: { label: 'Contact us', href: 'mailto:hello@designesy.org' },
     primary: false,
@@ -92,9 +80,9 @@ export default function PricingPage() {
             Open core stays free.
           </h1>
           <p className="surface-lede">
-            Score any site against the contract — free, forever. Score Pass and
-            Continuity add throughput, history, and drift for work that continues.
-            Priced after early access.
+            Score any site against the contract — free, forever. Continuity adds
+            scheduled scans, drift alerts, and score history at $29 per site per
+            month. Enterprise for CI gates and on-prem.
           </p>
           <p className="surface-note">
             No credit card to start. The free tier is the whole score engine,
@@ -106,8 +94,9 @@ export default function PricingPage() {
           <div className="pricing-desk">
             <p className="pricing-desk-lede">
               The free tier is not a trial. It is the whole verification engine
-              — 40 checks, one grade, real-time. The paid tiers add volume,
-              history, and continuity for teams shipping with agents.
+              — 40 checks, one grade, real-time. Continuity adds scheduled
+              monitoring and drift alerts for teams shipping with agents.
+              Enterprise adds CI gates and on-prem for organizations at scale.
             </p>
           </div>
         </section>
@@ -220,9 +209,9 @@ export default function PricingPage() {
                 What does &ldquo;early access&rdquo; mean?
               </summary>
               <p className="pricing-faq-a">
-                Score Pass and Continuity are not yet live. We are talking to
-                builders who score work with agents to shape the paid tiers
-                before pricing is set. Join the{' '}
+                Continuity is not yet live. We are talking to builders who score
+                work with agents to shape the monitoring features before
+                billing starts. Join the{' '}
                 <Link href="/continuity" className="text-link">
                   waitlist
                 </Link>{' '}
@@ -235,8 +224,9 @@ export default function PricingPage() {
               </summary>
               <p className="pricing-faq-a">
                 No hard cap. The free tier scores any URL with the full 40-check
-                engine and keeps your last 5 scores in your browser. Score Pass
-                will add higher daily throughput and 90-day server-side history.
+                engine and keeps your last 5 scores in your browser. Continuity
+                adds scheduled scans, server-side history, and email drift
+                alerts.
               </p>
             </details>
             <details className="pricing-faq-item">
@@ -253,12 +243,12 @@ export default function PricingPage() {
             </details>
             <details className="pricing-faq-item">
               <summary className="pricing-faq-q">
-                How many team seats in Continuity?
+                How many sites are included in Continuity?
               </summary>
               <p className="pricing-faq-a">
-                Seat count will be set during early access based on what teams
-                actually need. The waitlist exists to learn that number —
-                tell us your team size when you join.
+                5 sites are included with the $29/site/month plan. Each site
+                gets scheduled scans, drift alerts, and its own score history.
+                Need more? Enterprise covers unlimited sites.
               </p>
             </details>
             <details className="pricing-faq-item">
@@ -276,8 +266,8 @@ export default function PricingPage() {
                 What happens to my score history if I upgrade?
               </summary>
               <p className="pricing-faq-a">
-                Your 5 local scores stay in your browser. Score Pass will pick
-                up server-side history from the moment it activates. Local and
+                Your 5 local scores stay in your browser. Continuity picks up
+                server-side history from the moment it activates. Local and
                 server-side history are separate stores — one does not
                 overwrite the other.
               </p>
@@ -289,14 +279,13 @@ export default function PricingPage() {
           <h2 className="doctrine-heading">Feature comparison</h2>
           <div className="surface-note" style={{ marginBottom: '1rem' }}>
             All tiers use the same 40-check engine and the same contract. The
-            difference is volume, history, and infrastructure.
+            difference is monitoring, history, and infrastructure.
           </div>
           <table className="pricing-compare">
             <thead>
               <tr>
                 <th>Feature</th>
                 <th>Open</th>
-                <th>Score Pass</th>
                 <th>Continuity</th>
                 <th>Enterprise</th>
               </tr>
@@ -307,25 +296,27 @@ export default function PricingPage() {
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>Open contract + machine feed</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Embeddable SVG badge</td>
-                <td><span className="pricing-compare-check">✓</span></td>
+                <td>12-check drift radar</td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>Verification receipt export</td>
+                <td>10-check AI readiness</td>
                 <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>DTCG token validation</td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Embeddable SVG badge + receipt export</td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
@@ -333,69 +324,53 @@ export default function PricingPage() {
               <tr>
                 <td>Score history</td>
                 <td>5 local</td>
-                <td>90-day server</td>
-                <td>90-day server</td>
-                <td>90-day server</td>
+                <td>30-day server</td>
+                <td>1-year server</td>
               </tr>
               <tr>
-                <td>Score throughput</td>
-                <td>Standard</td>
-                <td>Higher daily</td>
-                <td>Higher daily</td>
-                <td>Higher daily</td>
-              </tr>
-              <tr>
-                <td>Per-check export (CSV + JSON)</td>
+                <td>Scheduled scans</td>
                 <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
+                <td>Daily or weekly</td>
+                <td>Custom schedule</td>
               </tr>
               <tr>
-                <td>Drift comparison between scores</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Saved projects + re-score schedule</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td>Email drift alerts</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>Drift alerts</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td>Baseline snapshots</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>Multi-site dashboard</td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td>5 sites included</td>
+                <td>Unlimited</td>
               </tr>
               <tr>
                 <td>Private contract host</td>
                 <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>Team seats</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td>Yes</td>
-                <td>Yes</td>
-              </tr>
-              <tr>
-                <td>Private contract instances</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td>API access + CI/CD gates</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>SSO + audit trail</td>
+                <td>Custom contract scoring</td>
                 <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-check">✓</span></td>
+              </tr>
+              <tr>
+                <td>SSO/SAML + audit trail</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
@@ -404,12 +379,10 @@ export default function PricingPage() {
                 <td>On-prem scoring engine</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
-                <td>SLA + dedicated support</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td>SLA + dedicated CSM</td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-dash">—</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
@@ -417,9 +390,8 @@ export default function PricingPage() {
             </tbody>
           </table>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
-            Open features are live today. Score Pass and Continuity features are
-            planned after early access. Enterprise features are available by
-            conversation —{' '}
+            Open features are live today. Continuity features are in early
+            access. Enterprise features are available by conversation —{' '}
             <a href="mailto:hello@designesy.org" className="text-link">
               contact us
             </a>
@@ -429,12 +401,11 @@ export default function PricingPage() {
 
         <section className="doctrine-section fade-up fade-up-delay-4">
           <p className="pricing-desk-note">
-            Score Pass and Continuity are in early access. Pricing will be
-            set after the early access period — join the{' '}
+            Continuity is in early access at $29/site/month. Join the{' '}
             <Link href="/continuity" className="text-link">
               Continuity waitlist
             </Link>{' '}
-            to shape it.
+            to shape the monitoring features before billing starts.
           </p>
         </section>
       </main>
