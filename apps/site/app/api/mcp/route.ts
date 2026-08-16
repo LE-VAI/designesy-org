@@ -27,6 +27,7 @@
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
+import { safeFetch } from '../../lib/url-guard';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -43,7 +44,9 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
     return cached.data;
   }
 
-  const res = await fetch(url, {
+  // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded (shared by
+  // the URL-fetching MCP tools).
+  const res = await safeFetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
       'User-Agent': 'designesy-mcp/1.10.2 (https://www.designesy.org)',
@@ -294,7 +297,8 @@ const handler = createMcpHandler(
           }
         } else if (url) {
           try {
-            const res = await fetch(url, {
+            // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
+            const res = await safeFetch(url, {
               headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.2' },
             });
             if (!res.ok) {
@@ -687,7 +691,8 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           }
         } else if (url) {
           try {
-            const res = await fetch(url, {
+            // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
+            const res = await safeFetch(url, {
               headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.2' },
             });
             if (!res.ok) {
