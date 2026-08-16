@@ -161,6 +161,13 @@ Designesy is not a template gallery. Designesy is not a generic AI design tool. 
 
 Designesy is a system.
 
+## Related tools
+
+- **[Lyse](https://github.com/lyse-design/lyse)** — 258-check design system health scoring from your codebase (6 axes). Designesy scores any public URL; Lyse scores your repo. Complementary.
+- **[DSAF](https://github.com/cyberskill-official/design-system-audit-framework)** — 125-criterion LLM-assisted design system maturity audit across 20 categories. Designesy is deterministic URL scoring; DSAF is LLM-assisted maturity assessment. Different layers, same goal.
+- **[axe-core](https://github.com/dequelabs/axe-core)** — WCAG accessibility testing. Designesy checks design-contract compliance (tokens, motion, typography) — a different layer. They complement each other.
+- **[Lighthouse](https://github.com/GoogleChrome/lighthouse)** — Performance, accessibility, and SEO auditing. Designesy checks design-contract compliance — Lighthouse doesn't know what a design token is.
+
 ## FAQ
 
 **Does it need an API key?**
