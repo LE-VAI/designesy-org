@@ -5,6 +5,16 @@ All notable changes to @designesy/stylelint-plugin-dtcg-tokens are documented he
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] — 2026-08-16
+
+### Changed — CrCoNi hardening
+
+- `pretest: npm run build` hook added — `npm test` now works on a fresh clone without manual build step
+- Removed all `as any` casts from `createPlugin()` calls — proper `stylelint.Rule<P, S>` typing throughout
+- `result` parameter typed as `PostcssResult` (was `any`) in all 3 rule functions
+- `RuleMeta.url` added to both rules (required by stylelint types)
+- 62 tests (unchanged count, but now runs via pretest hook in CI)
+
 ## [0.2.1] — 2026-08-15
 
 ### Fixed — DTCG 2025.10 JSON Pointer $ref support
