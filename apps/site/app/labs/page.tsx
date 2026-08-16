@@ -281,7 +281,7 @@ export default function LabsPage() {
             >
               <span className="row-index">09</span>
               <span className="row-body">
-                <span className="row-title">Talk to the Director</span>
+                <span className="row-title">Try the Studio</span>
                 <span className="row-meta">
                   The contract, conversational — type, motion, spacing, or score any site
                 </span>
