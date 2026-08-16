@@ -8,10 +8,10 @@
 // long tail of duplicates). 90-day retention — entries older than that
 // are pruned on read.
 //
-// The Score Pass tier (paid) replaces this with server-side 90-day
-// history + export. The free tier seeds that promise: a returning user
-// sees their last 5 scores, and the upgrade prompt surfaces "unlock
-// 90 days + export" — see the pricing page FAQ.
+// The Continuity tier ($29/site/month) replaces this with server-side
+// 30-day history + drift alerts. The free tier seeds that promise: a
+// returning user sees their last 5 scores, and the upgrade prompt surfaces
+// "scheduled scans + drift alerts" — see the pricing page.
 //
 // Contract compliance: zero raw hex, zero magic numbers in motion, all
 // durations come from the contract's motion token set when used in CSS.

@@ -18,9 +18,8 @@ const ALLOWED_ROLES = new Set([
 ]);
 const ALLOWED_INTEREST = new Set([
   '',
-  'score-pass',
   'continuity',
-  'both',
+  'enterprise',
   'unsure',
 ]);
 
