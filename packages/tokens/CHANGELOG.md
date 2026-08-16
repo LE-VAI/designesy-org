@@ -5,6 +5,13 @@ All notable changes to @designesy/tokens are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] — 2026-08-16
+
+### Changed — CrCoNi hardening
+
+- `pretest: npm run build` hook added — `npm test` now works on a fresh clone without manual build step
+- CI now runs npm tests on every PR (was publish-time only)
+
 ## [0.2.1] — 2026-08-15
 
 ### Added
