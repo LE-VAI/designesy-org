@@ -16,8 +16,8 @@ export function DirectorDock() {
       rel="noopener noreferrer"
       data-cuelume-hover="bloom"
       data-cuelume-press="tick"
-      aria-label="Talk to the Director — opens designesy.ai.studio in a new tab"
-      title="Talk to the Director"
+      aria-label="Try the Studio — opens designesy.ai.studio in a new tab"
+      title="Try the Studio"
     >
       <svg
         viewBox="0 0 16 16"
@@ -35,7 +35,7 @@ export function DirectorDock() {
         <path d="M3 5.5v3a1 1 0 0 0 1 1h1.5a0.5 0.5 0 0 1 0.5 0.5v1a1 1 0 0 1-1 1H4a2 2 0 0 1-2-2V5.5a0.5 0.5 0 0 1 0.5-0.5H3" />
         <path d="M9 5.5v3a1 1 0 0 0 1 1h1.5a0.5 0.5 0 0 1 0.5 0.5v1a1 1 0 0 1-1 1H10a2 2 0 0 1-2-2V5.5a0.5 0.5 0 0 1 0.5-0.5H9" />
       </svg>
-      <span className="director-dock-label">Talk to the Director →</span>
+      <span className="director-dock-label">Try the Studio →</span>
     </a>
   );
 }

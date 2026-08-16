@@ -124,7 +124,7 @@
 }
 
 .pillar h3 {
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   color: var(--ink);
 }
 
@@ -153,7 +153,7 @@
 }
 
 .surface-card-label {
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: var(--space-fine-35);
@@ -448,7 +448,7 @@ button.pillar:hover::before {
 }
 
 .pillar h3 {
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   color: var(--ink);
 }
 
@@ -477,7 +477,7 @@ button.pillar:hover::before {
 }
 
 .surface-card-label {
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: var(--ink);
   margin-bottom: var(--space-fine-35);
@@ -1164,7 +1164,7 @@ button.pillar {
     line-height: 1.55;
   }
   .principle-body h3 {
-    font-size: 1rem;
+    font-size: 1.171875rem;
     line-height: 1.3;
   }
 

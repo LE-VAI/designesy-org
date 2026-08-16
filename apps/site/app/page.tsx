@@ -161,7 +161,7 @@ const FIELD = [
     href: 'https://designesy.ai.studio/',
     badge: 'Conversational',
     status: 'Live',
-    title: 'Talk to the Director',
+    title: 'Try the Studio',
     lede: 'The contract, conversational. Ask about type, motion, spacing — or score any site.',
     desc: 'A conversational instance of the Designesy Director. Answers from the designesy.org contract — tokens, principles, and open tensions, not vibes.',
     arrow: 'Open the chat →',
@@ -202,10 +202,7 @@ export default function HomePage() {
         <section className="hero hero-architectural" aria-labelledby="hero-title">
           <HeroConstruction />
           <div className="hero-content">
-            <p className="hero-eyebrow fade-up" data-scramble>
-              The design legitimacy standard
-            </p>
-            <h1 className="hero-title hero-display fade-up fade-up-delay-1" id="hero-title">
+            <h1 className="hero-title hero-display fade-up" id="hero-title">
               <span className="hero-display-line" data-scramble>
                 AI makes execution<span className="hero-word-free"> free</span>.
               </span>
@@ -220,19 +217,19 @@ export default function HomePage() {
                 <span>.</span>
               </span>
             </h1>
-            <p className="hero-sub fade-up fade-up-delay-2">
+            <p className="hero-sub fade-up fade-up-delay-1">
               Verify any site against a real design contract. {ENGINE_CHECK_COUNT}{' '}
               checks. One grade. The compliance layer for AI-generated UI.
             </p>
 
             {/* THE PRODUCT — the URL input, the visual center of gravity */}
-            <div id="score" className="score-hero-input fade-up fade-up-delay-3">
+            <div id="score" className="score-hero-input fade-up fade-up-delay-2">
               <ScoreForm />
             </div>
 
             {/* REAL proof only — every value from app/hero-stats.ts. Nothing
                 fabricated. VWP receipt: see hero-stats module header. */}
-            <div className="hero-proof fade-up fade-up-delay-4" role="group" aria-label="Live verification facts">
+            <div className="hero-proof fade-up fade-up-delay-3" role="group" aria-label="Live verification facts">
               <ul className="hero-proof-stats">
                 <li className="hero-proof-stat">
                   <span className="hero-proof-dot is-live" aria-hidden="true" />

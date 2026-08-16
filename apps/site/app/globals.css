@@ -12249,7 +12249,7 @@ select {
     line-height: 1.55;
   }
   .principle-body h3 {
-    font-size: 1rem; /* 16px */
+    font-size: 1.171875rem; /* 18.75px — Major Third 1.25 from body p */
     line-height: 1.3;
   }
 
