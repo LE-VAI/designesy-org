@@ -37,6 +37,7 @@ import stylelint from 'stylelint';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { Root, Declaration } from 'postcss';
+import type { PostcssResult } from 'stylelint';
 
 import {
   flattenTokens,
@@ -94,8 +95,8 @@ const noBareHexMessages = ruleMessages(noBareHexRuleName, {
     `Bare hex color "${hex}" is ambiguous — matches tokens: ${names}. Specify which token to use.`,
 });
 
-const noBareHexRule = (primary: boolean, secondaryOptions: { tokensFile?: string } = {}) => {
-  return async (root: Root, result: any) => {
+const noBareHexRule: stylelint.Rule<boolean, { tokensFile?: string }> = (primary, secondaryOptions = {}) => {
+  return async (root: Root, result: PostcssResult) => {
     if (!primary) return;
 
     const tokensFile = secondaryOptions.tokensFile;
@@ -157,7 +158,7 @@ const noBareHexRule = (primary: boolean, secondaryOptions: { tokensFile?: string
 };
 noBareHexRule.ruleName = noBareHexRuleName;
 noBareHexRule.messages = noBareHexMessages;
-noBareHexRule.meta = { fixable: true };
+noBareHexRule.meta = { url: 'https://www.designesy.org/contracts/tokens', fixable: true };
 
 // ── Rule 2: no-magic-number ─────────────────────────────────────────────────
 
@@ -169,8 +170,8 @@ const noMagicNumberMessages = ruleMessages(noMagicNumberRuleName, {
     `Magic number "${val}" for "${prop}" is ambiguous — matches tokens: ${names}. Specify which token to use.`,
 });
 
-const noMagicNumberRule = (primary: boolean, secondaryOptions: { tokensFile?: string; severity?: string } = {}) => {
-  return async (root: Root, result: any) => {
+const noMagicNumberRule: stylelint.Rule<boolean, { tokensFile?: string; severity?: string }> = (primary, secondaryOptions = {}) => {
+  return async (root: Root, result: PostcssResult) => {
     if (!primary) return;
 
     const tokensFile = secondaryOptions.tokensFile;
@@ -232,7 +233,7 @@ const noMagicNumberRule = (primary: boolean, secondaryOptions: { tokensFile?: st
 };
 noMagicNumberRule.ruleName = noMagicNumberRuleName;
 noMagicNumberRule.messages = noMagicNumberMessages;
-noMagicNumberRule.meta = { fixable: true };
+noMagicNumberRule.meta = { url: 'https://www.designesy.org/contracts/tokens', fixable: true };
 
 // ── Rule 3: no-undeclared-var (NOT fixable) ─────────────────────────────────
 
@@ -242,8 +243,8 @@ const noUndeclaredVarMessages = ruleMessages(noUndeclaredVarRuleName, {
     `var() references custom property "${ref}" which is not declared in the DTCG token file`,
 });
 
-const noUndeclaredVarRule = (primary: boolean, secondaryOptions: { tokensFile?: string } = {}) => {
-  return async (root: Root, result: any) => {
+const noUndeclaredVarRule: stylelint.Rule<boolean, { tokensFile?: string }> = (primary, secondaryOptions = {}) => {
+  return async (root: Root, result: PostcssResult) => {
     if (!primary) return;
 
     const tokensFile = secondaryOptions.tokensFile;
@@ -287,9 +288,9 @@ noUndeclaredVarRule.messages = noUndeclaredVarMessages;
 // ── Plugin export ───────────────────────────────────────────────────────────
 
 const plugins = [
-  createPlugin(noBareHexRuleName, noBareHexRule as any),
-  createPlugin(noMagicNumberRuleName, noMagicNumberRule as any),
-  createPlugin(noUndeclaredVarRuleName, noUndeclaredVarRule as any),
+  createPlugin(noBareHexRuleName, noBareHexRule),
+  createPlugin(noMagicNumberRuleName, noMagicNumberRule),
+  createPlugin(noUndeclaredVarRuleName, noUndeclaredVarRule),
 ];
 
 export default plugins;

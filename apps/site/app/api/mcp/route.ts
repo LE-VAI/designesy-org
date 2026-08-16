@@ -21,7 +21,7 @@
 //   guardrails, monitor, compare, report, tokens, a11y, motion).
 // 1 UI resource (ui://designesy/report-app) renders the report dashboard.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.8.0 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.10.1 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
@@ -46,7 +46,7 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const res = await fetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': 'designesy-mcp/2.1.0 (https://www.designesy.org)',
+      'User-Agent': 'designesy-mcp/1.10.1 (https://www.designesy.org)',
     },
   });
 
@@ -295,7 +295,7 @@ const handler = createMcpHandler(
         } else if (url) {
           try {
             const res = await fetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/2.0.0' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.1' },
             });
             if (!res.ok) {
               return {
@@ -351,6 +351,29 @@ const handler = createMcpHandler(
         let colorStructureCount = 0;
         let colorBareHexCount = 0;
         let totalTokens = 0;
+        const allTypes = new Set<string>();
+        const dimensionValues: Array<{ path: string; value: string }> = [];
+        const deprecatedPatterns: string[] = [];
+
+        const DTCG_STANDARD_TYPES = new Set([
+          'color', 'dimension', 'fontFamily', 'fontWeight', 'duration',
+          'number', 'string', 'boolean', 'link', 'gradient', 'shadow',
+          'border', 'transition', 'typography', 'strokeStyle',
+          'borderStyle', 'borderWeight', 'radius', 'spacing',
+        ]);
+
+        const VALID_DIMENSION_UNITS = [
+          'px', 'rem', 'em', '%', 'vw', 'vh', 'vmin', 'vmax',
+          'ch', 'ex', 'svh', 'lvh', 'dvh', 'svw', 'lvw', 'dvw',
+          'cm', 'mm', 'in', 'pt', 'pc', 'fr',
+        ].sort((a, b) => b.length - a.length); // longest first for suffix matching
+
+        function extractUnit(v: string): string {
+          for (const unit of VALID_DIMENSION_UNITS) {
+            if (v.endsWith(unit)) return unit;
+          }
+          return '';
+        }
 
         function walkTokens(obj: Record<string, unknown>, path: string = ''): void {
           for (const [key, val] of Object.entries(obj)) {
@@ -360,7 +383,10 @@ const handler = createMcpHandler(
               const v = val as Record<string, unknown>;
               if (v.$value !== undefined) {
                 totalTokens++;
-                if (v.$type) typePassCount++;
+                if (v.$type) {
+                  typePassCount++;
+                  if (typeof v.$type === 'string') allTypes.add(v.$type);
+                }
                 if (v.$value !== undefined) valuePassCount++;
                 // Check color tokens for structured format
                 if (v.$type === 'color') {
@@ -368,7 +394,24 @@ const handler = createMcpHandler(
                     colorStructureCount++;
                   } else if (typeof v.$value === 'string' && (v.$value as string).startsWith('#')) {
                     colorBareHexCount++;
+                    deprecatedPatterns.push(`Color token '${currentPath}' uses bare hex (pre-2025.10 pattern)`);
                   }
+                }
+                // Check dimension tokens for valid units
+                if (v.$type === 'dimension') {
+                  if (typeof v.$value === 'string') {
+                    dimensionValues.push({ path: currentPath, value: v.$value });
+                    if (!extractUnit(v.$value)) {
+                      deprecatedPatterns.push(`Dimension token '${currentPath}' has unrecognized or missing unit: '${v.$value}'`);
+                    }
+                  } else if (typeof v.$value === 'number') {
+                    dimensionValues.push({ path: currentPath, value: String(v.$value) });
+                    deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (should include unit string)`);
+                  }
+                }
+                // Check for deprecated $ref syntax
+                if ('$ref' in v) {
+                  deprecatedPatterns.push(`Token '${currentPath}' uses deprecated $ref syntax (use {path} in $value)`);
                 }
               } else {
                 // Recurse into groups
@@ -412,37 +455,69 @@ const handler = createMcpHandler(
           });
         }
 
-        // t06-t10: remaining structural checks
-        results.push({
-          id: 't06',
-          name: checks[5]?.item || 'Standard type names',
-          status: 'PASS',
-          detail: 'Standard types verified: color, dimension, fontFamily, fontWeight, duration, number, string, boolean',
-        });
-        results.push({
-          id: 't07',
-          name: checks[6]?.item || 'Custom type extension',
-          status: 'PASS',
-          detail: 'Custom types use $type prefix convention (checked)',
-        });
-        results.push({
-          id: 't08',
-          name: checks[7]?.item || 'Dimension units',
-          status: 'PASS',
-          detail: 'Dimension tokens use unit references (px, rem, em, %)',
-        });
-        results.push({
-          id: 't09',
-          name: checks[8]?.item || 'Token naming hierarchy',
-          status: groupKeys.length > 0 ? 'PASS' : 'WARN',
-          detail: 'Token names follow dot-notation hierarchy (group.subgroup.token)',
-        });
-        results.push({
-          id: 't10',
-          name: checks[9]?.item || 'No deprecated patterns',
-          status: 'PASS',
-          detail: 'No deprecated DTCG patterns detected (pre-2025.10)',
-        });
+        // t06: Standard type names — verify all $type values are in the DTCG 2025.10 set
+        const nonStandardTypes = [...allTypes].filter((t) => !DTCG_STANDARD_TYPES.has(t));
+        let t06Status: string, t06Detail: string;
+        if (totalTokens === 0) {
+          t06Status = 'SKIP'; t06Detail = 'No tokens found';
+        } else if (typePassCount === 0) {
+          t06Status = 'FAIL'; t06Detail = 'No tokens have $type — cannot verify standard type names';
+        } else if (nonStandardTypes.length === 0) {
+          t06Status = 'PASS'; t06Detail = `All ${allTypes.size} unique type(s) are DTCG 2025.10 standard: ${[...allTypes].sort().join(', ')}`;
+        } else {
+          t06Status = 'WARN'; t06Detail = `Non-standard type(s) found: ${nonStandardTypes.sort().join(', ')}. These may be valid custom types (see t07).`;
+        }
+        results.push({ id: 't06', name: checks[5]?.item || 'Standard type names', status: t06Status, detail: t06Detail });
+
+        // t07: Custom type extension — non-standard types should follow namespacing convention
+        const customTypes = [...allTypes].filter((t) => !DTCG_STANDARD_TYPES.has(t));
+        let t07Status: string, t07Detail: string;
+        if (customTypes.length === 0) {
+          t07Status = 'SKIP'; t07Detail = 'No custom types found';
+        } else {
+          const bareCustoms = customTypes.filter((t) => !t.includes('.'));
+          if (bareCustoms.length === 0) {
+            t07Status = 'PASS'; t07Detail = `All ${customTypes.length} custom type(s) use dot-namespacing: ${customTypes.sort().join(', ')}`;
+          } else {
+            t07Status = 'WARN'; t07Detail = `Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): ${bareCustoms.sort().join(', ')}`;
+          }
+        }
+        results.push({ id: 't07', name: checks[6]?.item || 'Custom type extension', status: t07Status, detail: t07Detail });
+
+        // t08: Dimension units — verify dimension tokens have valid CSS length units
+        let t08Status: string, t08Detail: string;
+        if (dimensionValues.length === 0) {
+          t08Status = 'SKIP'; t08Detail = 'No dimension tokens found';
+        } else {
+          const badUnits = dimensionValues.filter((d) => !extractUnit(d.value)).map((d) => `${d.path}='${d.value}'`);
+          if (badUnits.length === 0) {
+            t08Status = 'PASS'; t08Detail = `All ${dimensionValues.length} dimension token(s) use valid units (px, rem, em, %, etc.)`;
+          } else {
+            t08Status = badUnits.length < dimensionValues.length ? 'WARN' : 'FAIL';
+            t08Detail = `${badUnits.length}/${dimensionValues.length} dimension token(s) have missing/unrecognized units: ${badUnits.slice(0, 5).join(', ')}`;
+          }
+        }
+        results.push({ id: 't08', name: checks[7]?.item || 'Dimension units', status: t08Status, detail: t08Detail });
+
+        // t09: Token naming hierarchy — groups should exist (dot-notation is implicit in nesting)
+        let t09Status: string, t09Detail: string;
+        if (totalTokens === 0) {
+          t09Status = 'FAIL'; t09Detail = 'No tokens found — cannot assess naming hierarchy';
+        } else if (groupKeys.length > 0) {
+          t09Status = 'PASS'; t09Detail = `${groupKeys.length} token group(s) with nested hierarchy: ${groupKeys.slice(0, 5).join(', ')}${groupKeys.length > 5 ? '...' : ''}`;
+        } else {
+          t09Status = 'WARN'; t09Detail = 'No token groups found — tokens should be organized into groups (e.g., color, spacing, typography)';
+        }
+        results.push({ id: 't09', name: checks[8]?.item || 'Token naming hierarchy', status: t09Status, detail: t09Detail });
+
+        // t10: No deprecated patterns — check for pre-2025.10 patterns
+        let t10Status: string, t10Detail: string;
+        if (deprecatedPatterns.length === 0) {
+          t10Status = 'PASS'; t10Detail = 'No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)';
+        } else {
+          t10Status = 'WARN'; t10Detail = `${deprecatedPatterns.length} deprecated pattern(s) found: ${deprecatedPatterns.slice(0, 3).join('; ')}${deprecatedPatterns.length > 3 ? '...' : ''}`;
+        }
+        results.push({ id: 't10', name: checks[9]?.item || 'No deprecated patterns', status: t10Status, detail: t10Detail });
 
         const passCount = results.filter((r) => r.status === 'PASS').length;
         const failCount = results.filter((r) => r.status === 'FAIL').length;
@@ -613,7 +688,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
         } else if (url) {
           try {
             const res = await fetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/2.0.0' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.1' },
             });
             if (!res.ok) {
               return {
@@ -728,12 +803,12 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           detail: `${deprecatedCount} deprecated layer types found. Types 12, 13 are deprecated in Lottie spec v1.0.1.`,
         });
 
-        // m09: §16 non-negotiable standards (metadata-level check)
+        // m09: §16 non-negotiable standards (metadata-level check — SKIP, requires runtime preview)
         results.push({
           id: 'm09',
           name: checks[8]?.item || '§16 Ten Non-Negotiable Standards',
-          status: 'PASS',
-          detail: `Ten standards from contract: ${tenStandards.map((s) => s.id || s.name).join(', ')}. Full verification requires runtime preview against §16 criteria.`,
+          status: 'SKIP',
+          detail: `Ten standards from contract: ${tenStandards.map((s) => s.id || s.name).join(', ')}. Full verification requires runtime preview against §16 criteria — metadata-level only.`,
         });
 
         // m10: JSON Schema Draft 2020-12 conformance
@@ -1060,7 +1135,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     // Stateless 2026-07-28: server identity reported via server/discover.
     serverInfo: {
       name: 'designesy',
-      version: '1.8.0',
+      version: '1.10.1',
     },
     verboseLogs: true,
   },

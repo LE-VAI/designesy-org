@@ -7,7 +7,7 @@
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.10.0",
+  "version": "1.10.1",
   "license": "MIT",
   "websiteUrl": "https://www.designesy.org",
   "remotes": [
@@ -21,7 +21,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "designesy-mcp",
-      "version": "1.10.0",
+      "version": "1.10.1",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

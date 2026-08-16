@@ -47,7 +47,7 @@ When a value maps to multiple tokens even after disambiguation, the violation is
 - Added `ms` (milliseconds) to magic number detection — `transition-duration: 150ms` is now flagged
 - stylelint plugin rewritten to use `createPlugin` + `report()` + `meta.fixable` (was ad-hoc `result.warn()`)
 - Added `stylelint` as a devDependency for testing
-- 61 tests (up from 29) — added reverse-map unit tests, PostCSS fix tests, and stylelint fix tests
+- 62 tests (up from 29) — added reverse-map unit tests, PostCSS fix tests, and stylelint fix tests
 
 ## [0.1.1] — 2026-08-15
 
