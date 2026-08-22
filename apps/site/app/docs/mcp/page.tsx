@@ -334,10 +334,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                80% B
+                90% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                /export/dtcg · 8/10 checks pass · 2 WARN (custom types without namespacing) · verified 2026-08-22
+                /export/dtcg · 9/10 checks pass · 1 WARN (custom types non-standard, namespaced designesy.* per t07) · verified 2026-08-22
               </p>
             </div>
             <div
