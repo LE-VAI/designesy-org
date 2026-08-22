@@ -957,8 +957,12 @@ function checkFontSmoothing(css: string): CheckResult {
 }
 
 function checkRemScale(css: string): CheckResult {
-  const remMatches = (css.match(/\b\d+(\.\d+)?rem\b/gi) || []).length;
-  const pxMatches = (css.match(/\b\d+px\b/gi) || []).length;
+  // v16 — text sizes in rem. The intent is font-size discipline (the Cadence
+  // contract), not layout px (borders, widths, shadows are legitimately px).
+  // Count font-size declarations only, so SVG micro-labels and non-font px
+  // don't drown the signal.
+  const remMatches = (css.match(/font-size\s*:\s*[\d.]+rem/gi) || []).length;
+  const pxMatches = (css.match(/font-size\s*:\s*[\d.]+px/gi) || []).length;
   if (remMatches > pxMatches) return { id: 'v16', item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed', category: 'cadence', status: 'PASS', detail: `${remMatches} rem vs ${pxMatches} px` };
   return { id: 'v16', item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed', category: 'cadence', status: 'WARN', detail: `${pxMatches} px vs ${remMatches} rem` };
 }
@@ -1463,6 +1467,8 @@ const RECOGNIZED_BUTTON_COMMANDS = new Set([
   'unfollow', 'like', 'bookmark', 'pin', 'star', 'report', 'block',
   'mute', 'unmute', 'archive', 'restore', 'refresh', 'reload', 'update',
   'find', 'replace', 'navigate', 'run', 'score', 'review', 'verify',
+  'detect', 'assess', 'enforce', 'dismiss', 'analyze', 'inspect', 'check',
+  'evaluate', 'validate', 'test', 'monitor', 'track', 'measure', 'scan',
 ]);
 
 function isVerbLike(word: string): boolean {
@@ -1488,7 +1494,13 @@ function checkButtonTextVerb(html: string): CheckResult {
   // "✕ Close" or "◐ Play". Range: misc symbols (2600-26FF), dingbats (2700-27BF),
   // geometric shapes (2A00-2BFF), arrows (2190-21FF), misc technical (2300-23FF),
   // CJK symbols, private use, and common icon chars like ✕ ◐ ✦ → etc.
-  const ICON_PREFIX_RE = /^[\u2100-\u27BF\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\u2A00-\u2BFF\u2190-\u21FF\u00A0\s]+/;
+  // Strip leading icon characters (Unicode symbols, emoji, geometric shapes,
+  // arrows, dingbats) that precede the actual verb in button labels like
+  // "✕ Close" or "◐ Play". Range: misc symbols (2600-26FF), dingbats (2700-27BF),
+  // geometric shapes (2A00-2BFF), arrows (2190-21FF), misc technical (2300-23FF),
+  // CJK symbols, private use, and common icon chars like ✕ ◐ ✦ → etc.
+  // U+00D7 (×, multiplication sign) is also used as a close glyph (e.g. "×").
+  const ICON_PREFIX_RE = /^[\u00D7\u2100-\u27BF\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\u2A00-\u2BFF\u2190-\u21FF\u00A0\s]+/;
 
   const buttonTexts: string[] = [];
   let m;
@@ -1504,12 +1516,21 @@ function checkButtonTextVerb(html: string): CheckResult {
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
     text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    // Icon-only button with an accessible name: use the aria-label verb.
+    if (!text) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
     if (text) buttonTexts.push(text);
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    if (!text) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
     if (text) buttonTexts.push(text);
   }
 
