@@ -28,7 +28,7 @@ const TOOLS = [
     checks: '40 checks across 14 categories',
     license: 'See designesy.org',
     stars: '—',
-    score: '95.3% A (self)',
+    score: '93% A (self)',
     url: 'https://www.designesy.org/',
   },
   {
@@ -176,7 +176,7 @@ export default function BenchmarksPage() {
               { attr: 'Checks', d: '40 across 14 categories', h: '57 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
               { attr: 'License', d: 'See designesy.org', h: 'MIT', s: 'Apache-2.0' },
               { attr: 'Stars', d: '—', h: '20.5k', s: '40 (parent repo)' },
-              { attr: 'Score on designesy.org', d: '95.3% A (33/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
+              { attr: 'Score on designesy.org', d: '93% A (36/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
             ].map((row) => (
               <div className="token-table-row" role="row" key={row.attr}>
                 <span role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{row.attr}</span>
@@ -285,7 +285,7 @@ export default function BenchmarksPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>designesy</code>
-              <code role="cell">95.3% A (33 PASS / 0 FAIL / 3 WARN / 1 SKIP / 3 MANUAL)</code>
+              <code role="cell">93% A (36 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL)</code>
               <span role="cell">3 WARN: v16 rem/px ratio, v26 font-family count, v38 bare-noun buttons. 3 MANUAL: viewport overflow, sound toggle, Core Web Vitals (browser-only probes)</span>
             </div>
             <div className="token-table-row" role="row">
@@ -349,13 +349,13 @@ export default function BenchmarksPage() {
             <p className="definition-label">Sources</p>
             <p>
               Live research via AnySearch MCP (2026-08-01). Designesy live score
-              verified via POST to https://www.designesy.org/api/score (95.3% A,
+              verified via POST to https://www.designesy.org/api/score (93% A,
               40 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.
             </p>
           </div>
           <CheckGrid items={[
-            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 95.3% A, 40 checks, verified 2026-08-14' },
+            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 93% A, 40 checks, verified 2026-08-22' },
             { title: 'hallmark 57 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },

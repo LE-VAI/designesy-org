@@ -392,7 +392,7 @@ export default function DocsPage() {
             <p className="definition-label">Honest reading of /report?url=designesy.org</p>
             <p>
               The composite grade is <strong>A (91/100)</strong> — a weighted
-              synthesis of the design-score engine (95.3/100, A), the drift
+              synthesis of the design-score engine (93/100, A), the drift
               engine (92/100, A), and AI-readiness (80/100, B). Of the 12 drift
               checks, 10 PASS, 0 FAIL, and 2 WARN. The 2 WARNs are:
             </p>
