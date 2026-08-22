@@ -334,10 +334,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                95.3% A
+                80% B
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                /export/dtcg · 10/10 checks pass · self-verified
+                /export/dtcg · 8/10 checks pass · 2 WARN (custom types without namespacing) · verified 2026-08-22
               </p>
             </div>
             <div
@@ -358,10 +358,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                95.3% A
+                93% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                40-check engine · 33 PASS / 0 FAIL / 3 WARN / 1 SKIP / 3 MANUAL
+                40-check engine · 36 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
               </p>
             </div>
           </div>
