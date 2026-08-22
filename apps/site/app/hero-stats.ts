@@ -19,7 +19,7 @@ export const CONTRACT_VERSION = 'v0.4.0';
 // second literal. The hero and the leaderboard show the same number because
 // they read the same source: two frozen values for one fact is the exact
 // contradiction this module exists to kill. Current seed-derived self-score
-// (2026-08-14 live engine re-score): 95.3% A (33P / 0F / 3W / 1S / 3M — the
+// (2026-08-22 fresh engine re-score): 93% A (36P / 0F / 0W / 1S / 3M — the
 // 1 skip is DESIGN.md not served; 3 manual are browser-only probes: viewport
 // overflow, sound toggle, Core Web Vitals). The number below is derived
 // from the seed row, never a second literal — update the seed to change it.

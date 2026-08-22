@@ -59,7 +59,7 @@ const EMISSION_FORMATS = [
     format: 'designesy',
     desc: 'The native designesy shape — the current response with score, grade, checks, categoryScores.',
     contentType: 'application/json',
-    example: '{ "ok": true, "score": 95.3, "grade": "A", "checks": [...] }',
+    example: '{ "ok": true, "score": 93, "grade": "A", "checks": [...] }',
   },
   {
     format: 'canonical',
