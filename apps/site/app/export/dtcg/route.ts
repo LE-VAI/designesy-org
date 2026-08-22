@@ -160,7 +160,7 @@ export function GET() {
         for (const [sk, sv] of Object.entries(springs)) {
           springGroup[sk] = {
             $value: `${sv.response}s response, ${sv.damping} damping`,
-            $type: 'spring',
+            $type: 'designesy.spring',
             $description: sv.description,
           };
         }
@@ -172,7 +172,7 @@ export function GET() {
         durationGroup[name] = { $value: spec.value, $type: 'duration', $description: spec.role };
       } else if (key.startsWith('ease')) {
         const name = key === 'ease' ? 'default' : key.replace('ease_', '');
-        easeGroup[name] = { $value: spec.value, $type: 'cubicBezier', $description: spec.role };
+        easeGroup[name] = { $value: spec.value, $type: 'designesy.cubicBezier', $description: spec.role };
       }
     }
     if (Object.keys(durationGroup).length > 0) motionGroup.duration = durationGroup;
@@ -214,7 +214,7 @@ export function GET() {
       const name = cue.token.replace('--cue:', '');
       soundGroup[name] = {
         $value: cue.cue,
-        $type: 'sound',
+        $type: 'designesy.sound',
         $description: cue.role,
       };
     }
