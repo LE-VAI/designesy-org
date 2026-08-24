@@ -7,6 +7,8 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { ToggleRow } from '../lib/toggle-row';
 import { pageMeta } from '../lib/site-meta';
+import { ListenButton } from '../lib/listen-button';
+import { OPEN_AUDIO } from '../lib/open-audio';
 import {
   JsonLd,
   creativeWorkJsonLd,
@@ -115,11 +117,16 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">Packages</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Live portable cargo. Machine URLs are CORS-open JSON for agents and
-            tools.
+            tools. Each package carries a spoken abstract — automated voice,
+            synthesized at build time, served as static audio.
           </p>
           <div className="row-stack" role="list">
             {o.packages.map((pkg, i) => (
-              <div className="row" role="listitem" key={pkg.id}>
+              <div
+                className={`row row--listen${OPEN_AUDIO[pkg.id] ? ' has-listen' : ''}`}
+                role="listitem"
+                key={pkg.id}
+              >
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
                 </span>
@@ -150,6 +157,7 @@ export default function OpenPage() {
                     )}
                   </span>
                 </span>
+                <ListenButton pkgId={pkg.id} title={pkg.title} />
               </div>
             ))}
           </div>
