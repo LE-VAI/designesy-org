@@ -6,17 +6,27 @@
   Static dial = dated; timeline strip = governance-ready.
 
   Two modes:
-  - With `snapshots` prop: real dots from the URL's history (oldest →
-    newest), colored by grade. Click to mark selected.
+  - With `snapshots` prop (2+): real dots from the URL's history.
   - Without: 6-point SAMPLE timeline showing what a watch series looks
     like — used on the /monitor hero to preview the surface before any
     run.
 
-  Craft contract:
-  - Hand-rolled SVG. No chart library. Blueprint-grid subtle baseline.
-  - role="img" + aria-roledescription + a per-dot title (linked-list
-    pattern: each dot is a real timestamp + score for screen readers).
-  - prefers-reduced-motion: CSS disables draw-on.
+  GEOMETRY CONTRACT (v2 — do not regress):
+  - FIXED viewBox (600 × H) with UNIFORM scaling (default
+    preserveAspectRatio). The v1 attempt used viewBox 0 0 100 H +
+    preserveAspectRatio="none", which stretched circles into flat
+    ellipses and turned px-sized labels into smudges. Never combine a
+    unit-width viewBox with `none` when the layer contains circles or
+    text.
+  - Vertical axis is DATA-RELATIVE (min/max + 15% padding) so a tight
+    score band still reads as a trend. First/last dots carry their true
+    numeric labels, so no dishonesty — the shape is relative, the
+    anchors are absolute.
+  - role="img" + aria-roledescription + per-dot <title> (each dot is a
+    real timestamp + score for screen readers); the numeric history
+    lives in the DOM around the strip.
+
+  prefers-reduced-motion: CSS disables transitions (globals.css).
 */
 
 export type TimelineSnapshot = {
@@ -28,12 +38,13 @@ export type TimelineSnapshot = {
 
 export type SnapshotTimelineStripProps = {
   snapshots?: TimelineSnapshot[];
-  /** Pixel width (default fills container via 100%) */
-  width?: number;
+  /** SVG height in viewBox units (default 96) */
   height?: number;
-  /** Show "sample" badge to mark preview data (default false) */
+  /** Mark as sample/preview data (default: auto — sample when no real snapshots) */
   sample?: boolean;
 };
+
+const VB_W = 600;
 
 const SAMPLE: TimelineSnapshot[] = [
   { timestamp: '2026-08-04T09:00:00Z', score: 78, grade: 'C' },
@@ -67,25 +78,30 @@ function shortDate(iso: string): string {
 
 export function SnapshotTimelineStrip({
   snapshots,
-  height = 88,
-  sample = false,
+  height = 96,
+  sample,
 }: SnapshotTimelineStripProps) {
-  const data = snapshots && snapshots.length >= 2 ? snapshots : SAMPLE;
-  const isSample = sample || !snapshots || snapshots.length < 2;
-  if (data.length < 2) return null;
+  const hasReal = snapshots && snapshots.length >= 2;
+  const data = hasReal ? snapshots! : SAMPLE;
+  const isSample = sample || !hasReal;
 
-  const pad = 14;
-  const dotR = 5;
-  const stepX = 1 / (data.length - 1);
+  const padX = 34;   // room for the first/last score labels
+  const padY = 22;   // room for labels above dots
+  const dotR = 6;
 
-  // Score band (0-100) — pad by 5 each side so dots don't kiss the edges.
-  const lo = 0;
-  const hi = 100;
-  const y = (score: number) => pad + (1 - (score - lo) / (hi - lo)) * (height - pad * 2);
+  // Data-relative vertical band with 15% padding (flat history centers).
+  const scores = data.map((s) => s.score);
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const span = max - min;
+  const lo = span === 0 ? min - 5 : min - span * 0.15;
+  const hi = span === 0 ? max + 5 : max + span * 0.15;
+  const range = hi - lo || 1;
 
-  const linePoints = data
-    .map((s, i) => `${(i * stepX * 100).toFixed(2)},${y(s.score).toFixed(1)}`)
-    .join(' ');
+  const y = (score: number) => padY + (1 - (score - lo) / range) * (height - padY * 2);
+  const x = (i: number) => padX + (i / (data.length - 1)) * (VB_W - padX * 2);
+
+  const linePoints = data.map((s, i) => `${x(i).toFixed(1)},${y(s.score).toFixed(1)}`).join(' ');
 
   const latest = data[data.length - 1];
   const first = data[0];
@@ -104,51 +120,49 @@ export function SnapshotTimelineStrip({
       </div>
       <svg
         width="100%"
-        height={height}
-        viewBox={`0 0 100 ${height}`}
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${VB_W} ${height}`}
         role="img"
         aria-roledescription="snapshot timeline"
         aria-label={`Snapshot timeline: ${data.length} runs from ${shortDate(first.timestamp)} (score ${Math.round(first.score)}) to ${shortDate(latest.timestamp)} (score ${Math.round(latest.score)})`}
         className="timeline-strip-svg"
+        style={{ display: 'block', width: '100%', height: 'auto' }}
       >
-        {/* Faint 50%-line baseline (Lighthouse score midline). */}
-        <line x1={pad} y1={y(50)} x2={100 - pad} y2={y(50)} stroke="var(--line-faint)" strokeWidth="0.5" strokeDasharray="2 4" />
         {/* Trend line connecting all dots. */}
         <polyline
           points={linePoints}
           fill="none"
           stroke="var(--line-strong)"
-          strokeWidth="0.8"
+          strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity="0.6"
+          opacity={0.6}
         />
-        {/* Per-snapshot dots + first/last labels. */}
-        {data.map((s, i) => {
-          const cx = pad + (i * stepX * (100 - pad * 2));
-          const cy = y(s.score);
-          const color = gradeColor(s.grade);
-          return (
-            <g key={i}>
-              <title>{`${shortDate(s.timestamp)} — ${s.grade} (${Math.round(s.score)})`}</title>
-              <circle cx={cx} cy={cy} r={dotR} fill={color} stroke="var(--paper)" strokeWidth="1" />
-            </g>
-          );
-        })}
-        {/* First + last dot score labels — minimal, only the two anchors. */}
+        {/* Per-snapshot dots + first/last true-value labels. */}
+        {data.map((s, i) => (
+          <g key={i}>
+            <title>{`${shortDate(s.timestamp)} — ${s.grade} (${Math.round(s.score)})`}</title>
+            <circle
+              cx={x(i)}
+              cy={y(s.score)}
+              r={dotR}
+              fill={gradeColor(s.grade)}
+              stroke="var(--paper)"
+              strokeWidth={1.5}
+            />
+          </g>
+        ))}
         <text
-          x={pad + (0 * stepX * (100 - pad * 2))}
-          y={y(first.score) - 10}
-          textAnchor="start"
+          x={x(0)}
+          y={y(first.score) - dotR - 7}
+          textAnchor="middle"
           className="timeline-strip-label"
         >
           {Math.round(first.score)}
         </text>
         <text
-          x={pad + ((data.length - 1) * stepX * (100 - pad * 2))}
-          y={y(latest.score) - 10}
-          textAnchor="end"
+          x={x(data.length - 1)}
+          y={y(latest.score) - dotR - 7}
+          textAnchor="middle"
           className="timeline-strip-label"
         >
           {Math.round(latest.score)}
