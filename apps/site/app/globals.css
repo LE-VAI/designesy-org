@@ -12845,7 +12845,6 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .timeline-strip-svg { transition: none; }
->>>>>>> 358a08b (feat(visual): score sparkline + monitor timeline strip + category spines)
 }
 
 .monitor-hero-preview {
