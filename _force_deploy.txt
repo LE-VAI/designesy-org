@@ -1,0 +1,1 @@
+<!-- visual-audit trio shipped: A1 sparkline, A2 timeline, I3 category spines -->
