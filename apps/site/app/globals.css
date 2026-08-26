@@ -12822,18 +12822,6 @@ select {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
-.timeline-strip-svg {
-  display: block;
-  width: 100%;
-  /* Stroke / fill use inline `var(--...)` so single-color rendering is
-     guaranteed regardless of host cascade order. */
-}
-.timeline-strip-label {
-  font-size: 3.5px;
-  font-weight: 700;
-  font-family: var(--mono);
-  fill: var(--muted);
-}
 .timeline-strip-axis {
   display: flex;
   justify-content: space-between;
@@ -12843,10 +12831,6 @@ select {
   text-transform: none;
   letter-spacing: 0;
 }
-@media (prefers-reduced-motion: reduce) {
-  .timeline-strip-svg { transition: none; }
-}
-
 .monitor-hero-preview {
   display: flex;
   flex-direction: column;
@@ -12903,11 +12887,12 @@ select {
 .timeline-strip-svg {
   display: block;
   width: 100%;
+  height: auto;
   /* Stroke / fill use inline `var(--...)` so single-color rendering is
      guaranteed regardless of host cascade order. */
 }
 .timeline-strip-label {
-  font-size: 3.5px;
+  font-size: 12px;
   font-weight: 700;
   font-family: var(--mono);
   fill: var(--muted);
@@ -12937,16 +12922,6 @@ select {
   align-items: center;
   gap: var(--space-fine-65);
   margin-top: var(--space-fine-30);
-}
-
-.score-sparkline {
-  /* Color follows the LATEST score band — set inline via the stroke attr,
-     not a CSS variable, so the gradient lives in the SVG. Subtle baseline
-     so the line reads as trend, not as decoration. */
-  display: block;
-  /* Vertical alignment with the chip — pull up by 1px to match the
-     uppercase badge top. */
-  transform: translateY(-1px);
 }
 
 /* v2026-08-25-scanability: 3-px category spine on each check card.
