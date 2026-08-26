@@ -9087,6 +9087,33 @@ a.lab-card:focus-visible .lab-card-arrow {
   opacity: 0;
 }
 
+/* v2026-08-25-scanability: 3-px category spine on each check card.
+   Answers "which category is failing" at a glance without reading a
+   single label. Colors come from the contract token set (one hue per
+   category family); the category chip remains the non-color signal
+   (a11y: color never carries alone). */
+.score-card-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-8);
+  bottom: var(--space-8);
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--muted-dim);
+  opacity: 0.55;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.score-card-item[data-category='tokens']::before { background: var(--signal); }
+.score-card-item[data-category='accessibility']::before { background: var(--ok); }
+.score-card-item[data-category='motion']::before { background: var(--signal-light); }
+.score-card-item[data-category='interaction']::before { background: var(--amber-notice); }
+.score-card-item[data-category='cadence']::before { background: var(--grade-b); }
+.score-card-item[data-category='copywriting']::before { background: var(--grade-c); }
+.score-card-item[data-category='identity']::before { background: var(--error); }
+.score-card-item[data-category='platform']::before { background: var(--muted); }
+.score-card-item:hover::before { opacity: 1; }
+
 @keyframes scoreCardReveal {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
@@ -11175,6 +11202,30 @@ select {
   border: 1px solid color-mix(in srgb, var(--grade-f) 28%, transparent);
 }
 
+/* v2026-08-25-trend: delta + sparkline group.
+   Wraps the score-delta-chip and ScoreSparkline together so they sit
+   side-by-side in the score hero. Sparkline is a hand-rolled SVG —
+   color follows the LATEST score's threshold band (ok / warn / error),
+   one hue, one story. Linked-table pattern: the data lives in the
+   adjacent "Recent scores" list (which is the screen-reader-readable
+   source of truth for this trend). */
+.score-delta-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-fine-65);
+  margin-top: var(--space-fine-30);
+}
+
+.score-sparkline {
+  /* Color follows the LATEST score band — set inline via the stroke attr,
+     not a CSS variable, so the gradient lives in the SVG. Subtle baseline
+     so the line reads as trend, not as decoration. */
+  display: block;
+  /* Vertical alignment with the chip — pull up by 1px to match the
+     uppercase badge top. */
+  transform: translateY(-1px);
+}
+
 .score-strong-weak {
   margin: var(--space-fine-15) 0 var(--space-fine-45);
   font-size: 0.8rem;
@@ -12693,65 +12744,6 @@ select {
   }
 }
 
-/* ==========================================================================
-   Listen - spoken package abstracts (/open rows).
-   Static Opus synthesized at build time; client toggle in listen-button.tsx.
-   Playing rows take --activation (the "live" semantic). Color-only state
-   changes: safe under prefers-reduced-motion by construction.
-   ========================================================================== */
-
-.row--listen {
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-}
-
-.listen-cell {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.listen-dur {
-  font-size: 0.72rem;
-  color: var(--muted-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.listen-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  transition:
-    color 0.18s var(--ease-out),
-    border-color 0.18s var(--ease-out),
-    background 0.18s var(--ease-out);
-}
-
-.listen-btn:hover {
-  color: var(--signal-access);
-  border-color: var(--signal-access);
-  background: var(--surface-hover);
-}
-
-.listen-btn:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-.listen-btn svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-  display: block;
-}
-
 .row--listen.is-playing {
   border-left-color: var(--activation);
   background: var(--surface-soft);
@@ -12761,3 +12753,226 @@ select {
   color: var(--activation);
   border-color: var(--activation);
 }
+
+/* ── v2026-08-25-visual-audit: hero balance + timeline strip ─────────────
+   Pair thin tool pages (form-only) with a right-column preview that
+   shows what the tool produces. Solves the 70% empty-hero problem on
+   /drift /monitor /readiness /guardrails /compare without changing
+   the form's contract. */
+.monitor-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--space-20);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .monitor-hero-grid { grid-template-columns: 1fr; }
+}
+
+.monitor-hero-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-20);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--inner-light);
+  /* Subtle accent on the right column so the eye lands on the preview
+     before the form. No border-left so it stays a peer, not a callout. */
+}
+
+.monitor-preview-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* SnapshotTimelineStrip — horizontal timeline of timestamped dots.
+   Single-line, 100% width. Grade-colored dots, faint midline, first/last
+   score labels. Sample badge in preview mode. */
+.timeline-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.timeline-strip-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.timeline-strip-title { margin: 0; flex: 1; }
+.timeline-strip-sample {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  background: var(--surface-soft);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+}
+.timeline-strip-delta {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.timeline-strip-svg {
+  display: block;
+  width: 100%;
+  /* Stroke / fill use inline `var(--...)` so single-color rendering is
+     guaranteed regardless of host cascade order. */
+}
+.timeline-strip-label {
+  font-size: 3.5px;
+  font-weight: 700;
+  font-family: var(--mono);
+  fill: var(--muted);
+}
+.timeline-strip-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  font-family: var(--mono);
+  color: var(--muted-dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .timeline-strip-svg { transition: none; }
+>>>>>>> 358a08b (feat(visual): score sparkline + monitor timeline strip + category spines)
+}
+
+.monitor-hero-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-20);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--inner-light);
+  /* Subtle accent on the right column so the eye lands on the preview
+     before the form. No border-left so it stays a peer, not a callout. */
+}
+
+.monitor-preview-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* SnapshotTimelineStrip — horizontal timeline of timestamped dots.
+   Single-line, 100% width. Grade-colored dots, faint midline, first/last
+   score labels. Sample badge in preview mode. */
+.timeline-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.timeline-strip-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.timeline-strip-title { margin: 0; flex: 1; }
+.timeline-strip-sample {
+  font-size: 0.6rem;
+  color: var(--muted-dim);
+  background: var(--surface-soft);
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+}
+.timeline-strip-delta {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.timeline-strip-svg {
+  display: block;
+  width: 100%;
+  /* Stroke / fill use inline `var(--...)` so single-color rendering is
+     guaranteed regardless of host cascade order. */
+}
+.timeline-strip-label {
+  font-size: 3.5px;
+  font-weight: 700;
+  font-family: var(--mono);
+  fill: var(--muted);
+}
+.timeline-strip-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  font-family: var(--mono);
+  color: var(--muted-dim);
+  text-transform: none;
+  letter-spacing: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .timeline-strip-svg { transition: none; }
+}
+
+/* v2026-08-25-trend: delta + sparkline group.
+   Wraps the score-delta-chip and ScoreSparkline together so they sit
+   side-by-side in the score hero. Sparkline is a hand-rolled SVG —
+   color follows the LATEST score's threshold band (ok / warn / error),
+   one hue, one story. Linked-table pattern: the data lives in the
+   adjacent "Recent scores" list (which is the screen-reader-readable
+   source of truth for this trend). */
+.score-delta-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-fine-65);
+  margin-top: var(--space-fine-30);
+}
+
+.score-sparkline {
+  /* Color follows the LATEST score band — set inline via the stroke attr,
+     not a CSS variable, so the gradient lives in the SVG. Subtle baseline
+     so the line reads as trend, not as decoration. */
+  display: block;
+  /* Vertical alignment with the chip — pull up by 1px to match the
+     uppercase badge top. */
+  transform: translateY(-1px);
+}
+
+/* v2026-08-25-scanability: 3-px category spine on each check card.
+   Answers "which category is failing" at a glance without reading a
+   single label. Colors come from the contract token set (one hue per
+   category family); the category chip remains the non-color signal
+   (a11y: color never carries alone). */
+.score-card-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-8);
+  bottom: var(--space-8);
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--muted-dim);
+  opacity: 0.55;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+.score-card-item[data-category='tokens']::before { background: var(--signal); }
+.score-card-item[data-category='accessibility']::before { background: var(--ok); }
+.score-card-item[data-category='motion']::before { background: var(--signal-light); }
+.score-card-item[data-category='interaction']::before { background: var(--amber-notice); }
+.score-card-item[data-category='cadence']::before { background: var(--grade-b); }
+.score-card-item[data-category='copywriting']::before { background: var(--grade-c); }
+.score-card-item[data-category='identity']::before { background: var(--error); }
+.score-card-item[data-category='platform']::before { background: var(--muted); }
+.score-card-item:hover::before { opacity: 1; }

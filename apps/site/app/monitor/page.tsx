@@ -3,6 +3,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { MonitorForm } from './monitor-form';
+import { SnapshotTimelineStrip } from '../lib/snapshot-timeline-strip';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,8 +42,20 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
           </p>
         </section>
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
+        {/* v2026-08-25-hero-balance: pair the form with a timeline preview so
+            the hero no longer reads as 70% empty void. The sample timeline
+            shows what a 6-run watch series looks like — same component, real
+            data, once a user runs monitor. */}
+        <section className="doctrine-section fade-up fade-up-delay-1 monitor-hero-grid">
           <MonitorForm initialUrl={initialUrl} />
+          <aside className="monitor-hero-preview" aria-label="Timeline preview">
+            <SnapshotTimelineStrip sample />
+            <p className="monitor-preview-note">
+              Each run stores a snapshot. After 2+ runs the strip becomes
+              your real watch history — color = grade, position = score,
+              arrows = delta.
+            </p>
+          </aside>
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">

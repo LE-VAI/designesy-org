@@ -13,6 +13,7 @@ import {
 } from '../lib/score-history';
 import { LottieHint, LottieTip } from '../lib/lottie-hint';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
+import { ScoreSparkline } from '../lib/score-sparkline';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -869,11 +870,22 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-percent-badge">
                   <span className="score-percent-value">{Math.round(animatedScore * 10) / 10}%</span>
                   <span className="score-percent-label">Legitimacy Score</span>
-                  {delta !== null && delta !== 0 && (
-                    <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
-                      {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}
-                    </span>
-                  )}
+                  {(() => {
+                    // History points for this URL only — sparkline needs >=2 points
+                    const sameUrl = history.filter((h) => h.url === scoredUrl).map((h) => h.score);
+                    const showSparkline = sameUrl.length >= 2;
+                    if (delta === null && !showSparkline) return null;
+                    return (
+                      <span className="score-delta-group">
+                        {showSparkline && <ScoreSparkline points={sameUrl} />}
+                        {delta !== null && delta !== 0 && (
+                          <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
+                            {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <p className="score-strong-weak">
@@ -1406,6 +1418,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                             <div
                               key={check.id}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
+                              data-category={check.category}
                               onClick={() => setExpandedId(isExpanded ? null : check.id)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
