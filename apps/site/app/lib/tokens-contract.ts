@@ -15,7 +15,7 @@ export const tokensContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/tokens',
   machine_url: 'https://www.designesy.org/contracts/tokens.json',
-  updated: '2026-08-09',
+  updated: '2026-08-30',
   purpose:
     'Token-format conformance is the foundation of portable design intelligence. If tokens are not structurally valid, every downstream tool inherits the rot.',
   source_authority: {
@@ -50,26 +50,41 @@ export const tokensContract = {
       object_form: '{ "value": number, "unit": "px" | "rem" }',
       rem_based: 'Designesy uses rem-based dimensions (root 16px). Px permitted for sub-pixel, shadows, borders.',
     },
-    schema_property: 'Files SHOULD declare $schema for editor validation',
+    schema_property: 'Files MUST declare $schema per the designesy validator (engine check t01 fails files without it) — stricter than the DTCG spec, which marks it SHOULD',
   },
   verification: {
+    // Check IDs and order match the designesy_tokens_score engine exactly
+    // (api/mcp route — t01…t10). The engine reads checks[N].item positionally,
+    // so this array must never be reordered or renumbered ahead of it.
+    // This document is the CONTRACT (rules), not a DTCG token file — a token
+    // file that passes all 10 lives at /export/dtcg (the contract's live export).
     checks: [
-      { id: 't01', item: 'Every token has $type (direct or inherited)', pass: 'All tokens typed', fail: 'Any token missing type' },
-      { id: 't02', item: 'Every token has $value', pass: 'All valued', fail: 'Any missing value' },
-      { id: 't03', item: 'Semantic tokens have $description', pass: 'All described', warn: 'Primitive missing description' },
-      { id: 't04', item: 'Color tokens use OKLCH or Display-P3', pass: 'New tokens OKLCH/P3', fail: 'New semantic uses bare hex', warn: 'Legacy hex in primitive' },
-      { id: 't05', item: 'Custom types namespaced under $extensions.designesy.*', pass: 'Namespaced', fail: 'Bare custom type' },
-      { id: 't06', item: 'Aliases resolve to valid typed tokens', pass: 'All resolve', fail: 'Dangling reference' },
-      { id: 't07', item: '$schema property present', pass: 'Present', warn: 'Missing (no editor validation)' },
-      { id: 't08', item: 'DTCG 2025.10 schema validation passes (Terrazzo tz check)', pass: 'Passes', fail: 'Schema violation' },
-      { id: 't09', item: 'No type drift between themes (same token, different $type)', pass: 'Consistent', fail: 'Drift detected' },
-      { id: 't10', item: 'Dimension units are px or rem only', pass: 'Valid units', fail: 'Invalid unit' },
+      { id: 't01', item: '$schema declaration present and pointing at designtokens.org', pass: 'Present, designtokens.org', warn: 'Present but non-canonical', fail: 'Missing — no editor validation' },
+      { id: 't02', item: 'Token groups present (top-level non-$ keys)', pass: 'Groups found', fail: 'No token groups' },
+      { id: 't03', item: 'Every token has $type (direct or inherited)', pass: 'All tokens typed', warn: 'Partial typing', fail: 'Any token missing type' },
+      { id: 't04', item: 'Every token has $value', pass: 'All valued', fail: 'Any missing value' },
+      { id: 't05', item: 'Color tokens use structured {colorSpace, components} format, not bare hex', pass: 'No bare hex', warn: 'Mixed structured and bare hex', fail: 'All bare hex' },
+      { id: 't06', item: '$type values are DTCG 2025.10 standard types', pass: 'All standard', warn: 'Non-standard types present (custom — see t07)', fail: 'No tokens typed' },
+      { id: 't07', item: 'Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)', pass: 'All namespaced', warn: 'Bare custom type names', fail: 'n/a' },
+      { id: 't08', item: 'Dimension units are valid CSS length units (px, rem preferred)', pass: 'All valid', warn: 'Partial', fail: 'Invalid units' },
+      { id: 't09', item: 'Token naming hierarchy — tokens organized into nested groups', pass: 'Groups with hierarchy', warn: 'Flat token set', fail: 'No tokens' },
+      { id: 't10', item: 'No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)', pass: 'Clean', warn: 'Deprecated patterns found', fail: 'n/a' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/10) × 100. A≥90, B≥80, C≥70, D≥60, F<60.',
+    scoring: '10 checks. PASS counts toward score; WARN and FAIL do not (WARN=0, matching the engine — not 0.5). Score = (PASS / checks run) × 100 — SKIP still counts in the denominator. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
       primary: '@terrazzo/parser 2.4.0 — tz check [file]',
       secondary: 'ajv 8.20.0 + ajv-formats 3.0.1 against DTCG JSON Schema URL',
-      designesy_specific: 't03, t04, t05, t09 require custom validator over DTCG schema',
+      designesy_specific: 't05, t07, t09, t10 require custom validator over DTCG schema',
+    },
+    documented_not_engine_wired: {
+      note: 'Deeper conformance rules this contract declares that designesy_tokens_score does not yet check. Listed here so the gap is explicit, not hidden — an unwired check presented as enforced is the same failure as a Semantic category with zero checks.',
+      checks: [
+        'Semantic tokens have $description — recommended, required on semantic tokens; custom validator needed',
+        'Color tokens use OKLCH or Display-P3 (mandatory for new semantic tokens) — color-space check not wired',
+        'Aliases resolve to valid typed tokens — resolver validation not wired',
+        'Full DTCG 2025.10 JSON Schema validation via @terrazzo/parser (tz check) — external, not wired',
+        'No type drift between themes — multi-theme comparison not wired',
+      ],
     },
   },
   relationship_to_core: {
@@ -78,7 +93,7 @@ export const tokensContract = {
     '§6 Economy Is Intelligence': 'Fewer, stronger tokens',
     '§6 Systems Enable Freedom': 'Portable, validated tokens',
     '§17 Verification': 'Machine-checkable verification layer for tokens',
-    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract v0.4.0 and passes designesy_tokens_score at 100% (10/10 checks, verified 2026-08-09)',
+    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract v0.4.0 and scores 90% (Grade A) on designesy_tokens_score — 9 PASS, 1 WARN (namespaced custom types designesy.spring/sound/cubicBezier, correct per t07; verified 2026-08-30).',
   },
   open_questions: [
     'DTCG custom types proposal: should spring and sound be proposed to W3C DTCG?',

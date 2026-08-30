@@ -533,5 +533,59 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    {
+      url: `${BASE}/pricing`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.85,
+    },
+    {
+      url: `${BASE}/badge`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${BASE}/blog`,
+      lastModified: NOW,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${BASE}/blog/scoring-30-sites`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/blog/scoring-11-fintech`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/blog/scoring-16-devtools`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/blog/scoring-57-synthesis`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
+      url: `${BASE}/export/dtcg`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.65,
+    },
+    {
+      url: `${BASE}/export/designmd`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.65,
+    },
   ];
 }

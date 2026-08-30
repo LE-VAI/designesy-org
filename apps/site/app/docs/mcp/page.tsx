@@ -21,7 +21,7 @@ const TOOLS = [
   {
     name: 'designesy_catalog',
     kind: 'Read-only',
-    desc: 'The full package catalog — 12 published packages (contracts, kits, labs, reviews) with versions, URLs, statuses, standing rules, and machine exports.',
+    desc: 'The full package catalog — 23 published packages (contracts, kits, labs, reviews, tools) with versions, URLs, statuses, standing rules, and machine exports.',
     args: 'none',
     source: '/open.json',
   },
@@ -337,7 +337,7 @@ export default function McpDocsPage() {
                 90% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                /export/dtcg · 9/10 checks pass · 1 WARN (custom types non-standard, namespaced designesy.* per t07) · verified 2026-08-22
+                /export/dtcg · 9/10 checks pass · 1 WARN (custom types non-standard, namespaced designesy.* per t07) · verified 2026-08-30
               </p>
             </div>
             <div

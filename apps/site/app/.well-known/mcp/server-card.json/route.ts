@@ -44,7 +44,7 @@ export function GET() {
     'server-card-version': '0.1',
     server: {
       name: 'designesy',
-      version: '1.10.2',
+      version: '1.11.0',
       description:
         'Design-system contract verification, scoring, and review tools for AI agents.',
       icon: `${HOMEPAGE}/badge.svg`,

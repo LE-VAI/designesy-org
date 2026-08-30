@@ -21,7 +21,7 @@
 //   guardrails, monitor, compare, report, tokens, a11y, motion).
 // 1 UI resource (ui://designesy/report-app) renders the report dashboard.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.10.2 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.11.0 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
@@ -49,7 +49,7 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const res = await safeFetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': 'designesy-mcp/1.10.2 (https://www.designesy.org)',
+      'User-Agent': 'designesy-mcp/1.11.0 (https://www.designesy.org)',
     },
   });
 
@@ -70,7 +70,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_catalog',
       {
-        description: 'List the 12 published Designesy packages with versions, URLs, and statuses. Use this to discover what Designesy publishes before fetching a specific contract. When NOT to use: if you already know which package you need, skip this and call designesy_contract directly. Read-only — no side effects. Returns JSON: { package_count, packages[{id, kind, title, version, status, human_url, machine_url}], standing_rules[], machine_exports[] }. No parameters — accepts empty input.',
+        description: 'List the 23 published Designesy packages with versions, URLs, and statuses. Use this to discover what Designesy publishes before fetching a specific contract. When NOT to use: if you already know which package you need, skip this and call designesy_contract directly. Read-only — no side effects. Returns JSON: { package_count, packages[{id, kind, title, version, status, human_url, machine_url}], standing_rules[], machine_exports[] }. No parameters — accepts empty input.',
       },
       async () => {
         const data = await cachedFetch(`${BASE_URL}/open.json`, true) as Record<string, unknown>;
@@ -299,7 +299,7 @@ const handler = createMcpHandler(
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.2' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.11.0' },
             });
             if (!res.ok) {
               return {
@@ -693,7 +693,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.10.2' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.11.0' },
             });
             if (!res.ok) {
               return {
@@ -1140,7 +1140,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     // Stateless 2026-07-28: server identity reported via server/discover.
     serverInfo: {
       name: 'designesy',
-      version: '1.10.2',
+      version: '1.11.0',
     },
     verboseLogs: true,
   },
