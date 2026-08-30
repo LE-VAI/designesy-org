@@ -9,7 +9,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
-  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 95.3% grade A, and the gate passes" width="1280">
+  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="1280">
 </picture>
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
@@ -56,7 +56,7 @@ The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-d
 - `designesy_a11y_score` — Get the WCAG 2.2 AA accessibility framework and Playwright/axe-core script template.
 - `designesy_motion_score` — Validate a Lottie animation file. 10 checks against Lottie spec v1.0.1 and §16 motion standards.
 - `designesy_contract` — Get the design-system contract (tokens, motion, takt, cadence, typography, verification).
-- `designesy_catalog` — List the 12 published Designesy packages with versions and URLs.
+- `designesy_catalog` — List the 23 published Designesy packages with versions and URLs.
 - `designesy_design_review` — Get the 8-dimension qualitative design review rubric.
 - `designesy_skill_md` — Get the contract as an agent-skill-format SKILL.md for Cursor, Claude Code, or Replit.
 - `designesy_agent_json` — Get the /.well-known/agent.json discovery document.
@@ -72,7 +72,7 @@ The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-d
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility framework + Playwright/axe-core script template |
 | `designesy_motion_score` | Validate a Lottie animation file (10 checks, Lottie spec v1.0.1 + §16 motion standards) |
 | `designesy_contract` | Get the design-system contract (tokens, motion, takt, cadence, typography, verification) |
-| `designesy_catalog` | List the 12 published Designesy packages with versions and URLs |
+| `designesy_catalog` | List the 23 published Designesy packages with versions and URLs |
 | `designesy_design_review` | Get the 8-dimension qualitative design review rubric |
 | `designesy_skill_md` | Get the contract as an agent-skill-format SKILL.md (for Cursor/Claude Code/Replit) |
 | `designesy_agent_json` | Get the /.well-known/agent.json discovery document |
@@ -91,9 +91,9 @@ The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-d
 
 ## Contract verification
 
-![Designesy Score](https://img.shields.io/badge/contract%20score-95.3%25%20A%20grade-brightgreen)
+![Designesy Score](https://img.shields.io/badge/contract%20score-93%25%20A%20grade-brightgreen)
 
-The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **95.3% (Grade A)** — 33 passed, 0 failed, 3 warned, 1 skipped, 3 manual (browser-only checks). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
+The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **93% (Grade A)** — 36 passed, 0 failed, 0 warned, 1 skipped, 3 manual (browser-only checks; the skip is DESIGN.md not yet served at the site root — see [/contracts/design-system](https://www.designesy.org/contracts/design-system)). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
 ## Contract v0.4.0
 

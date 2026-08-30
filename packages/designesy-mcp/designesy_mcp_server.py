@@ -9,7 +9,7 @@ resources/read, notifications/initialized, ping) — mirrors the
 factory_sessions_mcp_server scaffolding.
 
 Gives any agent the ability to:
-  - Get the full 12-package catalog (versions, URLs, statuses)
+  - Get the full 23-package catalog (versions, URLs, statuses)
   - Get the design-system contract (tokens, motion, acoustic, takt, cadence)
   - Get a filtered contract section (colors, motion, acoustic, etc.)
   - Get the Design Review kit (8 dimensions, agent prompt, output format)
@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.10.2"
+SERVER_VERSION = "1.11.0"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -1589,7 +1589,7 @@ def _score_grade(score: float) -> str:
 
 
 def _catalog_impl() -> dict[str, Any]:
-    """Return the 12-package catalog with versions, URLs, and statuses."""
+    """Return the 23-package catalog with versions, URLs, and statuses."""
     data = _fetch_open_index()
     packages = data.get("packages", [])
     machine_exports = data.get("machine_exports", [])
@@ -1737,7 +1737,7 @@ TOOLS = [
     {
         "name": "designesy_catalog",
         "description": (
-            "List the 12 published Designesy packages with versions, URLs, "
+            "List the 23 published Designesy packages with versions, URLs, "
             "and statuses. Use this to discover what Designesy publishes "
             "before fetching a specific contract. When NOT to use: if you "
             "already know which package you need, skip this and call "
@@ -2264,7 +2264,7 @@ TOOL_MAP = {t["name"]: t for t in TOOLS}
 # ── Resource definitions ────────────────────────────────────────────────────
 
 RESOURCES = [
-    {"uri": "designesy://open", "name": "Package catalog", "description": "12-package catalog from /open.json", "mimeType": "application/json"},
+    {"uri": "designesy://open", "name": "Package catalog", "description": "23-package catalog from /open.json", "mimeType": "application/json"},
     {"uri": "designesy://contract", "name": "Design system contract", "description": "Full contract from /contracts/design-system.json", "mimeType": "application/json"},
     {"uri": "designesy://kit/design-review", "name": "Design Review kit", "description": "Review kit from /kits/design-review.json", "mimeType": "application/json"},
     {"uri": "designesy://skill", "name": "SKILL.md", "description": "Agent-skill-format export from /contracts/skill", "mimeType": "text/markdown"},

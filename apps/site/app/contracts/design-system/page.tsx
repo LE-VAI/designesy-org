@@ -193,9 +193,9 @@ export default function DesignSystemContractPage() {
             leaves open: <strong>generation is not verification</strong>. An
             agent can read a token file and still ship hardcoded hex, broken
             contrast, or the AI-default look. The 40-check engine closes that
-            gap. When 42% of committed React is AI-generated, the score is the
-            compliance layer — not whether the agent read the rules, but whether
-            the shipped design passes them.
+            gap. With 42% of committed React now AI-generated (Belitsoft, State
+            of React 2026), the score is the compliance layer — not whether the
+            agent read the rules, but whether the shipped design passes them.
           </p>
         </section>
 
