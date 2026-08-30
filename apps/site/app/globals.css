@@ -12744,6 +12744,94 @@ select {
   }
 }
 
+
+/* ==========================================================================
+   Listen - spoken package abstracts (/open rows).
+   Static Opus synthesized at build time; client toggle in listen-button.tsx.
+   Playing rows take --activation (the "live" semantic). Color-only state
+   changes: safe under prefers-reduced-motion by construction.
+   ========================================================================== */
+
+.row--listen {
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+}
+
+.listen-cell {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.listen-dur {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sleekness pattern (2026-08-30, research-verified):
+   Hover-capable pointers: the play affordance rests as a quiet ghost —
+   borderless, low-contrast — and resolves to a full button on row hover
+   or keyboard focus-within (GitHub/Linear row-action pattern; WCAG 2.1.1
+   satisfied because :focus-within reveals without a mouse).
+   Touch (hover: none): no hover exists, so the button is always rendered
+   in its resolved form. Target is 30px > WCAG 2.5.8 AA 24px minimum.
+   Duration stays visible as scannable data (NOT title-only — title is
+   inaccessible on touch/keyboard per MDN). Playing state ignores all
+   hover rules: an active voice is never allowed to fade. */
+
+@media (hover: hover) {
+  .listen-btn {
+    border-color: transparent;
+    background: transparent;
+  }
+  .row--listen:not(.is-playing) .listen-btn {
+    color: var(--muted-dim);
+  }
+  .row--listen:not(.is-playing):hover .listen-btn,
+  .row--listen:not(.is-playing):focus-within .listen-btn {
+    color: var(--muted);
+    border-color: var(--line);
+    background: transparent;
+  }
+  .row--listen:not(.is-playing):hover .listen-btn:hover,
+  .row--listen:not(.is-playing):focus-within .listen-btn:hover {
+    color: var(--signal-access);
+    border-color: var(--signal-access);
+    background: var(--surface-hover);
+  }
+}
+
+.listen-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  transition:
+    color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out);
+}
+
+.listen-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.listen-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  display: block;
+}
+
+
 .row--listen.is-playing {
   border-left-color: var(--activation);
   background: var(--surface-soft);
