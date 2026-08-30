@@ -149,7 +149,7 @@ No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.o
 
 ### DTCG 2025.10 — the spec went stable
 
-The W3C Design Tokens Community Group published the spec's **first stable version** on Oct 28, 2025 — the [Final Community Group Report](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/), classified as a Candidate Recommendation and considered stable. 24+ organizations back it (Adobe, Google, Meta, Figma, Amazon, Microsoft, Shopify, Sketch, Framer). 84% of teams now use design tokens (2026, up from 56% YoY).
+The W3C Design Tokens Community Group published the spec's **first stable version** on Oct 28, 2025 — the [Final Community Group Report](https://www.w3.org/community/reports/design-tokens/CG-FINAL-format-20251028/), classified as a Candidate Recommendation and considered stable. 24+ organizations back it (Adobe, Google, Meta, Figma, Amazon, Microsoft, Shopify, Sketch, Framer). 84% of teams now use design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024).
 
 `designesy_tokens_score` validates against this stable spec. Every team adopting DTCG 2025.10 needs a validator — designesy is it.
 

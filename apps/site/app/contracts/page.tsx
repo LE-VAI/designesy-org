@@ -373,7 +373,7 @@ export default function ContractsPage() {
               <span className="row-body">
                 <span className="row-title">Accessibility · v0.1.0</span>
                 <span className="row-meta">
-                  WCAG 2.2 AA via axe-core 4.12.1 — 11 verification checks
+                  WCAG 2.2 AA via axe-core 4.13.0 — 11 verification checks
                 </span>
               </span>
             </Link>

@@ -26,7 +26,7 @@ export const guardrailsContract = {
     primary: 'Designesy research 2026-08-01',
     contract_shift: 'DLS Lead — "treat the design system as an API, not a library... CI fails if either side breaks the agreement"',
     types_not_suggestions: 'davekurian (dev.to) — "tokens are types... you\'re removing the off-brand options from the API it consumes"',
-    adoption_signal: 'zeroheight 2026 — token adoption 84% (up from 56%), but 40% still sync tokens by hand',
+    adoption_signal: 'zeroheight Design Systems Report 2025 — token adoption 84% (up from 56% in 2024), but 40% still sync tokens by hand',
   },
   conformance: {
     output_bundle: [

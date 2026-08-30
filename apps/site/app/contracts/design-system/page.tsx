@@ -194,7 +194,7 @@ export default function DesignSystemContractPage() {
             agent can read a token file and still ship hardcoded hex, broken
             contrast, or the AI-default look. The 40-check engine closes that
             gap. With 42% of committed React now AI-generated (Belitsoft, State
-            of React 2026), the score is the compliance layer — not whether the
+            of React Development 2026), the score is the compliance layer — not whether the
             agent read the rules, but whether the shipped design passes them.
           </p>
         </section>

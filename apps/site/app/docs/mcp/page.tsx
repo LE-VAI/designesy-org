@@ -84,7 +84,7 @@ const TOOLS = [
   {
     name: 'designesy_a11y_score',
     kind: 'Framework',
-    desc: 'Accessibility verification framework for WCAG 2.2 AA via axe-core 4.12.1. Returns 11 conformance checks (a01-a11) + a Playwright script template (axe-core needs a real DOM, cannot run server-side). The agent runs the script locally with @axe-core/playwright. Optional config JSON enables brand customization via axe.configure().',
+    desc: 'Accessibility verification framework for WCAG 2.2 AA via axe-core 4.13.0. Returns 11 conformance checks (a01-a11) + a Playwright script template (axe-core needs a real DOM, cannot run server-side). The agent runs the script locally with @axe-core/playwright. Optional config JSON enables brand customization via axe.configure().',
     args: 'url: string, ruleset?: string, config?: string',
     source: '/contracts/a11y.json',
   },
@@ -313,7 +313,7 @@ export default function McpDocsPage() {
                 0 violations
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                axe-core 4.12.1 · wcag22aa · verified 2026-07-28
+                axe-core 4.13.0 · wcag22aa · pinned to current npm latest (verified 2026-08-30 via registry check)
               </p>
             </div>
             <div
