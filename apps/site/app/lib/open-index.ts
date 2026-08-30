@@ -343,7 +343,7 @@ export const openIndex = {
       title: 'Accessibility',
       version: '0.1.0',
       status: 'provisional',
-      lede: 'axe-core 4.12.1 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with brand customization and provenance chain. 11 verification checks.',
+      lede: 'axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with brand customization and provenance chain. 11 verification checks.',
       human_url: 'https://www.designesy.org/contracts/a11y',
       machine_url: 'https://www.designesy.org/contracts/a11y.json',
       path: '/contracts/a11y',
@@ -451,7 +451,7 @@ export const openIndex = {
       title: 'Accessibility contract',
       path: '/contracts/a11y.json',
       url: 'https://www.designesy.org/contracts/a11y.json',
-      meta: 'v0.1.0 axe-core 4.12.1 + WCAG 2.2 AA + ACT Rules — brand customization, provenance chain, 11 checks',
+      meta: 'v0.1.0 axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules — brand customization, provenance chain, 11 checks',
     },
     {
       title: 'Motion contract',

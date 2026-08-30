@@ -12,7 +12,7 @@ Standalone DTCG 2025.10 design token validator. 20 conformance checks. Zero depe
 
 ## Why
 
-The W3C Design Tokens Format Module reached its first stable version (2025.10) on October 28, 2025, backed by 24+ organizations including Adobe, Google, Meta, and Figma. Token adoption is at 84% of teams.
+The W3C Design Tokens Format Module reached its first stable version (2025.10) on October 28, 2025, backed by 24+ organizations including Adobe, Google, Meta, and Figma. Token adoption is at 84% of teams (zeroheight Design Systems Report 2025, up from 56% in 2024).
 
 But no standalone DTCG validator CLI exists on npm. Terrazzo has `co check`, but it's bundled inside a full token compiler. This package is the first focused, standalone DTCG validator — the `npm audit` of design tokens.
 

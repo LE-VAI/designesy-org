@@ -189,7 +189,7 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v24',
-    item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)',
+    item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)',
     category: 'accessibility',
     how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. This is the WCAG 2.2 Target Size Minimum (AA). Full verification needs a browser to measure rendered dimensions.',
   },
@@ -1238,7 +1238,7 @@ export default function MethodologyPage() {
             <p>
               Every leaderboard site is scored by two independent raters that
               never see each other&rsquo;s results: the Designesy engine
-              (accessibility category &ge; 60 = pass) and axe-core 4.12.1,
+              (accessibility category &ge; 60 = pass) and axe-core 4.13.0,
               the industry-standard WCAG engine, injected into a real browser
               via CDP. Full matrix + kappa:{' '}
               <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/blind-comparison-report.md">

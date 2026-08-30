@@ -53,7 +53,7 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: '40 automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
+    text: '40 automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
   },
   {
     number: '03',
