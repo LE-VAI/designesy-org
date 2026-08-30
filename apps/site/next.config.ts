@@ -78,15 +78,25 @@ const nextConfig: NextConfig = {
   // and drops these assets, producing "input directory .../bin does not exist"
   // at Lambda runtime. Externalizing both packages keeps them on disk as-is.
   // playwright-core is the Lambda-safe driver (no bundled browser download).
-  serverExternalPackages: ['@sparticuz/chromium', 'playwright-core'],
+  // @google/design.md resolves its subpath export (@google/design.md/linter)
+  // through package-relative paths — Next's bundler inlines build-machine
+  // absolute paths (/vercel/path0/...) into the server bundle and the
+  // dynamic import in /api/score v37 ENOENTs at Lambda runtime.
+  // Externalizing keeps the package on disk, path-resolved at runtime.
+  serverExternalPackages: ['@sparticuz/chromium', 'playwright-core', '@google/design.md'],
   // Force Vercel's Node File Trace to include the @sparticuz/chromium
   // brotli-compressed binaries in the Lambda zip. Without this, NFT misses
   // the .br files (they're loaded dynamically at runtime, not statically
   // imported), and the /var/task/.../bin directory is empty at runtime.
+  // @google/design.md is dynamically imported by /api/score (v37 spec-layer
+  // check) — NFT misses it for the same reason, so include it explicitly.
   outputFileTracingIncludes: {
     '/api/score/audit': [
       './node_modules/@sparticuz/chromium/bin/**/*',
       './node_modules/@sparticuz/chromium/build/**/*',
+    ],
+    '/api/score': [
+      './node_modules/@google/design.md/**/*',
     ],
   },
   async headers() {
