@@ -111,101 +111,83 @@ async function fetchScore(url) {
 }
 
 // ── Generate the updated seed.ts ─────────────────────────────────────────
-function generateSeedTS(entries, lastScored) {
-  const lines = entries.map((e) => {
-    const prevScoreStr = e.prevScore !== null ? String(e.prevScore) : 'null';
-    return `  { url: '${e.url}', name: '${e.name}', tier: ${e.tier}, category: '${e.category}', score: ${e.score !== null ? e.score : 'null'}, grade: ${e.grade ? `'${e.grade}'` : 'null'}, pass: ${e.pass}, fail: ${e.fail}, warn: ${e.warn}, skip: ${e.skip}, tokens: ${e.tokens}, seededBecause: '${e.seededBecause}', prevScore: ${prevScoreStr} },`;
-  });
-
-  const scoredCount = entries.filter((e) => e.score !== null).length;
-
-  return `// /leaderboard seed — curated sites with batch-scored verification results.
-// Shared source for the JSON route (route.ts) and the rendered page (page.tsx).
 //
-// All ${entries.length} sites re-scored ${lastScored} with the 40-check engine (contract v0.4.0).
-// Deterministic — no LLM. Re-scored weekly via .github/workflows/rescore-leaderboard.yml.
-// prevScore holds the previous week's score for delta-badge rendering.
+// SURGICAL REWRITE — the 2026-08-30 run proved the previous full-file
+// regeneration approach wrong: it rebuilt seed.ts from a hardcoded template
+// that predates fields added since the last successful run (liveScoreUrl,
+// coiDisclosure), stripping them and breaking page.tsx's typecheck
+// (TS2339). The template also held a stale LEADERBOARD_VERSION.
+//
+// Instead: keep the file as-is and rewrite ONLY the fields this script
+// owns — per-entry score fields + prevScore, the header comment's re-score
+// date, LEADERBOARD_LAST_SCORED, and the count in LEADERBOARD_POLICY.
+// Unknown present or FUTURE fields pass through untouched, so schema
+// additions no longer break the weekly re-score.
+function generateSeedTS(src, entries, lastScored) {
+  let out = src;
 
-import { BATCH_CATEGORY_SCORES } from './batch-data';
+  // 1. Header comment: "All N sites re-scored DATE with the 40-check engine"
+  out = out.replace(
+    /(\/\/ All \d+ sites re-scored )\d{4}-\d{2}-\d{2}( with the 40-check engine)/,
+    `$1${lastScored}$2`
+  );
 
-export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
-export type Tier = 1 | 2 | 3 | 4 | 5;
+  // 2. Each entry: rewrite the fields we own inside its object literal.
+  //    Match each RAW_SEED entry by its url: '...' anchor, then swap the
+  //    owned scalar fields inside that literal only.
+  for (const e of entries) {
+    const anchor = e.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Locate the entry's object literal via its unique url anchor.
+    const entryRegex = new RegExp(`(\\{[^{}]*url: '${anchor}'[^{}]*\\})`);
+    const m = out.match(entryRegex);
+    if (!m) {
+      throw new Error(`generateSeedTS: could not locate entry for ${e.url} in seed.ts`);
+    }
+    let entryText = m[1];
 
-// One category's weighted sub-score, verbatim from the score engine
-// (/api/score categoryScores). score:null means the engine found zero scored
-// checks in that category for this site — rendered as a dashed unscored node,
-// never as a fabricated 0 or 100.
-export interface CategoryBreakdown {
-  score: number | null;
-  weight: number;
-  pass: number;
-  fail: number;
-  warn: number;
-  skip: number;
-}
+    const swap = (key, value) => {
+      const re = new RegExp(`${key}:\\s*('[^']*'|null|\\d+(?:\\.\\d+)?)`);
+      if (re.test(entryText)) {
+        entryText = entryText.replace(re, `${key}: ${value}`);
+        return true;
+      }
+      return false;
+    };
 
-export interface SeedSite {
-  rank: number | null;
-  url: string;
-  name: string;
-  tier: Tier;
-  category: string;
-  score: number | null;
-  grade: Grade | null;
-  pass: number | null;
-  fail: number | null;
-  warn: number | null;
-  skip: number | null;
-  tokens: number | null;
-  seededBecause: string;
-  /**
-   * Previous week's score — for delta badge rendering (↑/↓/= since last week).
-   * null when this is the first score or the previous run failed.
-   */
-  prevScore: number | null;
-  /**
-   * Real per-category fingerprints captured from a live engine batch run
-   * (batch-run.mjs -> batch-data.ts). undefined until a site has been batch
-   * scored — the MiniConstellation ring then renders the unscored state.
-   */
-  categoryScores?: Record<string, CategoryBreakdown>;
-}
+    const num = (v) => (v === null || v === undefined ? 'null' : String(v));
+    const swapRequired = (key, value) => {
+      if (!swap(key, value)) {
+        throw new Error(`generateSeedTS: field ${key} missing on entry ${e.url} — seed schema and script disagree`);
+      }
+    };
 
-// Unranked seed — re-scored ${lastScored}.
-// Rank is computed at load time (sorted by score desc, nulls last).
-const RAW_SEED: Omit<SeedSite, 'rank'>[] = [
-${lines.join('\n')}
-];
+    swapRequired('score', num(e.score));
+    swapRequired('grade', e.grade ? `'${e.grade}'` : 'null');
+    swapRequired('pass', num(e.pass));
+    swapRequired('fail', num(e.fail));
+    swapRequired('warn', num(e.warn));
+    swapRequired('skip', num(e.skip));
+    swapRequired('tokens', num(e.tokens));
+    // prevScore is optional in the schema (older entries lack it) — swap when
+    // present, skip silently when absent rather than failing the whole run.
+    swap('prevScore', num(e.prevScore));
 
-// Merge in the real per-category fingerprints captured in batch-data.ts
-// (generated by batch-run.mjs against the live engine). A site with no entry
-// renders its MiniConstellation ring entirely as the unscored dashed state.
-const merged: Omit<SeedSite, 'rank'>[] = RAW_SEED.map((s) =>
-  BATCH_CATEGORY_SCORES[s.url]
-    ? { ...s, categoryScores: BATCH_CATEGORY_SCORES[s.url] }
-    : s
-);
+    out = out.replace(m[0], entryText);
+  }
 
-// Assign ranks: scored sites sorted by score desc, nulls unranked.
-const scored = merged.filter((s) => s.score !== null).sort(
-  (a, b) => (b.score as number) - (a.score as number)
-);
-const unscored = merged.filter((s) => s.score === null);
+  // 3. LEADERBOARD_LAST_SCORED = '...'
+  out = out.replace(
+    /(LEADERBOARD_LAST_SCORED = ')\d{4}-\d{2}-\d{2}(')/,
+    `$1${lastScored}$2`
+  );
 
-export const SEED: SeedSite[] = [
-  ...scored.map((s, i) => ({ ...s, rank: i + 1 })),
-  ...unscored.map((s) => ({ ...s, rank: null })),
-];
+  // 4. LEADERBOARD_POLICY count: "Curated seed (N sites)"
+  out = out.replace(
+    /(Curated seed \()\d+( sites)/,
+    `$1${entries.length}$2`
+  );
 
-export const LEADERBOARD_LAST_SCORED = '${lastScored}';
-
-export const LEADERBOARD_POLICY =
-  'Curated seed (${entries.length} sites) + open submission. Scores are deterministic — 40 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
-
-export const LEADERBOARD_VERSION = '0.3.0';
-
-export const LEADERBOARD_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;
-`;
+  return out;
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────
@@ -267,7 +249,7 @@ async function main() {
 
   // Write the updated seed.ts
   console.log(`Writing updated seed.ts (last scored ${lastScored})...`);
-  const newSeedTS = generateSeedTS(entries, lastScored);
+  const newSeedTS = generateSeedTS(src, entries, lastScored);
   writeFileSync(SEED_PATH, newSeedTS, 'utf-8');
 
   // Write this week's snapshot (for next week's delta)
