@@ -80,6 +80,14 @@ jobs:
           snapshot. Triggered by .github/workflows/rescore-leaderboard.yml."
           git push -u origin "${BRANCH}"
 
+          # Labels must exist before gh pr create can attach them — the
+          # 2026-08-30 run failed with "could not add label: 'leaderboard'
+          # not found" AFTER pushing the branch, leaving scored data stranded
+          # with no PR. Creating them here is idempotent (|| true on the
+          # already-exists case).
+          gh label create leaderboard --description "Leaderboard data refresh" --color 0E8A16 || true
+          gh label create automated --description "Automated workflow output" --color D4C5F9 || true
+
           # Open a PR. The branch protection rules on main require
           # CI / Build site + CI / Build & test MCP package to pass; both
           # are quick and will gate the auto-merge below.
