@@ -6,6 +6,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.1] — 2026-08-30
+
+### Added
+
+- **/DESIGN.md served at site root** (Google DESIGN.md convention). The score
+  engine's v37 spec-layer check now validates the live file with Google's
+  @google/design.md linter (0 errors, 0 warnings) instead of SKIPping.
+- **/DESIGN.md added to sitemap** and the post-deploy smoke assertions.
+
+### Fixed
+
+- **v37 serverless regression: @google/design.md linter ENOENT at Lambda
+  runtime.** Next's bundler inlined build-machine absolute paths into the
+  server bundle, so the dynamic import failed in production. The package is
+  now externalized (serverExternalPackages) and traced into the /api/score
+  Lambda zip (outputFileTracingIncludes).
+- **Vercel alias flip missed on the 3845983 build** (integration glitch) —
+  production briefly kept serving the prior build until a manual promote.
+
+### Changed
+
+- **Accuracy true-up, AnySearch-verified:** v24 target-size citation
+  corrected to WCAG 2.5.5 Target Size (Enhanced) with the 2.5.8 24px AA
+  minimum stated alongside; APCA Lc role mapping corrected (Lc 75 body
+  minimum, Lc 90 body preferred, Lc 60 non-body); 84% token-adoption stat
+  attributed to zeroheight Design Systems Report 2025; axe-core pinned
+  4.12.1 → 4.13.0 across 17 pins; Belitsoft citation named exactly
+  (State of React Development 2026).
+- **Count true-up:** 23 packages, 17 MCP tools, 10 machine exports, 40
+  checks across READMEs, open.json.cache, and the single-source check
+  registry (lib/check-definitions.ts).
+- **Live self-score: 93 A** (37 pass / 0 fail / 0 warn / 0 skip / 3 manual).
+
 ## [1.0.4] — 2026-08-15
 
 ### Fixed
