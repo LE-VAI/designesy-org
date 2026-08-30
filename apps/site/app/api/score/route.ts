@@ -366,7 +366,7 @@ function resolveColor(value: string, tokens: Record<string, string>): [number, n
 // a signed Lc value: positive = dark text on light bg, negative = light text
 // on dark bg. Use Math.abs(Lc) for threshold comparison. Attribution:
 // Andrew Somers / Myndex Research.
-// Thresholds (Bronze Simple Mode): Lc 75 body min, Lc 60 content, Lc 45 large.
+// Thresholds (Bronze Simple Mode): Lc 75 body min, Lc 90 body preferred, Lc 60 non-body content.
 function sRGBtoY_APCA(rgb: [number, number, number]): number {
   const r = Math.pow(rgb[0] / 255, 2.4);
   const g = Math.pow(rgb[1] / 255, 2.4);
@@ -458,7 +458,7 @@ const REMEDIATION: Record<string, string> = {
   x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded — a common cause of blurry headlines on Windows.',
   x02: 'Add text-underline-position: from-font to links and underlined text. This uses the font designer\'s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
   x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
-  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.8 Target Size Minimum, AA in 2.2). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors — full verification needs a browser.',
+  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA — the 44px convention shared with Apple HIG; WCAG 2.5.8 Minimum AA is 24px, this check enforces the stricter 44px). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors — full verification needs a browser.',
   v25: 'Use exactly one <h1> per page as the main heading, and don\'t skip heading levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline. Audit your heading order with a browser extension or Lighthouse.',
   v26: 'Limit font-family declarations to 3 or fewer (1 body family, 1 heading family, 1 mono for code). More than 3 families signals inconsistency and hurts performance. Consolidate by removing unused families or using weight variations of a single family.',
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
@@ -542,7 +542,7 @@ function checkContrastReadable(tokens: Record<string, string>): CheckResult {
     if (!rgb) { results.push(`${name}: unresolvable`); continue; }
     const ratio = contrastRatio(rgb, paperRgb);
     const r = ratio.toFixed(2);
-    // APCA supplementary signal (Lc 75 = body min, Lc 60 = content min)
+    // APCA supplementary signal (Lc 75 = body min, Lc 90 = body preferred, Lc 60 = non-body content min)
     const lc = apcaContrast(rgb, paperRgb);
     const lcStr = `Lc${Math.abs(lc).toFixed(0)}`;
     let st: 'PASS' | 'WARN' | 'FAIL' = 'PASS';
@@ -784,7 +784,7 @@ function checkSkipInk(css: string): CheckResult {
 
 // ── Tier 3 coverage checks (v24-v28) — high-impact gaps from the audit ──────
 
-// v24 — Touch target sizes ≥44px (WCAG 2.5.8 Target Size Minimum, AA in 2.2).
+// v24 — Touch target sizes ≥44px (WCAG 2.5.5 Target Size Enhanced, AAA; 2.5.8 Minimum AA is 24px — this check enforces the stricter bar).
 // Static half: scans CSS for min-height/min-width ≥44px on interactive selectors.
 // Full verification needs a browser (getBoundingClientRect on rendered elements).
 function checkTouchTargets(css: string): CheckResult {
@@ -798,10 +798,10 @@ function checkTouchTargets(css: string): CheckResult {
     const px = unit === 'rem' ? val * 16 : val;
     targets.push(px);
   }
-  if (targets.length === 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: 'no explicit min-height/min-width on interactive selectors — full verification needs browser' };
+  if (targets.length === 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: 'no explicit min-height/min-width on interactive selectors — full verification needs browser' };
   const below = targets.filter(t => t < 44);
-  if (below.length > 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: `${targets.length} target(s) found, ${below.length} below 44px floor (${below.join(', ')}px)` };
-  return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.8)', category: 'accessibility', status: 'PASS', detail: `${targets.length} interactive element(s) with min-height/width ≥44px` };
+  if (below.length > 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: `${targets.length} target(s) found, ${below.length} below 44px floor (${below.join(', ')}px)` };
+  return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'PASS', detail: `${targets.length} interactive element(s) with min-height/width ≥44px` };
 }
 
 // v25 — Heading hierarchy: single h1, no skipped levels (h1→h3 jump = fail).
@@ -2553,7 +2553,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     // v02 Horizontal overflow — broken layout on mobile
     if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
     // v24 Touch targets — interactive elements too small to use
-    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target — inaccessible on touch devices.'; }
+    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target (WCAG 2.5.5 Enhanced) — inaccessible on touch devices.'; }
     // v25 Heading hierarchy — broken document outline
     if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
     // v16 Rem scale — root font-size under 16px (iOS zoom break)

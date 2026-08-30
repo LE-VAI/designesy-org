@@ -63,7 +63,7 @@ const SHARED_CHECKS = [
   { designesy: 'v28 — Reading width 45-75ch', hallmark: 'gate 25', slop: '—' },
   { designesy: 'v26 — Font family count ≤3', hallmark: 'gate 37', slop: '—' },
   { designesy: 'v02 — No horizontal scroll', hallmark: 'gate 34', slop: '—' },
-  { designesy: 'v24 — Touch targets ≥44px (WCAG 2.5.8)', hallmark: 'gate 26 (partial)', slop: '—' },
+  { designesy: 'v24 — Touch targets ≥44px (WCAG 2.5.5 Enhanced)', hallmark: 'gate 26 (partial)', slop: '—' },
 ];
 
 const DESIGNESY_UNIQUE = [

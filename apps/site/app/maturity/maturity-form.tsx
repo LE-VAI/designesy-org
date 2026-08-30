@@ -187,7 +187,7 @@ const QUESTIONS: Question[] = [
     answers: [
       { stage: 1, label: 'Eyeballed — no automated check' },
       { stage: 2, label: 'Manual axe-core or browser extension checks during QA' },
-      { stage: 3, label: 'APC contrast checks in CI (Lc 60/75/90 thresholds)' },
+      { stage: 3, label: 'APC contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
       { stage: 4, label: 'Automated WCAG 2.2 AA scan in CI + contrast tokens with computed Lc values' },
     ],
   },

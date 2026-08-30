@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Contracts',
     title: 'Accessibility contract',
-    lede: 'WCAG 2.2 AA via axe-core 4.12.1. Brand customization, provenance chain, 11 verification checks.',
+    lede: 'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks.',
     path: 'designesy.org/contracts/a11y',
     kind: 'contract',
     badge: 'v0.1.0',

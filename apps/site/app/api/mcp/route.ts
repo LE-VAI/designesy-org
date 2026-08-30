@@ -272,7 +272,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_tokens_score',
       {
-        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 — Candidate Recommendation, considered stable). Returns 10 conformance checks (t01-t10) with PASS/FAIL/WARN. Use this to verify a tokens.json (or any DTCG token export) is structurally correct — $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (2026, up from 56% YoY) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable — fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (t01–t10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 — Candidate Recommendation, considered stable). Returns 10 conformance checks (t01-t10) with PASS/FAIL/WARN. Use this to verify a tokens.json (or any DTCG token export) is structurally correct — $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable — fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (t01–t10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
           dtcg_file: z.string().optional().describe('Raw DTCG token JSON string to validate (alternative to url).'),
@@ -556,11 +556,11 @@ const handler = createMcpHandler(
     // Returns the accessibility contract + verification framework.
     // axe-core requires a real DOM (browser), so this tool returns the
     // contract checks + a Playwright script template the calling agent runs
-    // locally. The agent executes axe-core 4.12.1 via @axe-core/playwright.
+    // locally. The agent executes axe-core 4.13.0 via @axe-core/playwright.
     server.registerTool(
       'designesy_a11y_score',
       {
-        description: 'Get the Designesy WCAG 2.2 AA accessibility verification framework: 11 conformance checks (a01-a11) plus a ready-to-run Playwright + axe-core 4.12.1 script template targeting your URL. Use this to audit a site for accessibility violations. When NOT to use: for a full design-contract score (not just a11y), use designesy_score. Does NOT run the scan — axe-core needs a real browser DOM. Returns the 11 checks + a Playwright script you execute locally (npm i -D @axe-core/playwright). The score comes from your local run, not from this tool. Returns JSON: { checks[{id (a01–a11), name, status: "PENDING_EXECUTION"}], playwright_script, install_command, run_command }. Pass config (JSON string) to customize axe.configure() — e.g. branding overrides, rule disables. Omit for standard WCAG 2.2 AA.',
+        description: 'Get the Designesy WCAG 2.2 AA accessibility verification framework: 11 conformance checks (a01-a11) plus a ready-to-run Playwright + axe-core 4.13.0 script template targeting your URL. Use this to audit a site for accessibility violations. When NOT to use: for a full design-contract score (not just a11y), use designesy_score. Does NOT run the scan — axe-core needs a real browser DOM. Returns the 11 checks + a Playwright script you execute locally (npm i -D @axe-core/playwright). The score comes from your local run, not from this tool. Returns JSON: { checks[{id (a01–a11), name, status: "PENDING_EXECUTION"}], playwright_script, install_command, run_command }. Pass config (JSON string) to customize axe.configure() — e.g. branding overrides, rule disables. Omit for standard WCAG 2.2 AA.',
         inputSchema: z.object({
           url: z.string().describe('URL to scan for accessibility. The returned script template will target this URL.'),
           ruleset: z.string().optional().describe('Ruleset tag (default: wcag22aa). Options: wcag2a, wcag2aa, wcag21aa, wcag22aa, best-practice.'),
@@ -591,7 +591,7 @@ const handler = createMcpHandler(
           ? `const brandConfig = ${JSON.stringify(brandConfig, null, 2)};\n  await axe.configure(brandConfig);`
           : '';
 
-        const playwrightScript = `// axe-core 4.12.1 + Playwright — generated by designesy_a11y_score
+        const playwrightScript = `// axe-core 4.13.0 + Playwright — generated by designesy_a11y_score
 // Install: npm i -D @axe-core/playwright
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -640,7 +640,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
               url,
               ruleset: tag,
               brand_config: brandConfig,
-              summary: 'axe-core requires a real DOM. This tool returns the contract checks + a Playwright script. Execute the script locally with @axe-core/playwright 4.12.1 to get the actual score.',
+              summary: 'axe-core requires a real DOM. This tool returns the contract checks + a Playwright script. Execute the script locally with @axe-core/playwright 4.13.0 to get the actual score.',
               checks: checks.map((c) => ({
                 id: c.id,
                 name: c.name,
@@ -648,9 +648,9 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
                 status: 'PENDING_EXECUTION',
               })),
               playwright_script: playwrightScript,
-              install_command: 'npm i -D @axe-core/playwright@4.12.1',
+              install_command: 'npm i -D @axe-core/playwright@4.13.0',
               run_command: 'npx playwright test a11y-scan.spec.ts --reporter=line',
-              provenance: 'axe-core 4.12.1 + W3C WCAG 2.2 + ACT Rules + designesy-core.v0.4.0 §6',
+              provenance: 'axe-core 4.13.0 + W3C WCAG 2.2 + ACT Rules + designesy-core.v0.4.0 §6',
               priority: 'HIGH',
             }, null, 2),
           }],

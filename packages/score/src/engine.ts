@@ -472,7 +472,7 @@ const REMEDIATION: Record<string, string> = {
   x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded — a common cause of blurry headlines on Windows.',
   x02: 'Add text-underline-position: from-font to links and underlined text. This uses the font designer\'s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
   x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
-  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.8 Target Size Minimum, AA in 2.2). For small icon buttons, add padding or min-height to reach the 44px floor.',
+  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA; 2.5.8 Minimum AA is 24px — this check enforces the stricter bar). For small icon buttons, add padding or min-height to reach the 44px floor.',
   v25: 'Use exactly one <h1> per page as the main heading, and don\'t skip heading levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline. Audit your heading order with a browser extension or Lighthouse.',
   v26: 'Limit font-family declarations to 3 or fewer (1 body family, 1 heading family, 1 mono for code). More than 3 families signals inconsistency and hurts performance. Consolidate by removing unused families or using weight variations of a single family.',
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
@@ -687,9 +687,9 @@ function checkTouchTargets(css: string): CheckResult {
   const buttonMin = css.match(/(?:button|a|input|\.btn)[^{]*\{[^}]*min-height\s*:\s*(\d+)/gi) || [];
   const sizes = buttonMin.map((m) => parseInt(m.match(/min-height\s*:\s*(\d+)/i)?.[1] || '0'));
   const adequate = sizes.filter((s) => s >= 44);
-  if (adequate.length > 0) return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.8)', category: 'accessibility', status: 'PASS', detail: `${adequate.length} element(s) with min-height ≥44px` };
-  if (sizes.length > 0) return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: `${sizes.length} min-height(s) found but none ≥44px: ${sizes.join(', ')}` };
-  return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.8)', category: 'accessibility', status: 'WARN', detail: 'no min-height on interactive elements — static check, full verification needs browser' };
+  if (adequate.length > 0) return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'PASS', detail: `${adequate.length} element(s) with min-height ≥44px` };
+  if (sizes.length > 0) return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: `${sizes.length} min-height(s) found but none ≥44px: ${sizes.join(', ')}` };
+  return { id: 'v24', item: 'Touch targets ≥ 44px (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: 'no min-height on interactive elements — static check, full verification needs browser' };
 }
 
 function checkHeadingHierarchy(html: string): CheckResult {
