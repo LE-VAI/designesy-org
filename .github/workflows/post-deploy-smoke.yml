@@ -116,6 +116,7 @@ jobs:
           check_route "/" "Homepage" "200"
           check_route "/score" "Score page" "200"
           check_route "/pricing" "Pricing (ISR)" "200"
+          check_route "/DESIGN.md" "DESIGN.md root export" "200" "name: Designesy"
 
           # Dynamic OG image — verify ?url= param passes through to OG image
           check_route "/score?url=stripe.com" "Score with URL" "200" "opengraph-image?url=stripe.com"

@@ -587,5 +587,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.65,
     },
+    {
+      url: `${BASE}/DESIGN.md`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.65,
+    },
   ];
 }
