@@ -300,7 +300,7 @@ export function MonitorForm({ initialUrl }: { initialUrl: string }) {
                       ? '⏸ Alert active — email suppressed (1-hour cooldown, same alert set already delivered)'
                       : result.emailAlert.attempted
                         ? `⚠ Email delivery failed — ${result.emailAlert.error || 'unknown error'}`
-                        : '💡 Add an email above to get drift alerts by mail'}
+                        : 'Add an email above to get drift alerts by mail'}
                 </p>
               )}
             </div>

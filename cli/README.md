@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-score-gate.png">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 95.3% grade A, and the gate passes" width="960">
+  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="960">
 </picture>
 
 Score any URL against the **Designesy design-system contract** — 40 deterministic checks, one grade, no vibe-tax. **Runs locally — no server required.** Zero dependencies.

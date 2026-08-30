@@ -83,7 +83,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Read-only discovery
 | Tool | What it does |
 |---|---|
-| `designesy_catalog` | Get the 12-package catalog (versions, URLs, statuses) from `/open.json` |
+| `designesy_catalog` | Get the 23-package catalog (versions, URLs, statuses) from `/open.json` |
 | `designesy_contract` | Get the full design-system contract v0.4.0 (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section |
 | `designesy_design_review` | Get the Design Review kit (8 dimensions, agent prompt, output format, verification checklist) |
 | `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns |
@@ -143,7 +143,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | security | 5 | Security headers — CSP, X-Content-Type-Options, referrer policy |
 | spec | 4 | Spec conformance — `lang` attr, `charset`, doctype |
 
-No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 95.3% A.
+No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 93% A (36 pass / 0 fail / 1 skip / 3 manual).
 
 ## Standards positioning
 

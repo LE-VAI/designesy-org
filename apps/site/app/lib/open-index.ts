@@ -9,14 +9,14 @@
 
 export const openIndex = {
   id: 'designesy.open',
-  version: '0.1.5',
+  version: '0.1.6',
   status: 'public' as const,
   name: 'Open design intelligence',
   lede: 'Designesy publishes portable design judgment — contracts, kits, labs, and field checks people and agents can fetch, run, and remix.',
   path: '/open',
   public_url: 'https://www.designesy.org/open',
   machine_url: 'https://www.designesy.org/open.json',
-  updated: '2026-08-04',
+  updated: '2026-08-30',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
     'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
@@ -202,9 +202,9 @@ export const openIndex = {
       status: 'live',
       lede: 'Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2 engine. Acoustic token system adopted into contract v0.3.0.',
       human_url: 'https://www.designesy.org/labs/acoustics',
-      machine_url: null,
+      machine_url: 'https://www.designesy.org/labs/acoustics.json',
       path: '/labs/acoustics',
-      machine_path: null,
+      machine_path: '/labs/acoustics.json',
     },
     {
       id: 'review.poise',
@@ -487,7 +487,7 @@ export const openIndex = {
       title: 'MCP server',
       path: '/api/mcp',
       url: 'https://www.designesy.org/api/mcp',
-      meta: 'Streamable HTTP MCP endpoint — 12 design-intelligence tools (catalog, contract, review, score, tokens, a11y, motion, skill, a11y script, motion score, design review, agent.json). Docs: /docs/mcp',
+      meta: 'Streamable HTTP MCP endpoint — 17 design-intelligence tools (catalog, contract, design review, skill, agent.json, llms.txt, llms-full.txt, score, tokens, a11y framework, motion, drift, readiness, guardrails, monitor, compare, report) + 1 MCP App UI resource. Docs: /docs/mcp',
     },
   ],
   anti_patterns: [

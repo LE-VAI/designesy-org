@@ -5,12 +5,13 @@
 // provenance inline; add a stat only with a live data path behind it.
 
 import { SEED, LEADERBOARD_LAST_SCORED } from './leaderboard/seed';
+import { ENGINE_CHECK_COUNT } from './lib/check-definitions';
 
-// The verification engine's check count. The engine ships 40 checks
-// (v01–v23 + x01–x03 + v36–v41, grounded in CSS Color 5, WCAG 2.2, and
-// Baseline 2024–2026). Marketing copy previously said "32" and "34" —
-// stale; the engine is the truth.
-export const ENGINE_CHECK_COUNT = 40;
+// The verification engine's check count is DERIVED from the check registry
+// (app/lib/check-definitions.ts — the same source /api/score/checks serves),
+// not asserted. History: marketing copy said "32", then "34", then a comment
+// mis-derived "40" from broken range math. All replaced by the registry count.
+export { ENGINE_CHECK_COUNT };
 
 // Public contract version the engine scores against.
 export const CONTRACT_VERSION = 'v0.4.0';

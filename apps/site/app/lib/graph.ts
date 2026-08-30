@@ -100,7 +100,7 @@ export const graph = {
       stage: 'Shipped Work',
       description: 'Real artifacts produced using the contract.',
       public_examples: [
-        'designesy.org (live, v0.4.0, 12 packages, 5 machine exports)',
+        'designesy.org (live, v0.4.0, 23 packages, 10 machine exports)',
         'Tile — interactive series composer (617 views on X)',
         'Compile — principle compiler (built, pending hosting)',
         'Continuity — founder narrative (shipped, underperformed, failure documented)',
