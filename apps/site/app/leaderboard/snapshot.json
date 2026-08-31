@@ -40,12 +40,12 @@
     "scoredAt": "2026-08-31"
   },
   "https://nytimes.com": {
-    "score": 74.7,
+    "score": 76.5,
     "grade": "C",
-    "pass": 11,
+    "pass": 12,
     "fail": 2,
     "warn": 10,
-    "skip": 16,
+    "skip": 15,
     "tokens": 85,
     "scoredAt": "2026-08-31"
   },
