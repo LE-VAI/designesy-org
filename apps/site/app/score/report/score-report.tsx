@@ -526,7 +526,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </Link>
         </div>
         <p className="report-version">
-          Report generated against design system contract v0.4.0 · 40 checks ·{' '}
+          Report generated against design system contract v0.4.0 · 42 checks ·{' '}
           {total} checks evaluated
         </p>
         <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>

@@ -53,7 +53,7 @@ export default async function ScoreOpenGraphImage({
     return renderCard({
       eyebrow: 'Score',
       title: 'Score any site',
-      lede: '40 checks against a real design contract. One grade.',
+      lede: '42 checks against a real design contract. One grade.',
       siteUrl: '',
       score: null,
     });

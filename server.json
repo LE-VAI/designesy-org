@@ -2,12 +2,12 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.LE-VAI/designesy-org",
   "title": "Designesy",
-  "description": "Score any URL against a real design contract — 40 checks, A-F grade, token + motion validation.",
+  "description": "Score any URL against a real design contract — 42 checks, A-F grade, token + motion validation.",
   "repository": {
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.11.1",
+  "version": "1.12.0",
   "license": "MIT",
   "websiteUrl": "https://www.designesy.org",
   "remotes": [
@@ -21,7 +21,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "designesy-mcp",
-      "version": "1.11.1",
+      "version": "1.12.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

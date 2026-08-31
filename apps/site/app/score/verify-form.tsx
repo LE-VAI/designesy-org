@@ -600,7 +600,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       );
     }
     const engines: [string, SubEngineResult | null | undefined][] = [
-      ['Score (40-check)', reportResult?.score],
+      ['Score (42-check)', reportResult?.score],
       ['Drift (12-check)', reportResult?.drift],
       ['Readiness (10-check)', reportResult?.readiness],
       ['Guardrails (6-check)', guardrailsResult],
@@ -776,7 +776,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </p>
           <ol className="score-verify-log-list">
             {[
-              'Score engine (40 checks)',
+              'Score engine (42 checks)',
               'Drift radar (12 checks)',
               'AI readiness (10 checks)',
               'Guardrails emitter (6 checks)',
@@ -1505,7 +1505,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Unified Verification Cockpit</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. Four
-            engines fire in parallel: Score (40 checks), Drift (12 checks), AI
+            engines fire in parallel: Score (42 checks), Drift (12 checks), AI
             Readiness (10 checks), and Guardrails (6 checks). One composite
             grade. No login required.
           </p>

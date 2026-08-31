@@ -1,7 +1,7 @@
 // /leaderboard seed — curated sites with batch-scored verification results.
 // Shared source for the JSON route (route.ts) and the rendered page (page.tsx).
 //
-// All 30 sites re-scored 2026-08-30 with the 40-check engine (contract v0.4.0).
+// All 30 sites re-scored 2026-08-30 with the 42-check engine (contract v0.4.0).
 // Deterministic — no LLM. Re-scored weekly via .github/workflows/rescore-leaderboard.yml.
 // prevScore holds the previous week's score for delta-badge rendering.
 
@@ -120,7 +120,7 @@ export const SEED: SeedSite[] = [
 export const LEADERBOARD_LAST_SCORED = '2026-08-30';
 
 export const LEADERBOARD_POLICY =
-  'Curated seed (30 sites) + open submission. Scores are deterministic — 40 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
+  'Curated seed (30 sites) + open submission. Scores are deterministic — 42 checks, no LLM. Sites scoring below 50 are flagged "needs work", not hidden. No paywall, no pay-to-remove.';
 
 export const LEADERBOARD_VERSION = '0.4.0';
 

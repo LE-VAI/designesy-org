@@ -50,7 +50,7 @@ export default function MaturityPage() {
           <p className="surface-lede">
             Chart your design system across six independent compliance axes.
             24 questions. ~6 minutes. No survey, no vote — a structured
-            self-assessment that maps directly to the same 40-check contract
+            self-assessment that maps directly to the same 42-check contract
             the leaderboard scores against.
           </p>
           <p className="surface-note">
@@ -77,7 +77,7 @@ export default function MaturityPage() {
             The six axes map to the 14 weighted categories in the Designesy
             v0.4.0 contract. After the self-assessment, the highest-leverage
             next step is almost always a deterministic score — run the same
-            40-check engine against your live site and see where
+            42-check engine against your live site and see where
             self-perception meets shipped reality.
           </p>
           <p className="surface-note">

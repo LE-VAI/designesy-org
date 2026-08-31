@@ -5,7 +5,7 @@ export const contentType = 'image/png';
 
 /**
  * Home-screen mark — signal "gate" mark.
- * One lit cell of the 40-check verification grid: a signal dot inside a
+ * One lit cell of the 42-check verification grid: a signal dot inside a
  * thin square ring. Scaled proportionally from the 32×32 icon (×5.6).
  * Echoes the Score Gate hero and the OG card markRing.
  * No monogram, no letter logo. Matches wordmark period language.

@@ -35,13 +35,13 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — The AI UI compliance layer',
   description:
-    'AI makes execution free. We make execution yours. Verify any site against the Designesy design system contract — 40 checks, one grade, real-time. The compliance layer for AI-generated UI.',
+    'AI makes execution free. We make execution yours. Verify any site against the Designesy design system contract — 42 checks, one grade, real-time. The compliance layer for AI-generated UI.',
   path: '/',
   ogTitle: 'Designesy — The AI UI compliance layer',
   ogDescription:
-    '40 automated verification checks against a real design contract. The compliance layer for AI-generated UI. AI makes execution free. We make execution yours.',
+    '42 automated verification checks against a real design contract. The compliance layer for AI-generated UI. AI makes execution free. We make execution yours.',
   twitterDescription:
-    'Verify any site against the Designesy design contract. 40 checks. One grade. The AI UI compliance layer. designesy.org',
+    'Verify any site against the Designesy design contract. 42 checks. One grade. The AI UI compliance layer. designesy.org',
 });
 
 const PILLARS = [
@@ -53,7 +53,7 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: '40 automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
+    text: '42 automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
   },
   {
     number: '03',
@@ -113,7 +113,7 @@ const SURFACES = [
   {
     href: '/methodology',
     label: 'Methodology',
-    desc: 'The full 40-check scoring methodology — weights, math, grade bands',
+    desc: 'The full 42-check scoring methodology — weights, math, grade bands',
     meta: 'Fully transparent',
   },
   {
@@ -310,7 +310,7 @@ export default function HomePage() {
             becomes the new legitimacy signal. A site that is visually
             consistent, motion-coherent, and takt-disciplined reads as real.
             The contract is what makes that verifiable — not by taste, but by
-            40 checks that pass or fail.
+            42 checks that pass or fail.
           </p>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
@@ -472,7 +472,7 @@ export default function HomePage() {
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence + Acoustics adopted',
                 },
                 {
-                  title: 'Verification engine · 40 checks',
+                  title: 'Verification engine · 42 checks',
                   meta: 'Live on /score · scores any URL against the contract in real-time',
                 },
                 {

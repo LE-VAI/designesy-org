@@ -25,7 +25,7 @@ const TOOLS = [
     question: 'Does this conform to the contracted design system?',
     category: 'Contract conformance verification',
     delivery: 'URL-based API + MCP tools (agent-invocable)',
-    checks: '40 checks across 14 categories',
+    checks: '42 checks across 14 categories',
     license: 'See designesy.org',
     stars: '—',
     score: '93% A (self)',
@@ -106,7 +106,7 @@ const COMPETITOR_UNIQUE = [
 const POSITIONING = [
   'Generation → hallmark (prevent slop at emit time, 57 gates)',
   'Evaluation → slop-eval (score existing designs, 108 tells + 2 positive axes)',
-  'Verification → designesy (verify contract conformance, 40 checks + MCP delivery)',
+  'Verification → designesy (verify contract conformance, 42 checks + MCP delivery)',
 ];
 
 const DESIGNESY_MOAT = [

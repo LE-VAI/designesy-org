@@ -86,7 +86,7 @@ The local engine is strictly better than the API client:
 - **No rate limits** — run it as many times as you want
 - **Faster** — no HTTP round-trip to the scoring server
 - **Zero dependencies** — no transitive supply-chain risk
-- **Same engine** — identical 40 checks, same scoring math, same output format
+- **Same engine** — the identical check registry, same scoring math, same output format
 
 ## Questions?
 

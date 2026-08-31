@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Leaderboard',
     title: '30 sites scored',
-    lede: 'Scored by the same deterministic 40-check engine. Designesy is the only A-grade site.',
+    lede: 'Scored by the same deterministic 42-check engine. Designesy is the only A-grade site.',
     path: 'designesy.org/leaderboard',
   });
 }

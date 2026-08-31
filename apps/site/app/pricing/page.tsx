@@ -23,9 +23,9 @@ const TIERS = [
     name: 'Open',
     price: 'Free',
     suffix: 'forever',
-    sub: 'Score any URL with the full 40-check engine, drift radar, AI readiness, DTCG validation.',
+    sub: 'Score any URL with the full 42-check engine, drift radar, AI readiness, DTCG validation.',
     bullets: [
-      '40-check score on any URL',
+      '42-check score on any URL',
       '12-check drift radar',
       '10-check AI readiness score',
       'DTCG token file validation',
@@ -94,7 +94,7 @@ export default function PricingPage() {
           <div className="pricing-desk">
             <p className="pricing-desk-lede">
               The free tier is not a trial. It is the whole verification engine
-              — 40 checks, one grade, real-time. Continuity adds scheduled
+              — 42 checks, one grade, real-time. Continuity adds scheduled
               monitoring and drift alerts for teams shipping with agents.
               Enterprise adds CI gates and on-prem for organizations at scale.
             </p>
@@ -192,7 +192,7 @@ export default function PricingPage() {
                 Designesy does not accept payment for scores, methodology
                 changes, or leaderboard placement.
               </strong>{' '}
-              Every score is computed by the same deterministic 40-check engine
+              Every score is computed by the same deterministic 42-check engine
               against the same published contract. Enterprise customers pay for
               private scoring, custom contracts, and CI integration — never for
               public leaderboard placement. If a scored site is also an
@@ -223,7 +223,7 @@ export default function PricingPage() {
                 How many scores can I run on the free tier?
               </summary>
               <p className="pricing-faq-a">
-                No hard cap. The free tier scores any URL with the full 40-check
+                No hard cap. The free tier scores any URL with the full 42-check
                 engine and keeps your last 5 scores in your browser. Continuity
                 adds scheduled scans, server-side history, and email drift
                 alerts.
@@ -278,7 +278,7 @@ export default function PricingPage() {
         <section className="doctrine-section fade-up fade-up-delay-3">
           <h2 className="doctrine-heading">Feature comparison</h2>
           <div className="surface-note" style={{ marginBottom: '1rem' }}>
-            All tiers use the same 40-check engine and the same contract. The
+            All tiers use the same 42-check engine and the same contract. The
             difference is monitoring, history, and infrastructure.
           </div>
           <table className="pricing-compare">
@@ -292,7 +292,7 @@ export default function PricingPage() {
             </thead>
             <tbody>
               <tr>
-                <td>40-check verification engine</td>
+                <td>42-check verification engine</td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
