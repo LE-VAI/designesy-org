@@ -1,6 +1,6 @@
 {
   "name": "@designesy/score",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Standalone 42-check design-contract scoring engine — fetches a URL, extracts CSS + tokens, runs all checks locally. Zero dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",

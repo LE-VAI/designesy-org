@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Standalone `@designesy/score` engine re-synced to the site engine** (v0.3.0).
+  37 of 40 check functions had drifted from the canonical `apps/site` engine —
+  5 wrong category assignments (v03 accessibility→interaction, v05
+  accessibility→motion, v20/v26 identity→cadence, v27 responsive→
+  accessibility) and 32 stale check implementations (v10 takt, v34 AI
+  disclosure, v38 button-verb, v39 trailing-period, v11/v19 semantics, and
+  more). Before: the CLI scored designesy.org 88.5 B while the site engine
+  scored it 93 A. After: identical scores and per-check statuses verified on
+  three URLs (designesy.org 93 A, linear.app 67.7 D, example.com 63.3 D
+  universal) — 0 diffs across all 42 checks on each. The v37 DESIGN.md check
+  keeps its deliberate npm-runtime adaptations (SSRF-safe httpsFetch,
+  optional-linter fallback).
+
 ## [1.12.0] — 2026-08-30
 
 ### Added
