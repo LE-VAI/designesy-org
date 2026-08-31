@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMeta({
   path: '/contracts/design-system',
   ogTitle: `Design system contract · v${designSystemContract.version} — reference format`,
   ogDescription:
-    'A reference format for AI-readable design contracts. Input + verification — not just tokens and prose, but 40 automated checks that prove the output passes. Richer than design.md.',
+    'A reference format for AI-readable design contracts. Input + verification — not just tokens and prose, but 42 automated checks that prove the output passes. Richer than design.md.',
   twitterDescription:
     'A reference format for AI-readable design contracts — input + verification. designesy.org/contracts/design-system',
 });
@@ -75,7 +75,7 @@ export default function DesignSystemContractPage() {
           <p className="surface-note">
             design.md (Google Labs, 26k+ stars) is the input layer: tokens and
             prose an agent reads to generate UI. This contract is input{' '}
-            <em>plus</em> verification — 40 automated checks that prove the
+            <em>plus</em> verification — 42 automated checks that prove the
             generated output actually passes. Acoustic cues, takt interface-feel,
             copywriting principles, anti-generic tells, and provenance tracking
             have no design.md equivalent.
@@ -145,7 +145,7 @@ export default function DesignSystemContractPage() {
             <div className="token-table-row" role="row">
               <code role="cell">Verification</code>
               <span role="cell">CLI linter + WCAG contrast</span>
-              <span role="cell">40 automated checks, live score engine</span>
+              <span role="cell">42 automated checks, live score engine</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Anti-generic detection</code>
@@ -192,7 +192,7 @@ export default function DesignSystemContractPage() {
             The gap design.md leaves open is the same gap every AI coding agent
             leaves open: <strong>generation is not verification</strong>. An
             agent can read a token file and still ship hardcoded hex, broken
-            contrast, or the AI-default look. The 40-check engine closes that
+            contrast, or the AI-default look. The 42-check engine closes that
             gap. With 42% of committed React now AI-generated (Belitsoft, State
             of React Development 2026), the score is the compliance layer — not whether the
             agent read the rules, but whether the shipped design passes them.
@@ -433,7 +433,7 @@ export default function DesignSystemContractPage() {
               <span className="row-body">
                 <span className="row-title">Live verification</span>
                 <span className="row-meta">
-                  Score any URL against this contract — 40 checks, one grade
+                  Score any URL against this contract — 42 checks, one grade
                 </span>
               </span>
             </Link>
@@ -554,7 +554,7 @@ export default function DesignSystemContractPage() {
 
         <div className="status-note">
           Design system contract v{c.version} — a reference format for
-          AI-readable design contracts. Input plus verification: 40 automated
+          AI-readable design contracts. Input plus verification: 42 automated
           checks, not just tokens and prose. Live styles remain authoritative
           when they and this contract disagree. Human and machine surfaces stay
           synchronized.

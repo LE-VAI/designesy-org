@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.11.1"
+SERVER_VERSION = "1.12.0"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -1270,10 +1270,10 @@ def _contrast_ratio(fg: str, bg: str) -> float:
 
 
 def _score_remote(url: str) -> dict[str, Any] | None:
-    """POST to the canonical 40-check engine at /api/score.
+    """POST to the canonical 42-check engine at /api/score.
 
     The site API is the single source of truth for the v0.4.0 contract
-    (40 checks, 14 categories). Returns the normalized response, or None
+    (42 checks, 14 categories). Returns the normalized response, or None
     if the API is unreachable (caller falls back to the local engine).
     """
     try:
@@ -1318,7 +1318,7 @@ def _score_remote(url: str) -> dict[str, Any] | None:
             for c in checks
         ],
         "note": (
-            f"Canonical 40-check engine (v0.4.0). {data.get('pass', 0)} passed, "
+            f"Canonical 42-check engine (v0.4.0). {data.get('pass', 0)} passed, "
             f"{data.get('fail', 0)} failed, {data.get('warn', 0)} warned, "
             f"{data.get('skip', 0)} skipped, {data.get('manual', 0)} manual "
             f"(browser-only). Score {round(data.get('score', 0), 1)}% "
@@ -1330,7 +1330,7 @@ def _score_remote(url: str) -> dict[str, Any] | None:
 def _score_impl(url: str | None = None) -> dict[str, Any]:
     """Score a live URL against the Designesy design contract.
 
-    Primary path: delegate to the canonical 40-check engine at
+    Primary path: delegate to the canonical 42-check engine at
     /api/score (same engine the npm CLI and site use). Fallback: the
     local 26-check subset (v01-v23 + x01-x03) when the API is
     unreachable, so the tool still works offline.
@@ -1871,7 +1871,7 @@ TOOLS = [
         "name": "designesy_score",
         "description": (
             "Score a live URL against the Designesy design contract — a "
-            "deterministic 40-check verification engine that returns a "
+            "deterministic 42-check verification engine that returns a "
             "numeric score, letter grade (A–F), and per-check breakdown. "
             "Use this to audit whether a website or AI-generated UI "
             "complies with a real design contract (tokens, motion, "
@@ -1880,7 +1880,7 @@ TOOLS = [
             "designesy_tokens_score; for a Lottie file, use "
             "designesy_motion_score; for a qualitative critique, use "
             "designesy_design_review. Executable — fetches the URL "
-            "server-side, extracts CSS, runs 40 checks. Results cached "
+            "server-side, extracts CSS, runs 42 checks. Results cached "
             "~24h server-side per URL. Checks needing a live browser (Core Web "
             "Vitals, sound toggle, overflow) return MANUAL, not FAIL — "
             "run the full audit (/api/score/audit) to resolve them. "
@@ -2026,7 +2026,7 @@ TOOLS = [
             "dangling alias chains). Use this when you need to verify "
             "whether a site (especially an AI-generated one) is drifting "
             "off its own declared token system. When NOT to use: for a "
-            "full 40-check design-contract score, use designesy_score; "
+            "full 42-check design-contract score, use designesy_score; "
             "for token-file format validation, use "
             "designesy_tokens_score. Executable — fetches the URL "
             "server-side, extracts all CSS (inline + linked stylesheets), "
@@ -2225,7 +2225,7 @@ TOOLS = [
         "description": (
             "Generate a unified design-intelligence report for a single "
             "URL — the synthesis capstone of the Designesy dynasty. "
-            "Fires /score (40-check audit), /drift (12-check drift "
+            "Fires /score (42-check audit), /drift (12-check drift "
             "radar), and /readiness (10-check AI readiness) in "
             "parallel, then computes a weighted composite: score × 0.5 "
             "+ drift × 0.3 + readiness × 0.2. One input, one output, "

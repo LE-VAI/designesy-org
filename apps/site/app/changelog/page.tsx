@@ -41,6 +41,7 @@ type Dimension =
   | 'copywriting'
   | 'identity'
   | 'security'
+  | 'semantic'
   | 'verification'
   | 'all';
 
@@ -56,6 +57,7 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
   copywriting: 'Copywriting',
   identity: 'Identity',
   security: 'Security',
+  semantic: 'Semantic',
   verification: 'Verification',
 };
 
@@ -71,6 +73,7 @@ const DIMENSION_COLORS: Record<Dimension, string> = {
   copywriting: 'var(--signal)',
   identity: 'var(--signal)',
   security: 'var(--error)',
+  semantic: 'var(--signal)',
   verification: 'var(--signal)',
 };
 
@@ -260,7 +263,7 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'added',
     title: 'Spec-layer integration (DESIGN.md)',
     description:
-      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own 40-check contract verification.',
+      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own 42-check contract verification.',
     checks: ['v37'],
     rationale:
       'DESIGN.md is the AI-agent-facing spec file. Without it, AI coding tools build around your system, not from it. The check validates its presence and structure.',
@@ -279,6 +282,21 @@ const CHANGELOG: ChangelogEntry[] = [
     rationale:
       'The trust asset must be structurally non-monetizable. Pattern from Artificial Analysis (independence firewall) and Arena (structural neutrality). The compliance_index_version field makes scores machine-consumable for CI pipelines.',
     source: 'Artificial Analysis independence firewall, Arena structural neutrality',
+  },
+
+  // ── v0.4.0 (engine 1.12.0) — Semantic category wired ──
+  {
+    version: 'v0.4.0',
+    date: '2026-08-30',
+    dimension: 'semantic',
+    change: 'added',
+    title: 'Semantic category wired: v42 + v43',
+    description:
+      'The semantic category carried a reserved weight (12) with zero checks since v0.3.0. Two deterministic checks now score it: v42 measures the role-named vs hue-named share of :root color tokens; v43 checks status-state coverage (ok/warn/error/info). Engine grows 40 → 42 checks.',
+    checks: ['v42', 'v43'],
+    rationale:
+      'The contract\'s own palette is fully role-named (--ink, --paper, --surface, --signal, --ok/--warn/--error) — color named by meaning, not wavelength. Role-based naming is the documented best practice (zeroheight naming guide, Material 3), but nothing scored it. Both checks are WARN-only (style craft, not user harm) and self-SKIP when a site has no color tokens.',
+    source: 'Designesy contract colors section, zeroheight naming guide 2026, Material 3 design tokens',
   },
 ];
 
@@ -320,7 +338,7 @@ export default function ChangelogPage() {
             Every contract change, organized by design dimension. Track what
             was added, modified, adopted, and deprecated across versions —
             from the initial {CHANGELOG.filter((e) => e.version === 'v0.1.0').length}-check
-            contract through the current {CONTRACT_VERSION} 40-check engine.
+            contract through the current {CONTRACT_VERSION} 42-check engine.
           </p>
           <p className="surface-note">
             Pattern from Artificial Analysis: changelog organized by modality
@@ -452,7 +470,8 @@ export default function ChangelogPage() {
               { version: 'v0.1.2', date: '2026-07-05', checks: 26, summary: 'Takt interface-feel rules adopted from Lab Two.' },
               { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks — largest category at 18% weight.' },
               { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
-              { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version. Current version.' },
+              { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
+              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored. Current version.' },
             ].map((v, i) => (
               <div
                 key={v.version}

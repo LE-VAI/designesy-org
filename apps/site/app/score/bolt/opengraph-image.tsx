@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Score',
     title: 'Score your Bolt site',
-    lede: '40 checks against a real design contract. Built on Bolt? Score your site.',
+    lede: '42 checks against a real design contract. Built on Bolt? Score your site.',
     path: 'designesy.org/score/bolt',
   });
 }

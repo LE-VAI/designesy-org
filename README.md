@@ -9,7 +9,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
-  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="1280">
+  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 42-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="1280">
 </picture>
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
@@ -45,13 +45,13 @@ pip install designesy-mcp && designesy-mcp
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 42-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
-**Designesy Contract Check** is a GitHub Action that scores any URL against a **40-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
+**Designesy Contract Check** is a GitHub Action that scores any URL against a **42-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
 
 ## Tools
 
-- `designesy_score` — Score a live URL against the 40-check design contract. Returns score, grade (A–F), and per-check breakdown.
+- `designesy_score` — Score a live URL against the 42-check design contract. Returns score, grade (A–F), and per-check breakdown.
 - `designesy_tokens_score` — Validate a DTCG design-token file. 10 conformance checks against W3C DTCG 2025.10.
 - `designesy_a11y_score` — Get the WCAG 2.2 AA accessibility framework and Playwright/axe-core script template.
 - `designesy_motion_score` — Validate a Lottie animation file. 10 checks against Lottie spec v1.0.1 and §16 motion standards.
@@ -67,7 +67,7 @@ The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-d
 
 | Tool | Description |
 |---|---|
-| `designesy_score` | Score a live URL against the 40-check design contract — returns score, grade (A–F), per-check breakdown |
+| `designesy_score` | Score a live URL against the 42-check design contract — returns score, grade (A–F), per-check breakdown |
 | `designesy_tokens_score` | Validate a DTCG design-token file (10 conformance checks, W3C DTCG 2025.10) |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility framework + Playwright/axe-core script template |
 | `designesy_motion_score` | Validate a Lottie animation file (10 checks, Lottie spec v1.0.1 + §16 motion standards) |
@@ -85,7 +85,7 @@ The same 40-check engine powers an MCP server (17 tools for AI agents), a zero-d
 - **MCP endpoint:** [designesy.org/api/mcp](https://www.designesy.org/api/mcp) (Streamable HTTP, no auth)
 - **Score a site:** [designesy.org/score](https://www.designesy.org/score)
 - **Leaderboard:** [designesy.org/leaderboard](https://www.designesy.org/leaderboard) — 30 sites scored
-- **Methodology:** [designesy.org/methodology](https://www.designesy.org/methodology) — full 40-check scoring methodology
+- **Methodology:** [designesy.org/methodology](https://www.designesy.org/methodology) — full 42-check scoring methodology
 - **Contract:** [designesy.org/contracts/design-system](https://www.designesy.org/contracts/design-system)
 - **Machine export:** [designesy.org/contracts/design-system.json](https://www.designesy.org/contracts/design-system.json)
 
@@ -177,7 +177,7 @@ No — all 17 tools are read-only. The MCP endpoint is stateless Streamable HTTP
 Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.
 
 **What does it score against?**
-The Designesy v0.4.0 design-system contract — 40 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
+The Designesy v0.4.0 design-system contract — 42 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
 
 **Can I use it in CI?**
 Yes. The [GitHub Action](#github-action) gates your workflow on contract compliance — fail the build if the score drops below your threshold.

@@ -1,7 +1,7 @@
 {
   "name": "@designesy/cli",
   "version": "0.1.3",
-  "description": "Unified CLI for Designesy design verification — dispatches to tokens (DTCG validation) and score (40-check engine) subcommands.",
+  "description": "Unified CLI for Designesy design verification — dispatches to tokens (DTCG validation) and score (42-check engine) subcommands.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
   "homepage": "https://www.designesy.org",

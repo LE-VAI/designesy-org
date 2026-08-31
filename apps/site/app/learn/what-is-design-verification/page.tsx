@@ -38,7 +38,7 @@ const CONTRACT_LAYERS = [
   {
     num: '04',
     name: 'Verification',
-    desc: 'A runnable checklist — 40 automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.',
+    desc: 'A runnable checklist — 42 automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.',
   },
 ];
 
@@ -207,7 +207,7 @@ export default function WhatIsDesignVerificationPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Score a URL</span>
-                <span className="row-meta">Run the 40-check engine against any live site, including this one</span>
+                <span className="row-meta">Run the 42-check engine against any live site, including this one</span>
               </span>
             </Link>
             <Link

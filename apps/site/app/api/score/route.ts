@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 // not present on the scored site) is treated:
 //
 //   scope=contract  (default for designesy.org self-scoring)
-//     - All 40 checks active. Absence of a feature = WARN or FAIL.
+//     - All 42 checks active. Absence of a feature = WARN or FAIL.
 //     - This is the strictest mode: the contract's patterns are mandatory.
 //     - Used when scoring designesy.org itself (we should follow our own rules).
 //
@@ -130,7 +130,7 @@ function autoDetectScope(targetUrl: string): ScoreScope {
 
 // ── Score cache ─────────────────────────────────────────────────────────────
 // Score results are stable for ~24h (sites don't redesign daily) and the
-// 40-check run + target-site fetch is expensive (3-8s cold). unstable_cache
+// 42-check run + target-site fetch is expensive (3-8s cold). unstable_cache
 // persists results across requests on Vercel's Data Cache, keyed automatically
 // by the targetUrl argument. Tag 'score' allows future revalidation via
 // revalidateTag. Both the POST handler and the OG image route import `scoreUrl`
@@ -464,10 +464,12 @@ const REMEDIATION: Record<string, string> = {
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
   v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
+  v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage — when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
+  v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning — a score badge, a form error, and a toast all read the same token — and stay legible when the palette evolves.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters — e.g. Cyrillic а (U+0430) looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format — 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 40-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only — for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format — 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 42-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only — for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
   v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic) — review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
@@ -947,6 +949,96 @@ function checkTokenLayerDepth(tokens: Record<string, string>): CheckResult {
     return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail} — 2-tier aliasing detected` };
   }
   return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${detail} — only 1 layer, no aliasing` };
+}
+
+// ── Semantic category checks (v42, v43) ─────────────────────────────────────
+// The semantic category (weight 12) scores whether a site's color system
+// speaks in ROLES (meaning) rather than hues (wavelength). The contract's own
+// palette is fully role-named (--ink, --paper, --surface, --signal, --ok,
+// --warn, --error), and role-based naming is the documented best practice
+// (zeroheight naming guide 2026, Material 3 "named for how or where they're
+// used", NYS DS "do not use primitive tokens directly"). Both checks are
+// WARN-only (style-craft, not user harm) per the engine's calibration
+// precedent for style checks, and both self-SKIP when a site has no color
+// tokens to assess — no scope-tier registration needed.
+
+// Role words name USAGE; hue words name WAVELENGTH; numeric scale suffixes
+// (-100…-999) mark primitive palettes. Tokens matching neither list are
+// neutral (brand coinages like --shimmer-1) and are excluded from the share.
+const SEMANTIC_ROLE_WORDS = [
+  'ink', 'paper', 'surface', 'muted', 'border', 'line', 'content', 'text',
+  'foreground', 'background', 'accent', 'signal', 'brand', 'primary',
+  'secondary', 'tertiary', 'danger', 'error', 'success', 'warning', 'warn',
+  'info', 'ok', 'fail', 'link', 'focus', 'disabled', 'placeholder',
+  'selection', 'canvas', 'overlay', 'scrim', 'highlight', 'active', 'hover',
+  'pressed', 'elevated', 'lifted', 'raised', 'dim', 'faint', 'strong',
+];
+const SEMANTIC_HUE_WORDS = [
+  'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
+  'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink',
+  'rose', 'slate', 'gray', 'grey', 'zinc', 'neutral', 'stone', 'brown',
+  'black', 'white', 'mint', 'magenta', 'crimson', 'navy', 'olive', 'maroon',
+  'gold', 'silver', 'bronze', 'coral', 'salmon', 'peach', 'plum', 'lavender',
+  'turquoise', 'azure', 'jade', 'burgundy', 'charcoal', 'ivory', 'sepia',
+  'rust', 'sand', 'cream',
+];
+
+function isColorValue(value: string): boolean {
+  return /^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/i.test(value.trim());
+}
+
+function classifyColorToken(name: string): 'role' | 'hue' | 'neutral' {
+  const segments = name.toLowerCase().split(/[-_]/).filter(Boolean);
+  if (segments.some((s) => SEMANTIC_ROLE_WORDS.includes(s))) return 'role';
+  const last = segments[segments.length - 1] ?? '';
+  if (segments.some((s) => SEMANTIC_HUE_WORDS.includes(s)) || /^\d{2,3}$/.test(last)) return 'hue';
+  return 'neutral';
+}
+
+function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResult {
+  const item = 'Semantic color vocabulary: role-named tokens, not hue-named';
+  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
+  if (colorTokens.length < 4) {
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${colorTokens.length})` };
+  }
+  let role = 0;
+  let hue = 0;
+  for (const [name] of colorTokens) {
+    const c = classifyColorToken(name);
+    if (c === 'role') role++;
+    else if (c === 'hue') hue++;
+  }
+  const named = role + hue;
+  if (named === 0) {
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named — vocabulary unclassifiable` };
+  }
+  const share = Math.round((role / named) * 100);
+  if (role >= 3 && share >= 60) {
+    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color speaks in meaning` };
+  }
+  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color vocabulary leans on hue names` };
+}
+
+function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
+  const item = 'Semantic status colors: ok/warn/error/info state roles present';
+  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
+  if (colorTokens.length === 0) {
+    return { id: 'v43', item, category: 'semantic', status: 'SKIP', detail: 'no color tokens in :root' };
+  }
+  const families: Record<string, boolean> = { ok: false, warn: false, error: false, info: false };
+  for (const [name] of colorTokens) {
+    const segments = name.toLowerCase().split(/[-_]/);
+    if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
+    if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;
+    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative'].includes(s))) families.error = true;
+    if (segments.some((s) => ['info', 'notice', 'informational'].includes(s))) families.info = true;
+  }
+  const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
+  const missing = Object.entries(families).filter(([, v]) => !v).map(([k]) => k);
+  if (found.length >= 3) {
+    return { id: 'v43', item, category: 'semantic', status: 'PASS', detail: `${found.length}/4 status families present (${found.join(', ')}) — states expressed as semantic roles` };
+  }
+  return { id: 'v43', item, category: 'semantic', status: 'WARN', detail: `${found.length}/4 status families present${found.length ? ` (${found.join(', ')})` : ''} — missing: ${missing.join(', ')}` };
 }
 
 function checkFontSmoothing(css: string): CheckResult {
@@ -1900,6 +1992,8 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
+    checkSemanticColorVocabulary(tokens),
+    checkSemanticStatusRoles(tokens),
     checkAiDisclosure(html),
     checkForcedColors(css),
     checkSecurityConfusables(css, tokens),

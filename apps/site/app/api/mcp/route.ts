@@ -21,7 +21,7 @@
 //   guardrails, monitor, compare, report, tokens, a11y, motion).
 // 1 UI resource (ui://designesy/report-app) renders the report dashboard.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.11.1 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org v1.12.0 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { createMcpHandler } from 'mcp-handler';
@@ -49,7 +49,7 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const res = await safeFetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': 'designesy-mcp/1.11.1 (https://www.designesy.org)',
+      'User-Agent': 'designesy-mcp/1.12.0 (https://www.designesy.org)',
     },
   });
 
@@ -230,12 +230,12 @@ const handler = createMcpHandler(
     );
 
     // ── Tool 8: designesy_score ───────────────────────────────────────────────
-    // Calls the internal /api/score endpoint — the 40-check verification engine
+    // Calls the internal /api/score endpoint — the 42-check verification engine
     // that already runs natively on this same Vercel project. No Python needed.
     server.registerTool(
       'designesy_score',
       {
-        description: 'Score a live URL against the Designesy design contract — a deterministic 40-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable — fetches the URL server-side, extracts CSS, runs 40 checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL, not FAIL — run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). Returns JSON: { url, score (0–100), grade (A–F), pass_count, fail_count, checks[{id, name, status, weight, category}] }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output.',
+        description: 'Score a live URL against the Designesy design contract — a deterministic 42-check verification engine that returns a numeric score, letter grade (A–F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable — fetches the URL server-side, extracts CSS, runs 42 checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL, not FAIL — run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). Returns JSON: { url, score (0–100), grade (A–F), pass_count, fail_count, checks[{id, name, status, weight, category}] }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to score. Defaults to https://www.designesy.org/ if not provided.'),
         }),
@@ -299,7 +299,7 @@ const handler = createMcpHandler(
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.11.1' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.12.0' },
             });
             if (!res.ok) {
               return {
@@ -693,7 +693,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.11.1' },
+              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.12.0' },
             });
             if (!res.ok) {
               return {
@@ -861,7 +861,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_drift_score',
       {
-        description: 'Score a live URL for AI-generated UI drift — 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full 40-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable — fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+        description: 'Score a live URL for AI-generated UI drift — 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full 42-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable — fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.'),
         }),
@@ -1050,7 +1050,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_report',
       {
-        description: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone of the Designesy dynasty. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable — fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.',
+        description: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone of the Designesy dynasty. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable — fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.',
         inputSchema: z.object({
           url: z.string().describe('Public URL to generate a design-intelligence report for.'),
         }),
@@ -1140,7 +1140,7 @@ test('${url} — WCAG 2.2 AA scan', async ({ page }) => {
     // Stateless 2026-07-28: server identity reported via server/discover.
     serverInfo: {
       name: 'designesy',
-      version: '1.11.1',
+      version: '1.12.0',
     },
     verboseLogs: true,
   },

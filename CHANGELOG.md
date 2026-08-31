@@ -6,6 +6,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-08-30
+
+### Added
+
+- **Semantic category wired: v42 + v43.** The `semantic` category carried a
+  reserved weight (12) since v0.3.0 with zero checks returning it — dead
+  weight in the engine's category table. Two deterministic checks now score
+  it:
+  - **v42 — Semantic color vocabulary:** classifies every color-valued token
+    in :root as role-named (ink, paper, surface, danger, success, accent…)
+    vs hue-named (blue, slate, amber, -500 scales…). PASS at ≥60% role share
+    with ≥3 distinct roles. Grounded in the contract's own role-named
+    palette (--ink, --paper, --surface, --signal, --ok/--warn/--error) and
+    role-based naming best practice (zeroheight naming guide, Material 3).
+  - **v43 — Semantic status colors:** checks status-state coverage
+    (ok/success, warn/warning, error/danger, info/notice) among color token
+    names. PASS at ≥3 of 4 families.
+  Both checks are WARN-only (style craft, not user harm) per the engine's
+  calibration precedent, self-SKIP when a site has no color tokens, and are
+  site-agnostic (no scope-tier registration needed). Wired identically in
+  the standalone `@designesy/score` engine to keep CLI/site parity.
+- **Engine grows 40 → 42 checks.** The semantic category's weight 12 now
+  enters the weighted denominator (6 per check). The methodology page's
+  reserved-weight note is replaced with the live category description, and
+  all engine-count copy is true-upped to 42 (READMEs, MCP tool descriptions,
+  leaderboard, pricing, badge, CLI packages); historical surfaces (blog
+  studies, dated compliance reports, changelog entries for past releases)
+  intentionally keep their original counts.
+
+### Fixed
+
+- **The weekly-leaderboard write path was rotted three ways** (all fixed
+  2026-08-30): rescore workflow died on a missing `leaderboard` label before
+  opening its PR (labels now created idempotently in-workflow); the seed
+  writer regenerated seed.ts from a stale template, stripping
+  `liveScoreUrl`/`coiDisclosure` fields added after the last successful run
+  (rewritten as a surgical field-preserving editor); and branch protection
+  required status contexts in `CI / <job>` form that never matched the bare
+  check-run names GitHub Actions reports (corrected to bare names). First
+  fully-working weekly cycle lands with this release.
+
 ## [1.11.1] — 2026-08-30
 
 ### Added

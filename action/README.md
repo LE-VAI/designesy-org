@@ -149,13 +149,13 @@ The step writes a markdown summary (score, grade, pass/warn/fail/skip, gate verd
 
 ## How it works
 
-The Action calls the public Designesy scoring engine at `/api/score` — the same deterministic 40-check engine that powers [designesy.org](https://www.designesy.org). No LLM, no heuristics — each check is grounded in the published design-system contract and returns PASS/FAIL/WARN/SKIP with remediation guidance. An accessibility floor applies: accessibility below 60% caps the grade at C.
+The Action calls the public Designesy scoring engine at `/api/score` — the same deterministic 42-check engine that powers [designesy.org](https://www.designesy.org). No LLM, no heuristics — each check is grounded in the published design-system contract and returns PASS/FAIL/WARN/SKIP with remediation guidance. An accessibility floor applies: accessibility below 60% caps the grade at C.
 
 When triggered on a `pull_request` event with `post-comment: true` (default), the action posts a summary comment on the PR with the score, grade, and gate verdict. This requires `pull-requests: write` permission in the workflow.
 
 ### SARIF integration
 
-When `sarif-output` is set, the action converts the 40-check results into a SARIF v2.1.0 file:
+When `sarif-output` is set, the action converts the 42-check results into a SARIF v2.1.0 file:
 
 - Each check becomes a **rule** (with id, name, shortDescription, defaultConfiguration.level, tags, precision, help/remediation)
 - Each FAIL check becomes an **error-level result**; each WARN becomes a **warning-level result**

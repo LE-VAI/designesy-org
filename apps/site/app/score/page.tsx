@@ -45,7 +45,7 @@ export async function generateMetadata({
   const base = pageMeta({
     title: 'Verify',
     description:
-      'Four engines. One composite grade. Score (40 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
+      'Four engines. One composite grade. Score (42 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
     path: '/score',
     ogTitle: 'Verify any site — Designesy',
     ogDescription:
@@ -89,12 +89,12 @@ export default function ScorePage() {
             Verify any site
           </h1>
           <p className="surface-lede">
-            Four engines. One composite grade. Score (40 checks), drift (12), AI
+            Four engines. One composite grade. Score (42 checks), drift (12), AI
             readiness (10), and guardrails (6) — all on one URL, one dashboard.
             The compliance layer for AI-generated UI.
           </p>
           <p className="surface-note">
-            The homepage gives you the quick 40-check score. This is the power surface —
+            The homepage gives you the quick 42-check score. This is the power surface —
             every engine at once, with a composite grade that synthesizes score, drift, and
             readiness. Find out how close you are.
           </p>
@@ -121,7 +121,7 @@ export default function ScorePage() {
               <span className="text-link" data-dce-href="/contracts/design-system">
                 design system contract
               </span>
-              . The <strong>Score</strong> engine runs 40 checks — motion, typography, color,
+              . The <strong>Score</strong> engine runs 42 checks — motion, typography, color,
               accessibility, identity. <strong>Drift</strong> detects AI-generated UI drift —
               fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong> probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
               <strong> Guardrails</strong> emits a frozen build-contract bundle — DTCG tokens,
@@ -135,7 +135,7 @@ export default function ScorePage() {
               <header className="engine-card-head">
                 <span className="engine-card-num">01</span>
                 <h3 className="engine-card-title">Score</h3>
-                <span className="engine-card-count" data-tabular>40 checks</span>
+                <span className="engine-card-count" data-tabular>42 checks</span>
               </header>
               <p className="engine-card-desc">
                 Live design-contract compliance — motion, typography, color, accessibility, identity against the v0.4.0 contract.
