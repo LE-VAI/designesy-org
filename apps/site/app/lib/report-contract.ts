@@ -26,7 +26,7 @@ export const reportContract = {
     'Report is the synthesis capstone: fetch one URL, run score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade — the most shareable surface in the dynasty. Where /score answers "how good is this design", /drift answers "is AI breaking it", and /readiness answers "can agents use it", /report answers all three at once.',
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-02',
-    composition: 'Weighted synthesis of three independent Designesy engines — /score (40-check audit), /drift (12-check drift radar), /readiness (10-check AI readiness). Each engine is independently validated; report composes their results.',
+    composition: 'Weighted synthesis of three independent Designesy engines — /score (42-check audit), /drift (12-check drift radar), /readiness (10-check AI readiness). Each engine is independently validated; report composes their results.',
     weighting: 'Composite score = score × 0.5 + drift × 0.3 + readiness × 0.2. Score is weighted highest because it is the broadest quality measure; drift is second because AI-generated UI drift is the 2026 crisis; readiness is third because machine-readiness is emergent and still maturing.',
     shareability: 'Report is designed as the share hook — "here is your design-intelligence report" is more compelling than "run these six tools". One grade, one URL, one page.',
     url_gap: 'No competitor synthesizes audit + drift + readiness into a single composite report from a live URL — the designesy pattern.',
@@ -35,7 +35,7 @@ export const reportContract = {
     method:
       'Fetch the target URL once. Fire /api/score, /api/drift, and /api/readiness in parallel (Promise.all). Each engine independently fetches the URL, extracts CSS + tokens, and runs its own checks. Collect the three results. Compute a composite score using the weighted formula: score × 0.5 + drift × 0.3 + readiness × 0.2. Derive a composite grade from the composite score. Aggregate all checks across the three engines into a single check list. Surface the three sub-scores, the composite score, the composite grade, and the full check inventory.',
     weighting: [
-      { dimension: 'score', weight: 0.5, description: '40-check design-intelligence audit — the broadest quality measure (tokens, typography, motion, accessibility, anti-generic, runtime)' },
+      { dimension: 'score', weight: 0.5, description: '42-check design-intelligence audit — the broadest quality measure (tokens, typography, motion, accessibility, anti-generic, runtime)' },
       { dimension: 'drift', weight: 0.3, description: '12-check AI-generated UI drift radar — token fabrication, value variance, off-contract patterns' },
       { dimension: 'readiness', weight: 0.2, description: '10-check AI readiness — machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap' },
     ],
@@ -45,7 +45,7 @@ export const reportContract = {
   verification: {
     checks: [
       { id: 'rp01', item: 'Target URL fetched and validated', pass: 'URL is a public http(s) URL and was accepted by the guard', fail: 'URL is invalid, private, or blocked by the SSRF guard' },
-      { id: 'rp02', item: 'Score engine completed — 40-check audit ran', pass: 'Score engine returned a result with a score and grade', fail: 'Score engine failed or timed out — the audit did not complete', warn: 'Score engine returned but with SKIP checks — partial result' },
+      { id: 'rp02', item: 'Score engine completed — 42-check audit ran', pass: 'Score engine returned a result with a score and grade', fail: 'Score engine failed or timed out — the audit did not complete', warn: 'Score engine returned but with SKIP checks — partial result' },
       { id: 'rp03', item: 'Drift engine completed — 12-check drift radar ran', pass: 'Drift engine returned a result with a score and grade', fail: 'Drift engine failed or timed out — the drift radar did not complete' },
       { id: 'rp04', item: 'Readiness engine completed — 10-check readiness probe ran', pass: 'Readiness engine returned a result with a score and grade', fail: 'Readiness engine failed or timed out — the readiness probe did not complete' },
       { id: 'rp05', item: 'Composite score computed — weighted synthesis', pass: 'Composite score computed from all three sub-scores using the weighting formula', fail: 'Composite score could not be computed — one or more sub-scores are missing', warn: 'Composite score computed from partial results — one or more engines returned no score' },
@@ -61,7 +61,7 @@ export const reportContract = {
     },
   },
   relationship_to_core: {
-    'designesy.org /score': 'Report runs /score as its primary sub-engine (weight 0.5) — the 40-check audit is the backbone of the composite',
+    'designesy.org /score': 'Report runs /score as its primary sub-engine (weight 0.5) — the 42-check audit is the backbone of the composite',
     'designesy.org /drift': 'Report runs /drift as its second sub-engine (weight 0.3) — drift radar feeds the composite',
     'designesy.org /readiness': 'Report runs /readiness as its third sub-engine (weight 0.2) — readiness feeds the composite',
     'designesy.org /guardrails': 'Report does not run guardrails — guardrails emits a build contract, not a score; it is a companion, not a sub-engine',

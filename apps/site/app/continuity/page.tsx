@@ -45,7 +45,7 @@ const LADDER = [
   {
     name: 'Open',
     title: 'Free forever',
-    body: '40-check score, drift radar, AI readiness, DTCG validation. No credit card. 5 local score history.',
+    body: '42-check score, drift radar, AI readiness, DTCG validation. No credit card. 5 local score history.',
   },
   {
     name: 'Continuity',
@@ -77,7 +77,7 @@ export default function ContinuityPage() {
             ship — so taste does not reset every sprint or every agent run.
           </p>
           <p className="surface-note">
-            Open core stays free: 40-check scoring, drift radar, AI readiness,
+            Open core stays free: 42-check scoring, drift radar, AI readiness,
             DTCG validation. Continuity is the layer that remembers — scheduled
             scans, drift alerts, and score history at $29/site/month.
           </p>

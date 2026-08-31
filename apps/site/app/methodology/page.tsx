@@ -3,7 +3,7 @@
 // sealambda shadcn index, MCP Toplist) publishes methodology + score distribution.
 // Without it, cross-listings send traffic to a leaderboard that looks arbitrary.
 //
-// This page documents: the 40 checks, their categories and weights, the scoring
+// This page documents: the 42 checks, their categories and weights, the scoring
 // math (weighted PASS/WARN/FAIL with MANUAL and N/A exclusion), grade bands, the a11y floor,
 // and what the engine measures vs. what it cannot measure (MANUAL and N/A reasons).
 //
@@ -25,12 +25,12 @@ import { CountUp } from '../lib/count-up';
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
   description:
-    'How the Designesy 40-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
+    'How the Designesy 42-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
   path: '/methodology',
   ogDescription:
-    'The 40-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
+    'The 42-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
   twitterDescription:
-    'Designesy scoring methodology — 40 checks, 14 categories, deterministic · designesy.org/methodology',
+    'Designesy scoring methodology — 42 checks, 14 categories, deterministic · designesy.org/methodology',
 });
 
 // ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
@@ -71,7 +71,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (12), weighted highest at 18%.',
   accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
-  semantic: 'Reserved weight (12%) — declared in the engine CATEGORY_WEIGHTS table but no check currently returns category: "semantic". The semantic-HTML and AI-disclosure checks (v07, v34) are categorized as "identity" in the engine. This weight is held in reserve for future semantic-structure checks (RDFa, microdata, Open Graph). Documented for transparency; does not affect any site\'s score today.',
+  semantic: 'Semantic design vocabulary — does the color system speak in roles (meaning) rather than hues (wavelength)? v42 measures the role-named vs hue-named token share; v43 checks status-state coverage (ok/warn/error/info). Grounded in the contract\'s own role-named palette (--ink, --paper, --surface, --signal, --ok/--warn/--error) and in role-based naming best practice (zeroheight naming guide, Material 3). Wired 2026-08-30 — previously a reserved weight with zero checks. 12% weight, 2 scored checks (v42, v43).',
   copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in v0.4.0. 8% weight.',
   motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
   tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
@@ -81,7 +81,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness (EU AI Act Art 50). 6% weight, 2 scored checks (v07, v34).',
   interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
   performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (MANUAL in the static engine). 6% weight, 0 scored checks in the current engine.',
-  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 40-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).',
+  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 42-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).',
   responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (MANUAL in the static engine). 3% weight, 0 scored checks.',
 };
 
@@ -108,6 +108,20 @@ const CHECKS: CheckDef[] = [
     item: 'Token architecture: primitive → semantic → component layers',
     category: 'tokens',
     how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) signals a mature token system. PASS if at least 2 layers are detected.',
+  },
+
+  // ── Semantic (12%) ──
+  {
+    id: 'v42',
+    item: 'Semantic color vocabulary: role-named tokens, not hue-named',
+    category: 'semantic',
+    how: 'Classifies every color-valued token in :root by name: role words (ink, paper, surface, muted, danger, success, accent, border…) vs hue words (blue, slate, amber…) and numeric scale suffixes (-500). Brand coinages matching neither list are excluded from the share. PASS if ≥60% role-named with ≥3 distinct roles; WARN otherwise (WARN-only — style craft, not user harm). SKIP if fewer than 4 color tokens. Mirrors the contract\'s own role-named palette.',
+  },
+  {
+    id: 'v43',
+    item: 'Semantic status colors: ok/warn/error/info state roles present',
+    category: 'semantic',
+    how: 'Scans color token names for the four status families: ok/success, warn/warning/caution, error/danger/fail, info/notice. PASS if ≥3 of 4 families are present; WARN otherwise (WARN-only). SKIP if the site declares no color tokens. The contract ships --ok, --warn, and --error for exactly this purpose.',
   },
 
   // ── Responsive (3%) ──
@@ -377,7 +391,6 @@ const GRADE_BANDS = [
 ];
 
 // Group checks by category for display — keep ALL declared categories
-// (including reserved weights like `semantic` that have 0 checks today)
 // so the category table documents the full weight table transparently.
 const CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
 const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
@@ -501,7 +514,7 @@ export default function MethodologyPage() {
           <p className="surface-eyebrow" data-scramble>Verification transparency</p>
           <h1 className="surface-title" data-scramble>Methodology</h1>
           <p className="surface-lede">
-            The full scoring methodology behind the Designesy 40-check engine.
+            The full scoring methodology behind the Designesy 42-check engine.
             Deterministic, no LLM, no human judgment. Every check is a regex,
             token-resolution, or spec-linter test against the live fetched CSS
             and HTML. This page documents exactly what the engine measures, how
@@ -651,8 +664,9 @@ export default function MethodologyPage() {
               <code>{'weight / 117'}</code> of the total. Raw weight numbers (18, 15,
               12&hellip;) are kept un-normalized so they stay readable as integers and
               can grow as new checks are added without recalibrating every existing
-              weight. Three categories — semantic (12), performance (6), responsive
-              (3) — currently have zero scored checks; their weight is held in reserve
+              weight. Two categories — performance (6), responsive
+              (3) — currently have zero scored checks (browser-only MANUALs); their
+              weight is held in reserve
               and does not affect any site&rsquo;s score.
             </p>
           </div>

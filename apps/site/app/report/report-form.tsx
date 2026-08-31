@@ -177,7 +177,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
               label="Score"
               weight="×0.5"
               result={result.score}
-              description="40-check audit"
+              description="42-check audit"
             />
             <SubEngineCard
               label="Drift"

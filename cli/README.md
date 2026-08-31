@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-score-gate.png">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 40-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="960">
+  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 42-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="960">
 </picture>
 
 Score any URL against the **Designesy design-system contract** — 40 deterministic checks, one grade, no vibe-tax. **Runs locally — no server required.** Zero dependencies.
@@ -14,7 +14,7 @@ npx designesy-score designesy.org
 ## What's new in 1.0.0
 
 **The engine runs locally.** In 0.x, the CLI called the designesy.org API. In 1.0.0,
-it fetches the target URL, extracts CSS + `:root` tokens, and runs all 40 checks
+it fetches the target URL, extracts CSS + `:root` tokens, and runs all 42 checks
 in-process. No server dependency, no rate limits, works even if designesy.org is down.
 
 - **`--scope` flag** — `contract` (strict) or `universal` (fair to external sites)
@@ -75,7 +75,7 @@ npx designesy-score verify linear.app --json
 | **FAIL** | `/DESIGN.md` served, lint errors | `1` |
 | **SKIP** | `/DESIGN.md` not served (no public convention requires it) | `0` |
 
-This checks the **spec layer** (file format). For the full 40-check
+This checks the **spec layer** (file format). For the full 42-check
 design-system contract score, use `designesy-score <url>`.
 
 ## Options

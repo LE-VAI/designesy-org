@@ -1,5 +1,5 @@
 /**
- * @designesy/score — 40-check design-contract scoring engine.
+ * @designesy/score — 42-check design-contract scoring engine.
  *
  * Scores a URL against the Designesy design-system contract: fetches the page,
  * extracts CSS + :root tokens, runs 40 deterministic checks, computes a weighted
@@ -478,6 +478,8 @@ const REMEDIATION: Record<string, string> = {
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
   v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
+  v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage — when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
+  v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning — a score badge, a form error, and a toast all read the same token — and stay legible when the palette evolves.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options: add visible "AI Assistant" text in the chatbot UI header, add aria-label="AI assistant" to the chatbot container, add <meta name="generator" content="AI-powered"> to the page head, or add a persistent AI-disclosure badge.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Test with Windows High Contrast Mode.',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters. Audit all custom property names and class names for non-ASCII characters.',
@@ -695,15 +697,15 @@ function checkTouchTargets(css: string): CheckResult {
 function checkHeadingHierarchy(html: string): CheckResult {
   const h1s = html.match(/<h1\b/gi) || [];
   const headings = html.match(/<h([1-6])\b/gi) || [];
-  if (h1s.length === 0) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'semantic', status: 'WARN', detail: 'no h1 found' };
-  if (h1s.length > 1) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'semantic', status: 'FAIL', detail: `${h1s.length} h1 elements — should be exactly one` };
+  if (h1s.length === 0) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: 'no h1 found' };
+  if (h1s.length > 1) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'accessibility', status: 'FAIL', detail: `${h1s.length} h1 elements — should be exactly one` };
   const levels = headings.map((h) => parseInt(h.match(/<h([1-6])/i)?.[1] || '0'));
   let skipped = false;
   for (let i = 1; i < levels.length; i++) {
     if (levels[i] > levels[i - 1] + 1) { skipped = true; break; }
   }
-  if (skipped) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'semantic', status: 'FAIL', detail: 'heading levels skipped (e.g. h1→h3)' };
-  return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'semantic', status: 'PASS', detail: 'one h1, no skipped levels' };
+  if (skipped) return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'accessibility', status: 'FAIL', detail: 'heading levels skipped (e.g. h1→h3)' };
+  return { id: 'v25', item: 'Heading hierarchy: one h1, no skipped levels', category: 'accessibility', status: 'PASS', detail: 'one h1, no skipped levels' };
 }
 
 function checkFontFamilyCount(css: string): CheckResult {
@@ -766,13 +768,83 @@ function checkTokenLayerDepth(tokens: Record<string, string>): CheckResult {
   return { id: 'v29', item: 'Token layering: primitive → semantic → component', category: 'tokens', status: 'WARN', detail: 'no token layering — all tokens are flat values' };
 }
 
+// ── Semantic category checks (v42, v43) ─────────────────────────────────────
+// Mirrors apps/site/app/api/score/route.ts — wired 2026-08-30. Scores whether
+// the site's color system speaks in ROLES (meaning) rather than hues. WARN-only
+// (style-craft, not user harm); self-SKIPs when there are no color tokens.
+const SEMANTIC_ROLE_WORDS = [
+  'ink', 'paper', 'surface', 'muted', 'border', 'line', 'content', 'text',
+  'foreground', 'background', 'accent', 'signal', 'brand', 'primary',
+  'secondary', 'tertiary', 'danger', 'error', 'success', 'warning', 'warn',
+  'info', 'ok', 'fail', 'link', 'focus', 'disabled', 'placeholder',
+  'selection', 'canvas', 'overlay', 'scrim', 'highlight', 'active', 'hover',
+  'pressed', 'elevated', 'lifted', 'raised', 'dim', 'faint', 'strong',
+];
+const SEMANTIC_HUE_WORDS = [
+  'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
+  'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink',
+  'rose', 'slate', 'gray', 'grey', 'zinc', 'neutral', 'stone', 'brown',
+  'black', 'white', 'mint', 'magenta', 'crimson', 'navy', 'olive', 'maroon',
+  'gold', 'silver', 'bronze', 'coral', 'salmon', 'peach', 'plum', 'lavender',
+  'turquoise', 'azure', 'jade', 'burgundy', 'charcoal', 'ivory', 'sepia',
+  'rust', 'sand', 'cream',
+];
+
+function isColorValue(value: string): boolean {
+  return /^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/i.test(value.trim());
+}
+
+function classifyColorToken(name: string): 'role' | 'hue' | 'neutral' {
+  const segments = name.toLowerCase().split(/[-_]/).filter(Boolean);
+  if (segments.some((s) => SEMANTIC_ROLE_WORDS.includes(s))) return 'role';
+  const last = segments[segments.length - 1] ?? '';
+  if (segments.some((s) => SEMANTIC_HUE_WORDS.includes(s)) || /^\d{2,3}$/.test(last)) return 'hue';
+  return 'neutral';
+}
+
+function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResult {
+  const item = 'Semantic color vocabulary: role-named tokens, not hue-named';
+  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
+  if (colorTokens.length < 4) return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${colorTokens.length})` };
+  let role = 0;
+  let hue = 0;
+  for (const [name] of colorTokens) {
+    const c = classifyColorToken(name);
+    if (c === 'role') role++;
+    else if (c === 'hue') hue++;
+  }
+  const named = role + hue;
+  if (named === 0) return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named — vocabulary unclassifiable` };
+  const share = Math.round((role / named) * 100);
+  if (role >= 3 && share >= 60) return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color speaks in meaning` };
+  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color vocabulary leans on hue names` };
+}
+
+function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
+  const item = 'Semantic status colors: ok/warn/error/info state roles present';
+  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
+  if (colorTokens.length === 0) return { id: 'v43', item, category: 'semantic', status: 'SKIP', detail: 'no color tokens in :root' };
+  const families: Record<string, boolean> = { ok: false, warn: false, error: false, info: false };
+  for (const [name] of colorTokens) {
+    const segments = name.toLowerCase().split(/[-_]/);
+    if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
+    if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;
+    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative'].includes(s))) families.error = true;
+    if (segments.some((s) => ['info', 'notice', 'informational'].includes(s))) families.info = true;
+  }
+  const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
+  const missing = Object.entries(families).filter(([, v]) => !v).map(([k]) => k);
+  if (found.length >= 3) return { id: 'v43', item, category: 'semantic', status: 'PASS', detail: `${found.length}/4 status families present (${found.join(', ')}) — states expressed as semantic roles` };
+  return { id: 'v43', item, category: 'semantic', status: 'WARN', detail: `${found.length}/4 status families present${found.length ? ` (${found.join(', ')})` : ''} — missing: ${missing.join(', ')}` };
+}
+
 function checkAiDisclosure(html: string): CheckResult {
   const hasAiText = /\bAI\b|artificial intelligence|chatbot|assistant/gi.test(html);
   const hasDisclosure = /ai-assistant|aria-label="ai|data-ai|class="ai-disclosure/gi.test(html);
   const hasMeta = /<meta[^>]*generator[^>]*ai/gi.test(html);
-  if (hasDisclosure || hasMeta) return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'accessibility', status: 'PASS', detail: 'AI disclosure marker found in HTML' };
-  if (hasAiText) return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'accessibility', status: 'WARN', detail: 'AI-related text found but no disclosure marker (aria-label, meta generator, or badge)' };
-  return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'accessibility', status: 'SKIP', detail: 'no AI/chatbot content detected — disclosure not required' };
+  if (hasDisclosure || hasMeta) return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'identity', status: 'PASS', detail: 'AI disclosure marker found in HTML' };
+  if (hasAiText) return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'identity', status: 'WARN', detail: 'AI-related text found but no disclosure marker (aria-label, meta generator, or badge)' };
+  return { id: 'v34', item: 'AI disclosure for chatbots/agents (EU AI Act Art 50)', category: 'identity', status: 'SKIP', detail: 'no AI/chatbot content detected — disclosure not required' };
 }
 
 function checkForcedColors(css: string): CheckResult {
@@ -962,6 +1034,8 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
+    checkSemanticColorVocabulary(tokens),
+    checkSemanticStatusRoles(tokens),
     checkAiDisclosure(html),
     checkForcedColors(css),
     checkSecurityConfusables(css, tokens),

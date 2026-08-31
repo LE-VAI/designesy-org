@@ -326,7 +326,7 @@ const QUESTIONS: Question[] = [
       { stage: 1, label: 'We don’t — “it looks right” is the bar' },
       { stage: 2, label: 'Manual design reviews before launch' },
       { stage: 3, label: 'Automated linter (stylelint, eslint) in CI for token usage' },
-      { stage: 4, label: 'Deterministic 40-check engine scores every shipped surface — designesy or equivalent' },
+      { stage: 4, label: 'Deterministic 42-check engine scores every shipped surface — designesy or equivalent' },
     ],
   },
   {
@@ -910,7 +910,7 @@ export function MaturityAssessment() {
           </p>
           <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0 0 1.5rem', lineHeight: 1.5 }}>
             {overall >= 75
-              ? 'Your design system is in the Verified stage — compliance is measured, enforced, and continuously tracked. The next step is ensuring no drift: run the deterministic 40-check engine against your live site.'
+              ? 'Your design system is in the Verified stage — compliance is measured, enforced, and continuously tracked. The next step is ensuring no drift: run the deterministic 42-check engine against your live site.'
               : overall >= 50
               ? 'Your design system is Systematic — the foundations are in place but not yet enforced deterministically. The gap between “documented” and “enforced” is where most systems lose compliance.'
               : overall >= 25
@@ -1050,7 +1050,7 @@ export function MaturityAssessment() {
       {/* Privacy note */}
       <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginTop: '1.5rem', textAlign: 'center' }}>
         This is a self-assessment — your answers are self-reported, not verified.
-        For a deterministic score, run the 40-check engine at{' '}
+        For a deterministic score, run the 42-check engine at{' '}
         <Link href="/score" style={{ color: 'var(--signal)' }}>/score</Link>.
       </p>
     </div>

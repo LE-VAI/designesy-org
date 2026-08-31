@@ -94,7 +94,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Executable verification
 | Tool | What it does |
 |---|---|
-| `designesy_score` | Run the 40-check contract verification against a live URL. Fetches HTML + CSS, parses `:root` custom properties, returns PASS/FAIL/WARN/SKIP per check with an overall score, letter grade, and per-category breakdown. Supports 4 emission formats: `designesy` (default), `canonical` (review-findings.json schema), `review` (jakubkrehel markdown), `google` (@google/design.md JSON). |
+| `designesy_score` | Run the 42-check contract verification against a live URL. Fetches HTML + CSS, parses `:root` custom properties, returns PASS/FAIL/WARN/SKIP per check with an overall score, letter grade, and per-category breakdown. Supports 4 emission formats: `designesy` (default), `canonical` (review-findings.json schema), `review` (jakubkrehel markdown), `google` (@google/design.md JSON). |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
 | `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
@@ -123,7 +123,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | `designesy://llms` | Short agent brief (text) |
 | `designesy://llms-full` | Full agent brief (text) |
 
-## The 40-check verification engine
+## The 42-check verification engine
 
 `designesy_score` runs 40 deterministic checks across 13 weighted categories:
 
@@ -161,7 +161,7 @@ The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — the
 
 ### Contract vs. opinion
 
-No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 40-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
+No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 42-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
 
 ## Caching
 

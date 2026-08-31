@@ -38,6 +38,14 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v01', item: 'Token values match live site :root foundation', category: 'tokens', type: 'auto', threshold: '--paper token declared in :root', pass: '--paper resolves to a value', fail: '--paper not declared in :root', warn: 'n/a', ceiling: null },
   { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', type: 'auto', threshold: '3-layer token stack (primitive → semantic → component)', pass: 'token values reference var(--...) in a layered architecture', fail: 'flat token set — no primitive→semantic layering', warn: 'partial layering detected', ceiling: null },
 
+  // ── Semantic (weight 12) ──
+  // Wired 2026-08-30 (v42/v43) — the category was previously reserved weight
+  // with zero checks. Both checks classify the site's own :root color tokens
+  // against universal role-vs-hue naming principles (not Designesy's token
+  // names), so they are site-agnostic and need no scope-tier registration.
+  { id: 'v42', item: 'Semantic color vocabulary: role-named tokens, not hue-named', category: 'semantic', type: 'auto', threshold: '≥60% role-named color tokens with ≥3 distinct roles', pass: 'color tokens named by role (ink/paper/surface/danger/success…)', fail: 'n/a (WARN only)', warn: 'color vocabulary leans on hue names (blue-500, slate-900…)', ceiling: null },
+  { id: 'v43', item: 'Semantic status colors: ok/warn/error/info state roles present', category: 'semantic', type: 'auto', threshold: '3+ of 4 status color families (ok, warn, error, info)', pass: 'status states expressed as semantic color roles', fail: 'n/a (WARN only)', warn: 'missing status color families', ceiling: null },
+
   // ── Responsive (weight 3) ──
   { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', type: 'manual', threshold: 'no overflow-x at 375px, 720px, 860px, 1080px+', pass: 'no horizontal overflow at any breakpoint', fail: 'content overflows horizontally', warn: 'n/a', ceiling: 70 },
 

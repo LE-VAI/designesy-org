@@ -70,7 +70,7 @@ const TOOLS = [
   {
     name: 'designesy_score',
     kind: 'Executable',
-    desc: 'The 40-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 40 automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return MANUAL — run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A).',
+    desc: 'The 42-check verification engine. Fetches the page HTML, extracts all CSS, parses :root custom properties, and runs 42 automated checks with provenance back to contract tokens. Returns overall score, letter grade, and per-check breakdown. Browser-only checks (Core Web Vitals, viewport overflow, sound toggle) return MANUAL — run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A).',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/score',
   },
@@ -133,7 +133,7 @@ const TOOLS = [
   {
     name: 'designesy_report',
     kind: 'Executable · MCP App',
-    desc: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone. Fires /score (40-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline — composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.',
+    desc: 'Generate a unified design-intelligence report for a single URL — the synthesis capstone. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline — composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.',
     args: 'url: string',
     source: '/api/report + /api/report/app',
   },
@@ -361,7 +361,7 @@ export default function McpDocsPage() {
                 93% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                40-check engine · 36 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
+                42-check engine · 38 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
               </p>
             </div>
           </div>
@@ -372,7 +372,7 @@ export default function McpDocsPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Seven read-only tools fetch public machine exports from
             designesy.org. Nine executable tools run live verification — the
-            40-check score engine, DTCG token validation, Lottie motion
+            42-check score engine, DTCG token validation, Lottie motion
             validation, drift scoring, AI-readiness scoring, guardrails
             generation, monitor scoring, design-system comparison, and the
             composite report. One accessibility framework provides the WCAG

@@ -166,14 +166,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     const hasUnscored = hasManual || hasSkips;
     synthesis.push({
       id: 'rp02',
-      item: 'Score engine completed — 40-check audit ran',
+      item: 'Score engine completed — 42-check audit ran',
       status: hasUnscored ? 'WARN' : 'PASS',
       detail: `Score engine returned ${scoreResult.grade}/${scoreResult.score} (${scoreResult.pass} pass, ${scoreResult.warn} warn, ${scoreResult.fail} fail${hasManual ? `, ${scoreResult.manual} manual` : ''}${hasSkips ? `, some N/A` : ''})`,
     });
   } else {
     synthesis.push({
       id: 'rp02',
-      item: 'Score engine completed — 40-check audit ran',
+      item: 'Score engine completed — 42-check audit ran',
       status: 'FAIL',
       detail: scoreResult?.error || 'Score engine did not return a valid result',
     });

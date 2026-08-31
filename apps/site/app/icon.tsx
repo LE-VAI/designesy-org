@@ -5,7 +5,7 @@ export const contentType = 'image/png';
 
 /**
  * Tab mark — signal "gate" mark.
- * One lit cell of the 40-check verification grid: a signal dot inside a
+ * One lit cell of the 42-check verification grid: a signal dot inside a
  * thin square ring. Echoes the Score Gate hero and the OG card markRing.
  * No monogram, no letter logo. Matches wordmark period language.
  * Contract tokens: --paper #010102, --signal #0133cb, --signal-dim rgba(1,51,203,0.14).

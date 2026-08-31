@@ -4,12 +4,12 @@
  *
  * Single bin that dispatches to subcommands:
  *   designesy tokens <url|file>  DTCG 2025.10 token validation (10 checks)
- *   designesy score <url>        40-check design-contract scoring engine
+ *   designesy score <url>        42-check design-contract scoring engine
  *   designesy help               Show usage
  *
  * Each subcommand delegates to its respective package:
  *   tokens → @designesy/tokens (DTCG validator)
- *   score  → @designesy/score (40-check engine)
+ *   score  → @designesy/score (42-check engine)
  *
  * This package is a thin dispatcher — zero logic, zero dependencies on the
  * engine code. It imports the subpackages and forwards argv.
@@ -35,7 +35,7 @@ Usage:
 
 Commands:
   tokens <url|file>   Validate a DTCG 2025.10 token file (10 conformance checks)
-  score <url>         Score a URL against the 40-check design-contract engine
+  score <url>         Score a URL against the 42-check design-contract engine
   help                Show this help message
   version             Show version
 
@@ -63,7 +63,7 @@ Examples:
 
 Packages:
   @designesy/tokens   DTCG 2025.10 token validator (zero dependencies)
-  @designesy/score    40-check design-contract scoring engine (zero dependencies)
+  @designesy/score    42-check design-contract scoring engine (zero dependencies)
 `;
 
 function runSubcommand(cmd: string, args: string[]): void {

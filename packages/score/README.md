@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 40-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally — **no server required**. Zero dependencies.
+Standalone 42-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally — **no server required**. Zero dependencies.
 
 ## Install
 
@@ -54,7 +54,7 @@ console.log(result.fail);    // 3
 console.log(result.checks);  // [{ id: 'v01', status: 'PASS', detail: '...' }, ...]
 ```
 
-## The 40 checks
+## The 42 checks
 
 | Category | Checks | Weight |
 |---|---|---|
@@ -85,7 +85,7 @@ Plus 12 anti-slop deductions (S1–S12) and 7 originality lifts (O1–O7).
 
 ## Scope system
 
-- **contract** (default for designesy.org): All 40 checks active. Absence = WARN/FAIL.
+- **contract** (default for designesy.org): All 42 checks active. Absence = WARN/FAIL.
 - **universal** (default for external sites): Optional features SKIP on absence instead of penalizing.
 
 Auto-detect: `designesy.org` → contract, everything else → universal.
