@@ -35,7 +35,10 @@ permissions:
 jobs:
   rescore:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Re-scoring 30 sites against the live engine takes ~7 min and the
+    # auto-merge wait loop can run another 10 — 15 min timed out mid-wait
+    # on the first 42-check run (2026-08-31), stranding an auto-mergeable PR.
+    timeout-minutes: 25
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
