@@ -7,17 +7,17 @@
     "warn": 10,
     "skip": 7,
     "tokens": 191,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://vercel.com": {
-    "score": 76.5,
+    "score": 79.6,
     "grade": "C",
-    "pass": 20,
-    "fail": 4,
+    "pass": 21,
+    "fail": 3,
     "warn": 6,
     "skip": 9,
     "tokens": 3,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://stripe.com": {
     "score": 66.9,
@@ -27,7 +27,7 @@
     "warn": 11,
     "skip": 9,
     "tokens": 714,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://apple.com": {
     "score": 77.1,
@@ -37,17 +37,17 @@
     "warn": 12,
     "skip": 10,
     "tokens": 90,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://nytimes.com": {
-    "score": 74.7,
+    "score": 76.5,
     "grade": "C",
-    "pass": 11,
+    "pass": 12,
     "fail": 2,
     "warn": 10,
-    "skip": 16,
+    "skip": 15,
     "tokens": 85,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://mozaika.design": {
     "score": 62.8,
@@ -57,7 +57,7 @@
     "warn": 12,
     "skip": 20,
     "tokens": 0,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://www.designesy.org": {
     "score": 93,
@@ -67,7 +67,7 @@
     "warn": 0,
     "skip": 0,
     "tokens": 146,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://designesy.ai.studio": {
     "score": 73.3,
@@ -77,17 +77,17 @@
     "warn": 14,
     "skip": 13,
     "tokens": 28,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://getdesy.com": {
-    "score": 73.4,
-    "grade": "C",
-    "pass": 19,
-    "fail": 1,
-    "warn": 8,
-    "skip": 11,
-    "tokens": 61,
-    "scoredAt": "2026-08-31"
+    "score": 61.5,
+    "grade": "D",
+    "pass": 6,
+    "fail": 2,
+    "warn": 10,
+    "skip": 21,
+    "tokens": 0,
+    "scoredAt": "2026-09-07"
   },
   "https://stitch.withgoogle.com": {
     "score": 61.2,
@@ -97,7 +97,7 @@
     "warn": 11,
     "skip": 20,
     "tokens": 2,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://zeroheight.com": {
     "score": 83.2,
@@ -107,7 +107,7 @@
     "warn": 9,
     "skip": 12,
     "tokens": 134,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://roastbyai.com": {
     "score": 70,
@@ -117,17 +117,17 @@
     "warn": 9,
     "skip": 12,
     "tokens": 46,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://atlassian.design": {
-    "score": 79.3,
-    "grade": "C",
+    "score": 84.3,
+    "grade": "B",
     "pass": 16,
     "fail": 2,
     "warn": 10,
     "skip": 11,
     "tokens": 27,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://primer.style": {
     "score": 82.4,
@@ -136,8 +136,8 @@
     "fail": 3,
     "warn": 3,
     "skip": 7,
-    "tokens": 517,
-    "scoredAt": "2026-08-31"
+    "tokens": 518,
+    "scoredAt": "2026-09-07"
   },
   "https://carbondesignsystem.com": {
     "score": 60.7,
@@ -147,7 +147,7 @@
     "warn": 6,
     "skip": 15,
     "tokens": 15,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://spectrum.adobe.com": {
     "score": 58.9,
@@ -157,7 +157,7 @@
     "warn": 12,
     "skip": 18,
     "tokens": 0,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://m3.material.io": {
     "score": 67.6,
@@ -167,7 +167,7 @@
     "warn": 12,
     "skip": 18,
     "tokens": 158,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://radix-ui.com": {
     "score": 64.8,
@@ -177,7 +177,7 @@
     "warn": 11,
     "skip": 10,
     "tokens": 59,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://geist.dev": {
     "score": 62,
@@ -187,7 +187,7 @@
     "warn": 10,
     "skip": 21,
     "tokens": 0,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://plex.ibm.com": {
     "score": 58.3,
@@ -197,7 +197,7 @@
     "warn": 12,
     "skip": 18,
     "tokens": 0,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://awwwards.com": {
     "score": 70.3,
@@ -207,7 +207,7 @@
     "warn": 11,
     "skip": 11,
     "tokens": 98,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://fwa.org": {
     "score": 43.8,
@@ -217,17 +217,17 @@
     "warn": 13,
     "skip": 16,
     "tokens": 8,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://cssdesignawards.com": {
-    "score": 44.9,
-    "grade": "F",
+    "score": 61.5,
+    "grade": "D",
     "pass": 6,
-    "fail": 3,
-    "warn": 14,
-    "skip": 16,
+    "fail": 2,
+    "warn": 10,
+    "skip": 21,
     "tokens": 0,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://pentagram.com": {
     "score": 50,
@@ -237,7 +237,7 @@
     "warn": 11,
     "skip": 14,
     "tokens": 181,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://vam.ac.uk": {
     "score": 70,
@@ -247,7 +247,7 @@
     "warn": 9,
     "skip": 13,
     "tokens": 51,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://github.com": {
     "score": 69.3,
@@ -257,17 +257,17 @@
     "warn": 5,
     "skip": 7,
     "tokens": 575,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://notion.so": {
-    "score": 67.9,
+    "score": 66.1,
     "grade": "D",
-    "pass": 18,
+    "pass": 17,
     "fail": 4,
-    "warn": 7,
+    "warn": 8,
     "skip": 10,
     "tokens": 544,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://figma.com": {
     "score": 75.3,
@@ -277,7 +277,7 @@
     "warn": 8,
     "skip": 11,
     "tokens": 102,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://x.com": {
     "score": 82.8,
@@ -287,7 +287,7 @@
     "warn": 10,
     "skip": 12,
     "tokens": 166,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   },
   "https://wikipedia.org": {
     "score": 77.3,
@@ -297,6 +297,6 @@
     "warn": 8,
     "skip": 13,
     "tokens": 393,
-    "scoredAt": "2026-08-31"
+    "scoredAt": "2026-09-07"
   }
 }
