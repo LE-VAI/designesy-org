@@ -623,9 +623,9 @@ function checkReducedMotion(css: string): CheckResult {
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
-  // v07 — REPLACED. The old check grepped for the word "internal" in the target
-  // site's HTML — a designesy self-audit that was meaningless for any external
-  // site (they all passed for the wrong reason). The new v07 is a general
+  // v07 — REPLACED. The old check grepped for an internal control-plane word
+  // in the target site's HTML — a designesy self-audit that was meaningless
+  // for any external site (they all passed for the wrong reason). v07 is now a general
   // semantic-HTML check: verifies the page has a single <h1>, a <title>, a
   // <meta name="description">, and a <main>/<header>/<nav> landmark. These are
   // Lighthouse a11y basics (document-title weight 4.1, heading-order 0.8) and
@@ -2362,7 +2362,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // ── Originality / anti-slop POSITIVE lift ───────────────────────────────────
   // The compliance checks reward meeting the contract; the slop layer penalizes
   // generic patterns. Neither answers "is this DISTINCTIVE?" — the taste question
-  // behind the the operator's fairness audit ("uglier than IBM/Figma/DeepMind but
+  // behind the fairness audit ("uglier than IBM/Figma/DeepMind but
   // scoring 100"). This layer adds up to +8 points for positive craft signals
   // detectable from CSS/HTML text alone. Symmetric to slop deductions but in the
   // opposite direction: compliant-but-generic sites earn NO lift (stay at their

@@ -2,7 +2,7 @@
  * Designesy design system contract v0.4.0 — machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
- * v0.1.1 adopts Lab One · Poise interaction rules (the operator order 2026-07-12).
+ * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
  * v0.1.2 adopts Lab Two · Takt interface-feel rules (2026-07-13).
  * v0.1.3 adopts Lab Three · Cadence typography rules (2026-07-13).
  * v0.3.0 adopts duration scale + verification from external source ingests (2026-07-13).

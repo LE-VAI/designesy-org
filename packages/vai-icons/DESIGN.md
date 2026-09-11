@@ -4,11 +4,10 @@ version: 1.0.0
 updated: 2026-08-13
 status: active
 role: Contract surface for @vai/icons — animated icon library on authored principles
-source_skillbase: D:\DESIGN
-source_package: D:\the public repo root\designesy-org\packages\vai-icons
-peer_package: D:\the public repo root\designesy-org\packages\vai-motion
+source_package: packages/vai-icons
+peer_package: packages/vai-motion
 contract: https://www.designesy.org/contract
-design_tokens: D:\1internal\docs\internal_DESIGN_TOKENS.md
+design_tokens: https://www.designesy.org/contract#tokens
 governs: every icon published from this package
 ---
 
@@ -90,7 +89,7 @@ Consumers can read the motion contract *without running the code*:
   Every icon must declare its tier in its motion.json sidecar.
 - **No substituted VAI mark.** The `brand-mark` icon in this package is
   a generic focal placeholder. The VAI wordmark lives in
-  `D:\VAI\BRAND_ACTIVE\logos\` and is a deterministic asset, not a glyph
+  the VAI brand logo set (a deterministic asset), not a glyph
   rendered from text.
 - **No layout animation.** Animations use transform/opacity only.
 - **No anonymous keyframes.** Every keyframe is named and traceable.

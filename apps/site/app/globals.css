@@ -9512,7 +9512,7 @@ a.lab-card:focus-visible .lab-card-arrow {
    Patch: expand hit areas inside the mobile breakpoint without changing
    the visual editorial typography. Inline links get an invisible ::before
    expander; structural elements get min-height + inline-flex centering.
-   Provenance: internal VWP audit → an external audit CDP touch-target report.
+   Provenance: empirical CDP touch-target audit.
    ────────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
