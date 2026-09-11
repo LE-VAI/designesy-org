@@ -63,7 +63,7 @@ here so they are not forgotten.
 - ✅ Python test suite created (28 tests, all passing)
 - ✅ CI workflow: npm package test jobs + MCP pytest job added
 - ✅ /test route disallowed in robots.txt (already noindexed via metadata)
-- ✅ internal adapter synced from canonical (v1.10.1, 17 tools)
+- ✅ MCP adapter synced from canonical (v1.10.1, 17 tools)
 - ✅ stylelint plugin: all `as any` casts removed, `PostcssResult` typed, `RuleMeta.url` added
 - ✅ stylelint plugin CHANGELOG: "61 tests" → "62 tests"
 - ✅ MCP cache descriptions: "cached ~24h" → "cached ~24h server-side"

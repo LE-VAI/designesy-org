@@ -870,7 +870,7 @@ button.pillar {
      desktop display size the longest rotator word ("accountable.", now
      swapped for "liable.") measured ~1135.5px natural nowrap — 67.5px WIDER than the box. white-space:nowrap
      already guarantees no wrap, so overflow:hidden's only live effect is to
-     SHEAR the trailing glyph: the the operator's "accountabl[e]" cut-off (and
+     SHEAR the trailing glyph: the observed "accountabl[e]" cut-off (and
      the period vanishing with it). Mobile is unaffected (5.9vw auto-scales
      every word under the box). Extend the clip region 1ch outward on both
      inline sides with equal negative margins so the widest word renders its

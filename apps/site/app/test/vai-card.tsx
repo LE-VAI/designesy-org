@@ -16,7 +16,7 @@ import { useState } from 'react';
  *    says "Meet VAI" (character intro), not "VAI by Designesy" (brand merge).
  *  - Yellow is contained: --vai-yellow (#FFC400) only appears inside the open
  *    panel. The card border, label, and footer shell stay Designesy blue.
- *  - No "internal" anywhere on this surface.
+ *  - No internal control-plane naming anywhere on this surface.
  *
  * Scoped to /test — concept preview only, not wired to a real /vai route yet.
  */
