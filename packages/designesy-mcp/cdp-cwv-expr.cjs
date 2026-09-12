@@ -1,12 +1,13 @@
 // CDP Core Web Vitals checker — simplified version
-// Uses a separate expression file (cwv-expr.js) to avoid escaping issues.
+// Uses a separate expression file (cwv-expr.js, read as a text blob and never
+// executed by node) to avoid escaping issues.
 //
 // R2 improvements (2026-07-26):
 //   - Honest INP: reports `inp: null` + `inpPass: null` when no interaction occurred.
 //   - Settle-based wait (handled inside cwv-expr.js).
 //   - --throttle flag applies Lighthouse mobile preset.
 //
-// Usage: node cdp-cwv-expr.js <url> [--throttle]
+// Usage: node cdp-cwv-expr.cjs <url> [--throttle]
 const http = require('http');
 // Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
 // No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
@@ -142,5 +143,5 @@ async function checkCWV(url, throttle) {
 const args = process.argv.slice(2);
 const throttle = args.includes('--throttle');
 const url = args.find(a => !a.startsWith('--'));
-if (!url) { console.error('Usage: node cdp-cwv-expr.js <url> [--throttle]'); process.exit(1); }
+if (!url) { console.error('Usage: node cdp-cwv-expr.cjs <url> [--throttle]'); process.exit(1); }
 checkCWV(url, throttle).then(r => { console.log('\n' + JSON.stringify(r, null, 2)); process.exit(0); }).catch(e => { console.error('Error:', e.message); process.exit(1); });

@@ -1060,13 +1060,17 @@ def _check_skip_ink(css: str) -> tuple[str, str]:
 # These checks use the Chrome DevTools Protocol to run in a real browser,
 # unblocking the SKIPs that static CSS analysis can't reach.  They fall
 # back to SKIP if CDP is not available (Chrome not running on port 9222).
-# The Node script (cdp-viewport-check.js) handles the WebSocket dance.
+# The Node script (cdp-viewport-check.cjs) handles the WebSocket dance.
+# .cjs extension is required: this package sits inside a "type": "module"
+# monorepo, so a bare .js file is parsed as ESM and `require` throws
+# "require is not defined in ES module scope" — the checker then returned
+# SKIP and check v02 silently never ran.
 
 import subprocess
 import os
 
-_CDP_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-viewport-check.js")
-_CDP_CWV_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-cwv-expr.js")
+_CDP_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-viewport-check.cjs")
+_CDP_CWV_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-cwv-expr.cjs")
 
 
 def _cdp_available() -> bool:
@@ -1142,6 +1146,23 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
         widths_data = data.get("widths", [])
         if not widths_data:
             return "SKIP", "CDP check returned no width data"
+
+        # Fidelity gate: a width that was not actually emulated cannot be
+        # reported as verified. The checker sets measured=False when the
+        # observed innerWidth differs from the requested breakpoint (the
+        # signature of the emulation override being lost). Passing those
+        # through as "ok" is what let a broken checker look green.
+        unmeasured = [w for w in widths_data if not w.get("measured", False)]
+        if unmeasured:
+            bad_details = "; ".join(
+                f"{w['width']}px: measured innerWidth={w['innerWidth']}"
+                for w in unmeasured
+            )
+            return "WARN", (
+                f"breakpoints not actually emulated — cannot verify overflow "
+                f"({bad_details}). Emulation override was not in effect at "
+                f"measure time."
+            )
 
         overflows = [w for w in widths_data if w.get("overflow")]
         if not overflows:

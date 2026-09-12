@@ -69,15 +69,15 @@ packages = ["designesy_mcp_server.py"]
 # os.path.dirname(__file__) sibling resolution. Must ship as siblings
 # of the .py module so the paths resolve after pip install.
 [tool.hatch.build.targets.wheel.force-include]
-"cdp-viewport-check.js" = "cdp-viewport-check.js"
-"cdp-cwv-expr.js" = "cdp-cwv-expr.js"
+"cdp-viewport-check.cjs" = "cdp-viewport-check.cjs"
+"cdp-cwv-expr.cjs" = "cdp-cwv-expr.cjs"
 "cwv-expr.js" = "cwv-expr.js"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "designesy_mcp_server.py",
-    "cdp-viewport-check.js",
-    "cdp-cwv-expr.js",
+    "cdp-viewport-check.cjs",
+    "cdp-cwv-expr.cjs",
     "cwv-expr.js",
     "README.md",
     "LICENSE",
