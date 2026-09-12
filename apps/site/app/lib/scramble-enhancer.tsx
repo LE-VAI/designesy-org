@@ -781,6 +781,13 @@ function runScramble(pathname: string): (() => void) | undefined {
         };
 
         setWord(words[0]);
+        // §16.8: every motion-bearing artifact must have a prefers-reduced-motion
+        // path. The rotator is the loudest looping motion on the page (a word
+        // re-scrambles and re-decodes every 3.2s, indefinitely), so under
+        // reduced-motion it resolves to the first word and stops — the sentence
+        // is fully readable, nothing loops. Previously this loop had no
+        // reduced-motion check at all and kept cycling for the whole session.
+        if (reducedMotion) return true;
         startWhenDecoded(1);
         return true;
       };

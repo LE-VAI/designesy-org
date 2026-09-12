@@ -29,6 +29,27 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 const useIsoLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+// Shared animation epoch.
+//
+// Each counter captured its own performance.now() when its start timer fired,
+// so two counters starting in the same batch ran on clocks a few ms apart and
+// could display different progress fractions in the same frame. For a paired
+// readout like "30 of 30 sites scored" that means the two numbers can visibly
+// disagree mid-animation even though the final value agrees. Counters starting
+// within the same frame now share one epoch, so equal values always display
+// the same fraction. A counter that starts later gets a fresh epoch, so
+// scroll-triggered counters keep their own timing.
+let sharedEpoch = 0;
+let sharedEpochStamp = -Infinity;
+
+function epochFor(now: number): number {
+  if (now - sharedEpochStamp > 24) {
+    sharedEpoch = now;
+    sharedEpochStamp = now;
+  }
+  return sharedEpoch;
+}
+
 type CountUpProps = {
   /** Target value to count up to */
   value: number;
@@ -71,10 +92,19 @@ export function CountUp({ value, duration = 1200, suffix = '', prefix = '', clas
       if (started) return;
       started = true;
 
-      const startTime = performance.now();
+      // Share the epoch with any counter starting in the same frame so paired
+      // values (30 of 30) stay consistent for the whole animation.
+      const startTime = epochFor(performance.now());
       const tick = (now: number) => {
         const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        // Clamp BOTH ends. The rAF timestamp is the frame's start time, which
+        // can predate the performance.now() captured just before scheduling —
+        // elapsed goes negative, the cubic easing amplifies it (1-(1-t)^3 with
+        // t<0 is negative), and the hero briefly rendered "-1" checks and
+        // "-2%" self-score. A counter must never display a value the data
+        // cannot hold; the upper clamp also stops any late frame overshooting
+        // past the target.
+        const progress = Math.max(0, Math.min(elapsed / duration, 1));
         // ease-out cubic: 1 - (1 - t)^3
         const eased = 1 - Math.pow(1 - progress, 3);
         setDisplay(eased * value);
