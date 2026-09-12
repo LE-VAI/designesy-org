@@ -212,7 +212,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
 async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string): Promise<CheckResult> {
   let browser;
   try {
-    browser = await launchBrowser();
+    browser = await acquireBrowser();
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     // CDP session for performance trace
@@ -274,7 +274,9 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string):
       detail: `both PSI and Chromium lab failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (browser) await releaseBrowser().catch(() => {});
   }
 }
 
@@ -303,6 +305,52 @@ async function launchBrowser() {
   });
 }
 
+// One shared Chromium per request.
+//
+// v02 and v04 both need a browser and the caller runs all three audit checks
+// through Promise.all, so each was launching its OWN Chromium inside the same
+// function invocation. Two simultaneous launches each decompress the ~62MB
+// brotli binary into /tmp and compete for the same 2GB memory ceiling; one
+// browser gets killed and its check fails with "Target page, context or
+// browser has been closed" — which is exactly what v02 reported in production.
+//
+// A module-scoped promise means concurrent callers share a single launch
+// instead of racing. It is deliberately NOT a long-lived singleton: the
+// instance is ref-counted per request and closed when the last holder
+// releases it, so a warm serverless instance cannot leak a browser process
+// between invocations.
+let browserPromise: Promise<import('playwright-core').Browser> | null = null;
+let browserRefs = 0;
+
+async function acquireBrowser() {
+  if (!browserPromise) {
+    const p = launchBrowser();
+    browserPromise = p;
+    // If the launch rejects, clear the slot so the next request retries
+    // instead of re-awaiting a permanently rejected promise. Guard the clear
+    // so a newer launch started in the meantime is not clobbered.
+    p.catch(() => {
+      if (browserPromise === p) browserPromise = null;
+    });
+  }
+  browserRefs += 1;
+  return browserPromise;
+}
+
+async function releaseBrowser(): Promise<void> {
+  // Clamp at zero: a check that failed before acquiring still reaches its
+  // finally block, and an underflow there would corrupt the shared count for
+  // the sibling checks that are still running.
+  browserRefs = Math.max(0, browserRefs - 1);
+  if (browserRefs > 0) return;
+  const p = browserPromise;
+  browserPromise = null;
+  if (p) {
+    const b = await p.catch(() => null);
+    if (b) await b.close().catch(() => {});
+  }
+}
+
 // v02 — responsive overflow. Launch Chromium, navigate at 4 viewports,
 // measure scrollWidth vs clientWidth at each. PASS if all 4 fit; FAIL with
 // the first overflowing viewport in the detail string.
@@ -324,7 +372,7 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
   ];
   let browser;
   try {
-    browser = await launchBrowser();
+    browser = await acquireBrowser();
     const overflows: string[] = [];
     for (const vp of viewports) {
       const ctx = await browser.newContext({ viewport: { width: vp.w, height: 800 } });
@@ -369,7 +417,9 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
       detail: `browser launch failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (browser) await releaseBrowser().catch(() => {});
   }
 }
 
@@ -391,7 +441,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
   }
   let browser;
   try {
-    browser = await launchBrowser();
+    browser = await acquireBrowser();
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
     try {
@@ -400,7 +450,18 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
     }
     // Locate sound toggle — aria-pressed is the contract spec.
-    const toggle = await page.$('[aria-pressed], [data-sound-toggle], button:has-text("sound" i)');
+    //
+    // `button:has-text("sound" i)` is invalid Playwright syntax and throws
+    // "Unexpected token \"i\" while parsing css selector" on every call — the
+    // ` i` case-insensitivity flag belongs to CSS attribute selectors
+    // ([attr="v" i]), not to :has-text(), which is already case-insensitive
+    // and substring-matching by definition. That made v04 unable to pass
+    // anywhere, ever. Kept the pseudo-class bare, and the fallbacks run as
+    // separate locators so an unsupported selector can't take down the check.
+    let toggle = await page.$('[aria-pressed], [data-sound-toggle]');
+    if (!toggle) {
+      toggle = await page.$('button:has-text("sound")').catch(() => null);
+    }
     if (!toggle) {
       await ctx.close();
       // scope=universal: absence of sound is SKIP, not WARN — a site without
@@ -453,7 +514,9 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       detail: `browser launch failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (browser) await releaseBrowser().catch(() => {});
   }
 }
 
