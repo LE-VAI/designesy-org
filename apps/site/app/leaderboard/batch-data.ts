@@ -165,7 +165,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "performance": { score: null, weight: 6, pass: 0, fail: 0, warn: 0, skip: 0 },
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
-  "https://internalsian.design": {
+  "https://atlassian.design": {
     "cadence": { score: 58.3, weight: 18, pass: 2, fail: 0, warn: 10, skip: 0 },
     "accessibility": { score: 70, weight: 15, pass: 2, fail: 0, warn: 3, skip: 1 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },

@@ -22,7 +22,7 @@
 | https://zeroheight.com | 60 | PASS | FAIL (4 s/c) |
 | https://vercel.com | 60 | PASS | FAIL (6 s/c) |
 | https://x.com | 70 | PASS | FAIL (7 s/c) |
-| https://internalsian.design | 60 | PASS | PASS (0 s/c) |
+| https://atlassian.design | 60 | PASS | PASS (0 s/c) |
 | https://linear.app | 40 | FAIL | FAIL (4 s/c) |
 | https://notion.so | 60 | PASS | FAIL (2 s/c) |
 | https://figma.com | 60 | PASS | PASS (0 s/c) |

@@ -746,22 +746,50 @@ def _check_contrast_muted(tokens: dict[str, str]) -> tuple[str, str]:
     return "WARN", "; ".join(results)
 
 
-def _check_no_internal_naming(html: str) -> tuple[str, str]:
-    """Check no public surface displays internal control-plane naming."""
-    # Check visible text, not paths or code comments
-    # Strip <script> and <style> blocks
-    visible = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL)
-    visible = re.sub(r"<style[^>]*>.*?</style>", "", visible, flags=re.DOTALL)
-    # Strip HTML tags
-    text = re.sub(r"<[^>]+>", " ", visible)
-    # Check title and headings
-    title_match = re.search(r"<title[^>]*>([^<]*)</title>", html, re.IGNORECASE)
-    title = title_match.group(1) if title_match else ""
-    h1_match = re.search(r"<h1[^>]*>([^<]*)</h1>", html, re.IGNORECASE)
-    h1 = h1_match.group(1) if h1_match else ""
-    if "internal" in title or "internal" in h1:
-        return "FAIL", f"internal found in title/h1: title='{title}', h1='{h1}'"
-    return "PASS", "no internal naming in visible title/h1"
+def _check_semantic_html(html: str) -> tuple[str, str]:
+    """v07 — semantic-HTML foundation: single h1, title, meta description, landmark.
+
+    v07 was REPLACED on the site engine (route.ts / packages/score) by this
+    check. The old version grepped the target site's HTML for an internal
+    control-plane word — meaningless for external sites, which all passed for
+    the wrong reason. This MCP copy kept the old shape, and a later repo-wide
+    text substitution rewrote the literal it searched for, leaving a check that
+    merely looked for the ordinary English word "internal" in a title. That is
+    not a design property and would fail legitimate sites for using a normal
+    word. Kept aligned with the site engine so all three surfaces (site route,
+    standalone engine, MCP stdio) report the same v07.
+    """
+    visible_html = re.sub(r"<script[\s\S]*?</script>", "", html, flags=re.IGNORECASE)
+    visible_html = re.sub(r"<style[\s\S]*?</style>", "", visible_html, flags=re.IGNORECASE)
+    h1_count = len(re.findall(r"<h1\b", visible_html, re.IGNORECASE))
+    has_title = bool(re.search(r"<title\b[^>]*>[^<]+</title>", html, re.IGNORECASE))
+    has_meta_desc = bool(re.search(r"""<meta\s+name=["']description["']""", html, re.IGNORECASE))
+    has_landmark = bool(re.search(r"<(main|header|nav)\b", visible_html, re.IGNORECASE))
+
+    signals: list[str] = []
+    failures: list[str] = []
+    if h1_count == 1:
+        signals.append("single h1")
+    else:
+        failures.append("no h1" if h1_count == 0 else f"{h1_count} h1s")
+    if has_title:
+        signals.append("title")
+    else:
+        failures.append("no title")
+    if has_meta_desc:
+        signals.append("meta description")
+    else:
+        failures.append("no meta description")
+    if has_landmark:
+        signals.append("landmark")
+    else:
+        failures.append("no main/header/nav")
+
+    if not failures:
+        return "PASS", ", ".join(signals)
+    if len(failures) <= 2:
+        return "WARN", f"ok: {', '.join(signals)} · missing: {', '.join(failures)}"
+    return "FAIL", f"missing: {', '.join(failures)}"
 
 
 def _check_focus_visible(css: str) -> tuple[str, str]:
@@ -1428,9 +1456,9 @@ def _score_local_impl(url: str) -> dict[str, Any]:
         },
         {
             "id": "v07",
-            "item": "No public surface displays internal control-plane naming",
+            "item": "Semantic HTML foundation: single h1, title, meta description, landmark",
             "category": "identity",
-            "result": _check_no_internal_naming(html),
+            "result": _check_semantic_html(html),
         },
         {
             "id": "v08",

@@ -21,7 +21,7 @@
 | https://zeroheight.com | 68.2 (D) | 73.8 (C) | +5.6 | D→C | v38:WARN, v39:PASS, v40:WARN, v41:PASS, v37:SKIP |
 | https://vercel.com | 71.1 (C) | 73.6 (C) | +2.5 | C→C | v38:WARN, v39:PASS, v40:PASS, v41:WARN, v37:WARN |
 | https://x.com | 68.2 (D) | 73.1 (C) | +4.9 | D→C | v38:SKIP, v39:SKIP, v40:PASS, v41:PASS, v37:WARN |
-| https://internalsian.design | 64.9 (D) | 70.2 (C) | +5.3 | D→C | v38:PASS, v39:PASS, v40:PASS, v41:PASS, v37:WARN |
+| https://atlassian.design | 64.9 (D) | 70.2 (C) | +5.3 | D→C | v38:PASS, v39:PASS, v40:PASS, v41:PASS, v37:WARN |
 | https://linear.app | 69.9 (D) | 68.6 (D) | -1.3 | D→D | v38:WARN, v39:PASS, v40:PASS, v41:PASS, v37:WARN |
 | https://notion.so | 63.4 (D) | 68.5 (D) | +5.1 | D→D | v38:WARN, v39:PASS, v40:PASS, v41:PASS, v37:SKIP |
 | https://figma.com | 71.7 (C) | 68.1 (D) | -3.6 | C→D | v38:WARN, v39:PASS, v40:PASS, v41:PASS, v37:SKIP |

@@ -67,7 +67,7 @@
 | https://zeroheight.com | 73.8 | C | 62.4–83.1 | B–D |
 | https://vercel.com | 73.6 | C | 67.7–79.4 | C–D |
 | https://x.com | 73.1 | C | 61.7–84.4 | B–D |
-| https://internalsian.design | 70.2 | C | 58.7–81.6 | B–F |
+| https://atlassian.design | 70.2 | C | 58.7–81.6 | B–F |
 | https://linear.app | 68.6 | D | 61.2–81 | B–D |
 | https://notion.so | 68.5 | D | 59.4–77.6 | C–F |
 | https://figma.com | 68.1 | D | 60.599999999999994–80.6 | B–D |
