@@ -313,7 +313,7 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
       status: 'MANUAL',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
+      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
     };
   }
   const viewports = [
@@ -386,7 +386,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
       status: 'MANUAL',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
+      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
     };
   }
   let browser;
