@@ -19,7 +19,7 @@
 | https://zeroheight.com | 73.8 (C) | 4 | 4 | 6 | 2 | 72.1–78.5 |
 | https://vercel.com | 73.6 (C) | 5 | 3 | 6 | 3 | 70.5–75.8 |
 | https://x.com | 73.1 (C) | 6 | 4 | 6 | 2 | 69.2–76 |
-| https://internalsian.design | 70.2 (C) | 7 | 7 | 9 | 2 | 67.4–74 |
+| https://atlassian.design | 70.2 (C) | 7 | 7 | 9 | 2 | 67.4–74 |
 | https://linear.app | 68.6 (D) | 8 | 8 | 14 | 6 | 64.4–70 |
 | https://notion.so | 68.5 (D) | 9 | 8 | 12 | 4 | 65.7–74.4 |
 | https://figma.com | 68.1 (D) | 10 | 7 | 12 | 5 | 65–75.2 |
