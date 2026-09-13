@@ -293,6 +293,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, 
 // real user input, which lab Lighthouse approximates via TBT; we mark it
 // SKIP when only lab is available).
 
+import path from 'node:path';
 import { chromium as playwrightChromium } from 'playwright-core';
 import sparticuzChromium from '@sparticuz/chromium';
 
@@ -301,7 +302,28 @@ function browserAuditEnabled(): boolean {
 }
 
 async function launchBrowser() {
+  // Serverless has no GPU. sparticuz's default graphics mode enables the
+  // SwiftShader GL path, which is not usable in this environment — it has been
+  // reported to freeze the launch after "Creating new page". Turning it off is
+  // one of the two documented must-do steps that were missing here (the other
+  // is LD_LIBRARY_PATH below).
+  sparticuzChromium.setGraphicsMode = false;
+
   const executablePath = await sparticuzChromium.executablePath();
+
+  // Chromium's shared libraries are extracted by executablePath() into the
+  // same directory as the binary (/tmp on Lambda/Vercel). Without this the
+  // loader cannot resolve them, the browser process dies immediately after
+  // spawning, and every context operation fails with the misleading
+  // "Target page, context or browser has been closed" — which is exactly the
+  // error observed in production, with the launch args but no page ever
+  // reaching newPage(). path.dirname() of the resolved binary is the documented
+  // location.
+  const libraryPath = path.dirname(executablePath);
+  process.env.LD_LIBRARY_PATH = process.env.LD_LIBRARY_PATH
+    ? `${libraryPath}:${process.env.LD_LIBRARY_PATH}`
+    : libraryPath;
+
   return playwrightChromium.launch({
     args: sparticuzChromium.args,
     executablePath,
