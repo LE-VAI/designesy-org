@@ -563,12 +563,17 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
           : 'no sound toggle element found on page',
       };
     }
+    // Read BOTH baselines before interacting. The previous order read
+    // beforeStorage AFTER the click, so it was already the post-click value and
+    // the comparison was storage-against-itself — storageUpdated could never be
+    // true, so v04 reported FAIL on every site that actually worked. Verified
+    // against live designesy.org: with the correct order the toggle flips
+    // aria-pressed true->false AND writes designesy:sound null->"false".
     const beforePressed = await toggle.getAttribute('aria-pressed');
-    await toggle.click();
-    await page.waitForTimeout(300);
-    const afterPressed = await toggle.getAttribute('aria-pressed');
     const beforeStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
-    await page.waitForTimeout(200);
+    await toggle.click();
+    await page.waitForTimeout(500);
+    const afterPressed = await toggle.getAttribute('aria-pressed');
     const afterStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
     const pressedFlipped = beforePressed !== afterPressed;
     const storageUpdated = beforeStorage !== afterStorage;
