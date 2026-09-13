@@ -301,7 +301,57 @@ function browserAuditEnabled(): boolean {
   return process.env.ENABLE_BROWSER_AUDIT === '1' || process.env.ENABLE_BROWSER_AUDIT === 'true';
 }
 
+// A remote browser service that speaks CDP (Browserless, Browserbase, a
+// container host, or any Chrome started with --remote-debugging-port). When set,
+// we ATTACH to a browser that is already running off-platform instead of
+// launching Chromium inside this function.
+//
+// Why this exists: five in-function configurations were tested and none worked —
+// two separate launches, a shared ref-counted browser, per-request serialized
+// checks, plus LD_LIBRARY_PATH and graphics-off, and finally 4GB/2vCPU. The
+// failure moved from crashing to hanging as each fix landed but never resolved,
+// which closed the in-function path on evidence rather than guesswork. Attaching
+// to an external browser also removes the /tmp decompression of the ~62MB
+// brotli binary, the bundle-size cost, and Playwright's documented
+// browser.close() hang class (microsoft/playwright#39753) in one move.
+//
+// Set CDP_ENDPOINT (e.g. wss://chrome.browserless.io?token=...) plus
+// CDP_HEADERS_JSON if the service needs auth headers. Both are optional: with no
+// CDP_ENDPOINT the function falls back to the in-function Chromium path.
+function cdpEndpoint(): string | null {
+  const raw = (process.env.CDP_ENDPOINT || '').trim();
+  return raw.length > 0 ? raw : null;
+}
+
+function cdpHeaders(): Record<string, string> | undefined {
+  const raw = process.env.CDP_HEADERS_JSON;
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, string>;
+    }
+  } catch {
+    /* malformed config — connect without extra headers rather than throwing */
+  }
+  return undefined;
+}
+
 async function launchBrowser() {
+  // Preferred path: attach to an external browser over CDP. No local Chromium,
+  // no /tmp, no cold-start decompression.
+  const endpoint = cdpEndpoint();
+  if (endpoint) {
+    return playwrightChromium.connectOverCDP(endpoint, {
+      headers: cdpHeaders(),
+      timeout: 30000,
+    });
+  }
+
+  // Fallback: in-function Chromium. Retained so the route still works with no
+  // external service configured; see the block comment above for why this is
+  // not the recommended production configuration.
+  //
   // Serverless has no GPU. sparticuz's default graphics mode enables the
   // SwiftShader GL path, which is not usable in this environment — it has been
   // reported to freeze the launch after "Creating new page". Turning it off is
