@@ -6111,13 +6111,29 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 
-/* Hero first-paint (Option B): the hero h1 is the LCP element — it must be
-   an LCP candidate from the first frame. The fadeUp entrance animation
-   (0.6s, backwards fill) starts the hero at opacity:0, so even with the
-   delay removed the element stays hidden for most of the animation and
-   LCP is gated. Kill the entrance on the hero only — the fade-up stays
-   for below-the-fold content. */
-#hero-title.fade-up-delay-1 {
+/* Hero first-paint: the hero's LCP element must be an LCP candidate from the
+   first frame. The fadeUp entrance animation (0.6s, backwards fill) starts
+   elements at opacity:0, and LCP is not recorded until the element is actually
+   painted — so any entrance animation on the LCP element gates LCP to the end
+   of that animation.
+
+   The previous rule here targeted `#hero-title.fade-up-delay-1`, which matches
+   nothing: #hero-title is the <h1>, and the h1 carries `fade-up` alone (no
+   delay class). The element that actually wins LCP is the hero <p
+   class="hero-sub fade-up fade-up-delay-1"> below it — it is the largest text
+   block and it carried both classes, so it stayed at opacity 0 for the delay
+   plus the full animation.
+
+   Measured on the live site under the Lighthouse mobile preset: hero-sub sat at
+   opacity 0.00 until ~1907ms, reached full opacity at ~2212ms, and LCP was
+   recorded at ~2488ms — i.e. LCP was gated by the entrance, not by network.
+
+   Killing the animation on both hero text blocks makes both LCP candidates
+   paint on the first frame. The entrance is retained everywhere below the fold. */
+#hero-title.fade-up,
+#hero-title.fade-up-delay-1,
+.hero-sub.fade-up,
+.hero-sub.fade-up-delay-1 {
   animation: none;
 }
 
