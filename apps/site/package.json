@@ -20,7 +20,7 @@
     "cuelume": "^0.2.2",
     "ipaddr.js": "^2.5.0",
     "mcp-handler": "^2.1.1",
-    "next": "15.5.24",
+    "next": "15.5.25",
     "playwright-core": "^1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -34,7 +34,7 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.24",
+    "eslint-config-next": "15.5.25",
     "pagefind": "^1.5.2",
     "typescript": "5.9.3"
   },
