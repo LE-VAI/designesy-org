@@ -118,10 +118,10 @@
      --mono: Geist Mono Variable for check IDs, score readouts, token names.
      The serif/sans split is the 2026 hybrid system: serifs for brand-level
      communication (trust/authority), sans for UI/data (efficiency). */
-  --sans: 'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-  --serif: 'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+  --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+  --serif: var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
   --display: var(--serif);
-  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  --mono: var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token

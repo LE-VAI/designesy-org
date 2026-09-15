@@ -21,6 +21,7 @@ import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { PageShareButton } from '../../lib/page-share';
+import { ENGINE_CHECK_COUNT } from '../../hero-stats';
 import { ScoreDial, gradeColor } from '../../lib/score-dial';
 import { RadarChart } from '../../lib/radar-chart';
 import { SEED, type Grade, type CategoryBreakdown } from '../../leaderboard/seed';
@@ -129,7 +130,7 @@ function generateNarrative(site: typeof SEED[number]): string {
   // Opening
   parts.push(
     `${name} scores ${score}/${grade} on the Designesy Compliance Index — ` +
-    `${site.pass} of 40 checks passed, ${site.fail} failed, ${site.warn} warned, ${site.skip} skipped. ` +
+    `${site.pass} of ${ENGINE_CHECK_COUNT} checks passed, ${site.fail} failed, ${site.warn} warned, ${site.skip} skipped. ` +
     `The cohort mean is ${COHORT_MEAN.toFixed(1)}/D across ${SCORED_SITES.length} scored sites. ` +
     (score > COHORT_MEAN
       ? `${name} sits ${((score - COHORT_MEAN) / COHORT_MEAN * 100).toFixed(0)}% above the cohort mean.`
@@ -176,7 +177,7 @@ function generateNarrative(site: typeof SEED[number]): string {
 
   // Closing
   parts.push(
-    `This evaluation is deterministic — no LLM, no human judgment, no survey. The same 40-check engine that scored ${name} scores every site on the leaderboard. Re-score ${site.url.replace(/^https?:\/\//, '')} live to see if anything has changed since ${'2026-08-03'}.`
+    `This evaluation is deterministic — no LLM, no human judgment, no survey. The same ${ENGINE_CHECK_COUNT}-check engine that scored ${name} scores every site on the leaderboard. Re-score ${site.url.replace(/^https?:\/\//, '')} live to see if anything has changed since ${'2026-08-03'}.`
   );
 
   return parts.join('\n\n');
@@ -285,7 +286,7 @@ export default async function FrameworkEvaluationPage({
           </p>
           <div className="hero-actions" style={{ marginTop: '1.5rem' }}>
             <PageShareButton
-              text={`${site.name} · Grade ${site.grade} · ${site.score}/100 on the Designesy 40-check design contract — designesy.org/frameworks/${slug}`}
+              text={`${site.name} · Grade ${site.grade} · ${site.score}/100 on the Designesy ${ENGINE_CHECK_COUNT}-check design contract — designesy.org/frameworks/${slug}`}
               label={`Share ${site.name} evaluation`}
             />
           </div>
@@ -404,7 +405,7 @@ export default async function FrameworkEvaluationPage({
             ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Scored 2026-08-03 against contract v0.4.0 (40 checks, 14 weighted
+            Scored 2026-08-03 against contract v0.4.0 (${ENGINE_CHECK_COUNT} checks, 14 weighted
             categories). Re-scored weekly via GitHub Action.
           </p>
         </section>

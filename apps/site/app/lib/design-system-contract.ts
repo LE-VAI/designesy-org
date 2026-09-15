@@ -690,25 +690,25 @@ export const designSystemContract = {
       sans: {
         token: '--sans',
         value:
-          "'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
-        role: 'Primary UI and body stack (Geist Variable — Vercel house font, "deliberately set not defaulted". System fonts cover fallback.)',
+          "var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+        role: 'Primary UI and body stack — Geist, self-hosted at build time via next/font (--font-sans). System fonts cover fallback.',
       },
       serif: {
         token: '--serif',
         value:
-          "'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
-        role: 'Editorial serif for headlines — the trust/authority signal. Fraunces Variable with opsz + SOFT axes for dark-mode tuning.',
+          "var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
+        role: 'Editorial serif for headlines — the trust/authority signal. Fraunces, self-hosted at build time via next/font (--font-display), with opsz + SOFT + WONK axes.',
       },
       display: {
         token: '--display',
         value: 'var(--serif)',
-        role: 'Display/headline face — Fraunces Variable (aliased to --serif). Hybrid system: serif headlines + sans UI.',
+        role: 'Display/headline face — Fraunces (aliased to --serif). Hybrid system: serif headlines + sans UI.',
       },
       mono: {
         token: '--mono',
         value:
-          "'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
-        role: 'Mono stack for check IDs, score readouts, token names (Geist Mono Variable — system-thinking signal)',
+          "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+        role: 'Mono stack for check IDs, score readouts, token names — Geist Mono, self-hosted via next/font (--font-mono)',
       },
     },
     body: '16px / 1.55, Geist Variable (Inter fallback for CJK)',

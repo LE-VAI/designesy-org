@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 
 export const metadata: Metadata = pageMeta({
   title: 'Benchmarks',
@@ -350,12 +351,12 @@ export default function BenchmarksPage() {
             <p>
               Live research via AnySearch MCP (2026-08-01). Designesy live score
               verified via POST to https://www.designesy.org/api/score (93% A,
-              40 checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
+              ${ENGINE_CHECK_COUNT} checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.
             </p>
           </div>
           <CheckGrid items={[
-            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 93% A, 40 checks, verified 2026-08-22' },
+            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 93% A, ${ENGINE_CHECK_COUNT} checks, verified 2026-08-22' },
             { title: 'hallmark 57 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },
