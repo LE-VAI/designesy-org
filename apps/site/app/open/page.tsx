@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { ToggleRow } from '../lib/toggle-row';
@@ -375,7 +376,7 @@ export default function OpenPage() {
               <span className="row-body">
                 <span className="row-title">design.md (Google Labs)</span>
                 <span className="row-meta">
-                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with 40 verification checks.
+                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with ${ENGINE_CHECK_COUNT} verification checks.
                 </span>
               </span>
             </a>

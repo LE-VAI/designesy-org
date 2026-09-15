@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { designSystemContract } from '../../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../../hero-stats';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
@@ -11,7 +12,7 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract — reference format',
   description:
-    `Designesy design system contract v${designSystemContract.version} — a reference format for AI-readable design contracts. Richer than design.md: 40 verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
+    `Designesy design system contract v${designSystemContract.version} — a reference format for AI-readable design contracts. Richer than design.md: ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
   path: '/contracts/design-system',
   ogTitle: `Design system contract · v${designSystemContract.version} — reference format`,
   ogDescription:
@@ -51,7 +52,7 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            'A reference format for AI-readable design contracts — tokens, motion, components, 40 verification checks, acoustic cues, takt, copywriting, and adopted Poise + Takt + Cadence + Acoustics rules. Richer than design.md.',
+            `A reference format for AI-readable design contracts — tokens, motion, components, ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, and adopted Poise + Takt + Cadence + Acoustics rules. Richer than design.md.`,
           url: c.public_url,
           version: c.version,
           related: [c.machine_url, 'https://www.designesy.org/open', 'https://www.designesy.org/score'],

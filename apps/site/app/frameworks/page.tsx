@@ -14,17 +14,18 @@ import { pageMeta } from '../lib/site-meta';
 import { CountUp } from '../lib/count-up';
 import { PageShareButton } from '../lib/page-share';
 import { SEED, type Grade } from '../leaderboard/seed';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
   title: 'Framework Evaluations',
   description:
-    'Every scored site, each with its own evaluation article. 30 sites scored against the 40-check engine — browse by category, compare scores, read the findings.',
+    `Every scored site, each with its own evaluation article. 30 sites scored against the ${ENGINE_CHECK_COUNT}-check engine — browse by category, compare scores, read the findings.`,
   path: '/frameworks',
   ogTitle: 'Framework Evaluations · Designesy',
   ogDescription:
-    '30 sites scored against a 40-check design contract engine. Each has a dedicated evaluation page with per-category breakdowns.',
+    `30 sites scored against a ${ENGINE_CHECK_COUNT}-check design contract engine. Each has a dedicated evaluation page with per-category breakdowns.`,
   twitterDescription: 'Framework evaluations — designesy.org/frameworks',
 });
 
@@ -72,7 +73,7 @@ export default function FrameworksIndexPage() {
           </p>
           <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
             <PageShareButton
-              text="30 sites scored against a 40-check design contract — each with its own evaluation page."
+              text={`30 sites scored against a ${ENGINE_CHECK_COUNT}-check design contract — each with its own evaluation page.`}
               label="Share the framework evaluations"
             />
           </div>

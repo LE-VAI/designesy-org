@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
@@ -11,6 +12,67 @@ import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
+
+/*
+  Brand faces — self-hosted at build time by next/font.
+
+  These were previously DECLARED in globals.css (--sans: 'Geist Variable',
+  --display: 'Fraunces Variable') but never actually delivered: no @font-face
+  rule was served, no font file existed in the repo, next/font was unused, and
+  neither face is installed on a typical machine. Every visitor therefore read
+  the site in whatever system serif/sans their OS provided — Times New Roman on
+  Windows, Iowan Old Style or Palatino on macOS — so the brand typography was
+  neither what was intended nor consistent between visitors.
+
+  next/font/google downloads the files at BUILD time and serves them from our
+  own origin, so there is no runtime request to Google, no third-party origin
+  added to the CSP, and no shift on a slow connection.
+
+  display:'swap' shows the fallback immediately and swaps when the real face
+  arrives, so text is never invisible. The `fallback` arrays mirror the previous
+  stacks exactly, and adjustFontFallback (on by default) sizes the fallback to
+  match, which keeps the swap from moving layout.
+
+  `variable` exposes each face as a CSS custom property that the tokens in
+  globals.css reference — the token layer stays the single source of truth and
+  no component CSS has to change.
+*/
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  axes: ['SOFT', 'WONK', 'opsz'],
+  fallback: ['Iowan Old Style', 'Palatino Linotype', 'Times New Roman', 'serif'],
+});
+
+const geist = Geist({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+  fallback: [
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'Segoe UI',
+    'Arial',
+    'Helvetica',
+    'sans-serif',
+  ],
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
+  fallback: [
+    'ui-monospace',
+    'SF Mono',
+    'Cascadia Code',
+    'Source Code Pro',
+    'Menlo',
+    'Consolas',
+    'monospace',
+  ],
+});
 import {
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
@@ -106,7 +168,11 @@ export default function RootLayout({
   // localStorage → prefers-color-scheme), which runs before first paint → no
   // FOUC AND identical server HTML for every user → page can be ISR-cached.
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${fraunces.variable} ${geist.variable} ${geistMono.variable}`}
+    >
       <head>
         {/* Set js-ready before CSS paints so [data-reveal] hidden state
             only applies when JS is active — prevents invisible content

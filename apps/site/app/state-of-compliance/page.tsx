@@ -541,7 +541,7 @@ export default function StateOfCompliancePage() {
             doesn&rsquo;t have a tool to verify its own output — we do. The same
             engine that scores M3 scores designesy.org (self-score:{' '}
             <strong>{SELF_SCORE.toFixed(1)}% / {SELF_GRADE}</strong>), in
-            public, with the same 40 checks. Transparency earns trust.
+            public, with the same {ENGINE_CHECK_COUNT} checks. Transparency earns trust.
           </p>
         </section>
 

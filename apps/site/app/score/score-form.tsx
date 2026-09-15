@@ -12,6 +12,7 @@ import {
   type ScoreHistoryEntry,
 } from '../lib/score-history';
 import { LottieHint, LottieTip } from '../lib/lottie-hint';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 
@@ -1310,7 +1311,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 autoCorrect="off"
                 spellCheck={false}
                 className="score-search-input"
-                placeholder="Search 40 verification checks…"
+                placeholder={`Search ${ENGINE_CHECK_COUNT} verification checks…`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -1503,7 +1504,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
-            extract design tokens, and evaluate 40 verification checks against the Designesy
+            extract design tokens, and evaluate ${ENGINE_CHECK_COUNT} verification checks against the Designesy
             contract v0.4.0. Real-time. No login required.
           </p>
         </div>
