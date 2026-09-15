@@ -157,9 +157,13 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             </nav>
             <div className="sense-toggles" role="group" aria-label="Sensory feedback">
               <SoundToggle />
-              <span className="desktop-only">
-                <HapticsToggle />
-              </span>
+              {/* No .desktop-only wrapper. Haptics needs vibration hardware,
+                  which lives on phones and tablets — the wrapper hid this
+                  toggle on exactly the devices that can feel it while showing
+                  it on desktops that cannot. The component gates itself on
+                  real capability now (see haptics-engine detectNativeSupport),
+                  so it renders only where it can actually do something. */}
+              <HapticsToggle />
             </div>
             <CommandPalette />
             <ThemeToggle />

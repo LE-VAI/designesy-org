@@ -330,8 +330,34 @@ function titleFromHref(href: string): string {
     .join(' ');
 }
 
+/**
+ * Modifier glyph for the visible shortcut badge.
+ *
+ * The key handler accepts `metaKey || ctrlKey` and the button's aria-label and
+ * aria-keyshortcuts already name Control+K, so the accessible surface was
+ * correct. The RENDERED badge was hardcoded to the Mac Command glyph, which is
+ * a key that does not exist on a Windows or Linux keyboard — the badge told
+ * those visitors to press a key they cannot press.
+ *
+ * Apple platforms get the Command glyph; everything else gets "Ctrl". Resolved
+ * after mount because the platform is not known during SSR, and a wrong glyph
+ * for one frame is worse than none — so it renders the neutral label first.
+ */
+function useModifierLabel(): string {
+  const [label, setLabel] = useState('Ctrl');
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent || '';
+    // /Mac|iPhone|iPad|iPod/ covers Apple desktop and mobile (iPadOS reports
+    // as Macintosh on desktop-class Safari); everything else is Ctrl.
+    if (/Mac|iPhone|iPad|iPod/.test(ua)) setLabel('⌘');
+  }, []);
+  return label;
+}
+
 export function CommandPalette() {
   const router = useRouter();
+  const modLabel = useModifierLabel();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -686,7 +712,7 @@ export function CommandPalette() {
         </svg>
         <span className="cmdk-trigger-label">Find</span>
         <kbd className="cmdk-trigger-kbd" aria-hidden="true">
-          <span className="cmdk-kbd-mod">⌘</span>K
+          <span className="cmdk-kbd-mod">{modLabel}</span>K
         </kbd>
       </button>
 
