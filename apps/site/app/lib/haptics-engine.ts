@@ -96,11 +96,36 @@ let supportKnown = false;
 let supported = false;
 let loadPromise: Promise<void> | null = null;
 
+/**
+ * Can this device actually deliver vibration?
+ *
+ * The previous check was `typeof navigator.vibrate === 'function'` alone. That
+ * is a necessary condition, not a sufficient one: desktop Chrome and Firefox
+ * expose the Vibration API even though no desktop ships vibration hardware, so
+ * the check returned true on machines that can never vibrate. The UI then
+ * rendered a haptics toggle on desktop (where enabling it did nothing), while
+ * `.desktop-only` hid that same toggle on mobile — the one place vibration is
+ * real. A control that promises a sensation it cannot deliver, shown precisely
+ * where it cannot be delivered.
+ *
+ * MDN is explicit that vibrate() "pulses the vibration hardware on the device,
+ * if such hardware exists. If the device doesn't support vibration, this method
+ * has no effect." So capability requires BOTH the API and a touch device that
+ * can plausibly carry a vibration motor.
+ *
+ * maxTouchPoints is the discriminator: it is 0 on a desktop and >=1 on phones
+ * and tablets, and unlike a pointer/hover media query it is not affected by a
+ * touchscreen laptop's hybrid input. Devices with a touchscreen but no motor
+ * (some convertibles) will still show the toggle — that is the honest limit of
+ * what the web platform exposes, and it is strictly better than showing it on
+ * every desktop.
+ */
 function detectNativeSupport(): boolean {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
   }
-  return typeof navigator.vibrate === 'function';
+  if (typeof navigator.vibrate !== 'function') return false;
+  return (navigator.maxTouchPoints ?? 0) > 0;
 }
 
 async function ensureLib(): Promise<void> {

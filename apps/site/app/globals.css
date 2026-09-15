@@ -9485,6 +9485,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 @media (max-width: 380px) {
+  /* Narrow phones (iPhone SE 1st gen, Galaxy Fold cover screen).
+     Five 44px topbar controls plus the wordmark do not fit here: measured at
+     320px the cluster overlaps the wordmark by ~3px. Haptics is the one control
+     that is safe to drop at this width — it is a preference, not a destination,
+     and the sound toggle beside it still covers the sensory-feedback group.
+     Above this breakpoint all five fit with a comfortable gap (18px at 375,
+     33px at 390), so this is the only width where anything is hidden. */
+  .haptics-toggle {
+    display: none;
+  }
+
   .score-input-card {
     padding: var(--space-12);
   }
