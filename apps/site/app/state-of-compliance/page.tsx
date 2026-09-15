@@ -45,7 +45,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'State of Design Compliance',
   description:
-    'The first deterministic report on design-system contract compliance across the web. 30 sites scored against a 40-check engine. Material 3 scores 59/F. Only 1 site passes. No surveys, no votes — computed scores.',
+    `The first deterministic report on design-system contract compliance across the web. 30 sites scored against a ${ENGINE_CHECK_COUNT}-check engine. Material 3 scores 59/F. Only 1 site passes. No surveys, no votes — computed scores.`,
   path: '/state-of-compliance',
   ogTitle: 'State of Design Compliance · Designesy',
   ogDescription:
