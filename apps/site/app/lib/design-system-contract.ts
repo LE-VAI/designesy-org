@@ -397,6 +397,35 @@ export const designSystemContract = {
       value: 'linear-gradient(135deg, var(--signal-light), #6b8aff 130%)',
       role: 'Accent gradient (borders/focus only)',
     },
+    /* Ambient-field family — deliberately separate from the signal family.
+       The field paints thousands of dots across the whole viewport, so when it
+       borrowed --signal/--signal-light it competed with the buttons, links, and
+       focus rings those tokens exist for, and the accent stopped being
+       parsimonious. These tokens let the field carry ambient texture without
+       spending the accent budget. Dark keeps the bright palette (additive blue
+       on near-black reads as depth); light carries a quieter, de-saturated one
+       at reduced ink weight, because the same alpha that whispers on near-black
+       is the loudest element on near-white. */
+    field_dot_1: {
+      token: '--field-dot-1',
+      value: '#0133cb · light: #4a6ad4',
+      role: 'Ambient field dot — primary hue',
+    },
+    field_dot_2: {
+      token: '--field-dot-2',
+      value: '#3358e8 · light: #7b93e0',
+      role: 'Ambient field dot — secondary hue',
+    },
+    field_dot_3: {
+      token: '--field-dot-3',
+      value: '#5d7bff · light: #a3b4ea',
+      role: 'Ambient field dot — tertiary hue (bright variant derived from it)',
+    },
+    field_alpha: {
+      token: '--field-alpha',
+      value: '1 · light: 0.45',
+      role: 'Ambient-field ink multiplier — the theme lever for field weight; density, motion, and cursor dwell are unaffected',
+    },
   },
   shadows: {
     sm: {
