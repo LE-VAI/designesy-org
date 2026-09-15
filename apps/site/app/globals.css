@@ -253,6 +253,42 @@
   --space-144: 9rem;          /* 144px */
 }
 
+/* --- read-along host (bimodal prose) --------------------------------------
+   Host rules for the <read-along> custom element. Kept in globals.css rather
+   than a component stylesheet because the element renders on first paint and
+   must be styled before its definition loads.
+
+   display:block is load-bearing: the element is inline-level before upgrade and
+   block after, so without this the browser reserves an inline box and the
+   upgrade to block would shift the page (CLS).
+
+   The two --ra-* tokens are the component's documented theming hooks. They are
+   set from the site's own signal family so the highlight is brand blue rather
+   than the package's hardcoded rgb() fallbacks — those fallbacks are never
+   declared in a :root block, so they cannot enter the scored token surface, but
+   leaving brand color as an unused literal is still a drift surface.
+
+   ::highlight() accepts only color / background-color / text-decoration /
+   text-shadow — no border, padding, or radius. The values stay plain rgb()
+   because exotic color functions can be dropped silently by a hostile engine,
+   and an invisible highlight is worse than none. */
+read-along {
+  display: block;
+}
+
+read-along {
+  /* Plain rgb() on purpose. The package documents that ::highlight() silently
+     DROPS a value it cannot parse, and an invisible highlight is worse than no
+     highlight API — so color-mix()/oklab are deliberately avoided here even
+     though the rest of the site uses them. These two literals ARE the site's
+     brand: rgb(1 51 203) is --signal and rgb(51 88 232) is --signal-light,
+     both identical in light and dark, so no theme branch is needed. The values
+     are stated numerically because var() cannot be composed with an alpha
+     channel in a way ::highlight() is guaranteed to parse. */
+  --ra-highlight: rgb(1 51 203 / 0.42);
+  --ra-accent: rgb(51 88 232);
+}
+
 /* --- Light theme — [data-theme="light"] ---
    Same brand, re-lit. OKLCH-mirrored lightness values with slight chroma
    reduction (light surfaces carry less saturation before they look neon).

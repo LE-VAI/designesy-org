@@ -16,6 +16,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
+import { ReadAlong } from '../lib/read-along';
 import { Footer } from '../lib/footer';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
@@ -581,7 +582,14 @@ export default function MethodologyPage() {
 
         <section className="doctrine-section fade-up methodology-section" id="scoring-math">
           <h2 className="doctrine-heading">Scoring math</h2>
-          <div className="methodology-prose">
+          {/* Bimodal reading on the opening prose block. Scoped to one block
+              deliberately: the site's first read-along surface should be small
+              enough to judge, not a page-wide change. The component renders as
+              plain HTML before its module loads, so the prose reads normally
+              with JS disabled, and nothing autoplays — the reader starts
+              speech themselves (WCAG 1.4.2, and required for iOS). */}
+          <ReadAlong lang="en">
+            <div className="methodology-prose">
             <p>
               The engine fetches the target URL&rsquo;s HTML and all linked CSS,
               parses <code>:root</code> custom properties, and runs{' '}
@@ -603,7 +611,8 @@ export default function MethodologyPage() {
               elements the check targets (no <code>/DESIGN.md</code>, no buttons,
               no anchors, no tokens).
             </p>
-          </div>
+            </div>
+          </ReadAlong>
           <div className="methodology-formula">
             <span className="formula-comment"># Per-check weight = category weight / checks in that category</span><br />
             checkWeight = CATEGORY_WEIGHTS[category] / count(scored checks in category)<br /><br />
