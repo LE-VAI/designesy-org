@@ -11,6 +11,27 @@
 //    global `headers()` (which IS ISR-safe — it applies to the route, not
 //    per-request HTML). We do not duplicate them here.
 //
+// ALGORITHM: fixedWindow, chosen for COMMAND COST not for precision.
+//
+// The limiters were slidingWindow until 2026-09-16, when the Upstash free tier's
+// 500,000 monthly command allowance was exhausted and rate limiting silently
+// stopped on all nine guarded routes. Measured in the console: 506,000 commands,
+// of which 317,125 were WRITES against 188,693 reads (63:37). That write-heavy
+// signature is sliding window's — it maintains a sorted set, issuing ZINCRBY plus
+// INCRBY plus PEXPIRE per check. Upstash's own docs say sliding window "results in
+// large number of commands in Redis" and recommend fixed window "to keep the
+// number of commands low."
+//
+// fixedWindow trades a little precision for roughly half the commands: a caller
+// can burst across a window boundary (two windows filled back to back). For abuse
+// protection that is an acceptable trade — the limits are per-minute and per-hour
+// ceilings on expensive endpoints, not billing meters. Halving the burn is what
+// keeps the protection alive inside the free tier instead of being switched off
+// by it, which is strictly worse protection than a slightly imprecise limiter.
+//
+// If precision is ever needed more than cost, slidingWindow is one word away —
+// but check the command budget first, because that is what broke.
+//
 // Rate limiting uses Upstash Redis (@upstash/ratelimit) — a distributed
 // store that persists across serverless instances. The prior in-memory Map
 // rate limiters in each route reset on every cold start and differed per
@@ -49,7 +70,7 @@ const limiters = new Map<string, Ratelimit | null>();
 
 function getLimiter(
   prefix: string,
-  window: ReturnType<typeof Ratelimit.slidingWindow>,
+  window: ReturnType<typeof Ratelimit.fixedWindow>,
 ): Ratelimit | null {
   if (limiters.has(prefix)) return limiters.get(prefix)!;
   const limiter = createLimiter(prefix, window);
@@ -57,12 +78,12 @@ function getLimiter(
   return limiter;
 }
 
-// `Ratelimit.slidingWindow()` returns an `Algorithm<RegionContext>` — the
+// `Ratelimit.fixedWindow()` returns an `Algorithm<RegionContext>` — the
 // type isn't exported, so we use ReturnType to stay type-safe without
 // reaching into internals.
 function createLimiter(
   prefix: string,
-  limiter: ReturnType<typeof Ratelimit.slidingWindow>,
+  limiter: ReturnType<typeof Ratelimit.fixedWindow>,
 ): Ratelimit | null {
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -183,19 +204,19 @@ async function checkRateLimit(
 const API_LIMITERS: Array<{
   pattern: string;
   prefix: string;
-  window: ReturnType<typeof Ratelimit.slidingWindow>;
+  window: ReturnType<typeof Ratelimit.fixedWindow>;
 }> = [
   // Burst-capable endpoints — per-minute windows
-  { pattern: '/api/score/audit', prefix: 'audit', window: Ratelimit.slidingWindow(20, '1 h') },
-  { pattern: '/api/score', prefix: 'score', window: Ratelimit.slidingWindow(100, '60 s') },
-  { pattern: '/api/mcp', prefix: 'mcp', window: Ratelimit.slidingWindow(30, '60 s') },
+  { pattern: '/api/score/audit', prefix: 'audit', window: Ratelimit.fixedWindow(20, '1 h') },
+  { pattern: '/api/score', prefix: 'score', window: Ratelimit.fixedWindow(100, '60 s') },
+  { pattern: '/api/mcp', prefix: 'mcp', window: Ratelimit.fixedWindow(30, '60 s') },
   // Expensive / fetch-amplified endpoints — hourly windows
-  { pattern: '/api/report', prefix: 'report', window: Ratelimit.slidingWindow(20, '1 h') },
-  { pattern: '/api/compare', prefix: 'compare', window: Ratelimit.slidingWindow(30, '1 h') },
-  { pattern: '/api/drift', prefix: 'drift', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/guardrails', prefix: 'guardrails', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/monitor', prefix: 'monitor', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/readiness', prefix: 'readiness', window: Ratelimit.slidingWindow(50, '1 h') },
+  { pattern: '/api/report', prefix: 'report', window: Ratelimit.fixedWindow(20, '1 h') },
+  { pattern: '/api/compare', prefix: 'compare', window: Ratelimit.fixedWindow(30, '1 h') },
+  { pattern: '/api/drift', prefix: 'drift', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/guardrails', prefix: 'guardrails', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/monitor', prefix: 'monitor', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/readiness', prefix: 'readiness', window: Ratelimit.fixedWindow(50, '1 h') },
 ];
 
 // ── Middleware (async — Next.js supports async middleware) ──────────────────
