@@ -123,8 +123,8 @@
   --duration-slow: 400ms;    /* panel open, skeleton reveal */
 
   /* Typography tokens — hybrid system (2026 standard for trust-products).
-     --sans: Geist Variable (Vercel's house font — "deliberately set, not
-       defaulted"). System fonts cover fallback (no web font dependency).
+     --sans: Schibsted Grotesk (a newsroom-commissioned grotesque,
+     drawn for sustained reading — replaced Geist 2026-09-16).
      --serif: Fraunces Variable (editorial authority for headlines — the
        "we verify design" signal). Optical-size + soft axes for dark-mode
        tuning.
