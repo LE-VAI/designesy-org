@@ -845,6 +845,36 @@ function checkHeadingHierarchy(html: string): CheckResult {
 
 // v26 — Font family count ≤3 (design-auditor, Typography Master).
 // Counts distinct font-family declarations. >3 = inconsistency signal.
+/**
+ * Resolve a family token to a real typeface name, following the alias chain.
+ *
+ * One level is not enough. The site's stack is two hops deep:
+ *   --sans       -> var(--font-sans), -apple-system, ...
+ *   --font-sans  -> 'Geist', 'Geist Fallback', ...     (injected by next/font)
+ * so resolving once yields the literal string "var(--font-sans)", which then
+ * counts as its OWN family alongside the raw `geist` name that next/font also
+ * emits — double-counting one typeface and failing the check.
+ *
+ * Follows up to `maxHops` links and normalizes the result. Returns null when the
+ * chain does not terminate in a name (a cycle, or an unknown token), so the
+ * caller can skip rather than attribute a family it cannot identify.
+ */
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[ref[1]];
+  }
+  return null;
+}
+
+
 function checkFontFamilyCount(
   css: string,
   tokens: Record<string, string> = {},
@@ -863,9 +893,9 @@ function checkFontFamilyCount(
     // site and failed a page that uses exactly three typefaces.
     if (stack.startsWith('var(')) {
       const ref = stack.match(/var\(\s*--([\w-]+)/);
-      const raw = ref ? tokens[ref[1]] : undefined;
-      if (!raw) continue; // unresolvable alias — cannot attribute a family
-      stack = raw.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+      const resolved = ref ? resolveFamilyToken(tokens, ref[1]) : null;
+      if (!resolved) continue; // unresolvable alias — cannot attribute a family
+      stack = resolved;
       if (generic.includes(stack)) continue;
     }
     // next/font emits a synthetic metric-matched fallback face per family
