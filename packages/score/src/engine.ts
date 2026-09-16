@@ -845,16 +845,32 @@ function checkHeadingHierarchy(html: string): CheckResult {
 
 // v26 — Font family count ≤3 (design-auditor, Typography Master).
 // Counts distinct font-family declarations. >3 = inconsistency signal.
-function checkFontFamilyCount(css: string): CheckResult {
+function checkFontFamilyCount(
+  css: string,
+  tokens: Record<string, string> = {},
+): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
   let m;
   while ((m = re.exec(css)) !== null) {
     // Normalize: strip quotes, take first family in a stack, lowercase.
-    const stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    let stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     // Skip generic keywords that shouldn't count as "a family choice."
     const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
     if (generic.includes(stack)) continue;
+    // A var() alias REFERENCES a family token; it is not another family. Counting
+    // the spelling rather than the face inflated this check from 3 to 9 on the
+    // site and failed a page that uses exactly three typefaces.
+    if (stack.startsWith('var(')) {
+      const ref = stack.match(/var\(\s*--([\w-]+)/);
+      const raw = ref ? tokens[ref[1]] : undefined;
+      if (!raw) continue; // unresolvable alias — cannot attribute a family
+      stack = raw.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+      if (generic.includes(stack)) continue;
+    }
+    // next/font emits a synthetic metric-matched fallback face per family
+    // ("Geist Fallback"). Same family, not an extra typeface choice.
+    if (/\sfallback$/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -1399,7 +1415,16 @@ function checkButtonTextVerb(html: string): CheckResult {
   // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
   const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
-  const TEXT_SHORTCUT_RE = /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)\s*\+.*$/i;
+  // The `+` is optional and the key may be fused directly to the modifier
+  // ("CtrlK"), because the site's badge is platform-aware and renders "Ctrl"
+  // with no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived
+  // and v38 read the shortcut as part of the verb.
+  //
+  // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
+  // with no space between). A space separates a real word: "Alt text" is a
+  // label, not a shortcut, and must not be eaten.
+  const TEXT_SHORTCUT_RE =
+    /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
@@ -1804,7 +1829,7 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
     checkSkipInk(css),
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
-    checkFontFamilyCount(css),
+    checkFontFamilyCount(css, tokens),
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
