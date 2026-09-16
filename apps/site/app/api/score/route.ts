@@ -834,6 +834,35 @@ function checkHeadingHierarchy(html: string): CheckResult {
 //
 // `tokens` is the :root custom-property table, used to resolve var() aliases to
 // the family they actually reference — see the alias note in the loop.
+/**
+ * Resolve a family token to a real typeface name, following the alias chain.
+ *
+ * One level is not enough. The site's stack is two hops deep:
+ *   --sans       -> var(--font-sans), -apple-system, ...
+ *   --font-sans  -> 'Geist', 'Geist Fallback', ...     (injected by next/font)
+ * so resolving once yields the literal string "var(--font-sans)", which then
+ * counts as its OWN family alongside the raw `geist` name that next/font also
+ * emits — double-counting one typeface and failing the check.
+ *
+ * Follows up to `maxHops` links and normalizes the result. Returns null when the
+ * chain does not terminate in a name (a cycle, or an unknown token), so the
+ * caller can skip rather than attribute a family it cannot identify.
+ */
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[ref[1]];
+  }
+  return null;
+}
+
 function checkFontFamilyCount(css: string, tokens: Record<string, string>): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
@@ -852,10 +881,7 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
     // the custom-property table so the count reflects faces, not spellings.
     if (stack.startsWith('var(')) {
       const ref = stack.match(/var\(\s*--([\w-]+)/);
-      const raw = ref ? tokens[ref[1]] : undefined;
-      const resolved = raw
-        ? raw.split(',')[0].trim().replace(/["']/g, '').toLowerCase()
-        : null;
+      const resolved = ref ? resolveFamilyToken(tokens, ref[1]) : null;
       if (resolved) {
         stack = resolved;
         if (generic.includes(stack)) continue;
