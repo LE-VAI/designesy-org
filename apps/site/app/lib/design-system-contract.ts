@@ -720,7 +720,7 @@ export const designSystemContract = {
         token: '--sans',
         value:
           "var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
-        role: 'Primary UI and body stack — Geist, self-hosted at build time via next/font (--font-sans). System fonts cover fallback.',
+        role: "Primary UI and body stack — Schibsted Grotesk, self-hosted at build time via next/font (--font-sans). A newsroom-commissioned grotesque drawn for sustained reading, chosen to share Fraunces's editorial register. Replaced Geist 2026-09-16 (anti-slop rule S1 flags geist as an overused family). System fonts cover fallback.",
       },
       serif: {
         token: '--serif',
@@ -737,10 +737,10 @@ export const designSystemContract = {
         token: '--mono',
         value:
           "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
-        role: 'Mono stack for check IDs, score readouts, token names — Geist Mono, self-hosted via next/font (--font-mono)',
+        role: 'Mono stack for check IDs, score readouts, token names — Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face.',
       },
     },
-    body: '16px / 1.55, Geist Variable (Inter fallback for CJK)',
+    body: '16px / 1.55, Schibsted Grotesk (system sans fallback for other scripts)',
     headings: 'Fraunces Variable, weight 700, line-height 1.08, letter-spacing -0.02em',
     hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
     eyebrows:

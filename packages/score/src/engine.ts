@@ -850,7 +850,7 @@ function checkHeadingHierarchy(html: string): CheckResult {
  *
  * One level is not enough. The site's stack is two hops deep:
  *   --sans       -> var(--font-sans), -apple-system, ...
- *   --font-sans  -> 'Geist', 'Geist Fallback', ...     (injected by next/font)
+ *   --font-sans  -> 'Schibsted Grotesk', 'Schibsted Grotesk Fallback', ...  (next/font)
  * so resolving once yields the literal string "var(--font-sans)", which then
  * counts as its OWN family alongside the raw `geist` name that next/font also
  * emits — double-counting one typeface and failing the check.
