@@ -83,7 +83,17 @@ function createLimiter(
       redis,
       limiter,
       prefix: `designesy:${prefix}`,
-      analytics: true,
+      // analytics: false — deliberately.
+      //
+      // With analytics on, the docs state "every time we call ratelimit.limit(),
+      // analytics will be sent to the Redis database" — an extra write per
+      // guarded request, on top of the limit check itself. That multiplier sits
+      // directly on the monthly command quota, and on 2026-09-16 the free tier's
+      // quota ran out (ERR max requests limit exceeded, Limit 500000, Usage
+      // 500002), which silently disabled rate limiting on all nine guarded
+      // routes. The dashboard's analytics charts are not worth spending the
+      // protection's own budget on; the limiter should be as cheap as possible.
+      analytics: false,
     });
   } catch (err) {
     console.error(
