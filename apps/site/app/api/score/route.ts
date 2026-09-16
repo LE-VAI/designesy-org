@@ -831,16 +831,44 @@ function checkHeadingHierarchy(html: string): CheckResult {
 
 // v26 — Font family count ≤3 (design-auditor, Typography Master).
 // Counts distinct font-family declarations. >3 = inconsistency signal.
-function checkFontFamilyCount(css: string): CheckResult {
+//
+// `tokens` is the :root custom-property table, used to resolve var() aliases to
+// the family they actually reference — see the alias note in the loop.
+function checkFontFamilyCount(css: string, tokens: Record<string, string>): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
   let m;
   while ((m = re.exec(css)) !== null) {
     // Normalize: strip quotes, take first family in a stack, lowercase.
-    const stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    let stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     // Skip generic keywords that shouldn't count as "a family choice."
     const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
     if (generic.includes(stack)) continue;
+    // A var() alias is a REFERENCE to a family token, not another family. The
+    // site declares three stacks (--sans/--display/--mono); every component that
+    // writes `font-family: var(--mono)` is choosing the SAME family, but counted
+    // as a distinct name it inflated this check from 3 to 9 on the site and
+    // failed a page that genuinely uses three faces. Resolve the alias through
+    // the custom-property table so the count reflects faces, not spellings.
+    if (stack.startsWith('var(')) {
+      const ref = stack.match(/var\(\s*--([\w-]+)/);
+      const raw = ref ? tokens[ref[1]] : undefined;
+      const resolved = raw
+        ? raw.split(',')[0].trim().replace(/["']/g, '').toLowerCase()
+        : null;
+      if (resolved) {
+        stack = resolved;
+        if (generic.includes(stack)) continue;
+      } else {
+        continue; // unresolvable alias — cannot attribute it to a family
+      }
+    }
+    // next/font generates a synthetic metric-matched fallback face per family
+    // ("Geist Fallback", "Fraunces Fallback") and applies it via font-family in
+    // the adjusted @font-face. Those are not additional typeface choices — they
+    // are the same family's fallback metrics — so they must not count as
+    // palette drift.
+    if (/\sfallback$/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -1601,7 +1629,16 @@ function checkButtonTextVerb(html: string): CheckResult {
   // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
   const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
-  const TEXT_SHORTCUT_RE = /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)\s*\+.*$/i;
+  // The `+` is optional and the key may be fused directly to the modifier
+  // ("CtrlK"), because the badge is now platform-aware and renders "Ctrl" with
+  // no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived and
+  // v38 read the shortcut as part of the verb.
+  //
+  // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
+  // with no space between). A space separates a real word: "Alt text" is a
+  // label, not a shortcut, and must not be eaten.
+  const TEXT_SHORTCUT_RE =
+    /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
@@ -1988,7 +2025,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkSkipInk(css),
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
-    checkFontFamilyCount(css),
+    checkFontFamilyCount(css, tokens),
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
