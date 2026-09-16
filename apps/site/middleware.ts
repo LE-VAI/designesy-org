@@ -99,12 +99,15 @@ function createLimiter(
 // Returns a 429 NextResponse if rate limited, or null if OK (caller continues
 // to the route handler).
 
+type LimiterOutcome = 'active' | 'degraded' | 'inactive';
+
 async function checkRateLimit(
   request: NextRequest,
   limiter: Ratelimit | null,
   identifier: string,
-): Promise<NextResponse | null> {
-  if (!limiter) return null; // no Upstash configured → skip
+): Promise<{ blocked: NextResponse | null; outcome: LimiterOutcome }> {
+  // 'inactive' — no limiter object at all (env vars missing / construction threw)
+  if (!limiter) return { blocked: null, outcome: 'inactive' };
 
   // Next.js 15 removed `request.ip` from NextRequest. Vercel sets the
   // `x-forwarded-for` and `x-real-ip` headers on every edge request — both
@@ -137,7 +140,10 @@ async function checkRateLimit(
       `[middleware] rate limiter unavailable for "${identifier}" — failing open:`,
       err instanceof Error ? err.message : String(err),
     );
-    return null;
+    // 'degraded' — the limiter EXISTS but its backend did not answer. This is
+    // the state that must not be confused with a healthy one: requests are being
+    // served with NO rate limiting while every config check looks correct.
+    return { blocked: null, outcome: 'degraded' };
   }
 
   const { success, limit, remaining, reset } = decision;
@@ -152,10 +158,10 @@ async function checkRateLimit(
     res.headers.set('RateLimit-Remaining', '0');
     res.headers.set('RateLimit-Reset', Math.ceil(reset / 1000).toString());
     res.headers.set('Retry-After', Math.ceil((reset - Date.now()) / 1000).toString());
-    return res;
+    return { blocked: res, outcome: 'active' };
   }
 
-  return null;
+  return { blocked: null, outcome: 'active' };
 }
 
 // ── Route → limiter mapping ─────────────────────────────────────────────────
@@ -191,7 +197,7 @@ export async function middleware(request: NextRequest) {
   for (const route of API_LIMITERS) {
     if (pathname.startsWith(route.pattern)) {
       const limiter = getLimiter(route.prefix, route.window);
-      const blocked = await checkRateLimit(request, limiter, route.prefix);
+      const { blocked, outcome } = await checkRateLimit(request, limiter, route.prefix);
       if (blocked) return blocked;
 
       // Announce whether the limiter actually ran. Without this, a skipped
@@ -199,9 +205,12 @@ export async function middleware(request: NextRequest) {
       // which is how this protection sat silently inactive for weeks (see the
       // file header). Two non-sensitive values:
       //   "active"   — Upstash answered; the request was counted against the limit
-      //   "inactive" — limiter is null (missing env) or Upstash failed, so the
-      //                request was served WITHOUT protection
-      const limiterState = limiter ? 'active' : 'inactive';
+      //   "degraded" — the limiter built fine but its backend did NOT answer, so
+      //                the request was served without protection. Every config
+      //                check looks correct in this state, which is why it needs
+      //                its own name.
+      //   "inactive" — no limiter object (env vars missing or construction threw)
+      const limiterState = outcome;
 
       // Scoring API gets extra headers
       if (pathname.startsWith('/api/score')) {
