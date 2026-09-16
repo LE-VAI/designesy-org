@@ -858,7 +858,7 @@ function resolveFamilyToken(
     const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     const ref = first.match(/^var\(\s*--([\w-]+)/);
     if (!ref) return first;
-    current = tokens[ref[1]];
+    current = tokens[`--${ref[1]}`];
   }
   return null;
 }
