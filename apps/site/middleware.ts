@@ -194,10 +194,20 @@ export async function middleware(request: NextRequest) {
       const blocked = await checkRateLimit(request, limiter, route.prefix);
       if (blocked) return blocked;
 
+      // Announce whether the limiter actually ran. Without this, a skipped
+      // limiter is indistinguishable from an enforcing one from the outside —
+      // which is how this protection sat silently inactive for weeks (see the
+      // file header). Two non-sensitive values:
+      //   "active"   — Upstash answered; the request was counted against the limit
+      //   "inactive" — limiter is null (missing env) or Upstash failed, so the
+      //                request was served WITHOUT protection
+      const limiterState = limiter ? 'active' : 'inactive';
+
       // Scoring API gets extra headers
       if (pathname.startsWith('/api/score')) {
         const res = NextResponse.next();
         res.headers.set('x-request-id', crypto.randomUUID());
+        res.headers.set('RateLimit-Limiter', limiterState);
         // Defense-in-depth: the route is force-dynamic already; this guarantees
         // no CDN layer ever caches a score response regardless of future config.
         res.headers.set('Cache-Control', 'no-store, max-age=0');

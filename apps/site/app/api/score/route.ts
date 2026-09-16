@@ -142,6 +142,18 @@ const SCORE_TTL_SECONDS = 60 * 60 * 24; // 24h
 // Pro Plan: lifted from 20/hr to 100/hr. Results are cached 24h via
 // unstable_cache, so the effective throughput is much higher — repeat
 // scores for the same URL hit the Data Cache and cost nothing.
+//
+// HONEST SCOPE — this limiter does NOT enforce on Vercel. `hits` is a
+// module-level Map, and Fluid compute runs many serverless instances, each with
+// its own copy. A caller's requests are spread across instances, so the counter
+// never reaches 100 on any single one. Measured 2026-09-16: 105 consecutive
+// requests from one IP, zero 429s.
+//
+// It is kept as a same-instance burst damper (it does blunt a tight loop that
+// happens to land on one instance) and as a correct limiter for a single-process
+// deployment. Real cross-instance enforcement is the Edge layer's job — see
+// middleware.ts. If you are relying on THIS for abuse protection, you are not
+// protected; verify with /api/admin/limiter-health instead.
 
 const RATE_LIMIT = 100; // requests per hour per IP (Pro Plan)
 const RATE_WINDOW = 60 * 60 * 1000;
