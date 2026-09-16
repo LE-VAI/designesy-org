@@ -70,17 +70,28 @@ function createLimiter(
   // Graceful degradation: no Upstash env vars → skip rate limiting.
   if (!redisUrl || !redisToken) return null;
 
-  const redis = new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
+  // Construction can throw too (malformed URL, bad token shape), and that throw
+  // would happen at module init rather than inside the guarded call. Return null
+  // so the caller degrades to "no rate limiting" instead of failing the request.
+  try {
+    const redis = new Redis({
+      url: redisUrl,
+      token: redisToken,
+    });
 
-  return new Ratelimit({
-    redis,
-    limiter,
-    prefix: `designesy:${prefix}`,
-    analytics: true,
-  });
+    return new Ratelimit({
+      redis,
+      limiter,
+      prefix: `designesy:${prefix}`,
+      analytics: true,
+    });
+  } catch (err) {
+    console.error(
+      `[middleware] could not construct rate limiter "${prefix}" — running without it:`,
+      err instanceof Error ? err.message : String(err),
+    );
+    return null;
+  }
 }
 
 // ── Rate limit check ────────────────────────────────────────────────────────
@@ -105,7 +116,31 @@ async function checkRateLimit(
     request.headers.get('x-real-ip')?.trim() ||
     'unknown';
 
-  const { success, limit, remaining, reset } = await limiter.limit(`${identifier}:${ip}`);
+  // FAIL OPEN on any limiter error.
+  //
+  // This await was unguarded, and a rate limiter that throws takes the whole
+  // middleware invocation down with it: the platform returns 500
+  // MIDDLEWARE_INVOCATION_FAILED for every route in RULES below, so a dead or
+  // slow Upstash instance became a full outage of the scoring API, the MCP
+  // endpoint, and every other guarded route. Observed live 2026-09-16.
+  //
+  // The module's own comment promised "graceful degradation", but only covered
+  // missing env vars — an unreachable Redis still crashed the request. Rate
+  // limiting is a protective measure, not a correctness gate: if we cannot ask
+  // the limiter, the right answer is to serve the request and lose the
+  // protection, never to refuse every caller. Logged so the outage is visible.
+  let decision: { success: boolean; limit: number; remaining: number; reset: number };
+  try {
+    decision = await limiter.limit(`${identifier}:${ip}`);
+  } catch (err) {
+    console.error(
+      `[middleware] rate limiter unavailable for "${identifier}" — failing open:`,
+      err instanceof Error ? err.message : String(err),
+    );
+    return null;
+  }
+
+  const { success, limit, remaining, reset } = decision;
 
   if (!success) {
     const res = NextResponse.json(
