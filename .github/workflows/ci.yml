@@ -148,3 +148,47 @@ jobs:
       - name: Build & test
         working-directory: packages/${{ matrix.package }}
         run: npm test
+
+  # The scoring engine's own suite, including the calibration corpus.
+  #
+  # This package was absent from the matrix above and its 37 tests never ran in
+  # CI. That mattered more than usual: the corpus is the only thing asserting
+  # engine VERDICTS (every other suite asserts shape), so without this job a
+  # regression that inverted a check would reach production unchecked.
+  #
+  # The parity test calls the live API, so it is skipped here — CI must not
+  # depend on designesy.org being up, and a network-dependent gate is one that
+  # gets deleted the first time it flakes. The corpus runs fully offline.
+  test-score-engine:
+    name: Test score engine + calibration corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: packages/score
+        run: npm install --no-audit --no-fund
+
+      - name: Build engine
+        working-directory: packages/score
+        run: npm run build
+
+      - name: Run engine tests + calibration corpus
+        working-directory: packages/score
+        env:
+          SKIP_LIVE_TESTS: '1'
+        run: npm test
+
+      - name: Verify the published corpus artifact is current
+        working-directory: packages/score
+        # Fails when the fixtures changed but corpus.json did not, so the
+        # published artifact cannot drift from the tests it describes.
+        run: node scripts/export-corpus.mjs --check
