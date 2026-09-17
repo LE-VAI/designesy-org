@@ -602,6 +602,26 @@ export default function MethodologyPage() {
               ceilings.
             </p>
             <p>
+              <strong>What is measured: the delivered response, not the rendered page.</strong>{' '}
+              The engine reads the HTML the server sends and the stylesheets it links.
+              It does not execute JavaScript and does not wait for client hydration.
+              On a site that renders in the browser, every check therefore reads{' '}
+              <em>the markup that arrives over the wire</em> rather than what a visitor
+              ends up seeing — a heading injected by JavaScript is absent to this engine,
+              and a token set at runtime is not in the CSS it fetched.
+            </p>
+            <p>
+              That is a deliberate trade. It keeps the score deterministic,
+              reproducible, cheap, and free of the timing-dependent flakiness of
+              headless rendering: the same input always yields the same output, which is
+              what makes a score comparable week to week. It also bounds the claim — a low
+              score on a client-rendered site describes its delivered HTML, not how the
+              finished page looks. Every result carries a{' '}
+              <code>receipt</code> with <code>retrieved_at</code>, <code>engine_version</code>,
+              and a <code>digest</code> of the check verdicts, so a third party can re-run
+              the same URL and confirm they get the same answer.
+            </p>
+            <p>
               <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and
               denominator (Lighthouse precedent: manual/N/A audits excluded).
               This means a site is not penalized for checks the static engine

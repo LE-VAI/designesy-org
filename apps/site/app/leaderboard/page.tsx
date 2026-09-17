@@ -537,7 +537,7 @@ export default function LeaderboardPage() {
           <div className="definition">
             <p className="definition-label">What the engine measures</p>
             <p>
-              40 deterministic checks across 14 weighted categories — token
+              42 deterministic checks across 14 weighted categories — token
               architecture, motion hygiene, accessibility primitives,
               typography discipline, reduced-motion handling, AI disclosure,
               forced-colors readiness, UX copywriting, Unicode security. Plus
@@ -549,11 +549,15 @@ export default function LeaderboardPage() {
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
             The engine measures what is <em>shipped</em>, not what is
-            documented. A design-system site can publish a rich token taxonomy
-            in storybook and still score low if the marketing surface
+            documented — and it reads the delivered markup, not the rendered
+            page. It does not execute JavaScript, so a site that builds its
+            content in the browser is judged on the shell that arrives over the
+            wire; markup a script injects after load is invisible to every
+            check. A design-system site can publish a rich token taxonomy in
+            storybook and still score low if the marketing surface
             doesn&rsquo;t expose those tokens at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
-            That gap — between documented and shipped — is exactly what the
-            leaderboard surfaces. For the full scoring methodology — every
+            That gap — between documented, delivered, and rendered — is what
+            the leaderboard surfaces. For the full scoring methodology — every
             check, its category weight, the scoring math, and the accessibility
             floor — see the <Link href="/methodology">methodology page</Link>.
           </p>
