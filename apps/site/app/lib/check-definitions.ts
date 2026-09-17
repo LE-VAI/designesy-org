@@ -128,6 +128,24 @@ export const CHECKS: CheckDefinition[] = CHECK_DEFINITIONS.map((c) => {
 export const ENGINE_CHECK_COUNT = CHECKS.length;
 
 /**
+ * Checks the engine actually scores — the `auto` ones, excluding `manual`.
+ *
+ * The distinction matters in copy. "42 checks" describes the registry; a score
+ * of 93/A is computed from fewer, because MANUAL checks are excluded from both
+ * numerator and denominator (Lighthouse precedent: manual/N/A audits are not
+ * counted against a site). Copy that quotes the total while describing the
+ * score overstates what was measured.
+ *
+ * This number existed as a hardcoded "40" on the /score/report surface and had
+ * drifted — the engine reports 39. Derived from the registry rather than
+ * written as a literal so it cannot drift again.
+ */
+export const ENGINE_SCORED_CHECK_COUNT = CHECKS.filter((c) => c.type === 'auto').length;
+
+/** Checks that need a live browser and return MANUAL in the static engine. */
+export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual').length;
+
+/**
  * Engine version — the version of the MEASUREMENT, not of the contract.
  *
  * `contractVersion` (v0.4.0) answers "which rules were applied". This answers
