@@ -76,7 +76,7 @@
   "devDependencies": {
     "@types/node": "^26.2.0",
     "postcss": "^8.4.0",
-    "stylelint": "^16.0.0",
+    "stylelint": "^17.14.0",
     "typescript": "^5.7.0"
   },
   "overrides": {
