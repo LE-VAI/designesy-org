@@ -163,7 +163,7 @@ export default function BenchmarksPage() {
         {/* ── Tool comparison table ─────────────────────────────────────────── */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The three tools</h2>
-          <div className="token-table" role="table" aria-label="Tool comparison">
+          <div className="token-table token-table--four-col" role="table" aria-label="Tool comparison">
             <div className="token-table-head" role="row">
               <span role="columnheader">Attribute</span>
               <span role="columnheader">designesy</span>

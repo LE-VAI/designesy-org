@@ -6089,6 +6089,24 @@ html:not(.js-ready) .demo-stagger-bar {
   align-items: baseline;
 }
 
+/* Four-column variant — the three-tool comparison on /benchmarks.
+   The base rule above defines three tracks, but that table carries four cells
+   (Attribute, designesy, hallmark, slop-eval). With no fourth track, the extra
+   cell wrapped onto an implicit second line: the "SLOP-EVAL" header broke onto
+   its own row and every slop-eval value dropped into the Attribute column, so
+   the table read as three columns of mislabelled data.
+   Declared as a modifier rather than widening the base rule, because every
+   other .token-table on the site (contracts, specs, design-system) is genuinely
+   three columns and would be left with a trailing empty track. */
+.token-table--four-col .token-table-head,
+.token-table--four-col .token-table-row {
+  grid-template-columns:
+    minmax(7rem, 0.8fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr);
+}
+
 .token-table-head {
   font-size: 0.7rem;
   font-weight: 600;
@@ -6127,7 +6145,13 @@ html:not(.js-ready) .demo-stagger-bar {
     display: none;
   }
 
-  .token-table-row {
+  /* The four-col modifier must be reset here too. It is declared as
+     `.token-table--four-col .token-table-row` (specificity 0,2,0) so it would
+     otherwise outrank this `.token-table-row` (0,1,0) rule even inside the
+     media query, leaving a four-track grid and a hidden header on a 390px
+     screen. Repeating the modifier keeps the collapse to one column. */
+  .token-table-row,
+  .token-table--four-col .token-table-row {
     grid-template-columns: 1fr;
     gap: var(--space-4);
     padding: var(--space-fine-85) var(--space-16);
