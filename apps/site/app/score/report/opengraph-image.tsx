@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import { renderOgCard } from '../../lib/og-card';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../../api/score/route';
 
@@ -19,7 +20,7 @@ export default async function OpenGraphImage({
     return renderOgCard({
       eyebrow: 'Score Report',
       title: 'Full verification report',
-      lede: '40 deterministic checks against the Designesy design system contract.',
+      lede: `${ENGINE_SCORED_CHECK_COUNT} deterministic checks against the Designesy design system contract.`,
       path: 'designesy.org/score/report',
     });
   }
