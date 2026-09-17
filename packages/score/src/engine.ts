@@ -634,8 +634,54 @@ function checkTabularNums(css: string): CheckResult {
 }
 
 function checkReducedMotion(css: string): CheckResult {
-  if (/@media[^{]*prefers-reduced-motion/i.test(css)) return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'PASS', detail: 'prefers-reduced-motion declared' };
-  return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'WARN', detail: 'missing prefers-reduced-motion media query' };
+  const ITEM = 'prefers-reduced-motion disables entrance and wordmark breath';
+  const CATEGORY = 'motion';
+
+  // Strip comments first. Without this, a commented-out media query — or any
+  // prose mentioning prefers-reduced-motion — satisfied the old check. The
+  // calibration corpus caught exactly that: the previous regex matched the
+  // string anywhere, including inside /* */.
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Match the media query and require the `reduce` VALUE specifically.
+  // The prior regex accepted any @media containing the feature name, so
+  // `@media (prefers-reduced-motion: NO-PREFERENCE)` — which expresses the
+  // OPPOSITE intent, opting INTO motion — passed as readily as `reduce`. That
+  // is a false PASS on the exact accessibility primitive the check exists to
+  // verify. `no-preference` is not a reduced-motion block.
+  const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
+  let match: RegExpExecArray | null;
+  let sawReduce = false;
+  let sawNoPreference = false;
+  while ((match = mqRe.exec(code)) !== null) {
+    const value = match[1].toLowerCase();
+    // Capture the block body by brace-matching from the opening brace.
+    const open = match.index + match[0].length - 1;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < code.length; i++) {
+      if (code[i] === '{') depth++;
+      else if (code[i] === '}') {
+        depth--;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    const body = close > open ? code.slice(open + 1, close).trim() : '';
+    if (value === 'no-preference') { sawNoPreference = true; continue; }
+    // A `reduce` query that declares no rules reduces nothing.
+    if (body.length > 0) sawReduce = true;
+  }
+
+  if (sawReduce) {
+    return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'prefers-reduced-motion: reduce block declares rules' };
+  }
+  if (sawNoPreference) {
+    return {
+      id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: 'a prefers-reduced-motion media query exists but uses `no-preference` — that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+    };
+  }
+  return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
@@ -1824,8 +1870,56 @@ function computeGrade(score: number): string {
 
 // ── Main scoring function ───────────────────────────────────────────────────
 
+/**
+ * Score a URL: fetch it, then run the checks.
+ *
+ * This is a thin wrapper. Everything after the fetch lives in scoreFromParts,
+ * so a fixture can be scored through the SAME code path as a live URL. That
+ * matters for the calibration corpus: a fixture scored by a separate function
+ * would prove only that the copy agrees with itself.
+ *
+ * `subject` is passed down so the two URL-dependent checks (v37's DESIGN.md
+ * probe, and scope auto-detection) can still resolve a host. A fixture passes
+ * a synthetic origin it controls; nothing is fetched from it beyond DESIGN.md,
+ * which returns SKIP when absent.
+ */
 export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<ScoreResult> {
   const { html, css } = await fetchPageResilient(targetUrl);
+  return scoreFromParts({ html, css, subject: targetUrl, scope });
+}
+
+/** Inputs for scoring a page that has already been fetched. */
+export interface ScorePartsInput {
+  html: string;
+  css: string;
+  /**
+   * The URL the parts came from. Used only for scope auto-detection and the
+   * DESIGN.md probe — never re-fetched for html/css. Defaults to a synthetic
+   * origin so an offline fixture needs no host.
+   */
+  subject?: string;
+  scope?: ScoreScope;
+  /**
+   * Skip the network-bound DESIGN.md probe (v37) entirely.
+   *
+   * Set by the fixture runner. Without it an offline corpus would emit a
+   * network round-trip per fixture and a flaky v37 verdict, so the check is
+   * pinned to SKIP with a detail naming why — never silently passed.
+   */
+  offline?: boolean;
+}
+
+/**
+ * Run the full check suite against already-fetched parts.
+ *
+ * Exported for the calibration corpus and for parity testing. Both callers
+ * must be able to reach every check without a network, or the corpus can only
+ * verify the subset that happens to be fetchable.
+ */
+export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResult> {
+  const { html, css } = input;
+  const targetUrl = input.subject || 'https://fixture.local/';
+  const scope = input.scope;
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
   const effectiveScope: ScoreScope = scope || autoDetectScope(targetUrl);
@@ -1875,7 +1969,23 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
   ];
 
   // v37 is async — added after the synchronous checks array
-  checks.push(await checkDesignMdSpec(targetUrl));
+  //
+  // It is the only check that fetches beyond the page itself (it probes
+  // /DESIGN.md on the subject host), so the offline fixture runner pins it to
+  // SKIP rather than letting a corpus depend on network timing. SKIP is the
+  // honest state: the check did not run, and it is excluded from the score
+  // exactly as it would be on a site that serves no DESIGN.md.
+  checks.push(
+    input.offline
+      ? {
+          id: 'v37',
+          item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
+          category: 'spec',
+          status: 'SKIP' as const,
+          detail: 'not probed — offline fixture run (no network); excluded from the score',
+        }
+      : await checkDesignMdSpec(targetUrl),
+  );
 
   checks = applyScopeFilter(checks, effectiveScope);
 
