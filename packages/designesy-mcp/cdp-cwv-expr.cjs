@@ -123,6 +123,15 @@ async function checkCWV(url, throttle) {
         });
 
         clearTimeout(overallTimeout);
+
+        // Release the viewport override before dropping the socket. It does not
+        // revert on disconnect (measured 2026-09-16), and the tab is closed just
+        // below — leaving it pinned would apply 412x823 to whatever runs next
+        // against the same page.
+        try {
+          await send('Emulation.clearDeviceMetricsOverride');
+        } catch (e) { /* best effort */ }
+
         ws.close();
 
         let d = { lcp: null, inp: -1, cls: 0, inpMeasured: false, lcpMeasured: false, settled: 'unknown' };
