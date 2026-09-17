@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { buildReceipt } from '../../lib/receipt';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -2752,7 +2753,22 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     };
   });
 
-  return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, scope: effectiveScope, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
+  return {
+    score, grade, pass, fail, warn, skip, manual, total,
+    scored: total - skip - manual, scope: effectiveScope, a11yFloorApplied,
+    hardFailCeilingApplied, hardFailCeilingReason, categoryScores,
+    checks: checksWithRemediation,
+    tokensExtracted: Object.keys(rawTokens).length,
+    slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences },
+    originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied },
+    // Stamped HERE, inside the uncached function, so it travels with the result
+    // through unstable_cache. Reading the clock at the response boundary would
+    // stamp a cached result with a fresh time and report a stale measurement as
+    // new — the receipt would then contradict the data it is supposed to attest
+    // to. `retrievedAt` therefore means "when this run happened", not "when
+    // this response was served"; on a cache hit the two legitimately differ.
+    retrievedAt: new Date().toISOString(),
+  };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
@@ -2796,15 +2812,32 @@ function deriveVerdict(result: ScoreResult): string {
 }
 
 /** Emission format: designesy (default, native shape — unchanged). */
-function emitDesignesy(result: ScoreResult) {
-  return { ok: true, contractVersion: 'v0.4.0', ...result };
+function emitDesignesy(result: ScoreResult, requestedUrl: string, retrievedAt: Date) {
+  // `retrievedAt` is internal plumbing — it is destructured out so the raw
+  // string does not leak into the response body alongside the structured
+  // `receipt.retrieved_at` that supersedes it.
+  const { retrievedAt: _internal, ...payload } = result;
+  return {
+    ok: true,
+    contractVersion: 'v0.4.0',
+    ...payload,
+    receipt: buildReceipt(
+      {
+        requestedUrl,
+        contractVersion: 'v0.4.0',
+        scope: result.scope,
+        checks: result.checks,
+      },
+      retrievedAt,
+    ),
+  };
 }
 
 /** Emission format: canonical review-findings.json schema (the superset). */
-function emitCanonical(url: string, result: ScoreResult) {
+function emitCanonical(url: string, result: ScoreResult, retrievedAt: Date) {
   return {
     schemaVersion: '1.0',
-    generatedAt: new Date().toISOString(),
+    generatedAt: retrievedAt.toISOString(),
     tool: {
       name: 'designesy',
       version: 'v0.4.0',
@@ -2851,6 +2884,15 @@ function emitCanonical(url: string, result: ScoreResult) {
       ),
     },
     verdict: deriveVerdict(result),
+    receipt: buildReceipt(
+      {
+        requestedUrl: url,
+        contractVersion: 'v0.4.0',
+        scope: result.scope,
+        checks: result.checks,
+      },
+      retrievedAt,
+    ),
   };
 }
 
@@ -2974,6 +3016,11 @@ export async function POST(request: Request) {
   try {
     const result = await scoreUrl(url, scope);
 
+    // The run's own timestamp, carried on the result through the cache. On a
+    // cache hit this is correctly older than now — the measurement really did
+    // happen earlier, and the receipt must say so.
+    const retrievedAt = new Date(result.retrievedAt);
+
     if (format === 'review') {
       const markdown = emitReview(url, result);
       return new Response(markdown, {
@@ -2990,7 +3037,7 @@ export async function POST(request: Request) {
     }
 
     if (format === 'canonical') {
-      return NextResponse.json(emitCanonical(url, result), {
+      return NextResponse.json(emitCanonical(url, result, retrievedAt), {
         status: 200,
         headers: { 'Cache-Control': 'no-store' },
       });
@@ -2998,7 +3045,7 @@ export async function POST(request: Request) {
 
     // default: designesy (native shape, unchanged)
     return NextResponse.json(
-      emitDesignesy(result),
+      emitDesignesy(result, url, retrievedAt),
       { status: 200, headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (e) {
