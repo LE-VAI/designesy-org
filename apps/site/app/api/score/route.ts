@@ -631,8 +631,54 @@ function checkTabularNums(css: string): CheckResult {
 }
 
 function checkReducedMotion(css: string): CheckResult {
-  if (/@media[^{]*prefers-reduced-motion/i.test(css)) return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'PASS', detail: 'prefers-reduced-motion declared' };
-  return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'WARN', detail: 'missing prefers-reduced-motion media query' };
+  const ITEM = 'prefers-reduced-motion disables entrance and wordmark breath';
+  const CATEGORY = 'motion';
+
+  // Strip comments first. Without this, a commented-out media query — or any
+  // prose mentioning prefers-reduced-motion — satisfied the old check. The
+  // calibration corpus caught exactly that: the previous regex matched the
+  // string anywhere, including inside /* */.
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Match the media query and require the `reduce` VALUE specifically.
+  // The prior regex accepted any @media containing the feature name, so
+  // `@media (prefers-reduced-motion: NO-PREFERENCE)` — which expresses the
+  // OPPOSITE intent, opting INTO motion — passed as readily as `reduce`. That
+  // is a false PASS on the exact accessibility primitive the check exists to
+  // verify. `no-preference` is not a reduced-motion block.
+  const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
+  let match: RegExpExecArray | null;
+  let sawReduce = false;
+  let sawNoPreference = false;
+  while ((match = mqRe.exec(code)) !== null) {
+    const value = match[1].toLowerCase();
+    // Capture the block body by brace-matching from the opening brace.
+    const open = match.index + match[0].length - 1;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < code.length; i++) {
+      if (code[i] === '{') depth++;
+      else if (code[i] === '}') {
+        depth--;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    const body = close > open ? code.slice(open + 1, close).trim() : '';
+    if (value === 'no-preference') { sawNoPreference = true; continue; }
+    // A `reduce` query that declares no rules reduces nothing.
+    if (body.length > 0) sawReduce = true;
+  }
+
+  if (sawReduce) {
+    return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'prefers-reduced-motion: reduce block declares rules' };
+  }
+  if (sawNoPreference) {
+    return {
+      id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: 'a prefers-reduced-motion media query exists but uses `no-preference` — that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+    };
+  }
+  return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
