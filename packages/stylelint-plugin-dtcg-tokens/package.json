@@ -79,6 +79,11 @@
     "stylelint": "^16.0.0",
     "typescript": "^5.7.0"
   },
+  "overrides": {
+    "fast-uri": "3.1.8",
+    "js-yaml": "4.3.2",
+    "colord": "2.9.7"
+  },
   "dependencies": {},
   "scripts": {
     "build": "tsc -p tsconfig.json",
