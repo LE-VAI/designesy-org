@@ -73,21 +73,33 @@ function settleWait(wsUrl, settleMs = 600, maxWaitMs = 4000) {
 
 // A single long-lived CDP session, held open for the whole run.
 //
-// Why this exists: Emulation.setDeviceMetricsOverride is scoped to the CDP
-// session that applied it. The previous design opened a throwaway session per
-// call (setViewport applied the override, then closed; evaluateOnTab opened a
-// fresh one to measure). Closing the applying session reverts the emulation,
-// so every measurement ran against the host browser window — innerWidth came
-// back as the OS-scaled window width (375 requested → 150 measured on a 2.5x
-// display) and the check reported "no overflow" at four widths the page was
-// never rendered at.
+// Measured behavior of Emulation.setDeviceMetricsOverride (Chrome 153, probed
+// 2026-09-16 in both headed and headless):
+//   - The override is TAB-SCOPED. Other tabs are unaffected, so running this
+//     against a browser with live pages does not resize them.
+//   - The override does NOT revert when the applying session closes. It
+//     persists until the tab closes or someone clears it explicitly. An earlier
+//     version of this comment claimed the opposite; that was wrong, and no code
+//     here may rely on an implicit revert. See the clear call at teardown.
+//   - A later session can still apply its own override (no lock-out).
+//
+// The previous design opened a throwaway session per call (setViewport applied
+// the override, then closed; evaluateOnTab opened a fresh one to measure) and
+// every measurement came back at the host window width — 375 requested, 150
+// measured on a 2.5x display — so the check reported "no overflow" at four
+// widths the page was never rendered at. Holding one session for the whole run
+// fixes that regardless of which of the above mechanisms was responsible.
 //
 // mobile MUST be true. With mobile:false Chrome shrinks the real browser window
 // instead of emulating, so the OS display scale factor still divides the
-// requested width. mobile:true emulates properly and yields innerWidth === width.
-// deviceScaleFactor:1 keeps CSS px 1:1 so scrollWidth/clientWidth compare in the
-// same units the CSS breakpoints use. It does NOT flip pointer/hover media
-// queries to coarse/none — desktop pointer affordances stay testable.
+// requested width (measured 2026-09-16: 1080 requested → 1065 actual, 375 → 360).
+// mobile:true yields innerWidth === width exactly. It was worth checking that
+// this does not silently switch the page into mobile layout — probed at 375 and
+// 1080, `(min-width: 1080px)`, `(pointer: fine)` and `(hover: hover)` all
+// evaluate identically under both modes, and font-size and the viewport meta are
+// unchanged, so desktop affordances stay testable. deviceScaleFactor:1 keeps CSS
+// px 1:1 so scrollWidth/clientWidth compare in the same units the CSS
+// breakpoints use.
 function openSession(wsUrl) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl);
@@ -216,6 +228,9 @@ async function checkViewportOverflow(url) {
     results.push(data);
   }
 
+  // Release the override before closing. It would not revert on its own
+  // (measured — see the openSession note), and the tab may outlive this run.
+  try { await session.send('Emulation.clearDeviceMetricsOverride', {}, 5000); } catch (e) { /* best effort */ }
   session.close();
 
   try { http.request({ host: CDP_HOST, port: CDP_PORT, path: `/json/close/${tab.id}`, method: 'PUT' }).end(); } catch (e) {}
