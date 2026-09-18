@@ -1,10 +1,14 @@
 import { driftContract } from '../../lib/drift-contract';
 
-export const dynamic = 'force-static';
+import { negotiatedResponse } from '../../lib/content-negotiation';
 
-export function GET() {
-  return Response.json(driftContract, {
-    headers: {
+export const dynamic = 'force-dynamic';
+
+export function GET(request: Request) {
+  return negotiatedResponse(driftContract, {
+    accept: request.headers.get('accept'),
+    title: 'Designesy Drift',
+    jsonHeaders: {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
       'Content-Disposition': 'inline; filename="designesy-drift-v0.1.0.json"',

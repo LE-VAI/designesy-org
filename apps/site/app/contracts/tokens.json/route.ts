@@ -1,10 +1,13 @@
 import { tokensContract } from '../../lib/tokens-contract';
+import { negotiatedResponse } from '../../lib/content-negotiation';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-export function GET() {
-  return Response.json(tokensContract, {
-    headers: {
+export function GET(request: Request) {
+  return negotiatedResponse(tokensContract, {
+    accept: request.headers.get('accept'),
+    title: 'Designesy Tokens',
+    jsonHeaders: {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
       'Content-Disposition': 'inline; filename="designesy-tokens-v0.1.0.json"',
