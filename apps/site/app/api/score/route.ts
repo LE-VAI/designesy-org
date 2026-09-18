@@ -212,7 +212,27 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
   return links;
 }
 
-async function fetchCssSingle(url: string): Promise<string> {
+/**
+ * Result of one fetch attempt.
+ *
+ * WHY THIS IS NOT A BARE STRING
+ * The previous version returned '' for every failure mode AND for a
+ * successfully-fetched empty body, so callers could not tell "the server said
+ * 403" from "the page was genuinely blank". fetchPageResilient therefore
+ * substituted a placeholder document and the engine scored THAT. Verified
+ * 2026-09-18: nytimes.com and cssdesignawards.com return 403 to our fetches,
+ * and both were scored 61.5/D as though they were real pages carrying no design
+ * tokens — the same number an empty document produces, to the decimal. A grade
+ * that cannot distinguish a blocked site from a bare one is not a grade.
+ *
+ * `ok: false` means the attempt yielded no document; `reason` says which
+ * failure it was, so the caller can report it instead of guessing.
+ */
+type FetchOutcome =
+  | { ok: true; text: string }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number };
+
+async function fetchCssSingleDetailed(url: string): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -220,16 +240,44 @@ async function fetchCssSingle(url: string): Promise<string> {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
     });
-    if (!resp.ok) return '';
-    return await resp.text();
-  } catch {
-    return '';
+    if (!resp.ok) return { ok: false, reason: 'http_error', status: resp.status };
+    const text = await resp.text();
+    if (!text || text.length <= 50) return { ok: false, reason: 'empty_body' };
+    return { ok: true, text };
+  } catch (e) {
+    const aborted = e instanceof Error && (e.name === 'AbortError' || /abort/i.test(e.message));
+    return { ok: false, reason: aborted ? 'timeout' : 'network' };
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
+/**
+ * String-returning wrapper for the CSS call sites.
+ *
+ * CSS fetch sites legitimately collapse the two failures: "no stylesheet" and
+ * "a stylesheet we could not read" both mean no token layer is available to
+ * inspect, so '' is the honest value for both. Only the HTML fetch needs the
+ * distinction, because only the HTML fetch decides whether a page exists.
+ */
+async function fetchCssSingle(url: string): Promise<string> {
+  const r = await fetchCssSingleDetailed(url);
+  return r.ok ? r.text : '';
+}
+
+/**
+ * Fetched page, or an explicit statement that there is no page.
+ *
+ * The failure branch is the point. Previously every candidate failure produced
+ * `{ html: '<html><body></body></html>', css: '' }` — a real document that the
+ * 42 checks then scored, yielding 61.5/D for a site that had blocked us. The
+ * caller now learns the fetch failed and can say so instead of inventing a grade.
+ */
+type PageOutcome =
+  | { ok: true; html: string; css: string }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
+
+async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   const parsed = new URL(targetUrl);
   const candidateUrls = [
     targetUrl,
@@ -238,17 +286,24 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
   ].filter(Boolean);
 
   let html = '';
+  // Remember WHY each candidate failed. A 403 on every candidate means the site
+  // is blocking us — a different fact from a timeout, and the caller needs to
+  // tell them apart.
+  let lastFail: (FetchOutcome & { ok: false }) | null = null;
+
   for (const candidate of candidateUrls) {
-    try {
-      html = await fetchCssSingle(candidate);
-      if (html && html.length > 50) break;
-    } catch {
-      // try next fallback
-    }
+    const outcome = await fetchCssSingleDetailed(candidate);
+    if (outcome.ok) { html = outcome.text; break; }
+    lastFail = outcome;
   }
 
   if (!html) {
-    return { html: '<html><body></body></html>', css: '' };
+    return {
+      ok: false,
+      reason: lastFail ? lastFail.reason : 'network',
+      status: lastFail && 'status' in lastFail ? lastFail.status : undefined,
+      attempted: candidateUrls,
+    };
   }
 
   const parts = extractCssLinks(html, targetUrl);
@@ -262,7 +317,7 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
     }
   }
 
-  return { html, css: cssParts.join('\n') };
+  return { ok: true, html, css: cssParts.join('\n') };
 }
 
 // ── Token extraction + normalization ────────────────────────────────────────
@@ -2122,7 +2177,51 @@ function computeGrade(score: number): string {
 }
 
 async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
-  const { html, css } = await fetchPageResilient(targetUrl);
+  const page = await fetchPageResilient(targetUrl);
+
+  // UNREACHABLE — return a result carrying NO numeric score.
+  //
+  // Why this is not just a low score: a site that blocks our fetch (403/redirect
+  // loop/timeout) is not a badly-designed site, it is an unread site. Scoring the
+  // placeholder document gave every such site an identical 61.5/D, which is a
+  // statement about our own fetch and not about their design. Callers must now
+  // handle the absence explicitly rather than render a fabricated grade.
+  //
+  // `score: null` is deliberate and load-bearing: it makes every consumer fail
+  // type-check until it decides what to show. `grade: null` likewise. The counts
+  // are zeroed rather than omitted so the response shape stays stable for
+  // existing parsers.
+  if (!page.ok) {
+    const why =
+      page.reason === 'http_error'
+        ? `the server returned HTTP ${page.status ?? 'error'} for every candidate URL`
+        : page.reason === 'timeout'
+          ? 'the request timed out'
+          : page.reason === 'empty_body'
+            ? 'the response body was empty or too small to be a page'
+            : 'the request failed at the network level';
+    return {
+      unreachable: true as const,
+      unreachableReason: page.reason,
+      unreachableDetail: `Could not read ${targetUrl} — ${why}. No score is reported: a site we cannot fetch is not a site we can grade.`,
+      attemptedUrls: page.attempted,
+      score: null,
+      grade: null,
+      pass: 0, fail: 0, warn: 0, skip: 0, manual: 0, total: 0, scored: 0,
+      scope: (scope || autoDetectScope(targetUrl)) as ScoreScope,
+      a11yFloorApplied: false,
+      hardFailCeilingApplied: false,
+      hardFailCeilingReason: null,
+      categoryScores: {},
+      checks: [] as CheckResult[],
+      tokensExtracted: 0,
+      slop: { total: 0, findings: [], convergences: null },
+      originality: { points: 0, signals: [], summary: '', slopGateApplied: false },
+      retrievedAt: new Date().toISOString(),
+    };
+  }
+
+  const { html, css } = page;
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
 

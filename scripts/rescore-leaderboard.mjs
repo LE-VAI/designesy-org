@@ -213,12 +213,34 @@ async function main() {
   console.log(`Scoring ${entries.length} sites against ${SCORE_API}...`);
   let success = 0;
   let errors = 0;
+  /** URLs the engine could not read — reported at the end, never republished. */
+  const unreachable = [];
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     try {
       console.log(`  [${i + 1}/${entries.length}] ${entry.url} ...`);
       const result = await fetchScore(entry.url);
+
+      // ── UNREACHABLE GUARD ──────────────────────────────────────────────
+      // The engine returns score:null for a target it could not read (403,
+      // redirect loop, timeout). That must NOT overwrite a previously-measured
+      // grade: doing so would replace a real reading with a statement about our
+      // own fetch, and republish it as if it were a measurement.
+      //
+      // This is the exact failure that produced the 2026-09-18 run: nytimes.com
+      // (74.7 C) and getdesy.com (73.4 C) both returned 403 and were about to be
+      // republished as 61.5 D — the score of the placeholder document the engine
+      // used to grade instead of reporting the failure.
+      if (result.score === null) {
+        unreachable.push(entry.url);
+        entry.unreachable = true;
+        // Keep the stored score and grade untouched; record why it is stale.
+        console.log(`    → UNREACHABLE (no score reported) — keeping stored ${entry.score} ${entry.grade}`);
+        continue;
+      }
+
+      entry.unreachable = false;
       entry.score = result.score;
       entry.grade = result.grade;
       entry.pass = result.pass;
@@ -228,7 +250,9 @@ async function main() {
       entry.tokens = result.tokens;
       success++;
 
-      const delta = entry.prevScore !== null ? ` (prev ${entry.prevScore}, Δ${(entry.score - entry.prevScore).toFixed(1)})` : '';
+      const delta = entry.prevScore !== null && entry.score !== null
+        ? ` (prev ${entry.prevScore}, Δ${(entry.score - entry.prevScore).toFixed(1)})`
+        : '';
       console.log(`    → ${result.score} ${result.grade}${delta}`);
     } catch (e) {
       errors++;
@@ -242,6 +266,18 @@ async function main() {
   }
 
   console.log(`\nRe-score complete: ${success} scored, ${errors} errors.`);
+
+  if (unreachable.length > 0) {
+    // Printed loudly: an unreachable site keeps its previous grade, so the
+    // operator must know these rows are stale rather than assuming the whole
+    // cohort was refreshed.
+    console.log('');
+    console.log('UNREACHABLE - stored grade kept, NOT re-measured this run:');
+    for (const u of unreachable) console.log('  - ' + u);
+    console.log('');
+    console.log('These rows are stale by design: republishing them with a score derived');
+    console.log('from an unread page would replace a measurement with a fetch failure.');
+  }
 
   // Generate the date string
   const now = new Date();

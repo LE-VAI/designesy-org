@@ -15,6 +15,10 @@ import { FIXTURES } from './corpus.mjs';
 export async function runCorpus() {
   const rows = [];
   for (const fx of FIXTURES) {
+    // fetchOnly fixtures exercise scoreUrl's fetch path, which needs the
+    // network. The offline matrix skips them; they are asserted in
+    // corpus.test.mjs instead, where a real unreachable host is used.
+    if (fx.fetchOnly) continue;
     const result = await scoreFromParts({
       html: fx.html,
       css: fx.css,

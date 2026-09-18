@@ -58,7 +58,17 @@ export interface Receipt {
    * the same URL at the same engine version and diffing:
    *   sha256(checks.map(c => `${c.id}:${c.status}`).join('\n'))
    */
-  digest: string;
+  /**
+   * sha256 over the ordered `id:status` verdict set.
+   *
+   * null when no checks ran (an unreachable target) — see
+   * digest_absent_reason. A stable hash over an empty set would verify
+   * successfully while attesting to nothing, which reads as evidence and is
+   * therefore worse than no digest at all.
+   */
+  digest: string | null;
+  /** Present only when digest is null: why there is nothing to verify. */
+  digest_absent_reason?: string;
   /** How to re-check this receipt. */
   verify: {
     method: 're-run' | 'diff';
@@ -88,6 +98,27 @@ export function verdictDigest(checks: ReadonlyArray<{ id: string; status: string
  * instead of drifting across the run.
  */
 export function buildReceipt(input: ReceiptInput, retrievedAt: Date = new Date()): Receipt {
+  // No checks means nothing was measured, so there is nothing to attest to.
+  if (input.checks.length === 0) {
+    return {
+      subject: input.requestedUrl,
+      retrieved_at: retrievedAt.toISOString(),
+      contract_version: input.contractVersion,
+      engine_version: ENGINE_VERSION,
+      scope: input.scope,
+      digest: null,
+      digest_absent_reason:
+        'the target could not be read, so no checks ran and there is no verdict set to attest to',
+      verify: {
+        method: 're-run',
+        endpoint: '/api/score',
+        instructions:
+          'This receipt carries no digest because no measurement was taken. ' +
+          'A stable hash over an empty check set would verify successfully while proving nothing. ' +
+          'Re-run once the target is reachable.',
+      },
+    };
+  }
   return {
     subject: input.requestedUrl,
     retrieved_at: retrievedAt.toISOString(),

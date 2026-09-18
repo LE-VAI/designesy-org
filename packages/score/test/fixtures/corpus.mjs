@@ -356,4 +356,28 @@ input, textarea { font-size:16px; }`,
       },
     ],
   },
+
+  // ── Unreachable-target fixtures (added 2026-09-18) ────────────────────────
+  //
+  // These do NOT use scoreFromParts — they exercise scoreUrl's fetch path, so
+  // they need a real (unreachable) host. They are deliberately few: one that
+  // must never produce a score, and one that must still produce one, so the
+  // guard cannot be "fixed" by making everything unreachable.
+
+  {
+    name: 'unreachable-nonexistent-domain',
+    referent:
+      'A domain that does not resolve. Previously scored against a placeholder empty document, which gave every blocked or broken site an identical 61.5/D.',
+    scope: 'universal',
+    // No html/css: this fixture is run through the fetch path, not scoreFromParts.
+    fetchOnly: true,
+    url: 'https://designesy-nonexistent-probe-xyz987.invalid',
+    expect: [],
+    expectUnreachable: {
+      why:
+        'REGRESSION FIXTURE for the fabricated-grade defect. A target we cannot read must return score:null, grade:null, unreachable:true, a reason, and ZERO checks — ' +
+        'never a numeric grade derived from a placeholder. Verified live 2026-09-18: nytimes.com and cssdesignawards.com return 403 to our fetches and were both being scored 61.5/D, ' +
+        'the same value an empty document produces. If this fixture ever yields a number, the engine has resumed grading pages it never read.',
+    },
+  },
 ];
