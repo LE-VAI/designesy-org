@@ -981,21 +981,69 @@ function checkInputFontFloor(css: string): CheckResult {
   return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
 }
 
-// v28 — Reading width 45-75ch (design-auditor Reading Width module).
-// Scans CSS for max-width in ch units on prose containers. 66ch ideal.
 function checkReadingWidth(css: string): CheckResult {
-  const chRe = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/gi;
-  const widths: number[] = [];
-  let m;
-  while ((m = chRe.exec(css)) !== null) {
-    widths.push(parseFloat(m[1]));
+  const ITEM = 'Reading width 45-75ch on prose containers';
+  const CATEGORY = 'cadence';
+
+  // Selectors that indicate a prose container. Matched against the selector
+  // text of a rule, not the element tree — so `p`, `.prose`, `.lede`,
+  // `.definition > p`, `.methodology-prose > p` all qualify, while `.grid`,
+  // `.token-table`, `.row`, `.doctrine-cols` do not.
+  const PROSE_SELECTOR = /(^|[\s,>+~])(p|article|blockquote|li|dd|dt|figcaption)\b|prose|lede|measure|reading|note\b|copy\b|body-text|text-block/i;
+  // Containers that must never be treated as prose even if a class name
+  // contains a prose-ish word (e.g. `.prose-grid`).
+  const STRUCTURAL_SELECTOR = /grid|table|row|col\b|flex|swatch|chip|badge|tab\b|nav\b|toolbar|chart|canvas|pre\b|code\b|kbd/i;
+
+  // Walk every rule block, capturing selector + declarations together.
+  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
+  const proseInRange: number[] = [];
+  const proseOutOfRange: number[] = [];
+  const nonProse: number[] = [];
+  let m: RegExpExecArray | null;
+
+  while ((m = ruleRe.exec(css)) !== null) {
+    const selector = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    const body = m[2];
+    // Skip at-rule preludes (`@media (...)`, `@supports (...)`) — the block
+    // body is walked on the next iteration when the inner rule is seen. A
+    // media query wrapping prose rules should not itself be classified.
+    if (selector.startsWith('@')) continue;
+
+    const widthMatch = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/i.exec(body);
+    if (!widthMatch) continue;
+    const value = parseFloat(widthMatch[1]);
+
+    const isProse = PROSE_SELECTOR.test(selector) && !STRUCTURAL_SELECTOR.test(selector);
+    if (!isProse) { nonProse.push(value); continue; }
+    if (value >= 45 && value <= 75) proseInRange.push(value);
+    else proseOutOfRange.push(value);
   }
-  if (widths.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens' };
-  const inRange = widths.filter(w => w >= 45 && w <= 75);
-  const outOfRange = widths.filter(w => w < 45 || w > 75);
-  if (inRange.length > 0 && outOfRange.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} measure(s) in 45-75ch range: ${inRange.join(', ')}ch` };
-  if (inRange.length > 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} in range, ${outOfRange.length} out: ${widths.join(', ')}ch` };
-  return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: `${widths.length} ch-measure(s) found, all outside 45-75ch: ${widths.join(', ')}ch` };
+
+  if (proseInRange.length > 0) {
+    const detail = proseOutOfRange.length > 0
+      ? `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch (also ${proseOutOfRange.length} prose rule(s) outside the band: ${proseOutOfRange.join(', ')}ch)`
+      : `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch`;
+    return { id: 'v28', item: ITEM, category: CATEGORY, status: 'PASS', detail };
+  }
+
+  if (nonProse.length > 0 && proseOutOfRange.length === 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${nonProse.length} ch-based max-width rule(s) found (${nonProse.join(', ')}ch) but none target a prose container — line length on paragraphs is unconstrained. Add the measure to your prose selectors (p, article, .prose), not to a grid or table.`,
+    };
+  }
+
+  if (proseOutOfRange.length > 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${proseOutOfRange.length} prose rule(s) found, all outside 45-75ch: ${proseOutOfRange.join(', ')}ch`,
+    };
+  }
+
+  return {
+    id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+    detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens',
+  };
 }
 
 // ── Tier 5: token-layer completeness (v29) — DSAF A1.1 wedge ────────────────
