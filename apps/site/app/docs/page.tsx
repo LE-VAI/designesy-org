@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import './docs.css';
 import { Topbar } from '../lib/topbar';
+import { DocsToc } from '../lib/docs-toc';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
@@ -75,82 +76,82 @@ const LAYERS = [
 const START_HERE = [
   {
     href: '/open',
-    title: 'Open design intelligence',
+    title: 'Browse open design intelligence',
     meta: 'Human index and machine feed of portable packages',
   },
   {
     href: '/kits/design-review',
-    title: 'Use Kit One · Design Review',
+    title: 'Run Kit One · Design Review',
     meta: 'Portable review package · human + machine export',
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract',
+    title: 'Read the design system contract',
     meta: 'Portable values, roles, verification · v0.4.0 · Poise + Takt + Cadence + Acoustics adopted',
   },
   {
     href: '/labs/poise',
-    title: 'Lab One · Poise',
+    title: 'Study Lab One · Poise',
     meta: 'How Designesy responds when someone touches it',
   },
   {
     href: '/labs/takt',
-    title: 'Lab Two · Takt',
+    title: 'Study Lab Two · Takt',
     meta: 'How an interface feels under your hands',
   },
   {
     href: '/labs/cadence',
-    title: 'Lab Three · Cadence',
+    title: 'Study Lab Three · Cadence',
     meta: 'The rhythm of text on a page',
   },
   {
     href: '/labs/acoustics',
-    title: 'Lab Four · Acoustics',
+    title: 'Study Lab Four · Acoustics',
     meta: 'Interaction sound as a token system',
   },
   {
     href: '/review/poise',
-    title: 'Field check · Poise',
+    title: 'See field check · Poise',
     meta: 'Kit One applied to Lab One · pass with notes',
   },
   {
     href: '/review/takt',
-    title: 'Field check · Takt',
+    title: 'See field check · Takt',
     meta: 'Kit One applied to Lab Two · pass with notes',
   },
   {
     href: '/review/cadence',
-    title: 'Field check · Cadence',
+    title: 'See field check · Cadence',
     meta: 'Kit One applied to Lab Three · pass with notes',
   },
   {
     href: '/review/acoustics',
-    title: 'Field check · Acoustics',
+    title: 'See field check · Acoustics',
     meta: 'Kit One applied to Lab Four · pass with notes',
   },
   {
     href: '/review/designesy-org',
-    title: 'Public surface review',
+    title: 'Review the public surface',
     meta: 'designesy.org checked against its own contract',
   },
   {
     href: '/privacy',
-    title: 'Privacy',
+    title: 'Check the privacy scope',
     meta: 'What this surface collects, what it does not, open export scope',
   },
   {
     href: '/open/handoff',
-    title: 'Open handoff pack',
+    title: 'Take the open handoff pack',
     meta: 'Share copy, agent prompt, verification paths for /open',
   },
   {
     href: '/review/keyboard',
-    title: 'Keyboard path',
+    title: 'Walk the keyboard path',
     meta: 'Site-wide skip link, tab order, focus-visible proof',
   },
   {
     href: '/contracts#design-system-contract',
-    title: 'Full contract tables',
+    title: 'Read the full contract tables',
     meta: 'Complete human contract on /contracts',
   },
 ];
@@ -190,13 +191,18 @@ export default function DocsPage() {
           </p>
         </section>
 
-        <section className="doctrine-section fade-up">
+        {/* Two-column layout: reading column + sticky on-page TOC. The header
+            sits above both so the page title spans the full width, which is
+            what keeps the first viewport calm. */}
+        <div className="docs-layout">
+          <div className="docs-content">
+        <section id="start-here" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Start here</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Orientation is useful only when it leads to live artifacts. These
             are the public engines on designesy.org today.
           </p>
-          <div className="row-stack" role="list">
+          <div className="docs-card-grid" role="list">
             {START_HERE.map((item, i) => (
               <Link
                 key={item.href}
@@ -218,7 +224,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="mission" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Mission</h2>
           <div className="definition">
             <p className="definition-label">Working sentence</p>
@@ -239,7 +245,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="quality-bar" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Quality bar</h2>
           <div className="definition">
             <p className="definition-label">Standard</p>
@@ -256,7 +262,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="operating-principles" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Operating principles</h2>
           <div className="principle-list">
             {PRINCIPLES.map((p, i) => (
@@ -274,7 +280,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="architecture" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Architecture</h2>
           <div className="doctrine-cols">
             <div>
@@ -317,7 +323,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="public-voice" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Public voice</h2>
           <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
             <p className="surface-note">
@@ -360,7 +366,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section id="declarative-voice-rule" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Declarative voice rule</h2>
           <div className="definition">
             <p className="definition-label">Contract rule · public voice</p>
@@ -386,7 +392,7 @@ export default function DocsPage() {
           contracts, labs, kits, and review — is the real system.
         </div>
 
-        <section className="doctrine-section fade-up">
+        <section id="drift-score-acknowledged" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Drift score acknowledged</h2>
           <div className="definition">
             <p className="definition-label">Honest reading of /report?url=designesy.org</p>
@@ -444,6 +450,21 @@ export default function DocsPage() {
             </p>
           </div>
         </section>
+          </div>
+
+          <DocsToc
+            items={[
+              { id: 'start-here', label: 'Start here' },
+              { id: 'mission', label: 'Mission' },
+              { id: 'quality-bar', label: 'Quality bar' },
+              { id: 'operating-principles', label: 'Operating principles' },
+              { id: 'architecture', label: 'Architecture' },
+              { id: 'public-voice', label: 'Public voice' },
+              { id: 'declarative-voice-rule', label: 'Declarative voice rule' },
+              { id: 'drift-score-acknowledged', label: 'Drift score acknowledged' },
+            ]}
+          />
+        </div>
       </main>
 
       <Footer />
