@@ -87,8 +87,28 @@ describe('scoreUrl — SSRF redirect blocking', () => {
 });
 
 describe('scoreUrl — fetch error handling', () => {
-  it('handles a non-existent domain gracefully', async () => {
+  it('reports an unreadable domain as unscored rather than grading a placeholder', async () => {
+    // This test previously asserted `typeof result.score === 'number'` — it
+    // encoded the defect as a requirement. A non-existent domain used to be
+    // scored against a placeholder empty document, which is why unrelated
+    // blocked sites all received an identical 61.5/D. The correct behaviour is
+    // no numeric grade at all, plus a reason the caller can act on.
     const result = await scoreUrl('https://this-domain-does-not-exist-xyz123.invalid', { scope: 'universal' });
+    assert.equal(result.score, null, 'an unreadable target must not produce a numeric score');
+    assert.equal(result.grade, null);
+    assert.equal(result.unreachable, true);
+    assert.ok(
+      ['http_error', 'timeout', 'network', 'empty_body'].includes(result.unreachableReason),
+      `unexpected reason: ${result.unreachableReason}`,
+    );
+    assert.equal(result.checks.length, 0, 'no checks can have run against a page we never fetched');
+    assert.equal(result.total, 0);
+  });
+
+  it('still scores a reachable domain normally', async () => {
+    // The guard above must not have turned every fetch into "unreachable".
+    const result = await scoreUrl('https://example.com', { scope: 'universal' });
+    assert.equal(result.unreachable, undefined, 'example.com is reachable and must score normally');
     assert.equal(typeof result.score, 'number');
     assert.ok(result.score >= 0);
   });

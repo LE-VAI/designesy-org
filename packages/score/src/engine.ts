@@ -37,8 +37,18 @@ export type CheckResult = {
 };
 
 export type ScoreResult = {
-  score: number;
-  grade: string;
+  /**
+   * null when the target could not be read. Deliberately not `0`: a site we
+   * failed to fetch is not a site that scored zero, and consumers must decide
+   * what to show rather than rendering a fabricated grade.
+   */
+  score: number | null;
+  grade: string | null;
+  /** Present only when score is null — says WHY no grade is reported. */
+  unreachable?: true;
+  unreachableReason?: 'http_error' | 'timeout' | 'network' | 'empty_body';
+  unreachableDetail?: string;
+  attemptedUrls?: string[];
   pass: number;
   fail: number;
   warn: number;
@@ -296,7 +306,20 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
   return links;
 }
 
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
+/**
+ * Fetched page, or an explicit statement that there is no page.
+ *
+ * Previously every candidate failure produced `{ html: '<html><body></body></html>' }`
+ * — a real document that the checks then scored. A site that blocked the fetch
+ * (403, redirect loop, timeout) therefore received the same grade as a genuine
+ * page carrying no design tokens. This mirrors the server engine's fix
+ * (2026-09-18): the caller learns the fetch failed instead of inventing a score.
+ */
+export type PageOutcome =
+  | { ok: true; html: string; css: string }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
+
+async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   const parsed = new URL(targetUrl);
   const candidateUrls = [
     targetUrl,
@@ -305,12 +328,19 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
   ].filter(Boolean);
 
   let html = '';
+  let lastStatus = 0;
   for (const candidate of candidateUrls) {
     if (!isValidUrl(candidate)) continue;
     const r = await httpsFetch(candidate);
     if (r.ok && r.text.length > 50) { html = r.text; break; }
+    lastStatus = r.status;
   }
-  if (!html) return { html: '<html><body></body></html>', css: '' };
+  if (!html) {
+    // status 0 means the request never completed (network/DNS/timeout); a real
+    // status means the server answered and refused.
+    const reason = lastStatus >= 400 ? 'http_error' : lastStatus === 0 ? 'network' : 'empty_body';
+    return { ok: false, reason, status: lastStatus || undefined, attempted: candidateUrls };
+  }
 
   const parts = extractCssLinks(html, targetUrl);
   const cssParts: string[] = [];
@@ -323,7 +353,7 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
       cssParts.push(part);
     }
   }
-  return { html, css: cssParts.join('\n') };
+  return { ok: true, html, css: cssParts.join('\n') };
 }
 
 function extractRootTokens(css: string): Record<string, string> {
@@ -1932,8 +1962,9 @@ function computeGrade(score: number): string {
  * which returns SKIP when absent.
  */
 export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<ScoreResult> {
-  const { html, css } = await fetchPageResilient(targetUrl);
-  return scoreFromParts({ html, css, subject: targetUrl, scope });
+  const page = await fetchPageResilient(targetUrl);
+  if (!page.ok) return unreachableResult(targetUrl, page.reason, page.status, page.attempted, scope);
+  return scoreFromParts({ html: page.html, css: page.css, subject: targetUrl, scope });
 }
 
 /** Inputs for scoring a page that has already been fetched. */
@@ -1964,6 +1995,48 @@ export interface ScorePartsInput {
  * must be able to reach every check without a network, or the corpus can only
  * verify the subset that happens to be fetchable.
  */
+/**
+ * Build the no-grade result for a target we could not read.
+ *
+ * Every count is zero and `checks` is empty: there are no verdicts to report,
+ * because nothing was measured. An earlier version scored a placeholder
+ * document instead, which gave unrelated blocked sites identical grades.
+ */
+function unreachableResult(
+  targetUrl: string,
+  reason: 'http_error' | 'timeout' | 'network' | 'empty_body',
+  status: number | undefined,
+  attempted: string[],
+  scope?: ScoreScope,
+): ScoreResult {
+  const why =
+    reason === 'http_error'
+      ? `the server returned HTTP ${status ?? 'error'} for every candidate URL`
+      : reason === 'timeout'
+        ? 'the request timed out'
+        : reason === 'empty_body'
+          ? 'the response body was empty or too small to be a page'
+          : 'the request failed at the network level';
+  return {
+    score: null,
+    grade: null,
+    unreachable: true,
+    unreachableReason: reason,
+    unreachableDetail: `Could not read ${targetUrl} — ${why}. No score is reported: a site we cannot fetch is not a site we can grade.`,
+    attemptedUrls: attempted,
+    pass: 0, fail: 0, warn: 0, skip: 0, manual: 0, total: 0, scored: 0,
+    scope: scope || autoDetectScope(targetUrl),
+    a11yFloorApplied: false,
+    hardFailCeilingApplied: false,
+    hardFailCeilingReason: null,
+    categoryScores: {},
+    checks: [],
+    tokensExtracted: 0,
+    slop: { total: 0, findings: [], convergences: null },
+    originality: { points: 0, signals: [], summary: '', slopGateApplied: false },
+  };
+}
+
 export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResult> {
   const { html, css } = input;
   const targetUrl = input.subject || 'https://fixture.local/';
