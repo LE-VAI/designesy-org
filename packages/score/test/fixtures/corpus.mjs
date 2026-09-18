@@ -295,4 +295,65 @@ input, textarea { font-size:16px; }`,
     ],
     scoreBetween: [0, 65],
   },
+
+  // ── v28 reading-width regression fixtures (added 2026-09-17) ──────────────
+  //
+  // These pin the defect that v28 could not previously detect: a measure
+  // declared on a selector that never reaches prose. The old check grepped the
+  // stylesheet for any in-range `NNch` and PASSed, so designesy.org scored 93/A
+  // with zero v28 warnings while three of its own pages measured 108.6ch.
+
+  {
+    name: 'broken-measure-on-non-prose',
+    referent:
+      'A stylesheet that declares a perfectly good 66ch measure on a decorative container while every paragraph runs unconstrained — the exact shape that passed the old check.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+.spacer { max-width: 66ch; }
+.token-table { max-width: 72ch; }`,
+    expect: [
+      {
+        id: 'v28', status: 'WARN',
+        why:
+          'REGRESSION FIXTURE. ch-based rules exist (66ch, 72ch) and both are in the 45-75ch band, so the old text-search implementation returned PASS. ' +
+          'Neither selector targets prose — `.spacer` is decorative and `.token-table` is structural. Under the selector-aware check this must WARN: a measure ' +
+          'on the wrong element is not a readability fix. If this fixture ever PASSes again, v28 has regressed to pattern-matching on the value.',
+      },
+    ],
+  },
+
+  {
+    name: 'good-measure-on-prose',
+    referent:
+      'A stylesheet that puts the measure where it belongs — on paragraph selectors — which is the state designesy.org was moved to.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+.definition > p, .prose > p, .lede { max-width: 66ch; }`,
+    expect: [
+      {
+        id: 'v28', status: 'PASS',
+        why:
+          'The measure is declared on explicit prose selectors (a paragraph descendant combinator, a prose class, a lede class), all in range. ' +
+          'This is the counterpart to the fixture above: the check must still PASS when the rule is genuinely applied to prose, or it would be useless as a gate.',
+      },
+    ],
+  },
+
+  {
+    name: 'broken-measure-too-wide',
+    referent:
+      'A stylesheet with the measure on prose but set far too wide — 95ch, well past the readable band.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+.prose > p { max-width: 95ch; }`,
+    expect: [
+      {
+        id: 'v28', status: 'WARN',
+        why: 'Prose is constrained, but at 95ch the line length exceeds the 75ch ceiling the check exists to enforce.',
+      },
+    ],
+  },
 ];
