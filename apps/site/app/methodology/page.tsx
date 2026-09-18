@@ -308,7 +308,7 @@ const CHECKS: CheckDef[] = [
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Searches for max-width declarations in the 45-75ch range (66ch ideal). PASS if at least one measure is in range. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose — paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45-75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it — which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed, not applied silently.',
   },
   {
     id: 'x01',
