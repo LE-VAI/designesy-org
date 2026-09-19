@@ -37,6 +37,12 @@ exclude = [
   '^https://your-app\.vercel\.app',
   '^http://127\.0\.0\.1',
   '^http://localhost',
+  # nytimes.com — returns 403 to every automated client, including this
+  # project's own scoring engine, which is why it is one of the three
+  # leaderboard entries reported as unreachable. The link works for a human;
+  # the 403 is bot detection, not a broken link.
+  '^https://nytimes\.com',
+  '^https://www\.nytimes\.com',
   # awwwards.com — consistently times out under lychee's bot user-agent
   # (Cloudflare bot protection). It's a reference link, not our content.
   '^https://awwwards\.com',
@@ -48,9 +54,15 @@ exclude = [
 # ── Accept these status codes as OK ─────────────────────────────────────────
 # 200 — OK
 # 202 — Accepted (some sites return this for the root path, e.g. cssdesignawards.com)
-# 301/302 — redirect (followed by lychee, final status is what matters)
+# 301/302/307/308 — redirect (followed by lychee; the final status is what
+#   matters). 307 and 308 were MISSING, which made this check fail on every run
+#   from 2026-09-18 onward: getdesy.com returns 307 and radix-ui.com returns 308,
+#   and both are correct, reachable sites. 308 is the modern permanent-redirect
+#   status many hosts now return instead of 301. A checker that fails on working
+#   links trains people to ignore it — the same "cries wolf" failure the
+#   mirror-verify script had.
 # 405 — Method Not Allowed (POST-only endpoints like /api/mcp reject GET)
-accept = ["200", "202", "301", "302", "405"]
+accept = ["200", "202", "301", "302", "307", "308", "405"]
 
 # ── Timeout ──────────────────────────────────────────────────────────────────
 # 20s per request — some badge/shield endpoints are slow under load.
