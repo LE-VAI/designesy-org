@@ -23,3 +23,12 @@ packages/*/dist/
 packages/*/build/
 .venv/
 .env*
+
+# Build-generated per-page markdown (apps/site/scripts/generate-markdown.js).
+# Regenerated on every build from the prerendered HTML, so committing them would
+# only create stale artifacts that disagree with the page. The manifest records
+# exactly which files the last build wrote, so the next build cleans up
+# precisely those and never touches hand-made assets in public/.
+apps/site/public/*.md
+apps/site/public/**/*.md
+apps/site/public/.md-manifest.json
