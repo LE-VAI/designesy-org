@@ -291,6 +291,18 @@ async function main() {
   // Write this week's snapshot (for next week's delta)
   const snapshot = {};
   for (const entry of entries) {
+    // PRESERVE scoredAt for unreachable entries.
+    //
+    // The guard above keeps a stored score when the engine cannot read a site,
+    // but this loop previously stamped `scoredAt` on EVERY entry regardless —
+    // so an unmeasured row claimed to have been measured today. That is the same
+    // defect the guard exists to prevent, one layer down: a score whose
+    // provenance asserts something that did not happen.
+    //
+    // The prior timestamp is carried forward from the existing snapshot so the
+    // date always names the run that actually produced the number.
+    const prior = prevSnapshot[entry.url];
+    const wasUnmeasured = entry.unreachable === true;
     snapshot[entry.url] = {
       score: entry.score,
       grade: entry.grade,
@@ -299,7 +311,8 @@ async function main() {
       warn: entry.warn,
       skip: entry.skip,
       tokens: entry.tokens,
-      scoredAt: lastScored,
+      scoredAt: wasUnmeasured && prior && prior.scoredAt ? prior.scoredAt : lastScored,
+      ...(wasUnmeasured ? { unreachable: true } : {}),
     };
   }
   console.log('Writing snapshot.json...');
