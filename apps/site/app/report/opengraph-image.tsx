@@ -37,10 +37,13 @@ export default async function OpenGraphImage({
     const result = await scoreUrl(url);
     return renderOgCard({
       eyebrow: 'Designesy Report',
-      title: `Grade ${result.grade} — ${result.score}%`,
-      lede: `${result.pass} passed · ${result.fail} failed · composite design-intelligence report`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} — ${result.score}%`,
+      lede:
+        result.score === null
+          ? 'The target could not be read, so no score is reported.'
+          : `${result.pass} passed · ${result.fail} failed · composite design-intelligence report`,
       path: 'designesy.org/report',
-      badge: result.grade,
+      badge: result.grade ?? undefined, // null when unreachable — the card omits the badge rather than showing a letter
     });
   } catch {
     return renderOgCard({
