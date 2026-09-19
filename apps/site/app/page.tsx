@@ -35,13 +35,13 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Designesy — The AI UI compliance layer',
   description:
-    'AI makes execution free. We make execution yours. Verify any site against the Designesy design system contract — 42 checks, one grade, real-time. The compliance layer for AI-generated UI.',
+    `AI makes execution free. We make execution yours. Verify any site against the Designesy design system contract — ${ENGINE_CHECK_COUNT} checks, one grade, real-time. The compliance layer for AI-generated UI.`,
   path: '/',
   ogTitle: 'Designesy — The AI UI compliance layer',
   ogDescription:
-    '42 automated verification checks against a real design contract. The compliance layer for AI-generated UI. AI makes execution free. We make execution yours.',
+    `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. The compliance layer for AI-generated UI. AI makes execution free. We make execution yours.`,
   twitterDescription:
-    'Verify any site against the Designesy design contract. 42 checks. One grade. The AI UI compliance layer. designesy.org',
+    `Verify any site against the Designesy design contract. ${ENGINE_CHECK_COUNT} checks. One grade. The AI UI compliance layer. designesy.org`,
 });
 
 const PILLARS = [

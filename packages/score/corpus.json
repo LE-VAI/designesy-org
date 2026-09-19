@@ -1,0 +1,488 @@
+{
+  "corpus_version": "1.0.0",
+  "engine_version": "1.0.0",
+  "fixtures": 15,
+  "pinned_checks": 24,
+  "pinned_checks_matching": 24,
+  "digest": "670f2a529cafdea4b43884e88284210d0b4cb78a5d3ca0f3e1aa755bf7ac4c30",
+  "note": "Known-answer fixtures for the Designesy scoring engine. Each fixture pins expected verdicts for named checks, and `observed` records what the engine actually returned. A mismatch between expected and observed means the engine changed behavior for a known input — either a regression, or an intentional change whose pin was not yet updated. Fixtures whose name starts with \"broken-\" are deliberately defective pages; they exist so the corpus can catch a check that stopped detecting something, which a corpus of well-formed pages alone cannot do.",
+  "fixtures_detail": [
+    {
+      "name": "good-baseline",
+      "referent": "A page that ships the full contract surface: tokens at :root, a reduced-motion block, focus-visible rings, press scale, semantic landmarks.",
+      "scope": "contract",
+      "observed": {
+        "score": 88.2,
+        "grade": "B",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 14,
+          "skip": 1,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v01",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "--paper is declared in :root, which is exactly what v01 looks for."
+        },
+        {
+          "id": "v03",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "A :focus-visible rule is present, so the focus check has its primitive."
+        },
+        {
+          "id": "v05",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "A @media (prefers-reduced-motion: reduce) block is present."
+        },
+        {
+          "id": "v11",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "No transition:all anywhere — transitions name their properties."
+        },
+        {
+          "id": "v35",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "A forced-colors media query is present."
+        },
+        {
+          "id": "v25",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "Exactly one h1 and no skipped levels."
+        }
+      ],
+      "scoreBetween": [
+        70,
+        100
+      ]
+    },
+    {
+      "name": "broken-no-tokens",
+      "referent": "A page with no token layer at all — the shape of an early prototype or a hand-written static page.",
+      "scope": "contract",
+      "observed": {
+        "score": 53.8,
+        "grade": "F",
+        "counts": {
+          "pass": 11,
+          "fail": 4,
+          "warn": 19,
+          "skip": 5,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v01",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "No :root block, so --paper cannot resolve. v01 requires the token foundation."
+        },
+        {
+          "id": "v03",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "No :focus-visible rule present at all."
+        },
+        {
+          "id": "v05",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "No reduced-motion block. Verified behavior: absence is WARN, not FAIL — the reduced-motion check treats omission as a gap rather than a hard break."
+        }
+      ],
+      "scoreBetween": [
+        0,
+        65
+      ]
+    },
+    {
+      "name": "broken-transition-all",
+      "referent": "The single most common CSS performance anti-pattern: transition:all on every interactive element.",
+      "scope": "universal",
+      "observed": {
+        "score": 93,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 1,
+          "warn": 7,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v11",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "transition:all is present in the stylesheet — the exact pattern v11 bans."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-reduced-motion-inverted",
+      "referent": "A stylesheet that opts INTO motion while appearing to support reduced motion — `prefers-reduced-motion: no-preference` instead of `reduce`.",
+      "scope": "contract",
+      "observed": {
+        "score": 87,
+        "grade": "B",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 15,
+          "skip": 1,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v05",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "REGRESSION FIXTURE (caught 2026-09-17). v05 previously matched any @media mentioning prefers-reduced-motion, so `no-preference` — which expresses the opposite intent — passed as readily as `reduce`. That is a false PASS on the accessibility primitive the check exists to verify. Any change that makes this fixture PASS again has reintroduced substring matching on the feature name instead of evaluating its value."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-reduced-motion-commented-out",
+      "referent": "A stylesheet where the reduced-motion rules exist but are commented out — the shape of a rule disabled during debugging and never restored.",
+      "scope": "contract",
+      "observed": {
+        "score": 82.9,
+        "grade": "B",
+        "counts": {
+          "pass": 19,
+          "fail": 0,
+          "warn": 19,
+          "skip": 1,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v05",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "REGRESSION FIXTURE (caught 2026-09-17). Before comments were stripped, a commented-out media query satisfied v05 — the check read CSS text rather than the rules that actually apply. Here the ONLY reduce block is inside a comment, so the page genuinely ships no reduced-motion support and must not PASS. If this fixture starts passing, comment stripping has regressed."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-multiple-h1",
+      "referent": "A page where a template emitted the site name as an h1 in the header and the page title as another h1 in main.",
+      "scope": "universal",
+      "observed": {
+        "score": 92.7,
+        "grade": "A",
+        "counts": {
+          "pass": 22,
+          "fail": 0,
+          "warn": 9,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v25",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Two h1 elements — v25 tolerates the document but flags the duplicated top level."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-no-heading-outline",
+      "referent": "A client-rendered shell that ships markup with no heading at all — the shape the engine grades when JavaScript would have injected the h1.",
+      "scope": "universal",
+      "observed": {
+        "score": 87.9,
+        "grade": "B",
+        "counts": {
+          "pass": 18,
+          "fail": 1,
+          "warn": 9,
+          "skip": 11,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v25",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "No h1 in the delivered markup. Verified behavior: the heading check reports WARN on an absent outline, reserving FAIL for a malformed one. This is still the documented fetch-surface consequence — a JS-injected heading is invisible to a non-executing engine."
+        },
+        {
+          "id": "v07",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "Title present, but no landmark and no h1 — the semantic foundation is missing enough parts to FAIL."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-input-zoom",
+      "referent": "Inputs styled below the 16px iOS floor — the shape that causes Safari to auto-zoom on focus and break mobile layout.",
+      "scope": "universal",
+      "observed": {
+        "score": 70,
+        "grade": "C",
+        "counts": {
+          "pass": 23,
+          "fail": 1,
+          "warn": 7,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v27",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "An input font-size below the 16px floor is present — this is v27, the iOS auto-zoom trigger. (First written as v16, which is the rem/px scale check; the corpus caught the mix-up on its first run.)"
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-will-change-everything",
+      "referent": "The blunt performance fix: will-change sprayed onto elements with non-transform properties.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.2,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 8,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v12",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "will-change carries properties outside transform/opacity."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-trailing-period",
+      "referent": "Button and label text ending in periods — the copywriting inconsistency v39 targets from Microsoft Fluent guidance.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.4,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 8,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v39",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Button and label text end with a period, which Fluent explicitly forbids."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-bare-noun-buttons",
+      "referent": "Navigation-as-buttons: a marketing header whose buttons are bare nouns rather than verb phrases.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.4,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 8,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v38",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Three bare-noun button labels with no leading verb."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "edge-empty-page",
+      "referent": "A page that returns almost nothing — an error page or an empty deployment. The engine must degrade, not crash.",
+      "scope": "contract",
+      "observed": {
+        "score": 51.1,
+        "grade": "F",
+        "counts": {
+          "pass": 6,
+          "fail": 4,
+          "warn": 21,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v07",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "No title, no meta description, no landmarks — the semantic foundation is entirely absent."
+        },
+        {
+          "id": "v01",
+          "expected": "FAIL",
+          "observed": "FAIL",
+          "matches": true,
+          "why": "No CSS at all, so no token layer can exist."
+        }
+      ],
+      "scoreBetween": [
+        0,
+        65
+      ]
+    },
+    {
+      "name": "broken-measure-on-non-prose",
+      "referent": "A stylesheet that declares a perfectly good 66ch measure on a decorative container while every paragraph runs unconstrained — the exact shape that passed the old check.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.9,
+        "grade": "A",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 8,
+          "skip": 7,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v28",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "REGRESSION FIXTURE. ch-based rules exist (66ch, 72ch) and both are in the 45-75ch band, so the old text-search implementation returned PASS. Neither selector targets prose — `.spacer` is decorative and `.token-table` is structural. Under the selector-aware check this must WARN: a measure on the wrong element is not a readability fix. If this fixture ever PASSes again, v28 has regressed to pattern-matching on the value."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "good-measure-on-prose",
+      "referent": "A stylesheet that puts the measure where it belongs — on paragraph selectors — which is the state designesy.org was moved to.",
+      "scope": "universal",
+      "observed": {
+        "score": 95.9,
+        "grade": "A",
+        "counts": {
+          "pass": 25,
+          "fail": 0,
+          "warn": 7,
+          "skip": 7,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v28",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "The measure is declared on explicit prose selectors (a paragraph descendant combinator, a prose class, a lede class), all in range. This is the counterpart to the fixture above: the check must still PASS when the rule is genuinely applied to prose, or it would be useless as a gate."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-measure-too-wide",
+      "referent": "A stylesheet with the measure on prose but set far too wide — 95ch, well past the readable band.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.9,
+        "grade": "A",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 8,
+          "skip": 7,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v28",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Prose is constrained, but at 95ch the line length exceeds the 75ch ceiling the check exists to enforce."
+        }
+      ],
+      "scoreBetween": null
+    }
+  ]
+}
