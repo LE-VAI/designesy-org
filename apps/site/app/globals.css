@@ -123,8 +123,8 @@
   --duration-slow: 400ms;    /* panel open, skeleton reveal */
 
   /* Typography tokens — hybrid system (2026 standard for trust-products).
-     --sans: Geist Variable (Vercel's house font — "deliberately set, not
-       defaulted"). System fonts cover fallback (no web font dependency).
+     --sans: Schibsted Grotesk (a newsroom-commissioned grotesque,
+     drawn for sustained reading — replaced Geist 2026-09-16).
      --serif: Fraunces Variable (editorial authority for headlines — the
        "we verify design" signal). Optical-size + soft axes for dark-mode
        tuning.
@@ -4525,6 +4525,84 @@ a.surface-card:active {
 }
 
 /*
+  Docs card grid — /docs "Start here".
+
+  Replaces a single-column .row-stack of 16 items. That list was capped at
+  640px inside a 1180px container, so it left ~540px of dead space beside every
+  row and ran 1,272px tall — a full viewport of stacked single-line links.
+
+  The card-grid pattern is what the docs-hub teardowns converge on: each card
+  promises a task you can complete on the linked page, with no marketing copy.
+  Cards reflow 1 / 2 / 3 columns by available width, so the same markup serves
+  phone, tablet, and desktop without a breakpoint-specific layout.
+
+  Note the deliberate absence of a max-width on the grid itself: the measure
+  constraint (v28, 66ch) belongs on prose, not on a grid. Constraining a grid
+  narrows one track and breaks the rhythm — the prose inside each card is
+  short enough to stay readable at any track width. */
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-12);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-card-grid .row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-12);
+  align-items: start;
+  height: 100%;
+  padding: var(--space-16);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface);
+  transition:
+    border-color var(--duration-fast, 180ms) var(--ease, ease),
+    transform var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.docs-card-grid .row:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+/* Focus ring must remain visible on the card surface — the row is a link. */
+.docs-card-grid .row:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.docs-card-grid .row-index {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.15em;
+}
+
+.docs-card-grid .row-title {
+  font-size: 0.95rem;
+}
+
+.docs-card-grid .row-meta {
+  font-size: 0.8rem;
+}
+
+/* Reduced motion: the hover lift is decorative, so remove it rather than
+   shorten it. The border-color change still communicates hover. */
+@media (prefers-reduced-motion: reduce) {
+  .docs-card-grid .row {
+    transition: border-color 0.01ms;
+  }
+  .docs-card-grid .row:hover {
+    transform: none;
+  }
+}
+
+/*
   State marquee — sits beside the row-stack on desktop, filling the
   right-side negative space with an auto-scrolling vertical marquee
   of status pills. Pure CSS animation, no JS. Duplicated content for
@@ -6089,6 +6167,24 @@ html:not(.js-ready) .demo-stagger-bar {
   align-items: baseline;
 }
 
+/* Four-column variant — the three-tool comparison on /benchmarks.
+   The base rule above defines three tracks, but that table carries four cells
+   (Attribute, designesy, hallmark, slop-eval). With no fourth track, the extra
+   cell wrapped onto an implicit second line: the "SLOP-EVAL" header broke onto
+   its own row and every slop-eval value dropped into the Attribute column, so
+   the table read as three columns of mislabelled data.
+   Declared as a modifier rather than widening the base rule, because every
+   other .token-table on the site (contracts, specs, design-system) is genuinely
+   three columns and would be left with a trailing empty track. */
+.token-table--four-col .token-table-head,
+.token-table--four-col .token-table-row {
+  grid-template-columns:
+    minmax(7rem, 0.8fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr);
+}
+
 .token-table-head {
   font-size: 0.7rem;
   font-weight: 600;
@@ -6127,7 +6223,13 @@ html:not(.js-ready) .demo-stagger-bar {
     display: none;
   }
 
-  .token-table-row {
+  /* The four-col modifier must be reset here too. It is declared as
+     `.token-table--four-col .token-table-row` (specificity 0,2,0) so it would
+     otherwise outrank this `.token-table-row` (0,1,0) rule even inside the
+     media query, leaving a four-track grid and a hidden header on a 390px
+     screen. Repeating the modifier keeps the collapse to one column. */
+  .token-table-row,
+  .token-table--four-col .token-table-row {
     grid-template-columns: 1fr;
     gap: var(--space-4);
     padding: var(--space-fine-85) var(--space-16);
@@ -11035,12 +11137,38 @@ select {
    v28 — Reading width 45-75ch (66ch ideal for prose containers).
    Prevents line lengths >75ch on wide screens. Applied to prose-like content
    containers, not structural grids or tables.
-   -------------------------------------------------------------------------- */
+
+   EXTENDED 2026-09-17 after a DOM measurement found the rule was not reaching
+   the pages it was written for. Only five selectors carried 66ch, and the
+   densest prose pages used none of them:
+       /contracts/design-system  ~119 ch/line
+       /docs                     ~114 ch/line
+       /contracts                 ~99 ch/line
+       /methodology               ~88 ch/line
+   (target band 45-75ch; 65ch is the Tailwind max-w-prose default.)
+
+   The old `.definition > p:last-child` was the worst of it — /docs has 13 <p>
+   inside .definition blocks, so 12 of them were unconstrained and ran the full
+   1080px container. `:last-child` was presumably meant to skip the label
+   paragraph, but it silently skipped every paragraph that was not final.
+
+   Constraining `.definition > p` wholesale fixes that, and the label is
+   excluded explicitly by class instead of positionally — an element's role
+   should not depend on its DOM order, which is exactly what broke here.
+
+   Deliberately NOT constrained: .doctrine-cols (a 2-up grid; each column is
+   already ~65ch at 546px), .token-table, and any structural grid. Adding a
+   measure to a grid narrows one column and breaks the layout. */
 .surface-note,
 .surface-lede,
-.definition > p:last-child,
+.definition > p,
+.definition-label,
 .lb-policy,
-.status-note {
+.status-note,
+.doctrine-section > p,
+.methodology-prose > p,
+.methodology-prose > ul,
+.methodology-prose > ol {
   max-width: 66ch;
 }
 
@@ -13134,3 +13262,124 @@ select {
 .score-card-item[data-category='identity']::before { background: var(--error); }
 .score-card-item[data-category='platform']::before { background: var(--muted); }
 .score-card-item:hover::before { opacity: 1; }
+
+/* --------------------------------------------------------------------------
+   Docs TOC — right-rail on-page navigation for /docs.
+
+   Layout: the docs page becomes a 2-column grid on wide screens (content +
+   rail). The rail is sticky and does not scroll away. Below 1080px the rail is
+   replaced by a collapsed <details> disclosure rendered at the top of the
+   content, because a sticky rail on a phone would consume the reading column.
+
+   The measure constraint (v28, 66ch) still governs the prose INSIDE the
+   content column — the grid changes how much room the column has, not how wide
+   a line of text runs.
+   -------------------------------------------------------------------------- */
+.docs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: var(--space-48, 48px);
+  align-items: start;
+}
+
+.docs-layout > .docs-content {
+  min-width: 0; /* lets the prose column shrink instead of overflowing the grid */
+}
+
+.docs-toc {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  font-size: 0.8rem;
+}
+
+.docs-toc-heading {
+  margin: 0 0 var(--space-12, 12px);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.docs-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.docs-toc-list a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  border-left: 2px solid var(--line-faint);
+  color: var(--muted);
+  text-decoration: none;
+  line-height: 1.35;
+  transition: border-color var(--duration-fast, 180ms) var(--ease, ease),
+              color var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.docs-toc-list a:hover {
+  color: var(--ink);
+  border-left-color: var(--line-strong);
+}
+
+/* The active marker is a border-color + weight change, not a background block:
+   at this size a filled pill would out-shout the content it indexes. */
+.docs-toc-list a.is-active {
+  color: var(--ink);
+  border-left-color: var(--signal);
+  font-weight: 600;
+}
+
+.docs-toc-list a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Mobile disclosure hidden on wide screens; desktop rail hidden on narrow. */
+.docs-toc-mobile { display: none; }
+
+@media (max-width: 1080px) {
+  .docs-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .docs-toc-desktop { display: none; }
+  .docs-toc {
+    position: static;
+    margin-bottom: var(--space-32, 32px);
+  }
+  .docs-toc-mobile {
+    display: block;
+    border: 1px solid var(--line-faint);
+    border-radius: var(--radius-md, 8px);
+    background: var(--surface);
+    padding: var(--space-12, 12px) var(--space-16, 16px);
+  }
+  .docs-toc-mobile summary {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-12, 12px);
+    align-items: baseline;
+  }
+  .docs-toc-summary-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+  .docs-toc-summary-current {
+    color: var(--ink);
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .docs-toc-mobile .docs-toc-list { margin-top: var(--space-12, 12px); }
+}

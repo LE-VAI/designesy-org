@@ -80,6 +80,11 @@ function ScoreCell({ site }: { site: SeedSite }) {
 // null prevScore (first score or prior run failed) renders no badge.
 // Zero delta renders a neutral "•" hold mark.
 function DeltaBadge({ site }: { site: SeedSite }) {
+  // A held-over score has no delta to show. Its "previous" value IS the score
+  // being displayed, because the engine could not re-read the site — so a
+  // neutral dot would read as "measured, unchanged" when nothing was measured.
+  // The unreachable badge beside the name carries the real meaning.
+  if (site.unreachable) return null;
   if (site.score === null || site.prevScore === null) {
     return null;
   }
@@ -148,6 +153,17 @@ function SiteRow({ site }: { site: SeedSite }) {
                 </Link>
               )}
             </>
+          )}
+          {/* Held-over grade marker. Sibling of the isSelf block, not inside it:
+              an unreachable row is never the self row, so nesting it there made
+              it unrenderable. Every entry can be held over. */}
+          {site.unreachable && (
+            <span
+              className="lb-unreachable-badge"
+              title={`The scoring engine could not read this site on the most recent run, so the grade shown is the measurement from ${site.scoredAt ?? 'an earlier run'}. It is NOT a fresh score.`}
+            >
+              not re-measured · {site.scoredAt ?? 'earlier'}
+            </span>
           )}
           <span className="lb-row-meta">
             <a
@@ -309,6 +325,14 @@ export default function LeaderboardPage() {
           .lb-bench-link { font-size: 0.7rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.02em; }
           .lb-bench-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-self-tag { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.4rem; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); background: var(--signal-dim); border-radius: 3px; vertical-align: middle; }
+          /* Held-over grade marker. Uses --muted (not an alarm colour): the
+             row is not wrong, its provenance is old. A red badge would imply a
+             bad score; this needs to read as "stale", not "failed". */
+          /* align-self: flex-start is load-bearing. The parent .lb-row-head is a
+             COLUMN flex container, so an inline-block child stretches to the full
+             row width and the badge renders as a full-width dashed bar rather
+             than a chip. shrink-wrapping it keeps it reading as a badge. */
+          .lb-unreachable-badge { align-self: flex-start; display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; line-height: 1.5; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px dashed var(--line); border-radius: 3px; letter-spacing: 0.02em; white-space: nowrap; }
           .lb-row-self { background: var(--signal-dim); }
           .lb-row-self:hover { background: var(--signal-dim); }
           .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
@@ -537,7 +561,7 @@ export default function LeaderboardPage() {
           <div className="definition">
             <p className="definition-label">What the engine measures</p>
             <p>
-              40 deterministic checks across 14 weighted categories — token
+              42 deterministic checks across 14 weighted categories — token
               architecture, motion hygiene, accessibility primitives,
               typography discipline, reduced-motion handling, AI disclosure,
               forced-colors readiness, UX copywriting, Unicode security. Plus
@@ -549,11 +573,15 @@ export default function LeaderboardPage() {
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
             The engine measures what is <em>shipped</em>, not what is
-            documented. A design-system site can publish a rich token taxonomy
-            in storybook and still score low if the marketing surface
+            documented — and it reads the delivered markup, not the rendered
+            page. It does not execute JavaScript, so a site that builds its
+            content in the browser is judged on the shell that arrives over the
+            wire; markup a script injects after load is invisible to every
+            check. A design-system site can publish a rich token taxonomy in
+            storybook and still score low if the marketing surface
             doesn&rsquo;t expose those tokens at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
-            That gap — between documented and shipped — is exactly what the
-            leaderboard surfaces. For the full scoring methodology — every
+            That gap — between documented, delivered, and rendered — is what
+            the leaderboard surfaces. For the full scoring methodology — every
             check, its category weight, the scoring math, and the accessibility
             floor — see the <Link href="/methodology">methodology page</Link>.
           </p>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { buildReceipt } from '../../lib/receipt';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -142,6 +143,18 @@ const SCORE_TTL_SECONDS = 60 * 60 * 24; // 24h
 // Pro Plan: lifted from 20/hr to 100/hr. Results are cached 24h via
 // unstable_cache, so the effective throughput is much higher — repeat
 // scores for the same URL hit the Data Cache and cost nothing.
+//
+// HONEST SCOPE — this limiter does NOT enforce on Vercel. `hits` is a
+// module-level Map, and Fluid compute runs many serverless instances, each with
+// its own copy. A caller's requests are spread across instances, so the counter
+// never reaches 100 on any single one. Measured 2026-09-16: 105 consecutive
+// requests from one IP, zero 429s.
+//
+// It is kept as a same-instance burst damper (it does blunt a tight loop that
+// happens to land on one instance) and as a correct limiter for a single-process
+// deployment. Real cross-instance enforcement is the Edge layer's job — see
+// middleware.ts. If you are relying on THIS for abuse protection, you are not
+// protected; verify with /api/admin/limiter-health instead.
 
 const RATE_LIMIT = 100; // requests per hour per IP (Pro Plan)
 const RATE_WINDOW = 60 * 60 * 1000;
@@ -199,7 +212,27 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
   return links;
 }
 
-async function fetchCssSingle(url: string): Promise<string> {
+/**
+ * Result of one fetch attempt.
+ *
+ * WHY THIS IS NOT A BARE STRING
+ * The previous version returned '' for every failure mode AND for a
+ * successfully-fetched empty body, so callers could not tell "the server said
+ * 403" from "the page was genuinely blank". fetchPageResilient therefore
+ * substituted a placeholder document and the engine scored THAT. Verified
+ * 2026-09-18: nytimes.com and cssdesignawards.com return 403 to our fetches,
+ * and both were scored 61.5/D as though they were real pages carrying no design
+ * tokens — the same number an empty document produces, to the decimal. A grade
+ * that cannot distinguish a blocked site from a bare one is not a grade.
+ *
+ * `ok: false` means the attempt yielded no document; `reason` says which
+ * failure it was, so the caller can report it instead of guessing.
+ */
+type FetchOutcome =
+  | { ok: true; text: string }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number };
+
+async function fetchCssSingleDetailed(url: string): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -207,16 +240,81 @@ async function fetchCssSingle(url: string): Promise<string> {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
     });
-    if (!resp.ok) return '';
-    return await resp.text();
-  } catch {
-    return '';
+    if (!resp.ok) return { ok: false, reason: 'http_error', status: resp.status };
+    const text = await resp.text();
+    if (!text || text.length <= 50) return { ok: false, reason: 'empty_body' };
+    return { ok: true, text };
+  } catch (e) {
+    const aborted = e instanceof Error && (e.name === 'AbortError' || /abort/i.test(e.message));
+    return { ok: false, reason: aborted ? 'timeout' : 'network' };
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
+/**
+ * String-returning wrapper for the CSS call sites.
+ *
+ * CSS fetch sites legitimately collapse the two failures: "no stylesheet" and
+ * "a stylesheet we could not read" both mean no token layer is available to
+ * inspect, so '' is the honest value for both. Only the HTML fetch needs the
+ * distinction, because only the HTML fetch decides whether a page exists.
+ */
+async function fetchCssSingle(url: string): Promise<string> {
+  const r = await fetchCssSingleDetailed(url);
+  return r.ok ? r.text : '';
+}
+
+/**
+ * Fetched page, or an explicit statement that there is no page.
+ *
+ * The failure branch is the point. Previously every candidate failure produced
+ * `{ html: '<html><body></body></html>', css: '' }` — a real document that the
+ * 42 checks then scored, yielding 61.5/D for a site that had blocked us. The
+ * caller now learns the fetch failed and can say so instead of inventing a grade.
+ */
+/**
+ * Upper bound on external stylesheets fetched per score.
+ *
+ * This is a PATHOLOGY GUARD, not a performance measure. An earlier version of
+ * this fix capped at 12 on the assumption that fetching every sheet was slow —
+ * measured wrong: github.com's 29 unique stylesheets fetch in 0.5s in parallel
+ * (16 workers), because the cost was never the sheet count, it was fetching them
+ * SEQUENTIALLY. The lower cap silently truncated github's CSS surface and cost
+ * it 6.2 points (68.5 -> 62.3), which is a scoring regression dressed as an
+ * optimisation. Do not lower this to save time; time is already bounded by the
+ * per-request abort and the concurrency below.
+ *
+ * 60 is chosen to be above any real site observed (github's 29 is the largest in
+ * the leaderboard cohort) while still bounding a pathological page that links
+ * hundreds of sheets.
+ */
+const MAX_STYLESHEETS = 60;
+
+/**
+ * Wall-clock ceiling for the whole stylesheet phase, across every sheet.
+ *
+ * Distinct from the per-request 8s abort: this bounds the SUM, so a page linking
+ * many slow sheets cannot extend a score without limit. 20s is generous against
+ * the measured 0.5s for a 29-sheet page while still failing fast on a hung host.
+ */
+const STYLESHEET_DEADLINE_MS = 20_000;
+
+type PageOutcome =
+  | {
+      ok: true;
+      html: string;
+      css: string;
+      /** How many external stylesheets contributed — reported so a capped read is visible. */
+      stylesheetsFetched: number;
+      /** Unique external stylesheets the page referenced. */
+      stylesheetsTotal: number;
+      /** True when stylesheetsTotal exceeded the cap and the CSS surface is partial. */
+      stylesheetsTruncated: boolean;
+    }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
+
+async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   const parsed = new URL(targetUrl);
   const candidateUrls = [
     targetUrl,
@@ -225,31 +323,87 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
   ].filter(Boolean);
 
   let html = '';
+  // Remember WHY each candidate failed. A 403 on every candidate means the site
+  // is blocking us — a different fact from a timeout, and the caller needs to
+  // tell them apart.
+  let lastFail: (FetchOutcome & { ok: false }) | null = null;
+
   for (const candidate of candidateUrls) {
-    try {
-      html = await fetchCssSingle(candidate);
-      if (html && html.length > 50) break;
-    } catch {
-      // try next fallback
-    }
+    const outcome = await fetchCssSingleDetailed(candidate);
+    if (outcome.ok) { html = outcome.text; break; }
+    lastFail = outcome;
   }
 
   if (!html) {
-    return { html: '<html><body></body></html>', css: '' };
+    return {
+      ok: false,
+      reason: lastFail ? lastFail.reason : 'network',
+      status: lastFail && 'status' in lastFail ? lastFail.status : undefined,
+      attempted: candidateUrls,
+    };
   }
 
-  const parts = extractCssLinks(html, targetUrl);
-  const cssParts: string[] = [];
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      const externalCss = await fetchCssSingle(part);
-      if (externalCss) cssParts.push(externalCss);
-    } else {
-      cssParts.push(part);
-    }
-  }
+  // -- Stylesheet collection: dedupe, cap, and fetch in parallel ------------
+  //
+  // Was: sequential fetch of every <link rel=stylesheet> in document order,
+  // each with its own 8s abort. On a large site that is minutes of wall clock.
+  // github.com exposes 40 stylesheet links (11 of them exact duplicates), so the
+  // worst case was ~320s of sequential waiting for a single score. Observed live
+  // 2026-09-18: /api/score for github.com ran past 85s and returned http=000,
+  // which also stalled the weekly re-score at 26/30.
+  //
+  // Three changes, each addressing a distinct part of that:
+  //   1. Dedupe by URL. 11 of github's 40 links are byte-identical repeats.
+  //   2. Cap the count — as a pathology guard ONLY. See MAX_STYLESHEETS: an
+  //      earlier, lower cap was justified by an unmeasured assumption that
+  //      fetching every sheet was slow. It is not (29 sheets = 0.5s in
+  //      parallel), and the cap cost github.com 6.2 points by hiding CSS.
+  //   3. Fetch concurrently. THIS is the actual latency fix: sequential makes
+  //      latency the SUM of every slow sheet, concurrent makes it the MAX.
+  const allParts = extractCssLinks(html, targetUrl);
+  const inlineParts = allParts.filter((p) => !p.startsWith('http'));
+  const uniqueExternal = [...new Set(allParts.filter((p) => p.startsWith('http')))];
+  const externalParts = uniqueExternal.slice(0, MAX_STYLESHEETS);
 
-  return { html, css: cssParts.join('\n') };
+  const cssParts: string[] = [...inlineParts];
+  // Global deadline on the whole stylesheet phase.
+  //
+  // Each individual fetch already aborts at 8s, but 60 sheets at 8s each is
+  // still hours of worst case if a site is slow per-request — and unlike the
+  // sheet COUNT, which turned out not to matter, a hung endpoint genuinely
+  // does. The deadline bounds the phase regardless of how many sheets a page
+  // links, so raising the cap above cannot re-introduce an unbounded wait.
+  //
+  // Sheets that miss the deadline are dropped, not failed: a partial CSS surface
+  // still yields real token data, and the omission is reported in the outcome.
+  const deadline = new Promise<never>((_, rej) =>
+    setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS).unref?.()
+      ?? setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS),
+  );
+  let fetched: string[] = [];
+  try {
+    fetched = await Promise.race([
+      Promise.all(
+        externalParts.map(async (part) => {
+          const r = await fetchCssSingleDetailed(part);
+          return r.ok ? r.text : '';
+        }),
+      ),
+      deadline,
+    ]);
+  } catch {
+    fetched = [];
+  }
+  for (const t of fetched) if (t) cssParts.push(t);
+
+  return {
+    ok: true,
+    html,
+    css: cssParts.join('\n'),
+    stylesheetsFetched: fetched.filter(Boolean).length,
+    stylesheetsTotal: uniqueExternal.length,
+    stylesheetsTruncated: uniqueExternal.length > externalParts.length,
+  };
 }
 
 // ── Token extraction + normalization ────────────────────────────────────────
@@ -618,8 +772,54 @@ function checkTabularNums(css: string): CheckResult {
 }
 
 function checkReducedMotion(css: string): CheckResult {
-  if (/@media[^{]*prefers-reduced-motion/i.test(css)) return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'PASS', detail: 'prefers-reduced-motion declared' };
-  return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'WARN', detail: 'missing prefers-reduced-motion media query' };
+  const ITEM = 'prefers-reduced-motion disables entrance and wordmark breath';
+  const CATEGORY = 'motion';
+
+  // Strip comments first. Without this, a commented-out media query — or any
+  // prose mentioning prefers-reduced-motion — satisfied the old check. The
+  // calibration corpus caught exactly that: the previous regex matched the
+  // string anywhere, including inside /* */.
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Match the media query and require the `reduce` VALUE specifically.
+  // The prior regex accepted any @media containing the feature name, so
+  // `@media (prefers-reduced-motion: NO-PREFERENCE)` — which expresses the
+  // OPPOSITE intent, opting INTO motion — passed as readily as `reduce`. That
+  // is a false PASS on the exact accessibility primitive the check exists to
+  // verify. `no-preference` is not a reduced-motion block.
+  const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
+  let match: RegExpExecArray | null;
+  let sawReduce = false;
+  let sawNoPreference = false;
+  while ((match = mqRe.exec(code)) !== null) {
+    const value = match[1].toLowerCase();
+    // Capture the block body by brace-matching from the opening brace.
+    const open = match.index + match[0].length - 1;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < code.length; i++) {
+      if (code[i] === '{') depth++;
+      else if (code[i] === '}') {
+        depth--;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    const body = close > open ? code.slice(open + 1, close).trim() : '';
+    if (value === 'no-preference') { sawNoPreference = true; continue; }
+    // A `reduce` query that declares no rules reduces nothing.
+    if (body.length > 0) sawReduce = true;
+  }
+
+  if (sawReduce) {
+    return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'prefers-reduced-motion: reduce block declares rules' };
+  }
+  if (sawNoPreference) {
+    return {
+      id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: 'a prefers-reduced-motion media query exists but uses `no-preference` — that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+    };
+  }
+  return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
@@ -831,16 +1031,70 @@ function checkHeadingHierarchy(html: string): CheckResult {
 
 // v26 — Font family count ≤3 (design-auditor, Typography Master).
 // Counts distinct font-family declarations. >3 = inconsistency signal.
-function checkFontFamilyCount(css: string): CheckResult {
+//
+// `tokens` is the :root custom-property table, used to resolve var() aliases to
+// the family they actually reference — see the alias note in the loop.
+/**
+ * Resolve a family token to a real typeface name, following the alias chain.
+ *
+ * One level is not enough. The site's stack is two hops deep:
+ *   --sans       -> var(--font-sans), -apple-system, ...
+ *   --font-sans  -> 'Schibsted Grotesk', 'Schibsted Grotesk Fallback', ...  (next/font)
+ * so resolving once yields the literal string "var(--font-sans)", which then
+ * counts as its OWN family alongside the raw `geist` name that next/font also
+ * emits — double-counting one typeface and failing the check.
+ *
+ * Follows up to `maxHops` links and normalizes the result. Returns null when the
+ * chain does not terminate in a name (a cycle, or an unknown token), so the
+ * caller can skip rather than attribute a family it cannot identify.
+ */
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[`--${ref[1]}`];
+  }
+  return null;
+}
+
+function checkFontFamilyCount(css: string, tokens: Record<string, string>): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
   let m;
   while ((m = re.exec(css)) !== null) {
     // Normalize: strip quotes, take first family in a stack, lowercase.
-    const stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    let stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     // Skip generic keywords that shouldn't count as "a family choice."
     const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
     if (generic.includes(stack)) continue;
+    // A var() alias is a REFERENCE to a family token, not another family. The
+    // site declares three stacks (--sans/--display/--mono); every component that
+    // writes `font-family: var(--mono)` is choosing the SAME family, but counted
+    // as a distinct name it inflated this check from 3 to 9 on the site and
+    // failed a page that genuinely uses three faces. Resolve the alias through
+    // the custom-property table so the count reflects faces, not spellings.
+    if (stack.startsWith('var(')) {
+      const ref = stack.match(/var\(\s*--([\w-]+)/);
+      const resolved = ref ? resolveFamilyToken(tokens, ref[1]) : null;
+      if (resolved) {
+        stack = resolved;
+        if (generic.includes(stack)) continue;
+      } else {
+        continue; // unresolvable alias — cannot attribute it to a family
+      }
+    }
+    // next/font generates a synthetic metric-matched fallback face per family
+    // ("Geist Fallback", "Fraunces Fallback") and applies it via font-family in
+    // the adjusted @font-face. Those are not additional typeface choices — they
+    // are the same family's fallback metrics — so they must not count as
+    // palette drift.
+    if (/\sfallback$/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -875,21 +1129,69 @@ function checkInputFontFloor(css: string): CheckResult {
   return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
 }
 
-// v28 — Reading width 45-75ch (design-auditor Reading Width module).
-// Scans CSS for max-width in ch units on prose containers. 66ch ideal.
 function checkReadingWidth(css: string): CheckResult {
-  const chRe = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/gi;
-  const widths: number[] = [];
-  let m;
-  while ((m = chRe.exec(css)) !== null) {
-    widths.push(parseFloat(m[1]));
+  const ITEM = 'Reading width 45-75ch on prose containers';
+  const CATEGORY = 'cadence';
+
+  // Selectors that indicate a prose container. Matched against the selector
+  // text of a rule, not the element tree — so `p`, `.prose`, `.lede`,
+  // `.definition > p`, `.methodology-prose > p` all qualify, while `.grid`,
+  // `.token-table`, `.row`, `.doctrine-cols` do not.
+  const PROSE_SELECTOR = /(^|[\s,>+~])(p|article|blockquote|li|dd|dt|figcaption)\b|prose|lede|measure|reading|note\b|copy\b|body-text|text-block/i;
+  // Containers that must never be treated as prose even if a class name
+  // contains a prose-ish word (e.g. `.prose-grid`).
+  const STRUCTURAL_SELECTOR = /grid|table|row|col\b|flex|swatch|chip|badge|tab\b|nav\b|toolbar|chart|canvas|pre\b|code\b|kbd/i;
+
+  // Walk every rule block, capturing selector + declarations together.
+  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
+  const proseInRange: number[] = [];
+  const proseOutOfRange: number[] = [];
+  const nonProse: number[] = [];
+  let m: RegExpExecArray | null;
+
+  while ((m = ruleRe.exec(css)) !== null) {
+    const selector = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    const body = m[2];
+    // Skip at-rule preludes (`@media (...)`, `@supports (...)`) — the block
+    // body is walked on the next iteration when the inner rule is seen. A
+    // media query wrapping prose rules should not itself be classified.
+    if (selector.startsWith('@')) continue;
+
+    const widthMatch = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/i.exec(body);
+    if (!widthMatch) continue;
+    const value = parseFloat(widthMatch[1]);
+
+    const isProse = PROSE_SELECTOR.test(selector) && !STRUCTURAL_SELECTOR.test(selector);
+    if (!isProse) { nonProse.push(value); continue; }
+    if (value >= 45 && value <= 75) proseInRange.push(value);
+    else proseOutOfRange.push(value);
   }
-  if (widths.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens' };
-  const inRange = widths.filter(w => w >= 45 && w <= 75);
-  const outOfRange = widths.filter(w => w < 45 || w > 75);
-  if (inRange.length > 0 && outOfRange.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} measure(s) in 45-75ch range: ${inRange.join(', ')}ch` };
-  if (inRange.length > 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} in range, ${outOfRange.length} out: ${widths.join(', ')}ch` };
-  return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: `${widths.length} ch-measure(s) found, all outside 45-75ch: ${widths.join(', ')}ch` };
+
+  if (proseInRange.length > 0) {
+    const detail = proseOutOfRange.length > 0
+      ? `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch (also ${proseOutOfRange.length} prose rule(s) outside the band: ${proseOutOfRange.join(', ')}ch)`
+      : `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch`;
+    return { id: 'v28', item: ITEM, category: CATEGORY, status: 'PASS', detail };
+  }
+
+  if (nonProse.length > 0 && proseOutOfRange.length === 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${nonProse.length} ch-based max-width rule(s) found (${nonProse.join(', ')}ch) but none target a prose container — line length on paragraphs is unconstrained. Add the measure to your prose selectors (p, article, .prose), not to a grid or table.`,
+    };
+  }
+
+  if (proseOutOfRange.length > 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${proseOutOfRange.length} prose rule(s) found, all outside 45-75ch: ${proseOutOfRange.join(', ')}ch`,
+    };
+  }
+
+  return {
+    id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+    detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens',
+  };
 }
 
 // ── Tier 5: token-layer completeness (v29) — DSAF A1.1 wedge ────────────────
@@ -1601,7 +1903,16 @@ function checkButtonTextVerb(html: string): CheckResult {
   // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
   const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
-  const TEXT_SHORTCUT_RE = /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)\s*\+.*$/i;
+  // The `+` is optional and the key may be fused directly to the modifier
+  // ("CtrlK"), because the badge is now platform-aware and renders "Ctrl" with
+  // no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived and
+  // v38 read the shortcut as part of the verb.
+  //
+  // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
+  // with no space between). A space separates a real word: "Alt text" is a
+  // label, not a shortcut, and must not be eaten.
+  const TEXT_SHORTCUT_RE =
+    /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
@@ -1952,7 +2263,51 @@ function computeGrade(score: number): string {
 }
 
 async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
-  const { html, css } = await fetchPageResilient(targetUrl);
+  const page = await fetchPageResilient(targetUrl);
+
+  // UNREACHABLE — return a result carrying NO numeric score.
+  //
+  // Why this is not just a low score: a site that blocks our fetch (403/redirect
+  // loop/timeout) is not a badly-designed site, it is an unread site. Scoring the
+  // placeholder document gave every such site an identical 61.5/D, which is a
+  // statement about our own fetch and not about their design. Callers must now
+  // handle the absence explicitly rather than render a fabricated grade.
+  //
+  // `score: null` is deliberate and load-bearing: it makes every consumer fail
+  // type-check until it decides what to show. `grade: null` likewise. The counts
+  // are zeroed rather than omitted so the response shape stays stable for
+  // existing parsers.
+  if (!page.ok) {
+    const why =
+      page.reason === 'http_error'
+        ? `the server returned HTTP ${page.status ?? 'error'} for every candidate URL`
+        : page.reason === 'timeout'
+          ? 'the request timed out'
+          : page.reason === 'empty_body'
+            ? 'the response body was empty or too small to be a page'
+            : 'the request failed at the network level';
+    return {
+      unreachable: true as const,
+      unreachableReason: page.reason,
+      unreachableDetail: `Could not read ${targetUrl} — ${why}. No score is reported: a site we cannot fetch is not a site we can grade.`,
+      attemptedUrls: page.attempted,
+      score: null,
+      grade: null,
+      pass: 0, fail: 0, warn: 0, skip: 0, manual: 0, total: 0, scored: 0,
+      scope: (scope || autoDetectScope(targetUrl)) as ScoreScope,
+      a11yFloorApplied: false,
+      hardFailCeilingApplied: false,
+      hardFailCeilingReason: null,
+      categoryScores: {},
+      checks: [] as CheckResult[],
+      tokensExtracted: 0,
+      slop: { total: 0, findings: [], convergences: null },
+      originality: { points: 0, signals: [], summary: '', slopGateApplied: false },
+      retrievedAt: new Date().toISOString(),
+    };
+  }
+
+  const { html, css } = page;
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
 
@@ -1988,7 +2343,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkSkipInk(css),
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
-    checkFontFamilyCount(css),
+    checkFontFamilyCount(css, tokens),
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
@@ -2138,7 +2493,13 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // A single-hue brand shimmer (e.g. signal-blue sweep across a wordmark or grade letter)
   // uses var(--ink)/var(--signal) tokens plus tints of ONE hue — intentional, not slop.
   {
-    const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    // Anchored to a rule boundary. Was `[^{]*` — unbounded, so the regex engine
+    // retried from EVERY character position across the whole stylesheet. On
+    // github.com (3.2 MB of CSS) that single pattern took 56 SECONDS; the same
+    // pattern anchored to `(?:^|})` takes 4 ms and matches the same rule.
+    // Measured 2026-09-19, Node 24. This was the real cause of the 55s cold
+    // score, not the network (0.9s) and not the sequential CSS fetch.
+    const gradientClips = css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
     // Extract a comparable hue signature from a color stop; var()/token stops are ignored
     // (they resolve to brand tokens, not literal slop colors).
     const hueKey = (stop: string): string | null => {
@@ -2677,7 +3038,22 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     };
   });
 
-  return { score, grade, pass, fail, warn, skip, manual, total, scored: total - skip - manual, scope: effectiveScope, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores, checks: checksWithRemediation, tokensExtracted: Object.keys(rawTokens).length, slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences }, originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied } };
+  return {
+    score, grade, pass, fail, warn, skip, manual, total,
+    scored: total - skip - manual, scope: effectiveScope, a11yFloorApplied,
+    hardFailCeilingApplied, hardFailCeilingReason, categoryScores,
+    checks: checksWithRemediation,
+    tokensExtracted: Object.keys(rawTokens).length,
+    slop: { total: slopTotal, findings: slopDeductions, convergences: slopConvergences },
+    originality: { points: originalityPoints, signals: originalitySignals, summary: originalitySummary, slopGateApplied },
+    // Stamped HERE, inside the uncached function, so it travels with the result
+    // through unstable_cache. Reading the clock at the response boundary would
+    // stamp a cached result with a fresh time and report a stale measurement as
+    // new — the receipt would then contradict the data it is supposed to attest
+    // to. `retrievedAt` therefore means "when this run happened", not "when
+    // this response was served"; on a cache hit the two legitimately differ.
+    retrievedAt: new Date().toISOString(),
+  };
 }
 
 // Cached wrapper — the public `scoreUrl` used by both the POST handler and the
@@ -2721,15 +3097,32 @@ function deriveVerdict(result: ScoreResult): string {
 }
 
 /** Emission format: designesy (default, native shape — unchanged). */
-function emitDesignesy(result: ScoreResult) {
-  return { ok: true, contractVersion: 'v0.4.0', ...result };
+function emitDesignesy(result: ScoreResult, requestedUrl: string, retrievedAt: Date) {
+  // `retrievedAt` is internal plumbing — it is destructured out so the raw
+  // string does not leak into the response body alongside the structured
+  // `receipt.retrieved_at` that supersedes it.
+  const { retrievedAt: _internal, ...payload } = result;
+  return {
+    ok: true,
+    contractVersion: 'v0.4.0',
+    ...payload,
+    receipt: buildReceipt(
+      {
+        requestedUrl,
+        contractVersion: 'v0.4.0',
+        scope: result.scope,
+        checks: result.checks,
+      },
+      retrievedAt,
+    ),
+  };
 }
 
 /** Emission format: canonical review-findings.json schema (the superset). */
-function emitCanonical(url: string, result: ScoreResult) {
+function emitCanonical(url: string, result: ScoreResult, retrievedAt: Date) {
   return {
     schemaVersion: '1.0',
-    generatedAt: new Date().toISOString(),
+    generatedAt: retrievedAt.toISOString(),
     tool: {
       name: 'designesy',
       version: 'v0.4.0',
@@ -2776,6 +3169,15 @@ function emitCanonical(url: string, result: ScoreResult) {
       ),
     },
     verdict: deriveVerdict(result),
+    receipt: buildReceipt(
+      {
+        requestedUrl: url,
+        contractVersion: 'v0.4.0',
+        scope: result.scope,
+        checks: result.checks,
+      },
+      retrievedAt,
+    ),
   };
 }
 
@@ -2899,6 +3301,11 @@ export async function POST(request: Request) {
   try {
     const result = await scoreUrl(url, scope);
 
+    // The run's own timestamp, carried on the result through the cache. On a
+    // cache hit this is correctly older than now — the measurement really did
+    // happen earlier, and the receipt must say so.
+    const retrievedAt = new Date(result.retrievedAt);
+
     if (format === 'review') {
       const markdown = emitReview(url, result);
       return new Response(markdown, {
@@ -2915,7 +3322,7 @@ export async function POST(request: Request) {
     }
 
     if (format === 'canonical') {
-      return NextResponse.json(emitCanonical(url, result), {
+      return NextResponse.json(emitCanonical(url, result, retrievedAt), {
         status: 200,
         headers: { 'Cache-Control': 'no-store' },
       });
@@ -2923,7 +3330,7 @@ export async function POST(request: Request) {
 
     // default: designesy (native shape, unchanged)
     return NextResponse.json(
-      emitDesignesy(result),
+      emitDesignesy(result, url, retrievedAt),
       { status: 200, headers: { 'Cache-Control': 'no-store' } }
     );
   } catch (e) {

@@ -1,15 +1,24 @@
 # Dependabot — automated security updates for the designesy.org repo.
 #
-# Watches both ecosystems in this monorepo:
+# Watches the ecosystems in this monorepo:
 #   1. npm (apps/site — the Next.js app deployed on Vercel)
-#   2. pip (packages/designesy-mcp — the Python MCP server published to PyPI)
+#   2. npm (packages/stylelint-plugin-dtcg-tokens — published to npm)
+#   3. npm (packages/score — published to npm)
+#   4. pip (packages/designesy-mcp — the Python MCP server published to PyPI)
+#   5. github-actions (workflow action pins)
 #
 # On the weekly schedule, Dependabot opens PRs for each outdated dependency.
 # Each PR triggers the CI workflow (ci.yml), which runs the build gate — so
 # a broken dependency update is caught before merge, not after.
 #
-# GitHub native security alerts (secret scanning, push protection) are
-# enabled separately in Settings → Code security and are free for public repos.
+# NOTE — this file governs SCHEDULED VERSION UPDATES only. Security alerts
+# follow the GitHub dependency graph and fire for any manifest in the repo,
+# covered here or not. That asymmetry is how six alerts accumulated in
+# packages/stylelint-plugin-dtcg-tokens while nothing ever opened a PR for it,
+# so treat adding a directory here as separate work from it being scanned.
+# (This repo has no npm "workspaces" field — every directory installs
+# independently with its own lockfile, so each needs its own entry AND its own
+# "overrides" block for transitive pins.)
 
 version: 2
 
@@ -69,6 +78,59 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint-config-next"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # ── npm: the DTCG tokens stylelint plugin ────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/stylelint-plugin-dtcg-tokens
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      semver-major-days: 60
+    # Same deferral as apps/site, same reasons. This package declares
+    # "stylelint": ">=16.0.0" as a peer and builds against 16, so a 17 major is
+    # a real migration, not a bump. TypeScript majors routinely need config work.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stylelint"
+        update-types: ["version-update:semver-major"]
+
+  # ── npm: the score package ───────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/score
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      semver-major-days: 60
+    ignore:
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 
