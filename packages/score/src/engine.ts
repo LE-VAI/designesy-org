@@ -2163,7 +2163,13 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
 
   // S4. Gradient text
   {
-    const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    // Anchored to a rule boundary. Was `[^{]*` — unbounded, so the regex engine
+    // retried from EVERY character position across the whole stylesheet. On
+    // github.com (3.2 MB of CSS) that single pattern took 56 SECONDS; the same
+    // pattern anchored to `(?:^|})` takes 4 ms and matches the same rule.
+    // Measured 2026-09-19, Node 24. This was the real cause of the 55s cold
+    // score, not the network (0.9s) and not the sequential CSS fetch.
+    const gradientClips = css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
     const hueKey = (stop: string): string | null => {
       if (/var\(/.test(stop)) return null;
       const hex = stop.match(/#([0-9a-f]{6})/i);

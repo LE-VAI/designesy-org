@@ -273,8 +273,45 @@ async function fetchCssSingle(url: string): Promise<string> {
  * 42 checks then scored, yielding 61.5/D for a site that had blocked us. The
  * caller now learns the fetch failed and can say so instead of inventing a grade.
  */
+/**
+ * Upper bound on external stylesheets fetched per score.
+ *
+ * This is a PATHOLOGY GUARD, not a performance measure. An earlier version of
+ * this fix capped at 12 on the assumption that fetching every sheet was slow —
+ * measured wrong: github.com's 29 unique stylesheets fetch in 0.5s in parallel
+ * (16 workers), because the cost was never the sheet count, it was fetching them
+ * SEQUENTIALLY. The lower cap silently truncated github's CSS surface and cost
+ * it 6.2 points (68.5 -> 62.3), which is a scoring regression dressed as an
+ * optimisation. Do not lower this to save time; time is already bounded by the
+ * per-request abort and the concurrency below.
+ *
+ * 60 is chosen to be above any real site observed (github's 29 is the largest in
+ * the leaderboard cohort) while still bounding a pathological page that links
+ * hundreds of sheets.
+ */
+const MAX_STYLESHEETS = 60;
+
+/**
+ * Wall-clock ceiling for the whole stylesheet phase, across every sheet.
+ *
+ * Distinct from the per-request 8s abort: this bounds the SUM, so a page linking
+ * many slow sheets cannot extend a score without limit. 20s is generous against
+ * the measured 0.5s for a 29-sheet page while still failing fast on a hung host.
+ */
+const STYLESHEET_DEADLINE_MS = 20_000;
+
 type PageOutcome =
-  | { ok: true; html: string; css: string }
+  | {
+      ok: true;
+      html: string;
+      css: string;
+      /** How many external stylesheets contributed — reported so a capped read is visible. */
+      stylesheetsFetched: number;
+      /** Unique external stylesheets the page referenced. */
+      stylesheetsTotal: number;
+      /** True when stylesheetsTotal exceeded the cap and the CSS surface is partial. */
+      stylesheetsTruncated: boolean;
+    }
   | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
 
 async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
@@ -306,18 +343,67 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
     };
   }
 
-  const parts = extractCssLinks(html, targetUrl);
-  const cssParts: string[] = [];
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      const externalCss = await fetchCssSingle(part);
-      if (externalCss) cssParts.push(externalCss);
-    } else {
-      cssParts.push(part);
-    }
-  }
+  // -- Stylesheet collection: dedupe, cap, and fetch in parallel ------------
+  //
+  // Was: sequential fetch of every <link rel=stylesheet> in document order,
+  // each with its own 8s abort. On a large site that is minutes of wall clock.
+  // github.com exposes 40 stylesheet links (11 of them exact duplicates), so the
+  // worst case was ~320s of sequential waiting for a single score. Observed live
+  // 2026-09-18: /api/score for github.com ran past 85s and returned http=000,
+  // which also stalled the weekly re-score at 26/30.
+  //
+  // Three changes, each addressing a distinct part of that:
+  //   1. Dedupe by URL. 11 of github's 40 links are byte-identical repeats.
+  //   2. Cap the count — as a pathology guard ONLY. See MAX_STYLESHEETS: an
+  //      earlier, lower cap was justified by an unmeasured assumption that
+  //      fetching every sheet was slow. It is not (29 sheets = 0.5s in
+  //      parallel), and the cap cost github.com 6.2 points by hiding CSS.
+  //   3. Fetch concurrently. THIS is the actual latency fix: sequential makes
+  //      latency the SUM of every slow sheet, concurrent makes it the MAX.
+  const allParts = extractCssLinks(html, targetUrl);
+  const inlineParts = allParts.filter((p) => !p.startsWith('http'));
+  const uniqueExternal = [...new Set(allParts.filter((p) => p.startsWith('http')))];
+  const externalParts = uniqueExternal.slice(0, MAX_STYLESHEETS);
 
-  return { ok: true, html, css: cssParts.join('\n') };
+  const cssParts: string[] = [...inlineParts];
+  // Global deadline on the whole stylesheet phase.
+  //
+  // Each individual fetch already aborts at 8s, but 60 sheets at 8s each is
+  // still hours of worst case if a site is slow per-request — and unlike the
+  // sheet COUNT, which turned out not to matter, a hung endpoint genuinely
+  // does. The deadline bounds the phase regardless of how many sheets a page
+  // links, so raising the cap above cannot re-introduce an unbounded wait.
+  //
+  // Sheets that miss the deadline are dropped, not failed: a partial CSS surface
+  // still yields real token data, and the omission is reported in the outcome.
+  const deadline = new Promise<never>((_, rej) =>
+    setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS).unref?.()
+      ?? setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS),
+  );
+  let fetched: string[] = [];
+  try {
+    fetched = await Promise.race([
+      Promise.all(
+        externalParts.map(async (part) => {
+          const r = await fetchCssSingleDetailed(part);
+          return r.ok ? r.text : '';
+        }),
+      ),
+      deadline,
+    ]);
+  } catch {
+    fetched = [];
+  }
+  for (const t of fetched) if (t) cssParts.push(t);
+
+  return {
+    ok: true,
+    html,
+    css: cssParts.join('\n'),
+    stylesheetsFetched: fetched.filter(Boolean).length,
+    stylesheetsTotal: uniqueExternal.length,
+    stylesheetsTruncated: uniqueExternal.length > externalParts.length,
+  };
 }
 
 // ── Token extraction + normalization ────────────────────────────────────────
@@ -2407,7 +2493,13 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // A single-hue brand shimmer (e.g. signal-blue sweep across a wordmark or grade letter)
   // uses var(--ink)/var(--signal) tokens plus tints of ONE hue — intentional, not slop.
   {
-    const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    // Anchored to a rule boundary. Was `[^{]*` — unbounded, so the regex engine
+    // retried from EVERY character position across the whole stylesheet. On
+    // github.com (3.2 MB of CSS) that single pattern took 56 SECONDS; the same
+    // pattern anchored to `(?:^|})` takes 4 ms and matches the same rule.
+    // Measured 2026-09-19, Node 24. This was the real cause of the 55s cold
+    // score, not the network (0.9s) and not the sequential CSS fetch.
+    const gradientClips = css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
     // Extract a comparable hue signature from a color stop; var()/token stops are ignored
     // (they resolve to brand tokens, not literal slop colors).
     const hueKey = (stop: string): string | null => {
