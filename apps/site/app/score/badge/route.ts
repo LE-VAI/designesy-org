@@ -134,6 +134,17 @@ export async function GET(request: Request) {
 
   try {
     const result = await scoreUrl(url);
+    // An unread site has no grade to embed. Rendering one would put a fabricated
+    // letter on someone else's README, so the badge states the absence instead.
+    if (result.score === null || result.grade === null) {
+      const svg = renderBadge({ kind: 'unreachable', url });
+      return new NextResponse(svg, {
+        headers: {
+          'Content-Type': 'image/svg+xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
+      });
+    }
     const svg = renderBadge({
       kind: 'scored',
       grade: result.grade,

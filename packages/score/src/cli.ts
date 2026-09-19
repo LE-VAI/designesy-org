@@ -49,7 +49,12 @@ function formatReport(result: Awaited<ReturnType<typeof scoreUrl>>, url: string)
   const lines: string[] = [];
   lines.push(`${BOLD}Designesy Contract Check${RESET}`);
   lines.push(`${DIM}URL:${RESET}    ${url}`);
-  lines.push(`${DIM}Score:${RESET}  ${gradeColor(result.grade)}${BOLD}${result.score}${RESET} ${gradeColor(result.grade)}${BOLD}${result.grade}${RESET}`);
+  if (result.score === null || result.grade === null) {
+    lines.push(`${DIM}Score:${RESET}  ${BOLD}not scored${RESET} ${DIM}(${result.unreachableReason ?? 'unreadable'})${RESET}`);
+    if (result.unreachableDetail) lines.push(`${DIM}${result.unreachableDetail}${RESET}`);
+  } else {
+    lines.push(`${DIM}Score:${RESET}  ${gradeColor(result.grade)}${BOLD}${result.score}${RESET} ${gradeColor(result.grade)}${BOLD}${result.grade}${RESET}`);
+  }
   lines.push(`${DIM}Checks:${RESET} ${result.pass} pass · ${result.warn} warn · ${result.fail} fail · ${result.skip} skip ${DIM}(of ${result.total})${RESET}`);
   if (result.a11yFloorApplied) lines.push(`${DIM}a11y floor applied (score capped at C)${RESET}`);
   if (result.hardFailCeilingApplied && result.hardFailCeilingReason) lines.push(`${DIM}hard-fail ceiling: ${result.hardFailCeilingReason}${RESET}`);
@@ -218,6 +223,17 @@ async function main(): Promise<void> {
   // Gate check (exit code)
   const score = result.score;
   const grade = result.grade;
+
+  // An unreadable target fails the gate outright. It must NOT pass by default:
+  // a CI gate that goes green because the site was unreachable is worse than no
+  // gate, and it must not be compared against a floor — there is no measurement
+  // to compare. This is the exit-code consequence of the unreachable state.
+  if (score === null || grade === null) {
+    console.error(`
+${BOLD}Quality gate failed${RESET}: ${result.unreachableDetail ?? 'the target could not be read'}`);
+    process.exit(1);
+  }
+
   if (args.minScore > 0 && score < args.minScore) {
     console.error(`\n${BOLD}Quality gate failed${RESET}: score ${score} is below the ${args.minScore} floor.`);
     process.exit(1);
