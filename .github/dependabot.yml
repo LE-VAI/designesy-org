@@ -101,6 +101,14 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 5
       semver-major-days: 60
+    # Same deferral as apps/site, same reasons. This package declares
+    # "stylelint": ">=16.0.0" as a peer and builds against 16, so a 17 major is
+    # a real migration, not a bump. TypeScript majors routinely need config work.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stylelint"
+        update-types: ["version-update:semver-major"]
 
   # ── npm: the score package ───────────────────────────────────────────────
   - package-ecosystem: npm
@@ -122,6 +130,9 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 5
       semver-major-days: 60
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # ── pip: the Python MCP server ───────────────────────────────────────────
   - package-ecosystem: pip

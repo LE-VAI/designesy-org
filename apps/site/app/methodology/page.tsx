@@ -308,7 +308,7 @@ const CHECKS: CheckDef[] = [
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Searches for max-width declarations in the 45-75ch range (66ch ideal). PASS if at least one measure is in range. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose — paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45-75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it — which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed, not applied silently.',
   },
   {
     id: 'x01',
@@ -600,6 +600,26 @@ export default function MethodologyPage() {
               average — not a simple count — then adjusted by three further
               layers: anti-slop deduction, originality lift, and hard-fail
               ceilings.
+            </p>
+            <p>
+              <strong>What is measured: the delivered response, not the rendered page.</strong>{' '}
+              The engine reads the HTML the server sends and the stylesheets it links.
+              It does not execute JavaScript and does not wait for client hydration.
+              On a site that renders in the browser, every check therefore reads{' '}
+              <em>the markup that arrives over the wire</em> rather than what a visitor
+              ends up seeing — a heading injected by JavaScript is absent to this engine,
+              and a token set at runtime is not in the CSS it fetched.
+            </p>
+            <p>
+              That is a deliberate trade. It keeps the score deterministic,
+              reproducible, cheap, and free of the timing-dependent flakiness of
+              headless rendering: the same input always yields the same output, which is
+              what makes a score comparable week to week. It also bounds the claim — a low
+              score on a client-rendered site describes its delivered HTML, not how the
+              finished page looks. Every result carries a{' '}
+              <code>receipt</code> with <code>retrieved_at</code>, <code>engine_version</code>,
+              and a <code>digest</code> of the check verdicts, so a third party can re-run
+              the same URL and confirm they get the same answer.
             </p>
             <p>
               <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and

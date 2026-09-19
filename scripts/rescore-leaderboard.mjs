@@ -172,6 +172,28 @@ function generateSeedTS(src, entries, lastScored) {
     // present, skip silently when absent rather than failing the whole run.
     swap('prevScore', num(e.prevScore));
 
+    // unreachable / scoredAt are INJECTED rather than swapped, because they are
+    // new fields that no existing seed row contains — `swap` only replaces text
+    // already present.
+    //
+    // Without this the flag lived only in snapshot.json and never reached the
+    // page, so a held-over score rendered as a fresh measurement. The data model
+    // was honest and the UI could not see it.
+    // entry.scoredAt is set during the scoring loop, where BOTH the prior
+    // snapshot and the fresh result are in scope.
+    //
+    // entryText DOES include the closing brace (verified: the entry regex
+    // captures the whole object literal, so m[0] === m[1]). Insert before that
+    // brace rather than appending after it.
+    //
+    // Note the swap() calls above operate on this same text and match
+    // `key: value` anywhere inside it, so inserting new fields here cannot
+    // disturb them.
+    const extra =
+      `, scoredAt: '${e.scoredAt || lastScored}'` +
+      (e.unreachable === true ? ', unreachable: true' : '');
+    entryText = entryText.replace(/\s*\}\s*$/, `${extra} }`);
+
     out = out.replace(m[0], entryText);
   }
 
@@ -209,16 +231,48 @@ async function main() {
     }
   }
 
+  // The run date, resolved ONCE and used by both the scoring loop (to stamp
+  // entry.scoredAt) and the seed generator. It must be defined before the loop:
+  // an earlier version declared it after, which would have thrown.
+  const now = new Date();
+  const lastScored = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
   // Re-score every site
   console.log(`Scoring ${entries.length} sites against ${SCORE_API}...`);
   let success = 0;
   let errors = 0;
+  /** URLs the engine could not read — reported at the end, never republished. */
+  const unreachable = [];
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     try {
       console.log(`  [${i + 1}/${entries.length}] ${entry.url} ...`);
       const result = await fetchScore(entry.url);
+
+      // ── UNREACHABLE GUARD ──────────────────────────────────────────────
+      // The engine returns score:null for a target it could not read (403,
+      // redirect loop, timeout). That must NOT overwrite a previously-measured
+      // grade: doing so would replace a real reading with a statement about our
+      // own fetch, and republish it as if it were a measurement.
+      //
+      // This is the exact failure that produced the 2026-09-18 run: nytimes.com
+      // (74.7 C) and getdesy.com (73.4 C) both returned 403 and were about to be
+      // republished as 61.5 D — the score of the placeholder document the engine
+      // used to grade instead of reporting the failure.
+      if (result.score === null) {
+        unreachable.push(entry.url);
+        entry.unreachable = true;
+        // Carry the PREVIOUS measurement date forward. Stamping today would
+        // claim a measurement that did not happen.
+        entry.scoredAt = (prevSnapshot[entry.url] && prevSnapshot[entry.url].scoredAt) || null;
+        // Keep the stored score and grade untouched; record why it is stale.
+        console.log(`    → UNREACHABLE (no score reported) — keeping stored ${entry.score} ${entry.grade}`);
+        continue;
+      }
+
+      entry.unreachable = false;
+      entry.scoredAt = lastScored;
       entry.score = result.score;
       entry.grade = result.grade;
       entry.pass = result.pass;
@@ -228,7 +282,9 @@ async function main() {
       entry.tokens = result.tokens;
       success++;
 
-      const delta = entry.prevScore !== null ? ` (prev ${entry.prevScore}, Δ${(entry.score - entry.prevScore).toFixed(1)})` : '';
+      const delta = entry.prevScore !== null && entry.score !== null
+        ? ` (prev ${entry.prevScore}, Δ${(entry.score - entry.prevScore).toFixed(1)})`
+        : '';
       console.log(`    → ${result.score} ${result.grade}${delta}`);
     } catch (e) {
       errors++;
@@ -243,9 +299,17 @@ async function main() {
 
   console.log(`\nRe-score complete: ${success} scored, ${errors} errors.`);
 
-  // Generate the date string
-  const now = new Date();
-  const lastScored = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  if (unreachable.length > 0) {
+    // Printed loudly: an unreachable site keeps its previous grade, so the
+    // operator must know these rows are stale rather than assuming the whole
+    // cohort was refreshed.
+    console.log('');
+    console.log('UNREACHABLE - stored grade kept, NOT re-measured this run:');
+    for (const u of unreachable) console.log('  - ' + u);
+    console.log('');
+    console.log('These rows are stale by design: republishing them with a score derived');
+    console.log('from an unread page would replace a measurement with a fetch failure.');
+  }
 
   // Write the updated seed.ts
   console.log(`Writing updated seed.ts (last scored ${lastScored})...`);
@@ -255,6 +319,18 @@ async function main() {
   // Write this week's snapshot (for next week's delta)
   const snapshot = {};
   for (const entry of entries) {
+    // PRESERVE scoredAt for unreachable entries.
+    //
+    // The guard above keeps a stored score when the engine cannot read a site,
+    // but this loop previously stamped `scoredAt` on EVERY entry regardless —
+    // so an unmeasured row claimed to have been measured today. That is the same
+    // defect the guard exists to prevent, one layer down: a score whose
+    // provenance asserts something that did not happen.
+    //
+    // The prior timestamp is carried forward from the existing snapshot so the
+    // date always names the run that actually produced the number.
+    const prior = prevSnapshot[entry.url];
+    const wasUnmeasured = entry.unreachable === true;
     snapshot[entry.url] = {
       score: entry.score,
       grade: entry.grade,
@@ -263,7 +339,8 @@ async function main() {
       warn: entry.warn,
       skip: entry.skip,
       tokens: entry.tokens,
-      scoredAt: lastScored,
+      scoredAt: wasUnmeasured && prior && prior.scoredAt ? prior.scoredAt : lastScored,
+      ...(wasUnmeasured ? { unreachable: true } : {}),
     };
   }
   console.log('Writing snapshot.json...');

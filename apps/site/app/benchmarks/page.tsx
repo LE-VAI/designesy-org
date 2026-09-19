@@ -26,7 +26,7 @@ const TOOLS = [
     question: 'Does this conform to the contracted design system?',
     category: 'Contract conformance verification',
     delivery: 'URL-based API + MCP tools (agent-invocable)',
-    checks: '42 checks across 14 categories',
+    checks: `${ENGINE_CHECK_COUNT} checks across 14 categories`,
     license: 'See designesy.org',
     stars: '—',
     score: '93% A (self)',
@@ -163,7 +163,7 @@ export default function BenchmarksPage() {
         {/* ── Tool comparison table ─────────────────────────────────────────── */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The three tools</h2>
-          <div className="token-table" role="table" aria-label="Tool comparison">
+          <div className="token-table token-table--four-col" role="table" aria-label="Tool comparison">
             <div className="token-table-head" role="row">
               <span role="columnheader">Attribute</span>
               <span role="columnheader">designesy</span>
@@ -174,10 +174,10 @@ export default function BenchmarksPage() {
               { attr: 'Question', d: 'Does this conform to the contracted design system?', h: 'Does this look AI-generated?', s: 'How much slop does this contain?' },
               { attr: 'Category', d: 'Contract conformance verification', h: 'Anti-slop generation gate', s: 'Anti-slop evaluation skill' },
               { attr: 'Delivery', d: 'URL API + MCP tools (agent-invocable)', h: 'Agent skill (prompt-encoded)', s: 'Agent skill (deterministic script)' },
-              { attr: 'Checks', d: '40 across 14 categories', h: '57 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
+              { attr: 'Checks', d: `${ENGINE_CHECK_COUNT} across 14 categories`, h: '57 binary gates + 6 pre-emit axes', s: '108 tells + 2 positive axes' },
               { attr: 'License', d: 'See designesy.org', h: 'MIT', s: 'Apache-2.0' },
               { attr: 'Stars', d: '—', h: '20.5k', s: '40 (parent repo)' },
-              { attr: 'Score on designesy.org', d: '93% A (36/40 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
+              { attr: 'Score on designesy.org', d: '93% A (39/42 PASS)', h: 'Not run (no URL API)', s: 'Not run (no URL API)' },
             ].map((row) => (
               <div className="token-table-row" role="row" key={row.attr}>
                 <span role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{row.attr}</span>
@@ -286,8 +286,8 @@ export default function BenchmarksPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>designesy</code>
-              <code role="cell">93% A (36 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL)</code>
-              <span role="cell">3 WARN: v16 rem/px ratio, v26 font-family count, v38 bare-noun buttons. 3 MANUAL: viewport overflow, sound toggle, Core Web Vitals (browser-only probes)</span>
+              <code role="cell">93% A ({ENGINE_CHECK_COUNT - 3} PASS / 0 FAIL / 0 WARN / 0 SKIP / 3 MANUAL)</code>
+              <span role="cell">0 FAIL, 0 WARN. 3 MANUAL: viewport overflow, sound toggle, Core Web Vitals — browser-only probes the static engine cannot run, so they are excluded from the score rather than counted against it.</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>hallmark</code>
@@ -356,7 +356,7 @@ export default function BenchmarksPage() {
             </p>
           </div>
           <CheckGrid items={[
-            { title: 'designesy live score', meta: 'POST https://www.designesy.org/api/score — 93% A, ${ENGINE_CHECK_COUNT} checks, verified 2026-08-22' },
+            { title: 'designesy live score', meta: `POST https://www.designesy.org/api/score — 93% A, ${ENGINE_CHECK_COUNT} checks, verified 2026-09-17` },
             { title: 'hallmark 57 gates', meta: 'github.com/Nutlope/hallmark/blob/main/skills/hallmark/references/slop-test.md' },
             { title: 'slop-eval 108 tells', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/references/tells.md' },
             { title: 'slop-eval scoring', meta: 'github.com/fabricioctelles/skills/blob/main/skills/slop-eval/SKILL.md' },
