@@ -172,6 +172,28 @@ function generateSeedTS(src, entries, lastScored) {
     // present, skip silently when absent rather than failing the whole run.
     swap('prevScore', num(e.prevScore));
 
+    // unreachable / scoredAt are INJECTED rather than swapped, because they are
+    // new fields that no existing seed row contains — `swap` only replaces text
+    // already present.
+    //
+    // Without this the flag lived only in snapshot.json and never reached the
+    // page, so a held-over score rendered as a fresh measurement. The data model
+    // was honest and the UI could not see it.
+    // entry.scoredAt is set during the scoring loop, where BOTH the prior
+    // snapshot and the fresh result are in scope.
+    //
+    // entryText DOES include the closing brace (verified: the entry regex
+    // captures the whole object literal, so m[0] === m[1]). Insert before that
+    // brace rather than appending after it.
+    //
+    // Note the swap() calls above operate on this same text and match
+    // `key: value` anywhere inside it, so inserting new fields here cannot
+    // disturb them.
+    const extra =
+      `, scoredAt: '${e.scoredAt || lastScored}'` +
+      (e.unreachable === true ? ', unreachable: true' : '');
+    entryText = entryText.replace(/\s*\}\s*$/, `${extra} }`);
+
     out = out.replace(m[0], entryText);
   }
 
@@ -209,6 +231,12 @@ async function main() {
     }
   }
 
+  // The run date, resolved ONCE and used by both the scoring loop (to stamp
+  // entry.scoredAt) and the seed generator. It must be defined before the loop:
+  // an earlier version declared it after, which would have thrown.
+  const now = new Date();
+  const lastScored = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
   // Re-score every site
   console.log(`Scoring ${entries.length} sites against ${SCORE_API}...`);
   let success = 0;
@@ -235,12 +263,16 @@ async function main() {
       if (result.score === null) {
         unreachable.push(entry.url);
         entry.unreachable = true;
+        // Carry the PREVIOUS measurement date forward. Stamping today would
+        // claim a measurement that did not happen.
+        entry.scoredAt = (prevSnapshot[entry.url] && prevSnapshot[entry.url].scoredAt) || null;
         // Keep the stored score and grade untouched; record why it is stale.
         console.log(`    → UNREACHABLE (no score reported) — keeping stored ${entry.score} ${entry.grade}`);
         continue;
       }
 
       entry.unreachable = false;
+      entry.scoredAt = lastScored;
       entry.score = result.score;
       entry.grade = result.grade;
       entry.pass = result.pass;
@@ -278,10 +310,6 @@ async function main() {
     console.log('These rows are stale by design: republishing them with a score derived');
     console.log('from an unread page would replace a measurement with a fetch failure.');
   }
-
-  // Generate the date string
-  const now = new Date();
-  const lastScored = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // Write the updated seed.ts
   console.log(`Writing updated seed.ts (last scored ${lastScored})...`);
