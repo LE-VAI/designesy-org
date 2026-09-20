@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CHECKS, CATEGORY_WEIGHTS } from '../../../lib/check-definitions';
+import { CONTRACT_VERSION } from '../../../lib/design-system-contract';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-static';
@@ -33,7 +34,7 @@ const ORIGINALITY_SIGNALS = [
 
 export function GET() {
   return NextResponse.json({
-    contractVersion: 'v0.4.0',
+    contractVersion: CONTRACT_VERSION,
     totalChecks: CHECKS.length,
     scoredChecks: CHECKS.filter((c) => c.type === 'auto').length,
     manualChecks: CHECKS.filter((c) => c.type === 'manual').length,

@@ -10,6 +10,7 @@ import { CopyPrompt } from '../../lib/copy-prompt';
 import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Takt',
@@ -444,7 +445,7 @@ export default function TaktLabPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.4.0 · tokens, interaction, takt, cadence, acoustics, verification</span>
+                <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
               </span>
             </Link>
             <Link

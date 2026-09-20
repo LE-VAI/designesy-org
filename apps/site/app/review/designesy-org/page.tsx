@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
@@ -163,7 +164,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
-            <span className="lab-meta-item">Baseline · contract v0.4.0</span>
+            <span className="lab-meta-item">Baseline · contract {CONTRACT_VERSION}</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
         </section>
@@ -255,7 +256,7 @@ export default function PublicSurfaceReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition">
-            <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract v0.4.0</p>
+            <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract {CONTRACT_VERSION}</p>
             <p>
               Poise is Lab One; its portable interaction rules were adopted into
               contract v0.1.1. Takt is Lab Two; its interface-feel rules were

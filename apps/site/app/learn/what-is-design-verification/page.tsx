@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'What is design verification?',
@@ -220,7 +221,7 @@ export default function WhatIsDesignVerificationPage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Read the contract</span>
-                <span className="row-meta">Designesy design system v0.4.0 — tokens, rules, behavior, verification</span>
+                <span className="row-meta">Designesy design system {CONTRACT_VERSION} — tokens, rules, behavior, verification</span>
               </span>
             </Link>
             <Link

@@ -7,6 +7,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { CopyRow } from '../../lib/copy-row';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Open handoff',
@@ -168,7 +169,7 @@ export default function OpenHandoffPage() {
             >
               <span className="row-index">04</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.4.0</span>
+                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                 <span className="row-meta">Portable judgment · human + machine</span>
               </span>
             </Link>

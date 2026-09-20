@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { buildReceipt } from '../../lib/receipt';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -3104,12 +3105,12 @@ function emitDesignesy(result: ScoreResult, requestedUrl: string, retrievedAt: D
   const { retrievedAt: _internal, ...payload } = result;
   return {
     ok: true,
-    contractVersion: 'v0.4.0',
+    contractVersion: CONTRACT_VERSION,
     ...payload,
     receipt: buildReceipt(
       {
         requestedUrl,
-        contractVersion: 'v0.4.0',
+        contractVersion: CONTRACT_VERSION,
         scope: result.scope,
         checks: result.checks,
       },
@@ -3125,7 +3126,7 @@ function emitCanonical(url: string, result: ScoreResult, retrievedAt: Date) {
     generatedAt: retrievedAt.toISOString(),
     tool: {
       name: 'designesy',
-      version: 'v0.4.0',
+      version: CONTRACT_VERSION,
     },
     subject: {
       type: 'url' as const,
@@ -3172,7 +3173,7 @@ function emitCanonical(url: string, result: ScoreResult, retrievedAt: Date) {
     receipt: buildReceipt(
       {
         requestedUrl: url,
-        contractVersion: 'v0.4.0',
+        contractVersion: CONTRACT_VERSION,
         scope: result.scope,
         checks: result.checks,
       },

@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { acousticTokens } from '../lib/acoustic-tokens';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustic tokens',
@@ -186,7 +187,7 @@ export default function AcousticTokensPage() {
             >
               <span className="row-index">03</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.4.0</span>
+                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                 <span className="row-meta">Visual token system</span>
               </span>
             </Link>

@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Review',
@@ -263,7 +264,7 @@ export default function ReviewPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.4.0</span>
+                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                 <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
               </span>
             </Link>

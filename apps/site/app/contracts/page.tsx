@@ -9,6 +9,7 @@ import { DemoCell, DemoGrid } from '../lib/demo-cell';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
@@ -343,7 +344,7 @@ export default function ContractsPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system · v0.4.0</span>
+                <span className="row-title">Design system · {CONTRACT_VERSION}</span>
                 <span className="row-meta">
                   Human overview, full tables below, machine JSON export
                 </span>
@@ -654,7 +655,7 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="design-system-contract">
           <h2 className="doctrine-heading">Published contract</h2>
           <div className="definition">
-            <p className="definition-label">Designesy design system · v0.4.0</p>
+            <p className="definition-label">Designesy design system · {CONTRACT_VERSION}</p>
             <p>
               Public design contract for designesy.org. Derived from the live
               site token foundation, with Lab One · Poise, Lab Two · Takt, Lab
@@ -1076,7 +1077,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="09e-copywriting">
-          <h2 className="doctrine-heading">09e · Copywriting (v0.4.0)</h2>
+          <h2 className="doctrine-heading">09e · Copywriting ({CONTRACT_VERSION})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             UX copy principles adopted in v0.4.0 from NN/g, Polaris, IBM
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap signal:{' '}

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 type CheckResult = {
   id: string;
   item: string;
@@ -268,7 +269,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
         <div className="report-hero-meta">
           <p className="report-hero-url">{scoredUrl}</p>
-          <p className="report-hero-contract">Design system contract v0.4.0 · {total} checks</p>
+          <p className="report-hero-contract">Design system contract {CONTRACT_VERSION} · {total} checks</p>
           <div className="report-hero-counts">
             <span className="report-count report-count--pass">{pass} pass</span>
             <span className="report-count report-count--fail">{fail} fail</span>

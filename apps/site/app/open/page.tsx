@@ -16,6 +16,7 @@ import {
   creativeWorkJsonLd,
   datasetJsonLd,
 } from '../lib/json-ld';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
@@ -217,7 +218,7 @@ export default function OpenPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
-                <span className="row-meta">v0.4.0 · human + machine</span>
+                <span className="row-meta">{CONTRACT_VERSION} · human + machine</span>
               </span>
             </Link>
             <Link
