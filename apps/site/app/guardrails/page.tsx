@@ -12,6 +12,8 @@ export const metadata: Metadata = pageMeta({
   description:
     'Generate a frozen build contract for AI coding agents from any design system — DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
   path: '/guardrails',
+
+  machineSibling: '/contracts/guardrails.json',
   ogTitle: 'Guardrails · Designesy',
   ogDescription:
     'Turn your design system into the file AI agents read and the lint that enforces it — now with DESIGN.md emission.',

@@ -73,10 +73,46 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      # This is the exact command Vercel runs: `next build && node scripts/postbuild-pagefind.js`.
-      # If this passes locally in CI, it will pass on Vercel.
-      - name: Build
-        run: npm run build
+      # The build is split into NAMED STEPS rather than one `npm run build`.
+      #
+      # WHY: `npm run build` chains six commands, so any failure collapsed into a
+      # single "Build site: fail" with the cause buried in a long log. Splitting
+      # makes each gate its own named check in the GitHub UI, so a red run says
+      # which gate failed without reading output.
+      #
+      # WHY STEPS AND NOT SEPARATE JOBS: the gates all need .next/server/app,
+      # which only exists after `next build`. Five separate jobs would each pay
+      # for checkout + npm ci + a full build, turning one 2-minute build into ten.
+      # Steps share the workspace at no cost.
+      #
+      # `if: always()` ON THE GATES IS DELIBERATE. Without it, a failing first
+      # gate cancels the rest and you learn one problem per run. This way a
+      # single run reports every gate's verdict.
+      #
+      # The `npm run build` script still chains them for Vercel, which is where
+      # the real deploy gate lives. This mirrors it, step for step.
+      - name: Next build
+        run: npx next build
+
+      - name: Contract drift
+        if: always()
+        run: node scripts/check-contract-drift.js
+
+      - name: Pagefind index
+        if: always()
+        run: node scripts/postbuild-pagefind.js
+
+      - name: Generate markdown
+        if: always()
+        run: node scripts/generate-markdown.js
+
+      - name: Prose gate
+        if: always()
+        run: node scripts/prose-lint.js
+
+      - name: Contract version guard
+        if: always()
+        run: node scripts/check-contract-version.js
 
       # Cache the Next.js build output for faster re-runs on the same PR.
       - name: Cache .next

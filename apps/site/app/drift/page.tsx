@@ -12,6 +12,8 @@ export const metadata: Metadata = pageMeta({
   description:
     'Score any URL for AI-generated UI drift — 12 checks detect token fabrication, value variance, and off-contract patterns. The four documented 2026 drift failure modes, scored deterministically from compiled CSS.',
   path: '/drift',
+
+  machineSibling: '/contracts/drift.json',
   ogTitle: 'Drift radar · Designesy',
   ogDescription:
     'Detect AI-generated UI drift — 12 deterministic checks against compiled CSS.',

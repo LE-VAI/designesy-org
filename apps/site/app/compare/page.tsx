@@ -12,6 +12,8 @@ export const metadata: Metadata = pageMeta({
   description:
     'Compare two design systems from live URLs — diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta. The only URL-scoped design-token diff engine. 8 emission checks plus score delta on both sites.',
   path: '/compare',
+
+  machineSibling: '/contracts/compare.json',
   ogTitle: 'Token diff · Designesy',
   ogDescription:
     'Diff two design systems from live URLs — tokens added, removed, renamed, value-changed, scale drift.',
