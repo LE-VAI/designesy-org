@@ -37,8 +37,18 @@ export type CheckResult = {
 };
 
 export type ScoreResult = {
-  score: number;
-  grade: string;
+  /**
+   * null when the target could not be read. Deliberately not `0`: a site we
+   * failed to fetch is not a site that scored zero, and consumers must decide
+   * what to show rather than rendering a fabricated grade.
+   */
+  score: number | null;
+  grade: string | null;
+  /** Present only when score is null — says WHY no grade is reported. */
+  unreachable?: true;
+  unreachableReason?: 'http_error' | 'timeout' | 'network' | 'empty_body';
+  unreachableDetail?: string;
+  attemptedUrls?: string[];
   pass: number;
   fail: number;
   warn: number;
@@ -296,7 +306,20 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
   return links;
 }
 
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
+/**
+ * Fetched page, or an explicit statement that there is no page.
+ *
+ * Previously every candidate failure produced `{ html: '<html><body></body></html>' }`
+ * — a real document that the checks then scored. A site that blocked the fetch
+ * (403, redirect loop, timeout) therefore received the same grade as a genuine
+ * page carrying no design tokens. This mirrors the server engine's fix
+ * (2026-09-18): the caller learns the fetch failed instead of inventing a score.
+ */
+export type PageOutcome =
+  | { ok: true; html: string; css: string }
+  | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
+
+async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   const parsed = new URL(targetUrl);
   const candidateUrls = [
     targetUrl,
@@ -305,12 +328,19 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
   ].filter(Boolean);
 
   let html = '';
+  let lastStatus = 0;
   for (const candidate of candidateUrls) {
     if (!isValidUrl(candidate)) continue;
     const r = await httpsFetch(candidate);
     if (r.ok && r.text.length > 50) { html = r.text; break; }
+    lastStatus = r.status;
   }
-  if (!html) return { html: '<html><body></body></html>', css: '' };
+  if (!html) {
+    // status 0 means the request never completed (network/DNS/timeout); a real
+    // status means the server answered and refused.
+    const reason = lastStatus >= 400 ? 'http_error' : lastStatus === 0 ? 'network' : 'empty_body';
+    return { ok: false, reason, status: lastStatus || undefined, attempted: candidateUrls };
+  }
 
   const parts = extractCssLinks(html, targetUrl);
   const cssParts: string[] = [];
@@ -323,7 +353,7 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
       cssParts.push(part);
     }
   }
-  return { html, css: cssParts.join('\n') };
+  return { ok: true, html, css: cssParts.join('\n') };
 }
 
 function extractRootTokens(css: string): Record<string, string> {
@@ -634,8 +664,54 @@ function checkTabularNums(css: string): CheckResult {
 }
 
 function checkReducedMotion(css: string): CheckResult {
-  if (/@media[^{]*prefers-reduced-motion/i.test(css)) return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'PASS', detail: 'prefers-reduced-motion declared' };
-  return { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', status: 'WARN', detail: 'missing prefers-reduced-motion media query' };
+  const ITEM = 'prefers-reduced-motion disables entrance and wordmark breath';
+  const CATEGORY = 'motion';
+
+  // Strip comments first. Without this, a commented-out media query — or any
+  // prose mentioning prefers-reduced-motion — satisfied the old check. The
+  // calibration corpus caught exactly that: the previous regex matched the
+  // string anywhere, including inside /* */.
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  // Match the media query and require the `reduce` VALUE specifically.
+  // The prior regex accepted any @media containing the feature name, so
+  // `@media (prefers-reduced-motion: NO-PREFERENCE)` — which expresses the
+  // OPPOSITE intent, opting INTO motion — passed as readily as `reduce`. That
+  // is a false PASS on the exact accessibility primitive the check exists to
+  // verify. `no-preference` is not a reduced-motion block.
+  const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
+  let match: RegExpExecArray | null;
+  let sawReduce = false;
+  let sawNoPreference = false;
+  while ((match = mqRe.exec(code)) !== null) {
+    const value = match[1].toLowerCase();
+    // Capture the block body by brace-matching from the opening brace.
+    const open = match.index + match[0].length - 1;
+    let depth = 0;
+    let close = -1;
+    for (let i = open; i < code.length; i++) {
+      if (code[i] === '{') depth++;
+      else if (code[i] === '}') {
+        depth--;
+        if (depth === 0) { close = i; break; }
+      }
+    }
+    const body = close > open ? code.slice(open + 1, close).trim() : '';
+    if (value === 'no-preference') { sawNoPreference = true; continue; }
+    // A `reduce` query that declares no rules reduces nothing.
+    if (body.length > 0) sawReduce = true;
+  }
+
+  if (sawReduce) {
+    return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'prefers-reduced-motion: reduce block declares rules' };
+  }
+  if (sawNoPreference) {
+    return {
+      id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: 'a prefers-reduced-motion media query exists but uses `no-preference` — that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+    };
+  }
+  return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
 }
 
 function checkNoAtlasNaming(html: string): CheckResult {
@@ -845,16 +921,62 @@ function checkHeadingHierarchy(html: string): CheckResult {
 
 // v26 — Font family count ≤3 (design-auditor, Typography Master).
 // Counts distinct font-family declarations. >3 = inconsistency signal.
-function checkFontFamilyCount(css: string): CheckResult {
+/**
+ * Resolve a family token to a real typeface name, following the alias chain.
+ *
+ * One level is not enough. The site's stack is two hops deep:
+ *   --sans       -> var(--font-sans), -apple-system, ...
+ *   --font-sans  -> 'Schibsted Grotesk', 'Schibsted Grotesk Fallback', ...  (next/font)
+ * so resolving once yields the literal string "var(--font-sans)", which then
+ * counts as its OWN family alongside the raw `geist` name that next/font also
+ * emits — double-counting one typeface and failing the check.
+ *
+ * Follows up to `maxHops` links and normalizes the result. Returns null when the
+ * chain does not terminate in a name (a cycle, or an unknown token), so the
+ * caller can skip rather than attribute a family it cannot identify.
+ */
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[`--${ref[1]}`];
+  }
+  return null;
+}
+
+
+function checkFontFamilyCount(
+  css: string,
+  tokens: Record<string, string> = {},
+): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
   let m;
   while ((m = re.exec(css)) !== null) {
     // Normalize: strip quotes, take first family in a stack, lowercase.
-    const stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    let stack = m[1].split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     // Skip generic keywords that shouldn't count as "a family choice."
     const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
     if (generic.includes(stack)) continue;
+    // A var() alias REFERENCES a family token; it is not another family. Counting
+    // the spelling rather than the face inflated this check from 3 to 9 on the
+    // site and failed a page that uses exactly three typefaces.
+    if (stack.startsWith('var(')) {
+      const ref = stack.match(/var\(\s*--([\w-]+)/);
+      const resolved = ref ? resolveFamilyToken(tokens, ref[1]) : null;
+      if (!resolved) continue; // unresolvable alias — cannot attribute a family
+      stack = resolved;
+      if (generic.includes(stack)) continue;
+    }
+    // next/font emits a synthetic metric-matched fallback face per family
+    // ("Geist Fallback"). Same family, not an extra typeface choice.
+    if (/\sfallback$/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -889,21 +1011,69 @@ function checkInputFontFloor(css: string): CheckResult {
   return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
 }
 
-// v28 — Reading width 45-75ch (design-auditor Reading Width module).
-// Scans CSS for max-width in ch units on prose containers. 66ch ideal.
 function checkReadingWidth(css: string): CheckResult {
-  const chRe = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/gi;
-  const widths: number[] = [];
-  let m;
-  while ((m = chRe.exec(css)) !== null) {
-    widths.push(parseFloat(m[1]));
+  const ITEM = 'Reading width 45-75ch on prose containers';
+  const CATEGORY = 'cadence';
+
+  // Selectors that indicate a prose container. Matched against the selector
+  // text of a rule, not the element tree — so `p`, `.prose`, `.lede`,
+  // `.definition > p`, `.methodology-prose > p` all qualify, while `.grid`,
+  // `.token-table`, `.row`, `.doctrine-cols` do not.
+  const PROSE_SELECTOR = /(^|[\s,>+~])(p|article|blockquote|li|dd|dt|figcaption)\b|prose|lede|measure|reading|note\b|copy\b|body-text|text-block/i;
+  // Containers that must never be treated as prose even if a class name
+  // contains a prose-ish word (e.g. `.prose-grid`).
+  const STRUCTURAL_SELECTOR = /grid|table|row|col\b|flex|swatch|chip|badge|tab\b|nav\b|toolbar|chart|canvas|pre\b|code\b|kbd/i;
+
+  // Walk every rule block, capturing selector + declarations together.
+  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
+  const proseInRange: number[] = [];
+  const proseOutOfRange: number[] = [];
+  const nonProse: number[] = [];
+  let m: RegExpExecArray | null;
+
+  while ((m = ruleRe.exec(css)) !== null) {
+    const selector = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    const body = m[2];
+    // Skip at-rule preludes (`@media (...)`, `@supports (...)`) — the block
+    // body is walked on the next iteration when the inner rule is seen. A
+    // media query wrapping prose rules should not itself be classified.
+    if (selector.startsWith('@')) continue;
+
+    const widthMatch = /max-width\s*:\s*(\d+(?:\.\d+)?)ch/i.exec(body);
+    if (!widthMatch) continue;
+    const value = parseFloat(widthMatch[1]);
+
+    const isProse = PROSE_SELECTOR.test(selector) && !STRUCTURAL_SELECTOR.test(selector);
+    if (!isProse) { nonProse.push(value); continue; }
+    if (value >= 45 && value <= 75) proseInRange.push(value);
+    else proseOutOfRange.push(value);
   }
-  if (widths.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens' };
-  const inRange = widths.filter(w => w >= 45 && w <= 75);
-  const outOfRange = widths.filter(w => w < 45 || w > 75);
-  if (inRange.length > 0 && outOfRange.length === 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} measure(s) in 45-75ch range: ${inRange.join(', ')}ch` };
-  if (inRange.length > 0) return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'PASS', detail: `${inRange.length} in range, ${outOfRange.length} out: ${widths.join(', ')}ch` };
-  return { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', status: 'WARN', detail: `${widths.length} ch-measure(s) found, all outside 45-75ch: ${widths.join(', ')}ch` };
+
+  if (proseInRange.length > 0) {
+    const detail = proseOutOfRange.length > 0
+      ? `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch (also ${proseOutOfRange.length} prose rule(s) outside the band: ${proseOutOfRange.join(', ')}ch)`
+      : `${proseInRange.length} prose measure(s) in 45-75ch: ${proseInRange.join(', ')}ch`;
+    return { id: 'v28', item: ITEM, category: CATEGORY, status: 'PASS', detail };
+  }
+
+  if (nonProse.length > 0 && proseOutOfRange.length === 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${nonProse.length} ch-based max-width rule(s) found (${nonProse.join(', ')}ch) but none target a prose container — line length on paragraphs is unconstrained. Add the measure to your prose selectors (p, article, .prose), not to a grid or table.`,
+    };
+  }
+
+  if (proseOutOfRange.length > 0) {
+    return {
+      id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+      detail: `${proseOutOfRange.length} prose rule(s) found, all outside 45-75ch: ${proseOutOfRange.join(', ')}ch`,
+    };
+  }
+
+  return {
+    id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
+    detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens',
+  };
 }
 
 // ── Tier 5: token-layer completeness (v29) — DSAF A1.1 wedge ────────────────
@@ -1399,7 +1569,16 @@ function checkButtonTextVerb(html: string): CheckResult {
   // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
   const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
-  const TEXT_SHORTCUT_RE = /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)\s*\+.*$/i;
+  // The `+` is optional and the key may be fused directly to the modifier
+  // ("CtrlK"), because the site's badge is platform-aware and renders "Ctrl"
+  // with no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived
+  // and v38 read the shortcut as part of the verb.
+  //
+  // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
+  // with no space between). A space separates a real word: "Alt text" is a
+  // label, not a shortcut, and must not be eaten.
+  const TEXT_SHORTCUT_RE =
+    /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
     let text = m[1].replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
@@ -1769,8 +1948,99 @@ function computeGrade(score: number): string {
 
 // ── Main scoring function ───────────────────────────────────────────────────
 
+/**
+ * Score a URL: fetch it, then run the checks.
+ *
+ * This is a thin wrapper. Everything after the fetch lives in scoreFromParts,
+ * so a fixture can be scored through the SAME code path as a live URL. That
+ * matters for the calibration corpus: a fixture scored by a separate function
+ * would prove only that the copy agrees with itself.
+ *
+ * `subject` is passed down so the two URL-dependent checks (v37's DESIGN.md
+ * probe, and scope auto-detection) can still resolve a host. A fixture passes
+ * a synthetic origin it controls; nothing is fetched from it beyond DESIGN.md,
+ * which returns SKIP when absent.
+ */
 export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<ScoreResult> {
-  const { html, css } = await fetchPageResilient(targetUrl);
+  const page = await fetchPageResilient(targetUrl);
+  if (!page.ok) return unreachableResult(targetUrl, page.reason, page.status, page.attempted, scope);
+  return scoreFromParts({ html: page.html, css: page.css, subject: targetUrl, scope });
+}
+
+/** Inputs for scoring a page that has already been fetched. */
+export interface ScorePartsInput {
+  html: string;
+  css: string;
+  /**
+   * The URL the parts came from. Used only for scope auto-detection and the
+   * DESIGN.md probe — never re-fetched for html/css. Defaults to a synthetic
+   * origin so an offline fixture needs no host.
+   */
+  subject?: string;
+  scope?: ScoreScope;
+  /**
+   * Skip the network-bound DESIGN.md probe (v37) entirely.
+   *
+   * Set by the fixture runner. Without it an offline corpus would emit a
+   * network round-trip per fixture and a flaky v37 verdict, so the check is
+   * pinned to SKIP with a detail naming why — never silently passed.
+   */
+  offline?: boolean;
+}
+
+/**
+ * Run the full check suite against already-fetched parts.
+ *
+ * Exported for the calibration corpus and for parity testing. Both callers
+ * must be able to reach every check without a network, or the corpus can only
+ * verify the subset that happens to be fetchable.
+ */
+/**
+ * Build the no-grade result for a target we could not read.
+ *
+ * Every count is zero and `checks` is empty: there are no verdicts to report,
+ * because nothing was measured. An earlier version scored a placeholder
+ * document instead, which gave unrelated blocked sites identical grades.
+ */
+function unreachableResult(
+  targetUrl: string,
+  reason: 'http_error' | 'timeout' | 'network' | 'empty_body',
+  status: number | undefined,
+  attempted: string[],
+  scope?: ScoreScope,
+): ScoreResult {
+  const why =
+    reason === 'http_error'
+      ? `the server returned HTTP ${status ?? 'error'} for every candidate URL`
+      : reason === 'timeout'
+        ? 'the request timed out'
+        : reason === 'empty_body'
+          ? 'the response body was empty or too small to be a page'
+          : 'the request failed at the network level';
+  return {
+    score: null,
+    grade: null,
+    unreachable: true,
+    unreachableReason: reason,
+    unreachableDetail: `Could not read ${targetUrl} — ${why}. No score is reported: a site we cannot fetch is not a site we can grade.`,
+    attemptedUrls: attempted,
+    pass: 0, fail: 0, warn: 0, skip: 0, manual: 0, total: 0, scored: 0,
+    scope: scope || autoDetectScope(targetUrl),
+    a11yFloorApplied: false,
+    hardFailCeilingApplied: false,
+    hardFailCeilingReason: null,
+    categoryScores: {},
+    checks: [],
+    tokensExtracted: 0,
+    slop: { total: 0, findings: [], convergences: null },
+    originality: { points: 0, signals: [], summary: '', slopGateApplied: false },
+  };
+}
+
+export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResult> {
+  const { html, css } = input;
+  const targetUrl = input.subject || 'https://fixture.local/';
+  const scope = input.scope;
   const rawTokens = extractRootTokens(css);
   const tokens = inferTokensFromCss(css, rawTokens);
   const effectiveScope: ScoreScope = scope || autoDetectScope(targetUrl);
@@ -1804,7 +2074,7 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
     checkSkipInk(css),
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
-    checkFontFamilyCount(css),
+    checkFontFamilyCount(css, tokens),
     checkInputFontFloor(css),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
@@ -1820,7 +2090,23 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
   ];
 
   // v37 is async — added after the synchronous checks array
-  checks.push(await checkDesignMdSpec(targetUrl));
+  //
+  // It is the only check that fetches beyond the page itself (it probes
+  // /DESIGN.md on the subject host), so the offline fixture runner pins it to
+  // SKIP rather than letting a corpus depend on network timing. SKIP is the
+  // honest state: the check did not run, and it is excluded from the score
+  // exactly as it would be on a site that serves no DESIGN.md.
+  checks.push(
+    input.offline
+      ? {
+          id: 'v37',
+          item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
+          category: 'spec',
+          status: 'SKIP' as const,
+          detail: 'not probed — offline fixture run (no network); excluded from the score',
+        }
+      : await checkDesignMdSpec(targetUrl),
+  );
 
   checks = applyScopeFilter(checks, effectiveScope);
 
@@ -1877,7 +2163,13 @@ export async function scoreUrl(targetUrl: string, scope?: ScoreScope): Promise<S
 
   // S4. Gradient text
   {
-    const gradientClips = css.match(/[^{]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    // Anchored to a rule boundary. Was `[^{]*` — unbounded, so the regex engine
+    // retried from EVERY character position across the whole stylesheet. On
+    // github.com (3.2 MB of CSS) that single pattern took 56 SECONDS; the same
+    // pattern anchored to `(?:^|})` takes 4 ms and matches the same rule.
+    // Measured 2026-09-19, Node 24. This was the real cause of the 55s cold
+    // score, not the network (0.9s) and not the sequential CSS fetch.
+    const gradientClips = css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
     const hueKey = (stop: string): string | null => {
       if (/var\(/.test(stop)) return null;
       const hex = stop.match(/#([0-9a-f]{6})/i);

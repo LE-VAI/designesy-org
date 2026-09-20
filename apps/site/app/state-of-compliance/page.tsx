@@ -45,7 +45,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'State of Design Compliance',
   description:
-    'The first deterministic report on design-system contract compliance across the web. 30 sites scored against a 40-check engine. Material 3 scores 59/F. Only 1 site passes. No surveys, no votes — computed scores.',
+    `The first deterministic report on design-system contract compliance across the web. 30 sites scored against a ${ENGINE_CHECK_COUNT}-check engine. Material 3 scores 59/F. Only 1 site passes. No surveys, no votes — computed scores.`,
   path: '/state-of-compliance',
   ogTitle: 'State of Design Compliance · Designesy',
   ogDescription:
@@ -541,7 +541,7 @@ export default function StateOfCompliancePage() {
             doesn&rsquo;t have a tool to verify its own output — we do. The same
             engine that scores M3 scores designesy.org (self-score:{' '}
             <strong>{SELF_SCORE.toFixed(1)}% / {SELF_GRADE}</strong>), in
-            public, with the same 40 checks. Transparency earns trust.
+            public, with the same {ENGINE_CHECK_COUNT} checks. Transparency earns trust.
           </p>
         </section>
 

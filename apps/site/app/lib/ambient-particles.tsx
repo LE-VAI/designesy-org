@@ -94,22 +94,45 @@ const FADE_IN_MS = 2500;
 const FADE_IN_SPREAD = 1800;
 
 /**
- * Read the signal palette from CSS variables so it tracks the live theme.
+ * Read the ambient-field palette from CSS variables so it tracks the live theme.
+ *
+ * These are the dedicated --field-dot-* tokens, NOT --signal/--signal-light.
+ * The field covers the whole viewport, so when it borrowed the signal family it
+ * competed with the buttons, links, and focus rings those tokens exist for —
+ * the accent stopped being parsimonious. The dedicated tokens let light mode
+ * carry a quieter dot palette while dark mode keeps the bright one, from CSS,
+ * with no theme branch in the draw loop.
  */
 function readPalette(): string[] {
   const styles = getComputedStyle(document.documentElement);
-  const signal = styles.getPropertyValue('--signal').trim() || '#0133CB';
-  const light = styles.getPropertyValue('--signal-light').trim() || '#3358E8';
-  const access = styles.getPropertyValue('--signal-access').trim() || '#5d7bff';
+  const dot1 = styles.getPropertyValue('--field-dot-1').trim() || '#0133CB';
+  const dot2 = styles.getPropertyValue('--field-dot-2').trim() || '#3358E8';
+  const dot3 = styles.getPropertyValue('--field-dot-3').trim() || '#5d7bff';
   let bright = '#7E9DFF';
-  if (access.startsWith('#')) {
-    const r = parseInt(access.slice(1, 3), 16);
-    const g = parseInt(access.slice(3, 5), 16);
-    const b = parseInt(access.slice(5, 7), 16);
+  if (dot3.startsWith('#')) {
+    const r = parseInt(dot3.slice(1, 3), 16);
+    const g = parseInt(dot3.slice(3, 5), 16);
+    const b = parseInt(dot3.slice(5, 7), 16);
     const mix = (c: number) => Math.round(c + (255 - c) * 0.35);
     bright = `#${mix(r).toString(16).padStart(2, '0')}${mix(g).toString(16).padStart(2, '0')}${mix(b).toString(16).padStart(2, '0')}`;
   }
-  return [signal, light, access, bright];
+  return [dot1, dot2, dot3, bright];
+}
+
+/**
+ * Field opacity multiplier — 1 in dark mode, ~0.45 in light.
+ *
+ * On near-white paper the same alpha that reads as gentle depth on near-black
+ * becomes the loudest element on the page. Applied as a single multiplier over
+ * the per-dot alpha so density, motion, and the cursor dwell response are all
+ * untouched — only the ink weight changes.
+ */
+function readFieldOpacity(): number {
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--field-alpha')
+    .trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 1;
 }
 
 function buildSprites(palette: string[]): HTMLCanvasElement[] {
@@ -164,6 +187,7 @@ export function AmbientParticles() {
     const noise = makeNoise();
 
     let palette = readPalette();
+    let fieldOpacity = readFieldOpacity();
     let sprites = buildSprites(palette);
 
     const isDark = () =>
@@ -317,7 +341,8 @@ export function AmbientParticles() {
         const fadeIn = Math.min(1, age / 500);
         if (fadeIn <= 0) continue;
 
-        const alpha = Math.min(0.85, (d.baseAlpha + speed * 0.3) * fadeIn);
+        // fieldOpacity is the theme lever: 1 in dark, ~0.45 in light.
+        const alpha = Math.min(0.85, (d.baseAlpha + speed * 0.3) * fadeIn) * fieldOpacity;
         const sprite = sprites[d.colorIdx % sprites.length];
         const drawSize = d.size * 6;
         ctx.globalAlpha = alpha;
@@ -348,6 +373,7 @@ export function AmbientParticles() {
 
     const themeObserver = new MutationObserver(() => {
       palette = readPalette();
+      fieldOpacity = readFieldOpacity();
       sprites = buildSprites(palette);
       blendMode = isDark() ? 'lighter' : 'source-over';
       for (const d of dots) {

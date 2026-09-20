@@ -46,6 +46,20 @@
   --paper-on-signal: #ffffff;
   --activation: #fecc34;
 
+  /* Ambient field — separate from the signal family on purpose.
+     The field is the largest single surface in the composition: at 1440x900 it
+     paints thousands of dots across the whole viewport. When it borrowed
+     --signal/--signal-light it competed with the buttons, links, and focus
+     rings those tokens exist for, which breaks the frontier rule of ONE accent
+     used parsimoniously. These tokens let the field carry the ambient texture
+     without spending the accent budget. Dark mode keeps the field bright: on
+     near-black, additive blue reads as depth rather than as decoration, and
+     the measured text separation is unaffected (157 vs 159 with it off). */
+  --field-dot-1: #0133cb;
+  --field-dot-2: #3358e8;
+  --field-dot-3: #5d7bff;
+  --field-alpha: 1;
+
   /* Interaction color semantics — explicit state roles */
   --hover-fill: var(--surface-hover);
   --press-fill: var(--surface-soft);
@@ -109,8 +123,8 @@
   --duration-slow: 400ms;    /* panel open, skeleton reveal */
 
   /* Typography tokens — hybrid system (2026 standard for trust-products).
-     --sans: Geist Variable (Vercel's house font — "deliberately set, not
-       defaulted"). System fonts cover fallback (no web font dependency).
+     --sans: Schibsted Grotesk (a newsroom-commissioned grotesque,
+     drawn for sustained reading — replaced Geist 2026-09-16).
      --serif: Fraunces Variable (editorial authority for headlines — the
        "we verify design" signal). Optical-size + soft axes for dark-mode
        tuning.
@@ -118,10 +132,10 @@
      --mono: Geist Mono Variable for check IDs, score readouts, token names.
      The serif/sans split is the 2026 hybrid system: serifs for brand-level
      communication (trust/authority), sans for UI/data (efficiency). */
-  --sans: 'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-  --serif: 'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+  --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
+  --serif: var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
   --display: var(--serif);
-  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  --mono: var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
@@ -239,6 +253,42 @@
   --space-144: 9rem;          /* 144px */
 }
 
+/* --- read-along host (bimodal prose) --------------------------------------
+   Host rules for the <read-along> custom element. Kept in globals.css rather
+   than a component stylesheet because the element renders on first paint and
+   must be styled before its definition loads.
+
+   display:block is load-bearing: the element is inline-level before upgrade and
+   block after, so without this the browser reserves an inline box and the
+   upgrade to block would shift the page (CLS).
+
+   The two --ra-* tokens are the component's documented theming hooks. They are
+   set from the site's own signal family so the highlight is brand blue rather
+   than the package's hardcoded rgb() fallbacks — those fallbacks are never
+   declared in a :root block, so they cannot enter the scored token surface, but
+   leaving brand color as an unused literal is still a drift surface.
+
+   ::highlight() accepts only color / background-color / text-decoration /
+   text-shadow — no border, padding, or radius. The values stay plain rgb()
+   because exotic color functions can be dropped silently by a hostile engine,
+   and an invisible highlight is worse than none. */
+read-along {
+  display: block;
+}
+
+read-along {
+  /* Plain rgb() on purpose. The package documents that ::highlight() silently
+     DROPS a value it cannot parse, and an invisible highlight is worse than no
+     highlight API — so color-mix()/oklab are deliberately avoided here even
+     though the rest of the site uses them. These two literals ARE the site's
+     brand: rgb(1 51 203) is --signal and rgb(51 88 232) is --signal-light,
+     both identical in light and dark, so no theme branch is needed. The values
+     are stated numerically because var() cannot be composed with an alpha
+     channel in a way ::highlight() is guaranteed to parse. */
+  --ra-highlight: rgb(1 51 203 / 0.42);
+  --ra-accent: rgb(51 88 232);
+}
+
 /* --- Light theme — [data-theme="light"] ---
    Same brand, re-lit. OKLCH-mirrored lightness values with slight chroma
    reduction (light surfaces carry less saturation before they look neon).
@@ -251,12 +301,17 @@
   color-scheme: light;
 
   /* Ink ladder: near-black, mid-gray, subdued gray.
-     --muted-dim darkened from #888890 (3.52:1 on white, fails WCAG 4.5:1
-     text) to #76767e (4.50:1 on white) — the light-mode eyebrows, row-meta,
-     and group labels that use this token are body text, not decorative. */
+     --muted-dim was previously #76767e, documented as "4.50:1 on white". That
+     figure was computed against PURE WHITE (#ffffff), but the page renders on
+     --paper #fbfbfc — so the real ratio was 4.35:1, below the WCAG AA 4.5:1
+     floor for body text. The light-mode eyebrows, row-meta, and group labels
+     that use this token are body text, not decorative, so the miss mattered.
+     #70707a measures 4.74:1 against the ACTUAL paper, holding a margin above
+     the floor rather than sitting on it. Verified with the same WCAG relative-
+     luminance formula, against #fbfbfc, not #ffffff. */
   --ink: #1a1a1e;
   --muted: #555560;
-  --muted-dim: #76767e;
+  --muted-dim: #70707a;
 
   /* Paper: warm near-white with faint blue cast (same hue as dark paper) */
   --paper: #fbfbfc;
@@ -280,6 +335,20 @@
   --signal-dim: rgba(1, 51, 203, 0.08);
   --paper-on-signal: #ffffff;
   --activation: #d4a017;
+
+  /* Ambient field, light mode — dimmed deliberately.
+     On near-white paper the same dots that read as depth in dark mode become
+     the strongest visual signal on the page: measured 5.2% of the viewport in
+     saturated blue, which makes the accent wallpaper and competes with the
+     headline for attention. Two levers here: lower alpha (--field-alpha) and a
+     muted dot palette. The dots stay blue so the brand hue is still present —
+     they simply stop out-shouting the typography. Light mode measured 14
+     ink-to-background separation with the field on vs 7 with it off, i.e. the
+     field was doing the anchoring work the type should do. */
+  --field-dot-1: #4a6ad4;
+  --field-dot-2: #7b93e0;
+  --field-dot-3: #a3b4ea;
+  --field-alpha: 0.45;
 
   /* Shadows: softer on light backgrounds */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -4456,6 +4525,84 @@ a.surface-card:active {
 }
 
 /*
+  Docs card grid — /docs "Start here".
+
+  Replaces a single-column .row-stack of 16 items. That list was capped at
+  640px inside a 1180px container, so it left ~540px of dead space beside every
+  row and ran 1,272px tall — a full viewport of stacked single-line links.
+
+  The card-grid pattern is what the docs-hub teardowns converge on: each card
+  promises a task you can complete on the linked page, with no marketing copy.
+  Cards reflow 1 / 2 / 3 columns by available width, so the same markup serves
+  phone, tablet, and desktop without a breakpoint-specific layout.
+
+  Note the deliberate absence of a max-width on the grid itself: the measure
+  constraint (v28, 66ch) belongs on prose, not on a grid. Constraining a grid
+  narrows one track and breaks the rhythm — the prose inside each card is
+  short enough to stay readable at any track width. */
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-12);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-card-grid .row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-12);
+  align-items: start;
+  height: 100%;
+  padding: var(--space-16);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface);
+  transition:
+    border-color var(--duration-fast, 180ms) var(--ease, ease),
+    transform var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.docs-card-grid .row:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+/* Focus ring must remain visible on the card surface — the row is a link. */
+.docs-card-grid .row:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.docs-card-grid .row-index {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.15em;
+}
+
+.docs-card-grid .row-title {
+  font-size: 0.95rem;
+}
+
+.docs-card-grid .row-meta {
+  font-size: 0.8rem;
+}
+
+/* Reduced motion: the hover lift is decorative, so remove it rather than
+   shorten it. The border-color change still communicates hover. */
+@media (prefers-reduced-motion: reduce) {
+  .docs-card-grid .row {
+    transition: border-color 0.01ms;
+  }
+  .docs-card-grid .row:hover {
+    transform: none;
+  }
+}
+
+/*
   State marquee — sits beside the row-stack on desktop, filling the
   right-side negative space with an auto-scrolling vertical marquee
   of status pills. Pure CSS animation, no JS. Duplicated content for
@@ -6020,6 +6167,24 @@ html:not(.js-ready) .demo-stagger-bar {
   align-items: baseline;
 }
 
+/* Four-column variant — the three-tool comparison on /benchmarks.
+   The base rule above defines three tracks, but that table carries four cells
+   (Attribute, designesy, hallmark, slop-eval). With no fourth track, the extra
+   cell wrapped onto an implicit second line: the "SLOP-EVAL" header broke onto
+   its own row and every slop-eval value dropped into the Attribute column, so
+   the table read as three columns of mislabelled data.
+   Declared as a modifier rather than widening the base rule, because every
+   other .token-table on the site (contracts, specs, design-system) is genuinely
+   three columns and would be left with a trailing empty track. */
+.token-table--four-col .token-table-head,
+.token-table--four-col .token-table-row {
+  grid-template-columns:
+    minmax(7rem, 0.8fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr)
+    minmax(8rem, 1fr);
+}
+
 .token-table-head {
   font-size: 0.7rem;
   font-weight: 600;
@@ -6058,7 +6223,13 @@ html:not(.js-ready) .demo-stagger-bar {
     display: none;
   }
 
-  .token-table-row {
+  /* The four-col modifier must be reset here too. It is declared as
+     `.token-table--four-col .token-table-row` (specificity 0,2,0) so it would
+     otherwise outrank this `.token-table-row` (0,1,0) rule even inside the
+     media query, leaving a four-track grid and a hidden header on a 390px
+     screen. Repeating the modifier keeps the collapse to one column. */
+  .token-table-row,
+  .token-table--four-col .token-table-row {
     grid-template-columns: 1fr;
     gap: var(--space-4);
     padding: var(--space-fine-85) var(--space-16);
@@ -6111,13 +6282,29 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 
-/* Hero first-paint (Option B): the hero h1 is the LCP element — it must be
-   an LCP candidate from the first frame. The fadeUp entrance animation
-   (0.6s, backwards fill) starts the hero at opacity:0, so even with the
-   delay removed the element stays hidden for most of the animation and
-   LCP is gated. Kill the entrance on the hero only — the fade-up stays
-   for below-the-fold content. */
-#hero-title.fade-up-delay-1 {
+/* Hero first-paint: the hero's LCP element must be an LCP candidate from the
+   first frame. The fadeUp entrance animation (0.6s, backwards fill) starts
+   elements at opacity:0, and LCP is not recorded until the element is actually
+   painted — so any entrance animation on the LCP element gates LCP to the end
+   of that animation.
+
+   The previous rule here targeted `#hero-title.fade-up-delay-1`, which matches
+   nothing: #hero-title is the <h1>, and the h1 carries `fade-up` alone (no
+   delay class). The element that actually wins LCP is the hero <p
+   class="hero-sub fade-up fade-up-delay-1"> below it — it is the largest text
+   block and it carried both classes, so it stayed at opacity 0 for the delay
+   plus the full animation.
+
+   Measured on the live site under the Lighthouse mobile preset: hero-sub sat at
+   opacity 0.00 until ~1907ms, reached full opacity at ~2212ms, and LCP was
+   recorded at ~2488ms — i.e. LCP was gated by the entrance, not by network.
+
+   Killing the animation on both hero text blocks makes both LCP candidates
+   paint on the first frame. The entrance is retained everywhere below the fold. */
+#hero-title.fade-up,
+#hero-title.fade-up-delay-1,
+.hero-sub.fade-up,
+.hero-sub.fade-up-delay-1 {
   animation: none;
 }
 
@@ -9436,6 +9623,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 @media (max-width: 380px) {
+  /* Narrow phones (iPhone SE 1st gen, Galaxy Fold cover screen).
+     Five 44px topbar controls plus the wordmark do not fit here: measured at
+     320px the cluster overlaps the wordmark by ~3px. Haptics is the one control
+     that is safe to drop at this width — it is a preference, not a destination,
+     and the sound toggle beside it still covers the sensory-feedback group.
+     Above this breakpoint all five fit with a comfortable gap (18px at 375,
+     33px at 390), so this is the only width where anything is hidden. */
+  .haptics-toggle {
+    display: none;
+  }
+
   .score-input-card {
     padding: var(--space-12);
   }
@@ -10939,12 +11137,38 @@ select {
    v28 — Reading width 45-75ch (66ch ideal for prose containers).
    Prevents line lengths >75ch on wide screens. Applied to prose-like content
    containers, not structural grids or tables.
-   -------------------------------------------------------------------------- */
+
+   EXTENDED 2026-09-17 after a DOM measurement found the rule was not reaching
+   the pages it was written for. Only five selectors carried 66ch, and the
+   densest prose pages used none of them:
+       /contracts/design-system  ~119 ch/line
+       /docs                     ~114 ch/line
+       /contracts                 ~99 ch/line
+       /methodology               ~88 ch/line
+   (target band 45-75ch; 65ch is the Tailwind max-w-prose default.)
+
+   The old `.definition > p:last-child` was the worst of it — /docs has 13 <p>
+   inside .definition blocks, so 12 of them were unconstrained and ran the full
+   1080px container. `:last-child` was presumably meant to skip the label
+   paragraph, but it silently skipped every paragraph that was not final.
+
+   Constraining `.definition > p` wholesale fixes that, and the label is
+   excluded explicitly by class instead of positionally — an element's role
+   should not depend on its DOM order, which is exactly what broke here.
+
+   Deliberately NOT constrained: .doctrine-cols (a 2-up grid; each column is
+   already ~65ch at 546px), .token-table, and any structural grid. Adding a
+   measure to a grid narrows one column and breaks the layout. */
 .surface-note,
 .surface-lede,
-.definition > p:last-child,
+.definition > p,
+.definition-label,
 .lb-policy,
-.status-note {
+.status-note,
+.doctrine-section > p,
+.methodology-prose > p,
+.methodology-prose > ul,
+.methodology-prose > ol {
   max-width: 66ch;
 }
 
@@ -13038,3 +13262,187 @@ select {
 .score-card-item[data-category='identity']::before { background: var(--error); }
 .score-card-item[data-category='platform']::before { background: var(--muted); }
 .score-card-item:hover::before { opacity: 1; }
+
+/* --------------------------------------------------------------------------
+   Docs TOC — right-rail on-page navigation for /docs.
+
+   Layout: the docs page becomes a 2-column grid on wide screens (content +
+   rail). The rail is sticky and does not scroll away. Below 1080px the rail is
+   replaced by a collapsed <details> disclosure rendered at the top of the
+   content, because a sticky rail on a phone would consume the reading column.
+
+   The measure constraint (v28, 66ch) still governs the prose INSIDE the
+   content column — the grid changes how much room the column has, not how wide
+   a line of text runs.
+   -------------------------------------------------------------------------- */
+.docs-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: var(--space-48, 48px);
+  align-items: start;
+}
+
+.docs-layout > .docs-content {
+  min-width: 0; /* lets the prose column shrink instead of overflowing the grid */
+}
+
+.docs-toc {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  font-size: 0.8rem;
+}
+
+.docs-toc-heading {
+  margin: 0 0 var(--space-12, 12px);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.docs-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.docs-toc-list a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  border-left: 2px solid var(--line-faint);
+  color: var(--muted);
+  text-decoration: none;
+  line-height: 1.35;
+  transition: border-color var(--duration-fast, 180ms) var(--ease, ease),
+              color var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.docs-toc-list a:hover {
+  color: var(--ink);
+  border-left-color: var(--line-strong);
+}
+
+/* The active marker is a border-color + weight change, not a background block:
+   at this size a filled pill would out-shout the content it indexes. */
+.docs-toc-list a.is-active {
+  color: var(--ink);
+  border-left-color: var(--signal);
+  font-weight: 600;
+}
+
+.docs-toc-list a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Mobile disclosure hidden on wide screens; desktop rail hidden on narrow. */
+.docs-toc-mobile { display: none; }
+
+@media (max-width: 1080px) {
+  .docs-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .docs-toc-desktop { display: none; }
+  .docs-toc {
+    position: static;
+    margin-bottom: var(--space-32, 32px);
+  }
+  .docs-toc-mobile {
+    display: block;
+    border: 1px solid var(--line-faint);
+    border-radius: var(--radius-md, 8px);
+    background: var(--surface);
+    padding: var(--space-12, 12px) var(--space-16, 16px);
+  }
+  .docs-toc-mobile summary {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-12, 12px);
+    align-items: baseline;
+  }
+  .docs-toc-summary-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+  .docs-toc-summary-current {
+    color: var(--ink);
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .docs-toc-mobile .docs-toc-list { margin-top: var(--space-12, 12px); }
+}
+
+/* --------------------------------------------------------------------------
+   Agent actions — copy / view / open-in cluster for prose routes.
+
+   A HUMAN affordance, not an agent one. The agent-side channel is the Accept
+   header on the page itself, which already ships; there is no measurement
+   showing these buttons change agent behaviour. Sized accordingly: quiet by
+   default, visible on focus/hover, never competing with the page title.
+
+   Sits under the lede so it reads as a property of the page rather than a
+   toolbar. On narrow screens it wraps rather than scrolling — four short
+   labels fit two lines at 390px.
+   -------------------------------------------------------------------------- */
+.agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--space-16, 16px);
+}
+
+.agent-action {
+  display: inline-flex;
+  align-items: center;
+  /* 44px min height: WCAG 2.5.8 Target Size (Minimum) is 24px, but these are
+     small pill controls in a row of four and a 44px target is the practical
+     floor for a touch device. The site's own v24 check enforces 44px. */
+  min-height: 44px;
+  padding: 0 var(--space-12, 12px);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.agent-action:hover {
+  color: var(--ink);
+  border-color: var(--line-strong, rgba(255, 255, 255, 0.22));
+}
+
+.agent-action:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* The copied state is a colour change, not a size change: a control that
+   resizes on click shifts everything beside it. */
+.agent-action[data-copied='true'] {
+  color: var(--ok, #22c55e);
+  border-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-action { transition: none; }
+}

@@ -72,6 +72,24 @@ const agentLinkHeaders = {
   ],
 };
 
+/**
+ * Routes that have a build-generated markdown variant, and therefore
+ * participate in content negotiation.
+ *
+ * ONE definition shared by rewrites() and headers(). Two copies would drift,
+ * and a route listed in one but not the other fails in the quietest possible
+ * way: the rewrite serves markdown with no Vary, so a CDN can hand a cached
+ * markdown body to a browser.
+ */
+const MARKDOWN_ROUTES = [
+  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'contracts',
+  'contracts/design-system', 'contracts/a11y', 'contracts/motion',
+  'contracts/drift', 'contracts/readiness', 'contracts/guardrails',
+  'contracts/monitor', 'contracts/report', 'contracts/compare',
+  'contracts/tokens', 'labs/poise', 'labs/takt', 'labs/cadence',
+  'labs/acoustics',
+];
+
 const nextConfig: NextConfig = {
   // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
   // under bin/. Next's server bundler (esbuild/webpack) relocates node_modules
@@ -99,8 +117,73 @@ const nextConfig: NextConfig = {
       './node_modules/@google/design.md/**/*',
     ],
   },
+  // Content negotiation: serve the build-generated markdown when a client asks
+  // for it. A STATIC FILE SWAP, not the runtime self-fetch pattern a Next.js
+  // collaborator calls "your very last resort" — the rewrite points at a file the
+  // build already wrote, so there is no second round trip.
+  //
+  // Only Claude Code, Cursor and OpenCode negotiate (Cloudflare measured content
+  // negotiation passing on 3.9% of sites), which is why the .md suffix route
+  // exists alongside this rather than instead of it.
+  //
+  // NOTE beforeFiles, not a bare array. A plain array is treated as `afterFiles`,
+  // which runs AFTER static routes. Every one of these pages is statically
+  // prerendered, so the static HTML wins and the rewrite never fires — verified:
+  // with a bare array an `Accept: text/markdown` request returned 89KB of HTML.
+  // beforeFiles runs first, which is the only position where a rewrite can win
+  // against a prerendered page.
+  async rewrites() {
+    return {
+      beforeFiles: MARKDOWN_ROUTES.map((route) => ({
+        source: '/' + route,
+        has: [{ type: 'header' as const, key: 'accept', value: '.*text/markdown.*' }],
+        destination: '/' + route + '.md',
+      })),
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+
   async headers() {
     return [
+      // Vary: Accept on the negotiated routes ONLY.
+      //
+      // Mandatory, not decorative: without it a CDN can serve a cached HTML body
+      // to an agent that asked for markdown, or the reverse — the one way content
+      // negotiation fails in production. It also carries real infrastructure cost
+      // rather than being free: Akamai refuses to cache any Vary response except
+      // Accept-Encoding, and CloudFront needs an explicit cache policy listing
+      // Accept.
+      //
+      // Scoped to MARKDOWN_ROUTES deliberately. A blanket '/:path*' would put
+      // Vary on every route and deoptimise CDN caching site-wide to serve a
+      // negotiation only twenty routes implement.
+      ...MARKDOWN_ROUTES.map((route) => ({
+        source: '/' + route,
+        headers: [{ key: 'Vary', value: 'Accept, Accept-Encoding' }],
+      })),
+      // noindex on the markdown REPRESENTATION only.
+      //
+      // The markdown is a machine projection of a page that is already
+      // indexed. Letting both into the index means a search result can point
+      // at a stripped-down text file instead of the page. Mintlify ships the
+      // same guard.
+      //
+      // IMPORTANT: this must be conditional on the Accept header, NOT on the
+      // path. A plain rule on '/docs' would stamp noindex on the HTML too and
+      // deindex the actual page -- the exact opposite of the intent. Next's
+      // `has` matcher is what makes the distinction possible.
+      ...MARKDOWN_ROUTES.map((route) => ({
+        source: '/' + route,
+        has: [{ type: 'header' as const, key: 'accept', value: '.*text/markdown.*' }],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      })),
+      // And the .md suffix route: same guard, matched by path because that
+      // route has no Accept condition to key on.
+      {
+        source: '/:path*.md',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
       {
         source: '/:path*',
         headers: securityHeaders,
@@ -123,6 +206,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
   async redirects() {
     return [
       {

@@ -16,11 +16,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
+import { ReadAlong } from '../lib/read-along';
 import { Footer } from '../lib/footer';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -307,7 +309,7 @@ const CHECKS: CheckDef[] = [
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Searches for max-width declarations in the 45-75ch range (66ch ideal). PASS if at least one measure is in range. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose — paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45-75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it — which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed, not applied silently.',
   },
   {
     id: 'x01',
@@ -528,6 +530,7 @@ export default function MethodologyPage() {
               View leaderboard
             </Link>
           </div>
+          <AgentActions mdPath="/methodology.md" label="the methodology page" />
         </section>
 
         <section className="doctrine-section fade-up methodology-section">
@@ -581,7 +584,14 @@ export default function MethodologyPage() {
 
         <section className="doctrine-section fade-up methodology-section" id="scoring-math">
           <h2 className="doctrine-heading">Scoring math</h2>
-          <div className="methodology-prose">
+          {/* Bimodal reading on the opening prose block. Scoped to one block
+              deliberately: the site's first read-along surface should be small
+              enough to judge, not a page-wide change. The component renders as
+              plain HTML before its module loads, so the prose reads normally
+              with JS disabled, and nothing autoplays — the reader starts
+              speech themselves (WCAG 1.4.2, and required for iOS). */}
+          <ReadAlong lang="en">
+            <div className="methodology-prose">
             <p>
               The engine fetches the target URL&rsquo;s HTML and all linked CSS,
               parses <code>:root</code> custom properties, and runs{' '}
@@ -594,6 +604,26 @@ export default function MethodologyPage() {
               ceilings.
             </p>
             <p>
+              <strong>What is measured: the delivered response, not the rendered page.</strong>{' '}
+              The engine reads the HTML the server sends and the stylesheets it links.
+              It does not execute JavaScript and does not wait for client hydration.
+              On a site that renders in the browser, every check therefore reads{' '}
+              <em>the markup that arrives over the wire</em> rather than what a visitor
+              ends up seeing — a heading injected by JavaScript is absent to this engine,
+              and a token set at runtime is not in the CSS it fetched.
+            </p>
+            <p>
+              That is a deliberate trade. It keeps the score deterministic,
+              reproducible, cheap, and free of the timing-dependent flakiness of
+              headless rendering: the same input always yields the same output, which is
+              what makes a score comparable week to week. It also bounds the claim — a low
+              score on a client-rendered site describes its delivered HTML, not how the
+              finished page looks. Every result carries a{' '}
+              <code>receipt</code> with <code>retrieved_at</code>, <code>engine_version</code>,
+              and a <code>digest</code> of the check verdicts, so a third party can re-run
+              the same URL and confirm they get the same answer.
+            </p>
+            <p>
               <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and
               denominator (Lighthouse precedent: manual/N/A audits excluded).
               This means a site is not penalized for checks the static engine
@@ -603,7 +633,8 @@ export default function MethodologyPage() {
               elements the check targets (no <code>/DESIGN.md</code>, no buttons,
               no anchors, no tokens).
             </p>
-          </div>
+            </div>
+          </ReadAlong>
           <div className="methodology-formula">
             <span className="formula-comment"># Per-check weight = category weight / checks in that category</span><br />
             checkWeight = CATEGORY_WEIGHTS[category] / count(scored checks in category)<br /><br />

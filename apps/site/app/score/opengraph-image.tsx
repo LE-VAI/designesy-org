@@ -30,9 +30,12 @@ const GRADE_COLOR: Record<string, string> = {
   F: '#c4503e',
 };
 
+// Mirrors the engine's ScoreResult, but score/grade are nullable: an
+// unreachable target produces no grade, and this card must be able to say so
+// rather than being forced to invent one.
 type ScoreResult = {
-  score: number;
-  grade: string;
+  score: number | null;
+  grade: string | null;
   pass: number;
   fail: number;
   warn: number;
@@ -74,8 +77,11 @@ export default async function ScoreOpenGraphImage({
     const result = await scoreUrl(url);
     return renderCard({
       eyebrow: 'Designesy Score',
-      title: `Grade ${result.grade} — ${result.score}%`,
-      lede: `${result.pass} passed · ${result.fail} failed · ${result.warn} warnings · ${result.skip} skipped`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} — ${result.score}%`,
+      lede:
+        result.score === null
+          ? 'The target could not be read, so no score is reported.'
+          : `${result.pass} passed · ${result.fail} failed · ${result.warn} warnings · ${result.skip} skipped`,
       siteUrl: url,
       score: result,
     });

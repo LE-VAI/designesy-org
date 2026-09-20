@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { ToggleRow } from '../lib/toggle-row';
 import { pageMeta } from '../lib/site-meta';
 import { ListenButton } from '../lib/listen-button';
 import { OPEN_AUDIO } from '../lib/open-audio';
+import { AgentActions } from '../lib/agent-actions';
 import {
   JsonLd,
   creativeWorkJsonLd,
@@ -89,6 +91,7 @@ export default function OpenPage() {
               Stack · contracts · kits · labs · reviews · tools
             </span>
           </div>
+          <AgentActions mdPath="/open.md" label="the open index" />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -375,7 +378,7 @@ export default function OpenPage() {
               <span className="row-body">
                 <span className="row-title">design.md (Google Labs)</span>
                 <span className="row-meta">
-                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with 40 verification checks.
+                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with ${ENGINE_CHECK_COUNT} verification checks.
                 </span>
               </span>
             </a>

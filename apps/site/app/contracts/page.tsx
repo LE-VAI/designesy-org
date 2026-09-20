@@ -8,6 +8,7 @@ import { checkItemsFromStrings } from '../lib/check-items';
 import { DemoCell, DemoGrid } from '../lib/demo-cell';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
@@ -327,6 +328,7 @@ export default function ContractsPage() {
               Machine export
             </Link>
           </div>
+          <AgentActions mdPath="/contracts.md" label="the contracts index" />
         </section>
 
         <section className="doctrine-section fade-up">

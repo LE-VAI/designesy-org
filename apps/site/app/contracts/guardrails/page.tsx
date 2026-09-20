@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { guardrailsContract } from '../../lib/guardrails-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails contract',
@@ -32,6 +33,7 @@ export default function GuardrailsContractPage() {
           <p className="surface-note">
             Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/guardrails.md" label="the guardrails contract" />
         </section>
 
         <section className="doctrine-section fade-up">

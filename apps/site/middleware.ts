@@ -11,6 +11,27 @@
 //    global `headers()` (which IS ISR-safe — it applies to the route, not
 //    per-request HTML). We do not duplicate them here.
 //
+// ALGORITHM: fixedWindow, chosen for COMMAND COST not for precision.
+//
+// The limiters were slidingWindow until 2026-09-16, when the Upstash free tier's
+// 500,000 monthly command allowance was exhausted and rate limiting silently
+// stopped on all nine guarded routes. Measured in the console: 506,000 commands,
+// of which 317,125 were WRITES against 188,693 reads (63:37). That write-heavy
+// signature is sliding window's — it maintains a sorted set, issuing ZINCRBY plus
+// INCRBY plus PEXPIRE per check. Upstash's own docs say sliding window "results in
+// large number of commands in Redis" and recommend fixed window "to keep the
+// number of commands low."
+//
+// fixedWindow trades a little precision for roughly half the commands: a caller
+// can burst across a window boundary (two windows filled back to back). For abuse
+// protection that is an acceptable trade — the limits are per-minute and per-hour
+// ceilings on expensive endpoints, not billing meters. Halving the burn is what
+// keeps the protection alive inside the free tier instead of being switched off
+// by it, which is strictly worse protection than a slightly imprecise limiter.
+//
+// If precision is ever needed more than cost, slidingWindow is one word away —
+// but check the command budget first, because that is what broke.
+//
 // Rate limiting uses Upstash Redis (@upstash/ratelimit) — a distributed
 // store that persists across serverless instances. The prior in-memory Map
 // rate limiters in each route reset on every cold start and differed per
@@ -49,7 +70,7 @@ const limiters = new Map<string, Ratelimit | null>();
 
 function getLimiter(
   prefix: string,
-  window: ReturnType<typeof Ratelimit.slidingWindow>,
+  window: ReturnType<typeof Ratelimit.fixedWindow>,
 ): Ratelimit | null {
   if (limiters.has(prefix)) return limiters.get(prefix)!;
   const limiter = createLimiter(prefix, window);
@@ -57,12 +78,12 @@ function getLimiter(
   return limiter;
 }
 
-// `Ratelimit.slidingWindow()` returns an `Algorithm<RegionContext>` — the
+// `Ratelimit.fixedWindow()` returns an `Algorithm<RegionContext>` — the
 // type isn't exported, so we use ReturnType to stay type-safe without
 // reaching into internals.
 function createLimiter(
   prefix: string,
-  limiter: ReturnType<typeof Ratelimit.slidingWindow>,
+  limiter: ReturnType<typeof Ratelimit.fixedWindow>,
 ): Ratelimit | null {
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -70,17 +91,38 @@ function createLimiter(
   // Graceful degradation: no Upstash env vars → skip rate limiting.
   if (!redisUrl || !redisToken) return null;
 
-  const redis = new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
+  // Construction can throw too (malformed URL, bad token shape), and that throw
+  // would happen at module init rather than inside the guarded call. Return null
+  // so the caller degrades to "no rate limiting" instead of failing the request.
+  try {
+    const redis = new Redis({
+      url: redisUrl,
+      token: redisToken,
+    });
 
-  return new Ratelimit({
-    redis,
-    limiter,
-    prefix: `designesy:${prefix}`,
-    analytics: true,
-  });
+    return new Ratelimit({
+      redis,
+      limiter,
+      prefix: `designesy:${prefix}`,
+      // analytics: false — deliberately.
+      //
+      // With analytics on, the docs state "every time we call ratelimit.limit(),
+      // analytics will be sent to the Redis database" — an extra write per
+      // guarded request, on top of the limit check itself. That multiplier sits
+      // directly on the monthly command quota, and on 2026-09-16 the free tier's
+      // quota ran out (ERR max requests limit exceeded, Limit 500000, Usage
+      // 500002), which silently disabled rate limiting on all nine guarded
+      // routes. The dashboard's analytics charts are not worth spending the
+      // protection's own budget on; the limiter should be as cheap as possible.
+      analytics: false,
+    });
+  } catch (err) {
+    console.error(
+      `[middleware] could not construct rate limiter "${prefix}" — running without it:`,
+      err instanceof Error ? err.message : String(err),
+    );
+    return null;
+  }
 }
 
 // ── Rate limit check ────────────────────────────────────────────────────────
@@ -88,12 +130,15 @@ function createLimiter(
 // Returns a 429 NextResponse if rate limited, or null if OK (caller continues
 // to the route handler).
 
+type LimiterOutcome = 'active' | 'degraded' | 'inactive';
+
 async function checkRateLimit(
   request: NextRequest,
   limiter: Ratelimit | null,
   identifier: string,
-): Promise<NextResponse | null> {
-  if (!limiter) return null; // no Upstash configured → skip
+): Promise<{ blocked: NextResponse | null; outcome: LimiterOutcome }> {
+  // 'inactive' — no limiter object at all (env vars missing / construction threw)
+  if (!limiter) return { blocked: null, outcome: 'inactive' };
 
   // Next.js 15 removed `request.ip` from NextRequest. Vercel sets the
   // `x-forwarded-for` and `x-real-ip` headers on every edge request — both
@@ -105,7 +150,34 @@ async function checkRateLimit(
     request.headers.get('x-real-ip')?.trim() ||
     'unknown';
 
-  const { success, limit, remaining, reset } = await limiter.limit(`${identifier}:${ip}`);
+  // FAIL OPEN on any limiter error.
+  //
+  // This await was unguarded, and a rate limiter that throws takes the whole
+  // middleware invocation down with it: the platform returns 500
+  // MIDDLEWARE_INVOCATION_FAILED for every route in RULES below, so a dead or
+  // slow Upstash instance became a full outage of the scoring API, the MCP
+  // endpoint, and every other guarded route. Observed live 2026-09-16.
+  //
+  // The module's own comment promised "graceful degradation", but only covered
+  // missing env vars — an unreachable Redis still crashed the request. Rate
+  // limiting is a protective measure, not a correctness gate: if we cannot ask
+  // the limiter, the right answer is to serve the request and lose the
+  // protection, never to refuse every caller. Logged so the outage is visible.
+  let decision: { success: boolean; limit: number; remaining: number; reset: number };
+  try {
+    decision = await limiter.limit(`${identifier}:${ip}`);
+  } catch (err) {
+    console.error(
+      `[middleware] rate limiter unavailable for "${identifier}" — failing open:`,
+      err instanceof Error ? err.message : String(err),
+    );
+    // 'degraded' — the limiter EXISTS but its backend did not answer. This is
+    // the state that must not be confused with a healthy one: requests are being
+    // served with NO rate limiting while every config check looks correct.
+    return { blocked: null, outcome: 'degraded' };
+  }
+
+  const { success, limit, remaining, reset } = decision;
 
   if (!success) {
     const res = NextResponse.json(
@@ -117,10 +189,10 @@ async function checkRateLimit(
     res.headers.set('RateLimit-Remaining', '0');
     res.headers.set('RateLimit-Reset', Math.ceil(reset / 1000).toString());
     res.headers.set('Retry-After', Math.ceil((reset - Date.now()) / 1000).toString());
-    return res;
+    return { blocked: res, outcome: 'active' };
   }
 
-  return null;
+  return { blocked: null, outcome: 'active' };
 }
 
 // ── Route → limiter mapping ─────────────────────────────────────────────────
@@ -132,19 +204,19 @@ async function checkRateLimit(
 const API_LIMITERS: Array<{
   pattern: string;
   prefix: string;
-  window: ReturnType<typeof Ratelimit.slidingWindow>;
+  window: ReturnType<typeof Ratelimit.fixedWindow>;
 }> = [
   // Burst-capable endpoints — per-minute windows
-  { pattern: '/api/score/audit', prefix: 'audit', window: Ratelimit.slidingWindow(20, '1 h') },
-  { pattern: '/api/score', prefix: 'score', window: Ratelimit.slidingWindow(100, '60 s') },
-  { pattern: '/api/mcp', prefix: 'mcp', window: Ratelimit.slidingWindow(30, '60 s') },
+  { pattern: '/api/score/audit', prefix: 'audit', window: Ratelimit.fixedWindow(20, '1 h') },
+  { pattern: '/api/score', prefix: 'score', window: Ratelimit.fixedWindow(100, '60 s') },
+  { pattern: '/api/mcp', prefix: 'mcp', window: Ratelimit.fixedWindow(30, '60 s') },
   // Expensive / fetch-amplified endpoints — hourly windows
-  { pattern: '/api/report', prefix: 'report', window: Ratelimit.slidingWindow(20, '1 h') },
-  { pattern: '/api/compare', prefix: 'compare', window: Ratelimit.slidingWindow(30, '1 h') },
-  { pattern: '/api/drift', prefix: 'drift', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/guardrails', prefix: 'guardrails', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/monitor', prefix: 'monitor', window: Ratelimit.slidingWindow(50, '1 h') },
-  { pattern: '/api/readiness', prefix: 'readiness', window: Ratelimit.slidingWindow(50, '1 h') },
+  { pattern: '/api/report', prefix: 'report', window: Ratelimit.fixedWindow(20, '1 h') },
+  { pattern: '/api/compare', prefix: 'compare', window: Ratelimit.fixedWindow(30, '1 h') },
+  { pattern: '/api/drift', prefix: 'drift', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/guardrails', prefix: 'guardrails', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/monitor', prefix: 'monitor', window: Ratelimit.fixedWindow(50, '1 h') },
+  { pattern: '/api/readiness', prefix: 'readiness', window: Ratelimit.fixedWindow(50, '1 h') },
 ];
 
 // ── Middleware (async — Next.js supports async middleware) ──────────────────
@@ -156,13 +228,26 @@ export async function middleware(request: NextRequest) {
   for (const route of API_LIMITERS) {
     if (pathname.startsWith(route.pattern)) {
       const limiter = getLimiter(route.prefix, route.window);
-      const blocked = await checkRateLimit(request, limiter, route.prefix);
+      const { blocked, outcome } = await checkRateLimit(request, limiter, route.prefix);
       if (blocked) return blocked;
+
+      // Announce whether the limiter actually ran. Without this, a skipped
+      // limiter is indistinguishable from an enforcing one from the outside —
+      // which is how this protection sat silently inactive for weeks (see the
+      // file header). Two non-sensitive values:
+      //   "active"   — Upstash answered; the request was counted against the limit
+      //   "degraded" — the limiter built fine but its backend did NOT answer, so
+      //                the request was served without protection. Every config
+      //                check looks correct in this state, which is why it needs
+      //                its own name.
+      //   "inactive" — no limiter object (env vars missing or construction threw)
+      const limiterState = outcome;
 
       // Scoring API gets extra headers
       if (pathname.startsWith('/api/score')) {
         const res = NextResponse.next();
         res.headers.set('x-request-id', crypto.randomUUID());
+        res.headers.set('RateLimit-Limiter', limiterState);
         // Defense-in-depth: the route is force-dynamic already; this guarantees
         // no CDN layer ever caches a score response regardless of future config.
         res.headers.set('Cache-Control', 'no-store, max-age=0');

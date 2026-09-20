@@ -209,10 +209,14 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
 // INP requires real user input and isn't measurable in a headless lab run;
 // we mark INP as SKIP and score LCP + CLS only. This is the standard lab
 // limitation documented by web.dev.
-async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string): Promise<CheckResult> {
+async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, shared?: import('playwright-core').Browser): Promise<CheckResult> {
   let browser;
+  let ownsBrowser = false;
   try {
-    browser = await launchBrowser();
+    // Prefer the caller-owned browser: the route opens ONE Chromium and
+    // passes it in, so neither check has to launch or close it.
+    browser = shared ?? (await launchBrowser());
+    ownsBrowser = !shared;
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     // CDP session for performance trace
@@ -274,7 +278,9 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string):
       detail: `both PSI and Chromium lab failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (ownsBrowser && browser) await closeBrowserSafely(browser);
   }
 }
 
@@ -287,6 +293,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string):
 // real user input, which lab Lighthouse approximates via TBT; we mark it
 // SKIP when only lab is available).
 
+import path from 'node:path';
 import { chromium as playwrightChromium } from 'playwright-core';
 import sparticuzChromium from '@sparticuz/chromium';
 
@@ -294,8 +301,79 @@ function browserAuditEnabled(): boolean {
   return process.env.ENABLE_BROWSER_AUDIT === '1' || process.env.ENABLE_BROWSER_AUDIT === 'true';
 }
 
+// A remote browser service that speaks CDP (Browserless, Browserbase, a
+// container host, or any Chrome started with --remote-debugging-port). When set,
+// we ATTACH to a browser that is already running off-platform instead of
+// launching Chromium inside this function.
+//
+// Why this exists: five in-function configurations were tested and none worked —
+// two separate launches, a shared ref-counted browser, per-request serialized
+// checks, plus LD_LIBRARY_PATH and graphics-off, and finally 4GB/2vCPU. The
+// failure moved from crashing to hanging as each fix landed but never resolved,
+// which closed the in-function path on evidence rather than guesswork. Attaching
+// to an external browser also removes the /tmp decompression of the ~62MB
+// brotli binary, the bundle-size cost, and Playwright's documented
+// browser.close() hang class (microsoft/playwright#39753) in one move.
+//
+// Set CDP_ENDPOINT (e.g. wss://chrome.browserless.io?token=...) plus
+// CDP_HEADERS_JSON if the service needs auth headers. Both are optional: with no
+// CDP_ENDPOINT the function falls back to the in-function Chromium path.
+function cdpEndpoint(): string | null {
+  const raw = (process.env.CDP_ENDPOINT || '').trim();
+  return raw.length > 0 ? raw : null;
+}
+
+function cdpHeaders(): Record<string, string> | undefined {
+  const raw = process.env.CDP_HEADERS_JSON;
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, string>;
+    }
+  } catch {
+    /* malformed config — connect without extra headers rather than throwing */
+  }
+  return undefined;
+}
+
 async function launchBrowser() {
+  // Preferred path: attach to an external browser over CDP. No local Chromium,
+  // no /tmp, no cold-start decompression.
+  const endpoint = cdpEndpoint();
+  if (endpoint) {
+    return playwrightChromium.connectOverCDP(endpoint, {
+      headers: cdpHeaders(),
+      timeout: 30000,
+    });
+  }
+
+  // Fallback: in-function Chromium. Retained so the route still works with no
+  // external service configured; see the block comment above for why this is
+  // not the recommended production configuration.
+  //
+  // Serverless has no GPU. sparticuz's default graphics mode enables the
+  // SwiftShader GL path, which is not usable in this environment — it has been
+  // reported to freeze the launch after "Creating new page". Turning it off is
+  // one of the two documented must-do steps that were missing here (the other
+  // is LD_LIBRARY_PATH below).
+  sparticuzChromium.setGraphicsMode = false;
+
   const executablePath = await sparticuzChromium.executablePath();
+
+  // Chromium's shared libraries are extracted by executablePath() into the
+  // same directory as the binary (/tmp on Lambda/Vercel). Without this the
+  // loader cannot resolve them, the browser process dies immediately after
+  // spawning, and every context operation fails with the misleading
+  // "Target page, context or browser has been closed" — which is exactly the
+  // error observed in production, with the launch args but no page ever
+  // reaching newPage(). path.dirname() of the resolved binary is the documented
+  // location.
+  const libraryPath = path.dirname(executablePath);
+  process.env.LD_LIBRARY_PATH = process.env.LD_LIBRARY_PATH
+    ? `${libraryPath}:${process.env.LD_LIBRARY_PATH}`
+    : libraryPath;
+
   return playwrightChromium.launch({
     args: sparticuzChromium.args,
     executablePath,
@@ -303,17 +381,64 @@ async function launchBrowser() {
   });
 }
 
+// Browser lifecycle: ONE Chromium per request, owned by the route handler.
+//
+// Earlier revisions tried two shapes, both wrong here:
+//
+//  1. Each check launched its own Chromium. The route ran all three through
+//     Promise.all, so two-plus launches each decompressed the ~62MB brotli
+//     binary into /tmp and competed for the same 2GB ceiling. One browser
+//     died: v02 reported "Target page, context or browser has been closed"
+//     with "Browser logs:" attached.
+//
+//  2. A module-scoped ref-counted shared browser. This project runs with
+//     Fluid compute ENABLED, and Fluid explicitly lets multiple invocations
+//     share one physical instance CONCURRENTLY — so module-scoped state is
+//     shared between different users' requests. Ref counting cannot tell
+//     "my request's borrow" from another request's, and one request's browser
+//     crash (or a hung close) would wedge the instance for every subsequent
+//     caller. Playwright's own tracker has a documented case of
+//     browser.close() never resolving (microsoft/playwright#39753), which is
+//     exactly how that becomes a permanent wedge rather than a slow request.
+//
+// So: the route handler launches one browser, hands it to the checks, and
+// closes it when they are done. No cross-request state, nothing to alias.
+
+// Close a browser without ever risking an unbounded await. browser.close()
+// can hang on a wedged renderer; a hang inside a request handler means the
+// response is never sent and the platform kills the function at maxDuration.
+// Race it against a timeout and treat the timeout as success — the container
+// is recycled afterwards, so a straggler process costs nothing that matters.
+async function closeBrowserSafely(browser: import('playwright-core').Browser): Promise<void> {
+  try {
+    await Promise.race([
+      browser.close().catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
+  } catch {
+    /* fall through to the kill backstop */
+  }
+  // Backstop: SIGKILL the process tree if it is still alive. This mirrors the
+  // sanctioned upstream fix for the close-hang (microsoft/playwright#39753).
+  try {
+    const proc = (browser as unknown as { process?: () => { killed?: boolean; kill?: (s: string) => void } | null }).process?.();
+    if (proc && !proc.killed) proc.kill?.('SIGKILL');
+  } catch {
+    /* already gone */
+  }
+}
+
 // v02 — responsive overflow. Launch Chromium, navigate at 4 viewports,
 // measure scrollWidth vs clientWidth at each. PASS if all 4 fit; FAIL with
 // the first overflowing viewport in the detail string.
-async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> {
+async function checkResponsiveOverflow(targetUrl: string, shared?: import('playwright-core').Browser): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v02',
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
       status: 'MANUAL',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
+      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
     };
   }
   const viewports = [
@@ -323,8 +448,12 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
     { w: 1080, label: '1080px (desktop)' },
   ];
   let browser;
+  let ownsBrowser = false;
   try {
-    browser = await launchBrowser();
+    // Prefer the caller-owned browser: the route opens ONE Chromium and
+    // passes it in, so neither check has to launch or close it.
+    browser = shared ?? (await launchBrowser());
+    ownsBrowser = !shared;
     const overflows: string[] = [];
     for (const vp of viewports) {
       const ctx = await browser.newContext({ viewport: { width: vp.w, height: 800 } });
@@ -369,7 +498,9 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
       detail: `browser launch failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (ownsBrowser && browser) await closeBrowserSafely(browser);
   }
 }
 
@@ -379,19 +510,23 @@ async function checkResponsiveOverflow(targetUrl: string): Promise<CheckResult> 
 // update. PASS if both state changes occur.
 // When scope=universal, absence of a sound toggle is SKIP (not WARN) — a site
 // without sound isn't broken, it just doesn't use audio.
-async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal'): Promise<CheckResult> {
+async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal', shared?: import('playwright-core').Browser): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v04',
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
       status: 'MANUAL',
-      detail: 'browser audit not enabled on this deployment (set ENABLE_BROWSER_AUDIT=1)',
+      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
     };
   }
   let browser;
+  let ownsBrowser = false;
   try {
-    browser = await launchBrowser();
+    // Prefer the caller-owned browser: the route opens ONE Chromium and
+    // passes it in, so neither check has to launch or close it.
+    browser = shared ?? (await launchBrowser());
+    ownsBrowser = !shared;
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
     try {
@@ -400,7 +535,18 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
     }
     // Locate sound toggle — aria-pressed is the contract spec.
-    const toggle = await page.$('[aria-pressed], [data-sound-toggle], button:has-text("sound" i)');
+    //
+    // `button:has-text("sound" i)` is invalid Playwright syntax and throws
+    // "Unexpected token \"i\" while parsing css selector" on every call — the
+    // ` i` case-insensitivity flag belongs to CSS attribute selectors
+    // ([attr="v" i]), not to :has-text(), which is already case-insensitive
+    // and substring-matching by definition. That made v04 unable to pass
+    // anywhere, ever. Kept the pseudo-class bare, and the fallbacks run as
+    // separate locators so an unsupported selector can't take down the check.
+    let toggle = await page.$('[aria-pressed], [data-sound-toggle]');
+    if (!toggle) {
+      toggle = await page.$('button:has-text("sound")').catch(() => null);
+    }
     if (!toggle) {
       await ctx.close();
       // scope=universal: absence of sound is SKIP, not WARN — a site without
@@ -417,12 +563,17 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
           : 'no sound toggle element found on page',
       };
     }
+    // Read BOTH baselines before interacting. The previous order read
+    // beforeStorage AFTER the click, so it was already the post-click value and
+    // the comparison was storage-against-itself — storageUpdated could never be
+    // true, so v04 reported FAIL on every site that actually worked. Verified
+    // against live designesy.org: with the correct order the toggle flips
+    // aria-pressed true->false AND writes designesy:sound null->"false".
     const beforePressed = await toggle.getAttribute('aria-pressed');
-    await toggle.click();
-    await page.waitForTimeout(300);
-    const afterPressed = await toggle.getAttribute('aria-pressed');
     const beforeStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
-    await page.waitForTimeout(200);
+    await toggle.click();
+    await page.waitForTimeout(500);
+    const afterPressed = await toggle.getAttribute('aria-pressed');
     const afterStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
     const pressedFlipped = beforePressed !== afterPressed;
     const storageUpdated = beforeStorage !== afterStorage;
@@ -453,7 +604,9 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       detail: `browser launch failed: ${msg}`,
     };
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    // Release the SHARED browser — closing it here would kill the browser
+    // out from under the sibling checks that are still running.
+    if (ownsBrowser && browser) await closeBrowserSafely(browser);
   }
 }
 
@@ -499,11 +652,44 @@ export async function POST(request: Request) {
 
   try {
     // Run all three audit checks in parallel for the lowest total latency.
-    const [v21, v02, v04] = await Promise.all([
-      checkCoreWebVitals(url),
-      checkResponsiveOverflow(url),
-      checkSoundToggle(url, scope),
-    ]);
+    // v21 is a network call (PageSpeed Insights) — it can run alongside the
+    // browser work. v02 and v04 are SERIALIZED.
+    //
+    // They both drive Chromium, and running them concurrently against one
+    // shared browser meant two contexts loading a heavy page at once. On a
+    // 2GB function that exhausted memory and the browser process died:
+    // v02 reported "browserContext.close: Target page, context or browser has
+    // been closed" with "Browser logs:" attached, which is the signature of a
+    // crashed process rather than a closed context. Two Chromium launches (the
+    // original shape) was worse still. One browser driving one context at a
+    // time is the reliable configuration at this memory ceiling; the wall-clock
+    // cost is a few seconds and the audit is not latency-critical.
+    // v21 is a network call (PageSpeed Insights) — it runs alongside the
+    // browser work. v02 and v04 are SERIALIZED on ONE caller-owned browser.
+    //
+    // They both drive Chromium. Running them concurrently against a shared
+    // browser meant two contexts loading a heavy page at once; on a 2GB
+    // function that exhausted memory and the process died (v02 reported
+    // "browserContext.close: Target page, context or browser has been closed"
+    // with "Browser logs:" attached — the signature of a crashed browser, not
+    // a closed context). Two separate Chromium launches, the original shape,
+    // was worse still. One browser, one context at a time is the reliable
+    // configuration at this memory ceiling; the wall-clock cost is seconds and
+    // the audit is not latency-critical.
+    //
+    // The route owns the browser lifecycle so the first check to finish cannot
+    // close it out from under the second.
+    const v21Promise = checkCoreWebVitals(url);
+    const browser = browserAuditEnabled() ? await launchBrowser() : undefined;
+    let v02: CheckResult;
+    let v04: CheckResult;
+    try {
+      v02 = await checkResponsiveOverflow(url, browser);
+      v04 = await checkSoundToggle(url, scope, browser);
+    } finally {
+      if (browser) await closeBrowserSafely(browser);
+    }
+    const v21 = await v21Promise;
     const checks = [v02, v04, v21];
     return NextResponse.json(
       { ok: true, url, checks },

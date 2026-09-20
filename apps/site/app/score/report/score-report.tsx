@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 type CheckResult = {
@@ -192,7 +193,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   if (status === 'loading') {
     return (
       <div className="report-loading" role="status" aria-live="polite">
-        <span className="sr-only">Evaluating 40 contract checks against {initialUrl}…</span>
+        <span className="sr-only">Evaluating {ENGINE_SCORED_CHECK_COUNT} contract checks against {initialUrl}…</span>
         {/* Hero skeleton: grade circle + score number + meta lines */}
         <div className="report-skel-hero">
           <div className="report-skel-circle" aria-hidden="true" />

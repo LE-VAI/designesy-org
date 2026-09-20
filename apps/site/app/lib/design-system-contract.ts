@@ -397,6 +397,35 @@ export const designSystemContract = {
       value: 'linear-gradient(135deg, var(--signal-light), #6b8aff 130%)',
       role: 'Accent gradient (borders/focus only)',
     },
+    /* Ambient-field family — deliberately separate from the signal family.
+       The field paints thousands of dots across the whole viewport, so when it
+       borrowed --signal/--signal-light it competed with the buttons, links, and
+       focus rings those tokens exist for, and the accent stopped being
+       parsimonious. These tokens let the field carry ambient texture without
+       spending the accent budget. Dark keeps the bright palette (additive blue
+       on near-black reads as depth); light carries a quieter, de-saturated one
+       at reduced ink weight, because the same alpha that whispers on near-black
+       is the loudest element on near-white. */
+    field_dot_1: {
+      token: '--field-dot-1',
+      value: '#0133cb · light: #4a6ad4',
+      role: 'Ambient field dot — primary hue',
+    },
+    field_dot_2: {
+      token: '--field-dot-2',
+      value: '#3358e8 · light: #7b93e0',
+      role: 'Ambient field dot — secondary hue',
+    },
+    field_dot_3: {
+      token: '--field-dot-3',
+      value: '#5d7bff · light: #a3b4ea',
+      role: 'Ambient field dot — tertiary hue (bright variant derived from it)',
+    },
+    field_alpha: {
+      token: '--field-alpha',
+      value: '1 · light: 0.45',
+      role: 'Ambient-field ink multiplier — the theme lever for field weight; density, motion, and cursor dwell are unaffected',
+    },
   },
   shadows: {
     sm: {
@@ -690,28 +719,28 @@ export const designSystemContract = {
       sans: {
         token: '--sans',
         value:
-          "'Geist Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
-        role: 'Primary UI and body stack (Geist Variable — Vercel house font, "deliberately set not defaulted". System fonts cover fallback.)',
+          "var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+        role: "Primary UI and body stack — Schibsted Grotesk, self-hosted at build time via next/font (--font-sans). A newsroom-commissioned grotesque drawn for sustained reading, chosen to share Fraunces's editorial register. Replaced Geist 2026-09-16 (anti-slop rule S1 flags geist as an overused family). System fonts cover fallback.",
       },
       serif: {
         token: '--serif',
         value:
-          "'Fraunces Variable', 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
-        role: 'Editorial serif for headlines — the trust/authority signal. Fraunces Variable with opsz + SOFT axes for dark-mode tuning.',
+          "var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
+        role: 'Editorial serif for headlines — the trust/authority signal. Fraunces, self-hosted at build time via next/font (--font-display), with opsz + SOFT + WONK axes.',
       },
       display: {
         token: '--display',
         value: 'var(--serif)',
-        role: 'Display/headline face — Fraunces Variable (aliased to --serif). Hybrid system: serif headlines + sans UI.',
+        role: 'Display/headline face — Fraunces (aliased to --serif). Hybrid system: serif headlines + sans UI.',
       },
       mono: {
         token: '--mono',
         value:
-          "'Geist Mono Variable', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
-        role: 'Mono stack for check IDs, score readouts, token names (Geist Mono Variable — system-thinking signal)',
+          "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+        role: 'Mono stack for check IDs, score readouts, token names — Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face.',
       },
     },
-    body: '16px / 1.55, Geist Variable (Inter fallback for CJK)',
+    body: '16px / 1.55, Schibsted Grotesk (system sans fallback for other scripts)',
     headings: 'Fraunces Variable, weight 700, line-height 1.08, letter-spacing -0.02em',
     hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
     eyebrows:
