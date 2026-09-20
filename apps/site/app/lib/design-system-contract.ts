@@ -1066,3 +1066,26 @@ export const designSystemContract = {
 } as const;
 
 export type DesignSystemContract = typeof designSystemContract;
+
+/**
+ * The contract version in DISPLAY form, for every surface that shows it.
+ *
+ * The contract object stores the bare semver (`'0.4.0'`); consumers display the
+ * prefixed form (`'v0.4.0'`). Deriving here means a version bump is one edit in
+ * one file, and it is impossible for /api/score, /api/score/checks, the docs,
+ * the opengraph images and the hero to disagree about which contract they are
+ * describing.
+ *
+ * Why this exists at all: the same string was written by hand in 65 files, 145
+ * times. `api/score/route.ts` alone carried four `contractVersion: 'v0.4.0'`
+ * literals in its response payloads -- machine-readable values a client may
+ * gate on. One bump of the contract and those four keep reporting the old
+ * version, so a caller would be told the engine scored against a contract it no
+ * longer uses.
+ *
+ * NOT every occurrence of "v0.4.0" should become this. Four describe OTHER
+ * SOFTWARE -- `@google/design.md` (a third-party package, three places) and a
+ * Lottie-spec reference to `designesy-core.v0.4.0`. Wiring those here would
+ * silently make a dependency's version track ours.
+ */
+export const CONTRACT_VERSION = 'v' + designSystemContract.version;

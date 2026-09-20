@@ -14,7 +14,15 @@ import { ENGINE_CHECK_COUNT } from './lib/check-definitions';
 export { ENGINE_CHECK_COUNT };
 
 // Public contract version the engine scores against.
-export const CONTRACT_VERSION = 'v0.4.0';
+//
+// RE-EXPORTED from the contract module, which derives it from the contract's
+// own `version` field. This was `= 'v0.4.0'`, a second frozen literal sitting
+// beside `designSystemContract.version = '0.4.0'` -- two values for one fact,
+// in the very module whose header promises that two frozen values for one fact
+// is the contradiction it exists to kill.
+//
+// Kept as a named re-export so the 4 existing importers do not need to move.
+export { CONTRACT_VERSION } from './lib/design-system-contract';
 
 // Latest self-score — DERIVED from the public leaderboard seed row, never a
 // second literal. The hero and the leaderboard show the same number because

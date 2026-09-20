@@ -5,6 +5,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { graph } from '../lib/graph';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Graph — provenance chain',
@@ -123,7 +124,7 @@ export default function GraphPage() {
             >
               <span className="row-index">01</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.4.0</span>
+                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                 <span className="row-meta">Contract rules and tokens</span>
               </span>
             </Link>

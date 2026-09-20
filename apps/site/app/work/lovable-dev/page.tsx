@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev — A on arrival case study',
@@ -182,7 +183,7 @@ export default function LovableCaseStudy() {
             >
               <span className="row-index">02</span>
               <span className="row-body">
-                <span className="row-title">Design system contract v0.4.0</span>
+                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                 <span className="row-meta">The contract lovable.dev passes without citing</span>
               </span>
             </Link>
