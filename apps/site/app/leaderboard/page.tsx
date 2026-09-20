@@ -7,6 +7,7 @@ import { SubmitForm } from './submit-form/submit-form';
 import { MiniConstellation } from '../lib/mini-constellation';
 import { CountUp } from '../lib/count-up';
 import { PageShareButton } from '../lib/page-share';
+import { AgentActions } from '../lib/agent-actions';
 import {
   SEED,
   LEADERBOARD_POLICY,
@@ -424,6 +425,7 @@ export default function LeaderboardPage() {
               label="Share the leaderboard"
             />
           </div>
+          <AgentActions mdPath="/leaderboard.md" label="the leaderboard" />
         </section>
 
         <section className="doctrine-section fade-up">

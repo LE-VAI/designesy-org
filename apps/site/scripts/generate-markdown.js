@@ -53,6 +53,17 @@ const OUT_DIR = path.join(APP_DIR, 'public');
  * serve structured JSON AND negotiate markdown through the shared
  * negotiatedResponse helper — generating a second markdown copy for them here
  * would create two markdown paths that could disagree.
+ *
+ * /leaderboard is here because it is the single worst agent-facing page on the
+ * site: 603KB of HTML for 10.8KB of markdown, and a plain GET spends 57% of that
+ * on the RSC payload and another 35% on table markup — the same 30 rows shipped
+ * twice, once as HTML and once as a serialized React tree. An agent that
+ * truncates at 100KB reads less than half its prose. The markdown carries the
+ * whole cohort (all 30 sites, grades, scores, check counts, the COI disclosure
+ * on the self-scored row) in a GFM table.
+ *
+ * Note the .md twin is a REPRESENTATION, not a replacement: the page's own
+ * ranking logic, live re-score links and SVG fingerprints stay in the HTML.
  */
 const ROUTES = [
   'docs',
@@ -60,6 +71,7 @@ const ROUTES = [
   'kits',
   'open',
   'benchmarks',
+  'leaderboard',
   'contracts',
   'contracts/design-system',
   'contracts/a11y',
@@ -93,16 +105,42 @@ function decodeEntities(s) {
     .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
 }
 
-/** Strip tags, decode entities, collapse whitespace. */
+/**
+ * Strip tags, decode entities, collapse whitespace.
+ *
+ * EVERY replacement injects a SPACE, not an empty string. That is the whole
+ * subtlety: block-level tags sit between words in the source markup with no
+ * whitespace between them, so deleting a tag outright welds its neighbours
+ * together. `<span>Designesy</span><span>self</span>` became "Designesyself"
+ * on the leaderboard's self-scored row — the site's own name, corrupted. On a
+ * site whose whole thesis is verifiable output, a mangled word is worse than an
+ * extra space.
+ *
+ * React comment separators (`<!-- -->`) are DELETED without a space, not
+ * replaced by one. React emits them purely to separate adjacent text nodes it
+ * would otherwise weld during hydration, so their content is already correctly
+ * spaced on either side. Treating them like an element boundary would turn
+ * "86.1%" into "86.1 %" — inventing a space inside a number.
+ */
 function text(html) {
   return decodeEntities(
     html
-      .replace(/<script[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<svg[\s\S]*?<\/svg>/gi, '')
-      .replace(/<[^>]+>/g, ''),
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<[^>]+>/g, ' '),
   )
     .replace(/\s+/g, ' ')
+    // Inline runs that carried no whitespace in the source now carry one,
+    // because every element boundary above became a space. The leaderboard's
+    // score is the clearest case: "93.0" and "%" live in two adjacent spans, so
+    // a naive boundary-space renders "93.0 %" 47 times on one page.
+    //
+    // Only punctuation that can NEVER legitimately follow a space is tightened.
+    // A colon is deliberately absent: "16 : 9" and similar ratios are real, and
+    // guessing wrong there invents a typo rather than fixing one.
+    .replace(/(\w) ([%.,;!?])/g, '$1$2')
     .trim();
 }
 
@@ -150,7 +188,7 @@ function inline(html) {
   // are visual scaffolding: they read as orphan fragments once the styling that
   // grouped them with their body text is gone. Dropping them keeps the document
   // readable rather than emitting stray capitalised nouns between paragraphs.
-  s = s.replace(/<(p|span)[^>]*class=["'][^"']*(?:eyebrow|definition-label|doctrine-heading)[^"']*["'][^>]*>[\s\S]*?<\/>/gi, '');
+  s = s.replace(/<(p|span)\b[^>]*class=["'][^"']*(?:eyebrow|definition-label|doctrine-heading)[^"']*["'][^>]*>[\s\S]*?<\/\1>/gi, '');
   s = s.replace(/<br\s*\/?>/gi, ' ');
   return text(s);
 }
