@@ -601,8 +601,13 @@ export default function StateOfCompliancePage() {
                       </td>
                       <td className="soc-td-score">
                         <CountUp value={site.score as number} decimals={1} />
+                        {/* No space before the percent sign — "93.0%" is the
+                            correct form. This carried an explicit {' '} that
+                            rendered "93.0 %" on all 14 cohort rows. Found by
+                            the prose gate, not by eye: a single space before a
+                            symbol is exactly the kind of thing that survives
+                            every review because it reads as almost-right. */}
                         <span style={{ color: 'var(--muted-dim)', fontWeight: 400 }}>
-                          {' '}
                           %
                         </span>
                       </td>
