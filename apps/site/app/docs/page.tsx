@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './docs.css';
 import { Topbar } from '../lib/topbar';
 import { DocsToc } from '../lib/docs-toc';
+import { AgentActions } from '../lib/agent-actions';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
@@ -189,6 +190,7 @@ export default function DocsPage() {
             context for anyone who wants to understand what Designesy is and how
             it operates.
           </p>
+            <AgentActions mdPath="/docs.md" label="the docs page" />
         </section>
 
         {/* Two-column layout: reading column + sticky on-page TOC. The header

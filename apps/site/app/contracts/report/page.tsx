@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { reportContract } from '../../lib/report-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Report contract',
@@ -32,6 +33,7 @@ export default function ReportContractPage() {
           <p className="surface-note">
             Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/report.md" label="the report contract" />
         </section>
 
         <section className="doctrine-section fade-up">

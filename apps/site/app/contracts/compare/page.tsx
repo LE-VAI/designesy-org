@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { compareContract } from '../../lib/compare-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Compare contract',
@@ -32,6 +33,7 @@ export default function CompareContractPage() {
           <p className="surface-note">
             Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/compare.md" label="the compare contract" />
         </section>
 
         <section className="doctrine-section fade-up">
