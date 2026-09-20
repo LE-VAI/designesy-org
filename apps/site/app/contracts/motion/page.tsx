@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { motionContract } from '../../lib/motion-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Motion contract',
@@ -31,6 +32,7 @@ export default function MotionContractPage() {
             Version {c.version} · {c.status} ·{' '}
             <Link href={c.machine_url}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/motion.md" label="the motion contract" />
         </section>
 
         <section className="doctrine-section fade-up">

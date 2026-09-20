@@ -9,6 +9,7 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Takt',
@@ -224,6 +225,7 @@ export default function TaktLabPage() {
               </Link>
             </span>
           </div>
+          <AgentActions mdPath="/labs/takt.md" label="the Takt lab" />
         </section>
 
         <section className="doctrine-section fade-up">

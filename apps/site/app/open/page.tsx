@@ -10,6 +10,7 @@ import { ToggleRow } from '../lib/toggle-row';
 import { pageMeta } from '../lib/site-meta';
 import { ListenButton } from '../lib/listen-button';
 import { OPEN_AUDIO } from '../lib/open-audio';
+import { AgentActions } from '../lib/agent-actions';
 import {
   JsonLd,
   creativeWorkJsonLd,
@@ -90,6 +91,7 @@ export default function OpenPage() {
               Stack · contracts · kits · labs · reviews · tools
             </span>
           </div>
+          <AgentActions mdPath="/open.md" label="the open index" />
         </section>
 
         <section className="doctrine-section fade-up">

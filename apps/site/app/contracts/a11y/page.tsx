@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { a11yContract } from '../../lib/a11y-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Accessibility contract',
@@ -31,6 +32,7 @@ export default function A11yContractPage() {
             Version {c.version} · {c.status} ·{' '}
             <Link href={c.machine_url}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/a11y.md" label="the accessibility contract" />
         </section>
 
         <section className="doctrine-section fade-up">

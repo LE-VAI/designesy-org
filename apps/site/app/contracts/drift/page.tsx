@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { driftContract } from '../../lib/drift-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Drift contract',
@@ -32,6 +33,7 @@ export default function DriftContractPage() {
           <p className="surface-note">
             Version {c.version} · {c.status} · <Link href={c.machine_url}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/drift.md" label="the drift contract" />
         </section>
 
         <section className="doctrine-section fade-up">

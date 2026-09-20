@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { readinessContract } from '../../lib/readiness-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'AI Readiness contract',
@@ -32,6 +33,7 @@ export default function ReadinessContractPage() {
           <p className="surface-note">
             Version {c.version} · {c.status} · <Link href={c.machine_url}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/readiness.md" label="the readiness contract" />
         </section>
 
         <section className="doctrine-section fade-up">

@@ -13383,3 +13383,66 @@ select {
   }
   .docs-toc-mobile .docs-toc-list { margin-top: var(--space-12, 12px); }
 }
+
+/* --------------------------------------------------------------------------
+   Agent actions — copy / view / open-in cluster for prose routes.
+
+   A HUMAN affordance, not an agent one. The agent-side channel is the Accept
+   header on the page itself, which already ships; there is no measurement
+   showing these buttons change agent behaviour. Sized accordingly: quiet by
+   default, visible on focus/hover, never competing with the page title.
+
+   Sits under the lede so it reads as a property of the page rather than a
+   toolbar. On narrow screens it wraps rather than scrolling — four short
+   labels fit two lines at 390px.
+   -------------------------------------------------------------------------- */
+.agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--space-16, 16px);
+}
+
+.agent-action {
+  display: inline-flex;
+  align-items: center;
+  /* 44px min height: WCAG 2.5.8 Target Size (Minimum) is 24px, but these are
+     small pill controls in a row of four and a 44px target is the practical
+     floor for a touch device. The site's own v24 check enforces 44px. */
+  min-height: 44px;
+  padding: 0 var(--space-12, 12px);
+  border: 1px solid var(--line-faint);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+}
+
+.agent-action:hover {
+  color: var(--ink);
+  border-color: var(--line-strong, rgba(255, 255, 255, 0.22));
+}
+
+.agent-action:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* The copied state is a colour change, not a size change: a control that
+   resizes on click shifts everything beside it. */
+.agent-action[data-copied='true'] {
+  color: var(--ok, #22c55e);
+  border-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-action { transition: none; }
+}

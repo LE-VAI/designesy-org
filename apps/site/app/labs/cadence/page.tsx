@@ -9,6 +9,7 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Cadence',
@@ -215,6 +216,7 @@ export default function CadenceLabPage() {
               </Link>
             </span>
           </div>
+          <AgentActions mdPath="/labs/cadence.md" label="the Cadence lab" />
         </section>
 
         <section className="doctrine-section fade-up">

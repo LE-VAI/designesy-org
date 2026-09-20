@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Kits',
@@ -57,6 +58,7 @@ export default function KitsPage() {
             not invent taste. They package living rules from contracts, labs,
             and review into something you can hand to an agent or a teammate.
           </p>
+          <AgentActions mdPath="/kits.md" label="the kits index" />
         </section>
 
         <section className="doctrine-section fade-up">

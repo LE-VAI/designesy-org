@@ -162,6 +162,28 @@ const nextConfig: NextConfig = {
         source: '/' + route,
         headers: [{ key: 'Vary', value: 'Accept, Accept-Encoding' }],
       })),
+      // noindex on the markdown REPRESENTATION only.
+      //
+      // The markdown is a machine projection of a page that is already
+      // indexed. Letting both into the index means a search result can point
+      // at a stripped-down text file instead of the page. Mintlify ships the
+      // same guard.
+      //
+      // IMPORTANT: this must be conditional on the Accept header, NOT on the
+      // path. A plain rule on '/docs' would stamp noindex on the HTML too and
+      // deindex the actual page -- the exact opposite of the intent. Next's
+      // `has` matcher is what makes the distinction possible.
+      ...MARKDOWN_ROUTES.map((route) => ({
+        source: '/' + route,
+        has: [{ type: 'header' as const, key: 'accept', value: '.*text/markdown.*' }],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      })),
+      // And the .md suffix route: same guard, matched by path because that
+      // route has no Accept condition to key on.
+      {
+        source: '/:path*.md',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
       {
         source: '/:path*',
         headers: securityHeaders,
