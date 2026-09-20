@@ -138,7 +138,21 @@ for (const f of walk(APP)) {
 
 const shown = 'v' + literal[1];
 
-const key = (x) => x.file + ':' + x.line + ':' + x.text;
+/**
+ * Keyed on file + TEXT, deliberately NOT on the line number.
+ *
+ * The first version included `x.line`, on the theory that a moved line deserves
+ * a fresh look. In practice that made the guard cry wolf on every routine edit:
+ * inserting 18 AgentActions controls shifted lines in 14 files and produced 14
+ * "NEW hardcoded literal" reports, none of which were new. A guard that fires on
+ * unrelated edits trains people to ignore it -- the failure mode this whole
+ * session kept hitting.
+ *
+ * File + text still catches what matters: a genuinely new literal has new text,
+ * and copying a grandfathered literal into another file has a new file. What it
+ * no longer catches is a line that merely moved, which is not a finding.
+ */
+const key = (x) => x.file + ':' + x.text;
 
 if (findings.length === 0) {
   console.log('[contract-version] OK - no hardcoded ' + shown + ' outside exemptions');

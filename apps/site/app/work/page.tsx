@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { CASE_STUDIES, type CaseStudy } from '../lib/case-studies';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Work — case studies',
@@ -47,6 +48,7 @@ export default function WorkPage() {
             Before/after scores are real values from the live /api/score
             endpoint, captured on the date each case study lists.
           </p>
+          <AgentActions mdPath="/work.md" label="the work index" />
         </section>
 
         <section className="doctrine-section fade-up">

@@ -15,6 +15,7 @@ import { CountUp } from '../lib/count-up';
 import { PageShareButton } from '../lib/page-share';
 import { SEED, type Grade } from '../leaderboard/seed';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { AgentActions } from '../lib/agent-actions';
 
 export const revalidate = 3600;
 
@@ -77,6 +78,7 @@ export default function FrameworksIndexPage() {
               label="Share the framework evaluations"
             />
           </div>
+          <AgentActions mdPath="/frameworks.md" label="the frameworks index" />
         </section>
 
         {CATEGORIES.map((cat) => {

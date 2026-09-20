@@ -24,6 +24,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { MaturityAssessment } from './maturity-form';
+import { AgentActions } from '../lib/agent-actions';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -58,6 +59,7 @@ export default function MaturityPage() {
             stages each. Your result is computed in your browser and never
             sent anywhere.
           </p>
+          <AgentActions mdPath="/maturity.md" label="the maturity assessment" />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">

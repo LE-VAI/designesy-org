@@ -5,6 +5,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { ContinuityWaitlistForm } from './waitlist-form';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Continuity',
@@ -86,6 +87,7 @@ export default function ContinuityPage() {
             <span className="lab-meta-item">No charge to join</span>
             <span className="lab-meta-item">Designesy LLC</span>
           </div>
+          <AgentActions mdPath="/continuity.md" label="the continuity page" />
         </section>
 
         <section className="doctrine-section fade-up" aria-label="What Continuity is for">

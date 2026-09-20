@@ -14,6 +14,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../hero-stats';
+import { AgentActions } from '../lib/agent-actions';
 
 export const revalidate = 3600;
 
@@ -345,6 +346,7 @@ export default function ChangelogPage() {
             (dimension), not by version. Each entry shows the version, date,
             what changed, which checks were affected, and the rationale.
           </p>
+          <AgentActions mdPath="/changelog.md" label="the changelog" />
         </section>
 
         {/* Dimension tabs */}

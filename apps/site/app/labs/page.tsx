@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
@@ -57,6 +58,7 @@ export default function LabsPage() {
             live artifact, review checklist, portable contract, and
             implementation-ready prompt.
           </p>
+          <AgentActions mdPath="/labs.md" label="the labs index" />
         </section>
 
         <section className="doctrine-section fade-up">

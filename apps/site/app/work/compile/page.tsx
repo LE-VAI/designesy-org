@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Compile — case study',
@@ -203,6 +204,7 @@ export default function CompileCaseStudyPage() {
             <span className="lab-meta-item">Artifact · Local build · pending deploy</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
+          <AgentActions mdPath="/work/compile.md" label="the compile case study" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

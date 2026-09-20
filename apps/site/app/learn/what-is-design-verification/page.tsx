@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'What is design verification?',
@@ -78,6 +79,7 @@ export default function WhatIsDesignVerificationPage() {
             site keeps the promises its own design system makes, and returns a
             grade that any visitor can read.
           </p>
+          <AgentActions mdPath="/learn/what-is-design-verification.md" label="the design verification article" />
         </section>
 
         <section className="doctrine-section fade-up">

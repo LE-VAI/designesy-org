@@ -4,6 +4,7 @@ import './pricing.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -88,6 +89,7 @@ export default function PricingPage() {
             No credit card to start. The free tier is the whole score engine,
             not a teaser.
           </p>
+          <AgentActions mdPath="/pricing.md" label="the pricing page" />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">

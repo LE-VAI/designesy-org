@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
@@ -224,6 +225,7 @@ export default function McpDocsPage() {
             stateless, no sessions, no handshake. Any MCP-compatible client
             can connect.
           </p>
+          <AgentActions mdPath="/docs/mcp.md" label="the MCP documentation" />
         </section>
 
         <section className="doctrine-section fade-up">
