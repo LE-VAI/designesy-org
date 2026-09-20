@@ -20,7 +20,8 @@ export const SITE_DEFAULT_DESCRIPTION =
  * served there but unadvertised here would be undiscoverable via the tag.
  */
 const MARKDOWN_ROUTES = new Set([
-  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'contracts',
+  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
+  'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
   'contracts/drift', 'contracts/readiness', 'contracts/guardrails',
   'contracts/monitor', 'contracts/report', 'contracts/compare',

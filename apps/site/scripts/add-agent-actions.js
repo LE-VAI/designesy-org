@@ -27,6 +27,7 @@ const ROUTES = {
   'kits': ['/kits.md', 'the kits index'],
   'open': ['/open.md', 'the open index'],
   'benchmarks': ['/benchmarks.md', 'the benchmarks page'],
+  'leaderboard': ['/leaderboard.md', 'the leaderboard'],
   'contracts': ['/contracts.md', 'the contracts index'],
   'contracts/design-system': ['/contracts/design-system.md', 'the design system contract'],
   'contracts/a11y': ['/contracts/a11y.md', 'the accessibility contract'],

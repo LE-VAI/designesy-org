@@ -82,7 +82,8 @@ const agentLinkHeaders = {
  * markdown body to a browser.
  */
 const MARKDOWN_ROUTES = [
-  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'contracts',
+  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
+  'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
   'contracts/drift', 'contracts/readiness', 'contracts/guardrails',
   'contracts/monitor', 'contracts/report', 'contracts/compare',
