@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Why we built a public design score',
@@ -60,6 +61,7 @@ export default function WhyPublicScorePage() {
             it lives on. This article is the short version of why we made
             that choice — and what it costs.
           </p>
+          <AgentActions mdPath="/learn/why-we-built-a-public-design-score.md" label="the public score article" />
         </section>
 
         <section className="doctrine-section fade-up">

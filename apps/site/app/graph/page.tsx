@@ -6,6 +6,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { graph } from '../lib/graph';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Graph — provenance chain',
@@ -39,6 +40,7 @@ export default function GraphPage() {
             <span className="lab-meta-item">Version · {graph.version}</span>
             <span className="lab-meta-item">Machine export · /graph.json</span>
           </div>
+          <AgentActions mdPath="/graph.md" label="the graph page" />
         </section>
 
         <section className="doctrine-section fade-up" id="chain">

@@ -33,6 +33,7 @@ import {
   type Grade,
 } from '../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES } from '../leaderboard/batch-data';
+import { AgentActions } from '../lib/agent-actions';
 import {
   ENGINE_CHECK_COUNT,
   CONTRACT_VERSION,
@@ -263,6 +264,7 @@ export default function StateOfCompliancePage() {
             <span className="soc-version-stamp">contract {CONTRACT_VERSION}</span>
             <span className="soc-version-stamp">last scored {LEADERBOARD_LAST_SCORED}</span>
           </p>
+          <AgentActions mdPath="/state-of-compliance.md" label="the state of compliance report" />
         </section>
 
         {/* ── §1 The Trust Contract ──────────────────────────────────────── */}

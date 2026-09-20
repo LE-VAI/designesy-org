@@ -6,6 +6,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Review',
@@ -57,6 +58,7 @@ export default function ReviewPage() {
             clarity, context, inclusion, system coherence, durability, delight,
             responsibility, and verification proof.
           </p>
+          <AgentActions mdPath="/review.md" label="the review index" />
         </section>
 
         <section className="doctrine-section fade-up">

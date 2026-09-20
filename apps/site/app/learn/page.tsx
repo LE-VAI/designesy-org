@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Learn — design verification',
@@ -58,6 +59,7 @@ export default function LearnPage() {
             explain why Designesy publishes its own score on the same terms as
             everyone else&rsquo;s.
           </p>
+          <AgentActions mdPath="/learn.md" label="the learn index" />
         </section>
 
         <section className="doctrine-section fade-up">

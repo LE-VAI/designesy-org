@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Continuity — case study',
@@ -152,6 +153,7 @@ export default function ContinuityCaseStudyPage() {
             <span className="lab-meta-item">Artifact · le-vai.github.io/continuity</span>
             <span className="lab-meta-item">Date · 2026-07-12</span>
           </div>
+          <AgentActions mdPath="/work/continuity.md" label="the continuity case study" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

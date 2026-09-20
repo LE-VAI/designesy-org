@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Design verification vs design linting vs visual regression',
@@ -67,6 +68,7 @@ export default function ComparisonPage() {
             They answer different questions, take different inputs, and fail
             in different places. This article is the side-by-side.
           </p>
+          <AgentActions mdPath="/learn/design-verification-vs-linting-vs-visual-regression.md" label="the verification vs linting article" />
         </section>
 
         <section className="doctrine-section fade-up">

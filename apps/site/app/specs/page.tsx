@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Specs',
@@ -140,6 +141,7 @@ export default function SpecsPage() {
               Methodology
             </Link>
           </div>
+          <AgentActions mdPath="/specs.md" label="the specs page" />
         </section>
 
         {/* ── Why a standard matters ────────────────────────────────────────── */}
