@@ -80,14 +80,17 @@ export function pageMeta({
       // which strips to '' — falsy, so a truthy test silently skipped the
       // homepage and it alone would have had no alternate link.
       //
-      // The twin's URL is built from the path WITHOUT a trailing slash rather
-      // than by appending '.md' to the page URL. Appending to the homepage's
-      // URL would yield https://www.designesy.org.md, which is a different
-      // host entirely, not a file.
+      // The twin is ALWAYS rooted at /index.md, and for the homepage that is not
+      // a stylistic choice. Appending '.md' to '/' yields
+      // "https://www.designesy.org.md", which parses as a bare host with a
+      // ".md" TLD -- a link to a domain that does not exist, not a 404 on ours.
+      // Verified live before this fix: the homepage shipped exactly that href.
+      // Rooting it means the homepage's twin is /index.md, which is the file the
+      // build actually writes and the URL the rewrite serves.
       ...(path !== undefined && MARKDOWN_ROUTES.has(path.replace(/^\//, ''))
         ? {
             types: {
-              'text/markdown': `${SITE_BASE}${path.replace(/\/$/, '')}.md`,
+              'text/markdown': `${SITE_BASE}/${path.replace(/^\/|\/$/g, '') || 'index'}.md`,
             },
           }
         : {}),
