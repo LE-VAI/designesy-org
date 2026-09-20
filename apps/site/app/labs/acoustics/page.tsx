@@ -10,6 +10,7 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { pageMeta } from '../../lib/site-meta';
 import { acousticTokens } from '../../lib/acoustic-tokens';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
@@ -110,6 +111,7 @@ export default function AcousticsLabPage() {
             <span className="lab-meta-item">Contract · adopted in v0.3.0</span>
             <span className="lab-meta-item">Engine · {acousticTokens.engine}</span>
           </div>
+          <AgentActions mdPath="/labs/acoustics.md" label="the Acoustics lab" />
         </section>
 
         <section className="doctrine-section fade-up" id="demo">

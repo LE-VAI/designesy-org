@@ -22,6 +22,7 @@ import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -529,6 +530,7 @@ export default function MethodologyPage() {
               View leaderboard
             </Link>
           </div>
+          <AgentActions mdPath="/methodology.md" label="the methodology page" />
         </section>
 
         <section className="doctrine-section fade-up methodology-section">

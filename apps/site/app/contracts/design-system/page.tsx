@@ -8,6 +8,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract — reference format',
@@ -102,6 +103,7 @@ export default function DesignSystemContractPage() {
               Full contract
             </Link>
           </div>
+          <AgentActions mdPath="/contracts/design-system.md" label="the design system contract" />
         </section>
 
         <section className="doctrine-section fade-up">

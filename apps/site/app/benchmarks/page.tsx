@@ -6,6 +6,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Benchmarks',
@@ -158,6 +159,7 @@ export default function BenchmarksPage() {
               Leaderboard
             </Link>
           </div>
+          <AgentActions mdPath="/benchmarks.md" label="the benchmarks page" />
         </section>
 
         {/* ── Tool comparison table ─────────────────────────────────────────── */}

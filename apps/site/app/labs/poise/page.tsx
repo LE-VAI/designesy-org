@@ -11,6 +11,7 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise',
@@ -103,6 +104,7 @@ export default function PoiseLabPage() {
             <span className="lab-meta-item">Status · public experiment</span>
             <span className="lab-meta-item">Contract · adopted in v0.1.1</span>
           </div>
+          <AgentActions mdPath="/labs/poise.md" label="the Poise lab" />
         </section>
 
         <section className="doctrine-section fade-up" id="demo">

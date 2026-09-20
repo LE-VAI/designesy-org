@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { tokensContract } from '../../lib/tokens-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tokens contract',
@@ -31,6 +32,7 @@ export default function TokensContractPage() {
             Version {c.version} · {c.status} ·{' '}
             <Link href={c.machine_url}>machine export</Link>
           </p>
+          <AgentActions mdPath="/contracts/tokens.md" label="the tokens contract" />
         </section>
 
         <section className="doctrine-section fade-up">
