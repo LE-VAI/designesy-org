@@ -23,6 +23,8 @@ export async function generateMetadata({
     description:
       'Generate a unified design-intelligence report for any URL — score + drift + readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone of the Designesy dynasty.',
     path: '/report',
+
+    machineSibling: '/contracts/report.json',
     ogTitle: 'Design-intelligence report · Designesy',
     ogDescription:
       'One URL, three engines, one composite grade. Score + drift + readiness in a single report.',

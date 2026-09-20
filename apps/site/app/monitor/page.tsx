@@ -13,6 +13,8 @@ export const metadata: Metadata = pageMeta({
   description:
     'Monitor any URL for design-drift over time — re-scores on a cadence, stores snapshots, computes deltas against the baseline, and emails you when drift is detected. 10 governance checks plus the 12 drift checks on every run.',
   path: '/monitor',
+
+  machineSibling: '/contracts/monitor.json',
   ogTitle: 'Drift monitor · Designesy',
   ogDescription:
     'Continuous design-drift monitoring with email alerts — score deltas, trend slopes, new violations, token mutations.',

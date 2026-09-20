@@ -12,6 +12,8 @@ export const metadata: Metadata = pageMeta({
   description:
     'Score any URL for design-system AI readiness — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots.txt, and social meta. The 6th maturity axis, automated.',
   path: '/readiness',
+
+  machineSibling: '/contracts/readiness.json',
   ogTitle: 'AI Readiness score · Designesy',
   ogDescription:
     'Is your design system the default context AI tools build from? 10 automated checks.',

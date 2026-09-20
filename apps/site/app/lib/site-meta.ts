@@ -62,6 +62,7 @@ export function pageMeta({
   twitterDescription,
   image,
   type,
+  machineSibling,
 }: {
   title: string;
   description: string;
@@ -75,6 +76,26 @@ export function pageMeta({
   image?: string;
   /** OG type — defaults to website, use article for content pages */
   type?: 'website' | 'article';
+  /**
+   * Machine-readable sibling path, e.g. `/contracts/compare.json`.
+   *
+   * WHY THIS EXISTS
+   * Six routes (/compare, /drift, /readiness, /guardrails, /monitor, /report)
+   * are force-dynamic because they read searchParams, so the build-time markdown
+   * generator cannot reach them — it converts prerendered HTML, and they have
+   * none. They are not uncovered, though: each already serves a markdown
+   * projection at its `.json` sibling, with `x-markdown-fidelity: projection`.
+   *
+   * What was missing is DISCOVERY. An agent landing on /compare found no
+   * alternate link and, in four of the six cases, no mention of the sibling
+   * anywhere in the HTML. The document existed and was unreachable.
+   *
+   * The sibling is a DIFFERENT document from the page, not a rendering of it:
+   * the page explains what the tool does, the sibling specifies the contract it
+   * emits. Both are useful to different agents, so this advertises the one
+   * rather than replacing the other.
+   */
+  machineSibling?: string;
 }): Metadata {
   const normalized = path === '/' ? '' : path.replace(/\/$/, '');
   const url = `${SITE_BASE}${normalized || ''}`;
@@ -112,6 +133,10 @@ export function pageMeta({
             },
           }
         : {}),
+      // A different document, not a second rendering of the page: the contract
+      // this tool implements. Typed as application/json because that is what a
+      // client without the Accept header receives from that URL.
+      ...(machineSibling ? { types: { 'application/json': `${SITE_BASE}${machineSibling}` } } : {}),
     },
     openGraph: {
       title: socialTitle,
