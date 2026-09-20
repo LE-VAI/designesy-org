@@ -82,6 +82,7 @@ const agentLinkHeaders = {
  * markdown body to a browser.
  */
 const MARKDOWN_ROUTES = [
+  'index',
   'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
   'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
@@ -90,6 +91,17 @@ const MARKDOWN_ROUTES = [
   'contracts/tokens', 'labs/poise', 'labs/takt', 'labs/cadence',
   'labs/acoustics',
 ];
+
+// 'index' is the homepage. Its route KEY is the filename Next emits
+// (index.html), but its public path is the site root, and those two differ in a
+// way that breaks things silently if conflated:
+//   - '/' + 'index'  is /index, which 308-redirects to / -- a rewrite from
+//     there would never be reached.
+//   - naively appending '.md' to the root URL yields https://www.designesy.org.md
+// Both helpers exist so the rewrite, the Vary rule and the noindex rule all
+// resolve the homepage the same way instead of each special-casing it.
+const markdownPublicPath = (route: string) => (route === 'index' ? '/' : '/' + route);
+const markdownFilePath = (route: string) => (route === 'index' ? '/index.md' : '/' + route + '.md');
 
 const nextConfig: NextConfig = {
   // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
@@ -136,9 +148,9 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return {
       beforeFiles: MARKDOWN_ROUTES.map((route) => ({
-        source: '/' + route,
+        source: markdownPublicPath(route),
         has: [{ type: 'header' as const, key: 'accept', value: '.*text/markdown.*' }],
-        destination: '/' + route + '.md',
+        destination: markdownFilePath(route),
       })),
       afterFiles: [],
       fallback: [],
@@ -160,7 +172,7 @@ const nextConfig: NextConfig = {
       // Vary on every route and deoptimise CDN caching site-wide to serve a
       // negotiation only twenty routes implement.
       ...MARKDOWN_ROUTES.map((route) => ({
-        source: '/' + route,
+        source: markdownPublicPath(route),
         headers: [{ key: 'Vary', value: 'Accept, Accept-Encoding' }],
       })),
       // noindex on the markdown REPRESENTATION only.
@@ -175,7 +187,7 @@ const nextConfig: NextConfig = {
       // deindex the actual page -- the exact opposite of the intent. Next's
       // `has` matcher is what makes the distinction possible.
       ...MARKDOWN_ROUTES.map((route) => ({
-        source: '/' + route,
+        source: markdownPublicPath(route),
         has: [{ type: 'header' as const, key: 'accept', value: '.*text/markdown.*' }],
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       })),

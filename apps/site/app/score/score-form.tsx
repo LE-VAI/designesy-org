@@ -1504,7 +1504,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
-            extract design tokens, and evaluate ${ENGINE_CHECK_COUNT} verification checks against the Designesy
+            extract design tokens, and evaluate {ENGINE_CHECK_COUNT} verification checks against the Designesy
             contract v0.4.0. Real-time. No login required.
           </p>
         </div>

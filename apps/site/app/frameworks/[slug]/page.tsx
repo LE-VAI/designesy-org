@@ -405,7 +405,7 @@ export default async function FrameworkEvaluationPage({
             ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Scored 2026-08-03 against contract v0.4.0 (${ENGINE_CHECK_COUNT} checks, 14 weighted
+            Scored 2026-08-03 against contract v0.4.0 ({ENGINE_CHECK_COUNT} checks, 14 weighted
             categories). Re-scored weekly via GitHub Action.
           </p>
         </section>

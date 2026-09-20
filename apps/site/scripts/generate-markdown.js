@@ -64,8 +64,13 @@ const OUT_DIR = path.join(APP_DIR, 'public');
  *
  * Note the .md twin is a REPRESENTATION, not a replacement: the page's own
  * ranking logic, live re-score links and SVG fingerprints stay in the HTML.
+ *
+ * 'index' is the homepage. The key is 'index' because that is the literal file
+ * Next emits (index.html -> index.md); its PUBLIC path is '/', and the header
+ * below maps back to that. Using '' as the key would emit a file named ".md".
  */
 const ROUTES = [
+  'index',
   'docs',
   'methodology',
   'kits',
@@ -363,12 +368,17 @@ function main() {
       continue;
     }
 
-    const header =
-      '<!-- Generated from /' + route + ' at build time. Do not edit by hand. -->\n' +
-      '<!-- Source of truth: the rendered page. A hand edit here is overwritten on the next build. -->\n\n' +
-      '# Designesy \u2014 /' + route + '\n\n' +
-      'Canonical page: https://www.designesy.org/' + route + '\n\n---\n\n';
+    // 'index' is the homepage's FILENAME; its public path is the site root.
+    // Without this the generated header would claim a canonical of
+    // https://www.designesy.org/index, which 308-redirects away -- an agent
+    // following it would be told the page lives somewhere it does not.
+    const routePath = route === 'index' ? '' : route;
 
+    const header =
+      '<!-- Generated from /' + routePath + ' at build time. Do not edit by hand. -->\n' +
+      '<!-- Source of truth: the rendered page. A hand edit here is overwritten on the next build. -->\n\n' +
+      '# Designesy \u2014 /' + routePath + '\n\n' +
+      'Canonical page: https://www.designesy.org/' + routePath + '\n\n---\n\n';
     const body = header + md + '\n';
     const outFile = path.join(OUT_DIR, route + '.md');
     fs.mkdirSync(path.dirname(outFile), { recursive: true });

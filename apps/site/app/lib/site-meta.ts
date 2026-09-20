@@ -18,8 +18,13 @@ export const SITE_DEFAULT_DESCRIPTION =
  * Mirrors MARKDOWN_ROUTES in next.config.ts. The two lists must agree: a route
  * advertised here but missing there would 404 the alternate link, and one
  * served there but unadvertised here would be undiscoverable via the tag.
+ *
+ * Entries are PUBLIC paths with the leading slash stripped. The homepage is ''
+ * (the result of stripping '/' from '/'), which is why the lookup below handles
+ * an empty string rather than treating it as "no path".
  */
 const MARKDOWN_ROUTES = new Set([
+  '',  // the homepage: public path '/', markdown twin at /index.md
   'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
   'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
@@ -71,10 +76,18 @@ export function pageMeta({
       // and Codex CLI is one documented follower. Treat it as a convenience,
       // NOT as load-bearing -- most agents neither negotiate nor follow it,
       // which is why the .md suffix exists independently.
-      ...(path && MARKDOWN_ROUTES.has(path.replace(/^\//, ''))
+      // `path !== undefined`, NOT a truthy check. The homepage passes '/',
+      // which strips to '' — falsy, so a truthy test silently skipped the
+      // homepage and it alone would have had no alternate link.
+      //
+      // The twin's URL is built from the path WITHOUT a trailing slash rather
+      // than by appending '.md' to the page URL. Appending to the homepage's
+      // URL would yield https://www.designesy.org.md, which is a different
+      // host entirely, not a file.
+      ...(path !== undefined && MARKDOWN_ROUTES.has(path.replace(/^\//, ''))
         ? {
             types: {
-              'text/markdown': (url || SITE_BASE) + '.md',
+              'text/markdown': `${SITE_BASE}${path.replace(/\/$/, '')}.md`,
             },
           }
         : {}),

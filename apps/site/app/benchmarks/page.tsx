@@ -353,7 +353,7 @@ export default function BenchmarksPage() {
             <p>
               Live research via AnySearch MCP (2026-08-01). Designesy live score
               verified via POST to https://www.designesy.org/api/score (93% A,
-              ${ENGINE_CHECK_COUNT} checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
+              {ENGINE_CHECK_COUNT} checks). hallmark taxonomy from Nutlope/hallmark/skills/hallmark/references/slop-test.md.
               slop-eval taxonomy from fabricioctelles/skills/skills/slop-eval/references/tells.md.
             </p>
           </div>

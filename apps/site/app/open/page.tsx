@@ -378,7 +378,7 @@ export default function OpenPage() {
               <span className="row-body">
                 <span className="row-title">design.md (Google Labs)</span>
                 <span className="row-meta">
-                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with ${ENGINE_CHECK_COUNT} verification checks.
+                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
                 </span>
               </span>
             </a>
