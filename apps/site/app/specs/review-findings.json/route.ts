@@ -18,6 +18,8 @@
 // and jakubkrehel/skills better-interface markdown report format (Scope,
 // Findings, Considered-but-Rejected, Verification, Verdict).
 
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+
 export const dynamic = 'force-static';
 
 const SCHEMA = {
@@ -53,7 +55,9 @@ const SCHEMA = {
         },
         version: {
           type: 'string',
-          description: 'Tool version. Designesy contract version (v0.4.0), Lighthouse version (12.0.0), etc.',
+          // Our example stays current; the Lighthouse example is deliberately frozen
+          // because it is someone else's version number, not ours.
+          description: `Tool version. Designesy contract version (${CONTRACT_VERSION}), Lighthouse version (12.0.0), etc.`,
         },
         userAgent: {
           type: 'string',

@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -8,7 +9,7 @@ export default function TwitterImage() {
   return renderOgCard({
     eyebrow: 'Review · Public surface',
     title: 'designesy.org',
-    lede: 'A public field check against design system contract v0.4.0 — holds, tensions, and standing rules.',
+    lede: `A public field check against design system contract ${CONTRACT_VERSION} — holds, tensions, and standing rules.`,
     path: 'designesy.org/review/designesy-org',
     kind: 'review',
     badge: 'Published',

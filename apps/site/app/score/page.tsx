@@ -4,6 +4,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 // Static /score route — the entire page body is static and prerendered at
 // build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
@@ -138,7 +139,7 @@ export default function ScorePage() {
                 <span className="engine-card-count" data-tabular>42 checks</span>
               </header>
               <p className="engine-card-desc">
-                Live design-contract compliance — motion, typography, color, accessibility, identity against the v0.4.0 contract.
+                Live design-contract compliance — motion, typography, color, accessibility, identity against the {CONTRACT_VERSION} contract.
               </p>
               <ul className="engine-card-list">
                 <li>Token presence and binding</li>

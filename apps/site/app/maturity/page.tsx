@@ -25,6 +25,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { MaturityAssessment } from './maturity-form';
 import { AgentActions } from '../lib/agent-actions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -76,8 +77,8 @@ export default function MaturityPage() {
             That asymmetry is the finding.
           </p>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            The six axes map to the 14 weighted categories in the Designesy
-            v0.4.0 contract. After the self-assessment, the highest-leverage
+            The six axes map to the 14 weighted categories in the Designesy{' '}
+            {CONTRACT_VERSION} contract. After the self-assessment, the highest-leverage
             next step is almost always a deterministic score — run the same
             42-check engine against your live site and see where
             self-perception meets shipped reality.

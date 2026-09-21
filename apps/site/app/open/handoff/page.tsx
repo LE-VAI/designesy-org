@@ -26,7 +26,7 @@ const SHARE_POSTS = [
   },
   {
     role: 'Reply 1',
-    text: 'What ships in the catalog:\n\n• Design system contract v0.4.0\n• Use Kit One · Design Review\n• Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Lab Four · Acoustics\n• Field checks, site review, and keyboard path\n\nHuman page and machine export stay synchronized.',
+    text: 'What ships in the catalog:\n\n• Design system contract ' + CONTRACT_VERSION + '\n• Use Kit One · Design Review\n• Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, and Lab Four · Acoustics\n• Field checks, site review, and keyboard path\n\nHuman page and machine export stay synchronized.',
   },
   {
     role: 'Reply 2',
@@ -53,7 +53,7 @@ const VERIFY = [
   },
   {
     title: 'Contract export resolves',
-    meta: 'GET /contracts/design-system.json returns v0.4.0 rules',
+    meta: 'GET /contracts/design-system.json returns ' + CONTRACT_VERSION + ' rules',
   },
   {
     title: 'Handoff stays short',

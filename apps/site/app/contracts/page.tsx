@@ -14,10 +14,10 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system v0.4.0 is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
+    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system ' + CONTRACT_VERSION + ' is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract v0.4.0 is live — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
+    'Portable design agreements for people and agents. Design system contract ' + CONTRACT_VERSION + ' is live — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
   twitterDescription:
     'Portable design judgment — designesy.org/contracts/design-system',
 });
@@ -466,7 +466,7 @@ export default function ContractsPage() {
               <span className="row-body">
                 <span className="row-title">Copywriting adopted</span>
                 <span className="row-meta">
-                  UX copy principles adopted in v0.4.0 — NN/g, Polaris, Carbon, Fluent, HIG
+                  UX copy principles adopted in {CONTRACT_VERSION} — NN/g, Polaris, Carbon, Fluent, HIG
                 </span>
               </span>
             </Link>
@@ -705,7 +705,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Contract status',
-                meta: 'Public v0.4.0 — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
+                meta: 'Public ' + CONTRACT_VERSION + ' — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
               },
             ]} />
         </section>
@@ -1079,7 +1079,7 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up" id="09e-copywriting">
           <h2 className="doctrine-heading">09e · Copywriting ({CONTRACT_VERSION})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            UX copy principles adopted in v0.4.0 from NN/g, Polaris, IBM
+            UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, IBM
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap signal:{' '}
             <a
               href="https://detail.design"
@@ -1129,7 +1129,7 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract v0.4.0 — public artifact discipline,
+          Designesy design system contract {CONTRACT_VERSION} — public artifact discipline,
           not legal advice or a client service agreement. Values are taken from
           the live site tokens. Poise, Takt, Cadence, Acoustics, and Copywriting rules are
           adopted. Contract home:{' '}

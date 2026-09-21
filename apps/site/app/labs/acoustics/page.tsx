@@ -11,6 +11,7 @@ import { CopyPrompt } from '../../lib/copy-prompt';
 import { pageMeta } from '../../lib/site-meta';
 import { acousticTokens } from '../../lib/acoustic-tokens';
 import { AgentActions } from '../../lib/agent-actions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
@@ -225,7 +226,7 @@ export default function AcousticsLabPage() {
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts/design-system">
-              Design system contract v0.4.0
+              Design system contract {CONTRACT_VERSION}
             </Link>
             {' · '}
             <Link href="/acoustic-tokens">Token reference page</Link>

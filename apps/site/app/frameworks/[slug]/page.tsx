@@ -26,6 +26,7 @@ import { ScoreDial, gradeColor } from '../../lib/score-dial';
 import { RadarChart } from '../../lib/radar-chart';
 import { SEED, type Grade, type CategoryBreakdown } from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES } from '../../leaderboard/batch-data';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const revalidate = 3600;
 
@@ -405,7 +406,7 @@ export default async function FrameworkEvaluationPage({
             ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Scored 2026-08-03 against contract v0.4.0 ({ENGINE_CHECK_COUNT} checks, 14 weighted
+            Scored 2026-08-03 against contract {CONTRACT_VERSION} ({ENGINE_CHECK_COUNT} checks, 14 weighted
             categories). Re-scored weekly via GitHub Action.
           </p>
         </section>

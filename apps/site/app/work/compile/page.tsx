@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Compile — case study',
@@ -64,7 +65,7 @@ const DIMENSIONS = [
       'The compilation engine derives tokens from Designesy DESIGN.md v0.2.0. The output contract structure matches the Designesy contract contents list. The review checklist generates all eight Designesy review dimensions. The tool IS the Lab — its output satisfies the 10-cell Lab anatomy.',
     judgment:
       'Coherence is the strongest dimension. The tool is the pipeline made visible: a principle goes in, a contract comes out. The Lab anatomy mapping is self-documenting.',
-    action: 'Keep the DESIGN.md derivation explicit. When the contract moves to v0.4.0, update the compilation engine.',
+    action: 'Keep the DESIGN.md derivation explicit. When the contract moves to ' + CONTRACT_VERSION + ', update the compilation engine.',
   },
   {
     num: '06',
@@ -115,7 +116,7 @@ const TENSIONS = [
   },
   {
     title: 'DESIGN.md derivation is v0.2.0',
-    meta: 'The compilation engine derives from v0.2.0 — needs update when contract moves to v0.4.0',
+    meta: 'The compilation engine derives from v0.2.0 — needs update when contract moves to ' + CONTRACT_VERSION,
   },
 ];
 
@@ -129,8 +130,8 @@ const CORRECTIONS = [
     meta: 'One word + screen recording of the compilation + try-it reply',
   },
   {
-    title: 'Update compilation engine to v0.4.0',
-    meta: 'When the contract reconciles to DTCG v0.4.0, update the token derivation',
+    title: 'Update compilation engine to ' + CONTRACT_VERSION,
+    meta: 'When the contract reconciles to DTCG ' + CONTRACT_VERSION + ', update the token derivation',
   },
 ];
 
@@ -152,7 +153,7 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.4.0',
+    title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'Governing tokens',
   },
   {

@@ -1,4 +1,4 @@
-import { designSystemContract } from '../../lib/design-system-contract';
+import { designSystemContract, CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 import { negotiatedResponse } from '../../lib/content-negotiation';
 
@@ -12,7 +12,9 @@ export function GET(request: Request) {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
       'Content-Disposition':
-      'inline; filename="designesy-design-system-v0.4.0.json"',
+      // Derived, so the downloaded filename always names the contract it contains.
+      // A stale filename here is worse than a stale caption: a user keeps the file.
+      `inline; filename="designesy-design-system-${CONTRACT_VERSION}.json"`,
     },
   });
 }

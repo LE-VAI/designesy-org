@@ -15,6 +15,7 @@ import { LottieHint, LottieTip } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -513,7 +514,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       `Assessed: ${new Date().toISOString()}`,
       `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Manual: ${result.manual || 0} | N/A: ${result.skip}`,
       `Tokens Extracted: ${result.tokensExtracted || 0}`,
-      `Contract: Designesy Design System Contract v0.4.0`,
+      `Contract: Designesy Design System Contract ${CONTRACT_VERSION}`,
       `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, MANUAL and N/A excluded), weights below; accessibility < 60% caps grade at C.`,
     ];
     const cats = result.categoryScores || {};
@@ -1482,7 +1483,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </div>
 
           <p className="score-note">
-            {animatedCounts.total} checks evaluated against Designesy design system contract v0.4.0.
+            {animatedCounts.total} checks evaluated against Designesy design system contract {CONTRACT_VERSION}.
             {result.a11yFloorApplied && (
               <span className="score-a11y-floor-notice"> · Accessibility floor applied: score capped at C (70) because accessibility &lt; 60%.</span>
             )}
@@ -1505,7 +1506,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. We fetch its CSS,
             extract design tokens, and evaluate {ENGINE_CHECK_COUNT} verification checks against the Designesy
-            contract v0.4.0. Real-time. No login required.
+            contract {CONTRACT_VERSION}. Real-time. No login required.
           </p>
         </div>
       )}

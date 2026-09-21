@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics field check',
@@ -130,7 +131,7 @@ const CORRECTIONS = [
   },
   {
     title: 'Version future acoustic changes',
-    meta: 'New cues or mapping rules require a contract bump after v0.4.0 — not silent edits',
+    meta: 'New cues or mapping rules require a contract bump after ' + CONTRACT_VERSION + ' — not silent edits',
   },
   {
     title: 'Keep machine export and live cue grid aligned',

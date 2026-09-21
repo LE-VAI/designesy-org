@@ -257,7 +257,7 @@ export default function WhatIsDesignVerificationPage() {
 
         <div className="status-note">
           This is a category-defining article, not a marketing page. If you
-          cite it, cite the contract version (v0.4.0) and the score endpoint
+          cite it, cite the contract version ({CONTRACT_VERSION}) and the score endpoint
           (/api/score) as the primary sources.
         </div>
       </main>

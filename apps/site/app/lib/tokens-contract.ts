@@ -1,3 +1,4 @@
+import { CONTRACT_VERSION } from './design-system-contract';
 /**
  * Designesy Tokens Contract v0.1.0 — machine-readable form.
  * Sibling contract governing W3C DTCG 2025.10 token-format conformance.
@@ -93,7 +94,7 @@ export const tokensContract = {
     '§6 Economy Is Intelligence': 'Fewer, stronger tokens',
     '§6 Systems Enable Freedom': 'Portable, validated tokens',
     '§17 Verification': 'Machine-checkable verification layer for tokens',
-    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract v0.4.0 and scores 90% (Grade A) on designesy_tokens_score — 9 PASS, 1 WARN (namespaced custom types designesy.spring/sound/cubicBezier, correct per t07; verified 2026-08-30).',
+    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract ' + CONTRACT_VERSION + ' and scores 90% (Grade A) on designesy_tokens_score — 9 PASS, 1 WARN (namespaced custom types designesy.spring/sound/cubicBezier, correct per t07; verified 2026-08-30).',
   },
   open_questions: [
     'DTCG custom types proposal: should spring and sound be proposed to W3C DTCG?',

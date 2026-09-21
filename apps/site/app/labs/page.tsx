@@ -6,6 +6,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
@@ -253,7 +254,7 @@ export default function LabsPage() {
               <span className="row-body">
                 <span className="row-title">Public surface review</span>
                 <span className="row-meta">
-                  designesy.org checked against contract v0.4.0
+                  designesy.org checked against contract {CONTRACT_VERSION}
                 </span>
               </span>
             </Link>
