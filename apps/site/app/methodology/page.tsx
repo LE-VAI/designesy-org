@@ -491,11 +491,15 @@ export default function MethodologyPage() {
           .methodology-page .check-row-head { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
           .methodology-page .check-id { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; font-weight: 600; color: var(--signal-light); background: var(--signal-dim); padding: 0.1rem 0.4rem; border-radius: 3px; letter-spacing: 0.02em; }
           .methodology-page .check-item { font-size: 0.92rem; color: var(--ink); font-weight: 500; line-height: 1.4; }
-          .methodology-page .check-how { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin: 0 0 0 0; }
+          /* max-width is load-bearing, not cosmetic. Without it this line ran
+             the full 1032px container — 130 characters at 13.12px, 73% over the
+             ~75-character readable maximum, across 42 blocks on this page. The
+             rest of the site caps prose at 66ch for exactly this reason. */
+          .methodology-page .check-how { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin: 0 0 0 0; max-width: 66ch; }
           .methodology-page .check-skip { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.5rem; font-size: 0.7rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: 3px; letter-spacing: 0.02em; }
           .methodology-page .methodology-formula { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; margin: 1.25rem 0; font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; line-height: 1.7; color: var(--ink); overflow-x: auto; box-shadow: var(--inner-light); }
           .methodology-page .methodology-formula .formula-comment { color: var(--muted-dim); }
-          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: 6px; margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; }
+          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: 6px; margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; max-width: 66ch; }
           .methodology-page .methodology-callout strong { font-weight: 700; }
           .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; margin: 1.5rem 0; font-size: 0.85rem; }
           .methodology-page .methodology-toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
@@ -1417,14 +1421,22 @@ export default function MethodologyPage() {
           </div>
         </section>
 
+        {/* The inline maxWidth is the 1080px page container, which is right for the
+            section but wrong for running text: measured 136 characters per line,
+            the widest prose block on the site. Every other route's .status-note
+            already sits at 66ch because it inherits the global class; this one
+            opted out with an inline style. The container stays 1080px for
+            centring; the note itself is capped. */}
         <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
+          <div style={{ maxWidth: '66ch' }}>
           Contract v0.4.0 · Methodology v2 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
           12 slop rules (S1&ndash;S12, up to -20pts) · 7 originality signals
           (O1&ndash;O7, up to +8pts) · 6 hard-fail ceilings · deterministic, no
           LLM · engine source at{' '}
           <Link href="/api/score" style={{ color: 'var(--muted)' }}>/api/score</Link> ·{' '}
-          contract at{' '}
-          <Link href="/contracts/design-system.json" style={{ color: 'var(--muted)' }}>/contracts/design-system.json</Link>
+            contract at{' '}
+            <Link href="/contracts/design-system.json" style={{ color: 'var(--muted)' }}>/contracts/design-system.json</Link>
+          </div>
         </div>
       </main>
 
