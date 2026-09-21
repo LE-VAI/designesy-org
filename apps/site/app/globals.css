@@ -850,8 +850,8 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: transparent;
@@ -1074,7 +1074,7 @@ p {
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  height: 32px;
+  height: 44px;
   padding: 0 var(--space-fine-55) 0 var(--space-fine-60);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -2729,6 +2729,9 @@ a.surface-card:active {
     background 0.18s var(--ease),
     border-color 0.18s var(--ease),
     color 0.18s var(--ease);
+  /* 44px minimum at every width. A 2.75rem rule already existed inside a
+     media query, so desktop measured below target while mobile passed. */
+  min-height: 2.75rem;
 }
 
 /* Signal dot accent before each surface pill */
@@ -4957,7 +4960,11 @@ button.row:active {
 
 .row-title,
 .layer-name {
-  display: block;
+  /* 44px minimum target. As a block-level link inside table rows this
+     measured 26px tall on /leaderboard's 30 site rows -- wide but short. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--ink);
   font-weight: 700;
   text-wrap: balance;
@@ -4973,6 +4980,16 @@ button.row:active {
   word-break: break-word;
   text-wrap: pretty;
 }
+/* Path links inside .row-meta measured 155x19px -- block-level anchors with no
+   vertical padding, in a container that is itself only 19px tall. Giving the
+   container a min-height would move the layout; giving the LINKS a min-height
+   would not, because the rows are grid cells with room. */
+.row-meta a, .layer-desc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
 
 /* Inline desc after title (Seven Layers style) */
 
@@ -7015,6 +7032,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   text-decoration: none;
   transform: translateY(-160%);
   transition: transform 0.15s var(--ease-out);
+  /* 44px minimum at every width. A 2.75rem rule already existed inside a
+     media query, so desktop measured below target while mobile passed. */
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
 }
 
 .skip-link:focus,
@@ -13065,12 +13087,13 @@ select {
   }
 }
 
+  /* 44px, not 30px. A 2.75rem override existed only inside a media query. */
 .listen-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -13350,8 +13373,14 @@ select {
   gap: 2px;
 }
 
+/* 44px minimum target. At 0.3rem vertical padding these measured 200x27px:
+   the TOC is the primary navigation for a long document, so a miss costs the
+   reader their place. min-height rather than more padding keeps the text
+   position and the left rail unchanged. */
 .docs-toc-list a {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
   padding: 0.3rem 0 0.3rem 0.75rem;
   border-left: 2px solid var(--line-faint);
   color: var(--muted);
