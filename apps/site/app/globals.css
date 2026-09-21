@@ -2796,6 +2796,11 @@ a.surface-card:active {
   font-size: 0.8rem;
   color: var(--muted);
   transition: color 0.2s var(--ease);
+  /* The 44px rule below lived only inside a media query, so at desktop
+     width this measured 120x20px. Hoisted to the base rule. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .footer-link:hover {
@@ -4750,6 +4755,9 @@ a.surface-card:active {
   align-items: center;
   gap: var(--space-8);
   flex-shrink: 0;
+  /* 44px minimum. Measured 447x37px: wide, but 7px short. These are real
+     <a> links with pointer-events: auto -- no inline exception applies. */
+  min-height: 44px;
   padding: var(--space-8) var(--space-fine-80);
   font-size: 0.78rem;
   font-weight: 600;
@@ -11509,6 +11517,10 @@ select {
 
 .score-scope-option {
   padding: var(--space-fine-20) var(--space-fine-60);
+  /* 44px minimum hit area. Measured 61x22px -- a segmented control whose
+     targets were half the required height. Padding grows the box without
+     changing the type size. */
+  min-height: 44px;
   border-radius: var(--radius-sm);
   font-size: 0.68rem;
   font-family: var(--mono);
@@ -12690,6 +12702,11 @@ select {
 
 .lottie-tip-close {
   flex-shrink: 0;
+  /* 44px minimum. Measured 19x16px -- the smallest interactive target
+     on the site, and it is a DISMISS control, so a miss is costly. */
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;

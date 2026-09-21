@@ -321,6 +321,13 @@ export default function LeaderboardPage() {
           .lb-pending-note { color: var(--muted-dim); font-style: italic; font-size: 0.8rem; }
           .lb-action-cell { text-align: right; }
           .lb-action-stack { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.22rem; }
+          /* 44px minimum hit area. The ROW is already 112px+ tall, so this costs no
+             layout: the links simply claim vertical space the cell was already
+             giving them. Measured before the change: lb-eval-link was 68x17px and
+             lb-score-link 52x39px -- both below the 44px target, and neither
+             qualifies for WCAG 2.5.8's inline exception because they are
+             display:block inside table cells, not links flowing in a sentence. */
+          .lb-score-link, .lb-eval-link, .lb-bench-link, .lb-host { display: inline-flex; align-items: center; min-height: 44px; }
           .lb-score-link { font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
           .lb-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-bench-link { font-size: 0.7rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.02em; }
@@ -341,7 +348,7 @@ export default function LeaderboardPage() {
           .lb-coi-badge { display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 3px; letter-spacing: 0.02em; line-height: 1.4; max-width: 280px; }
           .lb-live-score-link { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; letter-spacing: 0.01em; }
           .lb-live-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .lb-row-needs-work .lb-name { color: var(--muted); }
+          .lb-row-needs-work .lb-name { color: var(--muted); display: inline-flex; align-items: center; min-height: 44px; }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
           .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
           .lb-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
