@@ -4,6 +4,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Design verification vs design linting vs visual regression',
@@ -152,7 +153,7 @@ export default function ComparisonPage() {
         </section>
 
         <div className="status-note">
-          Citations: the design system contract (v0.4.0) for verification
+          Citations: the design system contract ({CONTRACT_VERSION}) for verification
           scope, and the /score endpoint for the runnable artifact.
         </div>
       </main>

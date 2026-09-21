@@ -195,7 +195,7 @@ export default function ReviewPage() {
               </div>
               <h3 className="lab-card-title">designesy.org</h3>
               <p className="lab-card-lede">
-                Public review against design system contract v0.4.0.
+                Public review against design system contract {CONTRACT_VERSION}.
               </p>
               <p className="lab-card-desc">
                 Holds, tensions, and standing rules for the live site — including

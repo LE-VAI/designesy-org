@@ -5,6 +5,7 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Keyboard path',
@@ -195,7 +196,7 @@ const RELATED = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.4.0',
+    title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'focus-visible, reduced-motion, interaction rules',
   },
   {

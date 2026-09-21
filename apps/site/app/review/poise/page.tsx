@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise field check',
@@ -173,7 +174,7 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.4.0',
+    title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'Governing tokens · Poise interaction rules adopted in v0.1.1',
   },
   {

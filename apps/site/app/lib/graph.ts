@@ -1,3 +1,4 @@
+import { CONTRACT_VERSION } from './design-system-contract';
 /**
  * Designesy Graph — public read-only provenance chain.
  * The Graph shows how sources become shipped work through the Designesy pipeline.
@@ -100,7 +101,7 @@ export const graph = {
       stage: 'Shipped Work',
       description: 'Real artifacts produced using the contract.',
       public_examples: [
-        'designesy.org (live, v0.4.0, 23 packages, 10 machine exports)',
+        'designesy.org (live, ' + CONTRACT_VERSION + ', 23 packages, 10 machine exports)',
         'Tile — interactive series composer (617 views on X)',
         'Compile — principle compiler (built, pending hosting)',
         'Continuity — founder narrative (shipped, underperformed, failure documented)',

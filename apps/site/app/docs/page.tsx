@@ -11,6 +11,7 @@ import { Toggle } from '../lib/toggle';
 import { LottieHint } from '../lib/lottie-hint';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Docs',
@@ -40,7 +41,7 @@ const LAYERS = [
     num: '03',
     name: 'Contracts',
     desc: 'portable design agreements',
-    state: 'Public · design system v0.4.0',
+    state: 'Public · design system ' + CONTRACT_VERSION,
   },
   {
     num: '04',
@@ -88,7 +89,7 @@ const START_HERE = [
   {
     href: '/contracts/design-system',
     title: 'Read the design system contract',
-    meta: 'Portable values, roles, verification · v0.4.0 · Poise + Takt + Cadence + Acoustics adopted',
+    meta: 'Portable values, roles, verification · ' + CONTRACT_VERSION + ' · Poise + Takt + Cadence + Acoustics adopted',
   },
   {
     href: '/labs/poise',

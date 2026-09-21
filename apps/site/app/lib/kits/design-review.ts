@@ -1,3 +1,4 @@
+import { CONTRACT_VERSION } from '../design-system-contract';
 /**
  * Use Kit One · Design Review
  * Portable instruction package for humans and agents.
@@ -30,7 +31,7 @@ export const designReviewKit = {
     },
     {
       href: '/contracts/design-system',
-      title: 'Design system contract v0.4.0',
+      title: 'Design system contract ' + CONTRACT_VERSION,
       meta: 'Human home and machine export · Poise + Takt + Cadence + Acoustics adopted',
     },
     {
@@ -46,7 +47,7 @@ export const designReviewKit = {
     {
       href: '/review/designesy-org',
       title: 'Field check · designesy.org',
-      meta: 'Public surface review against contract v0.4.0',
+      meta: 'Public surface review against contract ' + CONTRACT_VERSION,
     },
     {
       href: '/labs/poise',

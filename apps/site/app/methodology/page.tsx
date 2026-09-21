@@ -23,6 +23,7 @@ import { pageMeta } from '../lib/site-meta';
 import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
 import { AgentActions } from '../lib/agent-actions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -74,7 +75,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (12), weighted highest at 18%.',
   accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
   semantic: 'Semantic design vocabulary — does the color system speak in roles (meaning) rather than hues (wavelength)? v42 measures the role-named vs hue-named token share; v43 checks status-state coverage (ok/warn/error/info). Grounded in the contract\'s own role-named palette (--ink, --paper, --surface, --signal, --ok/--warn/--error) and in role-based naming best practice (zeroheight naming guide, Material 3). Wired 2026-08-30 — previously a reserved weight with zero checks. 12% weight, 2 scored checks (v42, v43).',
-  copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in v0.4.0. 8% weight.',
+  copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in ' + CONTRACT_VERSION + '. 8% weight.',
   motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
   tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
   takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
@@ -1262,7 +1263,7 @@ export default function MethodologyPage() {
               <strong>The v0.3.0 &rarr; v0.4.0 release was not neutral.</strong>{' '}
               Across 30 leaderboard sites: mean &Delta; &minus;0.68, 12 grade
               flips (7 up, 5 down), max up +7.2 (m3.material.io), max down
-              &minus;13.2 (pentagram.com). The v0.4.0 additions — the
+              &minus;13.2 (pentagram.com). The {CONTRACT_VERSION} additions — the
               DESIGN.md spec layer (v37), copywriting checks (v38&ndash;v41),
               the a11y floor, anti-slop deduction, and originality lift —
               moved 12 of 30 grades, and this diff makes every move explicit

@@ -10,13 +10,13 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
   description:
-    'Public review of the Designesy site against design system contract v0.4.0, Lab One: Poise, Lab Two: Takt, Lab Three: Cadence, and Lab Four: Acoustics.',
+    'Public review of the Designesy site against design system contract ' + CONTRACT_VERSION + ', Lab One: Poise, Lab Two: Takt, Lab Three: Cadence, and Lab Four: Acoustics.',
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
     'A public surface checked against its own contract — holds, tensions, and standing rules.',
   twitterDescription:
-    'Field check against design system contract v0.4.0 — designesy.org/review/designesy-org',
+    'Field check against design system contract ' + CONTRACT_VERSION + ' — designesy.org/review/designesy-org',
 });
 
 const HOLDS = [
@@ -33,7 +33,7 @@ const HOLDS = [
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract v0.4.0, the machine export, Poise, Takt, Cadence, and Acoustics reference the same values — including adopted interaction, interface-feel, typography, and acoustic rules. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract ' + CONTRACT_VERSION + ', the machine export, Poise, Takt, Cadence, and Acoustics reference the same values — including adopted interaction, interface-feel, typography, and acoustic rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -154,7 +154,7 @@ export default function PublicSurfaceReviewPage() {
           </p>
           <h1 className="surface-title" data-scramble>designesy.org</h1>
           <p className="surface-lede">
-            A public review against design system contract v0.4.0.
+            A public review against design system contract {CONTRACT_VERSION}.
           </p>
           <p className="surface-note">
             Review leads with consequences, not taste. This packet checks the
@@ -269,8 +269,8 @@ export default function PublicSurfaceReviewPage() {
         </section>
 
         <div className="status-note">
-          Public review of the live designesy.org surface against contract
-          v0.4.0. This is institutional quality discipline, not a client report
+          Public review of the live designesy.org surface against contract{' '}
+          {CONTRACT_VERSION}. This is institutional quality discipline, not a client report
           or legal audit. Poise, Takt, Cadence, and Acoustics rules are adopted; the labs remain the
           inspectable source demos.
         </div>

@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tile — case study',
@@ -119,7 +120,7 @@ const SOURCES = [
   },
   {
     href: '/contracts/design-system',
-    title: 'Design system contract v0.4.0',
+    title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'Governing tokens',
   },
   {
@@ -223,7 +224,7 @@ export default function TileCaseStudyPage() {
               <span className="row-body">
                 <span className="row-title">Governing rules</span>
                 <span className="row-meta">
-                  Contract v0.4.0 · Kit One Design Review · VAI brand boundary
+                  Contract {CONTRACT_VERSION} · Kit One Design Review · VAI brand boundary
                 </span>
               </span>
             </ToggleRow>

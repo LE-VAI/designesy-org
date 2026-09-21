@@ -12,6 +12,7 @@ import { CopyPrompt } from '../../lib/copy-prompt';
 import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise',
@@ -272,7 +273,7 @@ export default function PoiseLabPage() {
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts#design-system-contract">
-              Design system contract v0.4.0
+              Design system contract {CONTRACT_VERSION}
             </Link>
             {' · '}
             <Link href="/contracts/design-system">Contract home</Link>

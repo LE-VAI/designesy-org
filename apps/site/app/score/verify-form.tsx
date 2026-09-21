@@ -25,6 +25,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { CopyPrompt } from '../lib/copy-prompt';
 import { ScoreDial } from '../lib/score-dial';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1480,7 +1481,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {activeEngineResult?.ok
               ? `${activeEngineResult.grade}/${activeEngineResult.score}`
               : 'engine failed'}{' '}
-            · Designesy design system contract v0.4.0
+            · Designesy design system contract {CONTRACT_VERSION}
             {scoreData?.a11yFloorApplied && (
               <span className="score-a11y-floor-notice">
                 {' '}

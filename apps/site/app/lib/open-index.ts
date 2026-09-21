@@ -1,3 +1,4 @@
+import { CONTRACT_VERSION } from './design-system-contract';
 /**
  * Open design intelligence — human + machine catalog of portable Designesy cargo.
  * Single source for /open, /open.json, /llms.txt, and agent discovery.
@@ -395,7 +396,7 @@ export const openIndex = {
       title: 'Contract changelog',
       version: '0.1',
       status: 'live',
-      lede: 'Contract changes organized by 11 design dimensions (tokens, motion, cadence, accessibility, takt, poise, acoustics, copywriting, identity, security, verification). 14 entries from v0.1.0 to v0.4.0.',
+      lede: 'Contract changes organized by 11 design dimensions (tokens, motion, cadence, accessibility, takt, poise, acoustics, copywriting, identity, security, verification). 14 entries from v0.1.0 to ' + CONTRACT_VERSION + '.',
       human_url: 'https://www.designesy.org/changelog',
       machine_url: null,
       path: '/changelog',
@@ -439,7 +440,7 @@ export const openIndex = {
       title: 'Design system contract',
       path: '/contracts/design-system.json',
       url: 'https://www.designesy.org/contracts/design-system.json',
-      meta: 'v0.4.0 tokens, interaction, takt, cadence, duration scale, verification',
+      meta: CONTRACT_VERSION + ' tokens, interaction, takt, cadence, duration scale, verification',
     },
     {
       title: 'Tokens contract',

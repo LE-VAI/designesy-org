@@ -6,6 +6,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
   title: 'Kits',
@@ -136,7 +137,7 @@ export default function KitsPage() {
               <span className="row-body">
                 <span className="row-title">Design system contract</span>
                 <span className="row-meta">
-                  Portable values and verification · v0.4.0
+                  Portable values and verification · {CONTRACT_VERSION}
                 </span>
               </span>
             </Link>

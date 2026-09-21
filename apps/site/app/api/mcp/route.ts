@@ -24,6 +24,7 @@
 // MCP Registry: io.github.LE-VAI/designesy-org v1.12.0 (auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
@@ -141,7 +142,7 @@ const handler = createMcpHandler(
           artifact: z.string().optional().describe('URL or description of the artifact to review.'),
           purpose: z.string().optional().describe('What the design is trying to make possible.'),
           context: z.string().optional().describe('Audience, device, environment, and constraints.'),
-          rules: z.string().optional().describe('Governing rules or contract version (default: designesy design system v0.4.0).'),
+          rules: z.string().optional().describe('Governing rules or contract version (default: designesy design system ' + CONTRACT_VERSION + ').'),
         }),
       },
       async ({ artifact, purpose, context, rules }) => {
@@ -153,7 +154,7 @@ const handler = createMcpHandler(
             artifact: artifact || 'Not specified',
             purpose: purpose || 'Not specified',
             context: context || 'Not specified',
-            rules: rules || 'designesy design system v0.4.0',
+            rules: rules || 'designesy design system ' + CONTRACT_VERSION,
             dimensions: dimensions.map((d) => ({
               name: d.name,
               question: d.question,

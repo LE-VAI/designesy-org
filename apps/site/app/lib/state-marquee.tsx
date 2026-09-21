@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import Link from 'next/link';
 import { initScrollPause } from './scroll-pause';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 const SIGNALS = [
-  { t: 'v0.4.0 · LIVE', c: 'live', href: '/contracts/design-system' },
+  { t: CONTRACT_VERSION + ' · LIVE', c: 'live', href: '/contracts/design-system' },
   { t: 'Poise ✓ adopted', c: 'adopted', href: '/labs/poise' },
   { t: 'Takt ✓ adopted', c: 'adopted', href: '/labs/takt' },
   { t: 'Cadence ✓ adopted', c: 'adopted', href: '/labs/cadence' },

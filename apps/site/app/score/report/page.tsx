@@ -4,6 +4,7 @@ import { Footer } from '../../lib/footer';
 import { pageMeta, SITE_BASE } from '../../lib/site-meta';
 import { ScoreReport } from './score-report';
 import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,7 +24,7 @@ export async function generateMetadata({
   const base = pageMeta({
     title: 'Score Report',
     description:
-      `Full verification report — ${ENGINE_SCORED_CHECK_COUNT} deterministic checks against the Designesy design system contract, v0.4.0.`,
+      `Full verification report — ${ENGINE_SCORED_CHECK_COUNT} deterministic checks against the Designesy design system contract, ${CONTRACT_VERSION}.`,
     path: '/score/report',
   });
 
@@ -68,7 +69,7 @@ export default async function ScoreReportPage({
           </h1>
           <p className="lede">
             {ENGINE_SCORED_CHECK_COUNT} deterministic checks against the
-            Designesy design system contract v0.4.0. Each check cites the
+            Designesy design system contract {CONTRACT_VERSION}. Each check cites the
             contract rule it verifies.
           </p>
         </section>
