@@ -564,6 +564,12 @@ p {
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--ink);
+  /* 44px minimum hit area at EVERY width. This rule already existed inside a
+     media query, so desktop measured below the target while mobile passed --
+     the floor was real but scoped to the wrong breakpoint. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 
 .wordmark .dot {
@@ -790,6 +796,12 @@ p {
   border-radius: var(--radius-sm);
   white-space: nowrap;
   transition: color 0.2s var(--ease), background 0.2s var(--ease);
+  /* 44px minimum hit area at EVERY width. This rule already existed inside a
+     media query, so desktop measured below the target while mobile passed --
+     the floor was real but scoped to the wrong breakpoint. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 
 .nav-links a:hover {
@@ -1013,8 +1025,15 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  /* 44px, not 32px. A 2.75rem rule already existed but only inside a media
+     query, so desktop was below target while mobile passed.
+     A 44px pseudo-element overlay was the first attempt, to preserve the 32px
+     paint. Rejected: .sense-toggles sets an 8px gap, so two overlays extending
+     6px each side leave 2px of clearance and can INTERSECT -- the first would
+     swallow clicks meant for the second, which is worse than a small target.
+     The honest fix is a real 44px box; the surrounding gap supports it. */
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1024,6 +1043,7 @@ p {
     border-color 0.2s var(--ease), background 0.2s var(--ease);
   padding: 0;
 }
+
 
 .sense-toggle:active {
   transform: scale(0.97);
@@ -7147,6 +7167,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: opacity 0.3s var(--ease), border-color 0.2s var(--ease),
     color 0.2s var(--ease), transform 0.3s var(--ease-out);
   animation: director-dock-in 0.4s var(--ease-out) 0.4s forwards;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
 }
 
 .director-dock:hover {
