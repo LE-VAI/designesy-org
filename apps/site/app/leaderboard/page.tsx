@@ -346,7 +346,11 @@ export default function LeaderboardPage() {
           .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
           .lb-seeded-because { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--signal-light); letter-spacing: 0.01em; line-height: 1.4; max-width: 280px; }
           .lb-coi-badge { display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 3px; letter-spacing: 0.02em; line-height: 1.4; max-width: 280px; }
-          .lb-live-score-link { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; letter-spacing: 0.01em; }
+          /* 44px target. At 0.66rem this measured 728x17px -- the width made it look
+             fine, but 17px of height is well under target and it is a real
+             action link. inline-flex so min-height takes effect on a block-level
+             element without disturbing the cell layout. */
+          .lb-live-score-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; letter-spacing: 0.01em; }
           .lb-live-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-row-needs-work .lb-name { color: var(--muted); display: inline-flex; align-items: center; min-height: 44px; }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
