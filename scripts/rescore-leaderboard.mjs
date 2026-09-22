@@ -172,27 +172,44 @@ function generateSeedTS(src, entries, lastScored) {
     // present, skip silently when absent rather than failing the whole run.
     swap('prevScore', num(e.prevScore));
 
-    // unreachable / scoredAt are INJECTED rather than swapped, because they are
-    // new fields that no existing seed row contains — `swap` only replaces text
-    // already present.
+    // scoredAt / unreachable: UPDATE IF PRESENT, INJECT IF ABSENT.
     //
-    // Without this the flag lived only in snapshot.json and never reached the
-    // page, so a held-over score rendered as a fresh measurement. The data model
-    // was honest and the UI could not see it.
-    // entry.scoredAt is set during the scoring loop, where BOTH the prior
-    // snapshot and the fresh result are in scope.
+    // These were originally injected unconditionally, on the stated premise that
+    // they are "new fields that no existing seed row contains". That premise
+    // EXPIRED: the UNREACHABLE guard (earlier work) added `scoredAt` to all 30
+    // rows on main, so this injector began appending a SECOND `scoredAt` to every
+    // row. That is a TypeScript error — TS1117 "An object literal cannot have
+    // multiple properties with the same name" — on ~17 rows, and it has been
+    // silently breaking the automated weekly re-score.
     //
-    // entryText DOES include the closing brace (verified: the entry regex
-    // captures the whole object literal, so m[0] === m[1]). Insert before that
-    // brace rather than appending after it.
+    // Symptom to recognise if it recurs: the weekly leaderboard PR fails
+    // `Build site` with a wall of TS1117 on seed.ts.
     //
-    // Note the swap() calls above operate on this same text and match
-    // `key: value` anywhere inside it, so inserting new fields here cannot
-    // disturb them.
-    const extra =
-      `, scoredAt: '${e.scoredAt || lastScored}'` +
-      (e.unreachable === true ? ', unreachable: true' : '');
-    entryText = entryText.replace(/\s*\}\s*$/, `${extra} }`);
+    // Idempotent now, because a generator that only works on the first run is
+    // not a generator, it is a one-shot script wearing a cron entry.
+    const scoredAtValue = e.scoredAt || lastScored;
+    const scoredAtRe = /,?\s*scoredAt:\s*'[^']*'/;
+    if (scoredAtRe.test(entryText)) {
+      entryText = entryText.replace(scoredAtRe, `, scoredAt: '${scoredAtValue}'`);
+    } else {
+      entryText = entryText.replace(
+        /\s*\}\s*$/,
+        `, scoredAt: '${scoredAtValue}' }`,
+      );
+    }
+
+    // unreachable follows the same rule for the same reason.
+    const unreachableRe = /,?\s*unreachable:\s*(?:true|false)/;
+    if (e.unreachable === true) {
+      if (unreachableRe.test(entryText)) {
+        entryText = entryText.replace(unreachableRe, ', unreachable: true');
+      } else {
+        entryText = entryText.replace(/\s*\}\s*$/, ', unreachable: true }');
+      }
+    } else if (unreachableRe.test(entryText)) {
+      // was unreachable, now measured — drop the stale flag rather than keep it.
+      entryText = entryText.replace(unreachableRe, '');
+    }
 
     out = out.replace(m[0], entryText);
   }
