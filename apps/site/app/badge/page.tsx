@@ -4,6 +4,7 @@ import './badge.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Badge',
@@ -70,6 +71,7 @@ export default function BadgePage() {
           <p className="surface-note">
             No API key. No registration. Embed the SVG, link to your score, done.
           </p>
+          <AgentActions mdPath="/badge.md" label="the badge page" />
         </section>
 
         {/* --- Badge variants gallery --- */}

@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Takt field check',
@@ -228,6 +229,7 @@ export default function TaktFieldCheckPage() {
             <span className="lab-meta-item">Artifact · /labs/takt</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
+          <AgentActions mdPath="/review/takt.md" label="the takt review" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

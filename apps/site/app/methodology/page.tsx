@@ -447,6 +447,30 @@ export default function MethodologyPage() {
       <main id="main-content" data-pagefind-body className="surface-page methodology-page" data-pagefind-meta="priority:high">
         <style>{`
           .methodology-page .methodology-section { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
+
+          /* SPACING TIERS — hierarchy without new markup.
+             All 31 sections used one value (64px), which is measurably
+             consistent and editorially monotonous: nothing signals where the
+             argument turns. Ranked by measured text volume, the sections split
+             cleanly into three bands, and CSS keyed on the existing ids gives
+             each band its own room. No markup touched, no new classes.
+
+             SCOPED TO .methodology-page DELIBERATELY. 'doctrine-section' is used
+             411 times across 65 files sitewide; tiers applied to it would have
+             restyled the entire site to solve a problem on one page. */
+          .methodology-page .methodology-section#scoring-math,
+          .methodology-page .methodology-section#anti-slop,
+          .methodology-page .methodology-section#originality-lift {
+            /* Major: 3.5-4.4KB of prose each, the parts the page exists to explain. */
+            padding-block: clamp(3.5rem, 7vw, 5.5rem);
+          }
+          .methodology-page .methodology-section#what-engine-skips,
+          .methodology-page .methodology-section#sensitivity,
+          .methodology-page .methodology-section#score-diff,
+          .methodology-page .methodology-section#rank-bounds {
+            /* Compact: under 1.4KB each, supporting detail rather than headline. */
+            padding-block: clamp(2rem, 3.5vw, 2.75rem);
+          }
           .methodology-page .methodology-prose { max-width: 66ch; }
           .methodology-page .methodology-prose p { color: var(--muted); font-size: 1rem; line-height: 1.6; margin: 0 0 1rem; }
           .methodology-page .methodology-prose strong { color: var(--ink); font-weight: 600; }

@@ -17,6 +17,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { SpringValidator } from './spring-validator-form';
+import { AgentActions } from '../lib/agent-actions';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -51,6 +52,7 @@ export default function SpringValidatorPage() {
             overshoot percentage, settle time, and an accessibility verdict:
             does this spring require explicit reduced-motion suppression?
           </p>
+          <AgentActions mdPath="/spring-validator.md" label="the spring validator" />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">

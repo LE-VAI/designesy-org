@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { ScoreForm } from './score-form';
+import { AgentActions } from '../lib/agent-actions';
 
 /**
  * Shared shell for target-specific score landing pages
@@ -36,6 +37,7 @@ export type TargetLandingProps = {
 };
 
 export function TargetLanding({
+  slug,
   platform,
   eyebrow,
   headline,
@@ -56,6 +58,12 @@ export function TargetLanding({
           <h1 className="surface-title" data-scramble>{headline}</h1>
           <p className="surface-lede">{lede}</p>
           <p className="surface-note">{body}</p>
+          {/* One insertion here covers every platform landing that uses
+              TargetLanding (currently /score/bolt, /score/lovable, /score/v0).
+              The AgentActions migration script could not place these itself --
+              it looks for a surface-header section in each PAGE file, and these
+              pages are thin wrappers around this shared component. */}
+          <AgentActions mdPath={`/score/${slug}.md`} label={`the ${platform} score page`} />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
