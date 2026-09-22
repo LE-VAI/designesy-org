@@ -7,7 +7,7 @@
     "warn": 10,
     "skip": 7,
     "tokens": 191,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://vercel.com": {
     "score": 81.7,
@@ -17,7 +17,7 @@
     "warn": 6,
     "skip": 9,
     "tokens": 3,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://stripe.com": {
     "score": 66.9,
@@ -27,28 +27,27 @@
     "warn": 11,
     "skip": 9,
     "tokens": 714,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://apple.com": {
-    "score": 83.1,
+    "score": 82.1,
     "grade": "B",
     "pass": 15,
     "fail": 2,
     "warn": 12,
     "skip": 10,
     "tokens": 90,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://nytimes.com": {
-    "score": 74.7,
+    "score": 75.8,
     "grade": "C",
-    "pass": 11,
+    "pass": 12,
     "fail": 2,
-    "warn": 10,
-    "skip": 16,
+    "warn": 11,
+    "skip": 14,
     "tokens": 85,
-    "scoredAt": "2026-08-31",
-    "unreachable": true
+    "scoredAt": "2026-09-22"
   },
   "https://mozaika.design": {
     "score": 62.8,
@@ -58,7 +57,7 @@
     "warn": 12,
     "skip": 20,
     "tokens": 0,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://www.designesy.org": {
     "score": 93,
@@ -68,7 +67,7 @@
     "warn": 0,
     "skip": 0,
     "tokens": 150,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://designesy.ai.studio": {
     "score": 74.8,
@@ -78,7 +77,7 @@
     "warn": 13,
     "skip": 13,
     "tokens": 28,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://getdesy.com": {
     "score": 73.4,
@@ -99,7 +98,7 @@
     "warn": 11,
     "skip": 20,
     "tokens": 2,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://zeroheight.com": {
     "score": 70,
@@ -109,7 +108,7 @@
     "warn": 11,
     "skip": 12,
     "tokens": 134,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://roastbyai.com": {
     "score": 71.2,
@@ -119,7 +118,7 @@
     "warn": 8,
     "skip": 12,
     "tokens": 46,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://atlassian.design": {
     "score": 86.1,
@@ -129,7 +128,7 @@
     "warn": 9,
     "skip": 11,
     "tokens": 28,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://primer.style": {
     "score": 82.4,
@@ -139,7 +138,7 @@
     "warn": 5,
     "skip": 7,
     "tokens": 521,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://carbondesignsystem.com": {
     "score": 60.7,
@@ -149,7 +148,7 @@
     "warn": 6,
     "skip": 15,
     "tokens": 15,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://spectrum.adobe.com": {
     "score": 58.9,
@@ -159,7 +158,7 @@
     "warn": 12,
     "skip": 18,
     "tokens": 0,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://m3.material.io": {
     "score": 67.6,
@@ -169,7 +168,7 @@
     "warn": 12,
     "skip": 18,
     "tokens": 158,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://radix-ui.com": {
     "score": 63.2,
@@ -179,7 +178,7 @@
     "warn": 12,
     "skip": 10,
     "tokens": 59,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://geist.dev": {
     "score": 62,
@@ -189,7 +188,7 @@
     "warn": 10,
     "skip": 21,
     "tokens": 0,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://plex.ibm.com": {
     "score": 58.3,
@@ -199,17 +198,17 @@
     "warn": 12,
     "skip": 18,
     "tokens": 0,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://awwwards.com": {
-    "score": 70.3,
+    "score": 71.6,
     "grade": "C",
-    "pass": 14,
+    "pass": 15,
     "fail": 3,
-    "warn": 11,
+    "warn": 10,
     "skip": 11,
     "tokens": 98,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://fwa.org": {
     "score": 48,
@@ -219,7 +218,7 @@
     "warn": 13,
     "skip": 15,
     "tokens": 44,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://cssdesignawards.com": {
     "score": 44.9,
@@ -240,17 +239,17 @@
     "warn": 12,
     "skip": 14,
     "tokens": 181,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://vam.ac.uk": {
     "score": 70,
     "grade": "C",
-    "pass": 14,
+    "pass": 13,
     "fail": 3,
-    "warn": 9,
+    "warn": 10,
     "skip": 13,
     "tokens": 51,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://github.com": {
     "score": 68.5,
@@ -260,7 +259,7 @@
     "warn": 6,
     "skip": 7,
     "tokens": 576,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://notion.so": {
     "score": 65,
@@ -270,7 +269,7 @@
     "warn": 9,
     "skip": 10,
     "tokens": 544,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://figma.com": {
     "score": 76.6,
@@ -280,17 +279,17 @@
     "warn": 9,
     "skip": 11,
     "tokens": 102,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://x.com": {
-    "score": 77.8,
-    "grade": "C",
+    "score": 82.8,
+    "grade": "B",
     "pass": 17,
     "fail": 0,
     "warn": 10,
     "skip": 12,
     "tokens": 166,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   },
   "https://wikipedia.org": {
     "score": 80.7,
@@ -300,6 +299,6 @@
     "warn": 8,
     "skip": 13,
     "tokens": 421,
-    "scoredAt": "2026-09-19"
+    "scoredAt": "2026-09-22"
   }
 }
