@@ -46,11 +46,11 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@designesy/tokens": "^0.1.0",
+    "@designesy/tokens": "^0.2.2",
     "@designesy/score": "^0.3.0"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.6.1",
     "typescript": "^7.0.2"
   },
   "scripts": {
