@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org — D to A case study',
@@ -77,6 +78,7 @@ export default function DesignesyOrgCaseStudy() {
             <span className="lab-meta-item">Artifact · designesy.org</span>
             <span className="lab-meta-item">Date · 2026-07-25</span>
           </div>
+          <AgentActions mdPath="/work/designesy-org.md" label="the designesy.org case study" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

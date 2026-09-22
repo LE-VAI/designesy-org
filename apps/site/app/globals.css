@@ -7061,8 +7061,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  /* 44px, not 2.25rem (36px). A 2.75rem rule already existed but only inside a
+     media query, so desktop was below target while mobile passed — the same
+     media-query-scoped-floor pattern found in a dozen other rules today. This is
+     a circular button, so width and height must both change or it stops being a
+     circle. */
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface-raised);
@@ -8872,6 +8877,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
+  /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
+  max-width: 66ch;
 }
 
 .score-originality-notice {
@@ -10087,6 +10094,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
+  /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
+  max-width: 66ch;
 }
 
 .score-history-foot .text-link {
@@ -11217,7 +11226,14 @@ select {
 .definition-label,
 .lb-policy,
 .status-note,
+/* .doctrine-section > ul and > ol were MISSING from this rule. It capped `> p`
+   but not the lists beside it, so every bulleted sentence ran the full 1108px
+   container -- 111 characters, 48% over the readable maximum -- across ~40 items
+   on the contract pages. Same omission class as /methodology's .check-how: one
+   selector's absence, invisible until something measured rendered output. */
 .doctrine-section > p,
+.doctrine-section > ul,
+.doctrine-section > ol,
 .methodology-prose > p,
 .methodology-prose > ul,
 .methodology-prose > ol {
@@ -11706,6 +11722,9 @@ select {
 }
 
 .score-rubric-toggle {
+  /* 44px target. Measured 156x22px on /score/bolt, /score/lovable and
+     /score/v0 -- a disclosure control 22px tall. */
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-40);
@@ -13019,6 +13038,39 @@ select {
   outline-offset: 4px;
 }
 
+/* The slider handle.
+   The range input sets appearance:none inline, which REMOVES the native thumb.
+   Measured on the live page: Chrome reported the "thumb" pseudo-element's
+   geometry as the entire element (361x4), i.e. nothing was being drawn as a
+   handle. The control still worked — the track is clickable — but it gave no
+   affordance that it could be dragged, and its box was 4px tall.
+   Drawn here at 14px to match the thumb the orb lab already uses. */
+.spring-validator input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: grab;
+}
+
+.spring-validator input[type='range']:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+
+.spring-validator input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: grab;
+}
+
 .spring-response-line {
   transition: stroke 200ms var(--ease);
 }
@@ -13433,7 +13485,12 @@ select {
     display: flex;
     justify-content: space-between;
     gap: var(--space-12, 12px);
-    align-items: baseline;
+    /* 44px minimum. This is the disclosure toggle for the whole mobile TOC and
+       measured 771x19.8px -- a 20px-tall target for the primary navigation of a
+       long document. align-items moves from baseline to center so the label
+       stays optically aligned once the box is taller. */
+    align-items: center;
+    min-height: 2.75rem;
   }
   .docs-toc-summary-label {
     font-size: 0.68rem;
