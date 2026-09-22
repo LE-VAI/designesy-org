@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "visual-floor": "node scripts/visual-floor.js",
     "check-contract-version": "node scripts/check-contract-version.js",
     "prose-lint": "node scripts/prose-lint.js",
     "dev": "next dev",

@@ -230,3 +230,66 @@ jobs:
         if: always()
         run: |
           echo "Alias verification complete."
+
+  # ── Rendered visual floor ─────────────────────────────────────────────────
+  # The smoke job above is curl-based: status codes and headers only. It cannot
+  # see the two defect classes that actually shipped on this site -- a 130-
+  # character measure and ~380 sub-44px targets -- because both exist only in
+  # the RENDERED page. Lint, types, tests and the prose gate all read source;
+  # none of them could have caught either.
+  #
+  # Separate job rather than a step in the curl job: this one needs a real
+  # browser, and the curl job deliberately has no checkout or npm install. Keeping
+  # them apart means a browser install failure cannot mask the header checks.
+  visual-floor:
+    name: Visual floor (rendered)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Production')
+
+    defaults:
+      run:
+        working-directory: apps/site
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # @sparticuz/chromium ships a Linux Chromium, which is exactly what this
+      # runner needs -- no `playwright install` step, no system packages. The
+      # same binary is unusable on a Windows dev box, which is why the script
+      # also has a --cdp mode for local runs.
+      - name: Verify the browser binary resolves
+        run: |
+          node -e "
+            const c = require('@sparticuz/chromium').default;
+            c.setGraphicsMode = false;
+            c.executablePath().then(p => console.log('chromium at', p));
+          "
+
+      # Measures the LIVE target, not the local build: the floors are about what
+      # production actually serves, including anything the CDN or the alias is
+      # doing to it.
+      - name: Visual floor against production
+        env:
+          TARGET: ${{ github.event_name == 'deployment_status' && github.event.deployment_status.target_url || 'https://www.designesy.org' }}
+        run: |
+          echo "## Visual floor" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          node scripts/visual-floor.js --base "$TARGET" | tee -a $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
