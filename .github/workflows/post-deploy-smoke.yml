@@ -289,20 +289,27 @@ jobs:
         env:
           TARGET: ${{ github.event_name == 'deployment_status' && github.event.deployment_status.target_url || 'https://www.designesy.org' }}
         run: |
-          # NO PIPE THROUGH tee.
+          # TWO SHELL BUGS HAVE EATEN THIS STEP'S EVIDENCE. BOTH ARE FIXED HERE.
           #
-          # The first version was `node ... | tee -a $GITHUB_STEP_SUMMARY`. The
-          # script hit a fatal browser error and exited 2, but the STEP reported
-          # success, because in a pipeline bash takes the LAST command's status
-          # and tee succeeded. A measurement that never ran looked like a pass.
+          # 1. It used `node ... | tee -a $GITHUB_STEP_SUMMARY`. In a pipeline bash
+          #    takes the LAST command's status, and tee succeeded — so a fatal
+          #    browser error that exited the script 2 still reported the step as
+          #    SUCCESS. A measurement that never ran read as a pass.
           #
-          # Capturing to a file and appending afterwards keeps node's exit status
-          # as the step's status, so a fatal error fails the job.
-          set -o pipefail
+          # 2. The fix for that captured to a file and catted it — but the runner
+          #    invokes the shell with `bash -e`, so a non-zero `node` terminated
+          #    the step IMMEDIATELY, before `status=$?` and before the cat. The job
+          #    failed correctly and printed NOTHING: a real failure whose cause was
+          #    invisible. Verified in the run logs: the step went straight from
+          #    group-open to "Process completed with exit code 1" with no output.
+          #
+          # `|| status=$?` keeps the command from tripping `-e`, so the output is
+          # always printed and the status is still propagated at the end.
+          set +e
           echo "## Visual floor" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          node scripts/visual-floor.js --base "$TARGET" > /tmp/floor.txt 2>&1
-          status=$?
+          status=0
+          node scripts/visual-floor.js --base "$TARGET" > /tmp/floor.txt 2>&1 || status=$?
           cat /tmp/floor.txt
           cat /tmp/floor.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
