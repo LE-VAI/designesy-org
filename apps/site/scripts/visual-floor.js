@@ -30,9 +30,44 @@
  * Exit 1 on any floor violation, so it can gate a workflow.
  */
 
+/**
+ * Routes to measure.
+ *
+ * DERIVED from next.config.ts's MARKDOWN_ROUTES rather than listed here.
+ *
+ * Why: the markdown set is already the site's own definition of "pages that
+ * matter to a machine reader", it is already maintained, and it already has a
+ * single source of truth. A second hand-written list here would drift from it,
+ * and the drift would be silent in the worst direction -- a route added to the
+ * markdown lane would get a machine-readable twin and NO rendered-floor check,
+ * so the page most likely to be read by something that cannot see it would be
+ * the one nobody measured.
+ *
+ * Overridden by FLOOR_ROUTES (comma-separated) for a focused run.
+ */
+function routesFromConfig() {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const cfg = path.join(__dirname, '..', 'next.config.ts');
+  try {
+    const src = fs.readFileSync(cfg, 'utf8');
+    const m = src.match(/const MARKDOWN_ROUTES = \[([\s\S]*?)\];/);
+    if (!m) throw new Error('MARKDOWN_ROUTES not found');
+    return [...m[1].matchAll(/'([^']+)'/g)]
+      .map((x) => x[1])
+      // 'index' is the homepage's FILENAME; its public path is the site root.
+      // The same distinction the markdown generator and next.config both carry.
+      .map((r) => (r === 'index' ? '/' : '/' + r));
+  } catch (e) {
+    console.error(`[floor] could not read routes from next.config.ts: ${e.message}`);
+    console.error('[floor] pass FLOOR_ROUTES=/a,/b for an explicit list');
+    process.exit(2);
+  }
+}
+
 const ROUTES = process.env.FLOOR_ROUTES
   ? process.env.FLOOR_ROUTES.split(',')
-  : ['/', '/docs', '/methodology', '/leaderboard', '/open', '/contracts', '/review'];
+  : routesFromConfig();
 
 // Floors. WCAG 2.5.8 = 24px (AA, required). 44px = 2.5.5 / Apple HIG, which
 // this site has adopted as its own standard, so it is enforced here too.
@@ -56,6 +91,20 @@ const PROBE = `(() => {
     if (el.getClientRects().length === 0) continue;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
+
+    // OFF-SCREEN BY DESIGN.
+    //
+    // /continuity has a spam honeypot (class 'waitlist-hp', name="website") parked at
+    // left:-10000px with aria-hidden="true". It is 1x1 by intent: it must be
+    // invisible AND untouchable, because a human who can reach it is a human
+    // filling in a field that exists to catch bots. Reporting it as a target
+    // failure would ask for the honeypot to be made comfortable to tap, which is
+    // the opposite of what it is for.
+    //
+    // aria-hidden is an explicit authorial statement that this element is not
+    // part of the interface, so it is the right signal -- not a size heuristic.
+    if (el.closest('[aria-hidden="true"]')) continue;
+    if (r.right < 0 || r.bottom < 0) continue;
     // offsetParent is null inside a display:none subtree AND for position:fixed
     // elements. The rect check above already excludes the hidden case, so this
     // is a second signal on the same condition rather than a new rule -- it
