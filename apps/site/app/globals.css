@@ -13433,7 +13433,12 @@ select {
     display: flex;
     justify-content: space-between;
     gap: var(--space-12, 12px);
-    align-items: baseline;
+    /* 44px minimum. This is the disclosure toggle for the whole mobile TOC and
+       measured 771x19.8px -- a 20px-tall target for the primary navigation of a
+       long document. align-items moves from baseline to center so the label
+       stays optically aligned once the box is taller. */
+    align-items: center;
+    min-height: 2.75rem;
   }
   .docs-toc-summary-label {
     font-size: 0.68rem;
