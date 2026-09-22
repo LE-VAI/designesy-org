@@ -24,7 +24,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "cuelume": "^0.2.2",
     "ipaddr.js": "^2.5.0",
-    "mcp-handler": "^2.1.1",
+    "mcp-handler": "^2.1.2",
     "next": "15.5.25",
     "playwright-core": "^1.63.0",
     "react": "19.3.0",
