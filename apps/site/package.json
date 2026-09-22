@@ -14,7 +14,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@designesy/read-along": "^0.1.4",
+    "@designesy/read-along": "^0.2.1",
     "@google/design.md": "0.4.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@sparticuz/chromium": "^149.0.0",
