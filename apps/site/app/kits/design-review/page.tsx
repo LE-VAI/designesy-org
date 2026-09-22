@@ -8,6 +8,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { CopyPrompt } from '../../lib/copy-prompt';
 import { pageMeta } from '../../lib/site-meta';
 import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
+import { AgentActions } from '../../lib/agent-actions';
 
 const ANATOMY_HREFS: Record<string, string> = {
   Purpose: '#purpose',
@@ -70,6 +71,7 @@ export default function DesignReviewKitPage() {
             <span className="lab-meta-item">Version · {k.version}</span>
             <span className="lab-meta-item">Permission · {k.permission}</span>
           </div>
+          <AgentActions mdPath="/kits/design-review.md" label="the design review kit" />
         </section>
 
         <section className="doctrine-section fade-up" id="handoff">

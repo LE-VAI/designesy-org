@@ -6,6 +6,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { ToggleRow } from '../lib/toggle-row';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Privacy',
@@ -117,6 +118,7 @@ export default function PrivacyPage() {
             <span className="lab-meta-item">Plain language · not a cookie wall</span>
             <span className="lab-meta-item">Updated 2026-07-19</span>
           </div>
+          <AgentActions mdPath="/privacy.md" label="the privacy page" />
         </section>
 
         <section className="doctrine-section fade-up">

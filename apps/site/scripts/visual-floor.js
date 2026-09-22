@@ -84,6 +84,10 @@ function routesFromConfig() {
  * three navigations and no signal.
  */
 const DYNAMIC_ROUTES = [
+  // /score is server-rendered (it reads searchParams for ?url=), so it has no
+  // build-time HTML and is absent from MARKDOWN_ROUTES -- and at 3,052 chars of
+  // visible prose it is one of the more substantial uncovered pages.
+  '/score',
   '/compare',
   '/drift',
   '/readiness',
