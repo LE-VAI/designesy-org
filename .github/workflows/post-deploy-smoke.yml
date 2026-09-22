@@ -289,7 +289,21 @@ jobs:
         env:
           TARGET: ${{ github.event_name == 'deployment_status' && github.event.deployment_status.target_url || 'https://www.designesy.org' }}
         run: |
+          # NO PIPE THROUGH tee.
+          #
+          # The first version was `node ... | tee -a $GITHUB_STEP_SUMMARY`. The
+          # script hit a fatal browser error and exited 2, but the STEP reported
+          # success, because in a pipeline bash takes the LAST command's status
+          # and tee succeeded. A measurement that never ran looked like a pass.
+          #
+          # Capturing to a file and appending afterwards keeps node's exit status
+          # as the step's status, so a fatal error fails the job.
+          set -o pipefail
           echo "## Visual floor" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          node scripts/visual-floor.js --base "$TARGET" | tee -a $GITHUB_STEP_SUMMARY
+          node scripts/visual-floor.js --base "$TARGET" > /tmp/floor.txt 2>&1
+          status=$?
+          cat /tmp/floor.txt
+          cat /tmp/floor.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $status
