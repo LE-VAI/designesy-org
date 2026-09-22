@@ -65,9 +65,36 @@ function routesFromConfig() {
   }
 }
 
+/**
+ * Routes that are force-dynamic and therefore absent from MARKDOWN_ROUTES.
+ *
+ * These six read searchParams, so they are server-rendered per request and have
+ * no build-time HTML — which is why they were excluded from the markdown lane.
+ * They are NOT excluded from this check, and the earlier reasoning for thinking
+ * so was wrong: this script drives a LIVE BROWSER via page.goto, so it never
+ * needed build-time HTML in the first place. Measuring them costs one navigation
+ * each.
+ *
+ * They earned their place immediately: a 36x36 `.back-button` on all six, the
+ * same media-query-scoped-floor pattern as a dozen other rules.
+ *
+ * The three remaining dynamic paths (/contracts/skill, /export/designmd,
+ * /export/dtcg) are route HANDLERS that serve file downloads, not pages. They
+ * render zero interactive targets by definition, so measuring them would add
+ * three navigations and no signal.
+ */
+const DYNAMIC_ROUTES = [
+  '/compare',
+  '/drift',
+  '/readiness',
+  '/guardrails',
+  '/monitor',
+  '/report',
+];
+
 const ROUTES = process.env.FLOOR_ROUTES
   ? process.env.FLOOR_ROUTES.split(',')
-  : routesFromConfig();
+  : [...routesFromConfig(), ...DYNAMIC_ROUTES];
 
 // Floors. WCAG 2.5.8 = 24px (AA, required). 44px = 2.5.5 / Apple HIG, which
 // this site has adopted as its own standard, so it is enforced here too.

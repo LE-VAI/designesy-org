@@ -7061,8 +7061,13 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  /* 44px, not 2.25rem (36px). A 2.75rem rule already existed but only inside a
+     media query, so desktop was below target while mobile passed — the same
+     media-query-scoped-floor pattern found in a dozen other rules today. This is
+     a circular button, so width and height must both change or it stops being a
+     circle. */
+  width: 2.75rem;
+  height: 2.75rem;
   border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--surface-raised);
