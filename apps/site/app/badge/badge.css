@@ -99,6 +99,10 @@
 }
 
 .badge-steps li {
+  /* 66ch. Without it these ran 136 characters -- the widest prose on any of the
+     60 measured routes, and the same 'the paragraph was capped but the list
+     beside it was not' omission that hit the eight contract pages. */
+  max-width: 66ch;
   position: relative;
   padding-left: var(--space-32);
   font-size: 0.875rem;
