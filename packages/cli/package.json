@@ -46,7 +46,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@designesy/tokens": "^0.1.0",
+    "@designesy/tokens": "^0.2.2",
     "@designesy/score": "^0.1.0"
   },
   "devDependencies": {
