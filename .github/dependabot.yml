@@ -16,9 +16,21 @@
 # covered here or not. That asymmetry is how six alerts accumulated in
 # packages/stylelint-plugin-dtcg-tokens while nothing ever opened a PR for it,
 # so treat adding a directory here as separate work from it being scanned.
-# (This repo has no npm "workspaces" field — every directory installs
-# independently with its own lockfile, so each needs its own entry AND its own
-# "overrides" block for transitive pins.)
+# (This repo has no npm "workspaces" field, so every directory installs
+# independently. Two corrections to what this note used to claim, both verified
+# 2026-09-22:
+#
+#   - "each needs its own ENTRY" is no longer true. The plural `directories` key
+#     (GA since June 2024) covers several paths in one entry, provided no path
+#     overlaps another entry's. The five remaining packages now share one.
+#   - "with its own lockfile" was wrong. lab-builder, vai-icons and vai-motion
+#     have NO lockfile — and also zero dependencies, so nothing is narrowed
+#     today. But the rule still bites if that changes: without a lockfile,
+#     Dependabot excludes indirect dependencies inferred from the manifest from
+#     vulnerability checks, so alert coverage would be direct-deps-only. Add a
+#     lockfile with the first dependency, not after.
+#
+# "overrides" for transitive pins remains per-directory and is unaffected.)
 
 version: 2
 
@@ -80,6 +92,63 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+
+  # ── npm: the remaining published packages ────────────────────────────────
+  #
+  # Added 2026-09-22. Before this, five published (non-private) packages had NO
+  # entry and so received no scheduled version updates at all.
+  #
+  # WHY NOT `directories: ["/packages/*"]`: the options reference warns that for
+  # multiple blocks on the same ecosystem+branch "all values must be unique and
+  # there is no overlap in directories defined." A wildcard would overlap the
+  # three entries already above (score, stylelint-plugin-dtcg-tokens) and
+  # /packages/designesy-mcp, which is a documented misconfiguration. The five
+  # paths are therefore listed explicitly.
+  #
+  # WHY /packages/tokens IS INCLUDED DESPITE HAVING no runtime deps: it has
+  # @types/node and typescript as devDependencies, and it has a lockfile, so
+  # those are real, updatable dependencies. Same for cli.
+  #
+  # WHY THE OTHER THREE STILL GET AN ENTRY: lab-builder, vai-icons and vai-motion
+  # declare zero dependencies today. An entry is not waste — it means the first
+  # dependency any of them adds is covered automatically, rather than being
+  # silently unmonitored until someone remembers this file exists. That is
+  # exactly how the original three-entry gap happened.
+  #
+  # NOTE ON COVERAGE HONESTY: none of these five was ever unmonitored for
+  # SECURITY. Dependabot alerts and security-update PRs follow the dependency
+  # graph repo-wide and do not depend on this file. What was missing is
+  # scheduled VERSION updates. The distinction matters — see the file header.
+  - package-ecosystem: npm
+    directories:
+      - /packages/cli
+      - /packages/tokens
+      - /packages/lab-builder
+      - /packages/vai-icons
+      - /packages/vai-motion
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: deps
+      prefix-development: deps-dev
+    cooldown:
+      default-days: 5
+      semver-patch-days: 3
+      semver-minor-days: 5
+      semver-major-days: 60
+    # These are LIBRARIES, not apps: a version-range widening is usually correct
+    # and a forced minimum bump can break consumers. The docs note Dependabot
+    # widens ranges for what it detects as libraries; `increase-if-necessary`
+    # keeps that behaviour explicit rather than inferred. HOW Dependabot decides
+    # library-vs-app for npm is not documented, so this is set deliberately.
+    versioning-strategy: increase-if-necessary
 
   # ── npm: the DTCG tokens stylelint plugin ────────────────────────────────
   - package-ecosystem: npm

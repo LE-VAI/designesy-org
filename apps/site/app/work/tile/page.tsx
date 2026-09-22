@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tile — case study',
@@ -165,6 +166,7 @@ export default function TileCaseStudyPage() {
             <span className="lab-meta-item">Artifact · le-vai.github.io/tile</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
+          <AgentActions mdPath="/work/tile.md" label="the tile case study" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">
