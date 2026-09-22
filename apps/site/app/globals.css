@@ -8877,6 +8877,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
+  /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
+  max-width: 66ch;
 }
 
 .score-originality-notice {
@@ -10092,6 +10094,8 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
+  /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
+  max-width: 66ch;
 }
 
 .score-history-foot .text-link {
@@ -11718,6 +11722,9 @@ select {
 }
 
 .score-rubric-toggle {
+  /* 44px target. Measured 156x22px on /score/bolt, /score/lovable and
+     /score/v0 -- a disclosure control 22px tall. */
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-40);
@@ -13029,6 +13036,39 @@ select {
 .spring-validator input[type='range']:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 4px;
+}
+
+/* The slider handle.
+   The range input sets appearance:none inline, which REMOVES the native thumb.
+   Measured on the live page: Chrome reported the "thumb" pseudo-element's
+   geometry as the entire element (361x4), i.e. nothing was being drawn as a
+   handle. The control still worked — the track is clickable — but it gave no
+   affordance that it could be dragged, and its box was 4px tall.
+   Drawn here at 14px to match the thumb the orb lab already uses. */
+.spring-validator input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: grab;
+}
+
+.spring-validator input[type='range']:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+
+.spring-validator input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--signal);
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: grab;
 }
 
 .spring-response-line {

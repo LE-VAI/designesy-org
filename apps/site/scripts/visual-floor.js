@@ -136,6 +136,20 @@ const PROBE = `(() => {
     // part of the interface, so it is the right signal -- not a size heuristic.
     if (el.closest('[aria-hidden="true"]')) continue;
     if (r.right < 0 || r.bottom < 0) continue;
+
+    // A CONTROL INSIDE ITS OWN LABEL IS NOT A 13px TARGET.
+    //
+    // Clicking anywhere in a wrapping <label> activates the control, so the
+    // effective target is the label, not the box. /spring-validator's
+    // reduced-motion checkbox measures 13x13 but its label is 191x19 and
+    // clickable throughout -- the same false-positive shape as the /continuity
+    // honeypot, and for the same reason: the measured element is not the thing
+    // a user aims at.
+    //
+    // 'implicit' association (wrapping) is what matters; a for= attribute
+    // pointing at this element would be the explicit form and equally valid.
+    const wrapLabel = el.closest('label');
+    if (wrapLabel && wrapLabel.contains(el) && wrapLabel !== el) continue;
     // offsetParent is null inside a display:none subtree AND for position:fixed
     // elements. The rect check above already excludes the hidden case, so this
     // is a second signal on the same condition rather than a new rule -- it
@@ -198,6 +212,16 @@ const PROBE = `(() => {
 
   return JSON.stringify(out);
 })()`;
+
+// NOTE: there is no runtime guard for backticks inside PROBE, deliberately.
+//
+// One was written and then removed: injecting an unbalanced backtick makes this
+// file a PARSE ERROR, so a runtime `if` can never execute. It would only run on
+// a file that already parses -- the case that needs no guard. A check that
+// cannot fail on its own target is not a check.
+//
+// The real guard is source-level and lives outside this file, because it must
+// run BEFORE node parses the source. See scripts/check-probe-backticks.js.
 
 async function main() {
   const args = process.argv.slice(2);

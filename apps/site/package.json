@@ -3,11 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "check-probe-backticks": "node scripts/check-probe-backticks.js",
     "visual-floor": "node scripts/visual-floor.js",
     "check-contract-version": "node scripts/check-contract-version.js",
     "prose-lint": "node scripts/prose-lint.js",
     "dev": "next dev",
-    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js",
+    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js",
     "build:win": "node scripts/build-win.js",
     "start": "next start",
     "lint": "next lint"
