@@ -11217,7 +11217,14 @@ select {
 .definition-label,
 .lb-policy,
 .status-note,
+/* .doctrine-section > ul and > ol were MISSING from this rule. It capped `> p`
+   but not the lists beside it, so every bulleted sentence ran the full 1108px
+   container -- 111 characters, 48% over the readable maximum -- across ~40 items
+   on the contract pages. Same omission class as /methodology's .check-how: one
+   selector's absence, invisible until something measured rendered output. */
 .doctrine-section > p,
+.doctrine-section > ul,
+.doctrine-section > ol,
 .methodology-prose > p,
 .methodology-prose > ul,
 .methodology-prose > ol {

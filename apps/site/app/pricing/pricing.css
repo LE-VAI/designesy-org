@@ -141,6 +141,9 @@
 }
 
 .pricing-desk-lede {
+  /* 66ch, matching the site's shared prose measure. Without it this ran 123
+     characters -- the widest line on any of the 40 measured routes. */
+  max-width: 66ch;
   font-size: 1rem;
   color: var(--ink);
   line-height: 1.5;

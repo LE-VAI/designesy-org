@@ -279,6 +279,12 @@ export default function McpDocsPage() {
               style={{
                 whiteSpace: 'nowrap',
                 fontSize: '0.875rem',
+                // 44px target. This class carries no CSS rule of its own, so the
+                // link defaulted to display:block and measured 144x22px -- a real
+                // target with no vertical area.
+                minHeight: '44px',
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
               View registry entry →
