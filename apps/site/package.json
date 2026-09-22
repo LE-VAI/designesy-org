@@ -32,7 +32,7 @@
     "resend": "^6.28.0",
     "sharp": "0.35.4",
     "web-haptics": "file:./vendor/web-haptics",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "26.5.1",
