@@ -16,6 +16,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { M3BridgeTool } from './m3-bridge-form';
+import { AgentActions } from '../lib/agent-actions';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -51,6 +52,7 @@ export default function M3BridgePage() {
             or hand-written JSON — Designesy validates them against the W3C
             standard.
           </p>
+          <AgentActions mdPath="/m3-bridge.md" label="the M3 bridge page" />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">

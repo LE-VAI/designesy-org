@@ -381,7 +381,7 @@ export function SpringValidator() {
           <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
             Spring response — displacement over time
           </p>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer', minHeight: '44px' }}>
             <input
               type="checkbox"
               checked={showReducedMotion}
@@ -529,10 +529,24 @@ function ParamSlider({
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         style={{
+          // height was '4px' — the VISUAL track height, which with
+          // appearance:none ALSO became the element's box, so the whole drag
+          // target measured 4px tall.
+          //
+          // 44px box, thin track drawn by a centred gradient, so the look is
+          // unchanged and the hit area is real.
+          //
+          // The gradient is not cosmetic: with appearance:none and no
+          // ::-webkit-slider-thumb rule, Chrome draws NO HANDLE. Measured here:
+          // the "thumb" reported geometry of the entire element (361x4), which
+          // means there is nothing to render as one. A slider with no visible
+          // thumb still works (the track is clickable) but gives the user no
+          // affordance that it is draggable — so the handle is drawn explicitly,
+          // below, matching the 14px circular thumb the orb lab already uses.
           width: '100%',
-          height: '4px',
-          background: 'var(--line)',
-          borderRadius: '2px',
+          height: '44px',
+          background:
+            'linear-gradient(to bottom, transparent calc(50% - 2px), var(--line) calc(50% - 2px), var(--line) calc(50% + 2px), transparent calc(50% + 2px))',
           outline: 'none',
           appearance: 'none',
           cursor: 'pointer',

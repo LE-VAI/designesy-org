@@ -6,6 +6,7 @@ import { CheckGrid } from '../../../lib/check-grid';
 import { ToggleRow } from '../../../lib/toggle-row';
 import { pageMeta } from '../../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../../lib/design-system-contract';
+import { AgentActions } from '../../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise keyboard path',
@@ -254,6 +255,7 @@ export default function PoiseKeyboardVerificationPage() {
             <span className="lab-meta-item">Date · 2026-07-12</span>
             <span className="lab-meta-item">Result · holds with one open</span>
           </div>
+          <AgentActions mdPath="/review/poise/keyboard.md" label="the poise keyboard review" />
         </section>
 
         <section className="doctrine-section fade-up" id="verdict">

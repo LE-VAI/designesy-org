@@ -360,6 +360,11 @@ export default function ChangelogPage() {
                   key={dim}
                   href={`#dim-${dim}`}
                   style={{
+                    // 44px target. Measured 131x33px: these are the only way to
+                    // filter the changelog, and there are 12 of them.
+                    minHeight: '44px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     padding: '0.4rem 0.85rem',
                     background: 'var(--surface)',
                     color: 'var(--muted)',
@@ -429,6 +434,19 @@ export default function ChangelogPage() {
                           key={check}
                           href={`/methodology#check-${check}`}
                           style={{
+                            // 44px target in BOTH dimensions.
+                            //
+                            // min-height alone left these 31-35px WIDE: the label
+                            // is "v42", three characters. WCAG 2.5.8 is about the
+                            // target's area, so a 34x44 chip is still a failure --
+                            // and it is the dimension a height-only fix silently
+                            // leaves behind. minWidth plus centring grows the hit
+                            // area without changing the chip's visible label.
+                            minHeight: '44px',
+                            minWidth: '44px',
+                            justifyContent: 'center',
+                            display: 'inline-flex',
+                            alignItems: 'center',
                             fontSize: '0.7rem',
                             fontWeight: 600,
                             color: 'var(--signal)',
@@ -452,7 +470,11 @@ export default function ChangelogPage() {
 
                   {/* Source */}
                   {entry.source && (
-                    <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0', maxWidth: '70ch' }}>
+                      {/* maxWidth matches the rationale paragraph directly above.
+                          Without it this ran 108 characters — the rationale is
+                          capped at 70ch and the source line, which is a full
+                          sentence, was not. */}
                       Source: {entry.source}
                     </p>
                   )}
