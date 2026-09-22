@@ -170,11 +170,24 @@ async function main() {
       ? `${libPath}:${process.env.LD_LIBRARY_PATH}`
       : libPath;
 
-    browser = await chromium.launch({
-      args: sparticuz.args,
-      executablePath,
-      headless: true,
-    });
+    // STRIP THE SERVERLESS-ONLY ARGS.
+    //
+    // sparticuz tunes its flag set for a Lambda container, where one process and
+    // no zygote are how you fit in a 2GB ceiling. Playwright needs the opposite:
+    // it drives the browser over a multi-process protocol, and --single-process
+    // breaks that. The first CI run died exactly there --
+    //   browser.newPage: Target page, context or browser has been closed
+    // -- with Chromium launching (pid=2365) and then failing to produce a page.
+    //
+    // These flags buy nothing on a GitHub runner, which is a full VM with no
+    // such ceiling. Removing them is not a workaround for a bug: it is using the
+    // binary without the constraints that shaped those flags.
+    const SERVERLESS_ONLY = ['--single-process', '--no-zygote', '--in-process-gpu'];
+    const args = sparticuz.args.filter(
+      (a) => !SERVERLESS_ONLY.some((bad) => a.includes(bad)),
+    );
+
+    browser = await chromium.launch({ args, executablePath, headless: true });
   }
 
   const findings = [];
@@ -332,7 +345,19 @@ async function main() {
   process.exit(findings.length ? 1 : 0);
 }
 
+// A fatal error MUST exit non-zero, and it must be LOUD.
+//
+// The first CI run of this script reported `[floor] fatal: browser.newPage:
+// Target page, context or browser has been closed` and the JOB STILL SHOWED
+// SUCCESS. The cause: the step pipes to `tee`, and bash takes tee's exit status,
+// not node's. So a total measurement failure read as a pass -- a check that
+// cannot fail, which is the exact shape this session keeps hunting.
+//
+// Two fixes, because either alone would be fragile:
+//   1. This handler exits 2 (unchanged), and
+//   2. the workflow step no longer pipes through tee -- it writes the summary
+//      from a file after the run, so node's status is the step's status.
 main().catch((e) => {
-  console.error('[floor] fatal:', e);
+  console.error('[floor] fatal:', e && e.message ? e.message : e);
   process.exit(2);
 });
