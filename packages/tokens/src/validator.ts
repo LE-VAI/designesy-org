@@ -89,6 +89,25 @@ const DTCG_TYPES = new Set([
   'typography',
 ]);
 
+/**
+ * Root-level $-prefixed properties this validator recognises.
+ *
+ * KEPT IN SYNC WITH THE SHIPPED DTCG SCHEMA ON PURPOSE. The schema's own $id is
+ * https://www.designtokens.org/schemas/2025.10/format.json and its root permits
+ * exactly: $schema, $type, $description, $extensions, $extends, $deprecated,
+ * $root — with additionalProperties: false, so anything else is REJECTED rather
+ * than merely undefined.
+ *
+ * $ref is included beyond that list because §6.6.2 defines JSON Pointer
+ * references; it is a spec concept even though the root schema does not name it.
+ *
+ * WHY THIS COMMENT EXISTS: `$version` used to be exempted in checkT08 while
+ * being absent here, so two checks in this same file disagreed about whether it
+ * was legal — t08 passed a document that t12 then failed. Verified against the
+ * live schema: `$version` is NOT a DTCG property at all (0 occurrences in the
+ * spec and the schema), so t12 was right and the exemption was wrong. The
+ * exemption is removed rather than this list extended.
+ */
 const PROPERTY_KEYS = new Set([
   '$type',
   '$value',
@@ -851,7 +870,11 @@ function checkT08Structure(root: Record<string, unknown>, traversal: TraversalRe
 
   // Check unknown $-prefixed properties at root
   for (const key of Object.keys(root)) {
-    if (key.startsWith('$') && !PROPERTY_KEYS.has(key) && key !== '$version') {
+    // No `$version` exemption. It was here and contradicted checkT12, which
+    // uses PROPERTY_KEYS and therefore rejected the very key this line allowed.
+    // The schema settles it: $version is not a DTCG property, so a document
+    // carrying one is non-conformant and t08 should say so.
+    if (key.startsWith('$') && !PROPERTY_KEYS.has(key)) {
       errors.push(`Unknown $-property at root: ${key}`);
     }
   }
