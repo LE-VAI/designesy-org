@@ -18,7 +18,7 @@
     "@google/design.md": "0.4.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@sparticuz/chromium": "^149.0.0",
-    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/ratelimit": "^2.1.0",
     "@upstash/redis": "^1.38.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
