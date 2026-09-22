@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org review',
@@ -167,6 +168,7 @@ export default function PublicSurfaceReviewPage() {
             <span className="lab-meta-item">Baseline · contract {CONTRACT_VERSION}</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
+          <AgentActions mdPath="/review/designesy-org.md" label="the designesy.org review" />
         </section>
 
         <section className="doctrine-section fade-up">

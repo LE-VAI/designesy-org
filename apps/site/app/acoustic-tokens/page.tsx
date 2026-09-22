@@ -5,6 +5,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { acousticTokens } from '../lib/acoustic-tokens';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustic tokens',
@@ -40,6 +41,7 @@ export default function AcousticTokensPage() {
             <span className="lab-meta-item">Engine · {acousticTokens.engine}</span>
             <span className="lab-meta-item">Machine export · /acoustic-tokens.json</span>
           </div>
+          <AgentActions mdPath="/acoustic-tokens.md" label="the acoustic tokens page" />
         </section>
 
         <section className="doctrine-section fade-up" id="standards-context">

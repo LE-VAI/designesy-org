@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev — A on arrival case study',
@@ -77,6 +78,7 @@ export default function LovableCaseStudy() {
             <span className="lab-meta-item">Artifact · lovable.dev</span>
             <span className="lab-meta-item">Date · 2026-07-25</span>
           </div>
+          <AgentActions mdPath="/work/lovable-dev.md" label="the lovable.dev case study" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

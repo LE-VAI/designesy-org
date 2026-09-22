@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise field check',
@@ -218,6 +219,7 @@ export default function PoiseFieldCheckPage() {
             <span className="lab-meta-item">Artifact · /labs/poise</span>
             <span className="lab-meta-item">Date · 2026-07-12</span>
           </div>
+          <AgentActions mdPath="/review/poise.md" label="the poise review" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">

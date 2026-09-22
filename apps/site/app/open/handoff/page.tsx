@@ -8,6 +8,7 @@ import { CopyPrompt } from '../../lib/copy-prompt';
 import { CopyRow } from '../../lib/copy-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Open handoff',
@@ -98,6 +99,7 @@ export default function OpenHandoffPage() {
             <span className="lab-meta-item">Catalog · v{o.version}</span>
             <span className="lab-meta-item">Updated {o.updated}</span>
           </div>
+          <AgentActions mdPath="/open/handoff.md" label="the open handoff" />
         </section>
 
         <section className="doctrine-section fade-up">
