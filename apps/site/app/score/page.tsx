@@ -5,6 +5,10 @@ import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { DRIFT_CHECK_COUNT } from '../lib/drift-contract';
+import { READINESS_CHECK_COUNT } from '../lib/readiness-contract';
+import { GUARDRAILS_CHECK_COUNT } from '../lib/guardrails-contract';
 
 // Static /score route — the entire page body is static and prerendered at
 // build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
@@ -62,8 +66,12 @@ export async function generateMetadata({
       'Four engines. One composite grade. Score (42 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
     path: '/score',
     ogTitle: 'Score any site — Designesy',
-    ogDescription:
-      '68 automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.',
+    // The total is COMPUTED from the four engines' own check lists. This string
+    // read "68 automated checks" while the engines actually sum to 70
+    // (42+12+10+6) — a literal that had drifted from the engines it described,
+    // on the page whose job is to count them. Deriving it means adding a check
+    // to any engine updates this line automatically.
+    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.`,
   });
 
   // When a URL is being scored, explicitly point social images to the dynamic
