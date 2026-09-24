@@ -3,6 +3,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { ScoreForm } from './score-form';
 import { AgentActions } from '../lib/agent-actions';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 /**
  * Shared shell for target-specific score landing pages
@@ -72,13 +73,13 @@ export function TargetLanding({
               <>
                 <strong>{platform}</strong> currently scores{' '}
                 <strong>{exampleScore}</strong> on the contract. Score your own{' '}
-                {platform} site below — the engine runs the same 42 checks
+                {platform} site below — the engine runs the same {ENGINE_CHECK_COUNT} checks
                 against your URL.
               </>
             ) : (
               <>
                 Score your <strong>{platform}</strong> site below — the engine
-                runs the same 42 checks against your URL as it does against
+                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it does against
                 any other.
               </>
             )}
