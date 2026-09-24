@@ -466,10 +466,67 @@ function checkD05ColorVariance(css: string, _tokens: Record<string, string>): Ch
   return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${distinctBases} distinct base colors — moderate consistency` };
 }
 
-function checkD06FontFamily(css: string): CheckResult {
+// Walk a font-family custom-property alias chain to the real face name.
+// Mirrors resolveFamilyToken in api/score/route.ts, where the sibling v26 check
+// learned the same lesson: `font-family: var(--mono)` is a REFERENCE to a family
+// token, not another family. Counting spellings instead of faces inflated v26
+// from 3 to 9 and d06 from 3 to 11 on a site that uses three faces.
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[`--${ref[1]}`];
+  }
+  return null;
+}
+
+function checkD06FontFamily(css: string, tokens: Record<string, string>): CheckResult {
   const cleaned = cleanCssForValueCounting(css);
   const families = extractValuesByProperty(cleaned, ['font-family']);
-  const stacks = uniqueValues(families.map((f) => f.split(',')[ 0]?.trim() || ''));
+
+  // Resolve var() aliases and drop non-choices BEFORE counting distinct names.
+  //
+  // This check previously counted the first token of every declaration as a
+  // distinct family. A component writing `font-family: var(--mono)` is choosing
+  // the SAME family the :root token already declares, but counted as a name it
+  // inflated this check: on designesy.org it read 11 distinct "stacks" for a
+  // site that genuinely uses three faces (Schibsted Grotesk, Fraunces, Geist
+  // Mono) and returned FAIL — "typography drift" — against a contract the site
+  // actually satisfies.
+  //
+  // The sibling score engine (v26) hit this exact defect and fixed it; its
+  // comment records the same symptom (3 real faces counted as 9). The two
+  // engines then disagreed about the same site — v26 PASS at 3 families, d06
+  // FAIL at 11 stacks — which is the worst outcome for two published engines
+  // that are supposed to measure one contract. Ported the resolution here so
+  // both count FACES, not spellings.
+  const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
+  const resolved: string[] = [];
+  for (const family of families) {
+    let name = (family.split(',')[0] || '').trim().replace(/["']/g, '').toLowerCase();
+    if (!name) continue;
+    if (name.startsWith('var(')) {
+      // Walk the alias chain to the real face. An unresolvable alias cannot be
+      // attributed to a family and must not count as one.
+      const ref = name.match(/var\(\s*--([\w-]+)/);
+      const face = ref ? resolveFamilyToken(tokens, ref[1]) : null;
+      if (!face) continue;
+      name = face;
+    }
+    if (generic.includes(name)) continue;
+    // next/font generates a synthetic metric-matched fallback face per family
+    // ("Fraunces Fallback") applied in the adjusted @font-face. Those are the
+    // same family's fallback metrics, not additional typeface choices.
+    if (/\sfallback$/.test(name)) continue;
+    resolved.push(name);
+  }
+  const stacks = uniqueValues(resolved);
   // Research: USWDS (US Web Design System) defines 6 type-based + 5 role-based
   // font families = 11. Tailwind ships 3 (sans/serif/mono). A rich design system
   // with display/body/ui/code/icon fonts legitimately has 5-8 stacks.
@@ -640,7 +697,7 @@ async function scoreDriftUncached(targetUrl: string, scope?: DriftScope) {
     checkD03InlineColors(allCss, tokens),
     checkD04SpacingVariance(allCss),
     checkD05ColorVariance(allCss, tokens),
-    checkD06FontFamily(allCss),
+    checkD06FontFamily(allCss, tokens),
     checkD07BorderRadius(allCss),
     checkD08ShadowVariance(allCss),
     checkD09TransitionVariance(allCss),

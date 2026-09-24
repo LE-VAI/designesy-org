@@ -340,13 +340,55 @@ function checkD05ColorVariance(css: string): DriftCheckResult {
   return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${groups.size} distinct color values — moderate consistency` };
 }
 
-function checkD06FontFamily(css: string): DriftCheckResult {
+// Walk a font-family custom-property alias chain to the real face name. Kept
+// identical in intent to the same helper in api/drift/route.ts and
+// api/score/route.ts, so all three engines that publish a d06-style reading
+// count FACES rather than spellings.
+function resolveFamilyToken(
+  tokens: Record<string, string>,
+  name: string,
+  maxHops = 4,
+): string | null {
+  let current = tokens[name];
+  for (let hop = 0; hop < maxHops && current; hop++) {
+    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
+    const ref = first.match(/^var\(\s*--([\w-]+)/);
+    if (!ref) return first;
+    current = tokens[`--${ref[1]}`];
+  }
+  return null;
+}
+
+function checkD06FontFamily(css: string, tokens: Record<string, string>): DriftCheckResult {
   const families = extractValuesByProperty(css, ['font-family']);
-  const stacks = uniqueValues(families.map((f) => f.split(',')[ 0]?.trim() || ''));
-  if (stacks.length <= 2) {
+
+  // Resolve var() aliases and drop non-choices before counting, for the reason
+  // recorded at length in api/drift/route.ts: `font-family: var(--mono)` is a
+  // reference to a family token, not a second family, and counting it as one
+  // made this reading disagree with the score engine about the same site.
+  // Thresholds were also raised to match drift d06 (<=4 PASS, >8 FAIL); this
+  // route previously used (<=2 PASS, >4 FAIL), so the monitor engine graded a
+  // three-face site as FAIL while the drift engine graded it WARN.
+  const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
+  const resolved: string[] = [];
+  for (const family of families) {
+    let name = (family.split(',')[0] || '').trim().replace(/["']/g, '').toLowerCase();
+    if (!name) continue;
+    if (name.startsWith('var(')) {
+      const ref = name.match(/var\(\s*--([\w-]+)/);
+      const face = ref ? resolveFamilyToken(tokens, ref[1]) : null;
+      if (!face) continue;
+      name = face;
+    }
+    if (generic.includes(name)) continue;
+    if (/\sfallback$/.test(name)) continue;
+    resolved.push(name);
+  }
+  const stacks = uniqueValues(resolved);
+  if (stacks.length <= 4) {
     return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'PASS', detail: `${stacks.length} distinct font-family stacks — consistent` };
   }
-  if (stacks.length > 4) {
+  if (stacks.length > 8) {
     return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'FAIL', detail: `${stacks.length} distinct font-family stacks — typography drift` };
   }
   return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'WARN', detail: `${stacks.length} distinct font-family stacks` };
@@ -745,7 +787,7 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
     checkD03InlineColors(allCss, tokens),
     checkD04SpacingVariance(allCss),
     checkD05ColorVariance(allCss),
-    checkD06FontFamily(allCss),
+    checkD06FontFamily(allCss, tokens),
     checkD07BorderRadius(allCss),
     checkD08ShadowVariance(allCss),
     checkD09TransitionVariance(allCss),
