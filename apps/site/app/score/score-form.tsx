@@ -725,7 +725,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
         {/* Scope toggle — controls how absence is treated.
             auto: designesy.org → contract, everything else → universal (default)
-            contract: all 42 checks penalize absence (strictest, for self-scoring)
+            contract: all {ENGINE_CHECK_COUNT} checks penalize absence (strictest, for self-scoring)
             universal: optional features SKIP on absence (fair to external sites) */}
         <div className="score-scope-toggle" role="radiogroup" aria-label="Scoring scope">
           <span className="score-scope-label">Scope:</span>
@@ -744,7 +744,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   ? 'Auto-detect: designesy.org uses contract scope, all other sites use universal scope'
                   : mode === 'universal'
                     ? 'Universal: optional features (sound, font-synthesis, text-wrap, etc.) are SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
-                    : 'Contract: all 42 checks penalize absence. The strictest mode — Designesy patterns are mandatory.'
+                    : `Contract: all ${ENGINE_CHECK_COUNT} checks penalize absence. The strictest mode — Designesy patterns are mandatory.`
               }
             >
               {mode === 'auto' ? 'Detect' : mode === 'universal' ? 'Assess' : 'Enforce'}
@@ -754,7 +754,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       </form>
 
       {status === 'idle' && !result && (
-        <LottieTip text="No login needed — enter any URL and get a 42-check score in seconds" className="score-tip-hint" />
+        <LottieTip text={`No login needed — enter any URL and get a ${ENGINE_CHECK_COUNT}-check score in seconds`} className="score-tip-hint" />
       )}
 
       {status === 'error' && result?.error && (
@@ -914,7 +914,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     <span className="score-scope-badge" title={
                       result.scope === 'universal'
                         ? 'Universal scope: optional features SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
-                        : 'Contract scope: all 42 checks penalize absence. Designesy patterns are mandatory.'
+                        : `Contract scope: all ${ENGINE_CHECK_COUNT} checks penalize absence. Designesy patterns are mandatory.`
                     }>
                       {result.scope} scope
                     </span>
