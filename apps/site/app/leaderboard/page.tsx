@@ -382,7 +382,7 @@ export default function LeaderboardPage() {
           .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
           .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
           .lb-field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; }
-          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: 0.92rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
+          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: 1rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
           .lb-input:focus { border-color: var(--signal); }
           .lb-input:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 2px var(--signal-dim); }
           .lb-input:disabled { opacity: 0.5; cursor: not-allowed; }
