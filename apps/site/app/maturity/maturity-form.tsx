@@ -720,9 +720,17 @@ export function MaturityAssessment() {
             {axis.symbol}
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.25rem' }}>
+            {/* h2, not h3. This is the only heading inside the assessment form
+                and it sits directly under the page's h1 ("Design Compliance
+                Maturity"), so h3 skipped a level — v25 reported "skipped level:
+                h1→h3". It is the heading of the current-axis section, which
+                makes h2 the correct rank; the size is set inline, so the
+                rendered look is unchanged. Heading RANK is document structure;
+                font-size is presentation. Conflating them is how a skip gets
+                shipped. */}
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.25rem' }}>
               {axis.label}
-            </h3>
+            </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
               {axis.description} · <span style={{ color: 'var(--muted-dim)' }}>{axis.contractWeight}</span>
             </p>
