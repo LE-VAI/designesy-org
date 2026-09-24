@@ -1,3 +1,4 @@
+import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 // /api/report — Designesy Unified Design-Intelligence Report
 //
 // The synthesis capstone — fetch one URL, fire /api/score + /api/drift +
@@ -166,14 +167,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     const hasUnscored = hasManual || hasSkips;
     synthesis.push({
       id: 'rp02',
-      item: 'Score engine completed — 42-check audit ran',
+      item: `Score engine completed — ${ENGINE_CHECK_COUNT}-check audit ran`,
       status: hasUnscored ? 'WARN' : 'PASS',
       detail: `Score engine returned ${scoreResult.grade}/${scoreResult.score} (${scoreResult.pass} pass, ${scoreResult.warn} warn, ${scoreResult.fail} fail${hasManual ? `, ${scoreResult.manual} manual` : ''}${hasSkips ? `, some N/A` : ''})`,
     });
   } else {
     synthesis.push({
       id: 'rp02',
-      item: 'Score engine completed — 42-check audit ran',
+      item: `Score engine completed — ${ENGINE_CHECK_COUNT}-check audit ran`,
       status: 'FAIL',
       detail: scoreResult?.error || 'Score engine did not return a valid result',
     });
