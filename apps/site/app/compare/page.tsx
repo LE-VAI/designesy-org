@@ -8,13 +8,23 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = pageMeta({
-  title: 'Token diff',
+  // Was 'Token diff'. Every route that reaches this page calls it Compare —
+  // the URL is /compare, the command palette entry is "Compare design systems",
+  // /contracts/compare labels its CTA "Compare two URLs →", and this page's own
+  // lede opens "Compare two design systems". The <h1> was the only surface in
+  // the chain using a different name, so following any of those links landed on
+  // a heading that did not match the link you clicked.
+  //
+  // "Diff" is still accurate vocabulary — it names the operation, and the
+  // description below keeps it. What changes is the page's NAME, which is now
+  // the one every caller already uses.
+  title: 'Compare',
   description:
     'Compare two design systems from live URLs — diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta. The only URL-scoped design-token diff engine. 8 emission checks plus score delta on both sites.',
   path: '/compare',
 
   machineSibling: '/contracts/compare.json',
-  ogTitle: 'Token diff · Designesy',
+  ogTitle: 'Compare design systems · Designesy',
   ogDescription:
     'Diff two design systems from live URLs — tokens added, removed, renamed, value-changed, scale drift.',
   twitterDescription: 'Designesy compare — designesy.org/compare',
@@ -31,7 +41,7 @@ export default async function ComparePage({ searchParams }: { searchParams?: Pro
       <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Verification</p>
-          <h1 className="surface-title" data-scramble>Token diff</h1>
+          <h1 className="surface-title" data-scramble>Compare design systems</h1>
           <p className="surface-lede">
             Compare two design systems from live URLs — diff tokens added,
             removed, renamed, value-changed, scale drift, contrast drift, and
