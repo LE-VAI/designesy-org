@@ -26,6 +26,7 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { CopyPrompt } from '../lib/copy-prompt';
 import { ScoreDial } from '../lib/score-dial';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -601,7 +602,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       );
     }
     const engines: [string, SubEngineResult | null | undefined][] = [
-      ['Score (42-check)', reportResult?.score],
+      [`Score (${ENGINE_CHECK_COUNT}-check)`, reportResult?.score],
       ['Drift (12-check)', reportResult?.drift],
       ['Readiness (10-check)', reportResult?.readiness],
       ['Guardrails (6-check)', guardrailsResult],
@@ -777,7 +778,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </p>
           <ol className="score-verify-log-list">
             {[
-              'Score engine (42 checks)',
+              `Score engine (${ENGINE_CHECK_COUNT} checks)`,
               'Drift radar (12 checks)',
               'AI readiness (10 checks)',
               'Guardrails emitter (6 checks)',
@@ -1506,7 +1507,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <p className="score-welcome-title">Unified Verification Cockpit</p>
           <p className="score-hint">
             Enter any public website URL above — no https:// needed. Four
-            engines fire in parallel: Score (42 checks), Drift (12 checks), AI
+            engines fire in parallel: Score ({ENGINE_CHECK_COUNT} checks), Drift (12 checks), AI
             Readiness (10 checks), and Guardrails (6 checks). One composite
             grade. No login required.
           </p>

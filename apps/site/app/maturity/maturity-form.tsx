@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -327,7 +328,7 @@ const QUESTIONS: Question[] = [
       { stage: 1, label: 'We don’t — “it looks right” is the bar' },
       { stage: 2, label: 'Manual design reviews before launch' },
       { stage: 3, label: 'Automated linter (stylelint, eslint) in CI for token usage' },
-      { stage: 4, label: 'Deterministic 42-check engine scores every shipped surface — designesy or equivalent' },
+      { stage: 4, label: `Deterministic ${ENGINE_CHECK_COUNT}-check engine scores every shipped surface — designesy or equivalent` },
     ],
   },
   {
@@ -1096,7 +1097,7 @@ export function MaturityAssessment() {
       {/* Privacy note */}
       <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginTop: '1.5rem', textAlign: 'center' }}>
         This is a self-assessment — your answers are self-reported, not verified.
-        For a deterministic score, run the 42-check engine at{' '}
+        For a deterministic score, run the {ENGINE_CHECK_COUNT}-check engine at{' '}
         <Link href="/score" style={{ color: 'var(--signal)' }}>/score</Link>.
       </p>
     </div>
