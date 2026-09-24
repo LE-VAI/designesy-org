@@ -53,7 +53,7 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: '42 automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.',
+    text: `${ENGINE_CHECK_COUNT} automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score is the compliance layer — not whether you read the rules, but whether your shipped design passes them.`,
   },
   {
     number: '03',
@@ -113,7 +113,7 @@ const SURFACES = [
   {
     href: '/methodology',
     label: 'Methodology',
-    desc: 'The full 42-check scoring methodology — weights, math, grade bands',
+    desc: `The full ${ENGINE_CHECK_COUNT}-check scoring methodology — weights, math, grade bands`,
     meta: 'Fully transparent',
   },
   {
@@ -310,7 +310,7 @@ export default function HomePage() {
             becomes the new legitimacy signal. A site that is visually
             consistent, motion-coherent, and takt-disciplined reads as real.
             The contract is what makes that verifiable — not by taste, but by
-            42 checks that pass or fail.
+            {ENGINE_CHECK_COUNT} checks that pass or fail.
           </p>
           <div className="pillar-grid">
             {PILLARS.map((pillar) => (
@@ -472,7 +472,7 @@ export default function HomePage() {
                   meta: 'Human home, full tables, machine export · Poise + Takt + Cadence + Acoustics adopted',
                 },
                 {
-                  title: 'Verification engine · 42 checks',
+                  title: `Verification engine · ${ENGINE_CHECK_COUNT} checks`,
                   meta: 'Live on /score · scores any URL against the contract in real-time',
                 },
                 {
