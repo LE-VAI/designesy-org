@@ -448,6 +448,17 @@ export const designSystemContract = {
       value: '4px',
       role: 'Compact controls / nav chips',
     },
+    // Intermediate tier. This sits BETWEEN sm (4) and lg (12) and is not one of
+    // the four steps the published scale advertises — it exists because four
+    // call sites had already hardcoded an 8px fallback against it. Documented
+    // rather than rounded to a scale step so the contract states what the site
+    // actually ships, and so `--radius-md` resolves rather than reading as a
+    // fabricated token to the drift engine's d02 check.
+    md: {
+      token: '--radius-md',
+      value: '8px',
+      role: 'Intermediate corner radius (documented 8px tier — not part of the 4-step public scale)',
+    },
     lg: {
       token: '--radius-lg',
       value: '12px',
