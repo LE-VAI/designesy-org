@@ -6,8 +6,20 @@
 //
 // Accessibility: respects prefers-reduced-motion (jumps to final value).
 // The count-up is decorative — the final value is in the DOM at first paint
-// via SSR, then reset to 0 by useLayoutEffect before the browser paints,
-// so the user only sees 0 → count-up → final value (no flash of SSR value).
+// via SSR. The reset to 0 is GATED ON BEING IN THE VIEWPORT at mount: an
+// element that is guaranteed to animate immediately can safely seed at 0
+// before paint (no flash of the SSR value), but an element that is off-screen
+// must KEEP its real value, because the observer may never fire for it.
+//
+// The unconditional reset this replaced was a real defect, found 2026-09-23:
+// anything that reads the DOM without scrolling saw the seed 0 forever —
+//   - screen-reader linear reads (a blind user reads document order, not
+//     visual scroll position, and heard "0 of 0 sites scored / Self-score 0%
+//     / Lowest: 0% F" on the homepage hero proof block)
+//   - print, and any automated screenshot/capture at a scroll offset
+//   - elements inside a collapsed container that never intersects
+// Information must not be gated behind motion. The count-up is delight; the
+// number is the answer. Delight may be skipped; the answer may never be wrong.
 //
 // iOS Safari notes:
 // - useLayoutEffect (via useIsoLayoutEffect) resets to 0 synchronously before
@@ -70,9 +82,18 @@ export function CountUp({ value, duration = 1200, suffix = '', prefix = '', clas
   // SSR renders the final value for SEO/no-JS.
   const [display, setDisplay] = useState(value);
 
-  // Reset to 0 before paint on the client (progressive enhancement).
+  // Seed to 0 before paint ONLY when this counter is about to animate right
+  // now. If the element is off-screen, the real value stays in the DOM until
+  // the observer actually fires — so a non-scrolling read (screen reader,
+  // print, capture) never sees a seed zero. See the header note: the previous
+  // unconditional reset made the homepage hero read "0 of 0 sites scored".
   useIsoLayoutEffect(() => {
-    setDisplay(0);
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = el.getBoundingClientRect();
+    const inViewport = rect.top < window.innerHeight && rect.bottom > 0;
+    if (inViewport) setDisplay(0);
   }, []);
 
   useEffect(() => {
@@ -136,6 +157,14 @@ export function CountUp({ value, duration = 1200, suffix = '', prefix = '', clas
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
+          // Zero it HERE, at the moment it begins to enter, not later. The
+          // off-screen value is the real one (see the layout effect), so
+          // without this the first tween frame would drop the number from its
+          // real value to 0 and then count back up — a visible glitch. At
+          // threshold 0.1 the element is only just entering, so the reset is
+          // effectively unseen; a counter that was never off-screen never
+          // reaches this branch.
+          setDisplay(0);
           // Delay so the fade-up CSS animation finishes first
           setTimeout(start, 300);
           observer.disconnect();
