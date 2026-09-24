@@ -363,6 +363,84 @@ async function main() {
   console.log('Writing snapshot.json...');
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot, null, 2) + '\n', 'utf-8');
 
+  // ── Self-report receipt ────────────────────────────────────────────────
+  //
+  // /docs publishes a "Drift score acknowledged" section — the site's own
+  // receipt, on a site whose entire thesis is receipts. Those figures were
+  // literal strings in app/docs/page.tsx, so they went stale the moment any
+  // engine changed. Found 2026-09-23: it claimed drift 92/A and readiness
+  // 80/B with an A(91) composite, while the live engines returned drift
+  // 96/A and readiness 90/A — the page was under-selling the site by two
+  // grade bands' worth of confidence, and the whole point of that section is
+  // that the number is checkable.
+  //
+  // Hand-editing is provably a losing game: the figures moved twice in one
+  // session. So the receipt is now DERIVED. This script runs weekly, so it
+  // is the natural producer: it already talks to /api/score and already has
+  // the self row. It now also records the two engines /docs quotes, the
+  // composite (by the site's own published formula), and each engine's
+  // pass/warn/fail counts — into a committed JSON that page.tsx imports.
+  //
+  // If a fetch fails the file is left untouched rather than written with
+  // nulls: a receipt that says "0" because a request timed out is worse than
+  // a receipt that is one week old.
+  try {
+    const SELF_URL = 'https://www.designesy.org';
+    const selfEntry = entries.find((e) => e.url === SELF_URL || e.url === SELF_URL + '/');
+    if (selfEntry && selfEntry.score !== null) {
+      const engines = {
+        score: {
+          score: selfEntry.score,
+          grade: selfEntry.grade,
+          pass: selfEntry.pass, warn: selfEntry.warn, fail: selfEntry.fail, skip: selfEntry.skip,
+          checks: selfEntry.pass + selfEntry.warn + selfEntry.fail + selfEntry.skip,
+        },
+      };
+      for (const [key, path] of [['drift', '/api/drift'], ['readiness', '/api/readiness']]) {
+        try {
+          const r = await fetch(new URL(path, SCORE_API).toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: SELF_URL }),
+          });
+          if (r.ok) {
+            const d = await r.json();
+            engines[key] = {
+              score: d.score, grade: d.grade,
+              pass: d.pass, warn: d.warn, fail: d.fail,
+              checks: d.checks ? d.checks.length : null,
+              // /docs cites the :root token count in prose; carry it here so
+              // the receipt never has to hardcode a number again.
+              ...(typeof d.tokensExtracted === 'number' ? { tokenCount: d.tokensExtracted } : {}),
+              // The per-check list lets /docs name the exact WARN/FAIL entries
+              // instead of paraphrasing them — the paraphrase is what went
+              // stale last time.
+              notes: (d.checks || [])
+                .filter((c) => c.status !== 'PASS')
+                .map((c) => ({ id: c.id, status: c.status, detail: c.detail })),
+            };
+          }
+        } catch (err) {
+          console.log(`  (self-report: ${key} fetch failed — leaving prior value in place)`);
+        }
+      }
+      const dr = engines.drift?.score, rd = engines.readiness?.score;
+      const selfReport = {
+        generatedAt: lastScored,
+        formula: 'score * 0.5 + drift * 0.3 + readiness * 0.2',
+        engines,
+        ...(typeof dr === 'number' && typeof rd === 'number'
+          ? { composite: Math.round((engines.score.score * 0.5 + dr * 0.3 + rd * 0.2) * 10) / 10 }
+          : {}),
+      };
+      const OUT = join(ROOT, 'apps/site/app/docs/self-report.json');
+      writeFileSync(OUT, JSON.stringify(selfReport, null, 2) + '\n', 'utf-8');
+      console.log(`Writing self-report.json (composite ${selfReport.composite ?? 'incomplete'})...`);
+    }
+  } catch (err) {
+    console.log(`  (self-report: skipped — ${err.message})`);
+  }
+
   // Summary
   const deltas = entries
     .filter((e) => e.prevScore !== null && e.score !== null)
