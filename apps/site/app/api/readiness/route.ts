@@ -116,21 +116,59 @@ async function checkR03AgentJson(origin: string): Promise<CheckResult> {
 }
 
 async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
+  // The MCP Streamable HTTP transport REQUIRES Accept to list both
+  // application/json and text/event-stream. This probe previously sent only
+  // Content-Type, so a spec-compliant server correctly answered 406 Not
+  // Acceptable — "Client must accept both application/json and
+  // text/event-stream" — and r04 read that as "did not respond with a tool
+  // list" and returned WARN.
+  //
+  // The effect: this check passed only on servers lenient enough to ignore a
+  // required header, and penalised the ones implementing the spec exactly. It
+  // marked designesy.org's own compliant endpoint as WARN, which is how it was
+  // found. Every correct MCP server on the web was getting a false WARN.
+  //
+  // Same defect class as d06 (which counted var() spellings as distinct
+  // families): a check measuring the target's conformance to the adapter's
+  // assumption rather than to the standard.
   const mcpUrl = new URL('/api/mcp', origin).href;
   try {
     const resp = await safeFetch(mcpUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // Both are required by the transport spec; omitting either earns a 406.
+        Accept: 'application/json, text/event-stream',
+      },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
       signal: AbortSignal.timeout(8000),
     });
     if (resp.ok) {
       const data = await resp.text();
-      if (data.includes('tools') || data.includes('result')) {
-        return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'PASS', detail: `MCP endpoint at /api/mcp responds to tools/list` };
+      // Streamable HTTP answers as either a single JSON body or an SSE frame
+      // (`event: message` / `data: {...}`). The previous test was a substring
+      // search for "tools"/"result", which appears in both framings — but it
+      // never parsed the body, so a 200 carrying a JSON-RPC *error* also
+      // satisfied it. Parse, then assert on the result shape.
+      let parsed: { result?: { tools?: unknown[] }; error?: { message?: string } } | null = null;
+      const jsonBody =
+        data.startsWith('event:') || data.includes('\ndata:')
+          ? data.slice(data.indexOf('data:') + 5).split('\n')[0].trim()
+          : data;
+      try {
+        parsed = JSON.parse(jsonBody);
+      } catch {
+        parsed = null;
+      }
+      const tools = parsed?.result?.tools;
+      if (Array.isArray(tools)) {
+        return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'PASS', detail: `MCP endpoint at /api/mcp responds to tools/list with ${tools.length} tool(s)` };
+      }
+      if (parsed?.error) {
+        return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: `MCP endpoint answered tools/list with a JSON-RPC error: ${parsed.error.message || 'unspecified'}` };
       }
     }
-    return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: 'Endpoint exists but did not respond with a tool list' };
+    return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: `Endpoint exists but did not respond with a tool list (HTTP ${resp.status})` };
   } catch {
     return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'FAIL', detail: 'No MCP endpoint detected at /api/mcp' };
   }
