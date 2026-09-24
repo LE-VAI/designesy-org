@@ -1975,6 +1975,15 @@ function checkButtonTextVerb(html: string): CheckResult {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }
+    // A one- or two-character visible label is an initial/symbol, not a label a
+    // reader can act on ("T" for Token Discipline). When the control carries an
+    // aria-label, that IS its accessible name and is what should be judged.
+    // Without this, v38 reported six single-letter "buttons" as non-verb labels
+    // on /maturity — an accurate observation of the wrong string.
+    if (text && text.length <= 2) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
     if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
@@ -1982,6 +1991,15 @@ function checkButtonTextVerb(html: string): CheckResult {
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
     if (!text) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
+    // A one- or two-character visible label is an initial/symbol, not a label a
+    // reader can act on ("T" for Token Discipline). When the control carries an
+    // aria-label, that IS its accessible name and is what should be judged.
+    // Without this, v38 reported six single-letter "buttons" as non-verb labels
+    // on /maturity — an accurate observation of the wrong string.
+    if (text && text.length <= 2) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }

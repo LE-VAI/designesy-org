@@ -886,6 +886,19 @@ export function MaturityAssessment() {
                   transition: 'all 0.2s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
                 }}
                 title={a.label}
+                // The visible label is a single initial ("T" for Token
+                // Discipline), which is not a usable accessible name — a screen
+                // reader announced just "T". The only full text lived in a
+                // `title` attribute, and title is unreliable as an accessible
+                // name: not exposed by every AT/browser pair, and announced
+                // after the label rather than instead of it.
+                //
+                // aria-label carries the axis name; aria-pressed exposes which
+                // axis is currently shown, previously conveyed only by the
+                // selected button's colour — the "do not rely on colour alone"
+                // case the contract's own accessibility list forbids.
+                aria-label={a.label}
+                aria-pressed={i === currentAxis}
               >
                 {a.symbol}{isComplete && ' ✓'}
               </button>
