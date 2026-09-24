@@ -1876,6 +1876,28 @@ function isVerbLike(word: string): boolean {
   return false;
 }
 
+/**
+ * Is this element opening tag a SELECTION control rather than a command button?
+ *
+ * v38's rule — button text leads with the verb it performs — is derived from
+ * NN/g's command guidance and is correct for actions. It does not apply to the
+ * options of a single-select group, whose labels name the choice, not an
+ * action. Without this distinction the check penalises correct copywriting and
+ * would flag every site using the <button aria-pressed> radio pattern.
+ *
+ * Detection is from explicit state/semantics, never from prose:
+ *   - aria-pressed / aria-checked   → toggle or radio semantics
+ *   - role="radio"|"option"|"menuitemradio"|"tab"  → an option in a set
+ *   - name="<field>" with a value   → a form control
+ */
+function isSelectionControl(openTag: string): boolean {
+  if (/aria-pressed\s*=/i.test(openTag)) return true;
+  if (/aria-checked\s*=/i.test(openTag)) return true;
+  if (/role\s*=\s*["']?(?:radio|option|menuitemradio|tab)["']?/i.test(openTag)) return true;
+  if (/\sname\s*=\s*["'][^"']+["']/i.test(openTag) && /\svalue\s*=/i.test(openTag)) return true;
+  return false;
+}
+
 function checkButtonTextVerb(html: string): CheckResult {
   const ITEM = 'Button text is a verb phrase or recognized command — not a bare noun';
   const CATEGORY = 'copywriting';
@@ -1883,6 +1905,32 @@ function checkButtonTextVerb(html: string): CheckResult {
   // Extract <button> and [role="button"] text content
   const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
   const roleButtonRe = /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi;
+
+  // Remove aria-hidden subtrees before extracting text.
+  //
+  // Content marked aria-hidden is by definition not part of the accessible name,
+  // and stripping tags with an empty replacement FUSES whatever flanked it. On
+  // /maturity an ordinal badge (<span aria-hidden>1</span>) sat directly before
+  // the option label, so tag-stripping produced the single token
+  // "1No — backgrounds are raw hex/rgb values" — a string nobody wrote, which
+  // then failed a check about label phrasing.
+  //
+  // Same class as the tag→space defect fixed in the markdown converter earlier
+  // in this lane: a transform silently invents text, and the invented text is
+  // then judged.
+  const stripAriaHidden = (inner: string): string => {
+    let out = inner;
+    for (let i = 0; i < 4; i++) {
+      // Repeat to handle an aria-hidden wrapper containing another.
+      const next = out.replace(
+        /<([a-z][a-z0-9-]*)\b[^>]*\baria-hidden\s*=\s*["']?true["']?[^>]*>[\s\S]*?<\/\1>/gi,
+        '',
+      );
+      if (next === out) break;
+      out = next;
+    }
+    return out;
+  };
 
   // Strip leading icon characters (Unicode symbols, emoji, geometric shapes,
   // arrows, dingbats) that precede the actual verb in button labels like
@@ -1897,7 +1945,9 @@ function checkButtonTextVerb(html: string): CheckResult {
   // U+00D7 (×, multiplication sign) is also used as a close glyph (e.g. "×").
   const ICON_PREFIX_RE = /^[\u00D7\u2100-\u27BF\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\u2A00-\u2BFF\u2190-\u21FF\u00A0\s]+/;
 
-  const buttonTexts: string[] = [];
+  // Carry the opening tag alongside the label so the violation loop can tell a
+  // command button from a selection control (see isSelectionControl).
+  const buttonTexts: { text: string; tag: string }[] = [];
   let m;
   // Strip keyboard shortcut hints that are fused to or appended after the
   // button label — e.g. "Find⌘K", "Search ⌘+K", "Save Ctrl+S". These are
@@ -1915,7 +1965,7 @@ function checkButtonTextVerb(html: string): CheckResult {
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
-    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
@@ -1925,17 +1975,17 @@ function checkButtonTextVerb(html: string): CheckResult {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push(text);
+    if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push(text);
+    if (text) buttonTexts.push({ text, tag: m[0] });
   }
 
   if (buttonTexts.length === 0) {
@@ -1943,11 +1993,31 @@ function checkButtonTextVerb(html: string): CheckResult {
   }
 
   const violations: string[] = [];
-  for (const text of buttonTexts) {
+  for (const { text, tag } of buttonTexts) {
     // Skip text that's clearly not a button label — if it's longer than ~40 chars
     // it's likely a regex false positive from nested content (e.g. a div
     // containing a whole section being matched as role="button")
     if (text.length > 40) continue;
+    // A selection control is not a command.
+    //
+    // v38 asks whether button TEXT leads with the action it performs. That is
+    // right for commands ("Save changes", "Delete file") and wrong for the
+    // options of a single-select group, where the label names the CHOICE rather
+    // than an action: "Structured token system", "Yes, a single --bg variable".
+    // NN/g's verb rule is about commands.
+    //
+    // Found on /maturity: 9 of 29 "buttons" were 1-4 scale options in the
+    // maturity questionnaire, each correctly answering a prompt. The check was
+    // penalising correct copywriting — and would do the same to any site whose
+    // radio group is built from <button aria-pressed> rather than
+    // <input type="radio">, which is a common accessible pattern.
+    //
+    // Detected from explicit selection-state attributes rather than by guessing
+    // at prose; the ordinal branch covers scale options that carry no ARIA
+    // state, and the yes/no branch covers closed-form answers.
+    if (isSelectionControl(tag)) continue;
+    if (/^(yes|no|none|not sure|unsure)\b/i.test(text)) continue;
+    if (/^\d+\s+\S/.test(text)) continue;
     const words = text.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) continue;
     const firstWord = words[0].toLowerCase();
