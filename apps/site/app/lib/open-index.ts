@@ -364,6 +364,19 @@ export const openIndex = {
       machine_path: '/contracts/motion.json',
     },
     {
+      id: 'designesy.components',
+      kind: 'contract' as const,
+      number: null,
+      title: 'Components',
+      version: '0.1.0',
+      status: 'live',
+      lede: 'Machine-readable component contract — every component the system defines, the states it may enter, the tokens each state binds, and the accessibility obligation it carries. Derived from the design system contract, so the two cannot disagree about which components exist.',
+      human_url: 'https://www.designesy.org/contracts/components',
+      machine_url: 'https://www.designesy.org/contracts/components.json',
+      path: '/contracts/components',
+      machine_path: '/contracts/components.json',
+    },
+    {
       id: 'designesy.maturity',
       kind: 'tool' as const,
       number: null,
@@ -459,6 +472,12 @@ export const openIndex = {
       path: '/contracts/motion.json',
       url: 'https://www.designesy.org/contracts/motion.json',
       meta: 'v0.1.0 Lottie spec v1.0.1 JSON Schema + §16 Ten Non-Negotiable Motion Standards — reduced-motion, 10 checks',
+    },
+    {
+      title: 'Components contract',
+      path: '/contracts/components.json',
+      url: 'https://www.designesy.org/contracts/components.json',
+      meta: 'v0.1.0 machine-readable component states + token bindings + accessibility obligations — derived from the design system contract',
     },
     {
       title: 'Design Review kit',
