@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 export const metadata: Metadata = pageMeta({
   title: 'What is design verification?',
@@ -40,7 +41,7 @@ const CONTRACT_LAYERS = [
   {
     num: '04',
     name: 'Verification',
-    desc: 'A runnable checklist — 42 automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.',
+    desc: `A runnable checklist — ${ENGINE_CHECK_COUNT} automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.`,
   },
 ];
 

@@ -108,7 +108,7 @@ const COMPETITOR_UNIQUE = [
 const POSITIONING = [
   'Generation → hallmark (prevent slop at emit time, 57 gates)',
   'Evaluation → slop-eval (score existing designs, 108 tells + 2 positive axes)',
-  'Verification → designesy (verify contract conformance, 42 checks + MCP delivery)',
+  `Verification → designesy (verify contract conformance, ${ENGINE_CHECK_COUNT} checks + MCP delivery)`,
 ];
 
 const DESIGNESY_MOAT = [
