@@ -84,3 +84,10 @@ export const readinessContract = {
     'The score does not measure token quality — only presence. A badly structured token file still scores PASS on r01',
   ],
 } as const;
+
+// Derived, never typed. The composite headline on /score advertised "68 checks
+// across 4 engines" while the engines actually sum to 70 (42+12+10+6) — a
+// literal that had drifted from the engines it described. Exporting the count
+// from the contract's own check list makes that class of drift impossible: the
+// list IS the number.
+export const READINESS_CHECK_COUNT = readinessContract.verification.checks.length;

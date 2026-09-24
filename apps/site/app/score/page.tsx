@@ -5,6 +5,10 @@ import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { VerifyForm } from './verify-form';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { DRIFT_CHECK_COUNT } from '../lib/drift-contract';
+import { READINESS_CHECK_COUNT } from '../lib/readiness-contract';
+import { GUARDRAILS_CHECK_COUNT } from '../lib/guardrails-contract';
 
 // Static /score route — the entire page body is static and prerendered at
 // build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
@@ -44,13 +48,30 @@ export async function generateMetadata({
   const scoredUrl = rawUrl.trim();
 
   const base = pageMeta({
-    title: 'Verify',
+    // Was 'Verify'. Thirty-one inbound CTAs — the nav item, the command
+    // palette, every "Score a site" / "Start scoring" button across /pricing,
+    // /leaderboard, /methodology, /continuity, /maturity and the homepage —
+    // all say Score, and the URL is /score. Not one inbound link said
+    // "Verify". The destination was the only surface using different
+    // vocabulary for the same thing, so clicking "Start scoring" landed on a
+    // page headed "Verify any site" and the reader had to work out whether
+    // they had arrived where they aimed. Aligned to the majority term its own
+    // URL already uses.
+    //
+    // "Verify/Verified" is NOT retired — it is the badge product's name
+    // ("Verified by Designesy"), a different artifact from the scoring engine,
+    // and it keeps that vocabulary.
+    title: 'Score',
     description:
       'Four engines. One composite grade. Score (42 checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.',
     path: '/score',
-    ogTitle: 'Verify any site — Designesy',
-    ogDescription:
-      '68 automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.',
+    ogTitle: 'Score any site — Designesy',
+    // The total is COMPUTED from the four engines' own check lists. This string
+    // read "68 automated checks" while the engines actually sum to 70
+    // (42+12+10+6) — a literal that had drifted from the engines it described,
+    // on the page whose job is to count them. Deriving it means adding a check
+    // to any engine updates this line automatically.
+    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.`,
   });
 
   // When a URL is being scored, explicitly point social images to the dynamic
@@ -85,9 +106,9 @@ export default function ScorePage() {
       <Topbar scrolled />
       <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
         <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Verification</p>
+          <p className="surface-eyebrow">Scoring</p>
           <h1 className="surface-title" data-scramble>
-            Verify any site
+            Score any site
           </h1>
           <p className="surface-lede">
             Four engines. One composite grade. Score (42 checks), drift (12), AI

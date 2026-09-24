@@ -12,6 +12,47 @@ import { LottieHint } from '../lib/lottie-hint';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import selfReportRaw from './self-report.json';
+
+// Self-report receipt data — regenerated weekly from the live engines by
+// scripts/rescore-leaderboard.mjs. Imported (not fetched) so this page stays
+// static: no runtime request, and it cannot disagree with the engines any
+// more than one week, which is the cadence the engines themselves re-run on.
+type EngineReading = {
+  score: number;
+  grade: string;
+  pass: number;
+  warn: number;
+  fail: number;
+  checks: number | null;
+  notes?: { id: string; status: string; detail: string }[];
+};
+type SelfReport = {
+  generatedAt: string;
+  formula: string;
+  composite?: number;
+  tokenCount?: number;
+  engines: { score: EngineReading; drift?: EngineReading; readiness?: EngineReading };
+};
+
+const selfReport = selfReportRaw as SelfReport | null;
+// Guard on the score engine, not the outer object: the receipt's sentence
+// names all three readings, so a file missing one of them must fall back to
+// the pointer rather than render "undefined/100".
+const scoreEngine = selfReport?.engines.score;
+const driftEngine = selfReport?.engines.drift;
+const readinessEngine = selfReport?.engines.readiness;
+const hasReceipt =
+  typeof selfReport?.composite === 'number' && !!scoreEngine && !!driftEngine && !!readinessEngine;
+const compositeGrade = (() => {
+  const c = selfReport?.composite;
+  if (typeof c !== 'number') return '—';
+  return c >= 90 ? 'A' : c >= 80 ? 'B' : c >= 70 ? 'C' : c >= 60 ? 'D' : 'F';
+})();
+// Only the non-PASS entries are enumerated: a receipt that lists its passes
+// too is a brochure, and the passes are what the section above already claims.
+const driftNotes = (driftEngine?.notes ?? []).filter((n) => n.status !== 'PASS');
+const readinessNotes = (readinessEngine?.notes ?? []).filter((n) => n.status !== 'PASS');
 
 export const metadata: Metadata = pageMeta({
   title: 'Docs',
@@ -399,36 +440,60 @@ export default function DocsPage() {
           <h2 className="doctrine-heading">Drift score acknowledged</h2>
           <div className="definition">
             <p className="definition-label">Honest reading of /report?url=designesy.org</p>
-            <p>
-              The composite grade is <strong>A (91/100)</strong> — a weighted
-              synthesis of the design-score engine (93/100, A), the drift
-              engine (92/100, A), and AI-readiness (80/100, B). Of the 12 drift
-              checks, 10 PASS, 0 FAIL, and 2 WARN. The 2 WARNs are:
-            </p>
-            <p style={{ marginTop: '0.75rem' }}>
-              <strong>d06 — font-family stacks (WARN):</strong> 5 distinct
-              font-family stacks. The site uses mono, sans, and display stacks
-              plus a few component-specific overrides — the engine counts each
-              as a separate stack. This is intentional typographic variety, not
-              amnesia.
-            </p>
-            <p style={{ marginTop: '0.75rem' }}>
-              <strong>d07 — border-radius values (WARN):</strong> 9 distinct
-              hardcoded border-radius values. The contract defines a 9-step
-              radius scale, but the engine counts each literal value rather
-              than mapping to scale stops. Most values align with the scale —
-              the WARN is an engine-counting artifact, not real drift.
-            </p>
-            <p style={{ marginTop: '0.75rem' }}>
-              The 10 PASSes are real wins: 152 custom properties are registered
-              at :root (d01), all 2,477 var() references resolve (d02), 97%
-              token coverage on color (d03), spacing clusters tightly on 4
-              values (d04), z-index stays within 0–200 across 11 distinct
-              levels (d10), and all alias chains resolve (d12).
-              The drift engine grew up alongside the site — the WARNs are
-              honest feedback about where the engine counts aggressively, not
-              where the design is inconsistent.
-            </p>
+            {/* Every figure below is READ from self-report.json, which the
+                weekly rescore-leaderboard workflow regenerates from the live
+                engines (scripts/rescore-leaderboard.mjs). These were literal
+                strings until 2026-09-23, when this section was found claiming
+                drift 92/A and readiness 80/B against live values of 96/A and
+                90/A — a receipt, on a site whose thesis is receipts, that had
+                drifted from what it receipts. Hand-editing is a losing game:
+                the figures moved twice in one session. When the file is
+                absent this renders a pointer to the live report rather than
+                asserting stale numbers. */}
+            {hasReceipt && selfReport && scoreEngine && driftEngine && readinessEngine ? (
+              <>
+                <p>
+                  The composite grade is{' '}
+                  <strong>
+                    {compositeGrade} ({selfReport.composite}/100)
+                  </strong>{' '}
+                  — a weighted synthesis of the design-score engine (
+                  {scoreEngine.score}/100, {scoreEngine.grade}), the drift engine
+                  ({driftEngine.score}/100, {driftEngine.grade}), and
+                  AI-readiness ({readinessEngine.score}/100,{' '}
+                  {readinessEngine.grade}). Of the {driftEngine.checks} drift
+                  checks, {driftEngine.pass} PASS, {driftEngine.fail} FAIL, and{' '}
+                  {driftEngine.warn} WARN.
+                  {driftNotes.length > 0 ? ' The non-PASS entries are:' : ''}
+                </p>
+                {driftNotes.map((n) => (
+                  <p key={n.id} style={{ marginTop: '0.75rem' }}>
+                    <strong>{n.id} ({n.status}):</strong> {n.detail}.
+                  </p>
+                ))}
+                <p style={{ marginTop: '0.75rem' }}>
+                  The {driftEngine.pass} PASSes are the substance:{' '}
+                  {selfReport.tokenCount ?? 'the'} custom properties registered
+                  at :root resolve end to end, spacing clusters on a small set of
+                  values, and z-index stays within 0–200. The drift engine grew
+                  up alongside the site — where it counts aggressively, this
+                  section says so rather than smoothing it over.
+                </p>
+                {readinessNotes.length > 0 && (
+                  <p style={{ marginTop: '0.75rem' }}>
+                    AI-readiness shows {readinessEngine.pass} PASS and{' '}
+                    {readinessEngine.warn} WARN:{' '}
+                    {readinessNotes.map((n) => `${n.id} (${n.detail})`).join('; ')}.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p>
+                This section reads its figures from a generated file. The file
+                is absent, so no numbers are asserted here — run the live
+                composite report below for current values.
+              </p>
+            )}
           </div>
           <div className="text-cell">
             <p className="surface-note">

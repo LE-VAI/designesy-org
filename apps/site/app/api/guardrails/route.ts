@@ -426,12 +426,30 @@ function generateComponentContract(tokens: Record<string, string>): object {
     generator: 'Designesy Guardrails v0.1.0',
     patternCount: patterns.length,
     patterns,
-    defaultProps: {
-      // Common component defaults derived from tokens
-      ...(tokenNames.some((n) => n.includes('radius')) ? { borderRadius: 'var(--radius-md)' } : {}),
-      ...(tokenNames.some((n) => n.includes('space')) ? { padding: 'var(--space-md)' } : {}),
-      ...(tokenNames.some((n) => n.includes('font-family')) ? { fontFamily: 'var(--font-family)' } : {}),
-    },
+    // Each guard emits a token name ONLY if the scanned site actually declares
+    // it. The previous version hardcoded designesy.org's own names — and two of
+    // them were wrong even for designesy.org: `--space-md` and `--font-family`
+    // do not exist here (the scale is --space-0…--space-144 and the stacks are
+    // --sans/--serif/--display/--mono). So the bundle shipped a frozen
+    // build-contract telling every scanned site to use custom properties that
+    // resolve to nothing — the precise failure this product exists to catch,
+    // emitted by the emitter.
+    //
+    // Picking by prefix from the site's OWN table keeps the promise in the
+    // bundle's own name: "frozen build-contract ... so the score is
+    // reproducible". A site with --space-16 gets --space-16 back.
+    ...(() => {
+      const pick = (...prefixes: string[]) =>
+        tokenNames.find((n) => prefixes.some((p) => n === p || n.startsWith(p + '-') || n.startsWith(p)));
+      const radius = pick('--radius');
+      const space = pick('--space');
+      const font = pick('--font', '--sans', '--serif', '--display');
+      return {
+        ...(radius ? { borderRadius: `var(${radius})` } : {}),
+        ...(space ? { padding: `var(${space})` } : {}),
+        ...(font ? { fontFamily: `var(${font})` } : {}),
+      };
+    })(),
   };
 }
 
