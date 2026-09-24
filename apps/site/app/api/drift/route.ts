@@ -545,22 +545,59 @@ function checkD07BorderRadius(css: string): CheckResult {
   const values = extractValuesByProperty(cleaned, ['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius']);
   // Only count hardcoded radius values (not var()-referenced)
   const hardcoded = values.filter((v) => !v.includes('var('));
+  // Count only values that could BE a scale stop, and count them by their full
+  // numeric value, not by the first number in the string.
+  //
+  // Two defects fixed here, both found when d07 reported "10 distinct hardcoded
+  // border-radius values" on a site that references var(--radius*) 110 times
+  // and whose remaining literals are overwhelmingly GEOMETRY rather than scale:
+  //
+  //   1. The old extractor took `/([\d.]+)\s*(px|rem|em|%)/` — the FIRST number
+  //      in the value — so `50%` counted as the radius "50", `999px` as "999",
+  //      and `1.5px` as "1.5". A circle and a pill became scale drift.
+  //   2. Nothing distinguished a scale stop from geometry. `50%` (a circle),
+  //      `999px` (a pill), and `1px` (a hairline) are not radius-scale choices
+  //      and cannot be replaced by a scale token; counting them guarantees a
+  //      WARN on any site with an avatar or a rounded chip, including one whose
+  //      geometry is entirely correct.
+  //
+  // d07's own stated item is "consistent radii OR DOCUMENTED SCALE", so the
+  // question it should answer is whether the radii that form part of a scale
+  // agree with each other — not whether the site also draws circles.
+  const SCALE_FLOOR_PX = 1;   // sub-2px values are hairlines, not scale stops
+  const PILL_PX = 40;         // >=40px is a pill/capsule, geometry not scale
   const numeric = hardcoded.map((v) => {
-    const m = v.match(/([\d.]+)\s*(px|rem|em|%)/);
-    return m ? m[1] : null;
+    const raw = v.trim();
+    // A single length only. Multi-value (per-corner) declarations like
+    // `0 2px 2px 0` are directional geometry, not a scale stop.
+    if (/[\s]/.test(raw) && !/^[\d.]+(px|rem|em|%)?$/.test(raw)) return null;
+    const m = raw.match(/^([\d.]+)\s*(px|rem|em|%)$/);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (!isFinite(n)) return null;
+    // Percentages are always geometry (circles/ellipses).
+    if (m[2] === '%') return null;
+    // Normalise to px for the range test; em/rem at a 16px root.
+    const px = m[2] === 'rem' || m[2] === 'em' ? n * 16 : n;
+    if (px < SCALE_FLOOR_PX * 2) return null; // hairlines
+    if (px >= PILL_PX) return null;           // pills/capsules
+    // Keep the normalised px so `1rem` and `16px` are recognised as one stop.
+    return String(px);
   }).filter((v): v is string => v !== null);
   const distinct = uniqueValues(numeric);
   // Research: Tailwind ships 10 radius steps (none/xs/sm/DEFAULT/md/lg/xl/2xl/3xl/full).
   // A design system with per-component radius tokens (--card-radius, --button-radius)
   // referencing scale tokens can have 8-12 values. Old threshold (>8) flagged
   // the industry-standard Tailwind scale as drift.
+  const excluded = hardcoded.length - numeric.length;
+  const note = excluded > 0 ? ` (${excluded} geometric value(s) excluded — circles, pills, hairlines, per-corner)` : '';
   if (distinct.length <= 8) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `${distinct.length} distinct hardcoded border-radius values` };
+    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `${distinct.length} distinct scale border-radius value(s)${note}` };
   }
   if (distinct.length > 15) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct hardcoded border-radius values — radius drift` };
+    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct scale border-radius values — radius drift${note}` };
   }
-  return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct hardcoded border-radius values` };
+  return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct scale border-radius values${note}` };
 }
 
 function checkD08ShadowVariance(css: string): CheckResult {

@@ -1057,7 +1057,7 @@ button.pillar {
   padding: 0;
   font-size: 0.74rem;
   line-height: 1;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
 }
 

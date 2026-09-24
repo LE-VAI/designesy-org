@@ -476,7 +476,7 @@ export default function MethodologyPage() {
           .methodology-page .methodology-prose strong { color: var(--ink); font-weight: 600; }
           .methodology-page .methodology-prose code { font-family: var(--mono, ui-monospace, monospace); font-size: 0.88rem; background: var(--surface); padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid var(--line-faint); color: var(--ink); }
           .methodology-page .methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.875rem; margin: 1.5rem 0; }
-          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); min-width: 0; }
+          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); min-width: 0; }
           .methodology-page .methodology-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .methodology-page .methodology-stat-label { display: block; margin-top: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
           .methodology-page .weight-table-wrap { overflow-x: auto; margin: 1.25rem 0; -webkit-overflow-scrolling: touch; }
@@ -488,8 +488,8 @@ export default function MethodologyPage() {
           .methodology-page .weight-table td.wt-name { color: var(--ink); font-weight: 600; }
           .methodology-page .weight-bar { display: inline-block; height: 0.5rem; border-radius: 2px; background: var(--signal-dim); vertical-align: middle; margin-right: 0.5rem; min-width: 2px; }
           .methodology-page .grade-bands { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.25rem 0; }
-          .methodology-page .grade-band { display: grid; grid-template-columns: 2.5rem 4rem 1fr; gap: 0.75rem; align-items: start; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
-          .methodology-page .grade-band-letter { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 1.1rem; text-align: center; padding: 0.25rem 0; border-radius: 4px; border: 1px solid var(--line); }
+          .methodology-page .grade-band { display: grid; grid-template-columns: 2.5rem 4rem 1fr; gap: 0.75rem; align-items: start; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+          .methodology-page .grade-band-letter { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 1.1rem; text-align: center; padding: 0.25rem 0; border-radius: var(--radius-sm); border: 1px solid var(--line); }
           .methodology-page .grade-band-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; padding-top: 0.35rem; }
           .methodology-page .grade-band-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
           .methodology-page .score-distribution { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
@@ -521,11 +521,11 @@ export default function MethodologyPage() {
              rest of the site caps prose at 66ch for exactly this reason. */
           .methodology-page .check-how { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin: 0 0 0 0; max-width: 66ch; }
           .methodology-page .check-skip { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.5rem; font-size: 0.7rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: 3px; letter-spacing: 0.02em; }
-          .methodology-page .methodology-formula { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; margin: 1.25rem 0; font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; line-height: 1.7; color: var(--ink); overflow-x: auto; box-shadow: var(--inner-light); }
+          .methodology-page .methodology-formula { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); margin: 1.25rem 0; font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; line-height: 1.7; color: var(--ink); overflow-x: auto; box-shadow: var(--inner-light); }
           .methodology-page .methodology-formula .formula-comment { color: var(--muted-dim); }
-          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: 6px; margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; max-width: 66ch; }
+          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: var(--radius); margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; max-width: 66ch; }
           .methodology-page .methodology-callout strong { font-weight: 700; }
-          .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; margin: 1.5rem 0; font-size: 0.85rem; }
+          .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); margin: 1.5rem 0; font-size: 0.85rem; }
           .methodology-page .methodology-toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
           .methodology-page .methodology-toc a:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .methodology-page .methodology-toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.3rem 1rem; }

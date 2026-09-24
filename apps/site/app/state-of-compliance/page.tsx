@@ -154,12 +154,12 @@ export default function StateOfCompliancePage() {
           .soc-page .soc-prose p { color: var(--muted); font-size: 1rem; line-height: 1.65; margin: 0 0 1rem; }
           .soc-page .soc-prose strong { color: var(--ink); font-weight: 600; }
           .soc-page .soc-prose code { color: var(--ink); background: var(--surface-soft); padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88em; font-family: var(--mono, ui-monospace, monospace); }
-          .soc-page .soc-trust { padding: 1.5rem 1.75rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-left: 3px solid var(--signal); border-radius: 6px; margin: 0 0 2rem; max-width: 66ch; box-shadow: var(--inner-light); }
+          .soc-page .soc-trust { padding: 1.5rem 1.75rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-left: 3px solid var(--signal); border-radius: var(--radius); margin: 0 0 2rem; max-width: 66ch; box-shadow: var(--inner-light); }
           .soc-page .soc-trust-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--signal-light); font-weight: 700; margin: 0 0 0.75rem; font-family: var(--mono, ui-monospace, monospace); }
           .soc-page .soc-trust p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; margin: 0; }
           .soc-page .soc-trust strong { color: var(--ink); font-weight: 600; }
           .soc-page .soc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
-          .soc-page .soc-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); text-align: center; }
+          .soc-page .soc-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); text-align: center; }
           .soc-page .soc-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .soc-page .soc-stat-suffix { font-size: 0.85rem; font-weight: 400; color: var(--muted-dim); }
           .soc-page .soc-stat-label { display: block; margin-top: 0.4rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
@@ -174,9 +174,9 @@ export default function StateOfCompliancePage() {
           .soc-page .soc-hist-label { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 0.3rem; border-top: 1px solid var(--line); width: 100%; }
           .soc-page .soc-hist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.92rem; }
           .soc-page .soc-hist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
-          .soc-page .soc-flagship { padding: 1.75rem 2rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 8px; margin: 1.5rem 0; box-shadow: var(--inner-light); }
+          .soc-page .soc-flagship { padding: 1.75rem 2rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius-md); margin: 1.5rem 0; box-shadow: var(--inner-light); }
           .soc-page .soc-flagship-header { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-          .soc-page .soc-flagship-grade { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 6px; font-weight: 700; font-size: 1.1rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line-faint); background: transparent; color: var(--muted-dim); flex-shrink: 0; }
+          .soc-page .soc-flagship-grade { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: var(--radius); font-weight: 700; font-size: 1.1rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line-faint); background: transparent; color: var(--muted-dim); flex-shrink: 0; }
           .soc-page .soc-flagship-score { font-family: var(--mono, ui-monospace, monospace); font-size: 2rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .soc-page .soc-flagship-score-suffix { color: var(--muted-dim); font-weight: 400; font-size: 1rem; }
           .soc-page .soc-flagship-name { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
@@ -195,7 +195,7 @@ export default function StateOfCompliancePage() {
           .soc-page .soc-rank-name { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; font-weight: 500; }
           .soc-page .soc-rank-name:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .soc-page .soc-rank-host { font-size: 0.75rem; color: var(--muted-dim); margin-top: 0.15rem; }
-          .soc-page .soc-rank-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: 4px; font-weight: 700; font-size: 0.72rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); }
+          .soc-page .soc-rank-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.72rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); }
           .soc-page .soc-rank-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); }
           .soc-page .soc-rank-grade-c { background: var(--surface-hover); color: var(--ink); border-color: var(--line-strong); }
           .soc-page .soc-rank-grade-d { background: var(--surface-hover); color: var(--muted); border-color: var(--line); }
@@ -205,15 +205,15 @@ export default function StateOfCompliancePage() {
           .soc-page .soc-struggle-bars { display: flex; flex-direction: column; gap: 0.625rem; margin: 1rem 0; }
           .soc-page .soc-struggle-row { display: grid; grid-template-columns: 9rem 1fr 3rem; gap: 0.75rem; align-items: center; }
           .soc-page .soc-struggle-label { font-size: 0.82rem; color: var(--muted); }
-          .soc-page .soc-struggle-track { height: 8px; background: var(--surface-soft); border-radius: 4px; overflow: hidden; }
-          .soc-page .soc-struggle-fill { height: 100%; border-radius: 4px; transition: width var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
+          .soc-page .soc-struggle-track { height: 8px; background: var(--surface-soft); border-radius: var(--radius-sm); overflow: hidden; }
+          .soc-page .soc-struggle-fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
           .soc-page .soc-struggle-val { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; text-align: right; }
           .soc-page .soc-cadence-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
-          .soc-page .soc-cadence-card { padding: 1.25rem 1.5rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
+          .soc-page .soc-cadence-card { padding: 1.25rem 1.5rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); }
           .soc-page .soc-cadence-card-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); font-weight: 600; margin: 0 0 0.5rem; font-family: var(--mono, ui-monospace, monospace); }
           .soc-page .soc-cadence-card-val { font-size: 0.95rem; color: var(--ink); font-weight: 600; line-height: 1.4; }
           .soc-page .soc-cadence-card-detail { font-size: 0.82rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.45; }
-          .soc-page .soc-version-stamp { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; padding: 0.4rem 0.75rem; background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: 4px; display: inline-block; }
+          .soc-page .soc-version-stamp { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; padding: 0.4rem 0.75rem; background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: var(--radius-sm); display: inline-block; }
           @media (max-width: 560px) {
             .soc-page .soc-histogram-bars { gap: 0.375rem; }
             .soc-page .soc-hist-bar-wrap { height: 70px; }
