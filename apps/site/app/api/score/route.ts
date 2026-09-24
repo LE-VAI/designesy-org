@@ -2488,6 +2488,33 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 
   const slopFindings: SlopFinding[] = [];
 
+  // ── Documentation exclusion for the copy/asset rules (S9, S11, S12) ───────
+  //
+  // S9 (lorem ipsum), S11 (marketing buzzwords) and S12 (placeholder image
+  // URLs) each search the page for their own trigger patterns. A page that
+  // DOCUMENTS those anti-patterns — listing "lorem ipsum", "streamline",
+  // "placehold.co" as examples of what the rule detects — therefore trips all
+  // three, and at maximum severity: /methodology lost the full 20-point slop
+  // deduction for correctly publishing the rules, scoring 88/B while passing
+  // 39 of 39 checks.
+  //
+  // This is the sharpest instance yet of the defect class running through this
+  // whole session: the check reports a verdict about its own vocabulary rather
+  // than the artifact. A page cannot both name an anti-pattern and be accused
+  // of committing it.
+  //
+  // The test is structural, not keyword-based — adding more excluded words
+  // would just move the false positives. A page is treated as documenting the
+  // rules when it carries the rule-registry structure the engine's own
+  // methodology surface uses: rule IDs (S1..S12) appearing alongside their
+  // labels as table content. Detected by counting distinct rule IDs present in
+  // the HTML; a page that merely USES lorem ipsum does not enumerate the rules.
+  const docRuleIds = new Set(
+    (html.match(/\bS(?:1[0-2]|[1-9])\b(?=[\s\S]{0,120}?(?:lorem ipsum|Marketing buzzword|Placeholder imag|Overused font|gradient background|pill badge|Single font))/gi) || [])
+      .map((s) => s.toUpperCase()),
+  );
+  const isDocumentingSlopRules = docRuleIds.size >= 4;
+
   // S1. Overused font families — the most reflexive AI tell
   {
     const overusedFonts = new Set([
@@ -2524,7 +2551,22 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // gradient elsewhere. Full-page means a large viewport area, so an overlay
   // must also be full-bleed (fixed or inset:0), not a pinned corner element.
   {
-    const isGridPattern = (text: string) => /(?:transparent|rgba\([^)]+\))\s+1px(?:\s*,)/.test(text);
+    // A repeating hairline pattern is a GRID, not a decorative gradient wash.
+    //
+    // The previous pattern required the colour to precede the stop —
+    // `(transparent|rgba(...))\s+1px` — which only matches
+    // `linear-gradient(transparent 1px, ...)`. The form actually used on
+    // designesy.org is the reverse: `linear-gradient(color-mix(...) 1px,
+    // transparent 1px)`, so the filter never fired and a graph-paper grid
+    // overlay was reported as "Full-page gradient background" at severity 5 —
+    // the maximum — deducting the full 20-point slop budget on a page whose
+    // background is a 1px grid on near-black.
+    //
+    // Match a 1px stop in EITHER order, which is what "hairline" means
+    // regardless of how the colour and the stop are written.
+    const isGridPattern = (text: string) =>
+      /(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8})\s+1px(?:\s*,)/.test(text)
+      || /\s+1px\s*,\s*(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\))/.test(text);
 
     // (a) Multi-color gradient on body/html directly (real background property).
     const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi) || [];
@@ -2707,7 +2749,11 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   {
     const pillPattern = /(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)/gi;
     const matches = html.match(pillPattern) || [];
-    if (matches.length > 0) {
+    // Skipped on a page that documents the rules — see isDocumentingSlopRules.
+    // Every S8 hit on /methodology was the anti-slop rule table listing
+    // "AI-powered", "Generate", "Chat with AI" as the patterns it detects. The
+    // page was penalised for naming the vocabulary it exists to catalogue.
+    if (matches.length > 0 && !isDocumentingSlopRules) {
       slopFindings.push({
         id: 'S8',
         label: 'AI-pill badge text',
@@ -2722,7 +2768,8 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   {
     const loremPattern = /lorem ipsum|dolor sit amet|consectetur adipiscing|sed do eiusmod|tempor incididunt/gi;
     const matches = html.match(loremPattern) || [];
-    if (matches.length > 0) {
+    // Skipped on a page that documents the rules — see isDocumentingSlopRules.
+    if (matches.length > 0 && !isDocumentingSlopRules) {
       slopFindings.push({
         id: 'S9',
         label: 'Lorem ipsum placeholder text',
@@ -2764,7 +2811,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     for (const word of buzzwords) {
       if (bodyText.includes(word)) found.push(word);
     }
-    if (found.length >= 2) {
+    if (found.length >= 2 && !isDocumentingSlopRules) {
       slopFindings.push({
         id: 'S11',
         label: 'Marketing buzzword copy',
@@ -2779,7 +2826,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   {
     const placeholderPatterns = /via\.placeholder|placehold\.co|placeholder\.com|dummyimage|picsum\.photos|loremflickr|unsplash\.com\/(?:random|featured)/gi;
     const matches = html.match(placeholderPatterns) || [];
-    if (matches.length > 0) {
+    if (matches.length > 0 && !isDocumentingSlopRules) {
       slopFindings.push({
         id: 'S12',
         label: 'Placeholder/stock image URLs',
