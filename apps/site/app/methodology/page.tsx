@@ -24,16 +24,17 @@ import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
   description:
-    'How the Designesy 42-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.',
+    `How the Designesy ${ENGINE_CHECK_COUNT}-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.`,
   path: '/methodology',
   ogDescription:
-    'The 42-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.',
+    `The ${ENGINE_CHECK_COUNT}-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.`,
   twitterDescription:
-    'Designesy scoring methodology — 42 checks, 14 categories, deterministic · designesy.org/methodology',
+    `Designesy scoring methodology — ${ENGINE_CHECK_COUNT} checks, 14 categories, deterministic · designesy.org/methodology`,
 });
 
 // ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
@@ -545,7 +546,7 @@ export default function MethodologyPage() {
           <p className="surface-eyebrow" data-scramble>Verification transparency</p>
           <h1 className="surface-title" data-scramble>Methodology</h1>
           <p className="surface-lede">
-            The full scoring methodology behind the Designesy 42-check engine.
+            The full scoring methodology behind the Designesy {ENGINE_CHECK_COUNT}-check engine.
             Deterministic, no LLM, no human judgment. Every check is a regex,
             token-resolution, or spec-linter test against the live fetched CSS
             and HTML. This page documents exactly what the engine measures, how
