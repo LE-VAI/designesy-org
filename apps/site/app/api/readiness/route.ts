@@ -128,6 +128,22 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   // marked designesy.org's own compliant endpoint as WARN, which is how it was
   // found. Every correct MCP server on the web was getting a false WARN.
   //
+  // Fixed 2026-09-24 and verified from an independent network path:
+  //   POST /api/mcp, Content-Type only                          -> 406
+  //   POST /api/mcp, + Accept: application/json, text/event-stream -> 200 + tools
+  //
+  // KNOWN REMAINING, and it is NOT this header: when the site scores its OWN
+  // origin, this probe reports 400 (or 401 against a *.vercel.app alias).
+  // That is a self-request-path artifact, not a conformance failure — the same
+  // request from outside Vercel returns 200 with the full tool list, and a
+  // third-party origin that lacks an MCP endpoint is correctly reported as
+  // 404/405. Vercel serves deployment-protected and loopback self-requests
+  // differently from external ones. Do not "fix" this by loosening the Accept
+  // header again; the header is now correct and the external behaviour is
+  // proven. If it is to be closed, it needs the self-case to skip the probe or
+  // resolve through the public hostname, which is a routing decision rather
+  // than a header one.
+  //
   // Same defect class as d06 (which counted var() spellings as distinct
   // families): a check measuring the target's conformance to the adapter's
   // assumption rather than to the standard.
