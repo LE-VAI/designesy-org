@@ -6,6 +6,7 @@ import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
+import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Why we built a public design score',
@@ -29,7 +30,7 @@ const REASONS = [
   {
     num: '02',
     title: 'The same checks grade everyone',
-    desc: 'The 42-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest MANUALs when a browser path is not enabled, and N/A when a convention is not met. If we ever fail our own contract, the score says so on the same surface.',
+    desc: `The ${ENGINE_CHECK_COUNT}-check engine that scores your site scores designesy.org. The same thresholds. The same letter grade. The same honest MANUALs when a browser path is not enabled, and N/A when a convention is not met. If we ever fail our own contract, the score says so on the same surface.`,
   },
   {
     num: '03',
