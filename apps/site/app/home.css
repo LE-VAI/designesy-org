@@ -843,9 +843,52 @@ button.pillar {
 
 @media (max-width: 720px) {
   .hero-display {
-    font-size: clamp(1.4rem, 1.2rem + 1vw, 3.2rem);
+    /* Was clamp(1.4rem, 1.2rem + 1vw, 3.2rem) -> 22.9px at 375px, which is
+       32% of the contract's own hero wordmark floor (clamp(3.2rem, 9vw, 5.5rem)
+       = 51.2px). The headline is the first thing anyone sees and it was
+       reading as slightly-larger body text: the subordinate .hero-sub block
+       rendered TALLER than the h1 (71px vs 54px), inverting the hierarchy.
+
+       The cap was not a taste decision — it was forced by the nowrap
+       composition. Line 2 is "We make execution <rotator>.", and holding all
+       of that on one line means the LONGEST rotator word ("intentional", 11
+       chars) sets the maximum size: measured at 375px it fits at 22.95px and
+       clips at 26px. One adjective was dictating the entire headline.
+
+       Fix: on mobile the rotator word becomes its own block (see the
+       .is-accent [data-word] rule below), so the widest line is the
+       sentence "AI makes execution free." (24 chars) instead of
+       prefix+longest-word (28 chars). That unlocks 30px here — a 31% lift —
+       and because the rotator is a single word on its own line, its swap
+       cannot change the line count or block height, so there is no reflow
+       during the 3.2s rotation. Desktop keeps its own two-line composition
+       untouched: the contract's 4.9rem desktop step is already in range. */
+    font-size: clamp(1.75rem, 1.4rem + 2.4vw, 3.2rem);
     line-height: 1.06;
     letter-spacing: -0.02em;
+  }
+
+  /* The rotator word gets its own line on mobile. It is the reason the
+     display size was capped; as a block it stops setting the width of the
+     sentence above it while still rotating in place. Measured at 375px /
+     30px: "AI makes execution free." 320px, "We make execution" 247px,
+     longest rotator word "intentional" 160px — all inside the 340px box. */
+  .hero-display-line.is-accent > [data-word] {
+    display: block;
+  }
+
+  /* Keep the terminal period attached to the rotated word.
+     The period is a SIBLING span after [data-word] in the JSX. Once the word
+     becomes a block, that sibling is pushed onto a line of its own and the
+     sentence reads "We make execution / yours / ." — a four-line hero with an
+     orphaned period. Repainting it as the word's ::after holds it on the
+     word's baseline; the original span stays in the DOM (the scramble still
+     writes to it) but is not painted, so nothing else changes. */
+  .hero-display-line.is-accent > [data-word] + span {
+    display: none;
+  }
+  .hero-display-line.is-accent > [data-word]::after {
+    content: '.';
   }
 }
 

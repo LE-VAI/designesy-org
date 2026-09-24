@@ -74,3 +74,10 @@ export const driftContract = {
     'The engine may flag third-party CSS (analytics, embeds) as fabricated tokens — a suppression list may be needed',
   ],
 } as const;
+
+// Derived, never typed. The composite headline on /score advertised "68 checks
+// across 4 engines" while the engines actually sum to 70 (42+12+10+6) — a
+// literal that had drifted from the engines it described. Exporting the count
+// from the contract's own check list makes that class of drift impossible: the
+// list IS the number.
+export const DRIFT_CHECK_COUNT = driftContract.verification.checks.length;

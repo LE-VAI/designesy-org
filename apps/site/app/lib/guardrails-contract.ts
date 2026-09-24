@@ -68,3 +68,10 @@ export const guardrailsContract = {
     'The emitter does not verify that the guardrail file actually prevents drift — that requires running the lint against AI output',
   ],
 } as const;
+
+// Derived, never typed. The composite headline on /score advertised "68 checks
+// across 4 engines" while the engines actually sum to 70 (42+12+10+6) — a
+// literal that had drifted from the engines it described. Exporting the count
+// from the contract's own check list makes that class of drift impossible: the
+// list IS the number.
+export const GUARDRAILS_CHECK_COUNT = guardrailsContract.verification.checks.length;

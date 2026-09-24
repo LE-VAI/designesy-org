@@ -298,7 +298,16 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
               </div>
               <pre
                 style={{
-                  background: 'var(--surface-1)',
+                  // Was var(--surface-1) — a token that has never been declared
+                  // anywhere in this repo, used here with no fallback, so the
+                  // declaration was invalid and the code block's background
+                  // silently resolved to transparent. The declared tier below
+                  // --surface-raised is --surface-soft (a translucent wash), so
+                  // this is the closest real token; the panel needs an opaque
+                  // backdrop, and --surface is the documented "card / panel
+                  // base". d02 in the drift engine could not see this: it scans
+                  // CSS, and the reference lived in a style object.
+                  background: 'var(--surface)',
                   border: '1px solid var(--line)',
                   borderRadius: 'var(--radius-md, 8px)',
                   padding: '1.25rem',
