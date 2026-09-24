@@ -4,7 +4,8 @@
 //
 // 6 axes × 4 questions = 24 questions. Each answer = stage 1–4.
 // Radar chart renders the result. Shareable via URL hash (base64).
-// CTA: "Verify your compliance with Designesy" → /score.
+// CTA: "Score your compliance with Designesy" → /score (wording aligned
+// 2026-09-24 with the destination page, which is named Score, not Verify).
 //
 // All state is client-side. No data is sent to any server.
 
@@ -957,7 +958,7 @@ export function MaturityAssessment() {
             data-cuelume-press="sparkle"
             data-firework="true"
           >
-            Verify your compliance with Designesy →
+            Score your compliance with Designesy →
           </Link>
         </div>
       </div>
