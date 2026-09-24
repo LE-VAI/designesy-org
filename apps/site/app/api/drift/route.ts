@@ -385,23 +385,87 @@ function checkD03InlineColors(css: string, tokens: Record<string, string>): Chec
   return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${hardcoded.length} hardcoded color values, ${coverage}% token coverage — partial token adoption` };
 }
 
-function checkD04SpacingVariance(css: string): CheckResult {
+function checkD04SpacingVariance(css: string, tokens: Record<string, string>): CheckResult {
   // Only count hardcoded spacing values (not var()-referenced or clamp/calc).
   // A site using var(--spacing-md) for all padding has 0 hardcoded values = PASS.
   // A site with 30 raw px values and no tokens = FAIL.
   const hardcoded = extractHardcodedSpacing(css);
-  const numeric = hardcoded.map((v) => {
-    const m = v.match(/([\d.]+)\s*(px|rem|em)/);
-    return m ? parseFloat(m[1]) * (m[2] === 'rem' ? 16 : m[2] === 'em' ? 16 : 1) : null;
-  }).filter((v): v is number => v !== null);
-  const distinct = uniqueValues(numeric.map((n) => String(Math.round(n))));
-  if (distinct.length <= 6) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${distinct.length} distinct hardcoded spacing values (var()-referenced spacing excluded)` };
+
+  // Parse EVERY component of every declaration, not just the first number.
+  //
+  // The previous extractor was `/([\d.]+)\s*(px|rem|em)/` applied to the whole
+  // value string, so:
+  //   - `padding: 1rem 1.25rem` counted as ONE value (16) and silently dropped
+  //     the 20px vertical component
+  //   - `padding: 0.5rem 0.625rem` counted as 8, dropping 10
+  //   - it rounded every value to whole px, so 4.8px and 5px collapsed or not
+  //     depending on rounding luck
+  // The result measured SHORTHAND SYNTAX VARIETY rather than scale spread: a
+  // page writing `padding: 1rem 1.25rem` scored differently from one writing
+  // the same padding as two longhand declarations containing the same two
+  // numbers. That is a verdict about typography of the source, not the design.
+  const numeric: number[] = [];
+  for (const v of hardcoded) {
+    for (const part of v.split(/\s+/)) {
+      const m = part.match(/^(-?[\d.]+)\s*(px|rem|em)$/);
+      if (!m) continue;
+      const n = parseFloat(m[1]);
+      if (!isFinite(n) || n <= 0) continue; // 0 and negatives are not scale stops
+      numeric.push(m[2] === 'rem' || m[2] === 'em' ? n * 16 : n);
+    }
   }
-  if (distinct.length > 15) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct hardcoded spacing values — no spacing scale` };
+
+  // Now ask the question the item actually poses: do the values cluster on a
+  // SCALE? "Spacing values cluster on a scale — padding/margin values follow a
+  // system." A site with a large documented scale should pass by ALIGNING to
+  // it, not by using few distinct numbers.
+  //
+  // Build the declared scale in px from the token table. When the site
+  // publishes one (designesy.org declares 72 --space stops), a literal that
+  // lands on a stop is evidence of a working system, not drift — even though it
+  // is hardcoded rather than referencing the token. The separate question of
+  // whether it SHOULD reference the token is a consistency concern, and d03
+  // and the token-architecture checks own that.
+  const declaredScale = new Set<number>();
+  for (const [name, value] of Object.entries(tokens)) {
+    if (!/^--space/.test(name)) continue;
+    const m = String(value).trim().match(/^([\d.]+)\s*(px|rem|em)$/);
+    if (!m) continue;
+    const n = parseFloat(m[1]);
+    if (!isFinite(n) || n <= 0) continue;
+    declaredScale.add(Math.round((m[2] === 'rem' || m[2] === 'em' ? n * 16 : n) * 100) / 100);
   }
-  return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct hardcoded spacing values — loose scale` };
+
+  const distinct = uniqueValues(numeric.map((n) => String(Math.round(n * 100) / 100)));
+
+  // No declared scale: fall back to the original clustering test, since
+  // "cluster on a scale" cannot be evaluated against a scale that does not
+  // exist.
+  if (declaredScale.size === 0) {
+    if (distinct.length <= 6) {
+      return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${distinct.length} distinct hardcoded spacing values (var()-referenced spacing excluded)` };
+    }
+    if (distinct.length > 15) {
+      return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct hardcoded spacing values — no spacing scale` };
+    }
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct hardcoded spacing values — loose scale` };
+  }
+
+  const onScale = distinct.filter((v) => declaredScale.has(parseFloat(v)));
+  const offScale = distinct.filter((v) => !declaredScale.has(parseFloat(v)));
+  const ratio = distinct.length > 0 ? onScale.length / distinct.length : 1;
+  const pct = Math.round(ratio * 100);
+
+  if (offScale.length === 0) {
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `all ${distinct.length} hardcoded spacing value(s) land on a declared --space stop (${declaredScale.size}-stop scale)` };
+  }
+  if (ratio >= 0.8) {
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${pct}% of ${distinct.length} hardcoded spacing value(s) land on a declared --space stop (off-scale: ${offScale.slice(0, 4).join(', ')})` };
+  }
+  if (ratio < 0.5) {
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `only ${pct}% of ${distinct.length} hardcoded spacing values land on the declared ${declaredScale.size}-stop scale — spacing ignores the system (off-scale: ${offScale.slice(0, 5).join(', ')})` };
+  }
+  return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${pct}% of ${distinct.length} hardcoded spacing values land on the declared scale (off-scale: ${offScale.slice(0, 5).join(', ')})` };
 }
 
 function checkD05ColorVariance(css: string, _tokens: Record<string, string>): CheckResult {
@@ -756,7 +820,7 @@ async function scoreDriftUncached(targetUrl: string, scope?: DriftScope) {
     checkD01TokenRegistry(tokens),
     checkD02FabricatedTokens(tokens, varRefs),
     checkD03InlineColors(allCss, tokens),
-    checkD04SpacingVariance(allCss),
+    checkD04SpacingVariance(allCss, tokens),
     checkD05ColorVariance(allCss, tokens),
     checkD06FontFamily(allCss, tokens),
     checkD07BorderRadius(allCss),
