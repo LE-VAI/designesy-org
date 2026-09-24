@@ -6,11 +6,12 @@
     "check-probe-backticks": "node scripts/check-probe-backticks.js",
     "check-count-up-seed": "node scripts/check-count-up-seed.js",
     "check-d02-coverage": "node scripts/check-d02-coverage.js",
+    "check-mcp-tool-parity": "node scripts/check-mcp-tool-parity.js",
     "visual-floor": "node scripts/visual-floor.js",
     "check-contract-version": "node scripts/check-contract-version.js",
     "prose-lint": "node scripts/prose-lint.js",
     "dev": "next dev",
-    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js",
+    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js && node scripts/check-mcp-tool-parity.js",
     "build:win": "node scripts/build-win.js",
     "start": "next start",
     "lint": "next lint"
