@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../api/score/route';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -56,7 +57,7 @@ export default async function ScoreOpenGraphImage({
     return renderCard({
       eyebrow: 'Score',
       title: 'Score any site',
-      lede: '42 checks against a real design contract. One grade.',
+      lede: `${ENGINE_CHECK_COUNT} checks against a real design contract. One grade.`,
       siteUrl: '',
       score: null,
     });

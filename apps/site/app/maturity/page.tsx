@@ -26,6 +26,7 @@ import { pageMeta } from '../lib/site-meta';
 import { MaturityAssessment } from './maturity-form';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -52,7 +53,7 @@ export default function MaturityPage() {
           <p className="surface-lede">
             Chart your design system across six independent compliance axes.
             24 questions. ~6 minutes. No survey, no vote — a structured
-            self-assessment that maps directly to the same 42-check contract
+            self-assessment that maps directly to the same {ENGINE_CHECK_COUNT}-check contract
             the leaderboard scores against.
           </p>
           <p className="surface-note">

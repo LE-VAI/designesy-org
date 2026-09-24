@@ -3,6 +3,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { ReportForm } from './report-form';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -67,7 +68,7 @@ export default async function ReportPage({ searchParams }: { searchParams?: Prom
             input, one output, one grade.
           </p>
           <p className="surface-note">
-            Fires /score (42-check audit), /drift (12-check drift radar), and
+            Fires /score ({ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and
             /readiness (10-check AI readiness) in parallel, then computes a
             weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2.
           </p>
