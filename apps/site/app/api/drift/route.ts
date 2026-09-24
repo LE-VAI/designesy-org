@@ -689,7 +689,31 @@ async function scoreDriftUncached(targetUrl: string, scope?: DriftScope) {
 
   const allCss = css + (html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi)?.join('\n') || '');
   const tokens = extractRootTokens(allCss);
-  const varRefs = extractVarRefs(allCss);
+
+  // var() references come from TWO surfaces, and only one was being scanned.
+  //
+  // extractVarRefs(allCss) sees stylesheets and <style> blocks. It does NOT
+  // see `style="..."` attributes — which is exactly what React's `style={{}}`
+  // prop renders to. So any token referenced from a component style object was
+  // invisible to d02 and d11.
+  //
+  // That is how `--surface-1` survived: guardrails-form.tsx set a code block's
+  // background to var(--surface-1) in a style object, the token was never
+  // declared anywhere, the declaration was therefore invalid, and the panel
+  // rendered transparent. d02 — the check whose entire job is catching
+  // fabricated tokens — reported PASS the whole time, because the reference
+  // lived in an attribute rather than a rule.
+  //
+  // Proven before fixing: injecting two fabricated tokens
+  // (--totally-fabricated-token-xyz, --another-fake-token) into a style
+  // attribute left d02 at PASS with an unchanged 2,593 reference count.
+  //
+  // The 8 tokens a rendered guardrails panel actually writes to attributes
+  // (--ease, --ink, --line, --muted, --muted-dim, --ok, --radius-md, --surface)
+  // are all declared today, so this changes no current verdict — it closes the
+  // door rather than reporting an existing breach.
+  const attrCss = (html.match(/\sstyle="([^"]*)"/gi) || []).join(';');
+  const varRefs = [...extractVarRefs(allCss), ...extractVarRefs(attrCss)];
 
   let checks: CheckResult[] = [
     checkD01TokenRegistry(tokens),
