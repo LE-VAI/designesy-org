@@ -299,7 +299,7 @@ export default function LeaderboardPage() {
           .lb-host:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-tier-tag { font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.04em; }
           .lb-grade-cell { text-align: right; }
-          .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 4px; font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), var(--inner-light); }
+          .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), var(--inner-light); }
           .lb-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); box-shadow: inset 0 0 0 1px rgba(51,88,232,0.18), var(--inner-light); }
           .lb-grade-b { background: rgba(254,204,52,0.18); color: var(--ink); border-color: var(--activation); }
           .lb-grade-c { background: var(--surface-hover); color: var(--ink); border-color: var(--line-strong); }
@@ -354,10 +354,10 @@ export default function LeaderboardPage() {
           .lb-live-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
           .lb-row-needs-work .lb-name { color: var(--muted); display: inline-flex; align-items: center; min-height: 44px; }
           .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
-          .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--inner-light); }
+          .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); }
           .lb-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
           .lb-stat-label { display: block; margin-top: 0.35rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
+          .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
           .lb-policy strong { color: var(--ink); font-weight: 600; }
           .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
           .lb-histogram { margin: 1.5rem 0; }
@@ -382,12 +382,12 @@ export default function LeaderboardPage() {
           .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
           .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
           .lb-field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; }
-          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; color: var(--ink); font-size: 0.92rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
+          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: 0.92rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
           .lb-input:focus { border-color: var(--signal); }
           .lb-input:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 2px var(--signal-dim); }
           .lb-input:disabled { opacity: 0.5; cursor: not-allowed; }
           .lb-submit-btn { margin-top: 0.25rem; align-self: flex-start; min-height: 44px; padding: 0.625rem 1.5rem; }
-          .lb-submit-result { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: 6px; border: 1px solid var(--line); }
+          .lb-submit-result { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--radius); border: 1px solid var(--line); }
           .lb-result-ok { background: var(--signal-dim); border-color: var(--signal-light); }
           .lb-result-err { background: var(--surface-soft); border-color: var(--line-strong); }
           .lb-result-head { font-family: var(--mono, ui-monospace, monospace); font-size: 1.2rem; font-weight: 700; color: var(--ink); margin: 0 0 0.25rem; }

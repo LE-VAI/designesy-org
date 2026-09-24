@@ -1123,7 +1123,7 @@ p {
   color: var(--muted-dim);
   background: var(--surface-soft);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-4);
   line-height: 1.4;
 }
@@ -1238,7 +1238,7 @@ p {
   font-size: 0.66rem;
   color: var(--muted-dim);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-5);
   line-height: 1;
   flex-shrink: 0;
@@ -1430,7 +1430,7 @@ p {
   font-family: inherit;
   font-size: 0.66rem;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-5);
   line-height: 1;
   background: var(--surface);
@@ -12497,7 +12497,7 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line-strong);
   color: var(--muted);
 }
