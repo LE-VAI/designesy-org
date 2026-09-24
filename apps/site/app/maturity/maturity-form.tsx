@@ -745,7 +745,11 @@ export function MaturityAssessment() {
                   <span className="row-title" style={{ display: 'block', marginBottom: '0.75rem' }}>
                     {q.prompt}
                   </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                  <div
+                    role="radiogroup"
+                    aria-label={q.prompt}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}
+                  >
                     {q.answers.map((a) => {
                       const isSelected = selected === a.stage;
                       return (
@@ -768,8 +772,29 @@ export function MaturityAssessment() {
                             width: '100%',
                           }}
                           className="maturity-option"
+                          // This is a single-select group rendered from buttons,
+                          // and it carried NO ARIA state — no role, no
+                          // aria-checked. Assistive tech therefore saw 16
+                          // unrelated buttons and could not tell the user they
+                          // were choosing one option from a scale, nor which one
+                          // was currently chosen. The selected state existed only
+                          // as colour (background/border), which is the "do not
+                          // rely on colour alone" case the contract's own
+                          // accessibility list forbids.
+                          //
+                          // role="radio" + aria-checked is the standard pattern
+                          // for a custom radio group; the wrapper below carries
+                          // role="radiogroup" with the question as its accessible
+                          // name, so the group is announced before its options.
+                          role="radio"
+                          aria-checked={isSelected}
                         >
-                          <span style={{
+                          {/* aria-hidden: the 1-4 position is decoration. The
+                              radiogroup semantics already tell assistive tech
+                              this is option N of a scale, and exposing the digit
+                              separately made the accessible name read
+                              "1 No — backgrounds are raw hex/rgb values". */}
+                          <span aria-hidden="true" style={{
                             width: '24px',
                             height: '24px',
                             borderRadius: '6px',
@@ -784,8 +809,7 @@ export function MaturityAssessment() {
                           }}>
                             {a.stage}
                           </span>
-                          <span>{a.label}</span>
-                        </button>
+                          <span>{a.label}</span>                        </button>
                       );
                     })}
                   </div>
