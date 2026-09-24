@@ -76,6 +76,17 @@
   --maxw-wide: 1180px;
   --radius: 6px;
   --radius-sm: 4px;
+  /* --radius-md is an INTERMEDIATE tier, not part of the published 4-step
+     contract scale (sm 4 / default 6 / lg 12 / xl 16). Four call sites
+     (docs-toc card, docs-toc-mobile, the guardrails form, and the guardrails
+     API's emitted defaultProps) referenced it with an `8px` fallback, so it
+     rendered correctly by accident while reading as a fabricated token to the
+     drift engine's d02 check — the exact failure mode that check exists to
+     catch, committed by the site that publishes it.
+     Declared here at the 8px those call sites already resolved to, so the
+     rendering is byte-identical and the reference is honest. It is deliberately
+     NOT adopted into the contract's 4-step scale, which stays as published. */
+  --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
