@@ -55,9 +55,9 @@
   border: 1px solid var(--line-strong);
 }
 
-.demo-radius-box.r-default { border-radius: 6px; }
+.demo-radius-box.r-default { border-radius: var(--radius); }
 
-.demo-radius-box.r-sm { border-radius: 4px; }
+.demo-radius-box.r-sm { border-radius: var(--radius-sm); }
 
 .demo-radius-box.r-none { border-radius: 0; }
 
