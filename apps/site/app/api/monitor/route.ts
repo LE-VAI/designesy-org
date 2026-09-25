@@ -344,12 +344,23 @@ function checkD05ColorVariance(css: string): DriftCheckResult {
 // identical in intent to the same helper in api/drift/route.ts and
 // api/score/route.ts, so all three engines that publish a d06-style reading
 // count FACES rather than spellings.
+//
+// THE FIRST LOOKUP BUG, inherited from the siblings. Callers pass the var()
+// capture group, which EXCLUDES the leading `--`, while the token map is keyed
+// WITH it — so `tokens[name]` missed, the loop never ran, and every aliased
+// declaration resolved to null and was skipped. That inverts the original
+// over-count into UNDER-counting, which PASSES input the check never read (five
+// faces via declared aliases measured "0 stacks" and PASS; the same five
+// declared directly measured 5). Normalized here rather than at the call site
+// because this function is duplicated across the engines.
 function resolveFamilyToken(
   tokens: Record<string, string>,
   name: string,
   maxHops = 4,
 ): string | null {
-  let current = tokens[name];
+  // Accept `mono` and `--mono` alike — see the note above.
+  const key = name.startsWith('--') ? name : `--${name}`;
+  let current = tokens[key];
   for (let hop = 0; hop < maxHops && current; hop++) {
     const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     const ref = first.match(/^var\(\s*--([\w-]+)/);

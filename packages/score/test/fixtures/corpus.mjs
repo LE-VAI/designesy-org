@@ -357,6 +357,105 @@ input, textarea { font-size:16px; }`,
     ],
   },
 
+  // ── Font-family alias resolution (added 2026-09-25) ───────────────────────
+  //
+  // v26 and drift d06 count distinct typefaces to detect typography drift. Both
+  // resolve `font-family: var(--mono)` through the token chain to the real face
+  // first, because counting SPELLINGS instead of FACES inflated the check (3
+  // real faces read as 9) and failed pages that satisfy the contract.
+  //
+  // The resolver then shipped with a first-lookup bug: callers pass the var()
+  // capture group, which EXCLUDES the leading `--`, while the token map is keyed
+  // WITH it. So `tokens[name]` missed, the loop never ran, and every aliased
+  // declaration resolved to null and was skipped. That inverted the original
+  // defect into UNDER-counting — a page whose fonts are all reached through
+  // tokens counted ZERO and PASSED. Measured before the fix: five faces via
+  // declared aliases reported "0 family/families" PASS, while the same five
+  // declared directly reported "5 families" WARN.
+  //
+  // The pair below is the point. `font-aliases-resolve-to-faces` and
+  // `font-alias-control-five-declared-directly` declare THE SAME five faces and
+  // differ ONLY in whether they are reached through tokens, so both must produce
+  // the same verdict. A future regression that stops resolving aliases cannot
+  // pass both: it under-counts the aliased fixture while the control still reads
+  // 5. That asymmetry is the detector — a fixture asserting only "aliases
+  // resolve" would pass for the wrong reason if both sides changed together.
+
+  {
+    name: 'font-aliases-resolve-to-faces',
+    referent:
+      'A design system that reaches all five of its distinct typefaces through declared :root tokens — the shape next/font produces, and the shape the site itself ships. Five faces behind aliases is genuine typography drift and must be reported as such; the failure mode pinned here is a resolver that skips aliased declarations and reports 0, PASSING a page it never read.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+:root {
+  --font-a: 'Alpha Face', serif;
+  --font-b: 'Bravo Face', serif;
+  --font-c: 'Charlie Face', serif;
+  --font-d: 'Delta Face', serif;
+  --font-e: 'Echo Face', serif;
+  --a: var(--font-a), serif;
+  --b: var(--font-b), serif;
+  --c: var(--font-c), serif;
+  --d: var(--font-d), serif;
+  --e: var(--font-e), serif;
+}
+body { font-family: var(--a); }
+h1 { font-family: var(--b); }
+h2 { font-family: var(--c); }
+code { font-family: var(--d); }
+pre { font-family: var(--e); }`,
+    expect: [
+      {
+        id: 'v26', status: 'WARN',
+        why: 'Five distinct faces reached through var() aliases: past the recommended 3, below the >5 FAIL threshold. Counting 0 here means the aliases were skipped rather than resolved — the under-count that passes unread input.',
+      },
+    ],
+  },
+
+  {
+    name: 'font-alias-control-five-declared-directly',
+    referent:
+      'The control for the fixture above: the SAME five faces declared directly, with no token layer. It exists so the aliased fixture cannot pass by having both sides change together.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+body { font-family: 'Alpha Face', serif; }
+h1 { font-family: 'Bravo Face', serif; }
+h2 { font-family: 'Charlie Face', serif; }
+code { font-family: 'Delta Face', serif; }
+pre { font-family: 'Echo Face', serif; }`,
+    expect: [
+      {
+        id: 'v26', status: 'WARN',
+        why: 'Five faces declared without any alias layer — the reference reading the aliased fixture must match. If this changes while the aliased one does not, the comparison itself has been lost.',
+      },
+    ],
+  },
+
+  {
+    name: 'font-alias-two-hop-chain',
+    referent:
+      "A two-hop alias chain, which is the shape the live site ships: --sans -> var(--font-sans) -> 'Schibsted Grotesk'. Resolving one level is not enough — the intermediate literal 'var(--font-sans)' would then be attributed as its own family, double-counting one typeface.",
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS + `
+:root {
+  --font-body: 'Schibsted Grotesk', sans-serif;
+  --font-code: 'Geist Mono', monospace;
+  --sans: var(--font-body), -apple-system, sans-serif;
+  --mono: var(--font-code), ui-monospace, monospace;
+}
+body { font-family: var(--sans); }
+code, pre { font-family: var(--mono); }`,
+    expect: [
+      {
+        id: 'v26', status: 'PASS',
+        why: "Exactly two faces resolve through a two-hop chain, within the recommended three. This is the site's own shape and must keep reading PASS — a resolver returning the intermediate 'var(--font-body)' spelling, or skipping the chain and counting 0, would both be wrong here.",
+      },
+    ],
+  },
+
   // ── Unreachable-target fixtures (added 2026-09-18) ────────────────────────
   //
   // These do NOT use scoreFromParts — they exercise scoreUrl's fetch path, so

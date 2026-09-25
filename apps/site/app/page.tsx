@@ -44,6 +44,42 @@ export const metadata: Metadata = pageMeta({
     `Verify any site against the Designesy design contract. ${ENGINE_CHECK_COUNT} checks. One grade. The AI UI compliance layer. designesy.org`,
 });
 
+// The hero headline, in the two parts the markup renders. HERO_ROTATOR_WORDS[0]
+// is the word the rotator rests on, so the canonical sentence and the settled
+// animation can never disagree — see HERO_HEADLINE below.
+const HERO_LINE_1 = 'AI makes execution free.';
+const HERO_LINE_2_PREFIX = 'We make execution ';
+const HERO_ROTATOR_WORDS = ['yours', 'count', 'stick', 'intentional', 'visible', 'liable', 'legitimate', 'real', 'shipped'] as const;
+
+/**
+ * The h1's accessible name — the sentence as a reader hears it, fixed.
+ *
+ * WHY THIS IS HANDED TO THE BROWSER RATHER THAN LEFT TO THE DOM
+ * The headline animates: the final word scrambles and cycles every 3.2s. That
+ * animation must not be the source of the page's primary heading text, because
+ * everything that caches or cites an h1 gets a different sentence depending on
+ * WHEN it looked. Measured on production, reading Chrome's own accessibility
+ * tree: "AI makes execution We make execution yours." while the visible word
+ * read "legitimate" — and the word "free" was missing entirely, because the
+ * enhancer derives each line's aria-label from that line's first text node and
+ * line 1 ends in a sibling <span>.
+ *
+ * So the name is declared here, derived from the same rotator list the markup
+ * uses, and both animated lines are aria-hidden. Text in the accessibility tree
+ * is then complete and constant whether the reader arrives before the first
+ * decode, between two rotations, or mid-scramble.
+ *
+ * aria-hidden on the lines is safe: this is decorative repetition of the name
+ * above it, not content. The visible text still renders exactly as before, and
+ * the markdown generator (which reads DOM text, not the a11y tree) is
+ * unaffected.
+ *
+ * The rotator's own aria-label writes are left in place — they are the
+ * enhancer's business during the animation, and they cost nothing now that both
+ * lines are hidden from assistive tech.
+ */
+const HERO_HEADLINE = `${HERO_LINE_1} ${HERO_LINE_2_PREFIX}${HERO_ROTATOR_WORDS[0]}.`;
+
 const PILLARS = [
   {
     number: '01',
@@ -202,18 +238,19 @@ export default function HomePage() {
         <section className="hero hero-architectural" aria-labelledby="hero-title">
           <HeroConstruction />
           <div className="hero-content">
-            <h1 className="hero-title hero-display fade-up" id="hero-title">
-              <span className="hero-display-line" data-scramble>
-                AI makes execution<span className="hero-word-free"> free</span>.
+            <h1 className="hero-title hero-display fade-up" id="hero-title" aria-label={HERO_HEADLINE}>
+              <span className="hero-display-line" data-scramble aria-hidden="true">
+                AI makes execution<span className="hero-word-free"> free</span>.
               </span>
               <span
                 className="hero-display-line is-accent"
                 data-scramble
-                data-scramble-rotate-words='["yours","count","stick","intentional","visible","liable","legitimate","real","shipped"]'
+                aria-hidden="true"
+                data-scramble-rotate-words={JSON.stringify(HERO_ROTATOR_WORDS)}
                 data-scramble-rotate-delay="3200"
               >
-                <span data-prefix>We make execution </span>
-                <span data-word>yours</span>
+                <span data-prefix>{HERO_LINE_2_PREFIX}</span>
+                <span data-word>{HERO_ROTATOR_WORDS[0]}</span>
                 <span>.</span>
               </span>
             </h1>

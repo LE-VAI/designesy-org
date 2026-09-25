@@ -535,12 +535,24 @@ function checkD05ColorVariance(css: string, _tokens: Record<string, string>): Ch
 // learned the same lesson: `font-family: var(--mono)` is a REFERENCE to a family
 // token, not another family. Counting spellings instead of faces inflated v26
 // from 3 to 9 and d06 from 3 to 11 on a site that uses three faces.
+//
+// THE FIRST LOOKUP BUG, inherited from the sibling. Callers pass the var()
+// capture group, which EXCLUDES the leading `--`, while the token map is keyed
+// WITH it — so `tokens[name]` missed, the loop never ran, and every aliased
+// declaration resolved to null and was skipped. That inverts the original defect
+// into UNDER-counting, which is the more dangerous direction: a page whose fonts
+// are all reached through tokens counts ZERO and PASSES. Measured before the
+// fix: five faces via declared aliases reported "0 stacks" PASS; the same five
+// declared directly reported 5. Normalized here rather than at the call site
+// because this function is duplicated across the engines.
 function resolveFamilyToken(
   tokens: Record<string, string>,
   name: string,
   maxHops = 4,
 ): string | null {
-  let current = tokens[name];
+  // Accept `mono` and `--mono` alike — see the note above.
+  const key = name.startsWith('--') ? name : `--${name}`;
+  let current = tokens[key];
   for (let hop = 0; hop < maxHops && current; hop++) {
     const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     const ref = first.match(/^var\(\s*--([\w-]+)/);
