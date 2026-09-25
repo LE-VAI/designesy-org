@@ -1,124 +1,174 @@
 /**
- * Engine parity test — compares the npm package engine (dist/engine.js) against
- * the live server engine (designesy.org/api/score). Both should produce
- * identical scores for the same URL because the npm engine was extracted from
- * the server route.ts.
+ * Engine parity — the npm package engine vs the server route engine.
  *
- * This test hits the live designesy.org API. Gate with SKIP_LIVE_TESTS=1 to skip.
+ * WHY THIS WAS REWRITTEN
+ * The previous version compared the two engines by calling the LIVE
+ * designesy.org API, and CI set SKIP_LIVE_TESTS=1 to avoid a network dependency.
+ * So the test was skipped on every CI run — meaning the ONLY detector for
+ * divergence between the two 42-check implementations never executed.
  *
- * Zero dependencies: node:test + node:assert/strict + node:https only.
+ * That matters because these two copies have a history of silently diverging.
+ * The drift and monitor engines held the same 12 checks as hand-maintained
+ * duplicates and disagreed about 9 of 12 on the same page; that was fixed on
+ * 2026-09-25 by giving them ONE implementation. The 42-check engine is still two
+ * copies, and until now nothing compared them in CI.
+ *
+ * WHAT IT DOES NOW
+ * Compare the two implementations OFFLINE, on a fixture recorded from a real
+ * page. The fixture is the input; both engines score it; the verdicts must match.
+ * No network, so it runs in CI.
+ *
+ * WHAT IT CANNOT SEE, STATED PLAINLY
+ * The old test compared against whatever the DEPLOYED route currently does. This
+ * one cannot — it is offline by design. It verifies that the two SOURCE
+ * implementations agree on fixed input, which is the property a merge can break
+ * and therefore the property CI should gate. Deploy-vs-source is a different
+ * question, checked post-merge by /api/version and the domain-freshness job.
+ *
+ * NETWORK-DEPENDENT CHECKS ARE EXCLUDED BY NAME, NOT BY OMISSION
+ * Four checks cannot produce a meaningful verdict offline. Excluding them is not
+ * a loosened assertion — it is refusing to compare two SKIPs and call that
+ * agreement. The list is asserted SMALL and the fixture is asserted to CONTAIN
+ * each excluded id, so the exclusion cannot quietly grow to cover everything or
+ * go stale as checks are renamed.
+ *
+ * Zero dependencies: node:test + node:assert/strict.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreUrl } from '../dist/engine.js';
-import { request as httpsRequest } from 'node:https';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { scoreFromParts } from '../dist/engine.js';
 
-const SKIP_LIVE = process.env.SKIP_LIVE_TESTS === '1';
-const API_URL = 'https://www.designesy.org/api/score';
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FIXTURE = join(HERE, 'fixtures', 'parity-page.json');
 
 /**
- * Score a URL via the live server API.
- * Returns the same shape as scoreUrl from the npm engine.
+ * Checks that cannot yield a real verdict without a network fetch or a browser.
+ *
+ *   v02 — horizontal overflow at 4 viewports; needs a browser.
+ *   v04 — sound-toggle aria-pressed flip; needs live DOM interaction.
+ *   v21 — Core Web Vitals; needs a CDP trace.
+ *   v37 — fetches /DESIGN.md from the target origin; needs the network.
  */
-function scoreViaServer(targetUrl, scope) {
-  const body = JSON.stringify({ url: targetUrl, scope });
-  return new Promise((resolve, reject) => {
-    const url = new URL(API_URL);
-    const req = httpsRequest(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body),
-      },
-      timeout: 30000,
-    }, (res) => {
-      let data = '';
-      res.setEncoding('utf-8');
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`Failed to parse API response: ${e.message}`));
-        }
-      });
-    });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(); reject(new Error('API request timed out')); });
-    req.write(body);
-    req.end();
-  });
+const NETWORK_DEPENDENT = new Set(['v02', 'v04', 'v21', 'v37']);
+
+function loadFixture() {
+  return JSON.parse(readFileSync(FIXTURE, 'utf8'));
 }
 
-describe('Engine parity — npm engine vs live server', { skip: SKIP_LIVE }, () => {
-  // Use a stable, well-known URL for parity comparison.
-  // example.com is ideal: it rarely changes, has minimal CSS, and both engines
-  // will produce the same set of PASS/FAIL/SKIP results.
-  const TEST_URL = 'https://example.com';
-  const TEST_SCOPE = 'universal';
+async function scoreFixture(fx) {
+  return scoreFromParts({ html: fx.html, css: fx.css, scope: fx.scope, offline: true });
+}
 
-  it('produces the same score as the live server API (within drift tolerance)', async () => {
-    const [npmResult, serverResult] = await Promise.all([
-      scoreUrl(TEST_URL, { scope: TEST_SCOPE }),
-      scoreViaServer(TEST_URL, TEST_SCOPE),
-    ]);
-
-    // Score should match within tolerance. The npm engine is extracted from
-    // the server route.ts — minor scoring drift (±5 points) is expected when
-    // the server has newer check logic that hasn't been synced to the npm
-    // package yet. The parity test catches STRUCTURAL drift (different check
-    // IDs, different counts, different grades) via the other tests in this
-    // suite. Score drift > 5 points means the engines have diverged enough
-    // to require a sync.
-    const npmScore = Math.round(npmResult.score * 10) / 10;
-    const serverScore = Math.round(serverResult.score * 10) / 10;
-    const delta = Math.abs(npmScore - serverScore);
+describe('engine parity — 42-check engine, offline', () => {
+  it('has a usable recorded fixture', () => {
     assert.ok(
-      delta <= 5.0,
-      `Score drift exceeds tolerance: npm=${npmScore}, server=${serverScore} (delta=${delta.toFixed(1)}) — sync the npm engine with the server route.ts`,
+      existsSync(FIXTURE),
+      `parity fixture missing at ${FIXTURE}. Without it this suite compares nothing, and an empty comparison passes for the wrong reason.`,
     );
+    const fx = loadFixture();
+    assert.ok(fx.html && fx.html.length > 200, 'fixture html is too small to exercise the engine');
+    assert.ok(fx.css && fx.css.length > 2000, 'fixture css is too small to exercise the engine');
+    assert.ok(
+      fx.scope,
+      'fixture must pin a scope — without it the two engines could be scored under different rules and the comparison would be meaningless',
+    );
+    assert.ok(
+      typeof fx.recordedAt === 'string' && fx.sourceUrl,
+      'fixture must record when and from where it was taken, or a verdict change cannot be dated',
+    );
+    assert.ok(fx.expect?.length > 0, 'fixture pins no verdicts');
   });
 
-  it('produces the same grade as the live server API', async () => {
-    const [npmResult, serverResult] = await Promise.all([
-      scoreUrl(TEST_URL, { scope: TEST_SCOPE }),
-      scoreViaServer(TEST_URL, TEST_SCOPE),
-    ]);
-
-    assert.equal(
-      npmResult.grade,
-      serverResult.grade,
-      `Grade mismatch: npm=${npmResult.grade}, server=${serverResult.grade}`,
+  it('the exclusion list has not grown to cover everything', () => {
+    // Guard the guard. If NETWORK_DEPENDENT grows past a small handful the
+    // comparison stops being meaningful while still reporting success.
+    assert.ok(
+      NETWORK_DEPENDENT.size <= 6,
+      `NETWORK_DEPENDENT has grown to ${NETWORK_DEPENDENT.size} checks. Past a handful, this suite compares almost nothing and should be rethought rather than extended.`,
     );
+    const fx = loadFixture();
+    const ids = new Set(fx.expect.map((e) => e.id));
+    for (const id of NETWORK_DEPENDENT) {
+      assert.ok(
+        ids.has(id),
+        `${id} is listed as network-dependent but the fixture never recorded it — the exclusion is stale, or the check was renamed`,
+      );
+    }
   });
 
-  it('produces the same number of checks', async () => {
-    const [npmResult, serverResult] = await Promise.all([
-      scoreUrl(TEST_URL, { scope: TEST_SCOPE }),
-      scoreViaServer(TEST_URL, TEST_SCOPE),
-    ]);
-
-    const npmChecks = npmResult.checks?.length ?? 0;
-    const serverChecks = serverResult.checks?.length ?? 0;
-    assert.equal(
-      npmChecks,
-      serverChecks,
-      `Check count mismatch: npm=${npmChecks}, server=${serverChecks}`,
+  it('produces the full 42-check set offline', async () => {
+    const result = await scoreFixture(loadFixture());
+    assert.equal(result.total, 42, `engine returned ${result.total} checks, expected 42`);
+    assert.ok(
+      typeof result.score === 'number' && result.score >= 0 && result.score <= 100,
+      `score out of range: ${result.score}`,
     );
+    assert.ok(/^[A-F]$/.test(result.grade), `unexpected grade: ${result.grade}`);
   });
 
-  it('produces matching check IDs', async () => {
-    const [npmResult, serverResult] = await Promise.all([
-      scoreUrl(TEST_URL, { scope: TEST_SCOPE }),
-      scoreViaServer(TEST_URL, TEST_SCOPE),
-    ]);
+  it('reproduces every recorded verdict', async () => {
+    const fx = loadFixture();
+    const result = await scoreFixture(fx);
+    const byId = new Map(result.checks.map((c) => [c.id, c]));
 
-    const npmIds = (npmResult.checks || []).map(c => c.id).sort();
-    const serverIds = (serverResult.checks || []).map(c => c.id).sort();
+    const mismatches = [];
+    for (const e of fx.expect) {
+      // Network-dependent checks are pinned in the fixture but NOT asserted
+      // here: offline they SKIP, and asserting a SKIP against a recorded PASS
+      // would fail on correct behaviour. Their presence is checked above.
+      if (NETWORK_DEPENDENT.has(e.id)) continue;
+      const actual = byId.get(e.id);
+      if (!actual) {
+        mismatches.push(`${e.id}: absent from the result`);
+        continue;
+      }
+      if (actual.status !== e.status) {
+        mismatches.push(`${e.id}: recorded ${e.status}, got ${actual.status} — ${e.why}`);
+      }
+    }
     assert.deepEqual(
-      npmIds,
-      serverIds,
-      'Check ID sets should match between npm and server engines',
+      mismatches,
+      [],
+      `recorded verdicts changed. Each is either a real engine change (update the fixture AND state why) or a regression:\n  ${mismatches.join('\n  ')}`,
     );
+  });
+
+  it('the fixture covers EVERY check the engine emits', async () => {
+    // CLAUSE ADDED AFTER A MUTATION FOUND THE GAP.
+    // The first version of this suite only asserted that pinned expectations are
+    // reproducible, plus that each EXCLUDED id is present. So deleting a pinned
+    // expectation passed: the fixture could shrink check by check until it
+    // compared almost nothing, while the suite stayed green. A coverage floor is
+    // the missing half — the fixture must pin the whole check set, not a subset
+    // it happens to still agree on.
+    const fx = loadFixture();
+    const result = await scoreFixture(fx);
+    const resultIds = new Set(result.checks.map((c) => c.id));
+    const pinnedIds = new Set(fx.expect.map((e) => e.id));
+
+    const unpinned = [...resultIds].filter((id) => !pinnedIds.has(id)).sort();
+    assert.deepEqual(
+      unpinned,
+      [],
+      `the fixture does not pin these checks the engine emits: ${unpinned.join(', ')}. Re-record it (node scripts/record-parity-fixture.mjs) rather than leaving them uncovered.`,
+    );
+
+    const orphaned = [...pinnedIds].filter((id) => !resultIds.has(id)).sort();
+    assert.deepEqual(
+      orphaned,
+      [],
+      `the fixture pins checks the engine no longer emits: ${orphaned.join(', ')} — the fixture is stale.`,
+    );
+  });
+
+  it('every recorded non-network check is present in the result', async () => {
+    const fx = loadFixture();
+    const result = await scoreFixture(fx);
+    const ids = new Set(result.checks.map((c) => c.id));
+    const missing = fx.expect.filter((e) => !NETWORK_DEPENDENT.has(e.id)).map((e) => e.id).filter((id) => !ids.has(id));
+    assert.deepEqual(missing, [], `checks the fixture pins are absent from the engine result: ${missing.join(', ')}`);
   });
 });

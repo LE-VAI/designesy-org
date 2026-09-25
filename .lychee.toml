@@ -19,6 +19,18 @@ exclude_path = [
   # package-lock.json contains transitive dep funding URLs (patreon,
   # opencollective, tidelift) that 403 bots — not our content to fix.
   "package-lock\\.json",
+  # Recorded test fixtures. These are verbatim captures of a live page's HTML
+  # and CSS, kept so packages/score/test/parity.test.mjs can compare the two
+  # 42-check engine implementations OFFLINE (CI has no network). Every URL
+  # inside them is TEST DATA, not a link we publish — checking them would gate
+  # CI on whether x.com is up, and on the exact byte-shape of third-party markup
+  # we merely recorded.
+  #
+  # This was found the moment the fixture was added (2026-09-25): it tripped
+  # lychee with two 403s from x.com and several 308 redirect chains. Those are
+  # the captured page's markup. "Fixing" them would mean editing a recording,
+  # which corrupts the very input the parity test depends on.
+  "test/fixtures/parity-page\\.json",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
