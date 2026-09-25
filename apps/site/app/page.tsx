@@ -18,6 +18,7 @@ import {
   SELF_GRADE,
   COHORT_SCORED_COUNT,
   COHORT_TOTAL_COUNT,
+  COHORT_LAST_SCORED,
   RECENT_SCORES,
   LOWEST_SCORE,
   LOWEST_GRADE,
@@ -27,9 +28,25 @@ import {
 // ISR: the homepage is statically rendered and cached at the Vercel edge,
 // regenerated at most once per hour. This is now possible because the theme
 // stamp moved out of the RSC render path (cookies() in layout.tsx forced the
-// whole tree dynamic; it now runs client-side via the inline script). The
-// hero self-score is baked at build/revalidate time — it refreshes within
-// the hour window, which is the correct freshness for a marketing page.
+// whole tree dynamic; it now runs client-side via the inline script).
+//
+// ⚠️ RE-RENDER CADENCE IS NOT DATA FRESHNESS — do not conflate these.
+// `revalidate = 3600` controls how often this PAGE re-renders. It says nothing
+// about how fresh the numbers on it are. The hero's self-score is read from the
+// leaderboard seed, which only changes when the weekly rescore workflow runs
+// (Mondays 10:00 UTC) — so the page can re-render hourly while quoting a score
+// measured days earlier.
+//
+// This comment previously read "the hero self-score is baked at build/revalidate
+// time — it refreshes within the hour window", which is true of the RENDER and
+// false of the VALUE. That wording is why the hero displayed "Self-score 93%" as
+// though it were live while the live engine returned 98% for the same verdict
+// counts. The number now renders with its measurement date beside it
+// (COHORT_LAST_SCORED) so the reader is told which fact they are looking at.
+//
+// If you want the hero to quote a fresher number, the fix is to raise the
+// rescore cadence in .github/workflows/rescore-leaderboard.yml — NOT to lower
+// this value. Lowering it re-renders the same stale number more often.
 export const revalidate = 3600;
 
 export const metadata: Metadata = pageMeta({
@@ -287,7 +304,27 @@ export default function HomePage() {
                   <span>Self-score </span>
                   <span className="hero-proof-num"><CountUp value={SELF_SCORE} suffix="%" /></span>
                   <span className="hero-proof-grade is-a">{SELF_GRADE}</span>
-                  <span className="hero-proof-caveat">our own contract</span>
+                  {/* The date is not decoration and not a caveat — it is the
+                      value's provenance, and without it the number reads as
+                      live. Two facts this fixes at once:
+
+                      1. The hero re-renders hourly (ISR 3600) but the score it
+                         quotes comes from the leaderboard seed, which only
+                         changes when the weekly rescore runs. So the page can
+                         show a number days old while looking freshly rendered.
+                      2. The live engine returns a HIGHER score than this
+                         snapshot for the same verdict counts (39 passing, 0
+                         failing), because engine fixes landed after the last
+                         rescore. A number that under-sells the site is less bad
+                         than one that looks live and is not, but it still needs
+                         to say when it was measured.
+
+                      Read from LEADERBOARD_LAST_SCORED via hero-stats, so the
+                      hero and the leaderboard can never quote different dates
+                      for the same measurement. */}
+                  <span className="hero-proof-caveat" title={`Scored ${COHORT_LAST_SCORED} — re-scored weekly`}>
+                    our own contract · {COHORT_LAST_SCORED}
+                  </span>
                 </li>
                 {LOWEST_SCORE !== null && (
                   <li className="hero-proof-stat">

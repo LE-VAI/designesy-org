@@ -27,11 +27,23 @@ export { CONTRACT_VERSION } from './lib/design-system-contract';
 // Latest self-score — DERIVED from the public leaderboard seed row, never a
 // second literal. The hero and the leaderboard show the same number because
 // they read the same source: two frozen values for one fact is the exact
-// contradiction this module exists to kill. Current seed-derived self-score
-// (2026-08-22 fresh engine re-score): 93% A (36P / 0F / 0W / 1S / 3M — the
-// 1 skip is DESIGN.md not served; 3 manual are browser-only probes: viewport
-// overflow, sound toggle, Core Web Vitals). The number below is derived
-// from the seed row, never a second literal — update the seed to change it.
+// contradiction this module exists to kill.
+//
+// The number below is derived from the seed row, never a second literal —
+// update the seed (via the weekly rescore) to change it.
+//
+// ⚠️ DO NOT RESTATE THE CURRENT VALUE HERE. This comment used to read
+// "(2026-08-22 fresh engine re-score): 93% A (36P / 0F / 0W / 1S / 3M …)" and had
+// drifted into being false in two directions at once: the seed row now reads
+// 39P / 0S, and the live engine returns a higher score than either for the same
+// verdict counts (engine fixes landed after the last rescore). A hand-copied
+// value in a comment is a second source of truth that nothing checks, which is
+// the same defect class as the /docs receipt that drifted twice before it was
+// made derived.
+//
+// The honest summary is the one that cannot rot: the value comes from the seed
+// row, the seed row's date is LEADERBOARD_LAST_SCORED, and that date is now
+// rendered beside the number on the hero so a reader can see its age.
 function selfRow() {
   const row = SEED.find((s) => s.url === 'https://www.designesy.org');
   if (!row || row.score === null || row.grade === null) {
