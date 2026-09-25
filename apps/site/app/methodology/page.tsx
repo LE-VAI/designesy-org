@@ -24,7 +24,7 @@ import { SEED } from '../leaderboard/seed';
 import { CountUp } from '../lib/count-up';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
-import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../lib/check-definitions';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
@@ -404,7 +404,21 @@ const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
 }));
 
 const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
-const SCORED_CHECKS = CHECKS.filter((c) => !c.skipReason && !c.manualReason).length;
+// Derived from the registry, not from this page's local arithmetic.
+//
+// The local form was CHECKS.filter(c => !c.skipReason && !c.manualReason) = 38,
+// which EXCLUDES v37 (the DESIGN.md spec check) because this page marks it
+// skipReason as "N/A if /DESIGN.md is not served". That is the worst case, and
+// it is the correct answer for a site without a DESIGN.md — but it is not the
+// answer for designesy.org, which SERVES one: /DESIGN.md returns 200 and the
+// engine scores v37 PASS. So the page printed "38 Scored" while the engine
+// reported scored=39 on the same site, in three separate places.
+//
+// The engine's own count is the honest headline because it reflects what the
+// registry contains; the v37 conditional is already disclosed on v37's own row,
+// where a reader can see the skip condition stated. Removing the contradiction
+// matters more here than which end of the range the headline picks.
+const SCORED_CHECKS = ENGINE_SCORED_CHECK_COUNT;
 const MANUAL_CHECKS = CHECKS.filter((c) => c.manualReason).length;
 const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
 
