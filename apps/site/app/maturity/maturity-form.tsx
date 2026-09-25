@@ -957,7 +957,7 @@ export function MaturityAssessment() {
           </p>
           <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0 0 1.5rem', lineHeight: 1.5 }}>
             {overall >= 75
-              ? 'Your design system is in the Verified stage — compliance is measured, enforced, and continuously tracked. The next step is ensuring no drift: run the deterministic 42-check engine against your live site.'
+              ? `Your design system is in the Verified stage — compliance is measured, enforced, and continuously tracked. The next step is ensuring no drift: run the deterministic ${ENGINE_CHECK_COUNT}-check engine against your live site.`
               : overall >= 50
               ? 'Your design system is Systematic — the foundations are in place but not yet enforced deterministically. The gap between “documented” and “enforced” is where most systems lose compliance.'
               : overall >= 25
