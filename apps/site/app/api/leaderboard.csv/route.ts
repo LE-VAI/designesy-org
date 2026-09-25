@@ -14,6 +14,7 @@
 export const dynamic = 'force-static';
 
 import { SEED, LEADERBOARD_VERSION, LEADERBOARD_LAST_SCORED } from '../../leaderboard/seed';
+import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 function csvEscape(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
@@ -64,7 +65,7 @@ export function GET() {
     `# Designesy Leaderboard v${LEADERBOARD_VERSION}`,
     `# Last scored: ${LEADERBOARD_LAST_SCORED}`,
     `# Scored: ${SEED.filter((s) => s.score !== null).length} / ${SEED.length}`,
-    `# Engine: deterministic 42-check design-contract verification (no LLM)`,
+    `# Engine: deterministic ${ENGINE_CHECK_COUNT}-check design-contract verification (no LLM)`,
     `# Source: https://www.designesy.org/api/leaderboard (JSON)`,
     `# Methodology: https://www.designesy.org/methodology`,
   ];
