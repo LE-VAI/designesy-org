@@ -200,7 +200,28 @@ function extractVarChains(css: string): { primary: string; fallback?: string }[]
 function extractValuesByProperty(css: string, props: string[]): string[] {
   const values: string[] = [];
   for (const prop of props) {
-    const re = new RegExp(`${prop}\\s*:\\s*([^;]+?)(?:;|$)`, 'gi');
+    // Terminate at ;, }, or end-of-string.
+    //
+    // The `}` matters and its absence was a real defect, measured on
+    // 2026-09-25. Minifiers strip the trailing semicolon from the LAST
+    // declaration in a block, so `font-family:var(--sans)}.radar-chart-polygon{…}`
+    // is ordinary minified CSS. Without the brace bound the capture runs past
+    // the closing `}` into the next rule, and the swallowed text becomes the
+    // "value":
+    //
+    //   monitor saw : "var(--sans)}.radar-chart-polygon{fill:var(--signal-dim)"
+    //   drift saw   : "var(--sans)"
+    //
+    // Three such declarations occur in the site's own stylesheet. Their
+    // first-tokens (`inherit}.bundle-tab--copy:hover{color:var(--ink)`, etc.) are
+    // not typefaces at all, but they were counted as families — so this engine
+    // read 5 distinct stacks where the drift engine read 3 for the same site,
+    // and returned WARN where drift correctly returned PASS.
+    //
+    // A sibling engine disagreeing with this one about the same input is the tell
+    // that one of them is measuring its own instrument. Ported drift's bound here
+    // so both count the declaration, not the declaration plus whatever followed.
+    const re = new RegExp(`${prop}\\s*:\\s*([^;{}]+?)(?:[;{}]|$)`, 'gi');
     let m;
     while ((m = re.exec(css)) !== null) {
       values.push(m[1].trim());

@@ -14,10 +14,11 @@
     "check-contract-version": "node scripts/check-contract-version.js",
     "prose-lint": "node scripts/prose-lint.js",
     "dev": "next dev",
-    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js && node scripts/check-mcp-tool-parity.js && node scripts/check-count-literal.js && node scripts/check-use-client-first.js && node scripts/check-hero-a11y-name.js",
+    "build": "next build && node scripts/check-contract-drift.js && node scripts/postbuild-pagefind.js && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js && node scripts/check-mcp-tool-parity.js && node scripts/check-count-literal.js && node scripts/check-use-client-first.js && node scripts/check-hero-a11y-name.js && node scripts/check-extractor-brace-bound.js",
     "build:win": "node scripts/build-win.js",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check-extractor-brace-bound": "node scripts/check-extractor-brace-bound.js"
   },
   "dependencies": {
     "@designesy/read-along": "^0.2.1",
