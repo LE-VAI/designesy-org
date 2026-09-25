@@ -34,8 +34,14 @@ const OUT = join(HERE, '..', 'corpus.json');
  * re-pinned. Independent of the engine version: a corpus can grow while the
  * engine is unchanged, and conflating them would make it impossible to say
  * whether a verdict moved because the engine changed or the test did.
+ *
+ * 1.1.0 (2026-09-25) — added the font-family alias-resolution trio
+ * (font-aliases-resolve-to-faces, -control-five-declared-directly,
+ * -two-hop-chain), which pin the resolver defect that silently DROPPED every
+ * aliased font declaration and PASSED pages whose typefaces were all reached
+ * through tokens.
  */
-const CORPUS_VERSION = '1.0.0';
+const CORPUS_VERSION = '1.1.0';
 
 /**
  * Engine version. Read from the server constant when reachable; the package

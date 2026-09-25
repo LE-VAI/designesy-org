@@ -1048,13 +1048,25 @@ function checkHeadingHierarchy(html: string): CheckResult {
  * Follows up to `maxHops` links and normalizes the result. Returns null when the
  * chain does not terminate in a name (a cycle, or an unknown token), so the
  * caller can skip rather than attribute a family it cannot identify.
+ *
+ * THE FIRST LOOKUP BUG. Callers pass the var() capture group, which EXCLUDES the
+ * leading `--` (`/var\(\s*--([\w-]+)/` captures `mono`), while the token map is
+ * keyed WITH it. So `tokens[name]` missed, the loop never ran, and every aliased
+ * declaration resolved to null and was skipped — the original over-count inverted
+ * into UNDER-counting, which PASSES input the check never read. Measured before
+ * the fix: five faces reached through declared aliases reported "0
+ * family/families" and PASS; the same five declared directly reported "5
+ * families" and WARN. Normalizing here rather than at each call site is
+ * deliberate — four copies of this function exist across the engines.
  */
 function resolveFamilyToken(
   tokens: Record<string, string>,
   name: string,
   maxHops = 4,
 ): string | null {
-  let current = tokens[name];
+  // Accept `mono` and `--mono` alike — see the note above.
+  const key = name.startsWith('--') ? name : `--${name}`;
+  let current = tokens[key];
   for (let hop = 0; hop < maxHops && current; hop++) {
     const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     const ref = first.match(/^var\(\s*--([\w-]+)/);

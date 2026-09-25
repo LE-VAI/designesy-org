@@ -9692,18 +9692,45 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
-@media (max-width: 380px) {
-  /* Narrow phones (iPhone SE 1st gen, Galaxy Fold cover screen).
-     Five 44px topbar controls plus the wordmark do not fit here: measured at
-     320px the cluster overlaps the wordmark by ~3px. Haptics is the one control
-     that is safe to drop at this width — it is a preference, not a destination,
-     and the sound toggle beside it still covers the sensory-feedback group.
-     Above this breakpoint all five fit with a comfortable gap (18px at 375,
-     33px at 390), so this is the only width where anything is hidden. */
+/* Haptics toggle reachability — its own breakpoint, deliberately narrower than
+   the 380px block below it.
+   
+   THE THRESHOLD IS MEASURED, AND THE OLD ONE WAS WRONG BY ~30px.
+   This rule lived inside `@media (max-width: 380px)`, which hid haptics at
+   375px — the most common phone width in the world, and the device class where
+   a haptics preference is most worth reaching. Its comment claimed "measured at
+   320px the cluster overlaps the wordmark by ~3px" and "18px at 375", i.e. that
+   only 320px collided. Both numbers reproduce, but the comment only ever
+   measured the AT-REST topbar, and the topbar changes width on scroll: past
+   40px the search pill expands from 44px to 67px, and that expansion sets the
+   real floor.
+   
+   Measured on production with the toggle forced visible (forcing proven
+   faithful — 0px delta on the cluster's width and position, so this is real
+   geometry and not an artifact of the instrument):
+     at rest  : overlap below ~324px   (gap -2.6 at 320, +1.4 at 324)
+     scrolled : overlap below ~346px   (gap -26 at 320, 0 at 346)
+     gap >=6px: from 352px             (6px is this cluster's own --space-fine-40)
+   The scrolled state is the one to design for — it is where a reader spends most
+   of their time on a long page.
+   
+   320px cannot be rescued by tightening the row's padding: five 44px controls
+   plus the expanded search pill and the wordmark need ~352px minimum. So the
+   honest breakpoint is "hide below 360px", which keeps the toggle on every
+   current phone (360 Android and 375 iPhone included) and drops it only on the
+   320px class where the fit genuinely does not exist. 360 leaves >=14px of gap
+   rather than the 0px a 346px cutover would.
+   
+   Kept as a SEPARATE query rather than by narrowing the 380px block below: that
+   block carries the score-card rules tuned for 380px, and re-scoping it would
+   silently change them across the 360-380 band. */
+@media (max-width: 359px) {
   .haptics-toggle {
     display: none;
   }
+}
 
+@media (max-width: 380px) {
   .score-input-card {
     padding: var(--space-12);
   }
