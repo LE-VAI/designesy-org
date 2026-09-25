@@ -136,7 +136,18 @@ function extractRootTokens(css: string): Record<string, string> {
 function extractValuesByProperty(css: string, props: string[]): string[] {
   const values: string[] = [];
   for (const prop of props) {
-    const re = new RegExp(`${prop}\\s*:\\s*([^;]+?)(?:;|$)`, 'gi');
+    // Terminate at ;, }, or end-of-string — the `}` is load-bearing.
+    // Minifiers strip the trailing semicolon from the last declaration in a
+    // block, so `font-family:var(--sans)}.next-rule{…}` is ordinary minified
+    // CSS. Without the brace bound the capture runs past the closing `}` and the
+    // swallowed text becomes the value, contributing first-tokens that are not
+    // the property's value at all. Measured on the site's own stylesheet
+    // 2026-09-25: three declarations leaked, making the monitor engine read 5
+    // font stacks where the drift engine read 3 for the same site. drift's
+    // extractor has always carried this bound and documents the reason. A diff
+    // engine that misreads one side's values reports a difference that is not
+    // there, which is the worst failure available to a comparison tool.
+    const re = new RegExp(`${prop}\\s*:\\s*([^;{}]+?)(?:[;{}]|$)`, 'gi');
     let m;
     while ((m = re.exec(css)) !== null) {
       values.push(m[1].trim());
