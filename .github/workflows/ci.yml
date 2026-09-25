@@ -284,3 +284,103 @@ jobs:
         # Fails when the fixtures changed but corpus.json did not, so the
         # published artifact cannot drift from the tests it describes.
         run: node scripts/export-corpus.mjs --check
+  # ── Job 6: Post-merge domain freshness ─────────────────────────────────────
+  # Verifies that the PRODUCTION DOMAIN is serving the commit that was just
+  # merged — not merely that a deployment exists.
+  #
+  # WHY THIS LIVES HERE AND NOT ONLY IN post-deploy-smoke.yml
+  # post-deploy-smoke.yml already has an `alias-verify` job for this, and it is
+  # the right place conceptually. But its trigger is `deployment_status`, and
+  # that event has fired ZERO runs for this repository. Measured 2026-09-25:
+  # every one of the 9 smoke runs in history was `workflow_dispatch` (manual);
+  # the only `deployment_status`-event run ever recorded was an unrelated
+  # `startup_failure` on a leaderboard branch on 2026-08-31.
+  #
+  # Meanwhile the alias trap — a `Ready` deployment whose build the domain never
+  # serves — fired on EVERY deploy on 2026-09-25. So the check existed, in a
+  # workflow that never ran, and the failure it was written for happened four
+  # times in one session with nothing detecting it.
+  #
+  # This job runs on `push: branches: [main]`, which is the trigger that
+  # demonstrably works in this repo. It duplicates the smoke job's assertion on
+  # purpose: a gate that never fires is not coverage, and "the other workflow
+  # should have caught it" is how this went unnoticed.
+  #
+  # It runs only on push (not on pull_request), because before merge there is
+  # nothing to verify — the domain serves the previous commit by definition.
+  domain-freshness:
+    name: Domain freshness (post-merge)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push'
+    needs: [build-site]
+
+    steps:
+      - name: Wait for the deployment to land, then verify the domain's commit
+        run: |
+          set -e
+          EXPECTED="${{ github.sha }}"
+          DOMAIN="https://www.designesy.org"
+
+          echo "## Post-merge domain freshness" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Expected commit: \`$EXPECTED\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Vercel builds on push and usually finishes in ~90-120s. Poll rather
+          # than sleep once, so a fast build is not punished and a slow one is
+          # still caught. 20 attempts x 30s = 10 minutes, which matches the job
+          # timeout — if the build genuinely never lands, that IS the finding.
+          DOMAIN_SHA=""
+          for i in $(seq 1 20); do
+            BODY=$(curl -s --max-time 20 "${DOMAIN}/api/version" 2>/dev/null || echo '')
+            DOMAIN_SHA=$(printf '%s' "$BODY" | grep -oE '"commit"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | grep -oE '[0-9a-f]{40}' || true)
+            if [ "$DOMAIN_SHA" = "$EXPECTED" ]; then
+              echo "Attempt $i: domain serves the expected commit." >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+            echo "Attempt $i/$(( 20 )): domain reports \`${DOMAIN_SHA:-<none>}\` — waiting 30s" 
+            sleep 30
+          done
+
+          if [ -z "$DOMAIN_SHA" ]; then
+            {
+              echo "✗ **Could not measure domain freshness.**"
+              echo ""
+              echo "\`${DOMAIN}/api/version\` never reported a commit. This is a"
+              echo "FAILURE, not a skip: a freshness gate that passes when it cannot"
+              echo "see is the defect this job exists to remove."
+              echo ""
+              echo "Most likely cause: *Enable access to System Environment Variables*"
+              echo "is off in Vercel project settings, so \`VERCEL_GIT_COMMIT_SHA\` is"
+              echo "never injected. (It was ON as of 2026-09-25 — verified live.)"
+            } >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          if [ "$DOMAIN_SHA" = "$EXPECTED" ]; then
+            echo "✅ Domain is serving the merged commit: \`${DOMAIN_SHA}\`" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Domain freshness verified: ${DOMAIN_SHA}"
+            exit 0
+          fi
+
+          {
+            echo "✗ **STALE DOMAIN — production is not serving the merged commit.**"
+            echo ""
+            echo "| | commit |"
+            echo "|---|---|"
+            echo "| merged (expected) | \`${EXPECTED}\` |"
+            echo "| \`${DOMAIN}\` is serving | \`${DOMAIN_SHA}\` |"
+            echo ""
+            echo "**Fix:**"
+            echo ""
+            echo '```bash'
+            echo "npx vercel promote \$(npx vercel ls --prod | awk 'NR==6{print \$3}') --yes"
+            echo '```'
+            echo ""
+            echo "Then re-run this job. The deployment is Ready; only the production"
+            echo "alias has not moved. Prefer \`promote\` over \`alias\` — promote keeps"
+            echo "rollback bookkeeping coherent."
+          } >> $GITHUB_STEP_SUMMARY
+          echo "✗ Domain freshness: STALE — expected ${EXPECTED}, domain serves ${DOMAIN_SHA}"
+          exit 1
