@@ -158,6 +158,10 @@ jobs:
         if: always()
         run: node scripts/check-hero-a11y-name.js
 
+      - name: Extractor brace bound
+        if: always()
+        run: node scripts/check-extractor-brace-bound.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
