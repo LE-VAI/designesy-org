@@ -85,7 +85,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness (EU AI Act Art 50). 6% weight, 2 scored checks (v07, v34).',
   interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
   performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (MANUAL in the static engine). 6% weight, 0 scored checks in the current engine.',
-  spec: 'DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own 42-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).',
+  spec: `DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own ${ENGINE_CHECK_COUNT}-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).`,
   responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (MANUAL in the static engine). 3% weight, 0 scored checks.',
 };
 
