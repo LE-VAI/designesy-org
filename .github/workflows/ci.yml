@@ -276,6 +276,16 @@ jobs:
       - name: Run engine tests + calibration corpus
         working-directory: packages/score
         env:
+          # Kept deliberately. This was originally set to make CI skip
+          # test/parity.test.mjs, whose old version called the live API — so the
+          # only detector for divergence between the two 42-check implementations
+          # never ran here.
+          #
+          # That test is now OFFLINE and runs regardless of this variable, so the
+          # var no longer skips anything. It stays because removing it would make
+          # any future test that reads it behave differently in CI than locally
+          # for no stated reason. A new test that honours SKIP_LIVE_TESTS is
+          # opting into being skipped here — say why in that test.
           SKIP_LIVE_TESTS: '1'
         run: npm test
 
