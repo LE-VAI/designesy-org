@@ -211,7 +211,7 @@ export default function WhatIsDesignVerificationPage() {
               <span className="row-index">01</span>
               <span className="row-body">
                 <span className="row-title">Score a URL</span>
-                <span className="row-meta">Run the 42-check engine against any live site, including this one</span>
+                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
               </span>
             </Link>
             <Link

@@ -371,7 +371,7 @@ export default function McpDocsPage() {
                 93% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                42-check engine · 38 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
+                {ENGINE_CHECK_COUNT}-check engine · 38 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
               </p>
             </div>
           </div>
@@ -382,7 +382,7 @@ export default function McpDocsPage() {
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Seven read-only tools fetch public machine exports from
             designesy.org. Nine executable tools run live verification — the
-            42-check score engine, DTCG token validation, Lottie motion
+            {ENGINE_CHECK_COUNT}-check score engine, DTCG token validation, Lottie motion
             validation, drift scoring, AI-readiness scoring, guardrails
             generation, monitor scoring, design-system comparison, and the
             composite report. One accessibility framework provides the WCAG

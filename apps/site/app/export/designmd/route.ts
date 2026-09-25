@@ -1,4 +1,6 @@
-import { designSystemContract } from '../../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import {
+  designSystemContract } from '../../lib/design-system-contract';
 
 export const dynamic = 'force-static';
 
@@ -22,7 +24,7 @@ export function GET() {
   const md = `---
 name: Designesy
 version: ${c.version}
-description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, 42 automated checks.
+description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, ${ENGINE_CHECK_COUNT} automated checks.
 standards:
   - WCAG 2.1 AA
   - APCA
@@ -34,7 +36,7 @@ standards:
 
 ## Overview
 
-Organization-first design system with deterministic verification. The contract is the scoring basis — 42 automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
+Organization-first design system with deterministic verification. The contract is the scoring basis — ${ENGINE_CHECK_COUNT} automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
 
 ## Tokens
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+
 import { useState } from 'react';
 import { ShareButton } from '../lib/share-button';
 import { ScoreDial } from '../lib/score-dial';
@@ -177,7 +179,7 @@ export function ReportForm({ initialUrl }: { initialUrl: string }) {
               label="Score"
               weight="×0.5"
               result={result.score}
-              description="42-check audit"
+              description={`${ENGINE_CHECK_COUNT}-check audit`}
             />
             <SubEngineCard
               label="Drift"
