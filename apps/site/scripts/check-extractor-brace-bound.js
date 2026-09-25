@@ -53,9 +53,30 @@ const path = require('node:path');
 
 const APP = path.join(__dirname, '..');
 const API = path.join(APP, 'app', 'api');
+const SHARED = path.join(APP, 'app', 'lib', 'drift-checks.ts');
 
-/** Routes known to carry a property extractor. Asserted non-empty below. */
-const MIN_EXPECTED_FILES = 4;
+/**
+ * Routes that must DEFINE a property extractor.
+ *
+ * drift and monitor are NOT in this list any more: since 2026-09-25 they import
+ * the shared one from app/lib/drift-checks.ts, which is the fix for their having
+ * held two divergent copies. Asserting a definition in those files would fail on
+ * correct code, so they are asserted in the "must import" list below instead.
+ */
+const MUST_DEFINE = [
+  path.join(API, 'guardrails', 'route.ts'),
+  path.join(API, 'compare', 'route.ts'),
+  SHARED,
+];
+
+/**
+ * Routes that must IMPORT the shared extractor rather than define their own.
+ * This is the invariant that keeps the two drift engines measuring one artifact.
+ */
+const MUST_IMPORT = [
+  path.join(API, 'drift', 'route.ts'),
+  path.join(API, 'monitor', 'route.ts'),
+];
 
 function routeFiles() {
   return fs
@@ -81,20 +102,45 @@ function extractorBody(source) {
 
 const findings = [];
 
-const files = routeFiles();
-if (files.length < MIN_EXPECTED_FILES) {
+// Guard the guard: if the files this gate exists to inspect are missing, a clean
+// result would be vacuous. Checked on the explicit lists rather than on a
+// count of whatever happens to be found, so renaming a route fails loudly.
+const missing = [...MUST_DEFINE, ...MUST_IMPORT].filter((f) => !fs.existsSync(f));
+if (missing.length) {
   findings.push({
-    id: 'too-few-route-files',
-    why: `Only ${files.length} route file(s) found under app/api (expected at least ${MIN_EXPECTED_FILES}). The scan is not seeing the app, so a clean result would be vacuous.`,
-    fix: 'Check that APP resolves to apps/site and that app/api still contains the engine routes.',
+    id: 'expected-source-missing',
+    why: `These files this gate inspects do not exist: ${missing.map((f) => path.relative(APP, f)).join(', ')}. A brace-bound check over an empty set passes for the wrong reason.`,
+    fix: 'Update MUST_DEFINE / MUST_IMPORT in this script to match where the extractors and their callers actually live.',
   });
 }
 
+// A route that must import the shared extractor must not also define its own —
+// that is the divergence this whole gate exists to prevent.
+for (const file of MUST_IMPORT) {
+  if (!fs.existsSync(file)) continue;
+  const source = fs.readFileSync(file, 'utf8');
+  if (extractorBody(source) !== null) {
+    findings.push({
+      id: 'duplicate-extractor-definition',
+      why: `${path.relative(APP, file)} defines its own extractValuesByProperty while it is supposed to import the shared one. Two copies is exactly how the drift and monitor engines came to read 3 vs 5 font stacks for the same page.`,
+      fix: "Delete the local definition and import extractValuesByProperty from '../../lib/drift-checks'.",
+    });
+  }
+}
+
 let checked = 0;
-for (const file of files) {
+for (const file of MUST_DEFINE) {
+  if (!fs.existsSync(file)) continue;
   const source = fs.readFileSync(file, 'utf8');
   const body = extractorBody(source);
-  if (body === null) continue;
+  if (body === null) {
+    findings.push({
+      id: 'extractor-definition-missing',
+      why: `${path.relative(APP, file)} is expected to define extractValuesByProperty but does not, so its brace bound cannot be asserted.`,
+      fix: 'Restore the definition, or move the file between MUST_DEFINE and MUST_IMPORT if the extractor was consolidated elsewhere.',
+    });
+    continue;
+  }
   checked++;
 
   const m = body.match(/new RegExp\(`([^`]+)`/);
@@ -123,11 +169,11 @@ for (const file of files) {
   }
 }
 
-if (checked < MIN_EXPECTED_FILES) {
+if (checked < MUST_DEFINE.length) {
   findings.push({
     id: 'too-few-extractors-checked',
-    why: `Found only ${checked} extractor(s) to check (expected at least ${MIN_EXPECTED_FILES}). A gate that checks nothing passes for the wrong reason.`,
-    fix: 'Verify extractValuesByProperty still exists in drift, monitor, guardrails and compare.',
+    why: `Checked only ${checked} of ${MUST_DEFINE.length} expected extractor definition(s). A gate that checks nothing passes for the wrong reason.`,
+    fix: 'Verify extractValuesByProperty still exists in the shared module, guardrails and compare.',
   });
 }
 

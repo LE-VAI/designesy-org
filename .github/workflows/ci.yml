@@ -162,6 +162,10 @@ jobs:
         if: always()
         run: node scripts/check-extractor-brace-bound.js
 
+      - name: Cross-engine agreement
+        if: always()
+        run: node scripts/check-cross-engine-agreement.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
