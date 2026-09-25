@@ -161,20 +161,32 @@ jobs:
 
   # ── Job 2: Alias verification ──────────────────────────────────────────────
   # Verifies that www.designesy.org is actually serving the deployment that
-  # Vercel just marked Ready. This catches the "alias stuck on old deployment"
-  # issue we hit on 2026-08-08 where Vercel reported success and the dashboard
-  # showed target=production + Ready, but the domain was still pointing at
-  # the previous deployment's serverless functions.
+  # Vercel just marked Ready.
   #
-  # The check: POST to /api/mcp with the modern MCP-Protocol-Version header.
-  # Our compatibility shim sets X-Mcp-Shim on the response. If the production
-  # domain is serving old code, there will be no X-Mcp-Shim header (or a
-  # 400 error from the old SDK path). If serving the new code, the header
-  # will be present (downgraded-to-legacy or passthrough-modern).
+  # THIS JOB WAS DEAD, AND ITS DEATH WAS INVISIBLE (fixed 2026-09-25)
+  # It previously looked for an `X-Mcp-Shim` response header on /api/mcp, as a
+  # proxy for "the domain is serving recent code". `X-Mcp-Shim` no longer exists
+  # anywhere in this repository — grep finds it ONLY in this file, in the very
+  # check that looks for it. A compatibility shim was removed at some point and
+  # the detector of that shim was left behind.
   #
-  # This job does NOT fail the workflow on mismatch — it reports a warning.
-  # The alias reassignment is a manual operator action (or a separate
-  # automation step) because it requires VERCEL_TOKEN.
+  # Two consequences, both quiet:
+  #   • The check could never pass again. It reported "⚠️ Alias may be stale" on
+  #     EVERY deploy regardless of truth, so it produced a permanent false alarm.
+  #   • It only warned. It never failed the workflow, so nothing ever acted on
+  #     the warning. A check that always fires and never blocks is one nobody
+  #     reads — which is why the real alias failures on 2026-09-25 went unnoticed.
+  #
+  # Worse, even when it worked it could only answer "is the domain newer than a
+  # specific 2026-08-08 commit?" — a seven-week-wide window. It was structurally
+  # incapable of detecting the actual failure mode, which is a domain exactly ONE
+  # deployment behind.
+  #
+  # THE REPLACEMENT asserts the deployed commit directly. /api/version reports
+  # VERCEL_GIT_COMMIT_SHA; the domain-serving-the-wrong-build answers with the
+  # wrong SHA, and the comparison catches it at any distance. It FAILS the
+  # workflow rather than warning, because the whole point is that a stale alias
+  # must stop being something a human has to notice.
   alias-verify:
     name: Verify production alias
     runs-on: ubuntu-latest
@@ -186,44 +198,73 @@ jobs:
       - name: Check if production domain is serving the latest deployment
         env:
           DEPLOY_TARGET: ${{ github.event.deployment_status.target_url || 'https://www.designesy.org' }}
-          COMMIT_SHA: ${{ github.sha }}
+          EXPECTED_SHA: ${{ github.event.deployment.sha || github.sha }}
         run: |
           echo "## Alias verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Deployment: $DEPLOY_TARGET" >> $GITHUB_STEP_SUMMARY
-          echo "Commit: $COMMIT_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "Expected commit: $EXPECTED_SHA" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Wait a few seconds for the alias to propagate after smoke test
+          # Give the alias a moment to propagate after the deploy settles.
           sleep 10
 
-          # Check the MCP endpoint for the X-Mcp-Shim header (only present in
-          # deployments after 2026-08-08 commit 6a487a3).
-          SHIM_HEADER=$(curl -sI -X POST "https://www.designesy.org/api/mcp" \
-            -H "Content-Type: application/json" \
-            -H "MCP-Protocol-Version: 2026-07-28" \
-            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
-            2>/dev/null | grep -i "x-mcp-shim" | tr -d '\r' || echo "")
+          DOMAIN="https://www.designesy.org"
+          VERSION_JSON=$(curl -s --max-time 20 "${DOMAIN}/api/version" 2>/dev/null || echo '')
+          # Extract the 40-hex commit. Matched with a strict pattern so a
+          # malformed or absent field cannot be mistaken for a match.
+          DOMAIN_SHA=$(printf '%s' "$VERSION_JSON" | grep -oE '"commit"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | grep -oE '[0-9a-f]{40}' || true)
 
-          if [ -n "$SHIM_HEADER" ]; then
-            echo "✅ Production alias is serving the latest deployment" >> $GITHUB_STEP_SUMMARY
-            echo "✅ X-Mcp-Shim header found: $SHIM_HEADER" >> $GITHUB_STEP_SUMMARY
-            echo "Production alias verified: $SHIM_HEADER"
+          if [ -z "$DOMAIN_SHA" ]; then
+            {
+              echo "✗ **Could not measure domain freshness.**"
+              echo ""
+              echo "\`${DOMAIN}/api/version\` did not report a commit, so the alias"
+              echo "cannot be verified. This is a FAILURE, not a skip: a freshness"
+              echo "check that passes when it cannot see is the exact defect this"
+              echo "job was rewritten to remove."
+              echo ""
+              echo "Likely causes:"
+              echo ""
+              echo "1. **System Environment Variables are disabled** in Vercel project"
+              echo "   settings. Tick *Enable access to System Environment Variables* —"
+              echo "   without it Vercel injects no \`VERCEL_GIT_COMMIT_SHA\`."
+              echo "2. \`/api/version\` is not deployed yet — true only for the first"
+              echo "   commit that introduced it."
+              echo ""
+              echo "Raw response (truncated): \`$(printf '%s' "$VERSION_JSON" | head -c 200)\`"
+            } >> $GITHUB_STEP_SUMMARY
+            echo "✗ Domain freshness: could not measure"
+            exit 1
+          fi
+
+          if [ "$DOMAIN_SHA" = "$EXPECTED_SHA" ]; then
+            echo "✅ Production alias is serving the expected commit: \`${DOMAIN_SHA}\`" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Domain freshness verified: ${DOMAIN_SHA}"
           else
-            echo "⚠️ **Alias may be stale** — production domain might be serving an older deployment" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The X-Mcp-Shim header was not found in the response." >> $GITHUB_STEP_SUMMARY
-            echo "This means www.designesy.org may still point to a previous deployment." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Fix" >> $GITHUB_STEP_SUMMARY
-            echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo "npx vercel alias <latest-deployment-url> www.designesy.org" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run \`npx vercel ls\` to find the latest deployment URL, then reassign the alias." >> $GITHUB_STEP_SUMMARY
-
-            echo "⚠️ Alias may be stale — X-Mcp-Shim header not found"
-            # Don't fail — this is a warning, not a hard failure
+            {
+              echo "✗ **STALE DOMAIN — the new deployment is not being served.**"
+              echo ""
+              echo "| | commit |"
+              echo "|---|---|"
+              echo "| just deployed (expected) | \`${EXPECTED_SHA}\` |"
+              echo "| \`${DOMAIN}\` is serving | \`${DOMAIN_SHA}\` |"
+              echo ""
+              echo "The deployment is live and Ready; only the production alias has"
+              echo "not moved. Vercel does this intermittently — it fired on every"
+              echo "deploy on 2026-09-25."
+              echo ""
+              echo "**Fix (promote, not alias — promote keeps rollback bookkeeping"
+              echo "coherent):**"
+              echo ""
+              echo '```bash'
+              echo "npx vercel promote ${DEPLOY_TARGET} --yes"
+              echo '```'
+              echo ""
+              echo "Then re-run this workflow."
+            } >> $GITHUB_STEP_SUMMARY
+            echo "✗ Domain freshness: STALE — expected ${EXPECTED_SHA}, domain serves ${DOMAIN_SHA}"
+            exit 1
           fi
 
       - name: Report alias status
