@@ -1,9 +1,8 @@
 'use client';
 
-import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
@@ -530,7 +529,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </Link>
         </div>
         <p className="report-version">
-          Report generated against design system contract v0.4.0 · {ENGINE_CHECK_COUNT} checks ·{' '}
+          Report generated against design system contract {CONTRACT_VERSION} · {ENGINE_CHECK_COUNT} checks ·{' '}
           {total} checks evaluated
         </p>
         <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>
