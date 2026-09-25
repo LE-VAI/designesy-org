@@ -158,91 +158,39 @@ async function fetchPageResilient(targetUrl: string): Promise<{ html: string; cs
   return { html, css: cssParts.join('\n') };
 }
 
-// ── Token extraction (mirrors drift route) ──────────────────────────────────
+import {
+  runDriftChecks,
+  extractRootTokens,
+  extractVarRefs,
+  extractVarChains,
+  extractValuesByProperty,
+  uniqueValues,
+  type CheckResult,
+} from '../../lib/drift-checks';
 
-function extractRootTokens(css: string): Record<string, string> {
-  const tokens: Record<string, string> = {};
-  const rootRe = /:root\s*\{([^}]*)\}/g;
-  let m;
-  while ((m = rootRe.exec(css)) !== null) {
-    const block = m[1];
-    const propRe = /(--[\w-]+)\s*:\s*([^;]+?)(?:;|$)/g;
-    let p;
-    while ((p = propRe.exec(block)) !== null) {
-      tokens[p[1]] = p[2].trim();
-    }
-  }
-  return tokens;
-}
-
-function extractVarRefs(css: string): string[] {
-  const refs: string[] = [];
-  const varRe = /var\(\s*(--[\w-]+)/g;
-  let m;
-  while ((m = varRe.exec(css)) !== null) {
-    refs.push(m[1]);
-  }
-  return refs;
-}
-
-function extractVarChains(css: string): { primary: string; fallback?: string }[] {
-  const chains: { primary: string; fallback?: string }[] = [];
-  const chainRe = /var\(\s*(--[\w-]+)\s*(?:,\s*var\(\s*(--[\w-]+)\s*\))?\)/g;
-  let m;
-  while ((m = chainRe.exec(css)) !== null) {
-    chains.push({ primary: m[1], fallback: m[2] });
-  }
-  return chains;
-}
-
-// ── Value extraction helpers ─────────────────────────────────────────────────
-
-function extractValuesByProperty(css: string, props: string[]): string[] {
-  const values: string[] = [];
-  for (const prop of props) {
-    // Terminate at ;, }, or end-of-string.
-    //
-    // The `}` matters and its absence was a real defect, measured on
-    // 2026-09-25. Minifiers strip the trailing semicolon from the LAST
-    // declaration in a block, so `font-family:var(--sans)}.radar-chart-polygon{…}`
-    // is ordinary minified CSS. Without the brace bound the capture runs past
-    // the closing `}` into the next rule, and the swallowed text becomes the
-    // "value":
-    //
-    //   monitor saw : "var(--sans)}.radar-chart-polygon{fill:var(--signal-dim)"
-    //   drift saw   : "var(--sans)"
-    //
-    // Three such declarations occur in the site's own stylesheet. Their
-    // first-tokens (`inherit}.bundle-tab--copy:hover{color:var(--ink)`, etc.) are
-    // not typefaces at all, but they were counted as families — so this engine
-    // read 5 distinct stacks where the drift engine read 3 for the same site,
-    // and returned WARN where drift correctly returned PASS.
-    //
-    // A sibling engine disagreeing with this one about the same input is the tell
-    // that one of them is measuring its own instrument. Ported drift's bound here
-    // so both count the declaration, not the declaration plus whatever followed.
-    const re = new RegExp(`${prop}\\s*:\\s*([^;{}]+?)(?:[;{}]|$)`, 'gi');
-    let m;
-    while ((m = re.exec(css)) !== null) {
-      values.push(m[1].trim());
-    }
-  }
-  return values;
-}
-
-function uniqueValues(values: string[]): string[] {
-  return [...new Set(values.map((v) => v.toLowerCase().replace(/\s+/g, ' ').trim()))];
-}
+// ── Token + value extraction — IMPORTED from the shared drift module ─────────
+//
+// This route used to carry its own copies, and both differed from drift's:
+//   * extractRootTokens read ONLY `:root { ... }` blocks. Drift's reads every
+//     custom property declaration so component-scoped theme tokens resolve —
+//     which is why this engine reported 151 custom properties where drift
+//     reported 162, a number disagreement hiding inside an agreed verdict.
+//   * extractValuesByProperty lacked the closing-brace bound. Minified CSS
+//     omits the trailing semicolon, so a capture could run past the block into
+//     the following rule; 86 such captures were measured on radix-ui.com alone.
+//
+// Both are fixed by importing rather than by re-porting.
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-type DriftCheckResult = {
-  id: string;
-  item: string;
-  category: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
-  detail: string;
-};
+//
+// DriftCheckResult is an ALIAS of the shared CheckResult, not a second shape.
+//
+// It was previously a hand-written twin that omitted SKIP. That omission was
+// harmless while each route owned its own checks, but it becomes a lie the
+// moment both engines run the same twelve functions: drift emits SKIP under
+// scope filtering, and a narrower local type cannot describe a value the shared
+// implementation returns. One type, one implementation.
+type DriftCheckResult = CheckResult;
 
 type MonitorCheckResult = {
   id: string;
@@ -284,235 +232,27 @@ type MonitorResponse = {
   error?: string;
 };
 
-// ── The 12 drift checks (inlined from drift route for self-containment) ────────
-
-function checkD01TokenRegistry(tokens: Record<string, string>): DriftCheckResult {
-  const count = Object.keys(tokens).length;
-  if (count >= 5) {
-    return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'PASS', detail: `Token registry found with ${count} custom properties` };
-  }
-  return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'FAIL', detail: `Only ${count} :root custom properties — the site has no token system` };
-}
-
-function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[]): DriftCheckResult {
-  const declared = new Set(Object.keys(tokens));
-  const undeclared = varRefs.filter((r) => !declared.has(r));
-  const uniqueUndeclared = [...new Set(undeclared)];
-  if (uniqueUndeclared.length === 0) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'PASS', detail: `All ${varRefs.length} var() references resolve to :root declarations` };
-  }
-  if (uniqueUndeclared.length <= 2) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (may be third-party)` };
-  }
-  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}... — token fabrication detected` };
-}
-
-function checkD03InlineColors(css: string, tokens: Record<string, string>): DriftCheckResult {
-  const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\)|hsla?\([^)]+\)|oklch\([^)]+\))/g;
-  const matches = css.match(colorRe) || [];
-  const tokenValues = new Set(Object.values(tokens).map((v) => v.trim().toLowerCase()));
-  const inline = matches.filter((m) => !tokenValues.has(m.toLowerCase()));
-  const colorTokenCount = Object.values(tokens).filter((v) => /#[0-9a-fA-F]|rgba?|hsla?|oklch/i.test(v)).length;
-  if (inline.length <= 5 && colorTokenCount > 0) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${inline.length} inline color values (${colorTokenCount} color tokens available)` };
-  }
-  if (inline.length > 20) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'FAIL', detail: `${inline.length} inline color values — color system bypassed` };
-  }
-  return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${inline.length} inline color values — partial token adoption` };
-}
-
-function checkD04SpacingVariance(css: string): DriftCheckResult {
-  const values = extractValuesByProperty(css, ['padding', 'margin']);
-  const numeric = values.map((v) => {
-    const m = v.match(/([\d.]+)\s*(px|rem|em)/);
-    return m ? parseFloat(m[1]) * (m[2] === 'rem' ? 16 : m[2] === 'em' ? 16 : 1) : null;
-  }).filter((v): v is number => v !== null);
-  const distinct = uniqueValues(numeric.map((n) => String(Math.round(n))));
-  if (distinct.length <= 6) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `Spacing values cluster on ${distinct.length} distinct steps` };
-  }
-  if (distinct.length > 15) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct spacing values — no spacing scale` };
-  }
-  return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct spacing values — loose scale` };
-}
-
-function checkD05ColorVariance(css: string): DriftCheckResult {
-  const colorRe = /(?:#[0-9a-fA-F]{3,8}\b|rgba?\([^)]+\))/g;
-  const matches = (css.match(colorRe) || []).map((c) => c.toLowerCase());
-  const groups = new Map<string, number>();
-  for (const c of matches) {
-    groups.set(c, (groups.get(c) || 0) + 1);
-  }
-  const top3 = [...groups.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const top3Count = top3.reduce((sum, [, count]) => sum + count, 0);
-  const total = matches.length;
-  if (total === 0) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: 'No raw color values found in CSS' };
-  }
-  const ratio = top3Count / total;
-  if (ratio > 0.6) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 colors cover ${Math.round(ratio * 100)}% of ${total} color declarations — consistent` };
-  }
-  if (ratio < 0.3) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${groups.size} distinct color values across ${total} declarations — color drift` };
-  }
-  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${groups.size} distinct color values — moderate consistency` };
-}
-
-// Walk a font-family custom-property alias chain to the real face name. Kept
-// identical in intent to the same helper in api/drift/route.ts and
-// api/score/route.ts, so all three engines that publish a d06-style reading
-// count FACES rather than spellings.
+// ── The 12 drift checks — IMPORTED from the shared drift module ──────────────
 //
-// THE FIRST LOOKUP BUG, inherited from the siblings. Callers pass the var()
-// capture group, which EXCLUDES the leading `--`, while the token map is keyed
-// WITH it — so `tokens[name]` missed, the loop never ran, and every aliased
-// declaration resolved to null and was skipped. That inverts the original
-// over-count into UNDER-counting, which PASSES input the check never read (five
-// faces via declared aliases measured "0 stacks" and PASS; the same five
-// declared directly measured 5). Normalized here rather than at the call site
-// because this function is duplicated across the engines.
-function resolveFamilyToken(
-  tokens: Record<string, string>,
-  name: string,
-  maxHops = 4,
-): string | null {
-  // Accept `mono` and `--mono` alike — see the note above.
-  const key = name.startsWith('--') ? name : `--${name}`;
-  let current = tokens[key];
-  for (let hop = 0; hop < maxHops && current; hop++) {
-    const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
-    const ref = first.match(/^var\(\s*--([\w-]+)/);
-    if (!ref) return first;
-    current = tokens[`--${ref[1]}`];
-  }
-  return null;
-}
-
-function checkD06FontFamily(css: string, tokens: Record<string, string>): DriftCheckResult {
-  const families = extractValuesByProperty(css, ['font-family']);
-
-  // Resolve var() aliases and drop non-choices before counting, for the reason
-  // recorded at length in api/drift/route.ts: `font-family: var(--mono)` is a
-  // reference to a family token, not a second family, and counting it as one
-  // made this reading disagree with the score engine about the same site.
-  // Thresholds were also raised to match drift d06 (<=4 PASS, >8 FAIL); this
-  // route previously used (<=2 PASS, >4 FAIL), so the monitor engine graded a
-  // three-face site as FAIL while the drift engine graded it WARN.
-  const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
-  const resolved: string[] = [];
-  for (const family of families) {
-    let name = (family.split(',')[0] || '').trim().replace(/["']/g, '').toLowerCase();
-    if (!name) continue;
-    if (name.startsWith('var(')) {
-      const ref = name.match(/var\(\s*--([\w-]+)/);
-      const face = ref ? resolveFamilyToken(tokens, ref[1]) : null;
-      if (!face) continue;
-      name = face;
-    }
-    if (generic.includes(name)) continue;
-    if (/\sfallback$/.test(name)) continue;
-    resolved.push(name);
-  }
-  const stacks = uniqueValues(resolved);
-  if (stacks.length <= 4) {
-    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'PASS', detail: `${stacks.length} distinct font-family stacks — consistent` };
-  }
-  if (stacks.length > 8) {
-    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'FAIL', detail: `${stacks.length} distinct font-family stacks — typography drift` };
-  }
-  return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'WARN', detail: `${stacks.length} distinct font-family stacks` };
-}
-
-function checkD07BorderRadius(css: string): DriftCheckResult {
-  const values = extractValuesByProperty(css, ['border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius']);
-  const numeric = values.map((v) => {
-    const m = v.match(/([\d.]+)\s*(px|rem|em|%)/);
-    return m ? m[1] : null;
-  }).filter((v): v is string => v !== null);
-  const distinct = uniqueValues(numeric);
-  if (distinct.length <= 4) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `Border-radius values cluster on ${distinct.length} distinct radii` };
-  }
-  if (distinct.length > 8) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct border-radius values — radius drift` };
-  }
-  return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct border-radius values` };
-}
-
-function checkD08ShadowVariance(css: string): DriftCheckResult {
-  const shadows = extractValuesByProperty(css, ['box-shadow']);
-  const distinct = uniqueValues(shadows);
-  if (distinct.length <= 3) {
-    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'PASS', detail: `${distinct.length} distinct box-shadow values` };
-  }
-  if (distinct.length > 6) {
-    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'FAIL', detail: `${distinct.length} distinct box-shadow values — shadow drift` };
-  }
-  return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'WARN', detail: `${distinct.length} distinct box-shadow values` };
-}
-
-function checkD09TransitionVariance(css: string): DriftCheckResult {
-  const transitions = extractValuesByProperty(css, ['transition', 'transition-duration']);
-  const durations = transitions.map((t) => {
-    const m = t.match(/([\d.]+)\s*(ms|s)/g);
-    return m ? m.join(', ') : null;
-  }).filter((v): v is string => v !== null);
-  const distinct = uniqueValues(durations);
-  if (distinct.length <= 4) {
-    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'PASS', detail: `Transition durations cluster on ${distinct.length} distinct values` };
-  }
-  if (distinct.length > 8) {
-    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'FAIL', detail: `${distinct.length} distinct transition durations — motion drift` };
-  }
-  return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'WARN', detail: `${distinct.length} distinct transition durations` };
-}
-
-function checkD10ZIndex(css: string): DriftCheckResult {
-  const zValues = extractValuesByProperty(css, ['z-index']);
-  const numeric = zValues.map((z) => parseInt(z, 10)).filter((n) => !isNaN(n));
-  const max = Math.max(...numeric, 0);
-  const distinct = uniqueValues(numeric.map(String));
-  if (max <= 100 && distinct.length <= 10) {
-    return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'PASS', detail: `All z-index values within 0-${max}, ${distinct.length} distinct levels` };
-  }
-  if (max > 100 || distinct.length > 10) {
-    return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'FAIL', detail: `Z-index values reach ${max}, ${distinct.length} distinct levels — stacking chaos` };
-  }
-  return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'WARN', detail: `Z-index values reach ${max}, ${distinct.length} levels` };
-}
-
-function checkD11UndeclaredRatio(tokens: Record<string, string>, varRefs: string[]): DriftCheckResult {
-  if (varRefs.length === 0) {
-    return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'PASS', detail: 'No var() references in CSS' };
-  }
-  const declared = new Set(Object.keys(tokens));
-  const undeclared = varRefs.filter((r) => !declared.has(r));
-  const ratio = (undeclared.length / varRefs.length) * 100;
-  if (ratio < 5) {
-    return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'PASS', detail: `${Math.round(ratio)}% undeclared var() references (${undeclared.length}/${varRefs.length})` };
-  }
-  if (ratio > 20) {
-    return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'FAIL', detail: `${Math.round(ratio)}% undeclared — widespread token fabrication` };
-  }
-  return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'WARN', detail: `${Math.round(ratio)}% undeclared — moderate fabrication` };
-}
-
-function checkD12AliasChains(css: string, tokens: Record<string, string>): DriftCheckResult {
-  const chains = extractVarChains(css);
-  const declared = new Set(Object.keys(tokens));
-  const dangling = chains.filter((c) => !declared.has(c.primary) && (!c.fallback || !declared.has(c.fallback)));
-  if (dangling.length === 0) {
-    return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'PASS', detail: chains.length > 0 ? `All ${chains.length} alias chains resolve to declared values` : 'No alias chains found' };
-  }
-  if (dangling.length <= 2) {
-    return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'WARN', detail: `${dangling.length} dangling alias chains` };
-  }
-  return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'FAIL', detail: `${dangling.length} alias chains reference undeclared tokens — dangling references` };
-}
-
+// These were "inlined from drift route for self-containment", and that copy IS
+// the defect this change removes. It was drift's code as of an earlier date, and
+// drift then accumulated six documented fixes this copy never received: the
+// closing-brace bound, d07's geometric exclusions (a 50% circle and a 999px pill
+// are not radius-scale choices), d04's per-component parsing and token-scale
+// alignment, raised thresholds once research showed the old ones flagged
+// standard systems, and a var() exclusion so token REFERENCES are not counted
+// as hardcoded drift.
+//
+// Measured offline on real cohort sites before this fix:
+//   radix-ui.com   d07: drift 2 PASS   / this engine 18 FAIL
+//                  d08: drift 7 PASS   / this engine 149 FAIL
+//   vercel.com     d07: drift 17 FAIL  / this engine 31 FAIL
+//                  d08: drift 8 PASS   / this engine 239 FAIL
+// Those readings are published on /contracts/monitor and through an MCP tool, so
+// the engine was reporting fabricated design drift about other people's sites.
+//
+// runDriftChecks() is now the single implementation both routes call. Agreement
+// is structural rather than maintained by hand.
 // ── Score computation ────────────────────────────────────────────────────────
 
 function computeGrade(score: number): string {
@@ -812,21 +552,20 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   const tokens = extractRootTokens(allCss);
   const varRefs = extractVarRefs(allCss);
 
-  // Run the 12 drift checks (same as /drift)
-  const driftChecks: DriftCheckResult[] = [
-    checkD01TokenRegistry(tokens),
-    checkD02FabricatedTokens(tokens, varRefs),
-    checkD03InlineColors(allCss, tokens),
-    checkD04SpacingVariance(allCss),
-    checkD05ColorVariance(allCss),
-    checkD06FontFamily(allCss, tokens),
-    checkD07BorderRadius(allCss),
-    checkD08ShadowVariance(allCss),
-    checkD09TransitionVariance(allCss),
-    checkD10ZIndex(allCss),
-    checkD11UndeclaredRatio(tokens, varRefs),
-    checkD12AliasChains(allCss, tokens),
-  ];
+  // The 12 drift checks — the SAME implementation /api/drift runs.
+  //
+  // This call used to be a hand-copied list, and three of its differences were
+  // visible right here: it passed no tokens to d04 (so the check could never
+  // compare literals against the declared scale — the argument did not exist in
+  // the copied signature), and it never passed the attribute-scanned varRefs
+  // that drift unions in, so a token referenced only from a React style object
+  // was invisible to this engine's d02 and d11.
+  //
+  // The type widened from DriftCheckResult to CheckResult because the shared
+  // module returns PASS|FAIL|WARN|SKIP (drift can emit SKIP under scope
+  // filtering). They are structurally identical apart from that, and the
+  // narrower local type was only ever a copy of the wider one.
+  const driftChecks: CheckResult[] = runDriftChecks(allCss, tokens, varRefs);
 
   const { score, grade, pass, warn, fail } = computeDriftScore(driftChecks);
   const now = new Date().toISOString();
