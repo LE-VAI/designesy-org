@@ -934,13 +934,41 @@ function checkHeadingHierarchy(html: string): CheckResult {
  * Follows up to `maxHops` links and normalizes the result. Returns null when the
  * chain does not terminate in a name (a cycle, or an unknown token), so the
  * caller can skip rather than attribute a family it cannot identify.
+ *
+ * THE FIRST LOOKUP BUG, AND WHY IT MATTERED MORE THAN THE OVER-COUNT
+ * Callers pass the var() capture group, which EXCLUDES the leading `--`
+ * (`/var\(\s*--([\w-]+)/` captures `mono`, not `--mono`), while the token map is
+ * keyed WITH it (`tokens['--mono']`). So `tokens[name]` missed on the first
+ * lookup, the loop body never ran, and the function returned null for every
+ * aliased declaration — which the caller then `continue`d past, dropping the
+ * declaration from the count silently.
+ *
+ * The effect was the ORIGINAL defect inverted, and pointed the dangerous way.
+ * Counting spellings as families inflated the check (3 real faces -> 9) and
+ * failed correct work loudly, which is how it was found and fixed. Skipping
+ * every alias instead means a site whose fonts are ALL reached through tokens
+ * counts ZERO families and PASSES — a verdict about a sample the check never
+ * read. Under-counting is worse than over-counting here: a loud false FAIL gets
+ * investigated, a quiet false PASS is indistinguishable from real conformance.
+ *
+ * Measured on this resolver before the fix: five distinct faces reached through
+ * declared aliases reported "0 family/families" and PASS, while the same five
+ * declared directly reported "5 families" and WARN.
+ *
+ * Normalizing here (rather than at each call site) is deliberate: there are four
+ * copies of this function across the engines, and a fix that depends on every
+ * caller remembering the prefix is a fix that regresses the next time one is
+ * touched. Accepting both spellings makes the argument's contract explicit.
  */
 function resolveFamilyToken(
   tokens: Record<string, string>,
   name: string,
   maxHops = 4,
 ): string | null {
-  let current = tokens[name];
+  // Accept `mono` and `--mono` alike — callers pass the capture group, which
+  // omits the dashes, and the token map is keyed with them.
+  const key = name.startsWith('--') ? name : `--${name}`;
+  let current = tokens[key];
   for (let hop = 0; hop < maxHops && current; hop++) {
     const first = current.split(',')[0].trim().replace(/["']/g, '').toLowerCase();
     const ref = first.match(/^var\(\s*--([\w-]+)/);

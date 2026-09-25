@@ -114,6 +114,54 @@ jobs:
         if: always()
         run: node scripts/check-contract-version.js
 
+      # ── The gates below ran in `npm run build` but NOT here ────────────────
+      #
+      # This job's own comment promised it mirrors `npm run build` "step for
+      # step". It did not: the script chains twelve gates, this job invoked five.
+      # The other seven ran only when Vercel built for production — i.e. AFTER
+      # merge, on main, with no PR-level signal. That included
+      # check-use-client-first, the guard for the directive-ordering defect that
+      # took every route down on 2026-09-24, and check-count-up-seed, whose
+      # regression is invisible to tsc, lint, and the prerender alike.
+      #
+      # The practical effect: a PR could pass CI green and only fail at deploy.
+      # Vercel building it is not a substitute — by then it is merged.
+      #
+      # Restored to parity 2026-09-25. If a gate is added to `npm run build`,
+      # add it here in the same commit; the two lists are asserted equal by
+      # scripts/check-gate-parity.js so they cannot silently diverge again.
+      - name: Probe backticks
+        if: always()
+        run: node scripts/check-probe-backticks.js
+
+      - name: Count-up seed
+        if: always()
+        run: node scripts/check-count-up-seed.js
+
+      - name: d02 style-attribute coverage
+        if: always()
+        run: node scripts/check-d02-coverage.js
+
+      - name: MCP tool parity
+        if: always()
+        run: node scripts/check-mcp-tool-parity.js
+
+      - name: Count literal
+        if: always()
+        run: node scripts/check-count-literal.js
+
+      - name: use-client directive first
+        if: always()
+        run: node scripts/check-use-client-first.js
+
+      - name: Hero a11y name
+        if: always()
+        run: node scripts/check-hero-a11y-name.js
+
+      - name: Gate parity (build script vs CI)
+        if: always()
+        run: node scripts/check-gate-parity.js
+
       # Cache the Next.js build output for faster re-runs on the same PR.
       - name: Cache .next
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

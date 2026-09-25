@@ -1,10 +1,10 @@
 {
-  "corpus_version": "1.0.0",
+  "corpus_version": "1.1.0",
   "engine_version": "1.0.0",
-  "fixtures": 15,
-  "pinned_checks": 24,
-  "pinned_checks_matching": 24,
-  "digest": "670f2a529cafdea4b43884e88284210d0b4cb78a5d3ca0f3e1aa755bf7ac4c30",
+  "fixtures": 18,
+  "pinned_checks": 27,
+  "pinned_checks_matching": 27,
+  "digest": "cd567f98852ebd482ace7e4d53190594715de8b2c4d84025ec7ed459a8293673",
   "note": "Known-answer fixtures for the Designesy scoring engine. Each fixture pins expected verdicts for named checks, and `observed` records what the engine actually returned. A mismatch between expected and observed means the engine changed behavior for a known input — either a regression, or an intentional change whose pin was not yet updated. Fixtures whose name starts with \"broken-\" are deliberately defective pages; they exist so the corpus can catch a check that stopped detecting something, which a corpus of well-formed pages alone cannot do.",
   "fixtures_detail": [
     {
@@ -480,6 +480,87 @@
           "observed": "WARN",
           "matches": true,
           "why": "Prose is constrained, but at 95ch the line length exceeds the 75ch ceiling the check exists to enforce."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "font-aliases-resolve-to-faces",
+      "referent": "A design system that reaches all five of its distinct typefaces through declared :root tokens — the shape next/font produces, and the shape the site itself ships. Five faces behind aliases is genuine typography drift and must be reported as such; the failure mode pinned here is a resolver that skips aliased declarations and reports 0, PASSING a page it never read.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.3,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 8,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v26",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Five distinct faces reached through var() aliases: past the recommended 3, below the >5 FAIL threshold. Counting 0 here means the aliases were skipped rather than resolved — the under-count that passes unread input."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "font-alias-control-five-declared-directly",
+      "referent": "The control for the fixture above: the SAME five faces declared directly, with no token layer. It exists so the aliased fixture cannot pass by having both sides change together.",
+      "scope": "universal",
+      "observed": {
+        "score": 94.3,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 8,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v26",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Five faces declared without any alias layer — the reference reading the aliased fixture must match. If this changes while the aliased one does not, the comparison itself has been lost."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "font-alias-two-hop-chain",
+      "referent": "A two-hop alias chain, which is the shape the live site ships: --sans -> var(--font-sans) -> 'Schibsted Grotesk'. Resolving one level is not enough — the intermediate literal 'var(--font-sans)' would then be attributed as its own family, double-counting one typeface.",
+      "scope": "universal",
+      "observed": {
+        "score": 95.4,
+        "grade": "A",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 7,
+          "skip": 8,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v26",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "Exactly two faces resolve through a two-hop chain, within the recommended three. This is the site's own shape and must keep reading PASS — a resolver returning the intermediate 'var(--font-body)' spelling, or skipping the chain and counting 0, would both be wrong here."
         }
       ],
       "scoreBetween": null
