@@ -1,5 +1,7 @@
 'use client';
 
+import { ENGINE_CHECK_COUNT } from './check-definitions';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -43,7 +45,7 @@ type SearchItem = {
 
 const INDEX: SearchItem[] = [
   // Verify
-  { title: 'Score a site', href: '/score', group: 'Verify', keywords: 'verify audit grade checks engine test url', meta: '42-check engine' },
+  { title: 'Score a site', href: '/score', group: 'Verify', keywords: 'verify audit grade checks engine test url', meta: `${ENGINE_CHECK_COUNT}-check engine` },
   { title: 'Drift radar', href: '/drift', group: 'Verify', keywords: 'drift ai generated ui token fabrication variance off contract', meta: '12-check drift' },
   { title: 'AI Readiness score', href: '/readiness', group: 'Verify', keywords: 'ai readiness machine readable llms.txt agent.json mcp design.md maturity', meta: '10-check readiness' },
   { title: 'Guardrails', href: '/guardrails', group: 'Verify', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint enforce', meta: '5-check emitter' },

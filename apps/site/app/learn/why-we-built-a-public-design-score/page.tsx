@@ -155,7 +155,7 @@ export default function WhyPublicScorePage() {
               <span className="row-index">02</span>
               <span className="row-body">
                 <span className="row-title">Score any URL</span>
-                <span className="row-meta">Run the 42-check engine against your own site</span>
+                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
               </span>
             </Link>
             <Link

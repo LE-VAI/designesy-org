@@ -81,7 +81,7 @@ export default function MaturityPage() {
             The six axes map to the 14 weighted categories in the Designesy{' '}
             {CONTRACT_VERSION} contract. After the self-assessment, the highest-leverage
             next step is almost always a deterministic score — run the same
-            42-check engine against your live site and see where
+            {ENGINE_CHECK_COUNT}-check engine against your live site and see where
             self-perception meets shipped reality.
           </p>
           <p className="surface-note">
