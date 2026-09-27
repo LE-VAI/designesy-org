@@ -3153,22 +3153,6 @@ a.surface-card:active {
    Mirror of the pillar pattern (number + title + count + description + list),
    keeping the cadence-rule typography stack. */
 
-.engines-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  margin-top: var(--space-32);
-  align-items: stretch;
-}
-
-@media (max-width: 1080px) {
-  .engines-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 640px) {
-  .engines-grid { grid-template-columns: 1fr; }
-}
-
 .engine-card {
   display: flex;
   flex-direction: column;
@@ -3177,74 +3161,6 @@ a.surface-card:active {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-}
-
-.engine-card-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-fine-60);
-  flex-wrap: wrap;
-}
-
-.engine-card-num {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.engine-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-  margin: 0;
-}
-
-.engine-card-count {
-  margin-left: auto;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--signal-light);
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.engine-card-desc {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.55;
-  margin: 0;
-  text-wrap: pretty;
-}
-
-.engine-card-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-35);
-  font-size: 0.82rem;
-  color: var(--ink);
-}
-
-.engine-card-list li {
-  position: relative;
-  padding-left: var(--space-16);
-  line-height: 1.45;
-}
-
-.engine-card-list li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--signal-light);
 }
 
 /* Checkmark list — what something includes */
@@ -7935,48 +7851,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   z-index: 1;
 }
 
-.bundle-tab {
-  padding: var(--space-8) var(--space-16);
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 400;
-  cursor: pointer;
-  font-family: inherit;
-  position: relative;
-  z-index: 0;
-  transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-              color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.bundle-tab:hover {
-  color: var(--ink);
-}
-
-.bundle-tab.is-active {
-  background: var(--surface-2);
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* Copy button — pushed to the right, styled as an outlined button */
-.bundle-tab--copy {
-  margin-left: auto;
-  padding: var(--space-8) var(--space-16);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 6px);
-  color: var(--muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.bundle-tab--copy:hover {
-  color: var(--ink);
-  border-color: var(--ink);
-}
 
 .score-tab-count {
   font-size: 0.7rem;
@@ -9543,218 +9418,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* --- Composite report (/report page) — visual container system --- */
 
-.report-composite {
-  max-width: var(--maxw);
-}
-
-.report-composite-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-24);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-32);
-}
-
-.report-composite-summary {
-  flex: 1;
-  min-width: 200px;
-}
-
-.report-composite-eyebrow {
-  font-size: 0.8rem;
-  color: var(--muted-dim);
-  margin: 0 0 var(--space-4);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.report-composite-grade-line {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0 0 var(--space-8);
-}
-
-.report-composite-counts {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin: 0;
-}
-
-.report-composite-share {
-  margin-left: auto;
-}
-
 /* Sub-engine cards grid */
-.report-sub-engines {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-12);
-  margin-bottom: var(--space-24);
-}
-
-.report-sub-engine-card {
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--space-16) var(--space-20);
-}
-
-.report-sub-engine-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  margin: 0 0 var(--space-8);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.report-sub-engine-grade {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 var(--space-4);
-}
-
-.report-sub-engine-grade--null {
-  color: var(--muted-dim);
-}
-
-.report-sub-engine-counts {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0;
-}
-
-.report-sub-engine-desc {
-  font-size: 0.7rem;
-  color: var(--muted-dim);
-  margin: var(--space-4) 0 0;
-}
 
 /* Engine tab navigation */
-.report-engine-tabs {
-  display: flex;
-  gap: var(--space-8);
-  margin-bottom: var(--space-16);
-  border-bottom: 1px solid var(--line);
-  padding-bottom: var(--space-8);
-  flex-wrap: wrap;
-}
-
-.report-engine-tab {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: var(--space-fine-40) var(--space-fine-80);
-  cursor: pointer;
-  transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    border-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.report-engine-tab.active {
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-}
-
-.report-engine-tab:focus-visible {
-  outline: 2px solid var(--signal-light);
-  outline-offset: 2px;
-}
 
 /* Engine content container */
-.report-engine-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
 
 /* Empty state */
-.report-empty {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin: var(--space-16) 0;
-}
 
 /* Status summary bar — colored pills showing pass/warn/fail counts */
-.report-status-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-12);
-  flex-wrap: wrap;
-  padding: var(--space-fine-60) var(--space-fine-85);
-  background: var(--surface-soft);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius-sm);
-}
-
-.report-status-bar-total {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-status-bar-pills {
-  display: flex;
-  gap: var(--space-fine-40);
-  flex-wrap: wrap;
-}
-
-.report-status-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: var(--space-fine-15) var(--space-8);
-  border-radius: 3px;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-status-pill--pass {
-  color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 12%, transparent);
-}
-
-.report-status-pill--warn {
-  color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 12%, transparent);
-}
-
-.report-status-pill--fail {
-  color: var(--error);
-  background: color-mix(in srgb, var(--error) 12%, transparent);
-}
-
-.report-status-pill--skip {
-  color: var(--muted);
-  background: var(--surface-soft);
-}
-
-.report-status-pill--manual {
-  color: var(--muted);
-  background: var(--surface-soft);
-}
 
 /* Check body — expanded detail inside <details> */
-.report-check-body {
-  padding: var(--space-12) var(--space-fine-85);
-  border-top: 1px solid var(--line-faint);
-  background: var(--surface);
-}
-
-.report-check-body-detail {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.55;
-  margin: 0;
-  text-wrap: pretty;
-}
 
 /* --- Principle list (/docs page) — responsive grid for 9 principles --- */
 
@@ -9771,19 +9445,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 @media (max-width: 720px) {
-  .report-composite-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-16);
-  }
-
-  .report-composite-share {
-    margin-left: 0;
-  }
-
-  .report-sub-engines {
-    grid-template-columns: 1fr;
-  }
 
   .report-check-detail {
     display: none;
@@ -11746,44 +11407,9 @@ select {
 
 /* ── Maturity self-assessment ────────────────────────────────────────────── */
 
-.maturity-option:hover {
-  border-color: var(--signal) !important;
-  background: var(--surface-hover) !important;
-}
-
-.maturity-option:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 2px;
-}
-
-.maturity-results .row {
-  cursor: default;
-}
-
 /* Radar chart — reduced motion: no transition on polygon */
-@media (prefers-reduced-motion: reduce) {
-  .maturity-results polygon,
-  .maturity-results circle {
-    transition: none !important;
-  }
-}
 
 /* ── M3 → DTCG bridge ─────────────────────────────────────────────────────── */
-
-.m3-bridge-tool textarea:focus {
-  border-color: var(--signal);
-  outline: 2px solid var(--signal);
-  outline-offset: 0;
-}
-
-.m3-bridge-tool textarea::placeholder {
-  color: var(--muted-dim);
-  opacity: 0.7;
-}
-
-.m3-bridge-tool pre {
-  tab-size: 2;
-}
 
 /* ── Spring physics validator ─────────────────────────────────────────────── */
 
@@ -11943,93 +11569,10 @@ select {
    shows what the tool produces. Solves the 70% empty-hero problem on
    /drift /monitor /readiness /guardrails /compare without changing
    the form's contract. */
-.monitor-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: var(--space-20);
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .monitor-hero-grid { grid-template-columns: 1fr; }
-}
-.monitor-hero-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  padding: var(--space-20);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--inner-light);
-  /* Subtle accent on the right column so the eye lands on the preview
-     before the form. No border-left so it stays a peer, not a callout. */
-}
-
-.monitor-preview-note {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 0;
-}
 
 /* SnapshotTimelineStrip — horizontal timeline of timestamped dots.
    Single-line, 100% width. Grade-colored dots, faint midline, first/last
    score labels. Sample badge in preview mode. */
-.timeline-strip {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.timeline-strip-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: var(--muted);
-}
-.timeline-strip-title { margin: 0; flex: 1; }
-.timeline-strip-sample {
-  font-size: 0.6rem;
-  color: var(--muted-dim);
-  background: var(--surface-soft);
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.06em;
-}
-.timeline-strip-delta {
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.timeline-strip-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  /* Stroke / fill use inline `var(--...)` so single-color rendering is
-     guaranteed regardless of host cascade order. */
-}
-.timeline-strip-label {
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--mono);
-  fill: var(--muted);
-}
-.timeline-strip-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.6rem;
-  font-family: var(--mono);
-  color: var(--muted-dim);
-  text-transform: none;
-  letter-spacing: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .timeline-strip-svg { transition: none; }
-}
 
 /* v2026-08-25-trend: delta + sparkline group.
    Wraps the score-delta-chip and ScoreSparkline together so they sit
