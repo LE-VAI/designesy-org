@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
+import '../instrument.css';
+import '../engine.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { registry } from '../lib/engine/registry';
+import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
 import { CompareForm } from './compare-form';
 
 export const dynamic = 'force-dynamic';
@@ -34,46 +39,45 @@ export default async function ComparePage({ searchParams }: { searchParams?: Pro
   const params = await searchParams;
   const initialA = typeof params?.a === 'string' ? params.a : '';
   const initialB = typeof params?.b === 'string' ? params.b : '';
+  const reg = registry('compare');
 
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Verification</p>
-          <h1 className="surface-title" data-scramble>Compare design systems</h1>
-          <p className="surface-lede">
-            Compare two design systems from live URLs — diff tokens added,
-            removed, renamed, value-changed, scale drift, contrast drift, and
-            structure delta. The only URL-scoped design-token diff engine.
-          </p>
-          <p className="surface-note">
-            Also serves as the diff engine inside /monitor (m08 token-set
-            mutation detection). 8 emission checks plus score delta on both sites.
-          </p>
-        </section>
+      <main id="main-content" data-pagefind-body className="eg" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/compare"
+          name="Compare"
+          thesis="Diff two live design systems token by token: what one has and the other lacks, what was renamed or changed, how far each scale moved, and which colors lost contrast."
+          facts={['two URLs', `${reg.count} dimensions`, 'compiled CSS']}
+          contract={{ href: '/contracts/compare', label: `contract ${reg.version} ${reg.status}` }}
+        />
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <CompareForm initialA={initialA} initialB={initialB} />
-        </section>
+        <CompareForm initialA={initialA} initialB={initialB} registry={{ checks: reg.checks, groups: reg.groups, machine: reg.machine }} />
 
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">What it does</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            The compare engine fetches both URLs in parallel, extracts all CSS
-            and :root custom properties from each, and computes a structured diff
-            across 8 dimensions: token-added, token-removed, token-renamed
-            (heuristic Levenshtein), token-value-changed, scale-stop-changed,
-            contrast-drift-per-pair, structure-delta, and score-delta (runs
-            /score on both URLs and diffs).
-          </p>
-          <p className="surface-note">
-            Scoring: 8 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/8) ×
-            100. The compare score reflects diff completeness (did the engine
-            produce a full diff), not design quality — design quality is the
-            /score surface. The diff result itself is the product.
-          </p>
-        </section>
+        <EngineMethod
+          steps={[
+            { title: 'Fetch both', text: 'Each URL is fetched fresh, with every stylesheet it links.' },
+            { title: 'Extract two token sets', text: 'Every custom property each site declares, by name and value.' },
+            { title: 'Diff 8 dimensions', text: 'Names on one side only, likely renames, changed values, scale stops, structure, contrast and both contract scores.' },
+            { title: 'Grade the diff', text: 'Each dimension computed counts. The grade reports how complete the diff is; the diff is the result.' },
+          ]}
+          formula={
+            <>
+              <span><b>completeness</b> = (pass + warn × 0.5) ÷ 8 × 100</span>
+              <span><b>renamed</b> = names within 2 edits, with different values</span>
+              <span>Static analysis of both sites: no browser, no login.</span>
+            </>
+          }
+        />
+
+        <EngineNext
+          items={[
+            { title: 'Watch one of them', desc: 'Monitor re-runs the drift checks on a site and flags tokens that change between runs.', route: '/monitor', carry: true },
+            { title: 'Score one of them', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one composite grade.`, route: '/score', carry: true },
+            { title: 'Freeze the one you trust', desc: "Guardrails turns a site's tokens into a build contract for AI coding agents.", route: '/guardrails', carry: true },
+          ]}
+        />
       </main>
       <Footer />
     </>

@@ -283,11 +283,9 @@
    text-shadow — no border, padding, or radius. The values stay plain rgb()
    because exotic color functions can be dropped silently by a hostile engine,
    and an invisible highlight is worse than none. */
-read-along {
-  display: block;
-}
 
 read-along {
+  display: block;
   /* Plain rgb() on purpose. The package documents that ::highlight() silently
      DROPS a value it cannot parse, and an invisible highlight is worse than no
      highlight API — so color-mix()/oklab are deliberately avoided here even
@@ -826,27 +824,6 @@ p {
   font-weight: 600;
 }
 
-.nav-links a::after {
-  content: "";
-  position: absolute;
-  left: 0.65rem;
-  right: 0.65rem;
-  bottom: 0.2rem;
-  height: 1px;
-  background: var(--signal);
-  opacity: 0;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform var(--duration-fast) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
-}
-
-.nav-links a.is-active::after,
-.nav-links a[aria-current="page"]::after {
-  opacity: 0.9;
-  transform: scaleX(1);
-}
-
 .nav-links a:focus-visible {
   outline: 2px solid var(--signal-light);
   outline-offset: 2px;
@@ -1080,17 +1057,6 @@ p {
    The one specular highlight on lit tiles and cells, the ink on an accent
    fill, and the shade used to deepen a status fill. Declared once so every
    control draws them from the palette (drift d05/d08). */
-:root {
-  --lv-shine: rgba(255, 255, 255, 0.34);
-  --lv-shine-soft: rgba(255, 255, 255, 0.26);
-  --lv-shade: #000;
-  --lv-warn-ink: #1d1400;
-  --lv-flag-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
-}
-
-[data-theme="light"] {
-  --lv-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
-}
 
 /* --- Motion toggle (WCAG 2.2.2 pause) — see lib/motion-toggle.tsx ---
    One attribute freezes every CSS animation site-wide; the rotator and the
@@ -1254,14 +1220,6 @@ html[data-motion="paused"] *::after {
 
 /* --- input row --- */
 
-.cmdk-input-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-fine-65);
-  padding: var(--space-fine-110) var(--space-fine-110);
-  border-bottom: 1px solid var(--line);
-}
-
 .cmdk-input-icon {
   flex-shrink: 0;
   color: var(--signal-light);
@@ -1290,6 +1248,11 @@ html[data-motion="paused"] *::after {
 }
 
 .cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-fine-65);
+  padding: var(--space-fine-110) var(--space-fine-110);
+  border-bottom: 1px solid var(--line);
   transition: box-shadow var(--duration-quick) var(--ease-out);
 }
 
@@ -1444,7 +1407,7 @@ html[data-motion="paused"] *::after {
 .cmdk-item[data-kind="score"] .cmdk-item-icon {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--signal-light), var(--signal));
-  box-shadow: inset 0 1px 0 var(--lv-shine-soft);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
 }
 
 .cmdk-item-enter {
@@ -1799,16 +1762,6 @@ html[data-motion="paused"] *::after {
 
 /* Capability hint below the score input — quiet, single line */
 
-
-
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-12);
-  align-items: center;
-}
-
 /* When a score-share-btn sits next to a .button.primary in hero-actions,
    lift the share button to match the primary's 44px height + 0.875rem font
    so they read as a peer pair, not a mismatched duo. */
@@ -1818,160 +1771,8 @@ html[data-motion="paused"] *::after {
   font-size: 0.875rem;
   border-radius: var(--radius);
 }
-
-/* --- Buttons --- */
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: var(--space-fine-65) var(--space-20);
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  border-radius: var(--radius);
-  transition: transform 160ms var(--ease-out), background 0.2s var(--ease),
-    border-color 0.2s var(--ease);
-  cursor: pointer;
-}
-
-.button:active {
-  transform: scale(0.97);
-}
-
-.button.primary {
-  background: var(--signal);
-  color: var(--paper-on-signal);
-  border: 1px solid var(--signal);
-  box-shadow: var(--inner-light), 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent) inset;
-  transition: background var(--duration-quick) var(--ease-out),
-              border-color var(--duration-quick) var(--ease-out),
-              box-shadow var(--duration-quick) var(--ease-out),
-              transform var(--duration-quick) var(--ease-out),
-              filter var(--duration-quick) var(--ease-out);
-}
-
-.button.primary:hover {
-  background: var(--signal-light);
-  border-color: var(--signal-light);
-  box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
-}
-
-.button.primary:active {
-  background: var(--signal);
-  filter: brightness(0.92);
-  transform: scale(0.97);
-  box-shadow: var(--inner-light);
-}
-
-.button.ghost {
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-}
-
-.button.ghost:hover {
-  background: var(--surface-hover);
-  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
-}
-
-/* --- Pipeline diagram — continuous rail, stable across widths --- */
-
-.pipeline {
-  padding: var(--space-36) 0 var(--space-44);
-  margin-bottom: var(--space-24);
-  border-top: 1px solid var(--line-faint);
-  border-bottom: 1px solid var(--line-faint);
-}
-
-.pipeline-track::before {
-  content: "";
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 0.55rem;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--line) 8%,
-    var(--line) 92%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-.pipeline-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-fine-45);
-  padding: 0 var(--space-fine-35);
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.pipeline-step.is-end .pipeline-node {
-  border-color: var(--signal);
-  background: var(--signal-dim);
-}
-
-.pipeline-step.is-end .pipeline-node-core {
-  background: var(--signal);
-  width: 0.4rem;
-  height: 0.4rem;
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.pipeline-step.is-end .pipeline-label {
-  color: var(--ink);
-}
-
-.pipeline-step.is-end .pipeline-num {
-  color: var(--signal-light);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .pipeline-step:hover .pipeline-node {
-    border-color: var(--signal-light);
-  }
-
-  .pipeline-step:hover .pipeline-node-core {
-    background: var(--signal-light);
-    transform: scale(1.15);
-  }
-
-  .pipeline-step:hover .pipeline-label {
-    color: var(--ink);
-  }
-}
-
-.pipeline-step:focus-within .pipeline-node {
-  outline: 2px solid var(--signal-light);
-  outline-offset: 2px;
-}
-
-/* --- Sections --- */
-
-.section {
-  padding: clamp(var(--space-56), 8vw, var(--space-104)) 0;
-}
-
-/* Scroll-driven depth — sections drift up 8px as they enter the viewport,
-   purely via native CSS scroll-driven animations. Progressive enhancement:
-   browsers without animation-timeline support (Firefox, older Safari) skip
-   this and sections render statically. No JS, no layout shift, no jank.
-   Reduced-motion users get the static fallback via the media query. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .section > * {
-      animation: section-depth linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 100%;
-    }
     /* Transform-only reveal: opacity is a contrast smell for WCAG 1.4.3 —
        sampling at any scroll position must still show AA 4.5:1 text. */
     @keyframes section-depth {
@@ -1981,1059 +1782,19 @@ html[data-motion="paused"] *::after {
   }
 }
 
-
-/* --- Pillar grid --- */
-
-
-/* Subgrid: cards in the same row share track sizing so numbers, titles, and
-   descriptions align horizontally across the row. Falls back gracefully —
-   browsers without subgrid support use the implicit row sizing. */
-
-
-/* --- Surfaces grid --- */
-
-
-.surface-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 120px;
-  padding: var(--space-20);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light);
-  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
-    background 0.2s var(--ease), box-shadow 0.2s var(--ease);
-}
-
-/* Subgrid: surface cards in the same row share track sizing so meta, label,
-   and desc align horizontally. Falls back to flex column without subgrid. */
-@supports (grid-template-rows: subgrid) {
-  .surface-card {
-    display: grid;
-    grid-row: span 3;
-    grid-template-rows: subgrid;
-    row-gap: var(--space-fine-45);
-  }
-  .surface-card-meta { grid-row: 1; }
-  .surface-card-label { grid-row: 2; }
-  .surface-card-desc { grid-row: 3; }
-}
-
-.surface-card:hover {
-  border-left-color: var(--signal);
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-  background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light), 0 8px 24px color-mix(in srgb, var(--paper) 25%, transparent);
-}
-
-a.surface-card:active {
-  transform: scale(0.985);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover {
-    transform: perspective(600px)
-      rotateX(var(--tilt-rx, 0deg))
-      rotateY(var(--tilt-ry, 0deg))
-      translateY(-1px);
-  }
-}
-
-
-.surface-card:hover .surface-card-arrow {
-  color: var(--ink);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-arrow {
-    transform: translateX(2px);
-  }
-}
-
-/*
-  ==========================================================================
-  Site-wide effect enhancements — spotlight, sweep, tilt, fill,
-  underline, slide, shake. Applied to existing components using
-  contract tokens. Respects prefers-reduced-motion.
-  ==========================================================================
-*/
-
-/* --- Spotlight: cursor-tracking glow on field cards --- */
-.field-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius);
-  background: radial-gradient(
-    circle 120px at var(--spot-x, 50%) var(--spot-y, 30%),
-    var(--signal-dim),
-    transparent 70%
-  );
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
-  transition: opacity 280ms var(--ease-out);
-}
-.field-card {
-  position: relative;
-  overflow: hidden;
-}
-.field-card:hover::before {
-  opacity: 0.5;
-}
-.field-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Spotlight: cursor-tracking glow on surface cards --- */
-.surface-card {
-  position: relative;
-  overflow: hidden;
-}
-.surface-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius);
-  background: radial-gradient(
-    circle 100px at var(--spot-x, 50%) var(--spot-y, 50%),
-    var(--signal-dim),
-    transparent 70%
-  );
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
-  transition: opacity 200ms var(--ease);
-}
-.surface-card:hover::before {
-  opacity: 0.5;
-}
-.surface-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Sweep: signal line scans across the top edge of surface cards --- */
-.surface-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--signal);
-  transform: translateX(-100%);
-  pointer-events: none;
-  z-index: 2;
-  transition: transform 400ms var(--ease-out);
-}
-.surface-card:hover::after {
-  transform: translateX(100%);
-}
-
-/* --- Tilt: 3D tilt toward cursor on field cards (fine pointer only) --- */
-/* Tilt is merged into the .field-card:hover rule above to avoid
-   transform conflicts with the existing lift + active states. */
-@media (hover: hover) and (pointer: fine) {
-  .field-card {
-    transition: transform 120ms var(--ease-out),
-      border-color 0.2s var(--ease), background 0.2s var(--ease);
-  }
-}
-
-/* --- Fill: signal-dim washes up into the pipeline node on hover --- */
-.pipeline-step:hover .pipeline-node {
-  background: var(--signal-dim);
-  border-color: var(--signal);
-}
-.pipeline-step:hover .pipeline-node-core {
-  background: var(--signal);
-  transform: scale(1.2);
-}
-
-/* --- Underline: signal underline grows under nav links on hover --- */
-.nav-links a::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  right: 50%;
-  bottom: 0.2rem;
-  height: 1px;
-  background: var(--signal);
-  opacity: 0;
-  transition: left 250ms var(--ease-out), right 250ms var(--ease-out),
-    opacity 200ms var(--ease);
-}
-.nav-links a:hover::after {
-  left: 0.65rem;
-  right: 0.65rem;
-  opacity: 0.7;
-}
-/* Active link keeps its static underline, overrides the hover animation */
-.nav-links a.is-active::after,
-.nav-links a[aria-current="page"]::after {
-  left: 0.65rem;
-  right: 0.65rem;
-  opacity: 0.9;
-  transition: none;
-}
-
-/* --- Slide: surface card label slides right, desc slides in on hover --- */
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-label {
-    transform: translateX(4px);
-  }
-  .surface-card:hover .surface-card-desc {
-    color: var(--ink);
-  }
-}
-
-/* --- Shake: non-link elements jitter on tap --- */
-.principle.is-shaking,
-.pipeline-step.is-shaking {
-  animation: site-shake 400ms var(--ease-out);
-}
-@keyframes site-shake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-4px); }
-  40% { transform: translateX(3px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(1px); }
-}
-
-/* --- Reduced motion: disable all site-wide effects --- */
-@media (prefers-reduced-motion: reduce) {
-  .field-card::before,
-  .surface-card::before,
-  .surface-card::after {
-    display: none;
-  }
-  /* Keep field-card hover tilt — it's interaction feedback, not motion.
-     The --tilt-rx/--tilt-ry vars are set by EffectEnhancer on pointermove. */
-  .nav-links a::after {
-    display: none;
-  }
-  .principle.is-shaking,
-  .pipeline-step.is-shaking {
-    animation: none;
-  }
-  .surface-card:hover .surface-card-label,
-  .surface-card:hover .surface-card-desc {
-    transform: none;
-  }
-}
-
-/*
-  ==========================================================================
-  Site-wide subtle enhancements — second pass
-  Extends lab-cards, rows, check-cells, definitions, buttons, toggles,
-  principles, footer links, lab-card children, surface-item cards,
-  token-table rows, and copy affordances. All token-driven, all
-  reduced-motion safe (guard at bottom).
-  ==========================================================================
-*/
-
-/* --- Lab cards: sweep on top edge + label slide on hover --- */
-.lab-card {
-  position: relative;
-  overflow: hidden;
-}
-.lab-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--signal);
-  transform: translateX(-100%);
-  pointer-events: none;
-  z-index: 2;
-  transition: transform 400ms var(--ease-out);
-}
-.lab-card:hover::after {
-  transform: translateX(100%);
-}
-.lab-card-title,
-.lab-card-lede {
-  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
-}
-@media (hover: hover) and (pointer: fine) {
-  .lab-card:hover .lab-card-title {
-    transform: translateX(3px);
-  }
-  .lab-card:hover .lab-card-lede {
-    color: var(--ink);
-  }
-}
-
-/* --- Rows: row-index brighten on hover --- */
-.row-index {
-  transition: color 200ms var(--ease);
-}
-.row:hover .row-index {
-  color: var(--signal-light);
-}
-
-/* --- Check cells: fill sweep from bottom + arrow slide --- */
-.check-cell {
-  position: relative;
-  overflow: hidden;
-}
-.check-cell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--signal-dim);
-  transform: translateY(100%);
-  transition: transform 250ms var(--ease-out);
-  z-index: 0;
-  pointer-events: none;
-}
-.check-cell:hover::before {
-  transform: translateY(0);
-  opacity: 0.3;
-}
-.check-cell > * {
-  position: relative;
-  z-index: 1;
-}
-@media (hover: hover) and (pointer: fine) {
-  a.check-cell:hover .check-cell-title {
-    transform: translateX(2px);
-  }
-}
-
-/* --- Definitions: signal sweep across left border on hover --- */
-.definition {
-  position: relative;
-  overflow: hidden;
-}
-.definition::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 300ms var(--ease-out);
-  z-index: 0;
-}
-.definition:hover::after {
-  transform: scaleY(1);
-}
-
-/* --- Buttons: signal glow ring on hover (primary) --- */
-.button.primary {
-  position: relative;
-  overflow: visible;
-}
-.button.primary::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  border: 1px solid var(--signal-light);
-  opacity: 0;
-  transform: scale(1.04);
-  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
-  pointer-events: none;
-  z-index: -1;
-}
-.button.primary:hover::after {
-  opacity: 0.4;
-  transform: scale(1);
-}
-
-/* --- Ghost buttons: signal-dim underline sweep --- */
-.button.ghost {
-  position: relative;
-  overflow: hidden;
-}
-.button.ghost::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background: var(--signal);
-  transform: translateX(-100%);
-  transition: transform 300ms var(--ease-out);
-  pointer-events: none;
-}
-.button.ghost:hover::after {
-  transform: translateX(0);
-}
-
-/* --- Toggle (pillar): signal left-edge trace on hover --- */
-
-
-/* --- Principles: signal-dot brighten + title slide on hover --- */
-.principle {
-  transition: transform 200ms var(--ease-out);
-}
-.principle:hover .principle-num::before {
-  background: var(--signal-light);
-  box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
-}
-.principle-body h3 {
-  transition: transform 200ms var(--ease-out), color 200ms var(--ease);
-}
-.principle-body p {
-  transition: color 200ms var(--ease);
-  text-wrap: pretty;
-}
-@media (hover: hover) and (pointer: fine) {
-  .principle:hover .principle-body h3 {
-    transform: translateX(3px);
-  }
-  .principle:hover .principle-body p {
-    color: var(--ink);
-  }
-}
-
-/* --- Footer links: signal underline grow --- */
-.footer-dock-pill,
-.footer-link {
-  position: relative;
-}
-.footer-dock-pill::after,
-.footer-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.footer-dock-pill:hover::after,
-.footer-link:hover::after {
-  right: 0;
-}
-
-/* --- Lab meta links: signal underline grow --- */
-.lab-meta-item a {
-  position: relative;
-}
-.lab-meta-item a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.lab-meta-item a:hover::after {
-  right: 0;
-}
-
-/* --- Lab crumbs: signal underline grow --- */
-.lab-crumb {
-  position: relative;
-}
-.lab-crumb::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.lab-crumb:hover::after {
-  right: 0;
-}
-
-/* --- Text links: signal underline grow (replaces static border) --- */
-.text-link {
-  position: relative;
-  /* Readable-by-default: --ink (≥ 7:1) carries the text; the brand-signal
-     moment is carried by the hover underline grow below, not by dim text. */
-  color: var(--ink);
-  border-bottom: 1px solid var(--line-strong);
-  overflow: visible;
-}
-.text-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.text-link:hover::after {
-  right: 0;
-}
-
-/* --- Scope path links: signal underline grow --- */
-.scope-path-link,
-.scope-line a {
-  position: relative;
-}
-.scope-path-link::after,
-.scope-line a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.scope-path-link:hover::after,
-.scope-line a:hover::after {
-  right: 0;
-}
-
-/* --- Sense toggles: signal ring on hover when active --- */
-.sense-toggle[aria-pressed="true"]:hover {
-  border-color: var(--signal-light);
-  box-shadow: 0 0 0 2px var(--signal-dim);
-}
-
-/* --- Copy prompt button: signal glow on hover --- */
-.copy-prompt-btn {
-  position: relative;
-  overflow: visible;
-}
-.copy-prompt-btn::after {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  border: 1px solid var(--signal-dim);
-  opacity: 0;
-  transition: opacity 200ms var(--ease);
-  pointer-events: none;
-}
-.copy-prompt-btn:hover::after {
-  opacity: 0.6;
-}
-
-/* --- Copy row: signal left trace on hover --- */
-/* CopyRow uses class="row", already covered by .row::above */
-
-/* --- Wordmark (nav): signal dot brighten on hover --- */
-.wordmark {
-  position: relative;
-}
-.wordmark:hover .dot {
-  animation: dot-brighten 400ms var(--ease-out);
-}
-@keyframes dot-brighten {
-  0% { color: var(--signal-access); }
-  50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
-  100% { color: var(--signal-access); }
-}
-
-/* --- Field card title + lede: slide on hover (parity with surface-card) --- */
-
-@media (hover: hover) and (pointer: fine) {
-  .field-card:hover .field-card-title {
-    transform: translateX(2px);
-  }
-  .field-card:hover .field-card-lede {
-    transform: translateX(1px);
-  }
-}
-
-/* --- Open package path links: signal underline grow --- */
-.open-package-paths a {
-  position: relative;
-}
-.open-package-paths a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: right 200ms var(--ease-out);
-}
-.open-package-paths a:hover::after {
-  right: 0;
-}
-
-/* --- Back button: signal glow ring on hover --- */
-.back-button {
-  position: relative;
-  overflow: visible;
-}
-.back-button::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--signal-dim);
-  opacity: 0;
-  transition: opacity 200ms var(--ease);
-  pointer-events: none;
-}
-.back-button:hover::after {
-  opacity: 0.5;
-}
-
-
-/* --- Token table rows: subtle background highlight on hover --- */
-.token-table-row {
-  transition: background 200ms var(--ease);
-}
-.token-table-row:hover {
-  background: var(--surface-soft);
-}
-
-/* --- Checkmark list items: glyph color shift on hover --- */
-.checkmark-list li,
-.avoid-list li {
-  transition: color 200ms var(--ease);
-}
-.checkmark-list li:hover {
-  color: var(--ink);
-}
-
-/* --- Reduced motion: disable all second-pass effects --- */
-@media (prefers-reduced-motion: reduce) {
-  .lab-card::after,
-  .check-cell::before,
-  .definition::after,
-  .button.primary::after,
-  .button.ghost::after,
-  button.pillar::before,
-  .footer-dock-pill::after,
-  .footer-link::after,
-  .lab-meta-item a::after,
-  .lab-crumb::after,
-  .text-link::after,
-  .scope-path-link::after,
-  .scope-line a::after,
-  .open-package-paths a::after,
-  .back-button::after,
-  .copy-prompt-btn::after {
-    display: none;
-  }
-  /* Keep hover text lifts — subtle transform on hover is interaction feedback */
-  .wordmark:hover .dot {
-    animation-duration: 12s;
-  }
-}
-
-/* --- Status bar --- */
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-12);
-  padding: var(--space-16) var(--space-20);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--signal);
-  border-radius: var(--radius);
-  background: var(--surface);
-  margin-bottom: var(--space-48);
-}
-
-.status-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  /* 11.2px uppercase is WCAG 1.4.3 AA-normal (4.5:1) territory. --signal-light
-     (var(--signal-light)) is only 3.5–3.7:1 on dark surfaces. Use a lighter derivative of
-     the same hue family — clears 4.5:1 while preserving the brand signal
-     identity. --signal-access is additive; contract tokens untouched. */
-  color: var(--signal-access);
-  padding: var(--space-4) var(--space-fine-60);
-  border: 1px solid var(--signal-dim);
-  border-radius: 3px;
-  /* No --signal-dim background fill: color-mix(in srgb, var(--signal) 14%, transparent) over surfaces produces
-     a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
-     the badge readable from the border + light text alone. */
-  background: transparent;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- Footer --- */
-
-.footer {
-  border-top: 1px solid var(--line);
-  padding: var(--space-48) 0 var(--space-40);
-  margin-top: var(--space-32);
-}
-
-.footer-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-16);
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.footer-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-35);
-  font-size: 0.8rem;
-  color: var(--muted-dim);
-  min-width: 0;
-  max-width: 100%;
-}
-
-.footer-meta strong {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.footer-badge {
-  margin-top: var(--space-8);
-  opacity: 0.85;
-  transition: opacity var(--duration-fast) var(--ease-out);
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-
-.footer-badge:hover {
-  opacity: 1;
-}
-
-/*
-  Footer docks — two separate horizontal auto-scrolling rows of pill cells.
-  Surfaces dock (human links) and Machine dock (agent links) are visually
-  distinct sections, each with its own label and track. Content duplicated
-  for seamless loop. Pauses on hover/focus. Edge fade on clip only.
-  Pure CSS, no JS. Respects prefers-reduced-motion.
-
-  Structure: .footer-dock > label + .footer-dock-clip > .footer-dock-track > pills
-  - .footer-dock-clip: width:100%, overflow:hidden, mask gradient (visible window)
-  - .footer-dock-track: width:max-content, animated translateX (the scroller)
-*/
-.footer-docks {
-  margin-top: var(--space-16);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-60);
-  max-width: 100%;
-  min-width: 0;
-}
-
-.footer-dock {
-  position: relative;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.footer-dock-label {
-  display: block;
-  padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  flex-shrink: 0;
-}
-
-/* Visible window — clips the scrolling track */
-.footer-dock-clip {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  padding: var(--space-fine-15) 0 var(--space-fine-55);
-  /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
-  touch-action: pan-y;
-  /* Prevent text selection during drag. */
-  user-select: none;
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--paper) 5%,
-    var(--paper) 95%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--paper) 5%,
-    var(--paper) 95%,
-    transparent 100%
-  );
-}
-
-/* Inner scroller — as wide as content, animated. Exact loop: every pill
-   carries its own trailing space (no gap, no padding inside the track), so
-   the track is exactly two periods wide and -50% lands on the seam. The lead
-   offset is a margin, which the percentage does not count. */
-.footer-dock-track {
-  display: flex;
-  align-items: center;
-  margin-left: var(--space-12);
-  width: max-content;
-  animation: footer-dock-scroll 48s linear infinite;
-}
-
-.footer-dock-track > * {
-  margin-right: var(--space-fine-40);
-}
-
-.footer-dock:hover .footer-dock-track,
-.footer-dock:focus-within .footer-dock-track {
-  animation-play-state: paused;
-}
-
-/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
-.footer-dock-clip {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-}
-.footer-dock-clip::-webkit-scrollbar {
-  height: 3px;
-}
-.footer-dock-clip::-webkit-scrollbar-track {
-  background: transparent;
-}
-.footer-dock-clip::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 3px;
-}
-.footer-dock:hover .footer-dock-clip {
-  cursor: grab;
-}
-.footer-dock-clip--dragging {
-  cursor: grabbing !important;
-}
-
-@keyframes footer-dock-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 .footer-dock-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-fine-35);
-  flex-shrink: 0;
-  padding: var(--space-fine-30) var(--space-fine-60);
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--muted);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-  transition: transform 0.18s var(--ease-out),
-    background 0.18s var(--ease),
-    border-color 0.18s var(--ease),
-    color 0.18s var(--ease);
   /* 44px minimum at every width. A 2.75rem rule already existed inside a
      media query, so desktop measured below target while mobile passed. */
   min-height: 2.75rem;
 }
 
-/* Signal dot accent before each surface pill */
-.footer-dock-pill--surface::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--signal);
-  opacity: 0.5;
-  transition: opacity 0.18s var(--ease);
-}
-
-.footer-dock-pill--surface:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-  color: var(--ink);
-  transform: scale(1.06);
-}
-
-.footer-dock-pill--surface:hover::before {
-  opacity: 1;
-}
-
-.footer-dock-pill--machine {
-  color: var(--muted-dim);
-  font-variant-numeric: tabular-nums;
-  font-family: var(--mono);
-  font-size: 0.68rem;
-}
-
-/* Dim dot accent before each machine pill */
-.footer-dock-pill--machine::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--muted-dim);
-  opacity: 0.4;
-  transition: opacity 0.18s var(--ease);
-}
-
-.footer-dock-pill--machine:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-  color: var(--muted);
-  transform: scale(1.06);
-}
-
-.footer-dock-pill--machine:hover::before {
-  opacity: 0.8;
-}
-
-/* During an active drag, suppress hover effects and transitions on all
-   pills so they don't flicker as the pointer passes over them. Also
-   disable pointer events on pills so drag pointermove never gets
-   interrupted by a child element stealing the pointer. */
-.footer-dock-clip--dragging .footer-dock-pill {
-  pointer-events: none;
-  transition: none;
-  transform: none !important;
-  background: var(--surface-raised) !important;
-  border-color: var(--line) !important;
-  color: var(--muted) !important;
-}
-.footer-dock-clip--dragging .footer-dock-pill--machine {
-  color: var(--muted-dim) !important;
-}
-.footer-dock-clip--dragging .footer-dock-pill::before {
-  opacity: 0.5 !important;
-}
-.footer-dock-clip--dragging .footer-dock-pill--machine::before {
-  opacity: 0.4 !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .footer-dock-track {
-    animation-duration: 200s;
-  }
-}
-
 .footer-link {
-  font-size: 0.8rem;
-  color: var(--muted);
-  transition: color 0.2s var(--ease);
   /* The 44px rule below lived only inside a media query, so at desktop
      width this measured 120x20px. Hoisted to the base rule. */
   display: inline-flex;
   align-items: center;
   min-height: 44px;
 }
-
-.footer-link:hover {
-  color: var(--ink);
-}
-
-/* --- Route page shells --- */
-
-.surface-page {
-  max-width: var(--maxw-wide);
-  margin: 0 auto;
-  padding: 0 var(--space-24);
-  min-height: 100vh;
-  min-height: 100dvh;
-  /* Lift above body's fixed background texture layers (Stage 4) */
-  position: relative;
-  z-index: 1;
-}
-
-/* Continuity case study — deliberate pacing entrance (350ms --ease).
-   Page-scoped so Tile/Compile keep the default 600ms --duration. */
-.continuity-page .fade-up {
-  animation-duration: var(--duration-medium);
-}
-
-.surface-header {
-  padding: clamp(var(--space-64), 9vw, var(--space-112)) 0 clamp(var(--space-40), 5vw, var(--space-56));
-  max-width: min(100%, 680px);
-}
-
-.surface-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-12);
-}
-
-.surface-title {
-  font-size: clamp(2.4rem, 2.4rem + 1.4vw, 3.5rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
-  margin-bottom: var(--space-16);
-  text-wrap: balance;
-  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
-     dark-mode contrast. */
-  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
-}
-
-.surface-lede {
-  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
-  color: var(--ink);
-  line-height: 1.4;
-  margin-bottom: var(--space-16);
-  text-wrap: pretty;
-}
-
-.surface-note {
-  font-size: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: min(100%, 580px);
-  text-wrap: pretty;
-}
-
-/* --- Doctrine content (route pages) --- */
-
-.doctrine-section {
-  padding: clamp(var(--space-48), 7vw, var(--space-88)) 0;
-  border-top: 1px solid var(--line);
-}
-
-.doctrine-section:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-
-.doctrine-heading {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-24);
-}
-
-/* Principle list — numbered entries with title + description */
 
 /*
   Operating principles + contract health — two stacked, bordered cells on one
@@ -3047,41 +1808,6 @@ a.surface-card:active {
 
 /* Cell 1 — the four operating principles as a 2×2 grid of bordered tiles. */
 
-
-.principle {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  padding: clamp(1.05rem, 1.8vw, var(--space-fine-140));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: border-color 240ms var(--ease-out), background 240ms var(--ease-out), transform 240ms var(--ease-out);
-}
-
-.principle-num {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--signal);
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-}
-
-.principle-body h3 {
-  font-size: 1.0875rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--space-fine-45);
-  text-wrap: balance;
-}
-
-.principle-body p {
-  font-size: 0.87rem;
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: 100%;
-}
-
 /* Cell 2 — the contract-health rack in its own bordered panel. */
 
 
@@ -3093,16 +1819,6 @@ a.surface-card:active {
 
 /* Hover — the premium instrument micro-state. Lift just the hovered gauge
    and gently raise the hovered principle tile. */
-@media (hover: hover) and (pointer: fine) {
-  .principle:hover {
-    border-color: var(--line-strong);
-    transform: translateY(-1px);
-  }
-  
-  
-  
-  
-}
 
 /* Mobile: collapse principle tiles to a single readable column. */
 
@@ -3121,6 +1837,7 @@ a.surface-card:active {
 }
 
 .hero-actions {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-12);
@@ -3157,6 +1874,8 @@ a.surface-card:active {
               box-shadow var(--duration-quick) var(--ease-out),
               transform var(--duration-quick) var(--ease-out),
               filter var(--duration-quick) var(--ease-out);
+  position: relative;
+  overflow: visible;
 }
 
 .button.primary:hover {
@@ -3176,6 +1895,8 @@ a.surface-card:active {
   background: transparent;
   color: var(--ink);
   border: 1px solid var(--line-strong);
+  position: relative;
+  overflow: hidden;
 }
 
 .button.ghost:hover {
@@ -3465,6 +2186,12 @@ a.surface-card:active {
 
 /* --- Underline: signal underline grows under nav links on hover --- */
 .nav-links a::after {
+  left: 0.65rem;
+  right: 0.65rem;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
   content: "";
   position: absolute;
   left: 50%;
@@ -3484,6 +2211,7 @@ a.surface-card:active {
 /* Active link keeps its static underline, overrides the hover animation */
 .nav-links a.is-active::after,
 .nav-links a[aria-current="page"]::after {
+  transform: scaleX(1);
   left: 0.65rem;
   right: 0.65rem;
   opacity: 0.9;
@@ -3590,7 +2318,6 @@ a.surface-card:active {
 
 /* --- Check cells: fill sweep from bottom + arrow slide --- */
 .check-cell {
-  position: relative;
   overflow: hidden;
 }
 .check-cell::before {
@@ -3640,10 +2367,6 @@ a.surface-card:active {
 }
 
 /* --- Buttons: signal glow ring on hover (primary) --- */
-.button.primary {
-  position: relative;
-  overflow: visible;
-}
 .button.primary::after {
   content: "";
   position: absolute;
@@ -3662,10 +2385,6 @@ a.surface-card:active {
 }
 
 /* --- Ghost buttons: signal-dim underline sweep --- */
-.button.ghost {
-  position: relative;
-  overflow: hidden;
-}
 .button.ghost::after {
   content: "";
   position: absolute;
@@ -3695,10 +2414,19 @@ a.surface-card:active {
 }
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
+  font-size: 1.0875rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--space-fine-45);
+  text-wrap: balance;
 }
 .principle-body p {
   transition: color 200ms var(--ease);
   text-wrap: pretty;
+  font-size: 0.87rem;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 100%;
 }
 @media (hover: hover) and (pointer: fine) {
   .principle:hover .principle-body h3 {
@@ -3771,8 +2499,6 @@ a.surface-card:active {
   position: relative;
   /* Readable-by-default: --ink (≥ 7:1) carries the text; the brand-signal
      moment is carried by the hover underline grow below, not by dim text. */
-  color: var(--ink);
-  border-bottom: 1px solid var(--line-strong);
   overflow: visible;
 }
 .text-link::after {
@@ -4067,30 +2793,6 @@ a.surface-card:active {
 }
 
 /* Visible window — clips the scrolling track */
-.footer-dock-clip {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  padding: var(--space-fine-15) 0 var(--space-fine-55);
-  /* Let the browser handle vertical page scroll; JS owns horizontal drag. */
-  touch-action: pan-y;
-  /* Prevent text selection during drag. */
-  user-select: none;
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--paper) 5%,
-    var(--paper) 95%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--paper) 5%,
-    var(--paper) 95%,
-    transparent 100%
-  );
-}
 
 /* Inner scroller — as wide as content, animated. Exact loop: every pill
    carries its own trailing space (no gap, no padding inside the track), so
@@ -4112,9 +2814,27 @@ a.surface-card:active {
 .footer-dock:focus-within .footer-dock-track {
   animation-play-state: paused;
 }
-
-/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
 .footer-dock-clip {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--space-fine-15) 0 var(--space-fine-55);
+  touch-action: pan-y;
+  user-select: none;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--paper) 5%,
+    var(--paper) 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--paper) 5%,
+    var(--paper) 95%,
+    transparent 100%
+  );
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
@@ -4335,10 +3055,12 @@ a.surface-card:active {
 /* Principle list — numbered entries with title + description */
 
 /*
-  Operating principles + contract health (segment 2 — the cascade defines each
-  section twice; keep both in step). Stacked bordered cells on one vertical
+  Operating principles + contract health. Stacked bordered cells on one vertical
   rhythm: principles as a 2×2 tile grid, the contract-health rack in its own
   full-width cell below. No side-by-side columns — alignment stays optimal.
+  (This section used to be defined twice, 1,300 lines apart; the earlier copy's
+  dead declarations were removed and its live ones folded in here or kept in
+  place where moving them would have changed the cascade.)
 */
 
 
@@ -4359,21 +3081,6 @@ a.surface-card:active {
   color: var(--signal);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
-}
-
-.principle-body h3 {
-  font-size: 1.0875rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--space-fine-45);
-  text-wrap: balance;
-}
-
-.principle-body p {
-  font-size: 0.87rem;
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: 100%;
 }
 
 
@@ -4446,22 +3153,6 @@ a.surface-card:active {
    Mirror of the pillar pattern (number + title + count + description + list),
    keeping the cadence-rule typography stack. */
 
-.engines-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  margin-top: var(--space-32);
-  align-items: stretch;
-}
-
-@media (max-width: 1080px) {
-  .engines-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 640px) {
-  .engines-grid { grid-template-columns: 1fr; }
-}
-
 .engine-card {
   display: flex;
   flex-direction: column;
@@ -4470,74 +3161,6 @@ a.surface-card:active {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-}
-
-.engine-card-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-fine-60);
-  flex-wrap: wrap;
-}
-
-.engine-card-num {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.engine-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-  margin: 0;
-}
-
-.engine-card-count {
-  margin-left: auto;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--signal-light);
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.engine-card-desc {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.55;
-  margin: 0;
-  text-wrap: pretty;
-}
-
-.engine-card-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-35);
-  font-size: 0.82rem;
-  color: var(--ink);
-}
-
-.engine-card-list li {
-  position: relative;
-  padding-left: var(--space-16);
-  line-height: 1.45;
-}
-
-.engine-card-list li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.55em;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--signal-light);
 }
 
 /* Checkmark list — what something includes */
@@ -4769,6 +3392,8 @@ a.surface-card:active {
     var(--paper) 94%,
     transparent 100%
   );
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
 
 .state-marquee-header {
@@ -4850,10 +3475,6 @@ a.surface-card:active {
 }
 
 /* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
-.state-marquee {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-}
 .state-marquee::-webkit-scrollbar {
   width: 3px;
 }
@@ -5658,9 +4279,6 @@ a.check-cell:hover .check-cell-title {
   .topbar.deep-scrolled .cmdk-trigger {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--signal-light) 28%, transparent);
   }
-  .topbar.deep-scrolled .topbar-glass {
-    /* No border-bottom — the scroll-progress bar is the bottom edge */
-  }
   @media (prefers-reduced-motion: no-preference) {
     .topbar {
       transition: padding var(--duration-fast) var(--ease-out),
@@ -6230,8 +4848,6 @@ html:not(.js-ready) .demo-stagger-bar {
 @media (prefers-reduced-motion: reduce) {
   .demo-stagger.is-revealed .demo-stagger-bar {
     animation: none;
-    opacity: 0.8;
-    transform: none;
   }
 }
 
@@ -6481,18 +5097,6 @@ html:not(.js-ready) .demo-stagger-bar {
   is active (.js-ready on <html>) to prevent invisible content
   if JS is slow to hydrate.
 */
-.js-ready [data-reveal] {
-  opacity: 0;
-  transition: opacity var(--duration) var(--ease-out),
-    transform 160ms var(--ease-out),
-    border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
-}
-
-.js-ready [data-reveal].is-revealed {
-  opacity: 1;
-  transition-delay: 0s;
-}
 
 /* Reveal slide done via animation so no transform residue blocks :hover tilt */
 @keyframes reveal-slide-up {
@@ -6501,6 +5105,11 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .js-ready [data-reveal] {
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease-out),
+    transform 160ms var(--ease-out),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
   /* fill-mode: backwards — prevents transform residue (compositing layer)
      after animation; the .is-revealed state sets animation:none + opacity:1
      so the element settles to its natural CSS without a persistent transform. */
@@ -6508,6 +5117,8 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .js-ready [data-reveal].is-revealed {
+  opacity: 1;
+  transition-delay: 0s;
   animation: none;
 }
 
@@ -7213,7 +5824,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .back-button.is-leaving {
-  opacity: 0;
   transform: translateY(-50%) translateX(-0.5rem);
 }
 
@@ -7346,7 +5956,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 600;
   letter-spacing: -0.01em;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.2s var(--ease), transform 0.2s var(--ease-out);
 }
 
@@ -8008,10 +6617,6 @@ a.lab-card:focus-visible .lab-card-arrow {
      invisible wrapper. The <input> below owns all visual chrome. */
 }
 
-.score-input-flex-box:focus-within {
-  /* No visual change on the wrapper — focus styles are on the input itself. */
-}
-
 .score-input-icon {
   /* Absolutely positioned overlay on top of the input's left padding zone.
      pointer-events: none so taps pass through to the input. */
@@ -8523,10 +7128,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   flex-wrap: wrap;
 }
 
-.score-tokens-badge {
-  margin-left: auto;
-}
-
 .score-action-btn {
   display: inline-flex;
   align-items: center;
@@ -8734,6 +7335,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-tokens-badge {
+  margin-left: auto;
   font-size: 0.75rem;
   color: var(--muted);
   font-weight: 500;
@@ -8988,9 +7590,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-note {
-  font-size: 0.8rem;
   color: var(--muted);
-  margin: 0;
   line-height: 1.5;
   /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
   max-width: 66ch;
@@ -9251,48 +7851,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   z-index: 1;
 }
 
-.bundle-tab {
-  padding: var(--space-8) var(--space-16);
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 400;
-  cursor: pointer;
-  font-family: inherit;
-  position: relative;
-  z-index: 0;
-  transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-              color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.bundle-tab:hover {
-  color: var(--ink);
-}
-
-.bundle-tab.is-active {
-  background: var(--surface-2);
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* Copy button — pushed to the right, styled as an outlined button */
-.bundle-tab--copy {
-  margin-left: auto;
-  padding: var(--space-8) var(--space-16);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 6px);
-  color: var(--muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.bundle-tab--copy:hover {
-  color: var(--ink);
-  border-color: var(--ink);
-}
 
 .score-tab-count {
   font-size: 0.7rem;
@@ -9447,33 +8006,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   animation: scoreCardReveal var(--duration) var(--ease-out) both;
   opacity: 0;
 }
-
-/* v2026-08-25-scanability: 3-px category spine on each check card.
-   Answers "which category is failing" at a glance without reading a
-   single label. Colors come from the contract token set (one hue per
-   category family); the category chip remains the non-color signal
-   (a11y: color never carries alone). */
-.score-card-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: var(--space-8);
-  bottom: var(--space-8);
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--muted-dim);
-  opacity: 0.55;
-  transition: opacity var(--duration-fast) var(--ease-out);
-}
-.score-card-item[data-category='tokens']::before { background: var(--signal); }
-.score-card-item[data-category='accessibility']::before { background: var(--ok); }
-.score-card-item[data-category='motion']::before { background: var(--signal-light); }
-.score-card-item[data-category='interaction']::before { background: var(--amber-notice); }
-.score-card-item[data-category='cadence']::before { background: var(--grade-b); }
-.score-card-item[data-category='copywriting']::before { background: var(--grade-c); }
-.score-card-item[data-category='identity']::before { background: var(--error); }
-.score-card-item[data-category='platform']::before { background: var(--muted); }
-.score-card-item:hover::before { opacity: 1; }
 
 @keyframes scoreCardReveal {
   from { opacity: 0; transform: translateY(6px); }
@@ -9662,13 +8194,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-hero-top {
-    flex-direction: column;
-    text-align: center;
     gap: var(--space-16);
-  }
-
-  .score-hero-meta {
-    align-items: center;
   }
 
   .score-grade-emblem {
@@ -10881,14 +9407,6 @@ a.lab-card:focus-visible .lab-card-arrow {
     flex-direction: column;
     gap: var(--space-8);
   }
-
-  .report-check-detail {
-    display: none;
-  }
-
-  .report-check-summary {
-    flex-wrap: wrap;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -10900,218 +9418,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 /* --- Composite report (/report page) — visual container system --- */
 
-.report-composite {
-  max-width: var(--maxw);
-}
-
-.report-composite-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-24);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-32);
-}
-
-.report-composite-summary {
-  flex: 1;
-  min-width: 200px;
-}
-
-.report-composite-eyebrow {
-  font-size: 0.8rem;
-  color: var(--muted-dim);
-  margin: 0 0 var(--space-4);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.report-composite-grade-line {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0 0 var(--space-8);
-}
-
-.report-composite-counts {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin: 0;
-}
-
-.report-composite-share {
-  margin-left: auto;
-}
-
 /* Sub-engine cards grid */
-.report-sub-engines {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-12);
-  margin-bottom: var(--space-24);
-}
-
-.report-sub-engine-card {
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--space-16) var(--space-20);
-}
-
-.report-sub-engine-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  margin: 0 0 var(--space-8);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.report-sub-engine-grade {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 var(--space-4);
-}
-
-.report-sub-engine-grade--null {
-  color: var(--muted-dim);
-}
-
-.report-sub-engine-counts {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0;
-}
-
-.report-sub-engine-desc {
-  font-size: 0.7rem;
-  color: var(--muted-dim);
-  margin: var(--space-4) 0 0;
-}
 
 /* Engine tab navigation */
-.report-engine-tabs {
-  display: flex;
-  gap: var(--space-8);
-  margin-bottom: var(--space-16);
-  border-bottom: 1px solid var(--line);
-  padding-bottom: var(--space-8);
-  flex-wrap: wrap;
-}
-
-.report-engine-tab {
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: var(--space-fine-40) var(--space-fine-80);
-  cursor: pointer;
-  transition: background-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
-    border-color 150ms var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.report-engine-tab.active {
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-}
-
-.report-engine-tab:focus-visible {
-  outline: 2px solid var(--signal-light);
-  outline-offset: 2px;
-}
 
 /* Engine content container */
-.report-engine-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
 
 /* Empty state */
-.report-empty {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin: var(--space-16) 0;
-}
 
 /* Status summary bar — colored pills showing pass/warn/fail counts */
-.report-status-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-12);
-  flex-wrap: wrap;
-  padding: var(--space-fine-60) var(--space-fine-85);
-  background: var(--surface-soft);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius-sm);
-}
-
-.report-status-bar-total {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-status-bar-pills {
-  display: flex;
-  gap: var(--space-fine-40);
-  flex-wrap: wrap;
-}
-
-.report-status-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: var(--space-fine-15) var(--space-8);
-  border-radius: 3px;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-status-pill--pass {
-  color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 12%, transparent);
-}
-
-.report-status-pill--warn {
-  color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 12%, transparent);
-}
-
-.report-status-pill--fail {
-  color: var(--error);
-  background: color-mix(in srgb, var(--error) 12%, transparent);
-}
-
-.report-status-pill--skip {
-  color: var(--muted);
-  background: var(--surface-soft);
-}
-
-.report-status-pill--manual {
-  color: var(--muted);
-  background: var(--surface-soft);
-}
 
 /* Check body — expanded detail inside <details> */
-.report-check-body {
-  padding: var(--space-12) var(--space-fine-85);
-  border-top: 1px solid var(--line-faint);
-  background: var(--surface);
-}
-
-.report-check-body-detail {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.55;
-  margin: 0;
-  text-wrap: pretty;
-}
 
 /* --- Principle list (/docs page) — responsive grid for 9 principles --- */
 
@@ -11128,19 +9445,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 @media (max-width: 720px) {
-  .report-composite-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-16);
-  }
-
-  .report-composite-share {
-    margin-left: 0;
-  }
-
-  .report-sub-engines {
-    grid-template-columns: 1fr;
-  }
 
   .report-check-detail {
     display: none;
@@ -11653,20 +9957,6 @@ select {
   border: 1px solid color-mix(in srgb, var(--grade-f) 28%, transparent);
 }
 
-/* v2026-08-25-trend: delta + sparkline group.
-   Wraps the score-delta-chip and ScoreSparkline together so they sit
-   side-by-side in the score hero. Sparkline is a hand-rolled SVG —
-   color follows the LATEST score's threshold band (ok / warn / error),
-   one hue, one story. Linked-table pattern: the data lives in the
-   adjacent "Recent scores" list (which is the screen-reader-readable
-   source of truth for this trend). */
-.score-delta-group {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-fine-65);
-  margin-top: var(--space-fine-30);
-}
-
 .score-sparkline {
   /* Color follows the LATEST score band — set inline via the stroke attr,
      not a CSS variable, so the gradient lives in the SVG. Subtle baseline
@@ -12167,23 +10457,9 @@ select {
 /* Reduced-motion — the seam returns to five quiet statics. Echoes vanish,
    satellite parks, orbit holds its full arc. */
 @media (prefers-reduced-motion: reduce) {
-  .hero-seam-mark .seam-orbit {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-
-  .hero-seam-mark .seam-square-satellite {
-    animation: none;
-    opacity: 0.5;
-  }
 
   .hero-seam-mark .seam-block {
     animation: none;
-  }
-
-  .hero-seam-mark .seam-triangle-echo {
-    animation: none;
-    opacity: 0;
   }
 }
 
@@ -12219,15 +10495,18 @@ select {
   }
 
   .hero-seam-mark .seam-orbit {
-    stroke-dashoffset: 0;
+  animation: none;
+  stroke-dashoffset: 0;
   }
 
   .hero-seam-mark .seam-square-satellite {
-    opacity: 0.5;
+  animation: none;
+  opacity: 0.5;
   }
 
   .hero-seam-mark .seam-triangle-echo {
-    opacity: 0;
+  animation: none;
+  opacity: 0;
   }
 }
 
@@ -13128,44 +11407,9 @@ select {
 
 /* ── Maturity self-assessment ────────────────────────────────────────────── */
 
-.maturity-option:hover {
-  border-color: var(--signal) !important;
-  background: var(--surface-hover) !important;
-}
-
-.maturity-option:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 2px;
-}
-
-.maturity-results .row {
-  cursor: default;
-}
-
 /* Radar chart — reduced motion: no transition on polygon */
-@media (prefers-reduced-motion: reduce) {
-  .maturity-results polygon,
-  .maturity-results circle {
-    transition: none !important;
-  }
-}
 
 /* ── M3 → DTCG bridge ─────────────────────────────────────────────────────── */
-
-.m3-bridge-tool textarea:focus {
-  border-color: var(--signal);
-  outline: 2px solid var(--signal);
-  outline-offset: 0;
-}
-
-.m3-bridge-tool textarea::placeholder {
-  color: var(--muted-dim);
-  opacity: 0.7;
-}
-
-.m3-bridge-tool pre {
-  tab-size: 2;
-}
 
 /* ── Spring physics validator ─────────────────────────────────────────────── */
 
@@ -13325,156 +11569,10 @@ select {
    shows what the tool produces. Solves the 70% empty-hero problem on
    /drift /monitor /readiness /guardrails /compare without changing
    the form's contract. */
-.monitor-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: var(--space-20);
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .monitor-hero-grid { grid-template-columns: 1fr; }
-}
-
-.monitor-hero-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  padding: var(--space-20);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--inner-light);
-  /* Subtle accent on the right column so the eye lands on the preview
-     before the form. No border-left so it stays a peer, not a callout. */
-}
-
-.monitor-preview-note {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 0;
-}
 
 /* SnapshotTimelineStrip — horizontal timeline of timestamped dots.
    Single-line, 100% width. Grade-colored dots, faint midline, first/last
    score labels. Sample badge in preview mode. */
-.timeline-strip {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.timeline-strip-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: var(--muted);
-}
-.timeline-strip-title { margin: 0; flex: 1; }
-.timeline-strip-sample {
-  font-size: 0.6rem;
-  color: var(--muted-dim);
-  background: var(--surface-soft);
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.06em;
-}
-.timeline-strip-delta {
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.timeline-strip-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.6rem;
-  font-family: var(--mono);
-  color: var(--muted-dim);
-  text-transform: none;
-  letter-spacing: 0;
-}
-.monitor-hero-preview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  padding: var(--space-20);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--inner-light);
-  /* Subtle accent on the right column so the eye lands on the preview
-     before the form. No border-left so it stays a peer, not a callout. */
-}
-
-.monitor-preview-note {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin: 0;
-}
-
-/* SnapshotTimelineStrip — horizontal timeline of timestamped dots.
-   Single-line, 100% width. Grade-colored dots, faint midline, first/last
-   score labels. Sample badge in preview mode. */
-.timeline-strip {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.timeline-strip-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: var(--muted);
-}
-.timeline-strip-title { margin: 0; flex: 1; }
-.timeline-strip-sample {
-  font-size: 0.6rem;
-  color: var(--muted-dim);
-  background: var(--surface-soft);
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.06em;
-}
-.timeline-strip-delta {
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.timeline-strip-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  /* Stroke / fill use inline `var(--...)` so single-color rendering is
-     guaranteed regardless of host cascade order. */
-}
-.timeline-strip-label {
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--mono);
-  fill: var(--muted);
-}
-.timeline-strip-axis {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.6rem;
-  font-family: var(--mono);
-  color: var(--muted-dim);
-  text-transform: none;
-  letter-spacing: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .timeline-strip-svg { transition: none; }
-}
 
 /* v2026-08-25-trend: delta + sparkline group.
    Wraps the score-delta-chip and ScoreSparkline together so they sit
@@ -13893,22 +11991,6 @@ select {
   transform: translate(calc(-1 * var(--space-1)), calc(-1 * var(--space-1)));
 }
 
-.senses-panel {
-  position: absolute;
-  top: calc(100% + var(--space-12));
-  right: 0;
-  z-index: 120;
-  width: min(20rem, calc(100vw - 2 * var(--space-16)));
-  padding: var(--space-6);
-  display: grid;
-  gap: var(--space-2);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-md);
-  animation: senses-in var(--duration-quick) var(--ease-out);
-}
-
 .senses-panel[hidden] {
   display: none;
 }
@@ -13925,6 +12007,19 @@ select {
 }
 
 .senses-panel {
+  position: absolute;
+  top: calc(100% + var(--space-12));
+  right: 0;
+  z-index: 120;
+  width: min(20rem, calc(100vw - 2 * var(--space-16)));
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+  animation: senses-in var(--duration-quick) var(--ease-out);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
@@ -14008,7 +12103,7 @@ select {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--signal-light), var(--signal));
   box-shadow:
-    inset 0 1px 0 var(--lv-shine-soft),
+    inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent),
     0 6px 16px -8px color-mix(in srgb, var(--signal-light) 80%, transparent);
 }
 
