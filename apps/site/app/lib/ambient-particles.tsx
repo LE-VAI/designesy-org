@@ -273,6 +273,12 @@ export function AmbientParticles() {
     };
 
     const tick = () => {
+      // Motion toggle (lib/motion-toggle): stop the loop and hold the last
+      // frame. The observer below re-kicks it when data-motion is cleared.
+      if (document.documentElement.dataset.motion === 'paused') {
+        raf = 0;
+        return;
+      }
       t += 0.0004;
       const frameNow = performance.now();
 
@@ -383,7 +389,7 @@ export function AmbientParticles() {
     });
     themeObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme'],
+      attributeFilter: ['data-theme', 'data-motion'],
     });
 
     return () => {

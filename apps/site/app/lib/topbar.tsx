@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { HapticsToggle } from './haptics-toggle';
+import { MotionToggle } from './motion-toggle';
 import { SoundToggle } from './sound-toggle';
 import { ThemeToggle } from './theme-toggle';
 import { CommandPalette } from './command-palette';
@@ -156,6 +157,9 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
               })}
             </nav>
             <div className="sense-toggles" role="group" aria-label="Sensory feedback">
+              {/* Desktop only (hidden ≤720px via CSS); phones get the labelled
+                  row in the nav drawer, where there is room for it. */}
+              <MotionToggle />
               <SoundToggle />
               {/* No .desktop-only wrapper. Haptics needs vibration hardware,
                   which lives on phones and tablets — the wrapper hid this
@@ -223,6 +227,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             </Link>
           );
         })}
+        <MotionToggle variant="row" />
       </nav>
     </>
   );

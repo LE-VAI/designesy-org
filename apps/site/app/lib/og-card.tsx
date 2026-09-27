@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -16,6 +18,39 @@ const T = {
   signalLight: '#3358e8',
   signalDim: 'rgba(1, 51, 203, 0.14)',
 } as const;
+
+/**
+ * The site's own faces, as static TTFs (lib/og-fonts). Satori cannot use the
+ * next/font WOFF2 files, and with no fonts passed every card rendered in a
+ * default sans that matched nothing on the site. Read once per process.
+ */
+let fontCache: { name: string; data: Buffer; weight: 500 | 600 | 700; style: 'normal' }[] | null = null;
+function ogFonts() {
+  if (fontCache) return fontCache;
+  const dir = join(process.cwd(), 'app/lib/og-fonts');
+  fontCache = [
+    { name: 'Fraunces', data: readFileSync(join(dir, 'Fraunces-600.ttf')), weight: 600, style: 'normal' },
+    { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-500.ttf')), weight: 500, style: 'normal' },
+    { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-700.ttf')), weight: 700, style: 'normal' },
+  ];
+  return fontCache;
+}
+
+/** VAI house mark (the LE-VAI asterisk), drawn on the card's black paper. */
+const VAI_YELLOW = '#FECC35';
+function VaiMark({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100">
+      <line x1="72" y1="28" x2="28" y2="72" stroke={VAI_YELLOW} strokeWidth="15" strokeLinecap="round" />
+      <line x1="28" y1="28" x2="72" y2="72" stroke={T.paper} strokeWidth="23" strokeLinecap="round" />
+      <line x1="28" y1="28" x2="72" y2="72" stroke={VAI_YELLOW} strokeWidth="15" strokeLinecap="round" />
+      <path d="M50 34 C47 29 43 25.5 43 20 A7 7 0 0 1 57 20 C57 25.5 53 29 50 34 Z" fill={VAI_YELLOW} />
+      <path d="M50 66 C47 71 43 74.5 43 80 A7 7 0 0 0 57 80 C57 74.5 53 71 50 66 Z" fill={VAI_YELLOW} />
+      <path d="M34 50 C29 47 25.5 43 20 43 A7 7 0 0 0 20 57 C25.5 57 29 53 34 50 Z" fill={VAI_YELLOW} />
+      <path d="M66 50 C71 47 74.5 43 80 43 A7 7 0 0 1 80 57 C74.5 57 71 53 66 50 Z" fill={VAI_YELLOW} />
+    </svg>
+  );
+}
 
 export type OgKind =
   | 'default'
@@ -66,8 +101,7 @@ export function renderOgCard({
           justifyContent: 'space-between',
           background: T.paper,
           color: T.ink,
-          fontFamily:
-            'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+          fontFamily: '"Schibsted Grotesk"',
           padding: '64px 72px',
           position: 'relative',
         }}
@@ -166,9 +200,10 @@ export function renderOgCard({
         >
           <div
             style={{
+              fontFamily: 'Fraunces',
               fontSize: title.length > 28 ? 64 : 76,
-              fontWeight: 800,
-              letterSpacing: '-0.035em',
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
               lineHeight: 1.05,
               color: T.ink,
               display: 'flex',
@@ -203,8 +238,8 @@ export function renderOgCard({
           <div
             style={{
               fontSize: 36,
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
               color: T.ink,
               display: 'flex',
             }}
@@ -214,18 +249,26 @@ export function renderOgCard({
           </div>
           <div
             style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 18,
               fontSize: 22,
               fontWeight: 500,
               color: T.mutedDim,
               letterSpacing: '0.01em',
-              display: 'flex',
             }}
           >
-            {path}
+            <div style={{ display: 'flex' }}>{path}</div>
+            <div style={{ width: 1, height: 24, background: T.lineStrong, display: 'flex' }} />
+            {/* Endorsement: designesy is its own brand, made by VAI. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: T.muted }}>
+              <VaiMark size={30} />
+              a VAI project
+            </div>
           </div>
         </div>
       </div>
     ),
-    { ...OG_SIZE }
+    { ...OG_SIZE, fonts: ogFonts() }
   );
 }
