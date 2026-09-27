@@ -61,6 +61,9 @@
   --lv-hatch: rgba(255, 255, 255, 0.2);
   --lv-head: #8aa0ff;
   --lv-ink-accent: var(--signal-access);
+  /* The one specular highlight on lit cells: the contract's on-signal white. */
+  --lv-shine: color-mix(in srgb, var(--paper-on-signal) 34%, transparent);
+  --lv-shine-soft: color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
 }
 
 [data-theme="light"] {
