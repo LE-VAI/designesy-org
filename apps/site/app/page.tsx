@@ -11,6 +11,7 @@ import { ScoreForm } from './score/score-form';
 import { HeroConstruction } from './hero-construction';
 import { ContractHealthRack, CONTRACT_HEALTH_DIMS, CONTRACT_HEALTH_MEAN } from './contract-health-rack';
 import { CountUp } from './lib/count-up';
+import { ScoreLoop } from './lib/score-loop';
 import {
   ENGINE_CHECK_COUNT,
   CONTRACT_VERSION,
@@ -371,6 +372,25 @@ export default function HomePage() {
               </Link>
             </p>
           </div>
+        </section>
+
+        {/* --- See it score: the product, working ---
+            A seamless 6s loop of the engine's checks sweeping a generic page.
+            Findings are real engine checks: v03 FAIL (no score ceiling) and
+            v06 WARN (WARN never triggers v06's cap), so grade A holds. The
+            loop pauses with the site-wide motion toggle and never autoplays
+            under reduced motion (lib/score-loop). */}
+        <section className="section" aria-labelledby="score-loop-title">
+          <p className="section-eyebrow">See it score</p>
+          <h2 className="section-title" id="score-loop-title" data-scramble>
+            Every check, run against the page.
+          </h2>
+          <p className="surface-lede">
+            Each of the {ENGINE_CHECK_COUNT} checks inspects a part of the page.
+            A finding pins to the element it flags, named by the check that
+            caught it.
+          </p>
+          <ScoreLoop description="Demo on a generic page. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. Neither finding caps the score, so the page grades A." />
         </section>
 
         {/* --- Pillars: reframed as brand-legitimacy infrastructure --- */}
