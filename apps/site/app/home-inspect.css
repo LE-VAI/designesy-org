@@ -208,6 +208,10 @@
   --mp-r-sm: 0.45em;
   --mp-r-md: 0.6em;
   --mp-r-lg: 0.8em;
+  /* Flag chips: the shade that deepens a status fill, the ink on amber, the lift. */
+  --ix-shade: #000;
+  --ix-warn-ink: #1d1400;
+  --ix-flag-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="light"] {
@@ -218,6 +222,7 @@
   --mp-on-accent: #ffffff;
   --mp-line: rgba(10, 20, 40, 0.09);
   --mp-card: rgba(10, 20, 40, 0.025);
+  --ix-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
 }
 
 .inspect-canvas {
@@ -573,7 +578,7 @@
 
 .ix-flag {
   color: var(--paper-on-signal);
-  box-shadow: var(--lv-flag-shadow);
+  box-shadow: var(--ix-flag-shadow);
 }
 
 .ix-flag b {
@@ -591,15 +596,15 @@
   left: calc(100% + 1em);
   top: 50%;
   translate: 0 -50%;
-  background: color-mix(in srgb, var(--ix-warn) 88%, var(--lv-shade));
-  color: var(--lv-warn-ink);
+  background: color-mix(in srgb, var(--ix-warn) 88%, var(--ix-shade));
+  color: var(--ix-warn-ink);
 }
 
 .ix-flag.is-fail {
   left: calc(100% + 1em);
   top: 50%;
   translate: 0 -50%;
-  background: color-mix(in srgb, var(--ix-fail) 92%, var(--lv-shade));
+  background: color-mix(in srgb, var(--ix-fail) 92%, var(--ix-shade));
 }
 
 .inspect[data-step="3"] .ix-find,

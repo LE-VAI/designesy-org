@@ -32,14 +32,33 @@ const contractSrc = fs.readFileSync(CONTRACT_PATH, 'utf8');
 const cssSrc = fs.readFileSync(CSS_PATH, 'utf8');
 
 // Custom properties declared in :root (the canonical token surface).
-// Matches `--name:` inside the first :root { } block.
-const rootMatch = cssSrc.match(/:root\s*\{([^}]+)\}/);
-if (!rootMatch) {
+// Every :root block counts, including ones nested in @media. This read only the
+// first block until 2026-09-27, so a token declared in a second :root block
+// (five instrument tokens were) passed the gate without being in the contract.
+// Blocks are bounded by brace matching, not [^}]+, so a brace in a comment or
+// value cannot cut a block short either.
+function rootBlocks(css) {
+  const bodies = [];
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[{}]/g, ' '));
+  const re = /(^|[{};,\s]):root\s*\{/g;
+  let m;
+  while ((m = re.exec(clean))) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0;
+    for (let i = open; i < clean.length; i++) {
+      if (clean[i] === '{') depth++;
+      else if (clean[i] === '}' && --depth === 0) { bodies.push(clean.slice(open + 1, i)); break; }
+    }
+  }
+  return bodies;
+}
+const blocks = rootBlocks(cssSrc);
+if (blocks.length === 0) {
   console.error('[check-contract-drift] no :root block found in globals.css');
   process.exit(1);
 }
 const rootProps = new Set(
-  [...rootMatch[1].matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map((m) => m[1])
+  blocks.flatMap((b) => [...b.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map((m) => m[1]))
 );
 
 // Token names declared in the contract: `token: '--x'`.
