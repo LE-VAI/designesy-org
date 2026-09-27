@@ -54,6 +54,14 @@ function selfRow() {
 export const SELF_SCORE = selfRow().score as number; // percent — from the seed row
 export const SELF_GRADE = selfRow().grade as string;
 
+/** The self row's verdict counts, for the homepage console (lib/verify-console),
+ *  which resolves each cell from these and says so when they stop reconciling. */
+export const SELF_COUNTS = {
+  pass: selfRow().pass ?? 0,
+  warn: selfRow().warn ?? 0,
+  fail: selfRow().fail ?? 0,
+};
+
 // Seeded cohort honesty — what the public leaderboard actually contains.
 export const COHORT_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;
 export const COHORT_TOTAL_COUNT = SEED.length;

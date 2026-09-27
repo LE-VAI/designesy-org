@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './home.css';
+import './home-lvl.css';
+import './home-inspect.css';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { Toggle } from './lib/toggle';
@@ -8,11 +10,10 @@ import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
-import { HeroConstruction } from './hero-construction';
 import { ContractHealthRack, CONTRACT_HEALTH_DIMS, CONTRACT_HEALTH_MEAN } from './contract-health-rack';
-import { CountUp } from './lib/count-up';
-import { ScoreLoop } from './lib/score-loop';
-import { ContractRing } from './lib/contract-ring';
+import { VerifyConsole, VC_TIMING } from './lib/verify-console';
+import { PlayWhenVisible } from './lib/play-when-visible';
+import { InspectSequence } from './lib/inspect-sequence';
 import { CheckGrid } from './lib/check-grid';
 import {
   ENGINE_CHECK_COUNT,
@@ -25,7 +26,7 @@ import {
   RECENT_SCORES,
   LOWEST_SCORE,
   LOWEST_GRADE,
-  LOWEST_NAME,
+  SELF_COUNTS,
 } from './hero-stats';
 
 // ISR: the homepage is statically rendered and cached at the Vercel edge,
@@ -64,45 +65,27 @@ export const metadata: Metadata = pageMeta({
     `Verify any site against the Designesy design contract. ${ENGINE_CHECK_COUNT} checks. One grade. designesy.org`,
 });
 
-// The hero headline, in the two parts the markup renders. HERO_ROTATOR_WORDS[0]
-// is the word the rotator rests on, so the canonical sentence and the settled
-// animation can never disagree — see HERO_HEADLINE below.
+// The hero headline, in the two parts the markup renders. The claim holds
+// still: the proof moves (the console below verifies this site on a loop, and
+// draws the underline under HERO_ACCENT each time its verdict lands).
+//
+// The final word used to rotate through four synonyms with a character
+// scramble. Captured mid-rotation it read "We make execution 3GzeY.", and a
+// moving word in the headline competed with the one instrument that proves it.
+// The sentence now rests on its strongest word.
 const HERO_LINE_1 = 'AI makes execution free.';
 const HERO_LINE_2_PREFIX = 'We make execution ';
-// Facelift: the list was nine words and led with its weakest ("yours"). The
-// headline now lands the outcome first ("provable"), and the rotation cycles
-// four words that each state a result, pausable with the site-wide motion
-// toggle. Word 0 is also the accessible name and the settled state.
-const HERO_ROTATOR_WORDS = ['provable', 'legitimate', 'real', 'yours'] as const;
+const HERO_ACCENT = 'provable';
 
 /**
- * The h1's accessible name — the sentence as a reader hears it, fixed.
- *
- * WHY THIS IS HANDED TO THE BROWSER RATHER THAN LEFT TO THE DOM
- * The headline animates: the final word scrambles and cycles every 3.2s. That
- * animation must not be the source of the page's primary heading text, because
- * everything that caches or cites an h1 gets a different sentence depending on
- * WHEN it looked. Measured on production, reading Chrome's own accessibility
- * tree: "AI makes execution We make execution yours." while the visible word
- * read "legitimate" — and the word "free" was missing entirely, because the
- * enhancer derives each line's aria-label from that line's first text node and
- * line 1 ends in a sibling <span>.
- *
- * So the name is declared here, derived from the same rotator list the markup
- * uses, and both animated lines are aria-hidden. Text in the accessibility tree
- * is then complete and constant whether the reader arrives before the first
- * decode, between two rotations, or mid-scramble.
- *
- * aria-hidden on the lines is safe: this is decorative repetition of the name
- * above it, not content. The visible text still renders exactly as before, and
- * the markdown generator (which reads DOM text, not the a11y tree) is
- * unaffected.
- *
- * The rotator's own aria-label writes are left in place — they are the
- * enhancer's business during the animation, and they cost nothing now that both
- * lines are hidden from assistive tech.
+ * The h1's accessible name, declared once and derived from the same parts the
+ * markup renders. The two visual lines are block spans, and accessible-name
+ * computation does not insert a space at a block boundary, so the name is
+ * handed to the browser rather than left to the DOM ("free.We make ...").
+ * The visual lines are aria-hidden so they cannot contribute a second name.
+ * (Guarded by scripts/check-hero-a11y-name.js.)
  */
-const HERO_HEADLINE = `${HERO_LINE_1} ${HERO_LINE_2_PREFIX}${HERO_ROTATOR_WORDS[0]}.`;
+const HERO_HEADLINE = `${HERO_LINE_1} ${HERO_LINE_2_PREFIX}${HERO_ACCENT}.`;
 
 const PILLARS = [
   {
@@ -212,6 +195,7 @@ const FIELD = [
     desc: 'Tokens, motion, components, and the Poise, Takt, Cadence, and Acoustics rules. A human overview, plus a machine export agents can cite directly.',
     arrow: 'Read the contract →',
     kind: 'contract' as const,
+    icon: 'contract' as const,
   },
   {
     href: '/kits/design-review',
@@ -222,6 +206,7 @@ const FIELD = [
     desc: 'Eight dimensions, a copyable agent prompt, output format, and verification checklist. Human and machine read the same rules.',
     arrow: 'Open the kit →',
     kind: 'kit' as const,
+    icon: 'review' as const,
   },
   {
     href: 'https://designesy.ai.studio/',
@@ -232,6 +217,7 @@ const FIELD = [
     desc: 'A conversational instance of the Designesy Director. It answers from the designesy.org contract: tokens, principles, and open tensions.',
     arrow: 'Open the chat →',
     kind: 'kit' as const,
+    icon: 'studio' as const,
   },
   {
     href: '/continuity',
@@ -242,8 +228,54 @@ const FIELD = [
     desc: 'Score, contract, verify, and keep the receipt. Open core stays free. Continuity adds history and drift for work that continues.',
     arrow: 'Join the waitlist →',
     kind: 'kit' as const,
+    icon: 'continuity' as const,
   },
 ];
+
+/** One line icon per "put the contract to work" card: what the thing is,
+ *  drawn in the same 1.5px stroke as the search palette's row icons. */
+function FieldIcon({ name }: { name: 'contract' | 'review' | 'studio' | 'continuity' }) {
+  const props = {
+    width: 18,
+    height: 18,
+    viewBox: '0 0 18 18',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.5,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+  if (name === 'contract') {
+    return (
+      <svg {...props}>
+        <path d="M4.5 2.5h6.2l2.8 2.8v10.2h-9z" />
+        <path d="M10.5 2.7v2.8h2.8M6.8 9.2l1.6 1.6 3-3.3" />
+      </svg>
+    );
+  }
+  if (name === 'review') {
+    return (
+      <svg {...props}>
+        <circle cx="8" cy="8" r="4.8" />
+        <path d="M11.6 11.6 15.5 15.5M6 8.2l1.4 1.4 2.6-2.8" />
+      </svg>
+    );
+  }
+  if (name === 'studio') {
+    return (
+      <svg {...props}>
+        <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5v6A1.5 1.5 0 0 1 13.5 12H8l-3.5 3v-3h0A1.5 1.5 0 0 1 3 10.5z" />
+        <path d="M6 6.8h6M6 9.2h3.6" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...props}>
+      <path d="M2.8 9a6.2 6.2 0 1 0 1.9-4.5" />
+      <path d="M2.6 2.8v2.6h2.6M9 5.6V9l2.4 1.6" />
+    </svg>
+  );
+}
 
 // All nine operating principles (canonical titles from /docs). The homepage
 // used to show four under "Nine principles. Four shown here.", a headline that
@@ -269,131 +301,109 @@ export default function HomePage() {
     <>
       <Topbar scrolled />
 
-      {/* data-particles="quiet": the ambient field thins here so the contract
-          ring stays the page's one dominant mass (lib/ambient-particles). */}
-      <main id="main-content" data-pagefind-body className="site-shell home" data-particles="quiet">
-        {/* --- Hero: the claim, the product, and the one anchor ---
+      <main id="main-content" data-pagefind-body className="site-shell home">
+        {/* --- Hero: the claim, then the instrument that proves it ---
             Positioning: Designesy states design judgment as a published
             standard and proves it live on any page, its own included:
             authoritative in what it claims, playful in how it shows the proof.
-            Left: the claim (editorial, left-aligned), the form, the proof row.
-            Right: the contract ring, the page's single dominant mass and its
-            one cinematic moment. */}
-        <section className="hero hero-architectural home-hero" aria-labelledby="hero-title">
-          <HeroConstruction />
-          <div className="hero-content home-hero-content">
+            The claim and the command bar sit still; the console below is the
+            page's one moving mass. PlayWhenVisible pauses the hero as one unit
+            off screen, so the console clock and the headline underline (same
+            timing, VC_TIMING) can never drift apart. */}
+        <PlayWhenVisible
+          as="section"
+          className="hero home-hero"
+          aria-labelledby="hero-title"
+          data-play="on"
+        >
+          <div className="home-hero-copy" style={VC_TIMING}>
             <p className="home-kicker">
-              <span className="home-kicker-mark" aria-hidden="true" />
-              The design standard, verified live
+              <span className="home-kicker-live" aria-hidden="true" />
+              <span>
+                Contract <b>{CONTRACT_VERSION}</b> is live · <b>{ENGINE_CHECK_COUNT}</b> checks, rescored weekly
+              </span>
             </p>
             <h1 className="hero-title hero-display" id="hero-title" aria-label={HERO_HEADLINE}>
-              <span className="hero-display-line" data-scramble aria-hidden="true">
-                AI makes execution<span className="hero-word-free"> free</span>.
+              <span className="hero-display-line" aria-hidden="true">
+                {HERO_LINE_1}
               </span>
-              <span
-                className="hero-display-line is-accent"
-                data-scramble
-                aria-hidden="true"
-                data-scramble-rotate-words={JSON.stringify(HERO_ROTATOR_WORDS)}
-                data-scramble-rotate-delay="3200"
-              >
-                <span data-prefix>{HERO_LINE_2_PREFIX}</span>
-                <span data-word>{HERO_ROTATOR_WORDS[0]}</span>
-                <span>.</span>
+              <span className="hero-display-line is-accent" aria-hidden="true">
+                {HERO_LINE_2_PREFIX}
+                <span className="hero-accent">
+                  {HERO_ACCENT}
+                  <span className="hero-proof-line">
+                    <i />
+                  </span>
+                </span>
+                .
               </span>
             </h1>
 
-            <div className="home-hero-grid">
-              <div className="home-hero-main">
-                <p className="hero-sub fade-up fade-up-delay-1">
-                  Designesy publishes design judgment as a versioned contract, then verifies any live
-                  page against it. {ENGINE_CHECK_COUNT} checks, one grade, and evidence you can cite.
-                </p>
+            <p className="hero-sub">
+              Designesy publishes design judgment as a versioned contract, then verifies any live
+              page against it. {ENGINE_CHECK_COUNT} checks, one grade, and evidence you can cite.
+            </p>
 
-                {/* THE PRODUCT: the URL input */}
-                <div id="score" className="score-hero-input fade-up fade-up-delay-2">
-                  <ScoreForm />
-                </div>
-
-                {/* REAL proof only: every value from app/hero-stats.ts. */}
-                <div className="hero-proof fade-up fade-up-delay-3" role="group" aria-label="Live verification facts">
-                  <ul className="hero-proof-stats">
-                    <li className="hero-proof-stat">
-                      <span className="hero-proof-dot is-live" aria-hidden="true" />
-                      <span>Live contract <b>{CONTRACT_VERSION}</b></span>
-                    </li>
-                    <li className="hero-proof-stat">
-                      <span className="hero-proof-num"><CountUp value={ENGINE_CHECK_COUNT} /></span>
-                      <span>checks</span>
-                    </li>
-                    <li className="hero-proof-stat">
-                      <span className="hero-proof-num"><CountUp value={COHORT_SCORED_COUNT} /></span>
-                      <span>of <CountUp value={COHORT_TOTAL_COUNT} /> sites scored</span>
-                    </li>
-                    {LOWEST_SCORE !== null && (
-                      <li className="hero-proof-stat">
-                        <span>Lowest </span>
-                        <span className="hero-proof-num"><CountUp value={LOWEST_SCORE} suffix="%" /></span>
-                        <span className={`hero-proof-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-
-                <p className="hero-hint fade-up fade-up-delay-4">
-                  The compliance layer for AI-generated UI. No login, {ENGINE_CHECK_COUNT} checks against
-                  contract {CONTRACT_VERSION}.{' '}
-                  <Link
-                    href="/contracts/design-system"
-                    className="text-link"
-                    data-cuelume-hover="tick"
-                    data-cuelume-press
-                  >
-                    Read the contract →
-                  </Link>
-                </p>
-              </div>
-
-              {/* The anchor: the contract as an instrument, then the cohort it
-                  measures, at a lower rank. */}
-              <div className="home-instrument">
-                {/* The self-score is a dated fact from the leaderboard seed
-                    (weekly rescore), shown with its date; see hero-stats. */}
-                <ContractRing grade={SELF_GRADE} score={SELF_SCORE} measured={COHORT_LAST_SCORED} />
-                <div className="hero-proof-recent home-cohort">
-                  <p className="hero-proof-recent-label">Highest-scoring in the cohort</p>
-                  <ul className="hero-proof-recent-list">
-                    {RECENT_SCORES.slice(0, 3).map((s) => (
-                      <li key={s.url} className="hero-proof-recent-item">
-                        <a
-                          className="hero-proof-recent-link"
-                          href={`/score?url=${encodeURIComponent(new URL(s.url).host.replace(/^www\./, ''))}`}
-                          data-cuelume-hover="tick"
-                        >
-                          <span className="hero-proof-recent-name">
-                            {s.name}
-                            {s.isSelf && <span className="hero-proof-recent-self">self</span>}
-                          </span>
-                          <span className="hero-proof-recent-dots" aria-hidden="true" />
-                          <span className="hero-proof-recent-score" data-tabular><CountUp value={s.score} decimals={1} /></span>
-                          <span className={`hero-proof-recent-grade is-${s.grade.toLowerCase()}`}>{s.grade}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+            {/* THE PRODUCT: the URL input, as one command bar */}
+            <div id="score" className="score-hero-input">
+              <ScoreForm />
             </div>
           </div>
-        </section>
 
-        {/* --- Demonstration: the product, working ---
-            A seamless 6s loop of the engine's checks sweeping a generic page.
-            v03 FAIL (no score ceiling) and v06 WARN (WARN never triggers v06's
-            cap), so grade A holds. No eyebrow: the heading and the loop carry it. */}
-        <section className="section home-demo" aria-labelledby="score-loop-title">
+          {/* The instrument: this site, verified by its own engine. Every
+              value is from the registry and the leaderboard seed. */}
+          <VerifyConsole
+            host="designesy.org"
+            score={SELF_SCORE}
+            grade={SELF_GRADE}
+            measured={COHORT_LAST_SCORED}
+            contract={CONTRACT_VERSION}
+            pass={SELF_COUNTS.pass}
+            warn={SELF_COUNTS.warn}
+            fail={SELF_COUNTS.fail}
+          />
+
+          <div className="hero-cohort" role="group" aria-label="This week's cohort">
+            <span className="hero-cohort-label">
+              Cohort, week of {COHORT_LAST_SCORED}: <b>{COHORT_SCORED_COUNT}</b> of {COHORT_TOTAL_COUNT} sites scored
+            </span>
+            <ul className="hero-cohort-list">
+              {RECENT_SCORES.filter((s) => !s.isSelf)
+                .slice(0, 3)
+                .map((s) => (
+                  <li key={s.url}>
+                    <a
+                      className="hero-cohort-link"
+                      href={`/score?url=${encodeURIComponent(new URL(s.url).host.replace(/^www\./, ''))}`}
+                      data-cuelume-hover="tick"
+                    >
+                      <span className="hero-cohort-name">{s.name}</span>
+                      <span className="hero-cohort-score" data-tabular>{s.score.toFixed(1)}</span>
+                      <span className={`hero-cohort-grade is-${s.grade.toLowerCase()}`}>{s.grade}</span>
+                    </a>
+                  </li>
+                ))}
+              {LOWEST_SCORE !== null && (
+                <li className="hero-cohort-low">
+                  Lowest <span data-tabular>{LOWEST_SCORE}%</span>
+                  <span className={`hero-cohort-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
+                </li>
+              )}
+            </ul>
+            <Link className="hero-cohort-more text-link" href="/leaderboard" data-cuelume-hover="tick">
+              See the leaderboard
+              <span aria-hidden="true"> →</span>
+            </Link>
+          </div>
+        </PlayWhenVisible>
+
+        {/* --- Inspection: the product, working, told by scroll ---
+            Replaces the MP4 loop (a black rectangle in light mode). A generic
+            page drawn in HTML, inspected in four steps the reader scrolls
+            through: read, measure, find, grade (lib/inspect-sequence). */}
+        <section className="section home-inspect" aria-labelledby="inspect-title">
           <div className="home-split-head">
-            <h2 className="section-title home-title home-title--section" id="score-loop-title" data-scramble>
+            <h2 className="section-title home-title home-title--section" id="inspect-title">
               Every check, run against the page.
             </h2>
             <p className="surface-lede">
@@ -401,7 +411,7 @@ export default function HomePage() {
               the element it flags, named by the check that caught it.
             </p>
           </div>
-          <ScoreLoop description="Demo on a generic page. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. Neither finding caps the score, so the page grades A." />
+          <InspectSequence />
         </section>
 
         {/* --- Statement: why it matters ---
@@ -497,13 +507,8 @@ export default function HomePage() {
                 >
                   <div className="field-card-top">
                     <span className={`status-badge status-badge--${item.kind}`}>{item.badge}</span>
-                    <span
-                      className={`mark-glyph mark-glyph--${item.kind}`}
-                      aria-hidden="true"
-                      title={item.kind === 'contract' ? 'Contract mark · structure' : 'Kit mark · usable package'}
-                    >
-                      <span className="mark-glyph-core" />
-                      <span className="mark-glyph-ring" />
+                    <span className="field-card-icon" aria-hidden="true">
+                      <FieldIcon name={item.icon} />
                     </span>
                   </div>
                   <div className={`field-card-status${item.status === 'Live' ? ' is-live' : ''}`}>{item.status}</div>
