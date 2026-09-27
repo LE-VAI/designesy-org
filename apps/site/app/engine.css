@@ -1,0 +1,2623 @@
+/* ==========================================================================
+   Engine pages: /score /drift /readiness /monitor /compare /guardrails
+   /report /maturity /m3-bridge. One composition, nine instruments.
+
+   The page is the engine: the checks it runs are drawn before you type (the
+   registry comes from each engine's published contract), and a run lights
+   the same drawing with the result. Layout answers to the bench's own width
+   (container queries), never the viewport's.
+
+   Materials come from instrument.css (the homepage console's palette);
+   everything else resolves to contract tokens.
+   ========================================================================== */
+
+.eg {
+  /* Composed motion: duration and easing travel together. */
+  --eg-t-press: var(--duration-quick) var(--ease-out);
+  --eg-t-move: var(--duration-fast) var(--ease-out);
+  --eg-t-reveal: var(--duration-slow) var(--ease-out);
+  --eg-gutter: clamp(var(--space-16), 4vw, var(--space-24));
+  container: eg / inline-size;
+  width: 100%;
+  max-width: calc(var(--maxw-wide) + 2 * var(--eg-gutter));
+  margin: 0 auto;
+  padding: 0 var(--eg-gutter) clamp(var(--space-64), 9vw, 7rem);
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Head: the route, the name, one sentence ----------------------------- */
+
+.eg-head {
+  padding-block: clamp(var(--space-40), 6.5vw, var(--space-72)) clamp(var(--space-28), 3.5vw, var(--space-40));
+}
+
+/* The page's one label: where you are and what this engine holds. It replaces
+   the category eyebrow, so it carries facts rather than a section name.
+
+   One line at every width, scrolling sideways when a phone is too narrow for
+   it. The fallback mono face is wider than Geist Mono, so a wrapping line
+   could be two lines tall before the font arrives and one line after, and
+   everything under it would jump (measured: CLS 0.23 on /maturity, local
+   build without font preloads). A line that never wraps is the same height
+   in either face. */
+.eg-path {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-12);
+  margin: 0 0 var(--space-20);
+  overflow-x: auto;
+  scrollbar-width: none;
+  font: 500 0.74rem/1.4 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eg-path::-webkit-scrollbar {
+  display: none;
+}
+
+.eg-path > span {
+  flex: 0 0 auto;
+}
+
+.eg-path b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.eg-path a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: color var(--eg-t-move), border-color var(--eg-t-move);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-path a:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+}
+
+.eg-path > span + span::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin-right: var(--space-12);
+  border-radius: 50%;
+  background: var(--line-strong);
+  vertical-align: middle;
+}
+
+/* Optical size pinned at 32, as on the homepage headline: next/font sizes the
+   fallback face to Fraunces' default optical size, and at the automatic size
+   for 4rem type the glyphs run narrower, so a late font would reflow the
+   title (the cause of #143 on the homepage). */
+/* Fraunces at 700 still runs 7 to 12% wider than its fallback, so a title near
+   a wrap point would change line count when the face arrives. Titles take the
+   full width (one line at 1080 in either face) and start smaller on phones,
+   so a title sits clear of a break at 375 in either face. */
+.eg-title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.eg-thesis {
+  margin: var(--space-16) 0 0;
+  max-width: 40rem;
+  font-size: clamp(1.06rem, 1rem + 0.35vw, 1.24rem);
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* --- Bench: the input and the instrument, one container ------------------- */
+
+.eg-bench {
+  container: bench / inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-16);
+}
+
+/* Grid items default to min-width: auto, so one long line of code would
+   widen the whole bench past the viewport; zero lets scrollers scroll. */
+.eg-bench > * {
+  min-width: 0;
+}
+
+/* --- Command bar: one glass line ----------------------------------------- */
+
+.eg-bar {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 46rem;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--lv-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  transition: box-shadow var(--eg-t-move);
+}
+
+.eg-bar-line {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+}
+
+.eg-bar:focus-within {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
+    inset 0 1px 0 var(--lv-glass-edge),
+    var(--lv-glass-shadow);
+}
+
+/* The field keeps its own outline off: the whole bar shows the focus. */
+.eg-bar-line .eg-bar-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.eg-bar-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding-inline: var(--space-12) var(--space-6);
+}
+
+.eg-bar-field svg {
+  flex: 0 0 auto;
+  color: var(--lv-ink-accent);
+}
+
+.eg-bar-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 3.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 1rem/1.2 var(--sans);
+}
+
+.eg-bar-input::placeholder {
+  color: var(--muted-dim);
+}
+
+.eg-bar-go {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: 3.25rem;
+  padding-inline: var(--space-24);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--signal-light), var(--signal));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
+  color: var(--paper-on-signal);
+  font: 600 0.95rem/1 var(--sans);
+  cursor: pointer;
+  transition: transform var(--eg-t-press), opacity var(--eg-t-press);
+}
+
+.eg-bar-go:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.eg-bar-go[aria-busy="true"] {
+  opacity: 0.72;
+  cursor: progress;
+}
+
+.eg-bar-go:focus-visible {
+  outline: 2px solid var(--paper-on-signal);
+  outline-offset: -4px;
+}
+
+.eg-bar-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  font-size: 0.8rem;
+  color: var(--muted-dim);
+}
+
+.eg-bar-foot-note {
+  margin: 0;
+}
+
+/* Two URLs (compare): the fields share one bar, a divider between them. */
+.eg-bar-line.is-pair .eg-bar-field + .eg-bar-field {
+  border-left: 1px solid var(--line-faint);
+  padding-left: var(--space-14);
+}
+
+@container bench (width < 36rem) {
+  .eg-bar-line {
+    flex-direction: column;
+  }
+  .eg-bar-go {
+    width: 100%;
+  }
+  .eg-bar-line.is-pair .eg-bar-field + .eg-bar-field {
+    border-left: 0;
+    border-top: 1px solid var(--line-faint);
+    padding-left: var(--space-12);
+  }
+}
+
+/* --- Segmented control (radiogroup, roving focus) ------------------------ */
+
+.eg-seg {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.eg-seg-label {
+  font: 500 0.72rem/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-seg-track {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+/* The selection is one moving tile, so a change of choice reads as motion
+   from the old choice to the new one. */
+.eg-seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--seg-n));
+  border-radius: var(--radius-sm);
+  background: var(--surface-lifted);
+  box-shadow: 0 0 0 1px var(--line), inset 0 1px 0 var(--lv-glass-edge);
+  transform: translateX(calc(var(--seg-i) * 100%));
+  transition: transform var(--eg-t-move);
+  pointer-events: none;
+}
+
+.eg-seg-track {
+  --seg-n: 1;
+  --seg-i: 0;
+}
+
+.eg-seg-opt {
+  position: relative;
+  z-index: 1;
+  min-height: 2rem;
+  padding: 0 var(--space-12);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: 500 0.78rem/1 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--eg-t-move);
+}
+
+.eg-seg-opt[aria-checked="true"] {
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-seg-opt:hover {
+    color: var(--ink);
+  }
+}
+
+.eg-seg-opt:disabled {
+  cursor: default;
+}
+
+/* --- Instrument panel ------------------------------------------------------ */
+
+.eg-inst {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--lv-glass);
+  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The one specular note along the top edge, as on the homepage console. */
+.eg-inst::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--lv-sheen), transparent);
+  pointer-events: none;
+}
+
+.eg-inst-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-12);
+  min-height: 2.9rem;
+  padding: 0 var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+  font: 500 0.78rem/1 var(--sans);
+  color: var(--muted);
+}
+
+.eg-inst-app {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Narrow bench: the target pill steps out (the findings name the host), so the
+   engine's name and its state never collide. */
+@container bench (width < 36rem) {
+  .eg-inst-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .eg-inst-target {
+    display: none;
+  }
+}
+
+.eg-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1.5px var(--lv-ink-accent);
+}
+
+.eg-mark i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lv-ink-accent);
+}
+
+.eg-inst-target {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  max-width: 22rem;
+  min-width: 0;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font: 500 0.74rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.eg-inst-target:empty {
+  visibility: hidden;
+}
+
+.eg-inst-target span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eg-inst-state {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 0.72rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.eg-inst[data-phase="running"] .eg-dot {
+  background: var(--lv-ink-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv-ink-accent) 20%, transparent);
+}
+
+.eg-inst[data-phase="done"] .eg-dot {
+  background: var(--live);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 18%, transparent);
+}
+
+.eg-inst[data-phase="error"] .eg-dot {
+  background: var(--error);
+}
+
+.eg-inst-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container bench (width >= 52rem) {
+  .eg-inst-body {
+    grid-template-columns: minmax(0, 1.6fr) minmax(17rem, 1fr);
+  }
+  .eg-side {
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+.eg-faces {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--space-20) var(--space-24);
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  min-width: 0;
+}
+
+/* A group is as wide as its checks: four checks beside eight read as a third
+   beside two thirds, the proportion of the registry itself. */
+.eg-group {
+  --n: 1;
+  flex: var(--n) 1 calc(var(--n) * 7.5rem);
+  min-width: min(100%, 15rem);
+}
+
+.eg-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-bottom: var(--space-4);
+}
+
+.eg-label {
+  font: 500 0.66rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.eg-group-hint {
+  margin: 0 0 var(--space-12);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+  text-wrap: pretty;
+}
+
+.eg-count {
+  font: 500 0.7rem/1 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Cells: one per check -------------------------------------------------- */
+
+.eg-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.75rem), 1fr));
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eg-cell {
+  --i: 0;
+  --tone: var(--lv-well-line);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-8);
+  width: 100%;
+  min-height: 4.4rem;
+  padding: var(--space-10) var(--space-12) var(--space-12);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--tone);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), box-shadow var(--eg-t-move), transform var(--eg-t-press);
+}
+
+.eg-cell:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-cell:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-cell[data-inspect="true"] {
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.eg-cell[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--lv-ink-accent) 9%, var(--lv-well));
+  box-shadow: inset 0 0 0 1.5px var(--lv-ink-accent);
+}
+
+.eg-cell-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.eg-cell-id {
+  font: 500 0.7rem/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-cell-label {
+  align-self: end;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/* The lamp: the homepage's lit glass cell, one per check. */
+.eg-lamp {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+/* In the instrument a lamp waits as a hairline dash (no reading yet, and
+   nothing that looks like a switch); a result grows it into the lit cell. */
+.eg-faces .eg-lamp {
+  background: var(--line-strong);
+  box-shadow: none;
+  transform: scaleY(0.2);
+  transition: transform var(--eg-t-reveal);
+}
+
+.eg-faces [data-status] .eg-lamp,
+.eg-faces .eg-lamp[data-status] {
+  transform: none;
+}
+
+[data-status="PASS"] > .eg-cell-top .eg-lamp,
+.eg-lamp[data-status="PASS"] {
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
+}
+
+[data-status="WARN"] > .eg-cell-top .eg-lamp,
+.eg-lamp[data-status="WARN"] {
+  background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));
+  box-shadow: inset 0 0 0 1px var(--lv-warn-b), inset 0 1px 0 var(--lv-shine);
+}
+
+[data-status="FAIL"] > .eg-cell-top .eg-lamp,
+.eg-lamp[data-status="FAIL"] {
+  background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b));
+  box-shadow: inset 0 0 0 1px var(--lv-fail-b), inset 0 1px 0 var(--lv-shine);
+}
+
+/* Skipped or checked by a person: hatched, the drawing convention for
+   "a different material". */
+[data-status="SKIP"] > .eg-cell-top .eg-lamp,
+[data-status="MANUAL"] > .eg-cell-top .eg-lamp,
+.eg-lamp[data-status="SKIP"],
+.eg-lamp[data-status="MANUAL"] {
+  background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
+  box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+.eg-cell[data-status="PASS"] { --tone: color-mix(in srgb, var(--lv-pass-a) 34%, transparent); }
+.eg-cell[data-status="WARN"] { --tone: color-mix(in srgb, var(--lv-warn-a) 42%, transparent); }
+.eg-cell[data-status="FAIL"] { --tone: color-mix(in srgb, var(--lv-fail-a) 46%, transparent); }
+.eg-cell[data-status="SKIP"],
+.eg-cell[data-status="MANUAL"] { --tone: var(--lv-hatch); }
+
+.eg-cell[data-status="FAIL"] {
+  background: color-mix(in srgb, var(--lv-fail-b) 8%, var(--lv-well));
+}
+
+.eg-cell[data-status="WARN"] {
+  background: color-mix(in srgb, var(--lv-warn-b) 7%, var(--lv-well));
+}
+
+/* --- Side column: verdict, or the check under the pointer ----------------- */
+
+.eg-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-16);
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  border-top: 1px solid var(--line-faint);
+  min-width: 0;
+}
+
+.eg-side-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.eg-side-note b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.eg-verdict-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+  min-height: 3.6rem;
+}
+
+.eg-grade {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: 3.6rem;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.eg-score {
+  font: 500 1.5rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.eg-score small {
+  margin-left: 2px;
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+}
+
+.eg-running {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.eg-running-line {
+  margin: 0;
+  font: 500 0.92rem/1.4 var(--sans);
+  color: var(--ink);
+}
+
+.eg-elapsed {
+  font: 500 0.78rem/1 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The grade scale, drawn to scale: F spans 0 to 60, each other grade ten
+   points, so the marker lands where the score lands. */
+.eg-scale {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.eg-scale-track {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 0.5rem;
+}
+
+.eg-scale-zone {
+  position: relative;
+  flex: var(--w) 0 0;
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  transform-origin: left center;
+}
+
+.eg-scale-zone { --w: 10; }
+
+.eg-scale-zone.is-here {
+  box-shadow: none;
+}
+
+.eg-scale-zone.is-here[data-band="pass"] { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); }
+.eg-scale-zone.is-here[data-band="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
+.eg-scale-zone.is-here[data-band="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+
+.eg-scale-marker {
+  --at: 0;
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: calc(var(--at) * 1%);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
+
+.eg-scale-ticks {
+  display: flex;
+  gap: 2px;
+  font: 500 0.66rem/1 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-scale-ticks span {
+  flex: var(--w) 0 0;
+}
+
+.eg-scale-ticks span { --w: 10; }
+
+.eg-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.eg-tally li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.eg-tally b {
+  font: 500 0.86rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.eg-tally .eg-lamp {
+  width: 0.9rem;
+  height: 0.42rem;
+}
+
+/* The first thing to fix, as one control that opens its finding. */
+.eg-start {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  padding: var(--space-12) var(--space-14);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+}
+
+.eg-start:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-start:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-start-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.eg-start-title .eg-lamp {
+  width: 1rem;
+}
+
+.eg-start-detail {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.eg-share {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding-top: var(--space-4);
+}
+
+.eg-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: 2.25rem;
+  padding: 0 var(--space-14);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: 500 0.8rem/1 var(--sans);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+}
+
+.eg-share-btn.is-icon {
+  width: 2.25rem;
+  padding: 0;
+}
+
+.eg-share-btn:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-share-btn:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/* A stack of labelled figures (compare's diff, report's engines). */
+.eg-figs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12) var(--space-16);
+  margin: 0;
+}
+
+.eg-figs div {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.eg-figs dt {
+  font: 500 0.66rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.eg-figs dd {
+  margin: 0;
+  font: 500 1.35rem/1.1 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-figs dd small {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+}
+
+.eg-quiet {
+  margin: 0;
+  font: 500 0.74rem/1.5 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tabular results (compare's token lists). */
+.eg-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.eg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-table th,
+.eg-table td {
+  padding: var(--space-10) var(--space-16);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.eg-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.eg-table th {
+  font: 500 0.66rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  background: var(--lv-well);
+}
+
+.eg-table td {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.eg-table td:first-child,
+.eg-table code {
+  font: 500 0.8rem/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.eg-table .is-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.eg-swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: var(--space-6);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--line);
+  vertical-align: -1px;
+}
+
+/* Monitor: alerts, the trend across runs, and this browser's watches. */
+.eg-alerts {
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-14);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--lv-fail-b) 8%, var(--lv-well));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lv-fail-a) 40%, transparent);
+}
+
+.eg-alerts ul {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.eg-trend {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.eg-spark {
+  width: 100%;
+  height: 2.75rem;
+  color: var(--lv-ink-accent);
+}
+
+.eg-watches {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eg-watch {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-10) var(--space-12);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-watch:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-watch-host {
+  font: 500 0.86rem/1.3 var(--mono);
+}
+
+/* Before a run: a reference drawn from the engine's contract. */
+.eg-ref {
+  display: grid;
+  gap: var(--space-10);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-16) 0 0;
+  border-top: 1px solid var(--line-faint);
+}
+
+.eg-ref dl {
+  display: grid;
+  gap: var(--space-12);
+  margin: 0;
+}
+
+.eg-ref div {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.eg-ref dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.eg-ref dd {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.eg-ref-where {
+  font: 500 0.68rem/1.4 var(--mono);
+  color: var(--muted-dim);
+  white-space: nowrap;
+}
+
+.eg-ref-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted-dim);
+  text-wrap: pretty;
+}
+
+/* A check under inspection (pointer or focus on a cell). */
+.eg-probe {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.eg-probe-id {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 0.74rem/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-probe-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.eg-probe dl {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.eg-probe dt {
+  font: 500 0.66rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.eg-probe dd {
+  margin: 0 0 var(--space-6);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.eg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-12) var(--space-20);
+  border-top: 1px solid var(--line-faint);
+  font: 500 0.7rem/1.4 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6) var(--space-14);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eg-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.eg-legend .eg-lamp {
+  width: 0.9rem;
+  height: 0.42rem;
+}
+
+/* --- Face: origin map (readiness) ------------------------------------------ */
+
+.eg-paths {
+  display: grid;
+  gap: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 0.8rem/1.2 var(--mono);
+}
+
+.eg-paths-origin {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 0 0 var(--space-10);
+  color: var(--ink);
+}
+
+.eg-path-row {
+  --i: 0;
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-12);
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0 var(--space-10) 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-path-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-path-row[data-inspect="true"] {
+  background: var(--surface-hover);
+}
+
+.eg-path-row:active {
+  transform: scale(0.985);
+}
+
+/* The tree's branch: a hairline elbow drawn from the origin. */
+.eg-path-branch {
+  position: relative;
+  align-self: stretch;
+}
+
+.eg-path-branch::before,
+.eg-path-branch::after {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  background: var(--line-strong);
+}
+
+.eg-path-branch::before {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.eg-path-branch::after {
+  top: 50%;
+  width: 0.6rem;
+  height: 1px;
+}
+
+.eg-paths > li:last-child .eg-path-branch::before {
+  bottom: 50%;
+}
+
+.eg-path-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 var(--space-12);
+  min-width: 0;
+}
+
+.eg-path-url {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.eg-path-checks {
+  font: 400 0.8rem/1.3 var(--sans);
+  color: var(--muted-dim);
+}
+
+.eg-path-lamps {
+  display: inline-flex;
+  gap: var(--space-4);
+}
+
+/* --- Face: the mirror (compare) ---------------------------------------------
+   A on the left, the dimension in the middle, B on the right: the diff reads
+   outward from the question to each site's answer. */
+
+.eg-diff {
+  display: grid;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-diff-head,
+.eg-diff-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.eg-diff-head {
+  padding: 0 var(--space-10) var(--space-10);
+  border-bottom: 1px solid var(--line-faint);
+  font: 500 0.72rem/1.3 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-diff-head b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.eg-diff-head .eg-diff-a,
+.eg-diff-head .eg-diff-b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eg-diff-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eg-diff-row {
+  --i: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-6) var(--space-10);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-diff-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-diff-row[data-inspect="true"] {
+  background: var(--surface-hover);
+}
+
+.eg-diff-row:active {
+  transform: scale(0.985);
+}
+
+.eg-diff-a {
+  justify-self: end;
+  text-align: right;
+  font: 500 0.8rem/1.35 var(--mono);
+  color: var(--ink);
+}
+
+.eg-diff-b {
+  justify-self: start;
+  font: 500 0.8rem/1.35 var(--mono);
+  color: var(--ink);
+}
+
+.eg-diff-mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-width: 0;
+  font-size: 0.84rem;
+}
+
+.eg-diff-head .eg-diff-mid {
+  font-size: 0.72rem;
+}
+
+.eg-diff-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eg-diff-row[data-status="PASS"] .eg-lamp {
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine);
+  transform: none;
+}
+
+.eg-diff-row[data-status="WARN"] .eg-lamp {
+  background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));
+  box-shadow: inset 0 0 0 1px var(--lv-warn-b);
+  transform: none;
+}
+
+.eg-diff-row[data-status="FAIL"] .eg-lamp {
+  background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b));
+  box-shadow: inset 0 0 0 1px var(--lv-fail-b);
+  transform: none;
+}
+
+.eg-delta-up { color: var(--lv-ink-accent); }
+.eg-delta-down { color: var(--error); }
+
+@container bench (width < 40rem) {
+  .eg-diff-head,
+  .eg-diff-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .eg-diff-head .eg-diff-mid {
+    display: none;
+  }
+  .eg-diff-row .eg-diff-mid {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: flex-start;
+  }
+  .eg-diff-a {
+    justify-self: start;
+    text-align: left;
+  }
+}
+
+/* --- Face: the bundle (guardrails) ------------------------------------------ */
+
+.eg-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-8);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eg-file {
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-6);
+}
+
+.eg-file .eg-cell-label {
+  font: 500 0.84rem/1.25 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.eg-file-meta {
+  font: 500 0.7rem/1.3 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- File viewer (guardrails) ------------------------------------------------ */
+
+.eg-viewer {
+  min-width: 0;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line-faint);
+  overflow: hidden;
+}
+
+.eg-viewer-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.eg-viewer-name {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-12);
+  font: 500 0.86rem/1.3 var(--mono);
+  color: var(--ink);
+}
+
+.eg-viewer-name small {
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-viewer-actions {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.eg-code {
+  max-height: 32rem;
+  margin: 0;
+  padding: var(--space-16) var(--space-20);
+  overflow: auto;
+  font: 400 0.8rem/1.65 var(--mono);
+  color: var(--ink);
+  tab-size: 2;
+}
+
+/* --- The weighting, drawn to scale (report) -----------------------------------
+   One bar split 50 / 30 / 20: each engine's share of the composite is its
+   width, and a run fills each share to that engine's score. */
+
+.eg-weights {
+  flex: 1 1 100%;
+  display: grid;
+  gap: var(--space-10);
+}
+
+.eg-weights-row {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.eg-weight {
+  --w: 1;
+  --fill: 0;
+  flex: var(--w) 1 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-8);
+}
+
+.eg-weight-bar {
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  overflow: hidden;
+}
+
+.eg-weight-bar i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  transform: scaleX(var(--fill));
+  transform-origin: left center;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.eg-weight-bar i[data-band="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
+.eg-weight-bar i[data-band="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+
+.eg-weight-text {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.eg-weight-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* Two lines reserved: after a run the meta grows to name each engine's share,
+   and in the narrow segments it wraps in one face and not the other. */
+.eg-weight-meta {
+  min-height: 2.7em;
+  font: 500 0.72rem/1.35 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-weight-meta b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+@container bench (width < 40rem) {
+  .eg-weights-row {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eg-weight-bar i {
+    transition: none;
+  }
+}
+
+/* --- Face: four engines (score) --------------------------------------------- */
+
+.eg-engines {
+  display: grid;
+  gap: var(--space-16);
+  width: 100%;
+}
+
+.eg-engine {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.eg-engine-name {
+  display: grid;
+  gap: var(--space-4);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.eg-engine-name small {
+  font: 500 0.7rem/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-minicells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(1.1rem, 1.35rem));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* An unlit cell is a dim filled pill: no outline, so a row of them reads as
+   a register waiting for a reading, never as empty checkboxes. */
+.eg-minicell {
+  --i: 0;
+  display: block;
+  width: 100%;
+  height: 0.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--lv-well-line);
+  cursor: pointer;
+  transition: transform var(--eg-t-press);
+}
+
+.eg-minicell:active {
+  transform: scale(0.9);
+}
+
+.eg-minicell[data-status="PASS"] {
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine);
+}
+
+.eg-minicell[data-status="WARN"] {
+  background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));
+  box-shadow: inset 0 0 0 1px var(--lv-warn-b);
+}
+
+.eg-minicell[data-status="FAIL"] {
+  background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b));
+  box-shadow: inset 0 0 0 1px var(--lv-fail-b);
+}
+
+.eg-minicell[data-status="SKIP"],
+.eg-minicell[data-status="MANUAL"] {
+  background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
+  box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+.eg-engine-score {
+  justify-self: end;
+  font: 500 0.86rem/1 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@container bench (width < 36rem) {
+  .eg-engine {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .eg-minicells {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* /score keeps its dashboard beneath the instrument; inside an engine page the
+   dashboard spans the bench instead of the 680px column it had alone. */
+.eg .eg-dash {
+  max-width: none;
+}
+
+/* --- Maturity: the questions beside their stage matrix -------------------- */
+
+.mt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-32);
+  align-items: start;
+}
+
+@container bench (width >= 60rem) {
+  .mt-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(21rem, 1fr);
+    gap: var(--space-40);
+  }
+  .mt-grid.is-results {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  /* The matrix stays in view while the questions scroll past it. */
+  .mt-grid:not(.is-results) .mt-side {
+    position: sticky;
+    top: 6rem;
+  }
+}
+
+.mt-axis-meta {
+  margin: 0 0 var(--space-12);
+  font: 500 0.74rem/1.4 var(--mono);
+  color: var(--muted-dim);
+}
+
+.mt-axis-desc {
+  margin: var(--space-8) 0 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.mt-questions {
+  display: grid;
+  gap: var(--space-28);
+  margin: var(--space-28) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mt-q-prompt {
+  display: flex;
+  gap: var(--space-12);
+  margin: 0 0 var(--space-12);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.mt-q-num {
+  flex: 0 0 auto;
+  padding-top: 0.15rem;
+  font: 500 0.74rem/1.4 var(--mono);
+  color: var(--muted-dim);
+}
+
+.mt-options {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.mt-opt {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-12);
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--space-10) var(--space-14);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  color: var(--ink);
+  font: 400 0.9rem/1.4 var(--sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move), box-shadow var(--eg-t-move), transform var(--eg-t-press);
+}
+
+.mt-opt:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mt-opt:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/* Chosen: an accent ring and a lit stage cell, so the choice reads without
+   relying on color alone. */
+.mt-opt[aria-checked="true"] {
+  background: color-mix(in srgb, var(--lv-ink-accent) 11%, var(--lv-well));
+  box-shadow: inset 0 0 0 1.5px var(--lv-ink-accent);
+}
+
+.mt-opt-stage {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--lv-well-line);
+  font: 600 0.72rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.mt-opt[aria-checked="true"] .mt-opt-stage {
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  color: var(--paper-on-signal);
+}
+
+.mt-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-top: var(--space-32);
+}
+
+.eg-bar-go[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.eg-share-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mt-panel-body {
+  padding: var(--space-12) var(--space-12) var(--space-16);
+}
+
+.mt-matrix {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 2.25rem;
+  align-items: center;
+  gap: var(--space-16);
+  width: 100%;
+  min-height: 3.25rem;
+  padding: var(--space-8) var(--space-12);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+button.mt-row {
+  cursor: pointer;
+  transition: background-color var(--eg-t-move);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.mt-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.mt-row[aria-current="step"] {
+  background: var(--surface-hover);
+  box-shadow: inset 2px 0 0 var(--lv-ink-accent);
+}
+
+.mt-row-name {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.mt-row-name small {
+  font: 500 0.68rem/1.3 var(--mono);
+  color: var(--muted-dim);
+}
+
+.mt-cells {
+  display: grid;
+  grid-template-columns: repeat(4, 2.1rem);
+  gap: var(--space-4);
+}
+
+.mt-cell {
+  display: block;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--lv-well-line);
+}
+
+.mt-cell[data-tone="pass"] { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); box-shadow: inset 0 1px 0 var(--lv-shine); }
+.mt-cell[data-tone="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); box-shadow: inset 0 0 0 1px var(--lv-warn-b); }
+.mt-cell[data-tone="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); box-shadow: inset 0 0 0 1px var(--lv-fail-b); }
+
+.eg-legend .mt-cell {
+  width: 1rem;
+  height: 0.42rem;
+}
+
+.mt-row-score {
+  justify-self: end;
+  font: 500 0.86rem/1 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-reading {
+  display: grid;
+  align-content: start;
+  gap: var(--space-16);
+}
+
+.mt-overall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8) var(--space-16);
+  margin: 0;
+}
+
+.mt-overall-stage {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.mt-actions .eg-bar-go {
+  min-height: 2.75rem;
+  text-decoration: none;
+}
+
+@container bench (width < 30rem) {
+  .mt-cells {
+    grid-template-columns: repeat(4, 1.4rem);
+  }
+  .mt-row {
+    gap: var(--space-10);
+  }
+}
+
+/* --- Findings -------------------------------------------------------------- */
+
+.eg-section {
+  margin-top: clamp(var(--space-56), 8vw, var(--space-96));
+}
+
+.eg-h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.55rem, 1.3rem + 1vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.eg-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-12) var(--space-24);
+  margin-bottom: var(--space-20);
+}
+
+.eg-section-sub {
+  margin: var(--space-8) 0 0;
+  font: 500 0.76rem/1.4 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-section-lead {
+  margin-bottom: var(--space-24);
+}
+
+.eg-find-group + .eg-find-group {
+  margin-top: var(--space-24);
+}
+
+.eg-find-group > .eg-label {
+  display: block;
+  padding: 0 var(--space-4) var(--space-8);
+}
+
+.eg-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  overflow: hidden;
+}
+
+.eg-rows > li + li {
+  border-top: 1px solid var(--line-faint);
+}
+
+/* The whole row is the control. */
+.eg-row {
+  display: grid;
+  grid-template-columns: 1.4rem 3rem minmax(0, 1fr) auto 1rem;
+  align-items: start;
+  gap: var(--space-4) var(--space-12);
+  width: 100%;
+  min-height: 3.5rem;
+  padding: var(--space-14) var(--space-16);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--eg-t-move);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.eg-row:focus-visible {
+  outline-offset: -3px;
+}
+
+.eg-row .eg-lamp {
+  margin-top: 0.36rem;
+  width: 1.1rem;
+}
+
+.eg-row-id {
+  padding-top: 0.2rem;
+  font: 500 0.74rem/1.2 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-row-body {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.eg-row-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.eg-row-detail {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.eg-row-status {
+  padding-top: 0.2rem;
+  font: 600 0.7rem/1.2 var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.eg-row[data-status="FAIL"] .eg-row-status { color: var(--error); }
+.eg-row[data-status="WARN"] .eg-row-status { color: var(--warn); }
+.eg-row[data-status="PASS"] .eg-row-status { color: var(--lv-ink-accent); }
+
+.eg-chev {
+  margin-top: 0.3rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-dim);
+  transition: transform var(--eg-t-move);
+}
+
+.eg-row[aria-expanded="true"] .eg-chev {
+  transform: rotate(90deg);
+}
+
+.eg-row-more {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0 var(--space-16) var(--space-16) calc(var(--space-16) + 1.4rem + 3rem + 2 * var(--space-12));
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.eg-row-more[hidden] {
+  display: none;
+}
+
+.eg-row-more b {
+  font: 500 0.66rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.eg-row-more a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+@container eg (width < 36rem) {
+  .eg-row {
+    grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  }
+  .eg-row-id {
+    display: none;
+  }
+  .eg-chev {
+    display: none;
+  }
+  .eg-row-more {
+    padding-left: calc(var(--space-16) + 1.4rem + var(--space-12));
+  }
+}
+
+.eg-empty {
+  margin: 0;
+  padding: var(--space-20);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.eg-error {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.eg-error p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.eg-error b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- Method: the engine's steps, drawn as a line -------------------------- */
+
+.eg-method {
+  container: method / inline-size;
+}
+
+.eg-steps-box {
+  --steps: 4;
+  position: relative;
+  margin-top: var(--space-24);
+}
+
+.eg-steps {
+  position: relative;
+  display: grid;
+  gap: var(--space-24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+@container method (width >= 44rem) {
+  .eg-steps {
+    grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr));
+    gap: var(--space-20);
+  }
+}
+
+.eg-step {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  padding-top: var(--space-24);
+}
+
+/* Each step's node sits on the rule that joins the steps. */
+.eg-step::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.1rem;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 500 0.66rem/1 var(--mono);
+  color: var(--ink);
+  z-index: 1;
+}
+
+.eg-step-title {
+  margin: var(--space-6) 0 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.eg-step p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.eg-rule {
+  display: none;
+}
+
+@container method (width >= 44rem) {
+  .eg-rule {
+    display: block;
+    position: absolute;
+    top: 0.55rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--line-strong);
+    transform-origin: left center;
+  }
+}
+
+.eg-formula {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-24);
+  margin: var(--space-32) 0 0;
+  padding: var(--space-16) var(--space-20);
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font: 500 0.78rem/1.6 var(--mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.eg-formula b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* --- Prose, where an engine page needs some ------------------------------------ */
+
+.eg-prose p {
+  max-width: 65ch;
+  margin: var(--space-16) 0 0;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.eg-prose a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.eg-prose code {
+  font: 400 0.88em/1 var(--mono);
+  color: var(--ink);
+}
+
+/* --- M3 bridge: the input bench and the conversion pipeline ----------------- */
+
+.m3-input {
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--lv-glass);
+  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+}
+
+.m3-input:focus-within {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
+    inset 0 1px 0 var(--lv-glass-edge),
+    var(--lv-glass-shadow);
+}
+
+.m3-textarea {
+  width: 100%;
+  min-height: 13rem;
+  padding: var(--space-14) var(--space-16);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  color: var(--ink);
+  font: 400 0.9rem/1.6 var(--mono);
+  resize: vertical;
+}
+
+.m3-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.m3-textarea::placeholder {
+  color: var(--muted-dim);
+}
+
+.m3-go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8) var(--space-16);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-6);
+}
+
+.m3-pipe {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pipe;
+}
+
+.m3-pipe li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  padding: var(--space-12) var(--space-14);
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+.m3-pipe b {
+  font: 500 1.35rem/1.1 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* No figure yet: a hairline where the number will land, at the number's height. */
+.m3-pipe b:empty {
+  display: flex;
+  align-items: center;
+  height: 1.485rem;
+}
+
+.m3-pipe b:empty::before {
+  content: "";
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.m3-pipe span {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+@container bench (width < 40rem) {
+  .m3-pipe {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- Next: where this result leads ---------------------------------------- */
+
+.eg-next-list {
+  margin: var(--space-20) 0 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  overflow: hidden;
+}
+
+.eg-next-list > li + li {
+  border-top: 1px solid var(--line-faint);
+}
+
+.eg-go {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 1.25rem;
+  align-items: center;
+  gap: var(--space-4) var(--space-20);
+  min-height: 4.25rem;
+  padding: var(--space-14) var(--space-20);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--eg-t-move);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-go:hover {
+    background: var(--surface-hover);
+  }
+  .eg-go:hover .eg-go-arrow {
+    transform: translateX(3px);
+  }
+}
+
+.eg-go:focus-visible {
+  outline-offset: -3px;
+}
+
+.eg-go-text {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.eg-go-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.eg-go-desc {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.eg-go-route {
+  font: 500 0.74rem/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.eg-go-arrow {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--muted);
+  transition: transform var(--eg-t-move);
+}
+
+@container eg (width < 36rem) {
+  .eg-go {
+    grid-template-columns: minmax(0, 1fr) 1.25rem;
+  }
+  .eg-go-route {
+    display: none;
+  }
+}
+
+/* --- Motion ------------------------------------------------------------------
+   Each moving part means one thing. Checking: a cursor steps through the
+   registry in order, looping until the answer arrives. Answer: each check
+   resolves in registry order, once. Method: its rule draws as you reach it.
+   Transform and opacity only. */
+
+@keyframes eg-scan {
+  0%,
+  100% { opacity: 0.35; }
+  4% { opacity: 1; }
+  14% { opacity: 0.35; }
+}
+
+@keyframes eg-resolve {
+  from { opacity: 0.35; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.eg-inst[data-phase="running"] .eg-faces .eg-lamp {
+  background: var(--lv-ink-accent);
+}
+
+.eg-inst[data-phase="running"] .eg-minicell {
+  box-shadow: inset 0 0 0 1px var(--lv-ink-accent);
+}
+
+.eg-inst[data-phase="running"] .eg-faces .eg-lamp,
+.eg-inst[data-phase="running"] .eg-minicell {
+  /* Backwards fill holds each lamp dim until its turn; 0% equals 100%, so
+     the cursor passes from the last check to the first without a seam. */
+  animation: eg-scan calc(var(--n-all) * 110ms) linear calc(var(--i) * 110ms) infinite both;
+}
+
+.eg-inst { --n-all: 12; }
+
+.eg-inst[data-phase="done"] .eg-cell[data-status],
+.eg-inst[data-phase="done"] .eg-path-row[data-status],
+.eg-inst[data-phase="done"] .eg-diff-row[data-status],
+.eg-inst[data-phase="done"] .eg-minicell[data-status] {
+  animation: eg-resolve var(--eg-t-reveal) both;
+  animation-delay: calc(var(--i) * var(--eg-stagger));
+}
+
+/* The resolve steps 26ms a check; the 70 small cells on /score step 10ms, so
+   every register settles inside one second. */
+.eg-inst { --eg-stagger: 26ms; }
+.eg-inst .eg-minicell { --eg-stagger: 10ms; }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .eg-rule {
+      animation: eg-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 45%;
+    }
+  }
+}
+
+@keyframes eg-draw {
+  from { transform: scaleX(0); }
+  to { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eg-inst[data-phase="running"] .eg-faces .eg-lamp,
+  .eg-inst[data-phase="running"] .eg-minicell,
+  .eg-inst[data-phase="done"] .eg-cell[data-status],
+  .eg-inst[data-phase="done"] .eg-path-row[data-status],
+  .eg-inst[data-phase="done"] .eg-diff-row[data-status],
+  .eg-inst[data-phase="done"] .eg-minicell[data-status] {
+    animation: none;
+  }
+  .eg-seg-thumb,
+  .eg-chev,
+  .eg-go-arrow {
+    transition: none;
+  }
+}
+
+/* The site's motion switch: paused means no motion and the finished state.
+   Pausing the resolve would freeze every cell on its dim first frame, and a
+   paused scroll timeline would hold the method rule undrawn. */
+html[data-motion="paused"] .eg-inst[data-phase] .eg-faces .eg-lamp,
+html[data-motion="paused"] .eg-inst[data-phase] .eg-minicell,
+html[data-motion="paused"] .eg-inst[data-phase] .eg-cell[data-status],
+html[data-motion="paused"] .eg-inst[data-phase] .eg-path-row[data-status],
+html[data-motion="paused"] .eg-inst[data-phase] .eg-diff-row[data-status],
+html[data-motion="paused"] .eg .eg-rule {
+  animation: none;
+}
+
+/* --- Forced colors ------------------------------------------------------------ */
+
+@media (forced-colors: active) {
+  .eg-lamp,
+  .eg-minicell,
+  .eg-scale-zone {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+  .eg-cell,
+  .eg-inst,
+  .eg-bar-line {
+    border: 1px solid CanvasText;
+  }
+}

@@ -1,17 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { ShareButton } from '../lib/share-button';
-
-type Status = 'idle' | 'loading' | 'ok' | 'error';
-
-type CheckResult = {
-  id: string;
-  item: string;
-  category: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
-  detail: string;
-};
+import { useRef, useState } from 'react';
+import { EngineBar } from '../lib/engine/command-bar';
+import { Instrument } from '../lib/engine/instrument';
+import { Findings, type FindingsHandle } from '../lib/engine/findings';
+import { EngineShare } from '../lib/engine/engine-share';
+import { normalizeUrl, stamp, useAutoRun, useEngineRun } from '../lib/engine/use-engine-run';
+import { hostOf, toOutcomes, type RegistryView } from '../lib/engine/types';
 
 type ReadinessResponse = {
   ok: boolean;
@@ -22,211 +17,101 @@ type ReadinessResponse = {
   warn?: number;
   fail?: number;
   total?: number;
-  checks?: CheckResult[];
+  checks?: { id: string; item: string; status: string; detail: string }[];
   error?: string;
 };
 
-function normalizeInput(input: string): string {
-  let clean = input.trim();
-  if (!clean) return '';
-  if (!/^https?:\/\//i.test(clean)) {
-    clean = `https://${clean}`;
-  }
-  return clean;
-}
-
-const STATUS_TOKENS: Record<string, string> = {
-  PASS: 'var(--ok)',
-  WARN: 'var(--warn)',
-  FAIL: 'var(--error)',
-};
-
-export function ReadinessForm({ initialUrl }: { initialUrl: string }) {
+export function ReadinessForm({ initialUrl, registry }: { initialUrl: string; registry: RegistryView }) {
   const [url, setUrl] = useState(initialUrl);
-  const [status, setStatus] = useState<Status>('idle');
-  const [result, setResult] = useState<ReadinessResponse | null>(null);
-  const [scoredUrl, setScoredUrl] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { phase, result, scanned, error, when, run } = useEngineRun<ReadinessResponse>('/api/readiness', 'readiness engine');
+  const findings = useRef<FindingsHandle>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const normalized = normalizeInput(url);
-    if (!normalized) return;
-    setStatus('loading');
-    setResult(null);
-    setScoredUrl(normalized);
+  const start = (target: string) => {
+    const u = normalizeUrl(target);
+    if (u) run(u, { url: u });
+  };
+  useAutoRun(initialUrl, start);
 
-    try {
-      const resp = await fetch('/api/readiness', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: normalized }),
-      });
-      const data: ReadinessResponse = await resp.json();
-      if (!data.ok) {
-        setStatus('error');
-        setResult(data);
-        return;
-      }
-      setStatus('ok');
-      setResult(data);
-    } catch {
-      setStatus('error');
-      setResult({ ok: false, error: 'Network error — could not reach the readiness engine.' });
-    }
-  }
-
-  function shareUrl(u: string): string {
-    return `/readiness?url=${encodeURIComponent(u)}`;
-  }
+  const outcomes = toOutcomes(result?.checks);
+  const host = scanned ? hostOf(scanned) : '';
+  const origin = scanned ? (() => { try { return new URL(scanned).origin.replace(/^https?:\/\//, ''); } catch { return host; } })() : '';
 
   return (
-    <div className="readiness-form">
-      <form onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-col">
-          <div className="score-input-flex-box">
-            <span className="score-input-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
-                <path d="M12 2a10 10 0 0 1 10 10" />
-              </svg>
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter a URL to score AI readiness..."
-              className="score-url-input-inner"
-              aria-label="URL to score for AI readiness"
-              disabled={status === 'loading'}
-            />
-          </div>
-          <button
-            type="submit"
-            className="button primary score-submit"
-            disabled={status === 'loading' || !url.trim()}
-            data-cuelume-press="sparkle"
-          >
-            {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" />
-                Probing…
-              </span>
-            ) : (
-              'Score readiness'
-            )}
-          </button>
-        </div>
-      </form>
-
-      {status === 'error' && result && (
-        <div className="score-result" style={{ marginTop: '2rem' }}>
-          <div className="score-result-error" style={{ color: 'var(--muted)' }}>
-            <p style={{ fontSize: '0.9rem', margin: 0 }}>{result.error || 'An error occurred.'}</p>
-          </div>
-        </div>
-      )}
-
-      {status === 'ok' && result && (
-        <div className="score-result" style={{ marginTop: '2rem' }}>
-          <div className="score-result-header" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-            <ReadinessDial score={result.score || 0} grade={result.grade || 'F'} />
-            <div className="score-summary">
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted-dim)', margin: '0 0 0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                AI Readiness score
-              </p>
-              <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.5rem' }}>
-                {result.grade} · {result.score}/100
-              </p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
-                {result.pass} pass · {result.warn} warn · {result.fail} fail of {result.total} checks
-              </p>
-            </div>
-            <div style={{ marginLeft: 'auto' }}>
-              <ShareButton
-                url={shareUrl(scoredUrl)}
-                text={`Designesy AI-readiness check — ${scoredUrl}`}
-                label="Share this readiness result"
-                compact
-              />
-            </div>
-          </div>
-
-          <div className="row-stack" role="list">
-            {result.checks?.map((check, i) => (
-              <div
-                key={check.id}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
-              >
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">
-                    {check.id} · {check.item}{' '}
-                    <span
-                      className={`check-status is-${check.status.toLowerCase()}`}
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: STATUS_TOKENS[check.status] || 'var(--warn)',
-                        marginLeft: '0.5rem',
-                      }}
-                    >
-                      {check.status}
-                    </span>
-                  </span>
-                  <span className="row-meta">{check.detail}</span>
-                </span>
+    <div className="eg-bench">
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'URL to probe for AI readiness', placeholder: 'Any public URL, like vercel.com' }]}
+        onSubmit={() => start(url)}
+        busy={phase === 'running'}
+        go="Probe readiness"
+        goBusy="Probing"
+        foot={<p className="eg-bar-foot-note">Probes the site&apos;s origin, so a deep link checks the same files as its homepage.</p>}
+      />
+      <Instrument
+        name="AI readiness"
+        registry={registry}
+        face="paths"
+        origin={origin}
+        phase={phase}
+        target={host}
+        outcomes={outcomes}
+        verdict={
+          result && phase === 'done'
+            ? {
+                score: result.score ?? 0,
+                grade: result.grade ?? 'F',
+                pass: result.pass ?? 0,
+                warn: result.warn ?? 0,
+                fail: result.fail ?? 0,
+                total: result.total ?? registry.checks.length,
+              }
+            : null
+        }
+        error={
+          <>
+            <p><b>{host || 'This URL'}</b> could not be probed.</p>
+            <p>{error}</p>
+          </>
+        }
+        scoring="found 1 · partial 0.5 · missing 0 · over 10 checks"
+        restNote="Probe a URL and each location lights as found, partial or missing. Point at a row to read what it checks."
+        restCard={
+          <div className="eg-ref">
+            <span className="eg-label">How a probe reads</span>
+            <dl>
+              <div>
+                <dt>Found <span className="eg-ref-where">pass</span></dt>
+                <dd>The file answers at a known path, in a format an agent parses.</dd>
               </div>
-            ))}
+              <div>
+                <dt>Partial <span className="eg-ref-where">warn</span></dt>
+                <dd>It answers, but in a shape an agent reads poorly.</dd>
+              </div>
+              <div>
+                <dt>Missing <span className="eg-ref-where">fail</span></dt>
+                <dd>Nothing at any of the paths tried.</dd>
+              </div>
+            </dl>
+            <p className="eg-ref-note">
+              GET and HEAD requests from our server; nothing is rendered in a browser. Readiness is the sixth axis in
+              zeroheight&apos;s 2026 maturity model.
+            </p>
           </div>
-        </div>
+        }
+        onOpen={(id) => findings.current?.open(id)}
+        sideExtra={
+          phase === 'done' && scanned ? (
+            <EngineShare path={`/readiness?url=${encodeURIComponent(scanned)}`} text={`Designesy AI readiness: ${host}`} label="Share this result" />
+          ) : null
+        }
+      />
+      {phase === 'done' && result && (
+        <Findings
+          ref={findings}
+          registry={registry}
+          outcomes={outcomes}
+          sub={[`${result.total ?? registry.checks.length} checks on ${origin || host}`, stamp(when)].filter(Boolean).join(' · ')}
+        />
       )}
     </div>
-  );
-}
-
-function ReadinessDial({ score, grade }: { score: number; grade: string }) {
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
-
-  return (
-    <svg
-      width="120"
-      height="120"
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label={`Grade ${grade}, ${score} percent`}
-    >
-      <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke={fillColor}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 60 60)"
-        style={{ transition: 'stroke-dashoffset 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-      />
-      <text x="60" y="58" textAnchor="middle" style={{ fontSize: '2rem', fontWeight: 700, fill: 'var(--ink)' }}>
-        {grade}
-      </text>
-      <text x="60" y="78" textAnchor="middle" style={{ fontSize: '0.8rem', fill: 'var(--muted-dim)' }}>
-        {score}/100
-      </text>
-    </svg>
   );
 }
