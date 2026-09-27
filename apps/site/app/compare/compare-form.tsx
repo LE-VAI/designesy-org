@@ -181,7 +181,6 @@ export function CompareForm({ initialA, initialB }: { initialA: string; initialB
             className="button primary score-submit"
             disabled={status === 'loading' || !urlA.trim() || !urlB.trim()}
             data-cuelume-press="sparkle"
-            data-firework="true"
           >
             {status === 'loading' ? (
               <span className="score-loading-state">

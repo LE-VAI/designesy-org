@@ -21,8 +21,6 @@ const SIGNALS = [
   { t: 'reduced-motion safe', c: 'info', href: '/contracts/motion' },
 ];
 
-const ITEMS = [...SIGNALS, ...SIGNALS];
-
 /**
  * System Signals vertical marquee — auto-scrolls, pauses on hover,
  * and lets the user manually scroll while hovered. Each pill is a
@@ -32,6 +30,13 @@ const ITEMS = [...SIGNALS, ...SIGNALS];
  *
  * WCAG 2.2.2 (Pause, Stop, Hide): a pause/play toggle button is
  * provided so users can stop the animation independently of hover.
+ *
+ * EXACT LOOP. The track holds two identical groups, each carrying its own
+ * trailing gap, and nothing else: so half the track's height is exactly one
+ * period, and translateY(-50%) lands the second group where the first began.
+ * (The old single list had the track's top and bottom padding inside that
+ * 50%, so every wrap jumped by about 20px.) initScrollPause reads the same
+ * half-height as its loop distance.
  */
 export function StateMarquee() {
   const clipRef = useRef<HTMLElement | null>(null);
@@ -60,16 +65,19 @@ export function StateMarquee() {
         {paused ? '▶' : '❚❚'}
       </button>
       <div className="state-marquee-track" ref={trackRef}>
-        {ITEMS.map((item, i) => (
-          <Link
-            href={item.href}
-            key={i}
-            className={`state-marquee-pill state-marquee-pill--${item.c}`}
-            aria-hidden={i >= SIGNALS.length ? true : undefined}
-            tabIndex={i >= SIGNALS.length ? -1 : undefined}
-          >
-            {item.t}
-          </Link>
+        {[0, 1].map((copy) => (
+          <div className="state-marquee-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>
+            {SIGNALS.map((item) => (
+              <Link
+                href={item.href}
+                key={item.t}
+                className={`state-marquee-pill state-marquee-pill--${item.c}`}
+                tabIndex={copy === 1 ? -1 : undefined}
+              >
+                {item.t}
+              </Link>
+            ))}
+          </div>
         ))}
       </div>
     </aside>

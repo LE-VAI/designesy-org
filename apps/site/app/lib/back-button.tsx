@@ -1,14 +1,20 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
- * Elegant floating back button.
- * Appears on the left edge when there is navigation history.
- * Uses history.back() to return the user exactly where they were.
- * Subtle by default (low opacity), full on hover/focus.
+ * Floating back button: a labelled glass pill at the bottom-left, paired with
+ * the Studio pill at the bottom-right (director-dock.tsx).
+ * Appears when there is navigation history; uses history.back() to return the
+ * visitor exactly where they were. Not on the homepage, where "back" leads
+ * off the site.
+ *
+ * (2026-09-27: it was an unlabelled circle at mid-height on the left edge,
+ * opposite another on the right; the pair read as carousel arrows.)
  */
 export function BackButton() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
@@ -25,7 +31,7 @@ export function BackButton() {
     setTimeout(() => window.history.back(), 120);
   }, []);
 
-  if (!visible) return null;
+  if (!visible || pathname === '/') return null;
 
   return (
     <button
@@ -48,6 +54,7 @@ export function BackButton() {
       >
         <path d="M10 4L6 8l4 4" />
       </svg>
+      <span className="back-button-label">Back</span>
     </button>
   );
 }
