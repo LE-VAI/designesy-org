@@ -1076,6 +1076,52 @@ p {
   background: color-mix(in srgb, var(--signal-light) 8%, transparent);
 }
 
+/* --- Motion toggle (WCAG 2.2.2 pause) — see lib/motion-toggle.tsx ---
+   One attribute freezes every CSS animation site-wide; the rotator and the
+   ambient particles read the same attribute in JS. Frozen, not removed: each
+   animation holds its current frame and resumes from it. */
+html[data-motion="paused"] *,
+html[data-motion="paused"] *::before,
+html[data-motion="paused"] *::after {
+  animation-play-state: paused !important;
+}
+
+.motion-toggle-row {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .motion-toggle {
+    display: none;
+  }
+  .motion-toggle-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-12);
+    min-height: 2.75rem;
+    margin-top: auto;
+    padding: var(--space-8) var(--space-12);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .motion-toggle-row[aria-pressed="true"] {
+    color: var(--signal-light);
+    border-color: var(--signal-dim);
+    background: color-mix(in srgb, var(--signal-light) 8%, transparent);
+  }
+  .motion-toggle-row-icon {
+    width: 1.25rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+}
+
 /* ===================================================================
    Command palette (Cmd+K) — Phase 2.5
    True-glass modal over the whole viewport. Client-side filter.

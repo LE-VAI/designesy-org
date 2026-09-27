@@ -167,6 +167,11 @@ const nextConfig: NextConfig = {
     '/api/score': [
       './node_modules/@google/design.md/**/*',
     ],
+    // lib/og-card reads its TTFs with readFileSync at render time. Static OG
+    // routes render at build, but the parameterised ones (score report,
+    // frameworks/[slug]) render in a Lambda, where NFT cannot see a runtime
+    // path join. Include the fonts for every route.
+    '/**/*': ['./app/lib/og-fonts/*.ttf'],
   },
   // Content negotiation: serve the build-generated markdown when a client asks
   // for it. A STATIC FILE SWAP, not the runtime self-fetch pattern a Next.js
