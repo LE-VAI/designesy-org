@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './instrument.css';
 import './home.css';
 import './home-lvl.css';
 import './home-inspect.css';

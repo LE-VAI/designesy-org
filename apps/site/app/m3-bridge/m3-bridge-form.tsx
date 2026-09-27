@@ -9,7 +9,9 @@
 // All conversion is client-side — no data sent to any server.
 
 import { useState, useMemo, useCallback } from 'react';
-import Link from 'next/link';
+import { Segmented } from '../lib/engine/command-bar';
+import { Instrument } from '../lib/engine/instrument';
+import { display, type Outcomes, type Phase, type RegistryCheck, type RegistryView } from '../lib/engine/types';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -445,21 +447,35 @@ const SAMPLE_M3_CSS = `:root {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
+// The five checks validateDtcg() runs, in its order, as the instrument draws
+// them. Outcomes are matched by position and the names asserted below, so a
+// check added to validateDtcg without a row here shows up as a mismatch.
+const VALIDATION: RegistryCheck[] = [
+  { id: 'b01', label: '$schema declared', item: 'The file points at the DTCG schema', pass: 'A $schema pointer is present', group: 'dtcg' },
+  { id: 'b02', label: 'Tokens present', item: 'At least one token converted', pass: 'One or more tokens in the file', group: 'dtcg' },
+  { id: 'b03', label: 'Every token typed', item: 'Each token declares a $type', pass: 'No token is missing $type', group: 'dtcg' },
+  { id: 'b04', label: 'Every token valued', item: 'Each token has a $value', pass: 'No token is missing $value', group: 'dtcg' },
+  { id: 'b05', label: 'Colors structured', item: 'Colors are written as colorSpace and components', pass: 'No color is a bare string', group: 'dtcg' },
+];
+const VALIDATION_NAMES = ['$schema present', 'Tokens present', 'All tokens have $type', 'All tokens have $value', 'Colors structured (not bare hex)'];
+const VIEW: RegistryView = {
+  checks: VALIDATION,
+  groups: [{ id: 'dtcg', label: 'DTCG validation', hint: 'The converted file, checked against the W3C format.' }],
+  machine: '/contracts/tokens.json',
+};
+
 export function M3BridgeTool() {
   const [input, setInput] = useState('');
   const [inputFormat, setInputFormat] = useState<'css' | 'json'>('css');
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [validation, setValidation] = useState<{ valid: boolean; checks: { name: string; pass: boolean; detail: string }[] } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleConvert = useCallback(() => {
     if (!input.trim()) return;
     const res = inputFormat === 'css' ? parseM3Css(input) : parseM3Json(input);
     setResult(res);
-    if (res.count > 0) {
-      setValidation(validateDtcg(res.tokens));
-    } else {
-      setValidation(null);
-    }
+    setValidation(res.count > 0 ? validateDtcg(res.tokens) : null);
   }, [input, inputFormat]);
 
   const handleLoadSample = useCallback(() => {
@@ -478,255 +494,180 @@ export function M3BridgeTool() {
     URL.revokeObjectURL(url);
   }, [result]);
 
-  const outputJson = useMemo(() => {
-    if (!result || result.count === 0) return '';
-    return JSON.stringify(result.tokens, null, 2);
+  const outputJson = useMemo(() => (result && result.count > 0 ? JSON.stringify(result.tokens, null, 2) : ''), [result]);
+
+  // What the pipeline found, counted from the converted file itself.
+  const types = useMemo(() => {
+    const t: Record<string, number> = {};
+    if (result && result.count > 0) traverseTokens(result.tokens as unknown as Record<string, unknown>, (_k, tok) => {
+      t[tok.$type] = (t[tok.$type] || 0) + 1;
+    });
+    return Object.entries(t).sort((a, b) => b[1] - a[1]);
   }, [result]);
 
-  return (
-    <div className="m3-bridge-tool">
-      {/* Input format toggle */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button
-          onClick={() => setInputFormat('css')}
-          style={{
-            padding: '0.4rem 1rem',
-            background: inputFormat === 'css' ? 'var(--signal)' : 'var(--surface)',
-            color: inputFormat === 'css' ? 'var(--paper)' : 'var(--muted)',
-            border: `1px solid ${inputFormat === 'css' ? 'var(--signal)' : 'var(--line)'}`,
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          CSS custom properties
-        </button>
-        <button
-          onClick={() => setInputFormat('json')}
-          style={{
-            padding: '0.4rem 1rem',
-            background: inputFormat === 'json' ? 'var(--signal)' : 'var(--surface)',
-            color: inputFormat === 'json' ? 'var(--paper)' : 'var(--muted)',
-            border: `1px solid ${inputFormat === 'json' ? 'var(--signal)' : 'var(--line)'}`,
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          JSON tokens
-        </button>
-        <button
-          onClick={handleLoadSample}
-          style={{
-            padding: '0.4rem 1rem',
-            background: 'var(--surface)',
-            color: 'var(--muted)',
-            border: '1px solid var(--line)',
-            borderRadius: '6px',
-            fontSize: '0.8rem',
-            cursor: 'pointer',
-            marginLeft: 'auto',
-          }}
-        >
-          Load M3 sample →
-        </button>
-      </div>
+  const outcomes: Outcomes = {};
+  if (validation) {
+    validation.checks.forEach((c, i) => {
+      const row = VALIDATION[i];
+      if (row && c.name === VALIDATION_NAMES[i]) outcomes[row.id] = { status: c.pass ? 'PASS' : 'FAIL', detail: c.detail };
+    });
+  }
+  const phase: Phase = !result ? 'idle' : result.count > 0 ? 'done' : 'error';
+  const passed = validation ? validation.checks.filter((c) => c.pass).length : 0;
+  const lines = input ? input.split('\n').length : 0;
 
-      {/* Input */}
-      <div style={{ marginBottom: '1rem' }}>
-        <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
-          Input — Material 3 tokens ({inputFormat === 'css' ? 'CSS custom properties' : 'JSON key-value'})
-        </p>
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(outputJson);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* clipboard refused */
+    }
+  };
+
+  const pipeline = (
+    <div className="eg-weights" aria-label="Conversion pipeline">
+      <span className="eg-label">The conversion</span>
+      <ol className="m3-pipe">
+        {/* A figure appears once it exists: lines count as you type, the rest
+            on conversion. */}
+        <li><b>{lines || ''}</b><span>lines read</span></li>
+        <li><b>{result ? result.count : ''}</b><span>tokens parsed</span></li>
+        <li>
+          <b>{result ? types.length : ''}</b>
+          <span>{types.length ? types.map(([k, n]) => `${n} ${k}`).join(' · ') : 'types found'}</span>
+        </li>
+        <li><b>{validation ? `${passed}/${validation.checks.length}` : ''}</b><span>checks pass</span></li>
+      </ol>
+    </div>
+  );
+
+  return (
+    <div className="eg-bench">
+      <div className="m3-input">
+        <div className="eg-bar-foot">
+          <Segmented<'css' | 'json'>
+            label="input"
+            value={inputFormat}
+            onChange={setInputFormat}
+            options={[
+              { value: 'css', label: 'CSS custom properties' },
+              { value: 'json', label: 'JSON tokens' },
+            ]}
+          />
+          <button type="button" className="eg-share-btn" onClick={handleLoadSample} data-cuelume-press="tick">
+            Load the M3 baseline sample
+          </button>
+        </div>
+        <label className="sr-only" htmlFor="m3-input">Material 3 tokens to convert</label>
         <textarea
+          id="m3-input"
+          className="m3-textarea"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={inputFormat === 'css'
-            ? ':root {\n  --md-sys-color-primary: #6750A4;\n  --md-sys-color-on-primary: #FFFFFF;\n  --md-sys-shape-corner-medium: 12px;\n  --md-sys-motion-duration-short-2: 100ms;\n  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);\n  ...'
-            : '{\n  "md.sys.color.primary": "#6750A4",\n  "md.sys.color.onPrimary": "#FFFFFF",\n  ...\n}'}
-          style={{
-            width: '100%',
-            minHeight: '200px',
-            padding: '1rem',
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            borderRadius: '8px',
-            color: 'var(--ink)',
-            fontFamily: 'var(--mono, ui-monospace, "SF Mono", Menlo, monospace)',
-            fontSize: '0.85rem',
-            lineHeight: 1.6,
-            resize: 'vertical',
-            outline: 'none',
-          }}
-          aria-label="M3 token input"
+          spellCheck={false}
+          placeholder={
+            inputFormat === 'css'
+              ? ':root {\n  --md-sys-color-primary: #6750A4;\n  --md-sys-color-on-primary: #FFFFFF;\n  --md-sys-shape-corner-medium: 12px;\n  --md-sys-motion-duration-short-2: 100ms;\n}'
+              : '{\n  "md.sys.color.primary": "#6750A4",\n  "md.sys.color.onPrimary": "#FFFFFF"\n}'
+          }
         />
+        <div className="m3-go">
+          <p className="eg-bar-foot-note">Converted in your browser. Nothing is sent anywhere.</p>
+          <button type="button" className="eg-bar-go" onClick={() => (input.trim() ? handleConvert() : document.getElementById('m3-input')?.focus())} data-cuelume-press="sparkle">
+            Convert to DTCG
+          </button>
+        </div>
       </div>
 
-      {/* Convert button */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <button
-          onClick={handleConvert}
-          disabled={!input.trim()}
-          className="button primary"
-          style={{ fontSize: '0.85rem', opacity: !input.trim() ? 0.5 : 1 }}
-          data-cuelume-press="sparkle"
-        >
-          Convert to DTCG →
-        </button>
-      </div>
-
-      {/* Results */}
-      {result && (
-        <div style={{ marginTop: '1.5rem' }}>
-          {/* Errors */}
-          {result.errors.length > 0 && (
-            <div style={{
-              padding: '1rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--error)',
-              borderLeft: '3px solid var(--error)',
-              borderRadius: '8px',
-              marginBottom: '1rem',
-            }}>
-              <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--error)', margin: '0 0 0.5rem' }}>Errors</p>
-              {result.errors.map((err, i) => (
-                <p key={i} style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.25rem 0' }}>{err}</p>
-              ))}
-            </div>
-          )}
-
-          {/* Warnings */}
-          {result.warnings.length > 0 && (
-            <div style={{
-              padding: '0.75rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--warn)',
-              borderLeft: '3px solid var(--warn)',
-              borderRadius: '8px',
-              marginBottom: '1rem',
-            }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--warn)', margin: '0 0 0.5rem' }}>
-                Warnings ({result.warnings.length})
-              </p>
-              {result.warnings.slice(0, 5).map((w, i) => (
-                <p key={i} style={{ fontSize: '0.75rem', color: 'var(--muted)', margin: '0.15rem 0' }}>{w}</p>
-              ))}
-              {result.warnings.length > 5 && (
-                <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0' }}>
-                  ...and {result.warnings.length - 5} more
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Summary + validation */}
-          {result.count > 0 && (
+      <Instrument
+        name="M3 to DTCG"
+        registry={VIEW}
+        face="tiles"
+        faceTop={pipeline}
+        phase={phase}
+        target={result ? `${result.count} tokens` : ''}
+        outcomes={outcomes}
+        verdictNode={
+          validation && result ? (
             <>
-              <div style={{
-                display: 'flex',
-                gap: '1rem',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                padding: '1rem 1.25rem',
-                background: 'var(--surface)',
-                border: '1px solid var(--line)',
-                borderRadius: '8px',
-                marginBottom: '1rem',
-              }}>
-                <div>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                    Tokens converted
-                  </p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
-                    {result.count}
-                  </p>
-                </div>
-                {validation && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    {validation.checks.map((check) => (
-                      <span
-                        key={check.name}
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '4px',
-                          border: `1px solid ${check.pass ? 'var(--ok)' : 'var(--error)'}`,
-                          color: check.pass ? 'var(--ok)' : 'var(--error)',
-                          background: 'var(--paper)',
-                        }}
-                        title={check.detail}
-                      >
-                        {check.pass ? '✓' : '✗'} {check.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={handleDownload}
-                  className="button ghost"
-                  style={{ fontSize: '0.8rem', marginLeft: 'auto' }}
-                  data-cuelume-hover="tick"
-                  data-cuelume-press="tick"
-                >
-                  Download tokens.json ↓
-                </button>
-              </div>
-
-              {/* Output */}
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
-                  Output — W3C DTCG 2025.10 format
-                </p>
-                <pre
-                  style={{
-                    padding: '1.25rem',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--line)',
-                    borderRadius: '8px',
-                    color: 'var(--ink)',
-                    fontFamily: 'var(--mono, ui-monospace, "SF Mono", Menlo, monospace)',
-                    fontSize: '0.8rem',
-                    lineHeight: 1.6,
-                    overflow: 'auto',
-                    maxHeight: '500px',
-                    margin: 0,
-                  }}
-                >
-                  {outputJson}
-                </pre>
-              </div>
-
-              {/* CTA */}
-              <div style={{
-                display: 'flex',
-                gap: '1rem',
-                flexWrap: 'wrap',
-                marginTop: '1.5rem',
-                alignItems: 'center',
-              }}>
-                <Link
-                  href="/score"
-                  className="button primary"
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  Score your site with Designesy →
-                </Link>
-                <Link
-                  href="/contracts/tokens"
-                  className="button ghost"
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  View Designesy token contract
-                </Link>
-                <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: 'auto' }}>
-                  Conversion is client-side — no data sent to any server.
-                </span>
+              <span className="eg-label">Output</span>
+              <dl className="eg-figs">
+                <div><dt>Tokens</dt><dd>{result.count}</dd></div>
+                <div><dt>Checks</dt><dd>{passed}<small> of {validation.checks.length}</small></dd></div>
+              </dl>
+              <p className="eg-side-note">
+                {validation.valid
+                  ? 'Valid W3C DTCG 2025.10. Ready to commit as tokens.json.'
+                  : 'Converted, with checks to fix before the file is valid DTCG.'}
+              </p>
+              <div className="eg-share">
+                <button type="button" className="eg-share-btn" onClick={handleDownload}>Download tokens.json</button>
+                <button type="button" className="eg-share-btn" onClick={copy} aria-live="polite">{copied ? 'Copied' : 'Copy'}</button>
               </div>
             </>
-          )}
+          ) : null
+        }
+        error={
+          <>
+            <p><b>No Material 3 tokens found.</b></p>
+            {(result?.errors ?? []).slice(0, 3).map((e, i) => <p key={i}>{e}</p>)}
+            <p>Tokens need the --md- prefix in CSS, or md. keys in JSON.</p>
+          </>
+        }
+        scoring="valid when all five checks pass"
+        restNote="Paste Material 3 tokens, or load the sample, and convert. Each stage of the conversion counts what it found."
+        restCard={
+          <div className="eg-ref">
+            <span className="eg-label">What it maps</span>
+            <dl>
+              <div>
+                <dt>--md-sys-color-*</dt>
+                <dd>Color tokens, written as colorSpace and components.</dd>
+              </div>
+              <div>
+                <dt>--md-sys-shape-*</dt>
+                <dd>Corner radii, as dimension tokens.</dd>
+              </div>
+              <div>
+                <dt>--md-sys-motion-*</dt>
+                <dd>Durations and easing curves.</dd>
+              </div>
+              <div>
+                <dt>--md-sys-typescale-*</dt>
+                <dd>Type sizes, weights and line heights.</dd>
+              </div>
+            </dl>
+            <p className="eg-ref-note">Paths follow the names: --md-sys-color-primary becomes color.primary.</p>
+          </div>
+        }
+      />
+
+      {result && result.warnings.length > 0 && (
+        <div className="eg-alerts" role="status">
+          <span className="eg-label">{result.warnings.length === 1 ? '1 warning' : `${result.warnings.length} warnings`}</span>
+          <ul>
+            {result.warnings.slice(0, 5).map((w, i) => <li key={i}>{display(w)}</li>)}
+          </ul>
+          {result.warnings.length > 5 && <p className="eg-quiet">{result.warnings.length - 5} more in the file</p>}
         </div>
+      )}
+
+      {result && result.count > 0 && (
+        <section className="eg-section" aria-labelledby="m3-out-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="m3-out-h">tokens.json</h2>
+              <p className="eg-section-sub">{result.count} tokens in W3C DTCG 2025.10 format</p>
+            </div>
+          </div>
+          <div className="eg-viewer">
+            <pre className="eg-code" tabIndex={0}>
+              <code>{outputJson}</code>
+            </pre>
+          </div>
+        </section>
       )}
     </div>
   );

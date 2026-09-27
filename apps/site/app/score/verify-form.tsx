@@ -24,7 +24,9 @@
 
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { CopyPrompt } from '../lib/copy-prompt';
-import { ScoreDial } from '../lib/score-dial';
+import { EngineBar } from '../lib/engine/command-bar';
+import { Instrument, type EngineBlock } from '../lib/engine/instrument';
+import { toOutcomes, type Phase, type RegistryView } from '../lib/engine/types';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
@@ -178,12 +180,12 @@ function verdictLine(
   total: number,
 ): string {
   if (totalFail === 0 && totalWarn <= Math.max(1, Math.floor(total * 0.15))) {
-    return 'Strong conformance — this design reads as engineered, not assembled.';
+    return 'Strong conformance. The design holds to its contract across all four engines.';
   }
   if (totalFail > 0) {
     return `${totalFail} contract ${totalFail === 1 ? 'violation' : 'violations'} across 4 engines.`;
   }
-  return 'Partial conformance — passes the floor, but the contract sees warnings the eye forgives.';
+  return 'Partial conformance. It clears the floor, with warnings left to resolve.';
 }
 
 // ── History (lightweight localStorage, separate namespace from score-form) ───
@@ -340,7 +342,15 @@ function EngineTile({
 
 // ── VerifyForm ────────────────────────────────────────────────────────────────
 
-export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
+export function VerifyForm({
+  initialUrl = '',
+  view,
+  blocks,
+}: {
+  initialUrl?: string;
+  view: RegistryView;
+  blocks: EngineBlock[];
+}) {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState(initialUrl);
   const [reportResult, setReportResult] = useState<ReportResponse | null>(null);
@@ -355,44 +365,14 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [history, setHistory] = useState<VerifyHistoryEntry[]>([]);
   const [historyCleared, setHistoryCleared] = useState(false);
-  const [animatedScore, setAnimatedScore] = useState(0);
   const [delta, setDelta] = useState<number | null>(null);
   const [activeBundleTab, setActiveBundleTab] = useState('tokens');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const formRef = useRef<HTMLFormElement>(null);
 
   // Load history on mount (client-only, SSR-safe).
   useEffect(() => {
     setHistory(readHistory());
   }, []);
-
-  // Animate the composite score dial — same rAF ease-out as ScoreForm.
-  useEffect(() => {
-    const target = reportResult?.compositeScore;
-    if (!target || target === 0) {
-      setAnimatedScore(0);
-      return;
-    }
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      setAnimatedScore(target);
-      return;
-    }
-    const duration = 1200;
-    const start = performance.now();
-    let rafId: number;
-    const animate = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setAnimatedScore(target * eased);
-      if (t < 1) rafId = requestAnimationFrame(animate);
-      else setAnimatedScore(target);
-    };
-    rafId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafId);
-  }, [reportResult?.compositeScore]);
 
   // Auto-run on mount when deep-linked via ?url=.
   //
@@ -677,64 +657,121 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     ...(bundle?.designMd ? [{ id: 'designMd', label: 'DESIGN.md' }] : []),
   ];
 
+  // The instrument: four engines' registries as cells, lit by this run.
+  const phase: Phase =
+    status === 'loading' ? 'running' : status === 'ok' ? 'done' : status === 'error' ? 'error' : 'idle';
+  const outcomes = toOutcomes([
+    ...(reportResult?.score?.checks ?? []),
+    ...(reportResult?.drift?.checks ?? []),
+    ...(reportResult?.readiness?.checks ?? []),
+    ...(guardrailsResult?.checks ?? []),
+  ]);
+  const liveBlocks = blocks.map((b) => ({
+    ...b,
+    score:
+      b.key === 'guardrails'
+        ? guardrailsResult?.score
+        : (reportResult?.[b.key as 'score' | 'drift' | 'readiness'] as SubEngineResult | undefined)?.score,
+  }));
+
+  // A cell opens its check: switch to that engine, clear filters, open the
+  // card's group and the card, then bring it into view.
+  function openCheck(id: string) {
+    const owner = blocks.find((b) => b.ids.includes(id));
+    if (!owner) return;
+    const engine = owner.key as Engine;
+    const st = outcomes[id]?.status;
+    setActiveEngine(engine);
+    setFilterStatus('ALL');
+    setSearchQuery('');
+    if (st) setCollapsedGroups((prev) => ({ ...prev, [`${engine}:${st}`]: false }));
+    setExpandedId(id);
+    window.setTimeout(() => {
+      document.getElementById(`vf-${id}`)?.scrollIntoView({
+        block: 'center',
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+    }, 80);
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="score-form">
-      {/* Input — same chrome as ScoreForm, all forms share this. */}
-      <form ref={formRef} onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-col">
-          <div className="score-input-flex-box">
-            <span className="score-input-icon" aria-hidden="true">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z" />
-              </svg>
-            </span>
-            <input
-              type="text"
-              inputMode="url"
-              enterKeyHint="go"
-              autoComplete="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="Enter any website URL…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={status === 'loading'}
-              aria-label="Site URL to verify"
-              data-cuelume-hover="tick"
-              className="score-url-input-inner"
-            />
+    <div className="score-form eg-bench eg-dash">
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'Site URL to verify', placeholder: 'Any public URL, like stripe.com' }]}
+        onSubmit={() => runVerify(normalizeInput(url))}
+        busy={status === 'loading'}
+        go="Run all four"
+        goBusy="Running four engines"
+        foot={<p className="eg-bar-foot-note">No login. The four engines fire in parallel and each fetches the page itself.</p>}
+      />
+
+      <Instrument
+        name="Four engines"
+        registry={view}
+        face="engines"
+        engines={liveBlocks}
+        phase={phase}
+        target={(status === 'loading' ? normalizeInput(url) : scoredUrl).replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+        outcomes={outcomes}
+        verdict={
+          status === 'ok' && reportResult?.ok && typeof reportResult.compositeScore === 'number'
+            ? {
+                score: Math.round(reportResult.compositeScore),
+                grade: reportResult.compositeGrade || 'F',
+                pass: reportResult.totalPass || 0,
+                warn: reportResult.totalWarn || 0,
+                fail: reportResult.totalFail || 0,
+                skip: reportResult.totalSkip || 0,
+                manual: reportResult.totalManual || 0,
+                total: reportResult.totalChecks || 0,
+              }
+            : status === 'ok' && guardrailsResult?.ok
+              ? {
+                  score: guardrailsResult.score || 0,
+                  grade: guardrailsResult.grade || 'F',
+                  pass: guardrailsResult.pass || 0,
+                  warn: guardrailsResult.warn || 0,
+                  fail: guardrailsResult.fail || 0,
+                  total: guardrailsResult.total || 0,
+                }
+              : null
+        }
+        error={
+          <>
+            <p><b>No engine returned a result.</b></p>
+            <p>{reportResult?.error || guardrailsResult?.error || 'Check the URL and run it again.'}</p>
+          </>
+        }
+        scoring="composite = score × 0.5 + drift × 0.3 + readiness × 0.2 · guardrails reports apart"
+        restNote="Run a URL and all four engines light at once. Point at any cell to read the check behind it."
+        restCard={
+          <div className="eg-ref">
+            <span className="eg-label">What each engine asks</span>
+            <dl>
+              <div>
+                <dt>Contract score <span className="eg-ref-where">{ENGINE_CHECK_COUNT} checks</span></dt>
+                <dd>Does the page keep the {CONTRACT_VERSION} contract: tokens, type, motion, color, access, identity?</dd>
+              </div>
+              <div>
+                <dt>Drift radar <span className="eg-ref-where">12 checks</span></dt>
+                <dd>Do its tokens resolve, and do its values still cluster on a scale?</dd>
+              </div>
+              <div>
+                <dt>AI readiness <span className="eg-ref-where">10 checks</span></dt>
+                <dd>What can an agent read about the system before it builds?</dd>
+              </div>
+              <div>
+                <dt>Guardrails <span className="eg-ref-where">6 checks</span></dt>
+                <dd>Can its tokens become a build contract an agent follows?</dd>
+              </div>
+            </dl>
+            <p className="eg-ref-note">The composite weighs the first three at 50, 30 and 20. Guardrails reports on its own.</p>
           </div>
-          <button
-            type="submit"
-            disabled={status === 'loading' || !url.trim()}
-            data-cuelume-press="sparkle"
-            className="button primary score-submit"
-          >
-            {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" />
-                Running 4 engines…
-              </span>
-            ) : (
-              'Verify it'
-            )}
-          </button>
-        </div>
-      </form>
+        }
+        onOpen={openCheck}
+      />
 
       {/* Error state */}
       {status === 'error' && (
@@ -764,45 +801,9 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       )}
 
-      {/* Loading state */}
-      {status === 'loading' && (
-        <div
-          className="score-verify-log"
-          role="status"
-          aria-live="polite"
-          aria-label="Verification in progress"
-        >
-          <p className="score-verify-log-title">
-            Running 4 engines in parallel
-          </p>
-          <ol className="score-verify-log-list">
-            {[
-              `Score engine (${ENGINE_CHECK_COUNT} checks)`,
-              'Drift radar (12 checks)',
-              'AI readiness (10 checks)',
-              'Guardrails emitter (6 checks)',
-            ].map((step, i) => (
-              <li
-                key={step}
-                className="score-verify-log-step"
-                style={{ animationDelay: `${i * 900}ms` }}
-              >
-                <span className="score-verify-dot" aria-hidden="true" />
-                {step}
-              </li>
-            ))}
-          </ol>
-          <div className="score-skeleton-feed" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="score-skeleton-row" />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* OK state — the unified dashboard */}
       {status === 'ok' && (reportResult?.ok || guardrailsResult?.ok) && (
-        <div className="score-results fade-up">
+        <div className="score-results">
           {/* Composite hero card — grade dial, composite score, formula, totals */}
           {reportResult?.ok &&
             typeof reportResult.compositeScore === 'number' && (
@@ -819,85 +820,30 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   )}
                 </p>
 
-                <div className="score-hero-top">
-                  <ScoreDial
-                    score={Math.round(animatedScore)}
-                    grade={reportResult.compositeGrade || 'F'}
-                  />
-                  <div className="score-hero-meta">
-                    <div className="score-percent-badge">
-                      <span className="score-percent-value">
-                        {fmtPct(animatedScore)}%
-                      </span>
-                      <span className="score-percent-label">
-                        Composite Score
-                      </span>
-                      {delta !== null && delta !== 0 && (
-                        <span
-                          className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`}
-                          title="Change vs your previous composite score for this site"
-                        >
-                          {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}
-                          {delta}
-                        </span>
-                      )}
-                    </div>
-                    <p className="score-strong-weak">
-                      score×0.5 + drift×0.3 + readiness×0.2
-                    </p>
-                    <div className="score-site-url">
-                      <span className="score-url-dot" />
-                      <a
-                        href={scoredUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="score-url-link"
-                        title={`Open ${scoredUrl} in a new tab`}
-                      >
-                        {scoredUrl.replace(/^https?:\/\//i, '')}
-                      </a>
-                      <span className="score-url-time">
-                        {new Date()
-                          .toISOString()
-                          .slice(0, 16)
-                          .replace('T', ' ')}{' '}
-                        UTC
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total metrics across all engines */}
-                <div className="score-metrics-grid">
-                  <div className="score-metric-tile is-pass">
-                    <span className="score-metric-val">
-                      {reportResult.totalPass || 0}
+                <div className="score-hero-meta">
+                  {delta !== null && delta !== 0 && (
+                    <span
+                      className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`}
+                      title="Change against your previous composite score for this site"
+                    >
+                      {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}
+                      {delta} since your last run
                     </span>
-                    <span className="score-metric-lbl">Passed</span>
-                  </div>
-                  <div className="score-metric-tile is-fail">
-                    <span className="score-metric-val">
-                      {reportResult.totalFail || 0}
+                  )}
+                  <div className="score-site-url">
+                    <span className="score-url-dot" />
+                    <a
+                      href={scoredUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="score-url-link"
+                      title={`Open ${scoredUrl} in a new tab`}
+                    >
+                      {scoredUrl.replace(/^https?:\/\//i, '')}
+                    </a>
+                    <span className="score-url-time">
+                      {new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC
                     </span>
-                    <span className="score-metric-lbl">Failed</span>
-                  </div>
-                  <div className="score-metric-tile is-warn">
-                    <span className="score-metric-val">
-                      {reportResult.totalWarn || 0}
-                    </span>
-                    <span className="score-metric-lbl">Warnings</span>
-                  </div>
-                  <div className="score-metric-tile is-manual">
-                    <span className="score-metric-val">
-                      {reportResult.totalManual || 0}
-                    </span>
-                    <span className="score-metric-lbl">Manual</span>
-                  </div>
-                  <div className="score-metric-tile is-skip">
-                    <span className="score-metric-val">
-                      {reportResult.totalSkip || 0}
-                    </span>
-                    <span className="score-metric-lbl">N/A</span>
                   </div>
                 </div>
 
@@ -1394,6 +1340,7 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                           return (
                             <div
                               key={check.id}
+                              id={`vf-${check.id}`}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
                               onClick={() =>
                                 setExpandedId(isExpanded ? null : check.id)
@@ -1500,23 +1447,10 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       )}
 
-      {/* Idle state */}
-      {status === 'idle' && (
-        <div className="score-welcome-card">
-          <p className="score-welcome-title">Unified Verification Cockpit</p>
-          <p className="score-hint">
-            Enter any public website URL above — no https:// needed. Four
-            engines fire in parallel: Score ({ENGINE_CHECK_COUNT} checks), Drift (12 checks), AI
-            Readiness (10 checks), and Guardrails (6 checks). One composite
-            grade. No login required.
-          </p>
-        </div>
-      )}
-
       {/* History — separate namespace from score-form's history */}
       {history.length > 0 && (
         <section
-          className="score-history-panel fade-up"
+          className="score-history-panel"
           aria-label="Recent verifications"
         >
           <div className="score-history-head">

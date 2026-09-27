@@ -3,7 +3,8 @@
 // Interactive Design Compliance Maturity self-assessment.
 //
 // 6 axes × 4 questions = 24 questions. Each answer = stage 1–4.
-// Radar chart renders the result. Shareable via URL hash (base64).
+// A stage matrix (six axes, four stages) fills as you answer and carries
+// the result. Shareable via URL hash (base64).
 // CTA: "Score your compliance with Designesy" → /score (wording aligned
 // 2026-09-24 with the destination page, which is named Score, not Verify).
 //
@@ -38,7 +39,7 @@ interface Question {
 const AXES: Axis[] = [
   {
     id: 'tokens',
-    label: 'Token Discipline',
+    label: 'Token discipline',
     symbol: 'T',
     description: 'Are design tokens defined, structured, and enforced?',
     categories: 'tokens, spec',
@@ -46,7 +47,7 @@ const AXES: Axis[] = [
   },
   {
     id: 'motion',
-    label: 'Motion Consistency',
+    label: 'Motion consistency',
     symbol: 'M',
     description: 'Are duration, easing, and interaction feel tokenized and applied?',
     categories: 'motion, takt',
@@ -54,7 +55,7 @@ const AXES: Axis[] = [
   },
   {
     id: 'a11y',
-    label: 'Accessibility Readiness',
+    label: 'Accessibility readiness',
     symbol: 'A',
     description: 'WCAG conformance, focus visibility, reduced-motion tiering.',
     categories: 'accessibility, interaction',
@@ -62,7 +63,7 @@ const AXES: Axis[] = [
   },
   {
     id: 'platform',
-    label: 'Platform Fit',
+    label: 'Platform fit',
     symbol: 'P',
     description: 'Core Web Vitals, responsive, interaction poise across devices.',
     categories: 'performance, responsive, poise',
@@ -70,7 +71,7 @@ const AXES: Axis[] = [
   },
   {
     id: 'identity',
-    label: 'Identity & Copy',
+    label: 'Identity and copy',
     symbol: 'I',
     description: 'Semantic landmarks, UX copy discipline, security hygiene.',
     categories: 'identity, copywriting, security',
@@ -78,7 +79,7 @@ const AXES: Axis[] = [
   },
   {
     id: 'verification',
-    label: 'Verification Maturity',
+    label: 'Verification maturity',
     symbol: 'V',
     description: 'Is compliance measured deterministically, or by vibes?',
     categories: 'cadence, self-measurement',
@@ -95,7 +96,7 @@ const QUESTIONS: Question[] = [
     axis: 'tokens',
     prompt: 'How are your design tokens defined?',
     answers: [
-      { stage: 1, label: 'Hardcoded values in CSS — no custom properties' },
+      { stage: 1, label: 'Hardcoded values in CSS, no custom properties' },
       { stage: 2, label: 'Some CSS custom properties for colors/spacing' },
       { stage: 3, label: 'Structured token system (primitive → semantic → component layers)' },
       { stage: 4, label: 'W3C DTCG format tokens with $type, $value, $description' },
@@ -106,7 +107,7 @@ const QUESTIONS: Question[] = [
     axis: 'tokens',
     prompt: 'Do you ship a --paper or root surface token at :root?',
     answers: [
-      { stage: 1, label: 'No — backgrounds are raw hex/rgb values' },
+      { stage: 1, label: 'No, backgrounds are raw hex or rgb values' },
       { stage: 2, label: 'Yes, a single --bg or --color-bg variable' },
       { stage: 3, label: 'Yes, with a full surface elevation scale (paper → surface → elevated)' },
       { stage: 4, label: 'Yes, with structured OKLCH color space + component-level tokens' },
@@ -117,7 +118,7 @@ const QUESTIONS: Question[] = [
     axis: 'tokens',
     prompt: 'How is token drift prevented?',
     answers: [
-      { stage: 1, label: 'It isn’t — developers hardcode values ad-hoc' },
+      { stage: 1, label: 'It isn’t: developers hardcode values as they go' },
       { stage: 2, label: 'Code review catches raw values manually' },
       { stage: 3, label: 'Stylelint or CSS linter flags raw hex/magic numbers' },
       { stage: 4, label: 'CI gate blocks PRs that introduce off-token values' },
@@ -128,7 +129,7 @@ const QUESTIONS: Question[] = [
     axis: 'tokens',
     prompt: 'Do you serve a machine-readable token file (JSON, W3C DTCG)?',
     answers: [
-      { stage: 1, label: 'No — tokens live only in CSS' },
+      { stage: 1, label: 'No, tokens live only in CSS' },
       { stage: 2, label: 'A JSON export exists but is generated manually' },
       { stage: 3, label: 'A build step emits tokens.json from source of truth' },
       { stage: 4, label: 'W3C DTCG tokens.json served at a stable URL + dtcg.json endpoint' },
@@ -152,7 +153,7 @@ const QUESTIONS: Question[] = [
     axis: 'motion',
     prompt: 'Do you ship a prefers-reduced-motion block?',
     answers: [
-      { stage: 1, label: 'No — all motion plays regardless of user preference' },
+      { stage: 1, label: 'No, all motion plays whatever the user prefers' },
       { stage: 2, label: 'A global kill switch that disables all animation' },
       { stage: 3, label: 'Tiered: removes large motion, softens small motion ≤200ms' },
       { stage: 4, label: '3-tier reduced-motion (remove / soften / keep) with per-component data-motion attrs' },
@@ -174,10 +175,10 @@ const QUESTIONS: Question[] = [
     axis: 'motion',
     prompt: 'Do you restrict will-change to transform and opacity?',
     answers: [
-      { stage: 1, label: 'No — will-change: all or no will-change declarations' },
+      { stage: 1, label: 'No: will-change: all, or no will-change at all' },
       { stage: 2, label: 'will-change used but on non-composited properties' },
       { stage: 3, label: 'will-change restricted to transform/opacity on animated elements only' },
-      { stage: 4, label: 'Linted in CI — will-change on non-composited props is blocked' },
+      { stage: 4, label: 'Linted in CI: will-change on non-composited properties is blocked' },
     ],
   },
 
@@ -187,7 +188,7 @@ const QUESTIONS: Question[] = [
     axis: 'a11y',
     prompt: 'How is color contrast verified?',
     answers: [
-      { stage: 1, label: 'Eyeballed — no automated check' },
+      { stage: 1, label: 'Eyeballed, with no automated check' },
       { stage: 2, label: 'Manual axe-core or browser extension checks during QA' },
       { stage: 3, label: 'APC contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
       { stage: 4, label: 'Automated WCAG 2.2 AA scan in CI + contrast tokens with computed Lc values' },
@@ -198,7 +199,7 @@ const QUESTIONS: Question[] = [
     axis: 'a11y',
     prompt: 'Are :focus-visible rings declared?',
     answers: [
-      { stage: 1, label: 'No focus styles — outline: none with no replacement' },
+      { stage: 1, label: 'No focus styles: outline: none with nothing in its place' },
       { stage: 2, label: 'Basic :focus styles, but not :focus-visible differentiated' },
       { stage: 3, label: ':focus-visible rings with visible contrast on all interactive elements' },
       { stage: 4, label: ':focus-visible rings + keyboard-path documentation + forced-colors readiness' },
@@ -233,7 +234,7 @@ const QUESTIONS: Question[] = [
     axis: 'platform',
     prompt: 'How are Core Web Vitals tracked?',
     answers: [
-      { stage: 1, label: 'Not tracked — we find out from user complaints' },
+      { stage: 1, label: 'Not tracked: we find out from user complaints' },
       { stage: 2, label: 'PageSpeed Insights checked manually before launches' },
       { stage: 3, label: 'LCP/INP/CLS monitored in production with alerting' },
       { stage: 4, label: 'CWV budgets enforced in CI; regressions block deployment' },
@@ -266,10 +267,10 @@ const QUESTIONS: Question[] = [
     axis: 'platform',
     prompt: 'Do you ship font-synthesis and text-rendering controls?',
     answers: [
-      { stage: 1, label: 'No — browser defaults apply (fake bold/italic possible)' },
+      { stage: 1, label: 'No, browser defaults apply (fake bold and italic possible)' },
       { stage: 2, label: 'font-synthesis: none on body, but not on headings' },
       { stage: 3, label: 'font-synthesis: none + text-rendering: optimizeLegibility + font-smoothing' },
-      { stage: 4, label: 'Full cadence stack: font-synthesis, text-wrap, tabular-nums, selection styling, skip-ink — all in CI' },
+      { stage: 4, label: 'Full cadence stack in CI: font-synthesis, text-wrap, tabular-nums, selection styling, skip-ink' },
     ],
   },
 
@@ -290,10 +291,10 @@ const QUESTIONS: Question[] = [
     axis: 'identity',
     prompt: 'How disciplined is your UX copy (buttons, links, labels)?',
     answers: [
-      { stage: 1, label: 'Inconsistent — “Click Here”, “Submit”, trailing periods, ALL CAPS' },
+      { stage: 1, label: 'Inconsistent: “Click Here”, “Submit”, trailing periods, ALL CAPS' },
       { stage: 2, label: 'Mostly verb-phrase buttons, but some “Click Here” links remain' },
       { stage: 3, label: 'Verb-phrase buttons, no trailing periods, descriptive link text, no ALL CAPS' },
-      { stage: 4, label: 'Copy linted in CI — button verbs, link text, no trailing periods, no ALL CAPS enforced' },
+      { stage: 4, label: 'Copy linted in CI: button verbs, link text, trailing periods and ALL CAPS all enforced' },
     ],
   },
   {
@@ -301,10 +302,10 @@ const QUESTIONS: Question[] = [
     axis: 'identity',
     prompt: 'Do you check for Unicode security (homoglyph) issues in token names?',
     answers: [
-      { stage: 1, label: 'Never heard of it — no checks' },
+      { stage: 1, label: 'Never heard of it, so no checks' },
       { stage: 2, label: 'Aware of it but no automated check' },
       { stage: 3, label: 'UTS #39 confusable detection run during builds' },
-      { stage: 4, label: 'UTS #39 confusable detection in CI — blocks Cyrillic/Greek homoglyph shadowing' },
+      { stage: 4, label: 'UTS #39 confusable detection in CI blocks Cyrillic and Greek homoglyph shadowing' },
     ],
   },
   {
@@ -312,10 +313,10 @@ const QUESTIONS: Question[] = [
     axis: 'identity',
     prompt: 'Do you serve a DESIGN.md spec file for AI coding tools?',
     answers: [
-      { stage: 1, label: 'No — no DESIGN.md or equivalent spec file' },
+      { stage: 1, label: 'No DESIGN.md or equivalent spec file' },
       { stage: 2, label: 'A README or wiki page with some design guidelines' },
       { stage: 3, label: 'A DESIGN.md file at the repo root with tokens, components, motion specs' },
-      { stage: 4, label: 'DESIGN.md + llms.txt + agent.json — AI tools build from your system, not around it' },
+      { stage: 4, label: 'DESIGN.md, llms.txt and agent.json, so AI tools build from your system instead of around it' },
     ],
   },
 
@@ -325,10 +326,10 @@ const QUESTIONS: Question[] = [
     axis: 'verification',
     prompt: 'How do you verify design-system compliance?',
     answers: [
-      { stage: 1, label: 'We don’t — “it looks right” is the bar' },
+      { stage: 1, label: 'We don’t: “it looks right” is the bar' },
       { stage: 2, label: 'Manual design reviews before launch' },
       { stage: 3, label: 'Automated linter (stylelint, eslint) in CI for token usage' },
-      { stage: 4, label: `Deterministic ${ENGINE_CHECK_COUNT}-check engine scores every shipped surface — designesy or equivalent` },
+      { stage: 4, label: `Deterministic ${ENGINE_CHECK_COUNT}-check engine, Designesy or an equivalent, scores every shipped surface` },
     ],
   },
   {
@@ -339,7 +340,7 @@ const QUESTIONS: Question[] = [
       { stage: 1, label: 'No font-smoothing, rem units, or text-wrap declarations' },
       { stage: 2, label: 'rem units for font sizes, but no smoothing or text-wrap' },
       { stage: 3, label: 'font-smoothing + rem sizes + line-height + text-wrap: balance' },
-      { stage: 4, label: 'Full cadence stack (12 checks) linted in CI — smoothing, rem, line-height, text-wrap, tabular-nums, selection, font-synthesis, skip-ink' },
+      { stage: 4, label: 'Full cadence stack (12 checks) linted in CI: smoothing, rem, line-height, text-wrap, tabular-nums, selection, font-synthesis, skip-ink' },
     ],
   },
   {
@@ -347,7 +348,7 @@ const QUESTIONS: Question[] = [
     axis: 'verification',
     prompt: 'Do you measure compliance drift over time?',
     answers: [
-      { stage: 1, label: 'No — we have no baseline to drift from' },
+      { stage: 1, label: 'No, we have no baseline to drift from' },
       { stage: 2, label: 'Occasional audits, but no continuous tracking' },
       { stage: 3, label: 'Weekly automated re-score with delta badges (up/down/flat)' },
       { stage: 4, label: 'Continuous drift monitoring + alerting + trend dashboards + regression gates' },
@@ -358,10 +359,10 @@ const QUESTIONS: Question[] = [
     axis: 'verification',
     prompt: 'Can a new developer verify their work against the design contract?',
     answers: [
-      { stage: 1, label: 'No — they guess based on existing code' },
+      { stage: 1, label: 'No, they guess from the existing code' },
       { stage: 2, label: 'They can read the docs and ask in Slack' },
       { stage: 3, label: 'They can run npx <tool> locally to score their branch' },
-      { stage: 4, label: 'CI runs the contract check on every PR — fails if score drops below threshold' },
+      { stage: 4, label: 'CI runs the contract check on every PR and fails it when the score drops below the threshold' },
     ],
   },
 ];
@@ -373,13 +374,6 @@ const STAGE_LABELS: Record<number, string> = {
   2: 'Emerging',
   3: 'Systematic',
   4: 'Verified',
-};
-
-const STAGE_COLORS: Record<number, string> = {
-  1: 'var(--error)',
-  2: 'var(--warn)',
-  3: 'var(--signal)',
-  4: 'var(--ok)',
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -398,11 +392,12 @@ function overallScore(answers: Record<string, number>): number {
   return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 }
 
+// The stage is the average answer rounded to the nearest whole stage, as the
+// method on the page says. This used >= 25 / 50 / 75 bands, which sent every
+// tie up a stage: an axis answered 3, 3, 3, 3 (score 75) read as stage 4,
+// "Verified", and 2, 2, 2, 2 read as "Systematic".
 function stageFromScore(score: number): 1 | 2 | 3 | 4 {
-  if (score >= 75) return 4;
-  if (score >= 50) return 3;
-  if (score >= 25) return 2;
-  return 1;
+  return Math.min(4, Math.max(1, Math.round(score / 25))) as 1 | 2 | 3 | 4;
 }
 
 function encodeAnswers(answers: Record<string, number>): string {
@@ -422,164 +417,85 @@ function decodeAnswers(hash: string): Record<string, number> | null {
   }
 }
 
-// ── Maturity radar (SVG) ───────────────────────────────────────────────────
-// Distinct from lib/radar-chart.tsx (site-vs-cohort comparison). This is a
-// self-assessment radar: 6 axes, stage labels with colors, ring numbers,
-// no cohort overlay. Purpose-built for the maturity quiz result view.
+// ── Stage matrix ────────────────────────────────────────────────────────────
+// Six axes, four stages each, drawn as one register per axis: the cells up to
+// the axis's stage light in that stage's tone. Six values compared side by
+// side, with one scale: the job a radar does badly (its area exaggerates the
+// larger values, and the eye reads shape before position).
 
-function MaturityRadar({ scores }: { scores: number[] }) {
-  const size = 320;
-  const center = size / 2;
-  const maxRadius = 120;
-  const axesCount = AXES.length;
-  const angleStep = (2 * Math.PI) / axesCount;
+type Tone = 'fail' | 'warn' | 'pass';
+const STAGE_TONE: Record<number, Tone> = { 1: 'fail', 2: 'warn', 3: 'pass', 4: 'pass' };
 
-  // Grid rings at 25, 50, 75, 100
-  const rings = [25, 50, 75, 100];
-
-  // Axis label positions
-  const axisPoints = AXES.map((_, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    return {
-      x: center + Math.cos(angle) * (maxRadius + 28),
-      y: center + Math.sin(angle) * (maxRadius + 28),
-      angle,
-    };
-  });
-
-  // Data polygon
-  const dataPoints = scores.map((score, i) => {
-    const angle = i * angleStep - Math.PI / 2;
-    const radius = (score / 100) * maxRadius;
-    return {
-      x: center + Math.cos(angle) * radius,
-      y: center + Math.sin(angle) * radius,
-    };
-  });
-
-  const polygonPoints = dataPoints.map((p) => `${p.x},${p.y}`).join(' ');
-
+function StageMatrix({
+  answers,
+  current,
+  onPick,
+}: {
+  answers: Record<string, number>;
+  current?: number;
+  onPick?: (axis: number) => void;
+}) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      role="img"
-      aria-label={`Maturity radar: ${AXES.map((a, i) => `${a.label} ${scores[i] || 0}`).join(', ')}`}
-    >
-      {/* Grid rings */}
-      {rings.map((ring) => {
-        const r = (ring / 100) * maxRadius;
-        const points = AXES.map((_, i) => {
-          const angle = i * angleStep - Math.PI / 2;
-          return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
-        }).join(' ');
-        return (
-          <polygon
-            key={ring}
-            points={points}
-            fill="none"
-            stroke="var(--line)"
-            strokeWidth="1"
-            opacity={ring === 100 ? 0.5 : 0.25}
-          />
-        );
-      })}
-
-      {/* Axis lines */}
-      {AXES.map((_, i) => {
-        const angle = i * angleStep - Math.PI / 2;
-        return (
-          <line
-            key={i}
-            x1={center}
-            y1={center}
-            x2={center + Math.cos(angle) * maxRadius}
-            y2={center + Math.sin(angle) * maxRadius}
-            stroke="var(--line)"
-            strokeWidth="1"
-            opacity="0.3"
-          />
-        );
-      })}
-
-      {/* Data polygon */}
-      <polygon
-        points={polygonPoints}
-        fill="var(--signal)"
-        fillOpacity="0.15"
-        stroke="var(--signal)"
-        strokeWidth="2"
-        style={{ transition: 'all 0.4s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-      />
-
-      {/* Data points */}
-      {dataPoints.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r="4"
-          fill="var(--signal)"
-          stroke="var(--paper)"
-          strokeWidth="2"
-          style={{ transition: 'all 0.4s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-        />
-      ))}
-
-      {/* Axis labels */}
+    <ol className="mt-matrix" aria-label="Stage per axis">
       {AXES.map((axis, i) => {
-        const pos = axisPoints[i];
-        const score = scores[i] || 0;
-        const stage = stageFromScore(score);
-        const anchor = Math.abs(pos.x - center) < 10 ? 'middle' : pos.x > center ? 'start' : 'end';
-        return (
-          <g key={axis.id}>
-            <text
-              x={pos.x}
-              y={pos.y - 6}
-              textAnchor={anchor}
-              style={{ fontSize: '0.7rem', fontWeight: 600, fill: 'var(--ink)' }}
-            >
+        const qs = QUESTIONS.filter((q) => q.axis === axis.id);
+        const answered = qs.filter((q) => answers[q.id] !== undefined).length;
+        const score = axisScore(answers, axis.id);
+        const stage = answered ? stageFromScore(score) : 0;
+        const label = answered
+          ? `${axis.label}: stage ${stage}, ${STAGE_LABELS[stage]}, ${score} of 100${answered < 4 ? `, ${answered} of 4 answered` : ''}`
+          : `${axis.label}: not answered`;
+        const body = (
+          <>
+            <span className="mt-row-name">
               {axis.label}
-            </text>
-            <text
-              x={pos.x}
-              y={pos.y + 8}
-              textAnchor={anchor}
-              style={{ fontSize: '0.65rem', fill: STAGE_COLORS[stage] }}
-            >
-              {score > 0 ? `${score} · ${STAGE_LABELS[stage]}` : '—'}
-            </text>
-          </g>
+              <small>{answered < 4 ? `${answered} of 4` : axis.contractWeight}</small>
+            </span>
+            <span className="mt-cells" aria-hidden="true">
+              {[1, 2, 3, 4].map((s) => (
+                <i key={s} className="mt-cell" data-tone={s <= stage ? STAGE_TONE[stage] : undefined} />
+              ))}
+            </span>
+            <span className="mt-row-score">{answered ? score : ''}</span>
+          </>
         );
-      })}
-
-      {/* Stage ring labels */}
-      {rings.map((ring) => {
-        const r = (ring / 100) * maxRadius;
         return (
-          <text
-            key={ring}
-            x={center + 4}
-            y={center - r + 3}
-            style={{ fontSize: '0.55rem', fill: 'var(--muted-dim)' }}
-          >
-            {ring}
-          </text>
+          <li key={axis.id}>
+            {onPick ? (
+              <button
+                type="button"
+                className="mt-row"
+                aria-current={current === i ? 'step' : undefined}
+                aria-label={`${label}. Go to this axis.`}
+                onClick={() => onPick(i)}
+              >
+                {body}
+              </button>
+            ) : (
+              <div className="mt-row" role="img" aria-label={label}>
+                {body}
+              </div>
+            )}
+          </li>
         );
       })}
-    </svg>
+    </ol>
   );
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
+const STAGE_READING: Record<number, (n: number) => string> = {
+  4: (n) => `Verified: compliance is measured, enforced and tracked. Next, keep it there: run the ${n}-check engine against the live site on every release.`,
+  3: () => 'Systematic: the foundations are in place and written down, and enforcement is still by hand. Most systems lose compliance in the gap between documented and enforced.',
+  2: () => 'Emerging: practices exist, and none of them is enforced yet. Define the token layer and a reduced-motion block first; both pay off on every axis.',
+  1: () => 'Ad-hoc: nothing is measured or enforced yet. Start with tokens: one surface variable and a duration scale at :root.',
+};
 
 export function MaturityAssessment() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [phase, setPhase] = useState<'quiz' | 'results'>('quiz');
   const [currentAxis, setCurrentAxis] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Load from URL hash on mount
   useEffect(() => {
@@ -594,510 +510,213 @@ export function MaturityAssessment() {
     }
   }, [loaded]);
 
-  // Update URL hash when results are shown
-  const updateHash = useCallback((a: Record<string, number>) => {
-    if (typeof window !== 'undefined' && phase === 'results') {
-      const encoded = encodeAnswers(a);
-      if (encoded) {
-        window.history.replaceState(null, '', `#r=${encoded}`);
-      }
-    }
-  }, [phase]);
-
   const handleAnswer = useCallback((questionId: string, stage: number) => {
-    setAnswers((prev) => {
-      const next = { ...prev, [questionId]: stage };
-      return next;
-    });
+    setAnswers((prev) => ({ ...prev, [questionId]: stage }));
   }, []);
 
-  const axisQuestions = useMemo(
-    () => QUESTIONS.filter((q) => q.axis === AXES[currentAxis]?.id),
-    [currentAxis]
-  );
-
-  const axisAnsweredCount = useMemo(
-    () => axisQuestions.filter((q) => answers[q.id] !== undefined).length,
-    [axisQuestions, answers]
-  );
-
-  const allAnswered = useMemo(
-    () => QUESTIONS.every((q) => answers[q.id] !== undefined),
-    [answers]
-  );
-
-  const totalAnswered = useMemo(
-    () => QUESTIONS.filter((q) => answers[q.id] !== undefined).length,
-    [answers]
-  );
-
-  const scores = useMemo(
-    () => AXES.map((a) => axisScore(answers, a.id)),
-    [answers]
-  );
-
+  const axisQuestions = useMemo(() => QUESTIONS.filter((q) => q.axis === AXES[currentAxis]?.id), [currentAxis]);
+  const axisAnsweredCount = axisQuestions.filter((q) => answers[q.id] !== undefined).length;
+  const allAnswered = QUESTIONS.every((q) => answers[q.id] !== undefined);
+  const totalAnswered = QUESTIONS.filter((q) => answers[q.id] !== undefined).length;
+  const scores = useMemo(() => AXES.map((a) => axisScore(answers, a.id)), [answers]);
   const overall = useMemo(() => overallScore(answers), [answers]);
 
-  function handleNext() {
-    if (currentAxis < AXES.length - 1) {
-      setCurrentAxis(currentAxis + 1);
-    }
-  }
-
-  function handlePrev() {
-    if (currentAxis > 0) {
-      setCurrentAxis(currentAxis - 1);
-    }
-  }
-
-  function handleSeeResults() {
+  function showResults() {
     setPhase('results');
-    updateHash(answers);
+    const encoded = encodeAnswers(answers);
+    if (encoded) window.history.replaceState(null, '', `#r=${encoded}`);
   }
 
-  function handleRestart() {
+  function restart() {
     setAnswers({});
     setPhase('quiz');
     setCurrentAxis(0);
-    if (typeof window !== 'undefined') {
-      window.history.replaceState(null, '', window.location.pathname);
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+
+  async function copyLink() {
+    const encoded = encodeAnswers(answers);
+    if (!encoded) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/maturity#r=${encoded}`);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      /* clipboard refused */
     }
   }
 
-  // ── Quiz phase ─────────────────────────────────────────────────────────────
+  // Arrow keys move and select within one question (APG radio group).
+  function optionKeys(e: React.KeyboardEvent, q: Question, at: number) {
+    const keys: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+    let next = at;
+    if (e.key in keys) next = (at + keys[e.key] + q.answers.length) % q.answers.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = q.answers.length - 1;
+    else return;
+    e.preventDefault();
+    handleAnswer(q.id, q.answers[next].stage);
+    const group = (e.currentTarget as HTMLElement).parentElement;
+    (group?.children[next] as HTMLElement | undefined)?.focus();
+  }
+
+  const matrixPanel = (interactive: boolean) => (
+    <section className="eg-inst mt-panel" aria-label="Maturity matrix">
+      <div className="eg-inst-bar">
+        <span className="eg-inst-app">
+          <i className="eg-mark" aria-hidden="true"><i /></i>
+          Maturity matrix
+        </span>
+        <span className="eg-inst-target" aria-hidden="true" />
+        <span className="eg-inst-state">
+          {totalAnswered} of {QUESTIONS.length} answered
+        </span>
+      </div>
+      <div className="mt-panel-body">
+        <StageMatrix answers={answers} current={interactive ? currentAxis : undefined} onPick={interactive ? setCurrentAxis : undefined} />
+      </div>
+      <div className="eg-legend">
+        <ul aria-label="Stages">
+          <li><i className="mt-cell" data-tone="fail" aria-hidden="true" />1 ad-hoc</li>
+          <li><i className="mt-cell" data-tone="warn" aria-hidden="true" />2 emerging</li>
+          <li><i className="mt-cell" data-tone="pass" aria-hidden="true" />3 systematic, 4 verified</li>
+        </ul>
+        <span>axis = average answer × 25</span>
+      </div>
+    </section>
+  );
 
   if (phase === 'quiz') {
     const axis = AXES[currentAxis];
-    const progress = ((currentAxis + (axisAnsweredCount / 4)) / AXES.length) * 100;
-
     return (
-      <div className="maturity-assessment">
-        {/* Progress bar */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Axis {currentAxis + 1} of {AXES.length}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)' }}>
-              {totalAnswered} of {QUESTIONS.length} answered
-            </span>
-          </div>
-          <div style={{ height: '3px', background: 'var(--line)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div
-              style={{
-                height: '100%',
-                width: `${progress}%`,
-                background: 'var(--signal)',
-                transition: 'width 0.3s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Axis header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem',
-          marginBottom: '2rem',
-          padding: '1.25rem 1.5rem',
-          background: 'var(--surface)',
-          borderRadius: 'var(--radius, 12px)',
-          border: '1px solid var(--line)',
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '10px',
-            background: 'var(--signal)',
-            color: 'var(--paper)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            flexShrink: 0,
-          }}>
-            {axis.symbol}
-          </div>
-          <div>
-            {/* h2, not h3. This is the only heading inside the assessment form
-                and it sits directly under the page's h1 ("Design Compliance
-                Maturity"), so h3 skipped a level — v25 reported "skipped level:
-                h1→h3". It is the heading of the current-axis section, which
-                makes h2 the correct rank; the size is set inline, so the
-                rendered look is unchanged. Heading RANK is document structure;
-                font-size is presentation. Conflating them is how a skip gets
-                shipped. */}
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.25rem' }}>
-              {axis.label}
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
-              {axis.description} · <span style={{ color: 'var(--muted-dim)' }}>{axis.contractWeight}</span>
+      <div className="eg-bench">
+        <div className="mt-grid">
+          <section className="mt-quiz" aria-labelledby="mt-axis-h">
+            <p className="mt-axis-meta">
+              Axis {currentAxis + 1} of {AXES.length} · {axis.categories} · {axis.contractWeight}
             </p>
-          </div>
-        </div>
+            {/* h2: the one heading inside the tool, directly under the page h1. */}
+            <h2 className="eg-h2" id="mt-axis-h">{axis.label}</h2>
+            <p className="mt-axis-desc">{axis.description}</p>
 
-        {/* Questions */}
-        <div className="row-stack" role="list">
-          {axisQuestions.map((q, qi) => {
-            const selected = answers[q.id];
-            return (
-              <div
-                key={q.id}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}
-              >
-                <span className="row-index">{String(currentAxis * 4 + qi + 1).padStart(2, '0')}</span>
-                <span className="row-body" style={{ width: '100%' }}>
-                  <span className="row-title" style={{ display: 'block', marginBottom: '0.75rem' }}>
-                    {q.prompt}
-                  </span>
-                  <div
-                    role="radiogroup"
-                    aria-label={q.prompt}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}
-                  >
-                    {q.answers.map((a) => {
-                      const isSelected = selected === a.stage;
-                      return (
-                        <button
-                          key={a.stage}
-                          onClick={() => handleAnswer(q.id, a.stage)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            padding: '0.7rem 1rem',
-                            background: isSelected ? 'var(--signal)' : 'var(--surface)',
-                            color: isSelected ? 'var(--paper)' : 'var(--ink)',
-                            border: `1px solid ${isSelected ? 'var(--signal)' : 'var(--line)'}`,
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            textAlign: 'left',
-                            transition: 'all 0.2s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                            width: '100%',
-                          }}
-                          className="maturity-option"
-                          // This is a single-select group rendered from buttons,
-                          // and it carried NO ARIA state — no role, no
-                          // aria-checked. Assistive tech therefore saw 16
-                          // unrelated buttons and could not tell the user they
-                          // were choosing one option from a scale, nor which one
-                          // was currently chosen. The selected state existed only
-                          // as colour (background/border), which is the "do not
-                          // rely on colour alone" case the contract's own
-                          // accessibility list forbids.
-                          //
-                          // role="radio" + aria-checked is the standard pattern
-                          // for a custom radio group; the wrapper below carries
-                          // role="radiogroup" with the question as its accessible
-                          // name, so the group is announced before its options.
-                          role="radio"
-                          aria-checked={isSelected}
-                        >
-                          {/* aria-hidden: the 1-4 position is decoration. The
-                              radiogroup semantics already tell assistive tech
-                              this is option N of a scale, and exposing the digit
-                              separately made the accessible name read
-                              "1 No — backgrounds are raw hex/rgb values". */}
-                          <span aria-hidden="true" style={{
-                            width: '24px',
-                            height: '24px',
-                            borderRadius: '6px',
-                            background: isSelected ? 'var(--paper)' : 'var(--line)',
-                            color: isSelected ? 'var(--signal)' : 'var(--muted-dim)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            flexShrink: 0,
-                          }}>
-                            {a.stage}
-                          </span>
-                          <span>{a.label}</span>                        </button>
-                      );
-                    })}
-                  </div>
-                </span>
-              </div>
-            );
-          })}
-        </div>
+            <ol className="mt-questions">
+              {axisQuestions.map((q, qi) => {
+                const selected = answers[q.id];
+                const at = Math.max(0, q.answers.findIndex((a) => a.stage === selected));
+                return (
+                  <li className="mt-q" key={q.id}>
+                    <p className="mt-q-prompt" id={`mt-q-${q.id}`}>
+                      <span className="mt-q-num">{String(currentAxis * 4 + qi + 1).padStart(2, '0')}</span>
+                      {q.prompt}
+                    </p>
+                    <div className="mt-options" role="radiogroup" aria-labelledby={`mt-q-${q.id}`}>
+                      {q.answers.map((a, ai) => {
+                        const on = selected === a.stage;
+                        return (
+                          <button
+                            key={a.stage}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            tabIndex={ai === at ? 0 : -1}
+                            className="mt-opt"
+                            onClick={() => handleAnswer(q.id, a.stage)}
+                            onKeyDown={(e) => optionKeys(e, q, ai)}
+                          >
+                            {/* The stage digit is decoration: the radio group already says
+                                "option N of 4", and reading the digit made the name start "1 No". */}
+                            <span className="mt-opt-stage" aria-hidden="true">{a.stage}</span>
+                            <span>{a.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
 
-        {/* Navigation */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '2rem',
-          gap: '1rem',
-          flexWrap: 'wrap',
-        }}>
-          <button
-            onClick={handlePrev}
-            disabled={currentAxis === 0}
-            className="button ghost"
-            style={{ fontSize: '0.85rem', opacity: currentAxis === 0 ? 0.4 : 1, cursor: currentAxis === 0 ? 'default' : 'pointer' }}
-          >
-            ← Previous axis
-          </button>
-
-          {currentAxis < AXES.length - 1 ? (
-            <button
-              onClick={handleNext}
-              disabled={axisAnsweredCount < 4}
-              className="button primary"
-              style={{ fontSize: '0.85rem', opacity: axisAnsweredCount < 4 ? 0.5 : 1 }}
-            >
-              Next axis →
-            </button>
-          ) : (
-            <button
-              onClick={handleSeeResults}
-              disabled={!allAnswered}
-              className="button primary"
-              style={{ fontSize: '0.85rem', opacity: !allAnswered ? 0.5 : 1 }}
-              data-cuelume-press="sparkle"
-            >
-              See results →
-            </button>
-          )}
-        </div>
-
-        {/* Axis quick-nav */}
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          marginTop: '1.5rem',
-          flexWrap: 'wrap',
-        }}>
-          {AXES.map((a, i) => {
-            const aScore = axisScore(answers, a.id);
-            const isComplete = QUESTIONS.filter((q) => q.axis === a.id).every((q) => answers[q.id] !== undefined);
-            return (
-              <button
-                key={a.id}
-                onClick={() => setCurrentAxis(i)}
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  background: i === currentAxis ? 'var(--signal)' : 'var(--surface)',
-                  color: i === currentAxis ? 'var(--paper)' : 'var(--muted)',
-                  border: `1px solid ${i === currentAxis ? 'var(--signal)' : isComplete ? 'var(--ok)' : 'var(--line)'}`,
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  transition: 'all 0.2s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                }}
-                title={a.label}
-                // The visible label is a single initial ("T" for Token
-                // Discipline), which is not a usable accessible name — a screen
-                // reader announced just "T". The only full text lived in a
-                // `title` attribute, and title is unreliable as an accessible
-                // name: not exposed by every AT/browser pair, and announced
-                // after the label rather than instead of it.
-                //
-                // aria-label carries the axis name; aria-pressed exposes which
-                // axis is currently shown, previously conveyed only by the
-                // selected button's colour — the "do not rely on colour alone"
-                // case the contract's own accessibility list forbids.
-                aria-label={a.label}
-                aria-pressed={i === currentAxis}
-              >
-                {a.symbol}{isComplete && ' ✓'}
+            <div className="mt-nav">
+              <button type="button" className="eg-share-btn" onClick={() => setCurrentAxis(currentAxis - 1)} disabled={currentAxis === 0}>
+                Previous axis
               </button>
-            );
-          })}
+              {currentAxis < AXES.length - 1 ? (
+                <button
+                  type="button"
+                  className="eg-bar-go"
+                  onClick={() => setCurrentAxis(currentAxis + 1)}
+                  aria-disabled={axisAnsweredCount < 4}
+                  data-cuelume-press="tick"
+                >
+                  {axisAnsweredCount < 4 ? `Answer ${4 - axisAnsweredCount} more` : 'Next axis'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="eg-bar-go"
+                  onClick={() => allAnswered && showResults()}
+                  aria-disabled={!allAnswered}
+                  data-cuelume-press="sparkle"
+                >
+                  {allAnswered ? 'See the matrix' : `${QUESTIONS.length - totalAnswered} questions left`}
+                </button>
+              )}
+            </div>
+          </section>
+
+          <div className="mt-side">{matrixPanel(true)}</div>
         </div>
       </div>
     );
   }
 
-  // ── Results phase ──────────────────────────────────────────────────────────
-
   const overallStage = stageFromScore(overall);
-  const weakestAxis = scores.indexOf(Math.min(...scores.filter((s) => s > 0)));
-  const strongestAxis = scores.indexOf(Math.max(...scores));
+  const answeredScores = scores.filter((s) => s > 0);
+  const weakest = scores.indexOf(Math.min(...answeredScores));
+  const strongest = scores.indexOf(Math.max(...scores));
 
   return (
-    <div className="maturity-results">
-      {/* Overall score + radar */}
-      <div style={{
-        display: 'flex',
-        gap: '2.5rem',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        marginBottom: '2rem',
-        padding: '1.5rem',
-        background: 'var(--surface)',
-        borderRadius: 'var(--radius, 12px)',
-        border: '1px solid var(--line)',
-      }}>
-        <MaturityRadar scores={scores} />
-
-        <div style={{ flex: '1 1 300px' }}>
-          <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
-            Overall compliance maturity
-          </p>
-          <p style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--ink)', margin: '0 0 0.25rem' }}>
-            {overall > 0 ? overall : '—'}<span style={{ fontSize: '1rem', color: 'var(--muted-dim)' }}>/100</span>
-          </p>
-          <p style={{
-            fontSize: '1rem',
-            fontWeight: 600,
-            color: STAGE_COLORS[overallStage],
-            margin: '0 0 1rem',
-          }}>
-            Stage {overallStage} — {STAGE_LABELS[overallStage]}
-          </p>
-          <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: '0 0 1.5rem', lineHeight: 1.5 }}>
-            {overall >= 75
-              ? `Your design system is in the Verified stage — compliance is measured, enforced, and continuously tracked. The next step is ensuring no drift: run the deterministic ${ENGINE_CHECK_COUNT}-check engine against your live site.`
-              : overall >= 50
-              ? 'Your design system is Systematic — the foundations are in place but not yet enforced deterministically. The gap between “documented” and “enforced” is where most systems lose compliance.'
-              : overall >= 25
-              ? 'Your design system is Emerging — some practices exist but they are not yet systematic or enforced. The highest-leverage move is defining the token layer and adding a reduced-motion block.'
-              : 'Your design system is in the Ad-hoc stage — compliance is not yet measured or enforced. Start with tokens: define a --paper surface variable and a duration scale at :root.'}
-          </p>
-
-          {scores.some((s) => s > 0) && (
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-              <div style={{
-                padding: '0.6rem 1rem',
-                background: 'var(--paper)',
-                border: '1px solid var(--line)',
-                borderRadius: '8px',
-              }}>
-                <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                  Strongest axis
-                </p>
-                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--ok)', margin: 0 }}>
-                  {AXES[strongestAxis]?.label} · {scores[strongestAxis]}/100
-                </p>
+    <div className="eg-bench">
+      <div className="mt-grid is-results">
+        <div className="mt-side">{matrixPanel(false)}</div>
+        <section className="mt-reading" aria-labelledby="mt-result-h">
+          <span className="eg-label">Overall, self-assessed</span>
+          <h2 className="mt-overall" id="mt-result-h">
+            <span className="eg-grade">{overall > 0 ? overall : 0}</span>
+            <span className="mt-overall-stage">
+              Stage {overallStage}, {STAGE_LABELS[overallStage].toLowerCase()}
+            </span>
+          </h2>
+          <p className="eg-side-note">{STAGE_READING[overallStage](ENGINE_CHECK_COUNT)}</p>
+          {answeredScores.length > 0 && (
+            <dl className="eg-figs">
+              <div>
+                <dt>Strongest</dt>
+                <dd>{scores[strongest]}<small> {AXES[strongest]?.label}</small></dd>
               </div>
-              <div style={{
-                padding: '0.6rem 1rem',
-                background: 'var(--paper)',
-                border: '1px solid var(--line)',
-                borderRadius: '8px',
-              }}>
-                <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                  Weakest axis
-                </p>
-                <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--error)', margin: 0 }}>
-                  {AXES[weakestAxis]?.label} · {scores[weakestAxis]}/100
-                </p>
+              <div>
+                <dt>Weakest</dt>
+                <dd>{scores[weakest]}<small> {AXES[weakest]?.label}</small></dd>
               </div>
-            </div>
+            </dl>
           )}
-
-          {/* CTA: Verify with Designesy */}
-          <Link
-            href="/score"
-            className="button primary"
-            style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-            data-cuelume-press="sparkle"
-          >
-            Score your compliance with Designesy →
-          </Link>
-        </div>
+          <p className="eg-ref-note">
+            Self-reported, so unverified. The {ENGINE_CHECK_COUNT}-check engine measures the live site against the same contract.
+          </p>
+          <div className="mt-actions">
+            <Link href="/score" className="eg-bar-go" data-cuelume-press="sparkle">
+              Score the live site
+            </Link>
+            <button type="button" className="eg-share-btn" onClick={copyLink} aria-live="polite">
+              {copied ? 'Link copied' : 'Copy the result link'}
+            </button>
+            <button type="button" className="eg-share-btn" onClick={restart}>
+              Start again
+            </button>
+          </div>
+          <p className="eg-quiet">Computed in your browser. Nothing is sent anywhere.</p>
+        </section>
       </div>
-
-      {/* Per-axis breakdown */}
-      <div className="row-stack" role="list" style={{ marginTop: '1.5rem' }}>
-        {AXES.map((axis, i) => {
-          const score = scores[i];
-          const stage = stageFromScore(score);
-          const axisQuestions = QUESTIONS.filter((q) => q.axis === axis.id);
-          const answeredCount = axisQuestions.filter((q) => answers[q.id] !== undefined).length;
-
-          return (
-            <div
-              key={axis.id}
-              className="row"
-              role="listitem"
-              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
-            >
-              <span className="row-index">{axis.symbol}</span>
-              <span className="row-body" style={{ width: '100%' }}>
-                <span className="row-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <span>{axis.label}</span>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: STAGE_COLORS[stage],
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}>
-                    {answeredCount > 0 ? `${score} · ${STAGE_LABELS[stage]}` : 'Not answered'}
-                  </span>
-                </span>
-                <span className="row-meta">
-                  {axis.description} · <span style={{ color: 'var(--muted-dim)' }}>{axis.categories}</span>
-                </span>
-                {/* Mini bar */}
-                <div style={{ height: '4px', background: 'var(--line)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.5rem', width: '100%' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${score}%`,
-                      background: STAGE_COLORS[stage],
-                      transition: 'width 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                    }}
-                  />
-                </div>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Actions */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginTop: '2rem',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-      }}>
-        <button
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              const encoded = encodeAnswers(answers);
-              if (encoded) {
-                navigator.clipboard?.writeText(`${window.location.origin}/maturity#r=${encoded}`);
-              }
-            }
-          }}
-          className="button ghost"
-          style={{ fontSize: '0.85rem' }}
-          data-cuelume-hover="tick"
-          data-cuelume-press="tick"
-        >
-          Copy share link
-        </button>
-        <button
-          onClick={handleRestart}
-          className="button ghost"
-          style={{ fontSize: '0.85rem' }}
-        >
-          Retake assessment
-        </button>
-        <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: 'auto' }}>
-          Results are computed in your browser and never sent to a server.
-        </span>
-      </div>
-
-      {/* Privacy note */}
-      <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginTop: '1.5rem', textAlign: 'center' }}>
-        This is a self-assessment — your answers are self-reported, not verified.
-        For a deterministic score, run the {ENGINE_CHECK_COUNT}-check engine at{' '}
-        <Link href="/score" style={{ color: 'var(--signal)' }}>/score</Link>.
-      </p>
     </div>
   );
 }

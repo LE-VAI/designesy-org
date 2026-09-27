@@ -1,16 +1,24 @@
 'use client';
 
-import { useState, useRef, useLayoutEffect } from 'react';
-import { ShareButton } from '../lib/share-button';
+import { useRef, useState } from 'react';
+import { EngineBar } from '../lib/engine/command-bar';
+import { Instrument } from '../lib/engine/instrument';
+import { Findings, type FindingsHandle } from '../lib/engine/findings';
+import { EngineShare } from '../lib/engine/engine-share';
+import { normalizeUrl, stamp, useAutoRun, useEngineRun } from '../lib/engine/use-engine-run';
+import { hostOf, toOutcomes, type RegistryView } from '../lib/engine/types';
 
-type Status = 'idle' | 'loading' | 'ok' | 'error';
-
-type CheckResult = {
-  id: string;
-  item: string;
-  category: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
-  detail: string;
+type Bundle = {
+  tokens: object;
+  lintConfig: object;
+  agentRules: string;
+  componentContract: object;
+  antiPatterns: {
+    inlineColors: { count: number; examples: string[]; rule: string };
+    magicNumbers: { count: number; examples: string[]; rule: string };
+    fabricatedTokens: { count: number; examples: string[]; rule: string };
+  };
+  designMd: string;
 };
 
 type GuardrailsResponse = {
@@ -23,344 +31,193 @@ type GuardrailsResponse = {
   fail?: number;
   total?: number;
   tokensExtracted?: number;
-  bundle?: {
-    tokens: object;
-    lintConfig: object;
-    agentRules: string;
-    componentContract: object;
-    antiPatterns: {
-      inlineColors: { count: number; examples: string[]; rule: string };
-      magicNumbers: { count: number; examples: string[]; rule: string };
-      fabricatedTokens: { count: number; examples: string[]; rule: string };
-    };
-    designMd: string;
-  };
-  checks?: CheckResult[];
+  bundle?: Bundle;
+  checks?: { id: string; item: string; status: string; detail: string }[];
   error?: string;
 };
 
-function normalizeInput(input: string): string {
-  let clean = input.trim();
-  if (!clean) return '';
-  if (!/^https?:\/\//i.test(clean)) {
-    clean = `https://${clean}`;
+/** Each check emits one file; this is the file's text as the viewer shows it. */
+function fileText(bundle: Bundle | undefined, id: string): string {
+  if (!bundle) return '';
+  switch (id) {
+    case 'g01': return JSON.stringify(bundle.tokens, null, 2);
+    case 'g02': return JSON.stringify(bundle.lintConfig, null, 2);
+    case 'g03': return bundle.agentRules || '';
+    case 'g04': return JSON.stringify(bundle.componentContract, null, 2);
+    case 'g05': return JSON.stringify(bundle.antiPatterns, null, 2);
+    case 'g06': return bundle.designMd || '';
+    default: return '';
   }
-  return clean;
 }
 
-const STATUS_TOKENS: Record<string, string> = {
-  PASS: 'var(--ok)',
-  WARN: 'var(--warn)',
-  FAIL: 'var(--error)',
-};
+function size(text: string): string {
+  const bytes = new TextEncoder().encode(text).length;
+  const lines = text ? text.split('\n').length : 0;
+  const kb = bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
+  return `${kb} · ${lines} lines`;
+}
 
-type Tab = 'tokens' | 'lint' | 'rules' | 'contract' | 'anti' | 'designmd';
-
-export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
+export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; registry: RegistryView }) {
   const [url, setUrl] = useState(initialUrl);
-  const [status, setStatus] = useState<Status>('idle');
-  const [result, setResult] = useState<GuardrailsResponse | null>(null);
-  const [scoredUrl, setScoredUrl] = useState('');
-  const [activeTab, setActiveTab] = useState<Tab>('tokens');
+  const { phase, result, scanned, error, when, run } = useEngineRun<GuardrailsResponse>('/api/guardrails', 'guardrails emitter');
+  const [file, setFile] = useState('g01');
   const [copied, setCopied] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const bundleTabsRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const container = bundleTabsRef.current;
-    if (!container) return;
-    const active = container.querySelector<HTMLElement>('.bundle-tab.is-active');
-    if (!active) return;
-    container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
-    container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
-  }, [activeTab, result]);
+  const findings = useRef<FindingsHandle>(null);
+  const viewer = useRef<HTMLElement>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const normalized = normalizeInput(url);
-    if (!normalized) return;
-    setStatus('loading');
-    setResult(null);
-    setScoredUrl(normalized);
+  const start = (target: string) => {
+    const u = normalizeUrl(target);
+    if (u) run(u, { url: u });
+  };
+  useAutoRun(initialUrl, start);
 
-    try {
-      const resp = await fetch('/api/guardrails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: normalized }),
-      });
-      const data: GuardrailsResponse = await resp.json();
-      if (!data.ok) {
-        setStatus('error');
-        setResult(data);
-        return;
-      }
-      setStatus('ok');
-      setResult(data);
-    } catch {
-      setStatus('error');
-      setResult({ ok: false, error: 'Network error — could not reach the guardrails engine.' });
+  const outcomes = toOutcomes(result?.checks);
+  const host = scanned ? hostOf(scanned) : '';
+  const byId = new Map(registry.checks.map((c) => [c.id, c]));
+  const text = fileText(result?.bundle, file);
+  const meta: Record<string, string> = {};
+  if (result?.bundle) for (const c of registry.checks) meta[c.id] = size(fileText(result.bundle, c.id));
+
+  const pick = (id: string) => {
+    setFile(id);
+    setCopied(false);
+    if (phase === 'done') {
+      viewer.current?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }
-  }
+  };
 
-  function shareUrl(u: string): string {
-    return `/guardrails?url=${encodeURIComponent(u)}`;
-  }
-
-  function getTabContent(tab: Tab): string {
-    if (!result?.bundle) return '';
-    switch (tab) {
-      case 'tokens':
-        return JSON.stringify(result.bundle.tokens, null, 2);
-      case 'lint':
-        return JSON.stringify(result.bundle.lintConfig, null, 2);
-      case 'rules':
-        return result.bundle.agentRules;
-      case 'contract':
-        return JSON.stringify(result.bundle.componentContract, null, 2);
-      case 'anti':
-        return JSON.stringify(result.bundle.antiPatterns, null, 2);
-      case 'designmd':
-        return result.bundle.designMd || '';
-    }
-  }
-
-  async function copyToClipboard() {
-    const content = getTabContent(activeTab);
+  const copy = async () => {
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      window.setTimeout(() => setCopied(false), 2200);
     } catch {
-      // clipboard not available
+      /* clipboard refused */
     }
-  }
+  };
 
-  function downloadBundle() {
+  const download = () => {
     if (!result?.bundle) return;
     const blob = new Blob([JSON.stringify(result.bundle, null, 2)], { type: 'application/json' });
-    const u = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = u;
+    a.href = URL.createObjectURL(blob);
     a.download = 'designesy-guardrails-bundle.json';
     a.click();
-    URL.revokeObjectURL(u);
-  }
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'tokens', label: 'Tokens' },
-    { id: 'lint', label: 'Stylelint' },
-    { id: 'rules', label: 'AGENTS.md' },
-    { id: 'contract', label: 'Contract' },
-    { id: 'anti', label: 'Anti-patterns' },
-    { id: 'designmd', label: 'DESIGN.md' },
-  ];
+    URL.revokeObjectURL(a.href);
+  };
 
   return (
-    <div className="guardrails-form">
-      <form onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-col">
-          <div className="score-input-flex-box">
-            <span className="score-input-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" />
-              </svg>
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter a URL to generate guardrails..."
-              className="score-url-input-inner"
-              aria-label="URL to generate guardrails for"
-              disabled={status === 'loading'}
-            />
+    <div className="eg-bench">
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'URL to emit guardrails from', placeholder: 'Any public URL, like linear.app' }]}
+        onSubmit={() => start(url)}
+        busy={phase === 'running'}
+        go="Emit the contract"
+        goBusy="Emitting"
+        foot={<p className="eg-bar-foot-note">Reads the site&apos;s CSS once and writes six files an AI coding agent can follow.</p>}
+      />
+      <Instrument
+        name="Guardrails"
+        registry={registry}
+        face="files"
+        phase={phase}
+        target={host}
+        outcomes={outcomes}
+        fileMeta={meta}
+        selected={phase === 'done' ? file : undefined}
+        controls="eg-viewer"
+        verdict={
+          result && phase === 'done'
+            ? {
+                score: result.score ?? 0,
+                grade: result.grade ?? 'F',
+                pass: result.pass ?? 0,
+                warn: result.warn ?? 0,
+                fail: result.fail ?? 0,
+                total: result.total ?? registry.checks.length,
+              }
+            : null
+        }
+        error={
+          <>
+            <p><b>{host || 'This URL'}</b> could not be read.</p>
+            <p>{error}</p>
+          </>
+        }
+        scoring="written 1 · not written 0 · over 6 files"
+        restNote="Emit from a URL and each file fills in with its size. Pick a file to read it below."
+        restCard={
+          <div className="eg-ref">
+            <span className="eg-label">Where each file goes</span>
+            <dl>
+              <div>
+                <dt>tokens.json <span className="eg-ref-where">g01</span></dt>
+                <dd>Your design repo, as the one source of values.</dd>
+              </div>
+              <div>
+                <dt>stylelint.json <span className="eg-ref-where">g02</span></dt>
+                <dd>CI, so an off-token value fails the build.</dd>
+              </div>
+              <div>
+                <dt>AGENTS.md and DESIGN.md <span className="eg-ref-where">g03 g06</span></dt>
+                <dd>The repo root, where coding agents look first.</dd>
+              </div>
+              <div>
+                <dt>components.json and anti-patterns.json <span className="eg-ref-where">g04 g05</span></dt>
+                <dd>Beside AGENTS.md, as context the rules point to.</dd>
+              </div>
+            </dl>
+            <p className="eg-ref-note">The grade counts files written. It says nothing about the design itself; the contract score does.</p>
           </div>
-          <button
-            type="submit"
-            className="button primary score-submit"
-            disabled={status === 'loading' || !url.trim()}
-            data-cuelume-press="sparkle"
-          >
-            {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" />
-                Emitting…
+        }
+        onOpen={(id) => (phase === 'done' ? pick(id) : undefined)}
+        sideExtra={
+          phase === 'done' && scanned ? (
+            <EngineShare path={`/guardrails?url=${encodeURIComponent(scanned)}`} text={`Designesy guardrails: ${host}`} label="Share this result" />
+          ) : null
+        }
+      />
+      {phase === 'done' && result?.bundle && (
+        <section className="eg-section" aria-labelledby="eg-bundle-h" ref={viewer}>
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="eg-bundle-h">The bundle</h2>
+              <p className="eg-section-sub">
+                Six files from {host}
+                {typeof result.tokensExtracted === 'number' ? ` · ${result.tokensExtracted} tokens` : ''}
+                {when ? ` · ${stamp(when)}` : ''}
+              </p>
+            </div>
+          </div>
+          <div className="eg-viewer" id="eg-viewer" role="region" aria-label={`${byId.get(file)?.file ?? 'File'} contents`}>
+            <div className="eg-viewer-head">
+              <span className="eg-viewer-name">
+                {byId.get(file)?.file}
+                <small>{file} · {meta[file]}</small>
               </span>
-            ) : (
-              'Generate guardrails'
-            )}
-          </button>
-        </div>
-      </form>
-
-      {status === 'error' && result && (
-        <div className="score-result" style={{ marginTop: '2rem' }}>
-          <div className="score-result-error" style={{ color: 'var(--muted)' }}>
-            <p style={{ fontSize: '0.9rem', margin: 0 }}>{result.error || 'An error occurred.'}</p>
-          </div>
-        </div>
-      )}
-
-      {status === 'ok' && result && (
-        <div className="score-result" style={{ marginTop: '2rem' }}>
-          <div className="score-result-header" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-            <GuardrailsDial score={result.score || 0} grade={result.grade || 'F'} />
-            <div className="score-summary">
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted-dim)', margin: '0 0 0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Guardrails emission
-              </p>
-              <p style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.5rem' }}>
-                {result.grade} · {result.score}/100 · {result.tokensExtracted} tokens
-              </p>
-              <p style={{ fontSize: '0.85rem', color: 'var(--muted)', margin: 0 }}>
-                {result.pass} pass · {result.warn} warn · {result.fail} fail of {result.total} checks
-              </p>
-            </div>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={downloadBundle}
-                className="button ghost"
-                style={{ fontSize: '0.8rem' }}
-                data-cuelume-hover="tick"
-                data-cuelume-press="tick"
-              >
-                Download bundle ↓
-              </button>
-              <ShareButton
-                url={shareUrl(scoredUrl)}
-                text={`Designesy guardrails bundle — ${scoredUrl}`}
-                label="Share this guardrails result"
-                compact
-              />
-            </div>
-          </div>
-
-          {/* Checks summary */}
-          <div className="row-stack" role="list" style={{ marginBottom: '2rem' }}>
-            {result.checks?.map((check, i) => (
-              <div
-                key={check.id}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
-              >
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">
-                    {check.id} · {check.item}{' '}
-                    <span
-                      className={`check-status is-${check.status.toLowerCase()}`}
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: STATUS_TOKENS[check.status] || 'var(--warn)',
-                        marginLeft: '0.5rem',
-                      }}
-                    >
-                      {check.status}
-                    </span>
-                  </span>
-                  <span className="row-meta">{check.detail}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Bundle output — tabbed */}
-          {result.bundle && (
-            <div className="guardrails-bundle">
-              <div ref={bundleTabsRef} className="bundle-tabs">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => { setActiveTab(tab.id); setCopied(false); }}
-                    className={`bundle-tab${activeTab === tab.id ? ' is-active' : ''}`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={copyToClipboard}
-                  className="bundle-tab bundle-tab--copy"
-                >
-                  {copied ? 'Copied ✓' : 'Copy'}
+              <span className="eg-viewer-actions">
+                <button type="button" className="eg-share-btn" onClick={copy} aria-live="polite">
+                  {copied ? 'Copied' : 'Copy file'}
                 </button>
-              </div>
-              <pre
-                style={{
-                  // Was var(--surface-1) — a token that has never been declared
-                  // anywhere in this repo, used here with no fallback, so the
-                  // declaration was invalid and the code block's background
-                  // silently resolved to transparent. The declared tier below
-                  // --surface-raised is --surface-soft (a translucent wash), so
-                  // this is the closest real token; the panel needs an opaque
-                  // backdrop, and --surface is the documented "card / panel
-                  // base". d02 in the drift engine could not see this: it scans
-                  // CSS, and the reference lived in a style object.
-                  background: 'var(--surface)',
-                  border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius-md, 8px)',
-                  padding: '1.25rem',
-                  overflow: 'auto',
-                  fontSize: '0.8rem',
-                  lineHeight: 1.6,
-                  color: 'var(--ink)',
-                  maxHeight: '500px',
-                }}
-              >
-                <code>{getTabContent(activeTab)}</code>
-              </pre>
+                <button type="button" className="eg-share-btn" onClick={download}>
+                  Download bundle
+                </button>
+              </span>
             </div>
-          )}
-        </div>
+            <pre className="eg-code" tabIndex={0}>
+              <code>{text}</code>
+            </pre>
+          </div>
+        </section>
+      )}
+      {phase === 'done' && result && (
+        <Findings
+          ref={findings}
+          registry={registry}
+          outcomes={outcomes}
+          sub={[`${result.total ?? registry.checks.length} files from ${host}`, stamp(when)].filter(Boolean).join(' · ')}
+        />
       )}
     </div>
-  );
-}
-
-function GuardrailsDial({ score, grade }: { score: number; grade: string }) {
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const fillColor = score >= 90 ? 'var(--ok)' : score >= 70 ? 'var(--warn)' : 'var(--error)';
-
-  return (
-    <svg
-      width="120"
-      height="120"
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label={`Grade ${grade}, ${score} percent`}
-    >
-      <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--line)" strokeWidth="6" />
-      <circle
-        cx="60"
-        cy="60"
-        r={radius}
-        fill="none"
-        stroke={fillColor}
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 60 60)"
-        style={{ transition: 'stroke-dashoffset 0.6s var(--ease, cubic-bezier(0.22,0.61,0.36,1))' }}
-      />
-      <text x="60" y="58" textAnchor="middle" style={{ fontSize: '2rem', fontWeight: 700, fill: 'var(--ink)' }}>
-        {grade}
-      </text>
-      <text x="60" y="78" textAnchor="middle" style={{ fontSize: '0.8rem', fill: 'var(--muted-dim)' }}>
-        {score}/100
-      </text>
-    </svg>
   );
 }
