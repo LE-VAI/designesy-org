@@ -201,7 +201,10 @@ export default function RootLayout({
             during hydration gap. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: 'document.documentElement.classList.add("js-ready");',
+            // Also restores the visitor's motion toggle before paint, so a
+            // paused visitor never sees a frame of motion (lib/motion-toggle).
+            __html:
+              'document.documentElement.classList.add("js-ready");try{if(localStorage.getItem("motion")==="paused")document.documentElement.dataset.motion="paused"}catch(e){}',
           }}
         />
         {/* Theme detection — stamps data-theme before first paint (no FOUC),

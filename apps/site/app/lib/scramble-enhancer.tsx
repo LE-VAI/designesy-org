@@ -17,7 +17,34 @@ import { usePathname } from 'next/navigation';
  * ran once on the initial mount.
  *
  * Respects prefers-reduced-motion (exits early, shows everything).
+ * Respects the visitor's motion toggle (html[data-motion="paused"]): the
+ * rotator holds its current word until motion is resumed.
  */
+
+/**
+ * Whole-heading scramble is OFF. Headings paint as real text and stay real.
+ *
+ * WHY (visual audit, 2026-09-27)
+ * With the scramble on, the first frame of every heading was noise. Captured
+ * on production: desktop at 0.9s read "We make execution yox0g."; a 390px phone
+ * at 0.25s showed both hero lines as random glyphs with a block cursor, clipped
+ * past the right edge by the nowrap/overflow lock. That frame is the one link
+ * previews, screenshot bots, and skimming visitors see. The brand signature
+ * survives in the hero rotator, which only scrambles its last word AFTER the
+ * sentence has been readable for a full rotate-delay.
+ *
+ * Flip to true to restore the per-heading decode; nothing else needs to change.
+ */
+const HEADLINE_SCRAMBLE = false;
+
+function scrambleTargets(): HTMLElement[] {
+  if (!HEADLINE_SCRAMBLE) return [];
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-scramble]'));
+}
+
+function motionPaused(): boolean {
+  return document.documentElement.dataset.motion === 'paused';
+}
 
 const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789·─│▌+-=*';
 
@@ -219,9 +246,7 @@ function runScramble(pathname: string): (() => void) | undefined {
       }
 
       /* --- Text Scramble (softened) --- */
-      const scrambleEls = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-scramble]')
-      );
+      const scrambleEls = scrambleTargets();
       const allObservers: IntersectionObserver[] = [];
 
       function lockHeight(el: HTMLElement): () => void {
@@ -391,9 +416,7 @@ function runScramble(pathname: string): (() => void) | undefined {
     }
 
     /* --- Text Scramble --- */
-    const scrambleEls = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-scramble]')
-    );
+    const scrambleEls = scrambleTargets();
 
     const allObservers: IntersectionObserver[] = [];
 
@@ -760,6 +783,12 @@ function runScramble(pathname: string): (() => void) | undefined {
 
         const rotateOnce = (idx: number) => {
           if (cancelled) return;
+          // Motion toggle (WCAG 2.2.2 pause): hold the current word and check
+          // again shortly, so resuming picks up where the cycle left off.
+          if (motionPaused()) {
+            rotatorTimers.push(setTimeout(() => rotateOnce(idx), 400));
+            return;
+          }
           const next = words[idx];
           // Brief scramble of the CURRENT word, then time-derived decode to next.
           // Width is CSS-pinned; no mid-rotation measurement.
