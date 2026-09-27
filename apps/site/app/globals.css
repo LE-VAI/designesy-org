@@ -13655,3 +13655,335 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .agent-action { transition: none; }
 }
+
+/* ==========================================================================
+   Instrument bar (facelift 2026-09-27)
+   The topbar becomes a floating capsule: inset from the viewport, borders-first,
+   its own glass on a pseudo-element (the iOS 26 tint rule still holds: nothing
+   on the sticky parent), the scroll progress drawn along its lower edge. The
+   five identical squares after the links became three distinct controls with
+   rank: Find, Senses (motion, sound, haptics, theme), and one primary action.
+   ========================================================================== */
+.topbar {
+  padding-top: max(var(--space-12), env(safe-area-inset-top));
+}
+
+.topbar .topbar-glass,
+.topbar.scrolled .topbar-glass {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.topbar .topbar-inner {
+  width: calc(100% - 2 * max(var(--space-16), env(safe-area-inset-left)));
+  max-width: var(--maxw-wide);
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-16);
+  gap: var(--space-16);
+  isolation: isolate;
+}
+
+.topbar .topbar-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  transition: background-color var(--duration-medium) var(--ease),
+    border-color var(--duration-medium) var(--ease);
+}
+
+.topbar.scrolled .topbar-inner::before {
+  background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
+  border-color: var(--line-strong);
+}
+
+.topbar .scroll-progress {
+  left: var(--space-16);
+  right: var(--space-16);
+  width: auto;
+  bottom: 0;
+  border-radius: var(--radius-xl);
+}
+
+.topbar.scrolled .scroll-progress {
+  background: transparent;
+}
+
+.topbar .scroll-progress-fill {
+  background: var(--signal-access);
+  opacity: 0.9;
+}
+
+/* Wordmark: the site's own square-and-dot mark beside the type. */
+.wordmark {
+  gap: var(--space-10);
+}
+
+.wordmark-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--signal-access) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  transition: border-color var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.wordmark-mark i {
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--signal-access);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.wordmark:hover .wordmark-mark {
+  border-color: var(--signal-access);
+  transform: rotate(-8deg);
+}
+
+.wordmark:hover .wordmark-mark i {
+  transform: scale(1.25);
+}
+
+.wordmark-type {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+/* Primary links: quiet at rest, a filled pill on hover, a tinted pill when active. */
+.topbar .nav-links a {
+  border-radius: var(--radius-md);
+  padding-inline: var(--space-12);
+}
+
+.topbar .nav-links a.is-active,
+.topbar .nav-links a[aria-current="page"] {
+  background: color-mix(in srgb, var(--signal-access) 12%, transparent);
+}
+
+/* Senses: one control centre. */
+.senses {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.senses-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0 var(--space-12);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease),
+    transform var(--duration-quick) var(--ease-out);
+}
+
+.senses-trigger:hover,
+.senses.is-open .senses-trigger {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+.senses-trigger:active {
+  transform: scale(0.97);
+}
+
+.senses-glyph {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 0.375rem);
+  gap: var(--space-3);
+}
+
+.senses-glyph i {
+  display: block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: currentColor;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.senses-glyph i:nth-child(1),
+.senses-glyph i:nth-child(4) {
+  background: var(--signal-access);
+}
+
+.senses.is-open .senses-glyph i:nth-child(1) {
+  transform: translate(var(--space-1), var(--space-1));
+}
+
+.senses.is-open .senses-glyph i:nth-child(4) {
+  transform: translate(calc(-1 * var(--space-1)), calc(-1 * var(--space-1)));
+}
+
+.senses-panel {
+  position: absolute;
+  top: calc(100% + var(--space-12));
+  right: 0;
+  z-index: 120;
+  width: min(20rem, calc(100vw - 2 * var(--space-16)));
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+  animation: senses-in var(--duration-quick) var(--ease-out);
+}
+
+.senses-panel[hidden] {
+  display: none;
+}
+
+@keyframes senses-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-6))) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.senses-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-quick) var(--ease);
+}
+
+.senses-row:hover {
+  background: var(--surface-hover);
+}
+
+/* Haptics renders only where hardware can vibrate: an empty row hides. */
+.senses-row:not(:has(button)) {
+  display: none;
+}
+
+.senses-row-text {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.senses-row-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.senses-row-hint {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The motion toggle hides itself on phones in the topbar; inside the panel it
+   is the control, so it shows at every width. */
+.senses-panel .motion-toggle {
+  display: inline-flex;
+}
+
+/* One primary action. Its fill and text pair is the site primary button
+   (checked by v22 against --signal). */
+.topbar-cta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--signal);
+  color: var(--paper-on-signal);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--duration-fast) var(--ease),
+    transform var(--duration-quick) var(--ease-out);
+}
+
+.topbar-cta:hover {
+  background: var(--signal-light);
+}
+
+.topbar-cta:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 1180px) {
+  .senses-label {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .topbar-cta {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar .topbar-inner {
+    width: calc(100% - 2 * max(var(--space-8), env(safe-area-inset-left)));
+    padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+    gap: var(--space-8);
+  }
+  .senses-trigger {
+    border-color: transparent;
+    padding: 0;
+    justify-content: center;
+  }
+  .senses-panel {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 4.5rem);
+    right: var(--space-8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Tiered: the panel appears without travel; state colour changes stay. */
+  .senses-panel {
+    animation: none;
+  }
+  .wordmark:hover .wordmark-mark,
+  .wordmark:hover .wordmark-mark i,
+  .senses.is-open .senses-glyph i {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .topbar .topbar-inner::before,
+  .senses-trigger,
+  .senses-panel,
+  .topbar-cta {
+    border: 1px solid CanvasText;
+  }
+}

@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { HapticsToggle } from './haptics-toggle';
 import { MotionToggle } from './motion-toggle';
-import { SoundToggle } from './sound-toggle';
-import { ThemeToggle } from './theme-toggle';
 import { CommandPalette } from './command-palette';
+import { SensesMenu } from './senses-menu';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -134,7 +132,11 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             data-firework="true"
             aria-current={pathname === '/' ? 'page' : undefined}
           >
-            designesy<span className="dot">.</span>
+            {/* The site's own mark (favicon and share-card construction): a
+                contract square holding the signal dot. Decorative; the
+                wordmark text names the link. */}
+            <span className="wordmark-mark" aria-hidden="true"><i /></span>
+            <span className="wordmark-type">designesy<span className="dot">.</span></span>
           </Link>
           <div className="topbar-right">
             <nav className="nav-links" aria-label="Primary">
@@ -156,21 +158,20 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                 );
               })}
             </nav>
-            <div className="sense-toggles" role="group" aria-label="Sensory feedback">
-              {/* Desktop only (hidden ≤720px via CSS); phones get the labelled
-                  row in the nav drawer, where there is room for it. */}
-              <MotionToggle />
-              <SoundToggle />
-              {/* No .desktop-only wrapper. Haptics needs vibration hardware,
-                  which lives on phones and tablets — the wrapper hid this
-                  toggle on exactly the devices that can feel it while showing
-                  it on desktops that cannot. The component gates itself on
-                  real capability now (see haptics-engine detectNativeSupport),
-                  so it renders only where it can actually do something. */}
-              <HapticsToggle />
-            </div>
             <CommandPalette />
-            <ThemeToggle />
+            <SensesMenu />
+            {/* One primary action, verb-first. Hidden on /score itself, where
+                the form is the page. */}
+            {!pathname.startsWith('/score') && (
+              <Link
+                href="/score"
+                className="topbar-cta"
+                data-cuelume-hover="tick"
+                data-cuelume-press="tick"
+              >
+                Score a site
+              </Link>
+            )}
             <button
               className="nav-trigger"
               aria-label="Toggle navigation"
@@ -182,12 +183,13 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
               <span className="nav-trigger-bar" />
             </button>
           </div>
-        </div>
-        <div className="scroll-progress" aria-hidden="true">
-          <span
-            className="scroll-progress-fill"
-            style={{ transform: `scaleX(${progress})` }}
-          />
+          {/* Progress runs along the capsule's own lower edge. */}
+          <div className="scroll-progress" aria-hidden="true">
+            <span
+              className="scroll-progress-fill"
+              style={{ transform: `scaleX(${progress})` }}
+            />
+          </div>
         </div>
       </header>
       {drawerOpen && (
