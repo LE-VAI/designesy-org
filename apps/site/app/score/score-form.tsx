@@ -11,7 +11,7 @@ import {
   truncateUrl,
   type ScoreHistoryEntry,
 } from '../lib/score-history';
-import { LottieHint, LottieTip } from '../lib/lottie-hint';
+import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
@@ -709,13 +709,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             type="submit"
             disabled={status === 'loading' || !url.trim()}
             data-cuelume-press="sparkle"
-            data-firework="true"
             className="button primary score-submit"
           >
             {status === 'loading' ? (
               <span className="score-loading-state">
                 <span className="score-spinner" />
-                Evaluating 40 Contract Checks…
+                Running {ENGINE_CHECK_COUNT} checks…
               </span>
             ) : (
               'Score it'
@@ -727,6 +726,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             auto: designesy.org → contract, everything else → universal (default)
             contract: all {ENGINE_CHECK_COUNT} checks penalize absence (strictest, for self-scoring)
             universal: optional features SKIP on absence (fair to external sites) */}
+        <div className="score-form-foot">
         <div className="score-scope-toggle" role="radiogroup" aria-label="Scoring scope">
           <span className="score-scope-label">Scope:</span>
           {(['auto', 'universal', 'contract'] as const).map((mode) => (
@@ -751,11 +751,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </button>
           ))}
         </div>
+        {status === 'idle' && !result && (
+          <p className="score-note">
+            No login. Any public URL, {ENGINE_CHECK_COUNT} checks, a grade in seconds.
+          </p>
+        )}
+        </div>
       </form>
-
-      {status === 'idle' && !result && (
-        <LottieTip text={`No login needed. Enter any URL and get a ${ENGINE_CHECK_COUNT}-check score in seconds`} className="score-tip-hint" />
-      )}
 
       {status === 'error' && result?.error && (
         <div className="score-error-card">

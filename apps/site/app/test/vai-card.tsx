@@ -39,7 +39,6 @@ export default function VaiCard() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="vai-panel"
-        data-firework
         style={{
           width: '100%',
           display: 'flex',

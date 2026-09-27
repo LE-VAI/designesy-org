@@ -571,7 +571,6 @@ export function M3BridgeTool() {
           className="button primary"
           style={{ fontSize: '0.85rem', opacity: !input.trim() ? 0.5 : 1 }}
           data-cuelume-press="sparkle"
-          data-firework="true"
         >
           Convert to DTCG →
         </button>

@@ -46,14 +46,6 @@
   max-width: min(100%, 640px);
 }
 
-.hero-hint {
-  margin-top: var(--space-20);
-  font-size: 0.85rem;
-  color: var(--muted-dim);
-  line-height: 1.55;
-  text-wrap: pretty;
-}
-
 .section-eyebrow {
   font-size: 0.72rem;
   font-weight: 600;
@@ -234,75 +226,23 @@ button.pillar:hover::before {
   padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
 }
 
-.health-rack-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
-  min-width: 0;
-}
 
-.health-rack-module {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-fine-55);
-  padding: 0;
-  transition: opacity 240ms var(--ease-out);
-}
 
-.health-rack-svg {
-  /* Floor set below the smallest target cell width so the gauge scales with
-     the viewport instead of pinning at 70px. At ≤720 the mobile block
-     (below) further tightens this; the floor here just prevents collapse. */
-  width: clamp(48px, 7vw, 88px);
-  height: auto;
-  display: block;
-}
 
-.health-rack-track {
-  stroke: var(--line-faint);
-  stroke-width: 4.5;
-  fill: none;
-  transition: stroke 240ms var(--ease-out);
-}
 
-.health-rack-value {
-  stroke: var(--signal-light);
-  stroke-width: 4.5;
-  fill: none;
-  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
-}
 
-.health-rack-tip {
-  fill: var(--signal-light);
-  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
-}
 
-.health-rack-numeral {
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  fill: var(--ink);
-  font-variant-numeric: tabular-nums;
-  transition: fill 240ms var(--ease-out);
-}
 
-.health-rack-unit {
-  font-size: 5.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  fill: var(--muted-dim);
-}
 
-.health-rack-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-  transition: color 240ms var(--ease-out);
-}
+
+
+
+
+
+
+
+
+
 
 @media (max-width: 640px) {
   .principle-cell {
@@ -310,11 +250,7 @@ button.pillar:hover::before {
   }
 }
 
-@media (min-width: 860px) {
-  .health-rack-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
+
 
 .section-heading-row {
   display: flex;
@@ -367,16 +303,7 @@ button.pillar:hover::before {
   margin-top: var(--space-32);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .health-rack-module,
-  .health-rack-value,
-  .health-rack-track,
-  .health-rack-tip,
-  .health-rack-numeral,
-  .health-rack-label {
-    transition: none;
-  }
-}
+
 
 .section-eyebrow {
   font-size: 0.72rem;
@@ -558,72 +485,23 @@ button.pillar:hover::before {
   padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
 }
 
-.health-rack-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(1rem, 2vw, 1.4rem) clamp(0.85rem, 1.4vw, 1.1rem);
-  min-width: 0;
-}
 
-.health-rack-module {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-fine-55);
-  padding: 0;
-  transition: opacity 240ms var(--ease-out);
-}
 
-.health-rack-svg {
-  width: clamp(48px, 7vw, 88px);
-  height: auto;
-  display: block;
-}
 
-.health-rack-track {
-  stroke: var(--line-faint);
-  stroke-width: 4.5;
-  fill: none;
-  transition: stroke 240ms var(--ease-out);
-}
 
-.health-rack-value {
-  stroke: var(--signal-light);
-  stroke-width: 4.5;
-  fill: none;
-  transition: stroke 240ms var(--ease-out), stroke-width 240ms var(--ease-out);
-}
 
-.health-rack-tip {
-  fill: var(--signal-light);
-  transition: fill 240ms var(--ease-out), r 240ms var(--ease-out);
-}
 
-.health-rack-numeral {
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  fill: var(--ink);
-  font-variant-numeric: tabular-nums;
-  transition: fill 240ms var(--ease-out);
-}
 
-.health-rack-unit {
-  font-size: 5.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  fill: var(--muted-dim);
-}
 
-.health-rack-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-  transition: color 240ms var(--ease-out);
-}
+
+
+
+
+
+
+
+
+
 
 @media (max-width: 640px) {
   .principle-cell {
@@ -631,11 +509,7 @@ button.pillar:hover::before {
   }
 }
 
-@media (min-width: 860px) {
-  .health-rack-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
+
 
 .section-more {
   margin-top: var(--space-32);
@@ -778,37 +652,9 @@ button.pillar {
   transform: translateZ(0);
 }
 
-.hero-construction {
-  position: absolute;
-  inset: 0;
-  z-index: 0;            /* behind foreground UI (content z-index: 3) */
-  pointer-events: none;  /* decorative layer; content stays interactive above */
-  overflow: hidden;
-}
-
 @media (max-width: 859px) {
   /* On narrow viewports the construction field would crowd the input — step back. */
-  .hero-construction { display: none; }
-}
-
-.hero-construction-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.hc-arc-ghost { stroke: var(--line-strong); opacity: 0.5; stroke-dasharray: 1 0; }
-
-.hc-arc-lit   { stroke: var(--signal-light); opacity: 0.85; }
-
-.hc-arc-tick  { fill: var(--line-strong); opacity: 0.7; }
-
-.hero-architectural {
-  min-height: min(880px, 96vh);
-  padding: clamp(var(--space-72), 9vw, var(--space-112)) 0 clamp(var(--space-56), 7vw, var(--space-96));
-  text-align: center;
+  
 }
 
 .hero-content {
@@ -818,11 +664,6 @@ button.pillar {
   max-width: var(--maxw-wide);
   margin-inline: auto;
   padding-inline: clamp(1rem, 3vw, 2rem);
-}
-
-.hero-architectural .hero-eyebrow {
-  color: var(--muted);
-  margin-bottom: clamp(var(--space-fine-140), 3vw, var(--space-fine-220));
 }
 
 .hero-display {
@@ -1000,150 +841,7 @@ button.pillar {
   }
 }
 
-.hero-architectural .hero-sub {
-  margin-inline: auto;
-  margin-bottom: clamp(var(--space-32), 4vw, var(--space-48));
-  max-width: 56ch;
-  text-align: center;
-}
 
-.hero-architectural .score-hero-input {
-  max-width: 720px;
-  margin-inline: auto;
-  width: 100%;
-}
-
-.hero-proof { margin: clamp(var(--space-28), 3vw, var(--space-40)) 0 0; }
-
-.hero-proof-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-8) var(--space-24);
-  list-style: none;
-  margin: 0;
-  padding: 0 0 var(--space-fine-110);
-}
-
-.hero-proof-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-fine-40);
-  font-size: 0.82rem;
-  color: var(--muted);
-  letter-spacing: 0.01em;
-}
-
-.hero-proof-stat b { color: var(--ink); font-weight: 600; }
-
-.hero-proof-num { font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
-
-.hero-proof-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-dim); }
-
-.hero-proof-dot.is-live { background: var(--live); box-shadow: 0 0 10px color-mix(in srgb, var(--live) 55%, transparent); }
-
-.hero-proof-grade {
-  font-family: var(--mono);
-  font-weight: 700;
-  /* Fixed square box with flex centering — the letter sits at the optical
-     center of the box, not the baseline. Without this, the letter renders
-     slightly low because the default inline alignment uses the baseline. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.45rem;
-  height: 1.45rem;
-  padding: 0;
-  font-size: 0.74rem;
-  line-height: 1;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-strong);
-}
-
-.hero-proof-caveat {
-  font-size: 0.58rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  opacity: 0.7;
-}
-
-.hero-proof-recent {
-  max-width: 460px;
-  margin: 0 auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light);
-  padding: var(--space-12) var(--space-fine-105) var(--space-fine-80);
-  text-align: left;
-}
-
-.hero-proof-recent-label {
-  margin: 0 0 var(--space-8);
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted-dim);
-  font-weight: 600;
-}
-
-.hero-proof-recent-list { list-style: none; margin: 0; padding: 0; }
-
-.hero-proof-recent-item + .hero-proof-recent-item { border-top: 1px solid var(--line-faint); }
-
-.hero-proof-recent-link {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-fine-60);
-  /* WCAG 2.5.5 target size: ensure a 44px-tall hit area on mobile — the row
-     content is ~20px, so 12px of vertical padding on each side. */
-  padding: var(--space-12) 0;
-  min-height: 44px;
-  text-decoration: none;
-  color: var(--muted);
-}
-
-.hero-proof-recent-link:hover { color: var(--ink); }
-
-.hero-proof-recent-name { display: inline-flex; align-items: center; gap: var(--space-fine-40); font-size: 0.84rem; color: var(--ink); white-space: nowrap; }
-
-.hero-proof-recent-self {
-  font-size: 0.58rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink);
-  background: var(--signal-dim);
-  padding: var(--space-fine-03) var(--space-fine-30);
-  border-radius: 3px;
-}
-
-.hero-proof-recent-dots { flex: 1; border-bottom: 1px dotted var(--line-strong); transform: translateY(-3px); min-width: 1rem; }
-
-.hero-proof-recent-score { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-
-.hero-architectural .hero-hint { margin-top: clamp(var(--space-fine-140), 2.6vw, var(--space-32)); }
-
-@media (max-width: 640px) {
-  .hero-proof-stats { gap: var(--space-fine-40) var(--space-fine-90); }
-  .hero-proof-recent { max-width: 100%; }
-}
-
-@media (max-width: 360px) {
-  .health-rack-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-16) var(--space-12);
-  }
-  .health-rack-svg {
-    width: min(100%, 30vw);
-  }
-  .health-rack-numeral {
-    font-size: clamp(0.9375rem, 0.9375rem + 1.5vw, 1.375rem);
-  }
-}
 
 /*
   Mobile responsive overrides — migrated from globals.css.
@@ -1186,21 +884,10 @@ button.pillar {
     gap: var(--space-12);
   }
 
-  .health-rack-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-14) var(--space-8);
-  }
-  .health-rack-module {
-    gap: var(--space-8);
-    min-width: 0;
-  }
-  .health-rack-svg {
-    width: min(100%, 15vw);
-    height: auto;
-  }
-  .health-rack-numeral {
-    font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.5rem);
-  }
+  
+  
+  
+  
 
   .principle-body p {
     font-size: 0.9375rem;
@@ -1211,12 +898,10 @@ button.pillar {
     line-height: 1.3;
   }
 
-  .health-rack-label,
   .section-heading-badge-label {
     font-size: 0.6875rem;
     letter-spacing: 0.11em;
   }
-  .health-rack-unit,
   .section-heading-badge-unit {
     font-size: 0.6875rem;
   }
@@ -1249,70 +934,9 @@ button.pillar {
   }
 }
 
-
 /* --- See it score (lib/score-loop) ---
    The 2:1 box is reserved before the video loads: no layout shift. The panel
    stays dark in both themes, like a screen, because the loop is. */
-.score-loop {
-  margin: var(--space-32) 0 0;
-  display: grid;
-  gap: var(--space-12);
-}
-
-.score-loop-frame {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  aspect-ratio: 2 / 1;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #010102;
-}
-
-.score-loop-video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.score-loop-caption {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-16);
-  font-size: 0.85rem;
-  line-height: 1.55;
-  color: var(--muted);
-}
-
-.score-loop-toggle {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-8);
-  min-height: 44px;
-  padding: 0 var(--space-16);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.score-loop-toggle:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
-}
-
-@media (max-width: 560px) {
-  .score-loop-caption {
-    flex-direction: column;
-  }
-}
 
 /* ==========================================================================
    Homepage facelift (2026-09-27)
@@ -1364,10 +988,6 @@ button.pillar {
   padding: clamp(var(--space-56), 7vw, var(--space-88)) 0 clamp(var(--space-64), 8vw, var(--space-104));
 }
 
-.home .home-hero-content {
-  text-align: left;
-}
-
 .home-kicker {
   display: inline-flex;
   align-items: center;
@@ -1376,14 +996,6 @@ button.pillar {
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--muted);
-}
-
-.home-kicker-mark {
-  width: 0.625rem;
-  height: 0.625rem;
-  border: 1px solid var(--signal-access);
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 0 0 var(--space-2) var(--surface), inset 0 0 0 var(--space-6) var(--signal-access);
 }
 
 .home .hero-display {
@@ -1403,20 +1015,6 @@ button.pillar {
   margin-inline-start: 0;
 }
 
-.home-hero-grid {
-  display: grid;
-  gap: var(--space-48);
-  margin-top: clamp(var(--space-28), 3vw, var(--space-44));
-  align-items: start;
-}
-
-@media (min-width: 1024px) {
-  .home-hero-grid {
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-    gap: clamp(var(--space-48), 5vw, var(--space-88));
-  }
-}
-
 .home .hero-sub {
   max-width: 36rem;
   font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
@@ -1429,141 +1027,12 @@ button.pillar {
   margin-inline: 0;
 }
 
-.home .hero-proof {
-  margin-top: var(--space-24);
-}
-
-.home .hero-proof-stats {
-  justify-content: flex-start;
-  padding-bottom: 0;
-}
-
-.home .hero-hint {
-  max-width: 40rem;
-  text-align: left;
-}
-
 /* The instrument column: the ring leads, the cohort follows at lower rank. */
-.home-instrument {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-24);
-}
-
-.home .home-cohort {
-  width: 100%;
-  max-width: 26rem;
-  margin: 0;
-}
 
 /* --- The contract ring ---------------------------------------------------- */
-.contract-ring {
-  margin: 0;
-  width: min(100%, 26rem);
-  display: grid;
-  gap: var(--space-12);
-}
-
-.contract-ring-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1;
-  overflow: visible;
-}
-
-.contract-ring-orbit {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 1;
-}
-
-.contract-ring-arc {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.contract-ring-tick {
-  fill: var(--signal-access);
-  animation: ring-tick-lit var(--duration-slow) var(--ease-out) backwards;
-}
-
-.contract-ring-tick.is-manual {
-  fill: none;
-  stroke: var(--muted);
-  stroke-width: 1.5;
-}
-
-@keyframes ring-tick-lit {
-  from {
-    opacity: 0.16;
-  }
-}
 
 /* The page's one use of --activation: the needle that sweeps once on load and
    then rests at twelve o'clock, where the registry starts. */
-.contract-ring-needle {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: ring-sweep 1.6s var(--ease-in-out) 0.35s backwards;
-}
-
-.contract-ring-needle line {
-  stroke: var(--activation);
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-.contract-ring-needle circle {
-  fill: var(--activation);
-}
-
-@keyframes ring-sweep {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.contract-ring-grade {
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 104px;
-  font-variation-settings: 'opsz' 144, 'SOFT' 40;
-  fill: var(--ink);
-}
-
-.contract-ring-score {
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  fill: var(--muted);
-}
-
-.contract-ring-caption {
-  display: grid;
-  gap: var(--space-4);
-  text-align: center;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.contract-ring-caption b {
-  color: var(--ink);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.contract-ring-measured {
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  color: var(--muted-dim);
-}
 
 /* --- Section rhythm: each section is sized for its role ------------------- */
 .home .section {
@@ -1709,21 +1178,12 @@ button.pillar {
    Remove: the needle sweep (spatial travel).
    Soften: tick lighting becomes one 200ms fade with no stagger.
    Keep: colour state changes on cells and pillars. */
-@media (prefers-reduced-motion: reduce) {
-  .contract-ring-needle {
-    animation: none;
-  }
-  .contract-ring-tick {
-    animation: ring-tick-lit 200ms linear backwards;
-    animation-delay: 0s !important;
-  }
-}
 
 @media (forced-colors: active) {
-  .contract-ring-tick { fill: CanvasText; }
-  .contract-ring-tick.is-manual { fill: none; stroke: CanvasText; }
-  .contract-ring-needle line { stroke: Highlight; }
-  .contract-ring-needle circle { fill: Highlight; }
+  
+  
+  
+  
   .home .home-health,
   .home .home-state-panel { border: 1px solid CanvasText; }
 }
@@ -1732,16 +1192,6 @@ button.pillar {
 .home .hero-sub {
   text-align: left;
   margin-inline: 0;
-}
-
-.home .contract-ring {
-  width: min(100%, 24rem);
-}
-
-@media (min-width: 1024px) {
-  .home-instrument {
-    margin-top: calc(-1 * var(--space-24));
-  }
 }
 
 /* Nine principles as a clean 3 x 3 (never a lone ninth cell). */
@@ -1796,10 +1246,6 @@ button.pillar {
    The statement section keeps its deliberate breathing room. */
 .home .home-hero {
   padding-bottom: clamp(var(--space-40), 5vw, var(--space-64));
-}
-
-.home .home-demo {
-  padding-bottom: clamp(var(--space-48), 5vw, var(--space-64));
 }
 
 /* Revision pass 3: font-swap stability. next/font sizes the fallback face to

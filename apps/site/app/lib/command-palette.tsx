@@ -2,37 +2,43 @@
 
 import { ENGINE_CHECK_COUNT } from './check-definitions';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { useTheme } from './use-theme';
+import { useMotionPreference } from './use-motion-pref';
 
 /**
- * Command palette (Cmd+K / Ctrl+K).
+ * Command palette (Cmd+K / Ctrl+K, or "/").
  *
- * Phase 3.4 (esy-search) — hybrid search surface:
- *   • Empty query  → curated QUICK JUMP grid (top destination per group) so
- *     the zero-state is scannable in one glance instead of a 30-row scroll.
- *   • Typed query  → instant local INDEX filter painted first (zero perceived
- *     latency), then Pagefind full-text (BM25 + fuzzy, title-weighted) refines
- *     over the built site. Degrades gracefully to the INDEX filter when the
- *     Pagefind asset isn't available (next dev, pre-postbuild).
+ * WHAT IT SEARCHES
+ *   - Pages: the curated INDEX, ranked locally on every keystroke (exact, then
+ *     prefix, word-start, acronym, substring, then an in-order fuzzy match).
+ *   - Mentions: Pagefind full-text over the built site, loaded on the first
+ *     keystroke. Its rows are APPENDED as their own group, never interleaved
+ *     with the ranked pages, so a result under the reader's cursor or
+ *     selection never moves when full-text arrives.
+ *   - Actions: type a domain and the first row scores it; the site's own
+ *     switches (theme, motion) are commands.
  *
- * Pagefind is emitted by the postbuild step into .next/static and loaded
- * lazily on first keystroke — zero cost until the user actually searches.
+ * INTERACTION CONTRACT (the fixes that made it feel solid, 2026-09-27)
+ *   - The keyboard owns selection. The pointer moves it only on a real
+ *     pointermove, never on mouseenter, so arrow-key scrolling can no longer
+ *     hand the selection to whatever row slides under a resting cursor.
+ *   - Selection resets to the first row when the QUERY changes, and nowhere
+ *     else: late full-text results do not yank it back to the top.
+ *   - Groups render once each, in the order of their best match, and arrow
+ *     keys walk rows in exactly the visual order (the old list grouped only
+ *     adjacent rows, so "Machine, Verify, Machine" repeated headings).
+ *   - No open animation: the site's motion contract keeps keyboard-initiated
+ *     actions still. The list height eases between result sets (120 ms) so the
+ *     panel grows downward from a fixed top edge instead of jumping.
+ *   - Focus stays in the input while open (Tab is held), Escape and click-away
+ *     close from anywhere, and focus returns to the trigger.
  *
- * Interaction contract (Phase-critical tweaks):
- *   • Click-away / tap-away dismisses via pointerdown (before blur/scroll),
- *     not click — so a tap that starts outside the panel closes it on both
- *     desktop and touch.
- *   • Escape closes even when focus has left the input (global capture-phase
- *     listener while open), and Cmd+K resets as well as toggles.
- *   • Results list is the only scroll container (overscroll-behavior: contain)
- *     so wheel/touch scrolling never chains to the page behind the overlay.
- *
- * Accessibility: roving tabindex listbox, full keyboard operability,
- * aria-activedescendant, focus restore. Reduced-motion respected via CSS
- * (opacity/transform transitions only, gated by media query).
+ * Accessibility: combobox + listbox with aria-activedescendant; groups are
+ * role="group" labelled by their heading; reduced motion drops the height ease.
  */
 
 type SearchItem = {
@@ -121,27 +127,6 @@ const QUICK_PICKS: Record<SearchItem['group'], string> = {
 
 function normalize(s: string) {
   return s.toLowerCase().trim();
-}
-
-function scoreItem(item: SearchItem, q: string): number {
-  if (!q) return 0;
-  const title = normalize(item.title);
-  const kw = normalize(item.keywords);
-  const meta = normalize(item.meta || '');
-  const group = normalize(item.group);
-  let score = 0;
-  // Title prefix match is strongest
-  if (title.startsWith(q)) score += 100;
-  else if (title.includes(q)) score += 60;
-  if (kw.includes(q)) score += 40;
-  if (meta.includes(q)) score += 20;
-  if (group.startsWith(q)) score += 15;
-  // Per-word bonus so multi-token queries narrow well
-  for (const word of q.split(/\s+/).filter(Boolean)) {
-    if (title.includes(word)) score += 12;
-    if (kw.includes(word)) score += 8;
-  }
-  return score;
 }
 
 // ---------------------------------------------------------------------------
@@ -358,213 +343,426 @@ function useModifierLabel(): string {
   return label;
 }
 
+// ---------------------------------------------------------------------------
+// Ranking, actions, rows
+// ---------------------------------------------------------------------------
+
+/** Every character of q, in order, somewhere in text. */
+function fuzzy(text: string, q: string): boolean {
+  let i = 0;
+  for (const ch of text) {
+    if (ch === q[i]) i += 1;
+    if (i === q.length) return true;
+  }
+  return false;
+}
+
+/** Rank a page: exact, prefix, word start, acronym, substring, keyword, then fuzzy. */
+function rankItem(item: SearchItem, q: string): number {
+  if (!q) return 0;
+  const title = normalize(item.title);
+  const kw = normalize(item.keywords);
+  const meta = normalize(item.meta || '');
+  const words = title.split(/[\s\-–—/:.]+/).filter(Boolean);
+  let s = 0;
+  if (title === q) s += 220;
+  else if (title.startsWith(q)) s += 130;
+  else if (words.some((w) => w.startsWith(q))) s += 95;
+  else if (title.includes(q)) s += 60;
+  if (q.length >= 2 && words.map((w) => w[0]).join('').startsWith(q)) s += 70;
+  if (kw.split(/\s+/).some((w) => w.startsWith(q))) s += 45;
+  else if (kw.includes(q)) s += 30;
+  if (meta.includes(q)) s += 15;
+  for (const part of q.split(/\s+/).filter(Boolean)) {
+    if (title.includes(part)) s += 12;
+    else if (kw.includes(part)) s += 8;
+  }
+  if (s === 0 && q.length >= 3 && fuzzy(title, q)) s += 10;
+  return s;
+}
+
+/** "stripe.com", "https://www.stripe.com/pricing" -> "stripe.com/pricing"; else null. */
+function urlTarget(raw: string): string | null {
+  const t = raw.trim();
+  if (!t || /\s/.test(t)) return null;
+  if (!/^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?(\/\S*)?$/i.test(t)) return null;
+  try {
+    const u = new URL(/^https?:\/\//i.test(t) ? t : `https://${t}`);
+    const path = u.pathname === '/' ? '' : u.pathname;
+    return `${u.hostname.replace(/^www\./, '')}${path}`;
+  } catch {
+    return null;
+  }
+}
+
+const FACETS: Record<string, SearchItem['group']> = {
+  verify: 'Verify',
+  score: 'Verify',
+  contract: 'Contract',
+  contracts: 'Contract',
+  learn: 'Learn',
+  docs: 'Learn',
+  lab: 'Labs',
+  labs: 'Labs',
+  kit: 'Kits',
+  kits: 'Kits',
+  machine: 'Machine',
+  api: 'Machine',
+  company: 'Company',
+};
+
+type RowIcon = 'page' | 'score' | 'theme' | 'motion' | 'mention' | 'machine';
+
+type Row = {
+  key: string;
+  title: string;
+  meta?: string;
+  metaHtml?: boolean;
+  href?: string;
+  run?: () => void;
+  icon: RowIcon;
+  hint?: string;
+};
+
+type Group = { name: string; rows: Row[] };
+
+function Icon({ kind }: { kind: RowIcon }) {
+  const common = {
+    width: 16,
+    height: 16,
+    viewBox: '0 0 16 16',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.5,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  };
+  switch (kind) {
+    case 'score':
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
+          <path d="M5.2 8.2l1.9 1.9 3.8-4.2" />
+        </svg>
+      );
+    case 'theme':
+      return (
+        <svg {...common}>
+          <path d="M13 9.6A5.5 5.5 0 1 1 6.4 3a4.3 4.3 0 0 0 6.6 6.6z" />
+        </svg>
+      );
+    case 'motion':
+      return (
+        <svg {...common}>
+          <path d="M1.5 8c1.1-2.4 2.2-2.4 3.3 0s2.2 2.4 3.3 0 2.2-2.4 3.3 0 2.2 2.4 3.1 0" />
+        </svg>
+      );
+    case 'mention':
+      return (
+        <svg {...common}>
+          <path d="M3 4.5h10M3 8h10M3 11.5h6" />
+        </svg>
+      );
+    case 'machine':
+      return (
+        <svg {...common}>
+          <path d="M6 3.5C4.5 3.5 4.5 5 4.5 6S3.5 8 3 8c.5 0 1.5 1 1.5 2s0 2.5 1.5 2.5M10 3.5c1.5 0 1.5 1.5 1.5 2.5s1 2 1.5 2c-.5 0-1.5 1-1.5 2s0 2.5-1.5 2.5" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <path d="M4 2.5h5.2L12 5.3v8.2H4z" />
+          <path d="M9 2.7V5.5h2.8" />
+        </svg>
+      );
+  }
+}
+
+/** The title with the first match of q set in bold (visual only). */
+function marked(title: string, q: string): ReactNode {
+  if (!q) return title;
+  const i = title.toLowerCase().indexOf(q);
+  if (i < 0) return title;
+  return (
+    <>
+      {title.slice(0, i)}
+      <mark>{title.slice(i, i + q.length)}</mark>
+      {title.slice(i + q.length)}
+    </>
+  );
+}
+
 export function CommandPalette() {
   const router = useRouter();
   const modLabel = useModifierLabel();
+  const theme = useTheme();
+  const motion = useMotionPreference();
+  const listId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
-  const [hits, setHits] = useState<SearchItem[] | null>(null); // Pagefind results for typed queries
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [mentions, setMentions] = useState<SearchItem[]>([]);
   const [searching, setSearching] = useState(false);
+  const [listH, setListH] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  const innerRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const searchSeq = useRef(0); // stale-response guard
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const keyNavRef = useRef(false);
+  const searchSeq = useRef(0);
 
-  // Typed-query search. Prefers Pagefind full-text (body + BM25 ranking);
-  // falls back to the curated INDEX filter when Pagefind is unavailable.
+  const q = normalize(query);
+
+  // Facets ("labs: takt") narrow the page search to one group.
+  const { facet, text } = useMemo(() => {
+    const m = q.match(/^([a-z]+):\s*(.*)$/);
+    if (m && FACETS[m[1]]) return { facet: FACETS[m[1]], text: m[2].trim() };
+    return { facet: null as SearchItem['group'] | null, text: q };
+  }, [q]);
+
+  // Full-text mentions: Pagefind, loaded on the first keystroke, appended as
+  // their own group. Pages the local index already ranks are not repeated.
   useEffect(() => {
-    let q = normalize(query);
-    if (!q) {
-      setHits(null);
+    if (!text || facet) {
+      setMentions([]);
       setSearching(false);
       return;
     }
-
-    // Faceted search: typing "contract: motion" or "lab: takt" filters
-    // results to that section group. The prefix is stripped before
-    // passing to Pagefind/INDEX scoring.
-    let facetGroup: string | null = null;
-    const facetMatch = q.match(/^([a-z]+):\s*(.*)/);
-    if (facetMatch) {
-      const prefix = facetMatch[1];
-      const FACET_MAP: Record<string, string> = {
-        contract: 'Contract',
-        contracts: 'Contract',
-        lab: 'Lab',
-        labs: 'Lab',
-        review: 'Review',
-        score: 'Score',
-        kit: 'Kit',
-        kits: 'Kit',
-        work: 'Work',
-        company: 'Company',
-        machine: 'Machine',
-        learn: 'Learn',
-      };
-      if (FACET_MAP[prefix]) {
-        facetGroup = FACET_MAP[prefix];
-        q = facetMatch[2].trim();
-        if (!q) {
-          // Just the facet prefix with no query — show all items in that group
-          const facetHits = INDEX.filter((item) => item.group === facetGroup).slice(0, 12);
-          setHits(facetHits);
-          setSearching(false);
-          return;
-        }
-      }
-    }
-
-    // Instant local filter FIRST so the UI always shows something with zero
-    // perceived latency; Pagefind refines when it resolves.
-    const local = INDEX
-      .map((item) => ({ item, s: scoreItem(item, q), g: item.group }))
-      .filter((r) => facetGroup ? r.g === facetGroup : true)
-      .filter((r) => r.s > 0)
-      .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
-      .map((r) => r.item)
-      .slice(0, 12);
-    setHits(local);
-
     const seq = ++searchSeq.current;
     let cancelled = false;
-
     (async () => {
       setSearching(true);
       const pf = await loadPagefind();
       if (!pf || cancelled || seq !== searchSeq.current) {
-        setSearching(false);
+        if (seq === searchSeq.current) setSearching(false);
         return;
       }
-      // debouncedSearch returns null when superseded by a newer keystroke —
-      // treat that as "a newer request owns the listbox now".
-      const res = await pf.debouncedSearch(q, { debounceTimeoutMs: 120 });
-      if (cancelled || seq !== searchSeq.current) return;
-      if (!res) {
-        // Superseded — a newer query is in-flight. Keep searching=true only
-        // while the newer request could still own the listbox.
-        setSearching(false);
+      const res = await pf.debouncedSearch(text, { debounceTimeoutMs: 140 });
+      if (cancelled || seq !== searchSeq.current || !res) {
+        if (!res && seq === searchSeq.current) setSearching(false);
         return;
       }
-
       const rows = await Promise.all(
-        res.results.slice(0, 12).map(async (hit) => {
+        res.results.slice(0, 8).map(async (hit) => {
           const d = await hit.data();
           const href = cleanHref(d.url);
-          if (!href) return null; // skip Pagefind internal chunk URLs
+          if (!href) return null;
           const title = d.meta?.title?.trim() || titleFromHref(href);
-          // excerpt carries matched body context — preserve <mark> tags
-          // for visual highlighting, strip everything else. Collapse
-          // whitespace and cap at 100 chars so it fits the row meta slot.
           const meta = d.excerpt
             ? d.excerpt
-                .replace(/<(?!\/?mark>)[^>]+>/g, '') // keep <mark>, strip rest
+                .replace(/<(?!\/?mark>)[^>]+>/g, '')
                 .replace(/\s+/g, ' ')
                 .trim()
-                .slice(0, 100)
+                .slice(0, 110)
             : '';
-          return {
-            title,
-            href,
-            group: groupForHref(href),
-            keywords: '',
-            meta,
-            _flagship: FLAGSHIP_HREFS.has(href),
-          } as SearchItem & { _flagship: boolean };
+          return { title, href, group: groupForHref(href), keywords: '', meta } as SearchItem;
         })
       );
-
       if (cancelled || seq !== searchSeq.current) return;
-      const validRows = rows.filter(Boolean) as (SearchItem & { _flagship: boolean })[];
-      // Apply facet filter to Pagefind results too
-      const facetFiltered = facetGroup
-        ? validRows.filter((r) => r.group === facetGroup)
-        : validRows;
-      // Flagship surfaces float to the top of their group on exact page hits.
-      facetFiltered.sort((a, b) => Number(b._flagship) - Number(a._flagship));
-      facetFiltered.sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
-
-      // MERGE — never REPLACE. The local INDEX filter already produced scored,
-      // sorted matches (authoritative for our curated routes). Pagefind may
-      // resolve to an empty set when its index references build-chunk URLs we
-      // filter out, or when BM25 ranks body text below our curated pages. If we
-      // blindly setHits(validRows) an empty Pagefind result would wipe correct
-      // local matches (the live "score"/"methodology" → No matches bug). So:
-      // keep every local hit, and append ONLY Pagefind rows whose href is not
-      // already present locally. Local wins on collision.
-      const localHrefs = new Set(local.map((item) => item.href));
-      const pfOnly = facetFiltered.filter((r) => !localHrefs.has(r.href));
-      const merged = [
-        ...local,
-        ...pfOnly.map(({ _flagship, ...rest }) => rest),
-      ].slice(0, 12);
-      setHits(merged);
+      setMentions(rows.filter(Boolean) as SearchItem[]);
       setSearching(false);
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [text, facet]);
 
-  // Zero-state: one QUICK JUMP tile per group (7 tiles, no scroll) — the
-  // authoritative browse view. Typed queries stay in the grouped list.
-  const zeroStateResults = useMemo(() => {
-    return GROUP_ORDER.map(
-      (g) => INDEX.find((item) => item.group === g && item.title === QUICK_PICKS[g])!
-    ).filter(Boolean);
-  }, []);
-
-  const results = useMemo(() => {
-    const q = normalize(query);
-    if (!q) return zeroStateResults;
-    return hits ?? [];
-  }, [query, hits, zeroStateResults]);
-
-  const openPalette = useCallback(() => {
-    setOpen(true);
-    setQuery('');
-    setActive(0);
-  }, []);
-
-  const closePalette = useCallback(() => {
+  const close = useCallback(() => {
     setOpen(false);
     setQuery('');
-    setActive(0);
-    setHits(null);
+    setMentions([]);
     setSearching(false);
-    searchSeq.current += 1; // invalidate any in-flight Pagefind response
-    // Restore focus to the trigger for keyboard users
-    triggerRef.current?.focus();
+    setListH(null);
+    searchSeq.current += 1;
+    const back = returnFocusRef.current ?? triggerRef.current;
+    back?.focus?.();
+  }, []);
+
+  const openPalette = useCallback(() => {
+    returnFocusRef.current = (document.activeElement as HTMLElement | null) ?? null;
+    setQuery('');
+    setOpen(true);
   }, []);
 
   const go = useCallback(
     (href: string) => {
-      closePalette();
+      close();
       router.push(href);
     },
-    [closePalette, router]
+    [close, router]
   );
 
-  // Global keys — capture phase, so nothing between target and window
-  // swallows them, and Escape works even when focus is NOT in the input
-  // (the intermittent-Escape bug: keydown on document.body had no handler).
+  // Rows, grouped, in the exact order the keyboard walks them.
+  const groups: Group[] = useMemo(() => {
+    const dark = theme.theme === 'dark';
+    const commands: (Row & { words: string })[] = [
+      {
+        key: 'cmd-theme',
+        title: dark ? 'Switch to light mode' : 'Switch to dark mode',
+        meta: 'Theme',
+        icon: 'theme',
+        words: 'theme dark light mode appearance colour color night day',
+        run: () => {
+          close();
+          theme.toggle();
+        },
+      },
+      {
+        key: 'cmd-motion',
+        title: motion.paused ? 'Resume motion' : 'Pause motion',
+        meta: 'Every looping animation on the site',
+        icon: 'motion',
+        words: 'motion animation pause resume stop reduce loops',
+        run: () => {
+          close();
+          motion.toggle();
+        },
+      },
+    ];
+    const pageRow = (item: SearchItem): Row => ({
+      key: `page:${item.href}`,
+      title: item.title,
+      meta: item.meta || undefined,
+      href: item.href,
+      icon: item.group === 'Machine' ? 'machine' : 'page',
+    });
+
+    if (!q) {
+      const picks = GROUP_ORDER.map((g) => INDEX.find((i) => i.group === g && i.title === QUICK_PICKS[g]))
+        .filter(Boolean)
+        .map((item) => ({ ...pageRow(item as SearchItem), meta: (item as SearchItem).group }));
+      return [
+        { name: 'Jump to', rows: picks },
+        { name: 'Commands', rows: commands.map(({ words: _w, ...r }) => r) },
+      ];
+    }
+
+    const out: Group[] = [];
+    const target = facet ? null : urlTarget(query);
+    if (target) {
+      out.push({
+        name: 'Score',
+        rows: [
+          {
+            key: 'act-score',
+            title: `Score ${target}`,
+            meta: `Run the ${ENGINE_CHECK_COUNT} checks against contract ${CONTRACT_VERSION}`,
+            href: `/score?url=${encodeURIComponent(target)}`,
+            icon: 'score',
+            hint: 'Enter',
+          },
+        ],
+      });
+    }
+
+    const ranked = INDEX.filter((i) => (facet ? i.group === facet : true))
+      .map((item) => ({ item, s: text ? rankItem(item, text) : 1 }))
+      .filter((r) => r.s > 0)
+      .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
+      .slice(0, 14);
+    const order: SearchItem['group'][] = [];
+    for (const r of ranked) if (!order.includes(r.item.group)) order.push(r.item.group);
+    for (const g of order) {
+      out.push({ name: g, rows: ranked.filter((r) => r.item.group === g).map((r) => pageRow(r.item)) });
+    }
+
+    if (!facet && text) {
+      const matched = commands.filter((c) => c.words.split(' ').some((w) => w.startsWith(text)) || c.title.toLowerCase().includes(text));
+      if (matched.length) out.push({ name: 'Commands', rows: matched.map(({ words: _w, ...r }) => r) });
+    }
+
+    const have = new Set(ranked.map((r) => r.item.href));
+    const extra = mentions.filter((m) => !have.has(m.href));
+    if (extra.length) {
+      out.push({
+        name: 'Mentioned on',
+        rows: extra.map((m) => ({
+          key: `mention:${m.href}`,
+          title: m.title,
+          meta: m.meta,
+          metaHtml: true,
+          href: m.href,
+          icon: 'mention' as const,
+        })),
+      });
+    }
+    return out;
+  }, [q, query, facet, text, mentions, theme, motion, close]);
+
+  const flat = useMemo(() => groups.flatMap((g) => g.rows), [groups]);
+
+  // Selection: first row on every query change; kept across late results.
+  useEffect(() => {
+    setActiveKey(flat[0]?.key ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+  useEffect(() => {
+    if (activeKey && !flat.some((r) => r.key === activeKey)) setActiveKey(flat[0]?.key ?? null);
+    if (!activeKey && flat.length) setActiveKey(flat[0].key);
+  }, [flat, activeKey]);
+
+  const activeIndex = flat.findIndex((r) => r.key === activeKey);
+  const optionId = (key: string) => `${listId}-opt-${key.replace(/[^a-z0-9-]/gi, '_')}`;
+
+  // Keyboard navigation scrolls the active row into view; pointer never does.
+  useEffect(() => {
+    if (!keyNavRef.current || !activeKey) return;
+    keyNavRef.current = false;
+    document.getElementById(optionId(activeKey))?.scrollIntoView({ block: 'nearest' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey]);
+
+  const runRow = useCallback(
+    (row: Row | undefined) => {
+      if (!row) return;
+      if (row.run) row.run();
+      else if (row.href) go(row.href);
+    },
+    [go]
+  );
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const n = flat.length;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!n) return;
+      const d = e.key === 'ArrowDown' ? 1 : -1;
+      const next = activeIndex < 0 ? 0 : (activeIndex + d + n) % n;
+      keyNavRef.current = true;
+      setActiveKey(flat[next].key);
+    } else if (e.key === 'Home' && n) {
+      e.preventDefault();
+      keyNavRef.current = true;
+      setActiveKey(flat[0].key);
+    } else if (e.key === 'End' && n) {
+      e.preventDefault();
+      keyNavRef.current = true;
+      setActiveKey(flat[n - 1].key);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      runRow(flat[activeIndex] ?? flat[0]);
+    } else if (e.key === 'Tab') {
+      // The palette is modal: focus stays in its one field.
+      e.preventDefault();
+    }
+  };
+
+  // Global keys: capture phase, so Escape works from any focus.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
       if (isMod && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
-        if (open) {
-          closePalette();
-        } else {
-          openPalette();
-        }
+        if (open) close();
+        else openPalette();
         return;
       }
       if (e.key === 'Escape' && open) {
         e.preventDefault();
-        closePalette();
+        close();
         return;
       }
       if (e.key === '/' && !open) {
@@ -578,124 +776,38 @@ export function CommandPalette() {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [open, openPalette, closePalette]);
+  }, [open, openPalette, close]);
 
-  // Click-away / tap-away dismiss — pointerdown (not click) so the palette
-  // closes before blur, focus-shift, or scroll can interfere, on desktop
-  // and touch alike. Guarded to presses that start OUTSIDE the panel.
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      const el = panelRef.current;
-      if (el && e.target instanceof Node && !el.contains(e.target)) {
-        e.preventDefault(); // don't let the stray tap activate anything behind
-        closePalette();
-      }
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
-  }, [open, closePalette]);
-
-  // Focus input when opened
-  useEffect(() => {
-    if (open) {
-      // next frame so the element is mounted
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+  // Focus the field the moment the panel exists.
+  useLayoutEffect(() => {
+    if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Lock body scroll while open (list is the only scroll container;
-  // CSS overscroll-behavior: contain stops wheel/touch chaining).
+  // The page behind stays put: scroll is locked (html reserves its scrollbar
+  // gutter, so nothing shifts sideways).
   useEffect(() => {
     if (!open) return;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = '';
-      // Dispatch a scroll event so the topbar recalculates its scroll-tier
-      // classes (searchExpanded, deepScrolled). When the palette closes and
-      // unlocks body scroll, no native scroll event fires if scrollY is
-      // already 0 — the topbar's search pill would stay expanded.
+      document.body.style.overflow = prev;
       window.dispatchEvent(new Event('scroll'));
     };
   }, [open]);
 
-  // Reset active index when results change
-  useEffect(() => {
-    setActive(0);
-  }, [results.length, query]);
+  // The list's height follows its content, eased (CSS), so the panel grows
+  // downward from a fixed top edge instead of jumping.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const inner = innerRef.current;
+    if (!inner || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setListH(inner.offsetHeight));
+    ro.observe(inner);
+    setListH(inner.offsetHeight);
+    return () => ro.disconnect();
+  }, [open]);
 
-  // Keep active item scrolled into view
-  useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [active]);
-
-  const onInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((a) => Math.min(a + 1, results.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((a) => Math.max(a - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const item = results[active];
-      if (item) go(item.href);
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      setActive(0);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      setActive(results.length - 1);
-    }
-    // Escape is handled by the global capture listener (works from any focus).
-  };
-
-  // Group the current results for rendering with headers. The zero-state is
-  // intentionally flat (one tile per group, self-labeled) so headers would
-  // be redundant; typed queries keep the familiar grouped list.
-  const isZeroState = normalize(query) === '';
-  const grouped = useMemo(() => {
-    const out: { group: string; items: { item: SearchItem; index: number }[] }[] = [];
-    let lastGroup = '';
-    results.forEach((item, index) => {
-      if (item.group !== lastGroup) {
-        out.push({ group: item.group, items: [{ item, index }] });
-        lastGroup = item.group;
-      } else {
-        out[out.length - 1].items.push({ item, index });
-      }
-    });
-    return out;
-  }, [results]);
-
-  const renderRow = (item: SearchItem, index: number) => (
-    <button
-      key={item.href}
-      id={`cmdk-opt-${index}`}
-      data-index={index}
-      type="button"
-      role="option"
-      aria-selected={index === active}
-      className={`cmdk-item${index === active ? ' is-active' : ''}`}
-      onMouseEnter={() => setActive(index)}
-      onClick={() => go(item.href)}
-    >
-      <span className="cmdk-item-body">
-        <span className="cmdk-item-title">
-          {isZeroState && <span className="cmdk-item-group">{item.group} — </span>}
-          {item.title}
-        </span>
-        {item.meta && (
-          <span
-            className="cmdk-item-meta"
-            dangerouslySetInnerHTML={{ __html: item.meta }}
-          />
-        )}
-      </span>
-      <span className="cmdk-item-arrow" aria-hidden="true">→</span>
-    </button>
-  );
+  const empty = flat.length === 0;
 
   return (
     <>
@@ -719,88 +831,129 @@ export function CommandPalette() {
         </kbd>
       </button>
 
-      {open && createPortal(
-        <div className="cmdk-overlay" role="presentation">
+      {open &&
+        createPortal(
           <div
-            ref={panelRef}
-            className="cmdk-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Search designesy.org"
+            className="cmdk-overlay"
+            role="presentation"
+            onPointerDown={(e) => {
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+                close();
+              }
+            }}
           >
-            <div className="cmdk-input-row">
-              <svg className="cmdk-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.5" y2="16.5" />
-              </svg>
-              <input
-                ref={inputRef}
-                type="text"
-                className="cmdk-input"
-                placeholder="Search pages, contracts, endpoints…  (try “contract: motion”)"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={onInputKeyDown}
-                role="combobox"
-                aria-expanded="true"
-                aria-controls="cmdk-listbox"
-                aria-activedescendant={results[active] ? `cmdk-opt-${active}` : undefined}
-                aria-autocomplete="list"
-                spellCheck={false}
-                autoComplete="off"
-              />
-              <kbd className="cmdk-esc" aria-hidden="true">esc</kbd>
-              {searching && results.length > 0 && (
-                <span className="cmdk-searching-dot" aria-hidden="true" title="Searching body content…" />
-              )}
-            </div>
+            <div className="cmdk-panel" role="dialog" aria-modal="true" aria-label="Search designesy.org">
+              <div className="cmdk-input-row">
+                <svg className="cmdk-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="cmdk-input"
+                  placeholder="Search pages, or type a URL to score it"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={onInputKeyDown}
+                  role="combobox"
+                  aria-expanded="true"
+                  aria-controls={listId}
+                  aria-activedescendant={activeKey && !empty ? optionId(activeKey) : undefined}
+                  aria-autocomplete="list"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                {searching && <span className="cmdk-searching-dot" aria-hidden="true" />}
+                <kbd className="cmdk-esc" aria-hidden="true">
+                  esc
+                </kbd>
+              </div>
 
-            <div
-              ref={listRef}
-              className="cmdk-list"
-              id="cmdk-listbox"
-              role="listbox"
-              aria-label="Search results"
-            >
-              {results.length === 0 && (
-                <div className="cmdk-empty" role="option" aria-selected="false">
-                  {searching ? (
-                    <>
-                      <p className="cmdk-empty-title">Searching…</p>
-                      <p className="cmdk-empty-sub">Looking through body content and contracts.</p>
-                    </>
+              <div
+                className="cmdk-list"
+                id={listId}
+                role="listbox"
+                aria-label="Results"
+                style={listH === null ? undefined : { height: listH }}
+                data-sized={listH === null ? undefined : ''}
+              >
+                <div className="cmdk-list-inner" ref={innerRef}>
+                  {empty ? (
+                    <div className="cmdk-empty">
+                      <p className="cmdk-empty-title">Nothing matches &ldquo;{query}&rdquo;</p>
+                      <p className="cmdk-empty-sub">
+                        Try a page name, a check ID, or a domain like example.com to score it.
+                      </p>
+                    </div>
                   ) : (
-                    <>
-                      <p className="cmdk-empty-title">No matches for “{query}”</p>
-                      <p className="cmdk-empty-sub">Try a page name, contract, endpoint, or topic.</p>
-                    </>
+                    groups.map((g, gi) => (
+                      <div className="cmdk-group" role="group" aria-labelledby={`${listId}-g${gi}`} key={g.name}>
+                        <div className="cmdk-group-label" id={`${listId}-g${gi}`}>
+                          {g.name}
+                        </div>
+                        {g.rows.map((row) => {
+                          const active = row.key === activeKey;
+                          return (
+                            <div
+                              key={row.key}
+                              id={optionId(row.key)}
+                              role="option"
+                              aria-selected={active}
+                              className={`cmdk-item${active ? ' is-active' : ''}`}
+                              data-kind={row.icon}
+                              onPointerMove={(e) => {
+                                const last = pointerRef.current;
+                                pointerRef.current = { x: e.clientX, y: e.clientY };
+                                if (last && last.x === e.clientX && last.y === e.clientY) return;
+                                if (!active) setActiveKey(row.key);
+                              }}
+                              onClick={() => runRow(row)}
+                            >
+                              <span className="cmdk-item-icon">
+                                <Icon kind={row.icon} />
+                              </span>
+                              <span className="cmdk-item-body">
+                                <span className="cmdk-item-title">{marked(row.title, text)}</span>
+                                {row.meta &&
+                                  (row.metaHtml ? (
+                                    <span className="cmdk-item-meta" dangerouslySetInnerHTML={{ __html: row.meta }} />
+                                  ) : (
+                                    <span className="cmdk-item-meta">{row.meta}</span>
+                                  ))}
+                              </span>
+                              <kbd className="cmdk-item-enter" aria-hidden="true">
+                                ↵
+                              </kbd>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))
                   )}
                 </div>
-              )}
-              {isZeroState ? (
-                <>
-                  <div className="cmdk-group-label" aria-hidden="true">Quick jump</div>
-                  {results.map((item, index) => renderRow(item, index))}
-                </>
-              ) : (
-                grouped.map((g) => (
-                  <div key={g.group} className="cmdk-group">
-                    <div className="cmdk-group-label" aria-hidden="true">{g.group}</div>
-                    {g.items.map(({ item, index }) => renderRow(item, index))}
-                  </div>
-                ))
-              )}
-            </div>
+              </div>
 
-            <div className="cmdk-footer" aria-hidden="true">
-              <span className="cmdk-footer-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-              <span className="cmdk-footer-hint"><kbd>↵</kbd> open</span>
-              <span className="cmdk-footer-hint"><kbd>esc</kbd> close</span>
+              <div className="cmdk-footer" aria-hidden="true">
+                <span className="cmdk-footer-hint">
+                  <kbd>↑</kbd>
+                  <kbd>↓</kbd> move
+                </span>
+                <span className="cmdk-footer-hint">
+                  <kbd>↵</kbd> open
+                </span>
+                <span className="cmdk-footer-hint">
+                  <kbd>esc</kbd> close
+                </span>
+                <span className="cmdk-footer-hint cmdk-footer-tip">
+                  <kbd>labs:</kbd> filter by section
+                </span>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
