@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import '../instrument.css';
+import '../engine.css';
 import './score.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
@@ -9,6 +11,8 @@ import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { DRIFT_CHECK_COUNT } from '../lib/drift-contract';
 import { READINESS_CHECK_COUNT } from '../lib/readiness-contract';
 import { GUARDRAILS_CHECK_COUNT } from '../lib/guardrails-contract';
+import { registry } from '../lib/engine/registry';
+import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
 
 // Static /score route — the entire page body is static and prerendered at
 // build time, served from the CDN edge (TTFB 20-80ms instead of 300-800ms).
@@ -101,131 +105,58 @@ export default function ScorePage() {
   // it already uses for its auto-run-on-deep-link useEffect. No searchParams
   // read here means no dynamic data dependency → the page prerenders at
   // build time and is served from the CDN edge.
+  const parts = (['score', 'drift', 'readiness', 'guardrails'] as const).map((k) => registry(k));
+  const view = {
+    checks: parts.flatMap((r) => r.checks),
+    groups: parts.flatMap((r) => r.groups),
+    machine: '/contracts/design-system.json',
+  };
+  const names = { score: 'Contract score', drift: 'Drift radar', readiness: 'AI readiness', guardrails: 'Guardrails' };
+  const blocks = parts.map((r) => ({
+    key: r.key,
+    name: names[r.key as keyof typeof names],
+    count: r.count,
+    ids: r.checks.map((c) => c.id),
+  }));
+  const total = ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT;
+
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow">Scoring</p>
-          <h1 className="surface-title" data-scramble>
-            Score any site
-          </h1>
-          <p className="surface-lede">
-            Four engines. One composite grade. Score ({ENGINE_CHECK_COUNT} checks), drift (12), AI
-            readiness (10), and guardrails (6) — all on one URL, one dashboard.
-            The compliance layer for AI-generated UI.
-          </p>
-          <p className="surface-note">
-            The homepage gives you the quick {ENGINE_CHECK_COUNT}-check score. This is the power surface —
-            every engine at once, with a composite grade that synthesizes score, drift, and
-            readiness. Find out how close you are.
-          </p>
-        </section>
+      <main id="main-content" data-pagefind-body className="eg" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/score"
+          name="Score any site"
+          thesis={`All four engines on one URL: the ${ENGINE_CHECK_COUNT}-check contract score, drift, AI readiness and guardrails, with one composite grade and every finding a click away.`}
+          facts={['4 engines', `${total} checks`, 'no login']}
+          contract={{ href: '/contracts/design-system', label: `contract ${CONTRACT_VERSION}` }}
+        />
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <VerifyForm />
-        </section>
+        <VerifyForm view={view} blocks={blocks} />
 
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">What the engines measure</h2>
-          <div className="definition">
-            <p className="definition-label">Four engines, one verdict</p>
-            <p>
-              Every check traces back to a specific token or rule in the{' '}
-              {/* Span, not <a>: this definition is inside DefinitionCopyEnhancer
-                  which makes the whole block role="button" + tabindex=0 (click-to-copy).
-                  An <a> descendant triggers axe-core nested-interactive even when
-                  demoted (tabindex=-1 + aria-hidden + href stripped), because the
-                  rule keys on element type, not on a11y-tree presence. A span with
-                  the same class renders identically (.text-link uses border-bottom +
-                  ::after, not text-decoration) and carries no interactive semantics
-                  to flag. data-dce-href preserves the link target as metadata. */}
-              <span className="text-link" data-dce-href="/contracts/design-system">
-                design system contract
-              </span>
-              . The <strong>Score</strong> engine runs {ENGINE_CHECK_COUNT} checks — motion, typography, color,
-              accessibility, identity. <strong>Drift</strong> detects AI-generated UI drift —
-              fabricated tokens, inline values, off-system variance. <strong>AI Readiness</strong> probes for machine-readable design context — llms.txt, agent.json, MCP, token files.
-              <strong> Guardrails</strong> emits a frozen build-contract bundle — DTCG tokens,
-              stylelint config, agent rules. The composite grade synthesizes score, drift, and
-              readiness into one defensible number.
-            </p>
-          </div>
+        <EngineMethod
+          steps={[
+            { title: 'Fire four engines', text: 'In parallel, each fetching the page itself: contract score, drift, readiness, guardrails.' },
+            { title: 'Weigh three', text: 'The composite is the contract score at 50%, drift at 30% and readiness at 20%.' },
+            { title: 'Keep one apart', text: 'Guardrails grades the bundle it writes for agents, so it reports beside the composite.' },
+            { title: 'Remember the last run', text: 'Your previous composite for the site is kept in this browser, and the change shows on the next run.' },
+          ]}
+          formula={
+            <>
+              <span><b>composite</b> = score × 0.5 + drift × 0.3 + readiness × 0.2</span>
+              <span><b>A</b> ≥ 90 · <b>B</b> ≥ 80 · <b>C</b> ≥ 70 · <b>D</b> ≥ 60 · <b>F</b> below</span>
+              <span>Checks a person must confirm are left out of every score.</span>
+            </>
+          }
+        />
 
-          <div className="engines-grid" data-reveal-group>
-            <article className="engine-card" data-reveal>
-              <header className="engine-card-head">
-                <span className="engine-card-num">01</span>
-                <h3 className="engine-card-title">Score</h3>
-                <span className="engine-card-count" data-tabular>{ENGINE_CHECK_COUNT} checks</span>
-              </header>
-              <p className="engine-card-desc">
-                Live design-contract compliance — motion, typography, color, accessibility, identity against the {CONTRACT_VERSION} contract.
-              </p>
-              <ul className="engine-card-list">
-                <li>Token presence and binding</li>
-                <li>Motion standards (10)</li>
-                <li>Cadence typography (cadence)</li>
-                <li>Color in OKLCH</li>
-                <li>Focus and reduced motion</li>
-              </ul>
-            </article>
-
-            <article className="engine-card" data-reveal>
-              <header className="engine-card-head">
-                <span className="engine-card-num">02</span>
-                <h3 className="engine-card-title">Drift</h3>
-                <span className="engine-card-count" data-tabular>12 checks</span>
-              </header>
-              <p className="engine-card-desc">
-                Detects AI-generated UI drift — fabricated tokens, inline values, off-system variance the Score engine rewards.
-              </p>
-              <ul className="engine-card-list">
-                <li>Inline hex / rgb / hsl values</li>
-                <li>Off-token shadow values</li>
-                <li>Magic-number spacing</li>
-                <li>Duplicate token definitions</li>
-                <li>Stack inconsistency</li>
-              </ul>
-            </article>
-
-            <article className="engine-card" data-reveal>
-              <header className="engine-card-head">
-                <span className="engine-card-num">03</span>
-                <h3 className="engine-card-title">AI Readiness</h3>
-                <span className="engine-card-count" data-tabular>10 checks</span>
-              </header>
-              <p className="engine-card-desc">
-                Probes machine-readable design context — whether agents can ingest, score, and remix without scraping HTML.
-              </p>
-              <ul className="engine-card-list">
-                <li>llms.txt presence</li>
-                <li>agent.json / .well-known</li>
-                <li>Token export (DTCG)</li>
-                <li>MCP endpoint</li>
-                <li>README / docs surface</li>
-              </ul>
-            </article>
-
-            <article className="engine-card" data-reveal>
-              <header className="engine-card-head">
-                <span className="engine-card-num">04</span>
-                <h3 className="engine-card-title">Guardrails</h3>
-                <span className="engine-card-count" data-tabular>6 checks</span>
-              </header>
-              <p className="engine-card-desc">
-                Emits a frozen build-contract bundle — DTCG tokens, stylelint config, agent rules — so the score is reproducible.
-              </p>
-              <ul className="engine-card-list">
-                <li>Build contract bundle</li>
-                <li>Stylelint config emit</li>
-                <li>Agent-rule emit</li>
-                <li>Token hash pinning</li>
-                <li>Provenance line</li>
-              </ul>
-            </article>
-          </div>
-        </section>
+        <EngineNext
+          items={[
+            { title: 'Read the contract behind the checks', desc: `The ${CONTRACT_VERSION} design system contract, with every rule the ${ENGINE_CHECK_COUNT} checks enforce.`, route: '/contracts/design-system' },
+            { title: 'See where others land', desc: 'The public leaderboard, scored by the same engine and dated.', route: '/leaderboard' },
+            { title: 'Watch a site over time', desc: 'Monitor re-runs the drift checks and compares every run with your first.', route: '/monitor' },
+          ]}
+        />
       </main>
       <Footer />
     </>

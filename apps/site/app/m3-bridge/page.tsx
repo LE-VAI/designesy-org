@@ -12,11 +12,14 @@
 // the W3C standard."
 
 import type { Metadata } from 'next';
+import '../instrument.css';
+import '../engine.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { M3BridgeTool } from './m3-bridge-form';
 import { AgentActions } from '../lib/agent-actions';
+import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -36,59 +39,57 @@ export default function M3BridgePage() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Token bridge</p>
-          <h1 className="surface-title" data-scramble>M3 → DTCG Bridge</h1>
-          <p className="surface-lede">
-            Material 3&apos;s DSP export was archived October 2024 and
-            doesn&apos;t emit W3C DTCG format. Paste your M3 token CSS or JSON —
-            get W3C DTCG 2025.10 output, validated and ready to download.
-          </p>
-          <p className="surface-note">
-            The neutral bridge between Google&apos;s two non-interoperating
-            design-data initiatives: M3 (DSP archived) and DESIGN.md (ships
-            DTCG). Whether your tokens come from M3, DESIGN.md, Tokens Studio,
-            or hand-written JSON — Designesy validates them against the W3C
-            standard.
-          </p>
+      <main id="main-content" data-pagefind-body className="eg" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/m3-bridge"
+          name="M3 to DTCG bridge"
+          thesis="Paste Material 3 tokens, as CSS or JSON, and get W3C DTCG 2025.10 back: typed, structured and checked."
+          facts={['5 checks', 'DTCG 2025.10', 'converted in your browser']}
+          contract={{ href: '/contracts/tokens', label: 'token contract' }}
+        >
           <AgentActions mdPath="/m3-bridge.md" label="the M3 bridge page" />
-        </section>
+        </EngineHead>
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <M3BridgeTool />
-        </section>
+        <M3BridgeTool />
 
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">Why this exists</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '70ch' }}>
-            Material Design 3 is the most influential design system on Earth.
-            Its native token export format — DSP (Design System Package) — was{' '}
-            <a
-              href="https://github.com/material-foundation/material-tokens"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--signal)' }}
-            >
-              archived October 17, 2024
+        <EngineMethod
+          steps={[
+            { title: 'Read the tokens', text: '--md- custom properties from CSS, or md. keys from a JSON file.' },
+            { title: 'Map the paths', text: 'Each name becomes a DTCG path: --md-sys-color-primary becomes color.primary.' },
+            { title: 'Type the values', text: 'Colors, dimensions, durations, easing curves, numbers and font families, each with its $type.' },
+            { title: 'Validate', text: 'Five checks against the DTCG format, before you download the file.' },
+          ]}
+          formula={
+            <>
+              <span><b>valid</b> = all five checks pass</span>
+              <span>Colors are written as colorSpace and components, never as bare hex.</span>
+            </>
+          }
+        />
+
+        <section className="eg-section eg-prose" aria-labelledby="m3-why-h">
+          <h2 className="eg-h2" id="m3-why-h">Why it exists</h2>
+          <p>
+            Material 3&apos;s own token export, the Design System Package, was{' '}
+            <a href="https://github.com/material-foundation/material-tokens" target="_blank" rel="noopener noreferrer">
+              archived on 17 October 2024
             </a>
-            . No replacement has been announced. M3 participates in the W3C
-            DTCG community group but has not shipped DTCG export.
+            , and it never wrote the W3C DTCG format. No replacement has been announced.
           </p>
-          <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '70ch' }}>
-            Meanwhile, Google&apos;s DESIGN.md initiative (different org,
-            same umbrella) <em>does</em> ship DTCG export via{' '}
-            <code style={{ fontSize: '0.85rem' }}>npx @google/design.md export --format dtcg</code>
-            . These two Google projects don&apos;t interoperate at the token
-            format level.
-          </p>
-          <p className="surface-note" style={{ maxWidth: '70ch' }}>
-            Designesy bridges the gap. Paste M3 tokens → get DTCG output →
-            validate with the Designesy token validator. This is the technical
-            moat: Designesy is the only tool that converts M3&apos;s archived
-            format to the W3C standard and then verifies the result.
+          <p>
+            Google&apos;s DESIGN.md project does export DTCG, through{' '}
+            <code>npx @google/design.md export --format dtcg</code>, and the two projects do not share a token format.
+            This bridge carries M3 tokens across, then checks the result against the standard.
           </p>
         </section>
+
+        <EngineNext
+          items={[
+            { title: 'Check the file against the token contract', desc: 'The rules a token file has to meet here, with the reasons behind each.', route: '/contracts/tokens' },
+            { title: 'Emit a full build contract from a live site', desc: 'Guardrails writes DTCG tokens, lint rules, AGENTS.md and a DESIGN.md from any URL.', route: '/guardrails' },
+            { title: 'Score the site that uses these tokens', desc: 'The contract score, drift and AI readiness on one URL, with one composite grade.', route: '/score' },
+          ]}
+        />
       </main>
       <Footer />
     </>

@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
+import '../instrument.css';
+import '../engine.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { registry } from '../lib/engine/registry';
+import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
 import { DriftForm } from './drift-form';
 
 export const dynamic = 'force-dynamic';
@@ -23,41 +28,45 @@ export const metadata: Metadata = pageMeta({
 export default async function DriftPage({ searchParams }: { searchParams?: Promise<{ url?: string }> }) {
   const params = await searchParams;
   const initialUrl = typeof params?.url === 'string' ? params.url : '';
+  const reg = registry('drift');
 
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Verification</p>
-          <h1 className="surface-title" data-scramble>Drift radar</h1>
-          <p className="surface-lede">
-            Detect AI-generated UI drift — 12 checks against compiled CSS for
-            token fabrication, value variance, and off-contract patterns.
-          </p>
-          <p className="surface-note">
-            The four documented 2026 drift failure modes: token fabrication,
-            within-session drift, between-session amnesia, silent breaking changes.
-          </p>
-        </section>
+      <main id="main-content" data-pagefind-body className="eg" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/drift"
+          name="Drift radar"
+          thesis="Catch a UI drifting off its own system: token names that resolve to nothing, and values that stop clustering on a scale. Built for interfaces an AI model wrote in one session and edited in the next."
+          facts={[`${reg.count} checks`, 'compiled CSS', 'static analysis']}
+          contract={{ href: '/contracts/drift', label: `contract ${reg.version} ${reg.status}` }}
+        />
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <DriftForm initialUrl={initialUrl} />
-        </section>
+        <DriftForm initialUrl={initialUrl} registry={{ checks: reg.checks, groups: reg.groups, machine: reg.machine }} />
 
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">What it checks</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            The drift engine fetches the target URL, extracts all CSS (inline +
-            linked stylesheets), parses :root custom property declarations, and
-            runs 12 checks covering the four drift failure modes. All checks
-            are static analysis — no browser needed.
-          </p>
-          <p className="surface-note">
-            Scoring: 12 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/12) ×
-            100. A≥90, B≥80, C≥70, D≥60, F&lt;60.
-          </p>
-        </section>
+        <EngineMethod
+          steps={[
+            { title: 'Fetch the page', text: 'The HTML at the URL, then every stylesheet it links, plus inline style blocks.' },
+            { title: 'Read the system', text: 'Every custom property declared, every var() reference, and each value set for color, spacing, radius, shadow and timing.' },
+            { title: 'Run 12 checks', text: 'Four ask whether the tokens resolve. Eight ask whether the values cluster on a few steps.' },
+            { title: 'Grade', text: 'Pass counts 1, warn 0.5, fail 0. Skipped checks leave the count. A is 90 and up.' },
+          ]}
+          formula={
+            <>
+              <span><b>score</b> = (pass + warn × 0.5) ÷ checks scored × 100</span>
+              <span><b>A</b> ≥ 90 · <b>B</b> ≥ 80 · <b>C</b> ≥ 70 · <b>D</b> ≥ 60 · <b>F</b> below</span>
+              <span>Static analysis of compiled CSS: no browser, no login.</span>
+            </>
+          }
+        />
+
+        <EngineNext
+          items={[
+            { title: 'Watch it over time', desc: 'Monitor runs these 12 checks again each time and compares the run with your first and your last.', route: '/monitor', carry: true },
+            { title: 'Freeze it for your agents', desc: 'Guardrails turns the same tokens into a build contract and the lint rules that hold it.', route: '/guardrails', carry: true },
+            { title: 'Run the full audit', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one composite grade.`, route: '/score', carry: true },
+          ]}
+        />
       </main>
       <Footer />
     </>

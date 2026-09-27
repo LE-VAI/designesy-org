@@ -20,6 +20,8 @@
 // the browser and can be shared via URL hash (base64-encoded answers).
 
 import type { Metadata } from 'next';
+import '../instrument.css';
+import '../engine.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
@@ -27,6 +29,7 @@ import { MaturityAssessment } from './maturity-form';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -46,52 +49,42 @@ export default function MaturityPage() {
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Self-assessment</p>
-          <h1 className="surface-title" data-scramble>Design Compliance Maturity</h1>
-          <p className="surface-lede">
-            Chart your design system across six independent compliance axes.
-            24 questions. ~6 minutes. No survey, no vote — a structured
-            self-assessment that maps directly to the same {ENGINE_CHECK_COUNT}-check contract
-            the leaderboard scores against.
-          </p>
-          <p className="surface-note">
-            Adapted from the zeroheight maturity model pattern. Six axes, four
-            stages each. Your result is computed in your browser and never
-            sent anywhere.
-          </p>
+      <main id="main-content" data-pagefind-body className="eg" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/maturity"
+          name="Design compliance maturity"
+          thesis="Place your design system on six axes, four stages each, in 24 questions. Most systems reach stage four on one axis and stay at stage one on another; the matrix shows which."
+          facts={['24 questions', 'about 6 minutes', 'computed in your browser']}
+          contract={{ href: '/contracts/design-system', label: `mapped to ${CONTRACT_VERSION}` }}
+        >
           <AgentActions mdPath="/maturity.md" label="the maturity assessment" />
-        </section>
+        </EngineHead>
 
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <MaturityAssessment />
-        </section>
+        <MaturityAssessment />
 
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">How it works</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Each axis has 4 questions. Each answer maps to a stage (1–4).
-            Your axis score is the average of its 4 questions, rounded to
-            the nearest stage. The radar chart shows all six axes at once —
-            most systems are Stage 4 on one axis and Stage 1 on another.
-            That asymmetry is the finding.
-          </p>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            The six axes map to the 14 weighted categories in the Designesy{' '}
-            {CONTRACT_VERSION} contract. After the self-assessment, the highest-leverage
-            next step is almost always a deterministic score — run the same
-            {ENGINE_CHECK_COUNT}-check engine against your live site and see where
-            self-perception meets shipped reality.
-          </p>
-          <p className="surface-note">
-            Scoring: 4 questions per axis, each scored 1–4. Axis score =
-            average × 25 (0–100 scale). Stage 1 (0–25), Stage 2 (25–50),
-            Stage 3 (50–75), Stage 4 (75–100). The overall score is the
-            mean of all six axes — but the radar chart is the point, not
-            the number.
-          </p>
-        </section>
+        <EngineMethod
+          steps={[
+            { title: 'Answer 24 questions', text: 'Four per axis, each answer a stage from 1, ad-hoc, to 4, verified.' },
+            { title: 'Score each axis', text: 'The average answer times 25, so a full row of fours reads 100.' },
+            { title: 'Read the matrix', text: 'Six axes side by side on one scale. The uneven rows are the finding.' },
+            { title: 'Check it for real', text: `The ${ENGINE_CHECK_COUNT}-check engine measures the live site against the same ${CONTRACT_VERSION} contract.` },
+          ]}
+          formula={
+            <>
+              <span><b>axis</b> = average answer × 25</span>
+              <span><b>overall</b> = mean of the answered axes</span>
+              <span><b>stage</b> = the average answer, rounded to the nearest whole stage</span>
+            </>
+          }
+        />
+
+        <EngineNext
+          items={[
+            { title: 'Score the live site', desc: `The ${ENGINE_CHECK_COUNT}-check engine turns self-perception into a measured grade.`, route: '/score' },
+            { title: 'Read the contract the axes map to', desc: `The ${CONTRACT_VERSION} design system contract and its 14 weighted categories.`, route: '/contracts/design-system' },
+            { title: 'See where others land', desc: 'The public leaderboard, scored by the same engine and dated.', route: '/leaderboard' },
+          ]}
+        />
       </main>
       <Footer />
     </>
