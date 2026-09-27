@@ -1801,3 +1801,23 @@ button.pillar {
 .home .home-demo {
   padding-bottom: clamp(var(--space-48), 5vw, var(--space-64));
 }
+
+/* Revision pass 3: font-swap stability. next/font sizes the fallback face to
+   Fraunces' default optical size; at 'opsz' 96 the display glyphs run ~11%
+   narrower, so on any load where Fraunces arrives after first paint (a cold
+   edge, a slow connection) the headline reflowed and the rotating word jumped
+   ~87px (CLS 0.0195, measured on production run 1). The hero keeps weight 700
+   but uses the optical size the site shipped with before (32), whose metrics
+   sit close to the fallback's. */
+.home .hero-display {
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+}
+
+/* At opsz 32 the glyphs are wider: capped at 4.6rem so the longest rotator
+   line ("We make execution legitimate.") fits the 1068px measure (measured:
+   1063px at 73.6px; 1125px at the old 4.9rem cap, which would clip). */
+@media (min-width: 721px) {
+  .home .hero-display {
+    font-size: clamp(2.6rem, 1rem + 4.5vw, 4.6rem);
+  }
+}
