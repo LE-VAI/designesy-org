@@ -1313,3 +1313,491 @@ button.pillar {
     flex-direction: column;
   }
 }
+
+/* ==========================================================================
+   Homepage facelift (2026-09-27)
+   Positioning: Designesy states design judgment as a published standard and
+   proves it live on any page, its own included: authoritative in what it
+   claims, playful in how it shows the proof.
+   Everything below is scoped to main.home, binds to existing tokens, and
+   cascades on top of the rules above (nothing above was removed).
+   ========================================================================== */
+
+/* --- Type register -------------------------------------------------------
+   The contract declares headings as Fraunces, weight 700, tracking -0.02em.
+   The live site had drifted to 340 (h1) and 400 (titles), a divergence no
+   check measures. The homepage now follows the contract. SOFT rounds the
+   serifs slightly: authority with warmth. */
+.home .hero-display,
+.home .home-title {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 96, 'SOFT' 40;
+  font-synthesis: none;
+}
+
+.home .home-title {
+  line-height: 1.08;
+  text-wrap: balance;
+  margin: 0 0 var(--space-20);
+  color: var(--ink);
+}
+
+.home .home-title--statement {
+  font-size: clamp(2.5rem, 1.5rem + 3.6vw, 4.5rem);
+  max-width: 16ch;
+}
+
+.home .home-title--section {
+  font-size: clamp(2rem, 1.45rem + 1.9vw, 3.1rem);
+  max-width: 22ch;
+}
+
+.home .home-title--compact {
+  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);
+}
+
+/* --- Hero ----------------------------------------------------------------- */
+.home .home-hero {
+  min-height: 0;
+  padding: clamp(var(--space-56), 7vw, var(--space-88)) 0 clamp(var(--space-64), 8vw, var(--space-104));
+}
+
+.home .home-hero-content {
+  text-align: left;
+}
+
+.home-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  margin: 0 0 var(--space-20);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.home-kicker-mark {
+  width: 0.625rem;
+  height: 0.625rem;
+  border: 1px solid var(--signal-access);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 var(--space-2) var(--surface), inset 0 0 0 var(--space-6) var(--signal-access);
+}
+
+.home .hero-display {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+@media (min-width: 721px) {
+  .home .hero-display {
+    font-size: clamp(2.6rem, 1rem + 4.5vw, 4.9rem);
+    line-height: 1.08;
+  }
+}
+
+.home .hero-display-line {
+  padding-inline-start: 0;
+  margin-inline-start: 0;
+}
+
+.home-hero-grid {
+  display: grid;
+  gap: var(--space-48);
+  margin-top: clamp(var(--space-28), 3vw, var(--space-44));
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .home-hero-grid {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    gap: clamp(var(--space-48), 5vw, var(--space-88));
+  }
+}
+
+.home .hero-sub {
+  max-width: 36rem;
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.home .score-hero-input {
+  max-width: 40rem;
+  margin-inline: 0;
+}
+
+.home .hero-proof {
+  margin-top: var(--space-24);
+}
+
+.home .hero-proof-stats {
+  justify-content: flex-start;
+  padding-bottom: 0;
+}
+
+.home .hero-hint {
+  max-width: 40rem;
+  text-align: left;
+}
+
+/* The instrument column: the ring leads, the cohort follows at lower rank. */
+.home-instrument {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-24);
+}
+
+.home .home-cohort {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0;
+}
+
+/* --- The contract ring ---------------------------------------------------- */
+.contract-ring {
+  margin: 0;
+  width: min(100%, 26rem);
+  display: grid;
+  gap: var(--space-12);
+}
+
+.contract-ring-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+}
+
+.contract-ring-orbit {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.contract-ring-arc {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.contract-ring-tick {
+  fill: var(--signal-access);
+  animation: ring-tick-lit var(--duration-slow) var(--ease-out) backwards;
+}
+
+.contract-ring-tick.is-manual {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+@keyframes ring-tick-lit {
+  from {
+    opacity: 0.16;
+  }
+}
+
+/* The page's one use of --activation: the needle that sweeps once on load and
+   then rests at twelve o'clock, where the registry starts. */
+.contract-ring-needle {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: ring-sweep 1.6s var(--ease-in-out) 0.35s backwards;
+}
+
+.contract-ring-needle line {
+  stroke: var(--activation);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.contract-ring-needle circle {
+  fill: var(--activation);
+}
+
+@keyframes ring-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.contract-ring-grade {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 104px;
+  font-variation-settings: 'opsz' 144, 'SOFT' 40;
+  fill: var(--ink);
+}
+
+.contract-ring-score {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  fill: var(--muted);
+}
+
+.contract-ring-caption {
+  display: grid;
+  gap: var(--space-4);
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.contract-ring-caption b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.contract-ring-measured {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+}
+
+/* --- Section rhythm: each section is sized for its role ------------------- */
+.home .section {
+  padding-block: clamp(var(--space-56), 7vw, var(--space-88));
+}
+
+.home .home-statement {
+  padding-block: clamp(var(--space-72), 10vw, var(--space-144));
+}
+
+.home .home-index {
+  padding-block: clamp(var(--space-48), 6vw, var(--space-72));
+}
+
+/* Demonstration: the heading and lede split across the measure. */
+.home-split-head {
+  display: grid;
+  gap: var(--space-12);
+  margin-bottom: var(--space-32);
+}
+
+@media (min-width: 1024px) {
+  .home-split-head {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: var(--space-48);
+    align-items: end;
+  }
+  .home-split-head .home-title {
+    margin-bottom: 0;
+  }
+  .home-split-head .surface-lede {
+    margin-bottom: var(--space-4);
+  }
+}
+
+/* Statement: the page's largest claim after the hero. */
+.home .home-statement-lede {
+  max-width: 44rem;
+  font-size: clamp(1.1rem, 1rem + 0.45vw, 1.35rem);
+  line-height: 1.55;
+  color: var(--muted);
+  margin-bottom: var(--space-48);
+}
+
+.home .home-pillars .pillar-number {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1.08;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40;
+  color: var(--muted-dim);
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.home .home-pillars .pillar.is-checked .pillar-number,
+.home .home-pillars .pillar:hover .pillar-number {
+  color: var(--signal-access);
+}
+
+/* The contract: principles as cells beside the health instrument. */
+.home-principles-grid {
+  display: grid;
+  gap: var(--space-40);
+}
+
+@media (min-width: 1024px) {
+  .home-principles-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(var(--space-40), 5vw, var(--space-72));
+    align-items: start;
+  }
+}
+
+.home .home-principle-cells {
+  margin-top: var(--space-8);
+}
+
+.home .home-health {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-24);
+}
+
+.home-health-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-bottom: var(--space-20);
+}
+
+/* Now live: a bento with one featured card. */
+@media (min-width: 1024px) {
+  .home .home-bento {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "feature a b"
+      "feature c c";
+  }
+  .home .home-bento > :nth-child(1) { grid-area: feature; }
+  .home .home-bento > :nth-child(2) { grid-area: a; }
+  .home .home-bento > :nth-child(3) { grid-area: b; }
+  .home .home-bento > :nth-child(4) { grid-area: c; }
+}
+
+.home .field-card.is-featured {
+  border-color: color-mix(in srgb, var(--signal-access) 45%, var(--line));
+  background: color-mix(in srgb, var(--signal) 8%, var(--surface));
+}
+
+.home .field-card.is-featured .field-card-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40;
+}
+
+/* Index: every surface, dense and launcher-like. */
+.home .home-launcher {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-8);
+}
+
+/* System state: the site's own status panel. */
+.home .home-state-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: clamp(var(--space-16), 2.5vw, var(--space-28));
+}
+
+/* Visible at rest: nothing on the homepage waits for scroll to exist.
+   Entrance motion (the global section drift) is transform-only. */
+.home [data-reveal],
+.home .fade-in {
+  opacity: 1;
+}
+
+/* --- Reduced motion, tiered ------------------------------------------------
+   Remove: the needle sweep (spatial travel).
+   Soften: tick lighting becomes one 200ms fade with no stagger.
+   Keep: colour state changes on cells and pillars. */
+@media (prefers-reduced-motion: reduce) {
+  .contract-ring-needle {
+    animation: none;
+  }
+  .contract-ring-tick {
+    animation: ring-tick-lit 200ms linear backwards;
+    animation-delay: 0s !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .contract-ring-tick { fill: CanvasText; }
+  .contract-ring-tick.is-manual { fill: none; stroke: CanvasText; }
+  .contract-ring-needle line { stroke: Highlight; }
+  .contract-ring-needle circle { fill: Highlight; }
+  .home .home-health,
+  .home .home-state-panel { border: 1px solid CanvasText; }
+}
+
+/* --- Revision pass 1 ------------------------------------------------------ */
+.home .hero-sub {
+  text-align: left;
+  margin-inline: 0;
+}
+
+.home .contract-ring {
+  width: min(100%, 24rem);
+}
+
+@media (min-width: 1024px) {
+  .home-instrument {
+    margin-top: calc(-1 * var(--space-24));
+  }
+}
+
+/* Nine principles as a clean 3 x 3 (never a lone ninth cell). */
+@media (min-width: 600px) {
+  .home .home-principle-cells {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* The featured card fills its height: facts, then the link at the foot. */
+.home .field-card.is-featured {
+  display: flex;
+  flex-direction: column;
+}
+
+.home .field-card.is-featured .field-card-arrow {
+  margin-top: auto;
+}
+
+.home-contract-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: var(--space-24) 0 var(--space-24);
+  padding-top: var(--space-20);
+  border-top: 1px solid var(--line);
+}
+
+.home-contract-facts div {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.home-contract-facts dt {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.home-contract-facts dd {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.08;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Revision pass 2: close the dead bands where a section's bottom padding met
+   the next section's top padding (~200px of empty ground before each rule).
+   The statement section keeps its deliberate breathing room. */
+.home .home-hero {
+  padding-bottom: clamp(var(--space-40), 5vw, var(--space-64));
+}
+
+.home .home-demo {
+  padding-bottom: clamp(var(--space-48), 5vw, var(--space-64));
+}

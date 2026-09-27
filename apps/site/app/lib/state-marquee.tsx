@@ -50,11 +50,11 @@ export function StateMarquee() {
       className={`state-marquee${paused ? ' state-marquee--user-paused' : ''}`}
       ref={clipRef as Ref<HTMLElement>}
     >
-      <span className="state-marquee-header">System signals</span>
+      <span className="state-marquee-header">System status</span>
       <button
         className="state-marquee-toggle"
         aria-pressed={paused}
-        aria-label={paused ? 'Resume system signals' : 'Pause system signals'}
+        aria-label={paused ? 'Resume system status' : 'Pause system status'}
         onClick={() => setPaused((p) => !p)}
       >
         {paused ? '▶' : '❚❚'}
