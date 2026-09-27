@@ -16,7 +16,7 @@ export function DirectorDock() {
       rel="noopener noreferrer"
       data-cuelume-hover="bloom"
       data-cuelume-press="tick"
-      aria-label="Try the Studio — opens designesy.ai.studio in a new tab"
+      aria-label="Try the Studio (opens designesy.ai.studio in a new tab)"
       title="Try the Studio"
     >
       <svg

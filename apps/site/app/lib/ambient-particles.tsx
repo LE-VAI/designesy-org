@@ -194,7 +194,11 @@ export function AmbientParticles() {
       document.documentElement.getAttribute('data-theme') !== 'light';
     let blendMode: GlobalCompositeOperation = isDark() ? 'lighter' : 'source-over';
 
-    const count = Math.min(MAX_COUNT, Math.floor((w * h) / DENSITY));
+    // A page can ask for a quieter field (the homepage does, so the contract
+    // ring stays the one dominant mass): data-particles="quiet" on any
+    // ancestor element thins the field to roughly a third.
+    const quiet = document.querySelector('[data-particles="quiet"]') !== null;
+    const count = Math.min(MAX_COUNT, Math.floor((w * h) / (DENSITY * (quiet ? 2.8 : 1))));
 
     const now = performance.now();
     const dots: Dot[] = [];

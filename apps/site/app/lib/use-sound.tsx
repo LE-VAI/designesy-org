@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { play, setEnabled } from 'cuelume';
 
+/**
+ * Mirror the preference onto <html data-audio="on|off">. Check v04 requires the
+ * toggle to flip aria-pressed AND apply the preference as a [data-audio]
+ * attribute the audio layer can read; before this, only aria-pressed moved.
+ */
+function applyAudioAttr(on: boolean) {
+  document.documentElement.dataset.audio = on ? 'on' : 'off';
+}
+
 const STORAGE_KEY = 'designesy:sound';
 
 /**
@@ -39,6 +48,7 @@ export function useSoundPreference() {
 
     setEnabledState(initial);
     setEnabled(initial);
+    applyAudioAttr(initial);
     setReady(true);
   }, []);
 
@@ -55,6 +65,8 @@ export function useSoundPreference() {
         setEnabled(true);
         play('toggle');
       }
+
+      applyAudioAttr(next);
 
       try {
         localStorage.setItem(STORAGE_KEY, String(next));
