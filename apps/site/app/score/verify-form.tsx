@@ -722,7 +722,6 @@ export function VerifyForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             type="submit"
             disabled={status === 'loading' || !url.trim()}
             data-cuelume-press="sparkle"
-            data-firework="true"
             className="button primary score-submit"
           >
             {status === 'loading' ? (

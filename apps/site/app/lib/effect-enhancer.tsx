@@ -24,53 +24,24 @@ export function EffectEnhancer() {
     const handleMove = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
 
-      // Surface card spotlight + 3D tilt
-      const surfaceCard = target.closest<HTMLElement>('.surface-card');
-      if (surfaceCard) {
-        const rect = surfaceCard.getBoundingClientRect();
-        surfaceCard.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
-        surfaceCard.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
-
-        // 3D tilt on fine pointers (same as field cards)
-        if (finePointer.matches) {
-          const px = (e.clientX - rect.left) / rect.width - 0.5;
-          const py = (e.clientY - rect.top) / rect.height - 0.5;
-          surfaceCard.style.setProperty('--tilt-rx', `${py * -8}deg`);
-          surfaceCard.style.setProperty('--tilt-ry', `${px * 8}deg`);
-        }
-      }
-
-      // Field card spotlight + tilt
-      const fieldCard = target.closest<HTMLElement>('.field-card');
-      if (fieldCard) {
-        const rect = fieldCard.getBoundingClientRect();
-        fieldCard.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
-        fieldCard.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
-
-        if (finePointer.matches) {
-          const px = (e.clientX - rect.left) / rect.width - 0.5;
-          const py = (e.clientY - rect.top) / rect.height - 0.5;
-          fieldCard.style.setProperty('--tilt-rx', `${py * -6}deg`);
-          fieldCard.style.setProperty('--tilt-ry', `${px * 6}deg`);
-        }
+      // Card spotlight: the light follows the pointer across the card face.
+      // (The 3D tilt that used to ride along was removed in the 2026-09-27
+      // level-up: cards that rock under the cursor read as a template effect,
+      // and the contract's press scale already answers touch.)
+      const card = target.closest<HTMLElement>('.surface-card, .field-card');
+      if (card && finePointer.matches) {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
       }
     };
 
     const handleLeave = (e: PointerEvent) => {
       const target = e.target as HTMLElement;
-      const fieldCard = target.closest<HTMLElement>('.field-card');
-      if (fieldCard) {
-        fieldCard.style.removeProperty('--tilt-rx');
-        fieldCard.style.removeProperty('--tilt-ry');
-        fieldCard.style.removeProperty('--spot-x');
-        fieldCard.style.removeProperty('--spot-y');
-      }
-      const surfaceCard = target.closest<HTMLElement>('.surface-card');
-      if (surfaceCard) {
-        surfaceCard.style.removeProperty('--tilt-rx');
-        surfaceCard.style.removeProperty('--tilt-ry');
-        surfaceCard.style.removeProperty('--spot-x');
-        surfaceCard.style.removeProperty('--spot-y');
+      const card = target.closest<HTMLElement>('.surface-card, .field-card');
+      if (card) {
+        card.style.removeProperty('--spot-x');
+        card.style.removeProperty('--spot-y');
       }
     };
 

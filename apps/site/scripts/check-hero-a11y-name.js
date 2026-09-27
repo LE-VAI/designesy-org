@@ -3,7 +3,11 @@
  * hero a11y gate — the hero headline's accessible name must be stable and complete.
  *
  * WHY THIS EXISTS
- * The hero h1 is animated: the final word scrambles and cycles every 3.2s. On
+ * (2026-09-27: the rotator was retired and the headline is static, with its
+ * final word rendered from HERO_ACCENT. The clauses below accept either shape,
+ * so the invariant holds if a rotator ever returns.)
+ *
+ * The hero h1 was animated: the final word scrambled and cycled every 3.2s. On
  * 2026-09-25 the live page was read through Chrome's own accessibility tree and
  * the heading announced as:
  *
@@ -101,9 +105,13 @@ const CLAUSES = [
   },
   {
     id: 'headline-constant-is-derived',
-    test: (code) => /const HERO_HEADLINE\s*=\s*`[^`]*\$\{HERO_LINE_1\}[^`]*\$\{HERO_ROTATOR_WORDS\[0\]\}[^`]*`/.test(code),
-    why: 'HERO_HEADLINE must be DERIVED from the same rotator list the markup renders, not a second frozen sentence. Two hand-written copies of one sentence is the shape this lane exists to remove — the name would stay at words[0] while the list moved on.',
-    fix: 'Build HERO_HEADLINE from HERO_LINE_1 and HERO_ROTATOR_WORDS[0] in a template literal.',
+    // The final word is either a rotator's resting word (HERO_ROTATOR_WORDS[0])
+    // or, since the 2026-09-27 level-up, one static accent word (HERO_ACCENT).
+    // Either way the name must be built from the constant the markup renders.
+    test: (code) =>
+      /const HERO_HEADLINE\s*=\s*`[^`]*\$\{HERO_LINE_1\}[^`]*\$\{(?:HERO_ROTATOR_WORDS\[0\]|HERO_ACCENT)\}[^`]*`/.test(code),
+    why: 'HERO_HEADLINE must be DERIVED from the same constants the markup renders, not a second frozen sentence. Two hand-written copies of one sentence is the shape this lane exists to remove: the name would keep one word while the markup showed another.',
+    fix: 'Build HERO_HEADLINE from HERO_LINE_1 and the final word (HERO_ACCENT, or HERO_ROTATOR_WORDS[0] if a rotator returns) in a template literal.',
   },
   {
     id: 'rotator-lines-are-aria-hidden',
@@ -121,16 +129,22 @@ const CLAUSES = [
     fix: 'Add aria-hidden="true" to both <span className="hero-display-line ..."> elements inside the h1.',
   },
   {
-    id: 'rotator-wordlist-has-one-source',
+    id: 'final-word-has-one-source',
     test: (code) => {
-      const literal = code.match(/data-scramble-rotate-words='\[[^\]]*\]'/);
-      const derived = /data-scramble-rotate-words=\{JSON\.stringify\(HERO_ROTATOR_WORDS\)\}/.test(code);
-      // Pass when derived. Fail on a hardcoded literal, because that is the
-      // second frozen copy the constant exists to prevent.
-      return derived && !literal;
+      const block = heroH1Block(code);
+      if (!block) return false;
+      const literal = /data-scramble-rotate-words='\[[^\]]*\]'/.test(code);
+      if (literal) return false;
+      // A rotator, if one returns, must take its list from the constant.
+      if (/data-scramble-rotate-words=/.test(block)) {
+        return /data-scramble-rotate-words=\{JSON\.stringify\(HERO_ROTATOR_WORDS\)\}/.test(block);
+      }
+      // A static headline must render its final word from HERO_ACCENT, the
+      // same constant HERO_HEADLINE is built from.
+      return /\{HERO_ACCENT\}/.test(block) && /const HERO_ACCENT\s*=/.test(code);
     },
-    why: 'The rotator word list must be passed as JSON.stringify(HERO_ROTATOR_WORDS), not a hardcoded attribute string. A literal list beside the constant is two sources for one fact: HERO_HEADLINE would pin words[0] from the constant while the markup rotated a differently-ordered list.',
-    fix: 'Replace the data-scramble-rotate-words literal with {JSON.stringify(HERO_ROTATOR_WORDS)}.',
+    why: 'The headline\'s final word must have one source. A rotator takes its list from JSON.stringify(HERO_ROTATOR_WORDS); a static headline renders {HERO_ACCENT}. A literal word or list in the markup beside the constant is two sources for one fact, and the accessible name would drift from what is shown.',
+    fix: 'Render the final word as {HERO_ACCENT} (static) or pass data-scramble-rotate-words={JSON.stringify(HERO_ROTATOR_WORDS)} (rotator).',
   },
 ];
 

@@ -1,0 +1,763 @@
+/* ==========================================================================
+   Inspection: "Every check, run against the page", told by scroll
+   (lib/inspect-sequence). The scroll position picks the step; nothing here
+   advances on a timer except the step-one read sweep, which loops exactly.
+   Loaded after home-lvl.css (it uses the --lv-* instrument palette).
+   ========================================================================== */
+
+.home .home-inspect .home-split-head {
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.inspect {
+  --ix-head: var(--lv-head);
+  --ix-warn: var(--warn);
+  --ix-fail: var(--error);
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+}
+
+/* --- The steps: text, always readable; the active one is lit ------------ */
+
+.inspect-steps {
+  position: relative;
+  margin: 0;
+  padding: 12vh 0 18vh 1.6rem;
+  list-style: none;
+}
+
+.inspect-steps::before,
+.inspect-steps::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12vh;
+  bottom: 18vh;
+  width: 2px;
+  border-radius: 1px;
+}
+
+.inspect-steps::before {
+  background: var(--line-faint);
+}
+
+.inspect-steps::after {
+  background: linear-gradient(180deg, var(--lv-pass-b), var(--lv-pass-a));
+  transform-origin: top center;
+  transform: scaleY(0.25);
+  transition: transform 600ms var(--ease-out);
+}
+
+.inspect[data-step="2"] .inspect-steps::after { transform: scaleY(0.5); }
+.inspect[data-step="3"] .inspect-steps::after { transform: scaleY(0.75); }
+.inspect[data-step="4"] .inspect-steps::after { transform: scaleY(1); }
+
+.inspect-step {
+  display: grid;
+  align-content: center;
+  gap: 0.65rem;
+  min-height: 56vh;
+  opacity: 0.36;
+  transition: opacity 450ms var(--ease-out);
+}
+
+.inspect[data-step="1"] [data-inspect-step="1"],
+.inspect[data-step="2"] [data-inspect-step="2"],
+.inspect[data-step="3"] [data-inspect-step="3"],
+.inspect[data-step="4"] [data-inspect-step="4"] {
+  opacity: 1;
+}
+
+.inspect-step-n {
+  font: 500 0.74rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--lv-ink-accent);
+}
+
+.inspect-step-title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.45rem, 1.1rem + 1vw, 2rem);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.inspect-step-text {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* --- The stage: a glass window, sticky while the steps scroll ----------- */
+
+.inspect-stage {
+  position: sticky;
+  top: max(6rem, calc(50vh - 17rem));
+}
+
+.inspect-window {
+  position: relative;
+  margin: 0;
+  border-radius: var(--radius-xl);
+  background: var(--lv-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.inspect-chrome {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  height: 2.6rem;
+  padding: 0 0.95rem;
+  border-bottom: 1px solid var(--line-faint);
+  font: 500 0.72rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.inspect-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.inspect-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lv-well-line);
+}
+
+.inspect-url {
+  justify-self: center;
+  padding: 0.34rem 0.8rem;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.inspect-status {
+  position: relative;
+  display: inline-grid;
+  justify-items: end;
+}
+
+.inspect-status > span {
+  grid-area: 1 / 1;
+  transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+}
+
+.inspect-status-run { color: var(--muted); }
+.inspect-status-done { color: var(--lv-ink-accent); opacity: 0; transform: translateY(4px); }
+.inspect[data-step="4"] .inspect-status-run { opacity: 0; transform: translateY(-4px); }
+.inspect[data-step="4"] .inspect-status-done { opacity: 1; transform: none; }
+
+.inspect-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+}
+
+.inspect-rail i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--lv-pass-b), var(--lv-pass-a));
+  transform-origin: left center;
+  transform: scaleX(0.25);
+  transition: transform 600ms var(--ease-out);
+}
+
+.inspect[data-step="2"] .inspect-rail i { transform: scaleX(0.5); }
+.inspect[data-step="3"] .inspect-rail i { transform: scaleX(0.75); }
+.inspect[data-step="4"] .inspect-rail i { transform: scaleX(1); }
+
+.inspect-caption {
+  margin: 0.8rem 0.25rem 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+}
+
+/* --- The page under test: its own small palette, theme-following ------- */
+
+/* The demo page's own palette and radii, as token definitions. */
+:root {
+  --mp-paper: #0f1114;
+  --mp-ink: #eef0f3;
+  --mp-muted: #7d838c;
+  --mp-accent: #2dd4bf;
+  --mp-on-accent: #032621;
+  --mp-line: rgba(255, 255, 255, 0.08);
+  --mp-card: rgba(255, 255, 255, 0.03);
+  --mp-r-xs: 0.32em;
+  --mp-r-sm: 0.45em;
+  --mp-r-md: 0.6em;
+  --mp-r-lg: 0.8em;
+}
+
+[data-theme="light"] {
+  --mp-paper: #ffffff;
+  --mp-ink: #121418;
+  --mp-muted: #8b919a;
+  --mp-accent: #0d9488;
+  --mp-on-accent: #ffffff;
+  --mp-line: rgba(10, 20, 40, 0.09);
+  --mp-card: rgba(10, 20, 40, 0.025);
+}
+
+.inspect-canvas {
+  position: relative;
+  container-type: inline-size;
+  background: var(--mp-paper);
+}
+
+
+
+.mp {
+  position: relative;
+  padding: 1.5em 2.1em 2.2em;
+  font-family: var(--sans);
+  font-size: clamp(8.5px, 2.45cqi, 15px);
+  color: var(--mp-ink);
+}
+
+.mp-nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2em;
+  padding-bottom: 1.1em;
+  border-bottom: 1px solid var(--mp-line);
+  font-size: 0.8em;
+}
+
+.mp-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.mp-logo i {
+  width: 1em;
+  height: 1em;
+  border-radius: var(--mp-r-xs);
+  background: var(--mp-accent);
+}
+
+.mp-links {
+  display: inline-flex;
+  gap: 1.5em;
+  color: var(--mp-muted);
+}
+
+.mp-signin {
+  margin-left: auto;
+  padding: 0.4em 0.85em;
+  border-radius: var(--mp-r-sm);
+  box-shadow: inset 0 0 0 1px var(--mp-line);
+}
+
+.mp-hero {
+  display: grid;
+  justify-items: start;
+  gap: 1.1em;
+  padding: 2.4em 0 2.1em;
+}
+
+.mp-eyebrow {
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mp-accent);
+}
+
+.mp-h1 {
+  position: relative;
+  max-width: 13em;
+  font-size: 2.35em;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+}
+
+.mp-p {
+  position: relative;
+  max-width: 25em;
+  margin: 0;
+  font-size: 1.02em;
+  line-height: 1.55;
+  color: var(--mp-muted);
+}
+
+.mp-actions {
+  display: flex;
+  gap: 0.7em;
+  margin-top: 0.4em;
+}
+
+.mp-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75em 1.3em;
+  border-radius: var(--mp-r-md);
+  background: var(--mp-accent);
+  color: var(--mp-on-accent);
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.mp-btn.is-ghost {
+  background: transparent;
+  color: var(--mp-ink);
+  box-shadow: inset 0 0 0 1px var(--mp-line);
+}
+
+.mp-cards {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8em;
+}
+
+.mp-card {
+  display: grid;
+  gap: 0.4em;
+  padding: 1.1em;
+  border-radius: var(--mp-r-lg);
+  background: var(--mp-card);
+  box-shadow: inset 0 0 0 1px var(--mp-line);
+  font-size: 0.78em;
+  line-height: 1.4;
+  color: var(--mp-muted);
+}
+
+.mp-card b {
+  color: var(--mp-ink);
+  font-weight: 600;
+}
+
+.mp-card-ico {
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: var(--mp-r-sm);
+  background: color-mix(in srgb, var(--mp-accent) 22%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mp-accent) 40%, transparent);
+}
+
+/* --- Inspection layers ---------------------------------------------------
+   Each layer belongs to steps: read (1), measure (2), find (3, 4), verdict (4).
+   Transitions stagger by element (--i), so a step lands as a sweep, not a
+   blink. */
+
+.ix {
+  --i: 0;
+  position: relative;
+}
+
+.ix-box,
+.ix-tag,
+.ix-chip,
+.ix-ruler,
+.ix-target,
+.ix-find,
+.ix-flag,
+.ix-verdict {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 380ms var(--ease-out) calc(var(--i, 0) * 70ms),
+    transform 480ms var(--ease-out) calc(var(--i, 0) * 70ms);
+}
+
+.ix-box {
+  inset: -0.4em -0.5em;
+  border-radius: var(--mp-r-sm);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ix-head) 80%, transparent);
+  background: color-mix(in srgb, var(--ix-head) 7%, transparent);
+}
+
+.inspect[data-step="1"] .ix-box { opacity: 1; }
+.inspect[data-step="2"] .ix-box { opacity: 0.4; }
+.inspect[data-step="3"] .ix-box,
+.inspect[data-step="4"] .ix-box { opacity: 0.12; }
+
+.ix-tag,
+.ix-chip,
+.ix-flag {
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.38em 0.6em;
+  border-radius: var(--mp-r-xs);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: max(10px, 0.74em);
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(4px);
+}
+
+/* Inside the headline, em is the headline's size: scale the chips back. */
+.mp-h1 .ix-tag,
+.mp-h1 .ix-chip,
+.mp-h1 .ix-flag {
+  font-size: max(10px, 0.315em);
+}
+
+.ix-tag {
+  left: -0.5em;
+  bottom: calc(100% + 0.7em);
+  background: var(--ix-head);
+  color: var(--paper-on-signal);
+}
+
+.mp-nav .ix-tag {
+  top: calc(100% + 0.6em);
+  bottom: auto;
+  left: auto;
+  right: 0;
+}
+
+.mp-cards .ix-tag {
+  top: calc(100% + 0.7em);
+  bottom: auto;
+}
+
+/* Each tag sits where the page has room for it, the way an inspector does. */
+.mp-h1 .ix-tag {
+  left: auto;
+  right: -0.2em;
+  bottom: calc(100% + 0.3em);
+}
+
+.mp-p .ix-tag {
+  left: auto;
+  right: -0.5em;
+  bottom: auto;
+  top: calc(100% + 0.55em);
+}
+
+.mp-btn .ix-tag {
+  left: calc(100% + 0.9em);
+  bottom: auto;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.inspect[data-step="1"] .ix-tag { opacity: 1; transform: none; }
+
+/* Step two: measurements. */
+.ix-chip {
+  right: -0.4em;
+  bottom: calc(100% + 0.75em);
+  background: var(--mp-paper);
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ix-head) 55%, transparent);
+}
+
+.ix-chip b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ix-chip::before {
+  content: "";
+  width: 0.55em;
+  height: 0.3em;
+  border-left: 1.5px solid var(--ix-head);
+  border-bottom: 1.5px solid var(--ix-head);
+  transform: rotate(-45deg) translate(0.05em, -0.1em);
+}
+
+.ix-ruler {
+  left: 0;
+  right: 0;
+  bottom: -0.45em;
+  height: 1px;
+  background: var(--ix-head);
+  transform-origin: left center;
+  transform: scaleX(0.2);
+}
+
+.ix-ruler::before,
+.ix-ruler::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 7px;
+  background: var(--ix-head);
+}
+
+.ix-ruler::before { left: 0; }
+.ix-ruler::after { right: 0; }
+
+.ix-ruler span {
+  position: absolute;
+  left: calc(100% + 0.6em);
+  top: 50%;
+  translate: 0 -50%;
+  padding: 0.3em 0.5em;
+  border-radius: var(--mp-r-xs);
+  background: var(--ix-head);
+  color: var(--paper-on-signal);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: max(10px, 0.74em);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ix-target {
+  top: 0;
+  bottom: 0;
+  left: calc(100% + 0.5em);
+  width: 0.5em;
+  border-block: 1px solid var(--ix-head);
+  border-right: 1px solid var(--ix-head);
+  transform: translateX(-4px);
+}
+
+.ix-target span {
+  position: absolute;
+  left: calc(100% + 0.45em);
+  top: 50%;
+  translate: 0 -50%;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: max(10px, 0.8em);
+  line-height: 1;
+  color: var(--ix-head);
+  white-space: nowrap;
+}
+
+.inspect[data-step="2"] .ix-measure { opacity: 1; transform: none; }
+
+/* Steps three and four: findings. */
+.ix-find {
+  inset: -0.45em -0.55em;
+  border-radius: var(--mp-r-sm);
+  transform: scale(1.04);
+}
+
+.ix-find.is-warn {
+  box-shadow: 0 0 0 1.5px var(--ix-warn);
+  background: color-mix(in srgb, var(--ix-warn) 8%, transparent);
+}
+
+.ix-find.is-fail {
+  box-shadow: 0 0 0 1.5px var(--ix-fail);
+  background: color-mix(in srgb, var(--ix-fail) 8%, transparent);
+}
+
+.ix-flag {
+  color: var(--paper-on-signal);
+  box-shadow: var(--lv-flag-shadow);
+}
+
+.ix-flag b {
+  font-weight: 700;
+}
+
+.ix-flag em {
+  font-style: normal;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ix-flag.is-warn {
+  left: calc(100% + 1em);
+  top: 50%;
+  translate: 0 -50%;
+  background: color-mix(in srgb, var(--ix-warn) 88%, var(--lv-shade));
+  color: var(--lv-warn-ink);
+}
+
+.ix-flag.is-fail {
+  left: calc(100% + 1em);
+  top: 50%;
+  translate: 0 -50%;
+  background: color-mix(in srgb, var(--ix-fail) 92%, var(--lv-shade));
+}
+
+.inspect[data-step="3"] .ix-find,
+.inspect[data-step="3"] .ix-flag,
+.inspect[data-step="4"] .ix-find,
+.inspect[data-step="4"] .ix-flag {
+  opacity: 1;
+  transform: none;
+}
+
+/* Step four: the verdict card rises over the page. */
+.ix-verdict {
+  right: 1.1rem;
+  bottom: 1.1rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem 0.9rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--lv-glass);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  transform: translateY(14px) scale(0.98);
+}
+
+.inspect[data-step="4"] .ix-verdict {
+  opacity: 1;
+  transform: none;
+  transition-delay: 160ms;
+}
+
+.ix-verdict-grade {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 2.6rem;
+  line-height: 0.9;
+  color: var(--ink);
+}
+
+.ix-verdict-body {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ix-verdict-tally {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+.ix-verdict-tally b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ix-verdict-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Step one: the read sweep, an exact loop (it fades out before it wraps). */
+.ix-scan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+.ix-scan::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 78%,
+    color-mix(in srgb, var(--ix-head) 10%, transparent) 97%,
+    var(--ix-head) 100%
+  );
+  transform: translateY(-100%);
+  animation: ix-scan 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes ix-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  12% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+.inspect[data-step="1"] .ix-scan { opacity: 1; }
+.inspect:not([data-step="1"]) .ix-scan::before { animation-play-state: paused; }
+
+/* Continuous scrub where the browser can: the steps' rail follows scroll. */
+@supports (animation-timeline: view()) {
+  .inspect-steps {
+    view-timeline-name: --inspect;
+  }
+  .inspect-steps::after {
+    transition: none;
+    animation: ix-rail linear both;
+    animation-timeline: --inspect;
+    animation-range: contain -30% contain 130%;
+  }
+  @keyframes ix-rail {
+    from { transform: scaleY(0.04); }
+    to { transform: scaleY(1); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspect *,
+  .inspect *::before,
+  .inspect *::after {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+  .ix-scan { display: none; }
+}
+
+/* --- Narrow: the stage pins to the top, the steps scroll beneath -------- */
+@container (max-width: 520px) {
+  /* No room beside the paragraph: the flag rides its top-right corner. */
+  .ix-flag.is-warn {
+    left: auto;
+    right: 0.3em;
+    top: -1.05em;
+    translate: none;
+  }
+}
+
+@media (max-width: 959px) {
+  .inspect {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .inspect-stage {
+    order: -1;
+    top: 4.75rem;
+    z-index: 2;
+    padding-bottom: 0.75rem;
+    background: linear-gradient(180deg, var(--paper) 88%, transparent);
+  }
+  .inspect-caption { display: none; }
+  .inspect-steps {
+    padding: 4vh 0 10vh 1.2rem;
+  }
+  .inspect-steps::before,
+  .inspect-steps::after {
+    top: 4vh;
+    bottom: 10vh;
+  }
+  .inspect-step {
+    min-height: 46vh;
+  }
+}
