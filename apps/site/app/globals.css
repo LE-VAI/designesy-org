@@ -13987,3 +13987,14 @@ select {
     border: 1px solid CanvasText;
   }
 }
+
+/* Font-swap stability (2026-09-27): the right-hand group is anchored to the
+   capsule's right edge instead of growing from the wordmark's edge, so when the
+   wordmark's face swaps in (a cold load) the group's box does not move. Its
+   children were already right-aligned; now the box is too. It still shrinks
+   when space is tight (flex-shrink 1, min-width 0), so nav overflow behaviour
+   is unchanged. */
+.topbar .topbar-right {
+  flex: 0 1 auto;
+  margin-left: auto;
+}
