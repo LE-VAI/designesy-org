@@ -1,11 +1,10 @@
 'use client';
 
 /**
- * Director dock — persistent conversational entry point.
- * Mirrors the BackButton language: fixed circle, opacity-gated,
- * lead-border, surface-raised fill. Sits on the right edge
- * (desktop) / bottom-right (mobile), paired with BackButton on the left.
- * Bridges to designesy.ai.studio — the conversational Director instance.
+ * Director dock: the persistent way into the Studio (designesy.ai.studio, the
+ * conversational Director). A labelled glass pill at the bottom-right, paired
+ * with the Back pill at the bottom-left. The label is always visible: it used
+ * to appear only on hover beside an unlabelled circle.
  */
 export function DirectorDock() {
   return (
@@ -16,8 +15,7 @@ export function DirectorDock() {
       rel="noopener noreferrer"
       data-cuelume-hover="bloom"
       data-cuelume-press="tick"
-      aria-label="Try the Studio (opens designesy.ai.studio in a new tab)"
-      title="Try the Studio"
+      aria-label="Ask the Studio (opens designesy.ai.studio in a new tab)"
     >
       <svg
         viewBox="0 0 16 16"
@@ -35,7 +33,9 @@ export function DirectorDock() {
         <path d="M3 5.5v3a1 1 0 0 0 1 1h1.5a0.5 0.5 0 0 1 0.5 0.5v1a1 1 0 0 1-1 1H4a2 2 0 0 1-2-2V5.5a0.5 0.5 0 0 1 0.5-0.5H3" />
         <path d="M9 5.5v3a1 1 0 0 0 1 1h1.5a0.5 0.5 0 0 1 0.5 0.5v1a1 1 0 0 1-1 1H10a2 2 0 0 1-2-2V5.5a0.5 0.5 0 0 1 0.5-0.5H9" />
       </svg>
-      <span className="director-dock-label">Try the Studio →</span>
+      <span className="director-dock-label">
+        <span className="director-dock-label-lead">Ask the </span>Studio
+      </span>
     </a>
   );
 }

@@ -7,8 +7,6 @@ import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
 import { DirectorDock } from './lib/director-dock';
 import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
-import { AmbientParticles } from './lib/ambient-particles';
-import { FireworkBurst } from './lib/firework-burst';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
@@ -217,7 +215,6 @@ export default function RootLayout({
         <BackButton />
         <DirectorDock />
         <DefinitionCopyEnhancer />
-        <FireworkBurst />
         <EffectEnhancer />
         <ScrambleEnhancer />
         <ScrollDepth />
@@ -226,11 +223,11 @@ export default function RootLayout({
             JS. Replaces the old hero-bounded mesh that showed a cutoff at
             extreme zoom-out. aria-hidden: decorative only. */}
         <div className="ambient-signal" aria-hidden="true" />
-        {/* Ambient particle field — fixed full-viewport canvas at z-index 0.
-            ~450 signal-blue dots drift via Perlin noise and pull toward the
-            cursor. Reads CSS-var palette + watches data-theme to swap with
-            night/day. Sits behind all content (z-1), above body paper. */}
-        <AmbientParticles />
+        {/* The ambient particle field and the click fireworks were removed in
+            the 2026-09-27 level-up: drifting dots and confetti are the stock
+            "AI site" look this contract exists to flag (DESIGN.md: no glowing
+            blobs, no AI sparkles), and the dots floated over body text. Motion
+            now lives only in instruments that show the product working. */}
         {children}
         <Analytics />
         <SpeedInsights />

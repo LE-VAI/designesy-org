@@ -129,7 +129,6 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             href="/"
             data-cuelume-hover="sparkle"
             data-cuelume-press="tick"
-            data-firework="true"
             aria-current={pathname === '/' ? 'page' : undefined}
           >
             {/* The site's own mark (favicon and share-card construction): a
@@ -149,7 +148,6 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                     ref={active ? activeRef : undefined}
                     data-cuelume-hover="tick"
                     data-cuelume-press="tick"
-                    data-firework={route.href === '/open' ? true : undefined}
                     className={active ? 'is-active' : undefined}
                     aria-current={active ? 'page' : undefined}
                   >

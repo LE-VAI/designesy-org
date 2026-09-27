@@ -862,7 +862,6 @@ export function MaturityAssessment() {
               className="button primary"
               style={{ fontSize: '0.85rem', opacity: !allAnswered ? 0.5 : 1 }}
               data-cuelume-press="sparkle"
-              data-firework="true"
             >
               See results →
             </button>
@@ -1002,7 +1001,6 @@ export function MaturityAssessment() {
             className="button primary"
             style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
             data-cuelume-press="sparkle"
-            data-firework="true"
           >
             Score your compliance with Designesy →
           </Link>

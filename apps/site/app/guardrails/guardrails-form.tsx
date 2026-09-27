@@ -184,7 +184,6 @@ export function GuardrailsForm({ initialUrl }: { initialUrl: string }) {
             className="button primary score-submit"
             disabled={status === 'loading' || !url.trim()}
             data-cuelume-press="sparkle"
-            data-firework="true"
           >
             {status === 'loading' ? (
               <span className="score-loading-state">

@@ -1076,6 +1076,22 @@ p {
   background: color-mix(in srgb, var(--signal-light) 8%, transparent);
 }
 
+/* --- Instrument light (2026-09-27) --------------------------------------
+   The one specular highlight on lit tiles and cells, the ink on an accent
+   fill, and the shade used to deepen a status fill. Declared once so every
+   control draws them from the palette (drift d05/d08). */
+:root {
+  --lv-shine: rgba(255, 255, 255, 0.34);
+  --lv-shine-soft: rgba(255, 255, 255, 0.26);
+  --lv-shade: #000;
+  --lv-warn-ink: #1d1400;
+  --lv-flag-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="light"] {
+  --lv-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
+}
+
 /* --- Motion toggle (WCAG 2.2.2 pause) — see lib/motion-toggle.tsx ---
    One attribute freezes every CSS animation site-wide; the rotator and the
    ambient particles read the same attribute in JS. Frozen, not removed: each
@@ -1201,9 +1217,8 @@ html[data-motion="paused"] *::after {
   justify-content: center;
   padding: 20vh var(--space-16) var(--space-16);
   background: color-mix(in srgb, var(--paper) 72%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  animation: cmdk-fade 180ms var(--ease-out);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
 }
 
 [data-theme="light"] .cmdk-overlay {
@@ -1213,9 +1228,9 @@ html[data-motion="paused"] *::after {
 .cmdk-panel {
   width: 100%;
   max-width: 40rem;
-  background: linear-gradient(180deg, rgba(20, 20, 26, 0.86), rgba(12, 12, 16, 0.92));
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  background: linear-gradient(180deg, rgba(20, 20, 26, 0.84), rgba(12, 12, 16, 0.9));
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: var(--radius-lg);
   box-shadow:
@@ -1225,7 +1240,6 @@ html[data-motion="paused"] *::after {
     inset 0 1px 0 color-mix(in srgb, var(--ink) 11%, transparent),
     inset 0 20px 40px -20px color-mix(in srgb, var(--ink) 4%, transparent);
   overflow: hidden;
-  animation: cmdk-pop 200ms var(--ease-out);
 }
 
 [data-theme="light"] .cmdk-panel {
@@ -1236,16 +1250,6 @@ html[data-motion="paused"] *::after {
     0 4px 16px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     inset 0 20px 40px -20px rgba(0, 0, 0, 0.04);
-}
-
-@keyframes cmdk-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes cmdk-pop {
-  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* --- input row --- */
@@ -1279,6 +1283,20 @@ html[data-motion="paused"] *::after {
   color: var(--muted-dim);
 }
 
+.cmdk-input:focus,
+.cmdk-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cmdk-input-row {
+  transition: box-shadow var(--duration-quick) var(--ease-out);
+}
+
+.cmdk-input-row:focus-within {
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--signal-access) 70%, transparent);
+}
+
 .cmdk-esc {
   font-family: inherit;
   font-size: 0.66rem;
@@ -1293,12 +1311,20 @@ html[data-motion="paused"] *::after {
 /* --- results list --- */
 
 .cmdk-list {
-  max-height: min(26rem, calc(100dvh - 36vh));
+  max-height: min(28rem, calc(100dvh - 36vh));
   overflow-y: auto;
   overscroll-behavior: contain; /* wheel/touch never chains to the page behind */
-  padding: var(--space-8) var(--space-8) var(--space-fine-55);
+  scroll-padding-block: var(--space-8);
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
+}
+
+.cmdk-list[data-sized] {
+  transition: height 120ms var(--ease-out);
+}
+
+.cmdk-list-inner {
+  padding: var(--space-6) var(--space-8) var(--space-8);
 }
 
 .cmdk-list::-webkit-scrollbar {
@@ -1310,12 +1336,6 @@ html[data-motion="paused"] *::after {
 }
 .cmdk-list::-webkit-scrollbar-track {
   background: transparent;
-}
-
-.cmdk-item-group {
-  color: var(--signal-light);
-  font-size: 0.8em;
-  font-weight: 500;
 }
 
 .cmdk-group + .cmdk-group {
@@ -1333,12 +1353,14 @@ html[data-motion="paused"] *::after {
 
 .cmdk-item {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-fine-70);
+  gap: var(--space-12);
   width: 100%;
+  min-height: 2.9rem;
   text-align: left;
-  padding: var(--space-fine-68) var(--space-12) var(--space-fine-68) var(--space-fine-85);
+  padding: var(--space-6) var(--space-10) var(--space-6) var(--space-10);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1390,10 +1412,65 @@ html[data-motion="paused"] *::after {
   -webkit-box-orient: vertical;
 }
 
-.cmdk-item-meta mark {
+.cmdk-item-meta mark,
+.cmdk-item-title mark {
   background: transparent;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.cmdk-item-meta mark {
   color: var(--fg);
-  font-weight: 600;
+}
+
+.cmdk-item-icon {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: color 120ms var(--ease), background-color 120ms var(--ease);
+}
+
+.cmdk-item.is-active .cmdk-item-icon {
+  color: var(--signal-light);
+  background: color-mix(in srgb, var(--signal-light) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal-light) 32%, transparent);
+}
+
+.cmdk-item[data-kind="score"] .cmdk-item-icon {
+  color: var(--paper-on-signal);
+  background: linear-gradient(180deg, var(--signal-light), var(--signal));
+  box-shadow: inset 0 1px 0 var(--lv-shine-soft);
+}
+
+.cmdk-item-enter {
+  font-family: inherit;
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-5);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 100ms var(--ease);
+}
+
+.cmdk-item.is-active .cmdk-item-enter {
+  opacity: 1;
+}
+
+.cmdk-footer-tip {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .cmdk-footer-tip {
+    display: none;
+  }
 }
 
 .cmdk-searching-dot {
@@ -1410,26 +1487,12 @@ html[data-motion="paused"] *::after {
   50% { opacity: 1; }
 }
 
-.cmdk-item-arrow {
-  color: var(--muted-dim);
-  opacity: 0;
-  transform: translateX(-3px);
-  transition: opacity 100ms var(--ease), transform 100ms var(--ease), color 100ms var(--ease);
-  flex-shrink: 0;
-}
-
 .cmdk-item.is-active {
   background: var(--surface-hover);
 }
 
 .cmdk-item.is-active::before {
   transform: translateY(-50%) scaleY(1);
-}
-
-.cmdk-item.is-active .cmdk-item-arrow {
-  opacity: 1;
-  transform: translateX(0);
-  color: var(--signal-light);
 }
 
 .cmdk-empty {
@@ -1545,12 +1608,10 @@ html[data-motion="paused"] *::after {
    position remain valid under WCAG since they are functional, not decorative;
    only animation-timing keyframes are gated. */
 @media (prefers-reduced-motion: reduce) {
-  .cmdk-overlay,
-  .cmdk-panel {
-    animation: none;
-  }
+  .cmdk-list[data-sized],
   .cmdk-item,
-  .cmdk-item-arrow,
+  .cmdk-item-icon,
+  .cmdk-item-enter,
   .cmdk-item::before {
     transition-duration: 0.01ms;
   }
@@ -1714,7 +1775,6 @@ html[data-motion="paused"] *::after {
 .hero-body,
 .hero-actions,
 .hero-sub,
-.hero-hint,
 .score-hero-input {
   position: relative;
   z-index: 1;
@@ -1740,9 +1800,7 @@ html[data-motion="paused"] *::after {
 /* Capability hint below the score input — quiet, single line */
 
 
-.hero-hint .text-link {
-  color: var(--muted);
-}
+
 
 .hero-actions {
   display: flex;
@@ -2727,14 +2785,20 @@ a.surface-card:active {
   );
 }
 
-/* Inner scroller — as wide as content, animated */
+/* Inner scroller — as wide as content, animated. Exact loop: every pill
+   carries its own trailing space (no gap, no padding inside the track), so
+   the track is exactly two periods wide and -50% lands on the seam. The lead
+   offset is a margin, which the percentage does not count. */
 .footer-dock-track {
   display: flex;
   align-items: center;
-  gap: var(--space-fine-40);
-  padding: 0 var(--space-12);
+  margin-left: var(--space-12);
   width: max-content;
-  animation: footer-dock-scroll 50s linear infinite;
+  animation: footer-dock-scroll 48s linear infinite;
+}
+
+.footer-dock-track > * {
+  margin-right: var(--space-fine-40);
 }
 
 .footer-dock:hover .footer-dock-track,
@@ -3034,21 +3098,10 @@ a.surface-card:active {
     border-color: var(--line-strong);
     transform: translateY(-1px);
   }
-  .health-rack-module:hover .health-rack-track {
-    stroke: var(--line);
-  }
-  .health-rack-module:hover .health-rack-value {
-    stroke: var(--signal);
-    stroke-width: 5.5;
-  }
-  .health-rack-module:hover .health-rack-numeral,
-  .health-rack-module:hover .health-rack-label {
-    color: var(--ink);
-    fill: var(--ink);
-  }
-  .health-rack-module:hover .health-rack-tip {
-    fill: var(--signal);
-  }
+  
+  
+  
+  
 }
 
 /* Mobile: collapse principle tiles to a single readable column. */
@@ -4039,14 +4092,20 @@ a.surface-card:active {
   );
 }
 
-/* Inner scroller — as wide as content, animated */
+/* Inner scroller — as wide as content, animated. Exact loop: every pill
+   carries its own trailing space (no gap, no padding inside the track), so
+   the track is exactly two periods wide and -50% lands on the seam. The lead
+   offset is a margin, which the percentage does not count. */
 .footer-dock-track {
   display: flex;
   align-items: center;
-  gap: var(--space-fine-40);
-  padding: 0 var(--space-12);
+  margin-left: var(--space-12);
   width: max-content;
-  animation: footer-dock-scroll 50s linear infinite;
+  animation: footer-dock-scroll 48s linear infinite;
+}
+
+.footer-dock-track > * {
+  margin-right: var(--space-fine-40);
 }
 
 .footer-dock:hover .footer-dock-track,
@@ -4323,21 +4382,10 @@ a.surface-card:active {
     border-color: var(--line-strong);
     transform: translateY(-1px);
   }
-  .health-rack-module:hover .health-rack-track {
-    stroke: var(--line);
-  }
-  .health-rack-module:hover .health-rack-value {
-    stroke: var(--signal);
-    stroke-width: 5.5;
-  }
-  .health-rack-module:hover .health-rack-numeral,
-  .health-rack-module:hover .health-rack-label {
-    color: var(--ink);
-    fill: var(--ink);
-  }
-  .health-rack-module:hover .health-rack-tip {
-    fill: var(--signal);
-  }
+  
+  
+  
+  
 }
 
 
@@ -4740,12 +4788,22 @@ a.surface-card:active {
   pointer-events: none;
 }
 
+/* Two identical groups and no padding inside the track: half its height is
+   exactly one period, so the -50% loop has no seam (state-marquee.tsx). The
+   top offset is a margin, which the percentage does not count. */
 .state-marquee-track {
   display: flex;
   flex-direction: column;
+  margin-top: var(--space-36);
+  padding: 0 var(--space-16);
+  animation: state-marquee-scroll 36s linear infinite;
+}
+
+.state-marquee-group {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-fine-55);
-  padding: var(--space-36) var(--space-16) var(--space-16);
-  animation: state-marquee-scroll 30s linear infinite;
+  padding-bottom: var(--space-fine-55);
 }
 
 .state-marquee:hover .state-marquee-track {
@@ -11408,6 +11466,23 @@ select {
   display: flex;
 }
 
+/* The form's foot: the scope control and one line of reassurance (quiet
+   text, not a dismissible bubble), sharing one row where there is room. */
+.score-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-16);
+}
+
+.score-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+}
+
 
 .principle-num {
   position: relative;
@@ -12551,11 +12626,11 @@ select {
 /* Proof rail — quiet, single cluster, real values only. */
 
 
-.hero-proof-grade.is-a { color: var(--grade-a); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); background: color-mix(in srgb, var(--grade-a) 8%, transparent); }
-.hero-proof-grade.is-b { color: var(--grade-b-light); border-color: color-mix(in srgb, var(--grade-b-light) 45%, transparent); background: color-mix(in srgb, var(--grade-b-light) 8%, transparent); }
-.hero-proof-grade.is-c { color: var(--grade-c); border-color: color-mix(in srgb, var(--grade-c) 45%, transparent); background: color-mix(in srgb, var(--grade-c) 8%, transparent); }
-.hero-proof-grade.is-d { color: var(--grade-d-glow); border-color: color-mix(in srgb, var(--grade-d-glow) 45%, transparent); background: color-mix(in srgb, var(--grade-d-glow) 8%, transparent); }
-.hero-proof-grade.is-f { color: var(--grade-f); border-color: color-mix(in srgb, var(--grade-f) 45%, transparent); background: color-mix(in srgb, var(--grade-f) 8%, transparent); }
+
+
+
+
+
 
 
 /* Recent-scores — the real cohort leaders, hairline ledger rows. */
@@ -12612,9 +12687,7 @@ select {
 
 /* The first chapter after the hero gets extra top air so the hero → chapter
    handoff reads as a page turn. */
-.hero-architectural + .section {
-  padding-top: clamp(var(--space-64), 9vw, 7.5rem);
-}
+
 
 /* ===========================================================================
    MOBILE ALIGNMENT / PADDING / SPACING PASS  (max-width: 720px)
@@ -12657,25 +12730,10 @@ select {
      phones each gauge shrinks to fit its column instead of pinning at 70px
      and bleeding edge-to-edge. Numeral scales with the gauge so 95/88 never
      overflows the ring. -- */
-  .health-rack-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-14) var(--space-8);
-  }
-  .health-rack-module {
-    gap: var(--space-8);
-    min-width: 0;
-  }
-  .health-rack-svg {
-    /* Fill the column; the cell's minmax(0,1fr) + this width:100% is what
-       actually stops the bleed. vw keeps it proportional as the phone grows. */
-    width: min(100%, 15vw);
-    height: auto;
-  }
-  .health-rack-numeral {
-    /* 24px fixed overflowed the small rings — scale with the gauge via
-       container-ish sizing: a clamp tied to viewport so it stays inside. */
-    font-size: clamp(0.9375rem, 0.85rem + 0.5vw, 1.5rem);
-  }
+  
+  
+  
+  
 
   /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
   .principle-body p {
@@ -12692,12 +12750,10 @@ select {
      11px is a deliberate concession at this weight (600) + tracking below
      the strict 12px caption floor, the minimum legible step for the
      instrument register. -- */
-  .health-rack-label,
   .section-heading-badge-label {
     font-size: 0.6875rem; /* 11px */
     letter-spacing: 0.11em;
   }
-  .health-rack-unit,
   .section-heading-badge-unit {
     font-size: 0.6875rem; /* 11px */
   }
@@ -13868,23 +13924,50 @@ select {
   }
 }
 
+.senses-panel {
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
+  box-shadow: var(--shadow-md), inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+/* Each row is one toggle button: the name, the line under it, and the state
+   tile all respond, and the whole row is the target (senses-menu.tsx). */
 .senses-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-12);
-  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+  width: 100%;
+  min-height: 3.5rem;
+  margin: 0;
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-12);
+  border: 0;
   border-radius: var(--radius-md);
-  transition: background-color var(--duration-quick) var(--ease);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--duration-quick) var(--ease),
+    transform var(--duration-quick) var(--ease-out);
 }
 
-.senses-row:hover {
-  background: var(--surface-hover);
+@media (hover: hover) and (pointer: fine) {
+  .senses-row:hover {
+    background: var(--surface-hover);
+  }
 }
 
-/* Haptics renders only where hardware can vibrate: an empty row hides. */
-.senses-row:not(:has(button)) {
-  display: none;
+.senses-row:active {
+  transform: scale(0.985);
+}
+
+.senses-row:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: -2px;
 }
 
 .senses-row-text {
@@ -13905,10 +13988,112 @@ select {
   color: var(--muted);
 }
 
-/* The motion toggle hides itself on phones in the topbar; inside the panel it
-   is the control, so it shows at every width. */
-.senses-panel .motion-toggle {
-  display: inline-flex;
+/* The state tile: lit when the sense is on. */
+.senses-tile {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.senses-row[aria-pressed="true"] .senses-tile {
+  color: var(--paper-on-signal);
+  background: linear-gradient(180deg, var(--signal-light), var(--signal));
+  box-shadow:
+    inset 0 1px 0 var(--lv-shine-soft),
+    0 6px 16px -8px color-mix(in srgb, var(--signal-light) 80%, transparent);
+}
+
+/* Glyphs: shapes move between states instead of characters swapping. */
+.sg {
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+}
+
+.sg * {
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Motion: a wave that travels while motion is on, and lies flat when paused.
+   The path repeats every 10 units and moves exactly one period per loop. */
+.sg-motion {
+  overflow: hidden;
+}
+
+.sg-wave {
+  transform-box: view-box;
+  transform-origin: 10px 10px;
+}
+
+.senses-row[aria-pressed="true"] .sg-wave {
+  animation: sg-wave 2.4s linear infinite;
+}
+
+.senses-row[aria-pressed="false"] .sg-wave {
+  transform: scaleY(0.12);
+}
+
+@keyframes sg-wave {
+  from { transform: translateX(0); }
+  to { transform: translateX(10px); }
+}
+
+/* Sound: the arcs fold away and a small cross takes their place. */
+.sg-mute {
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.senses-row[aria-pressed="false"] .sg-arc {
+  opacity: 0;
+  transform: scale(0.5) translateX(-2px);
+}
+
+.senses-row[aria-pressed="false"] .sg-mute {
+  opacity: 1;
+  transform: none;
+}
+
+/* Haptics: the buzz marks retract into the phone. */
+.senses-row[aria-pressed="false"] .sg-buzz-l {
+  opacity: 0;
+  transform: translateX(3px);
+}
+
+.senses-row[aria-pressed="false"] .sg-buzz-r {
+  opacity: 0;
+  transform: translateX(-3px);
+}
+
+/* Dark mode: the sun's rays draw in and a bite turns the disc into a moon. */
+.sg-moon-bite {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.senses-row--theme[aria-pressed="true"] .sg-moon-bite {
+  transform: translate(-11px, 3px);
+}
+
+.senses-row--theme[aria-pressed="true"] .sg-rays {
+  opacity: 0;
+  transform: scale(0.6) rotate(-30deg);
+}
+
+.senses-row--theme[aria-pressed="true"] .sg-core {
+  transform: scale(1.18);
 }
 
 /* One primary action. Its fill and text pair is the site primary button
@@ -13972,6 +14157,13 @@ select {
   .senses-panel {
     animation: none;
   }
+  .sg *,
+  .senses-row {
+    transition-duration: 0ms;
+  }
+  .senses-row[aria-pressed="true"] .sg-wave {
+    animation: none;
+  }
   .wordmark:hover .wordmark-mark,
   .wordmark:hover .wordmark-mark i,
   .senses.is-open .senses-glyph i {
@@ -13997,4 +14189,104 @@ select {
 .topbar .topbar-right {
   flex: 0 1 auto;
   margin-left: auto;
+}
+
+/* ==========================================================================
+   Floating dock (2026-09-27): Back and Studio as labelled glass pills in the
+   bottom corners, replacing two unlabelled circles at mid-height that read as
+   carousel arrows. Overrides the earlier circle rules above.
+   ========================================================================== */
+
+.back-button,
+.director-dock {
+  top: auto;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  width: auto;
+  height: 2.75rem;
+  min-width: 0;
+  min-height: 2.75rem;
+  gap: var(--space-8);
+  padding: 0 var(--space-16) 0 var(--space-12);
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 80%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 0 0 1px var(--line),
+    inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent),
+    var(--shadow-md);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transform: none;
+  opacity: 1;
+  animation: dock-in var(--duration-slow) var(--ease-out) 0.3s backwards;
+}
+
+.back-button { left: max(1.25rem, env(safe-area-inset-left)); }
+.director-dock { right: max(1.25rem, env(safe-area-inset-right)); }
+
+.back-button:hover,
+.director-dock:hover {
+  color: var(--ink);
+}
+
+.back-button:active,
+.director-dock:active {
+  transform: scale(0.97);
+}
+
+.back-button.is-leaving {
+  opacity: 0;
+  transform: translateX(-0.5rem);
+}
+
+.director-dock-label {
+  position: static;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  opacity: 1;
+  transform: none;
+  pointer-events: none;
+}
+
+.director-dock:hover .director-dock-label,
+.director-dock:focus-visible .director-dock-label {
+  transform: none;
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@media (max-width: 720px) {
+  .back-button,
+  .director-dock {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    height: 2.75rem;
+    padding: 0 var(--space-12);
+    font-size: 0.78rem;
+  }
+  .director-dock-label {
+    display: inline;
+  }
+  /* Phones: the shortest label that still names it ("Ask the" drops). */
+  .director-dock-label-lead {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-button,
+  .director-dock {
+    animation: none;
+  }
 }
