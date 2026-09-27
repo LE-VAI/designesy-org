@@ -1249,3 +1249,67 @@ button.pillar {
   }
 }
 
+
+/* --- See it score (lib/score-loop) ---
+   The 2:1 box is reserved before the video loads: no layout shift. The panel
+   stays dark in both themes, like a screen, because the loop is. */
+.score-loop {
+  margin: var(--space-32) 0 0;
+  display: grid;
+  gap: var(--space-12);
+}
+
+.score-loop-frame {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 2 / 1;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #010102;
+}
+
+.score-loop-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.score-loop-caption {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-16);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.score-loop-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 44px;
+  padding: 0 var(--space-16);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.score-loop-toggle:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+@media (max-width: 560px) {
+  .score-loop-caption {
+    flex-direction: column;
+  }
+}

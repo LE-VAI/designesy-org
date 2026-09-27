@@ -8,9 +8,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="apps/site/public/hero-score-gate.png">
-  <img src="apps/site/public/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 42-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="1280">
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/score-loop-poster.png">
+  <img src="docs/media/score-loop.webp" width="800" alt="A sweep arm runs the engine's checks around the contract ring while the page regions each check inspects outline in blue. Two findings pin to a generic page: v03 fails because no focus-visible ring is declared, and v06 warns because muted text measures 3.8 to 1. The page grades A.">
 </picture>
+<p><sub>A 6-second loop. It plays once and rests, and shows a still frame if you prefer reduced motion. <a href="https://le-vai.github.io/LE-VAI/loops/#designesy">Watch it on repeat</a>.</sub></p>
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
 
