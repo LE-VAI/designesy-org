@@ -118,7 +118,7 @@ export default function GuardrailsContractPage() {
 
         <div className="status-note">
           The guardrails emitter is the product layer: it turns a design
-          system into the file AI agents read and the lint that enforces it.
+          system into the file AI agents read and the lint that enforces it.{' '}
           <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>

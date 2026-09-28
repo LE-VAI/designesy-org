@@ -162,7 +162,7 @@ export default function MonitorContractPage() {
 
         <div className="status-note">
           The monitor contract is the continuous-governance layer: it turns
-          every prior designesy surface from a snapshot into a watched series.
+          every prior designesy surface from a snapshot into a watched series.{' '}
           <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>
