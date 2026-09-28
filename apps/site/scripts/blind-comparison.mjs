@@ -9,10 +9,17 @@
  * Two raters, applied independently to the same 30 leaderboard sites:
  *   Rater A — Designesy /api/score accessibility category verdict:
  *             PASS if the a11y category scores >= 60 (the floor threshold),
- *             FAIL otherwise. Deterministic engine, contract v0.4.0.
+ *             FAIL otherwise. Deterministic engine, scored through
+ *             live-score.mjs: a rate limit or network failure stops the run
+ *             and writes nothing; a page the engine cannot read is left out
+ *             and named in the report (it used to count as FAIL for both).
  *   Rater B — axe-core 4.10.2 (industry-standard WCAG a11y engine) injected
- *             into a real browser (CDP 127.0.0.1:9222), violations counted.
- *             PASS if zero serious/critical violations, FAIL otherwise.
+ *             into a real browser over CDP, violations counted. PASS if zero
+ *             serious/critical violations, FAIL otherwise. The browser is
+ *             any Chromium with remote debugging on CDP_HOST:CDP_PORT
+ *             (default 127.0.0.1:9222), for example a separate headless one:
+ *               chrome --headless=new --remote-debugging-port=9333 &
+ *               CDP_PORT=9333 node scripts/blind-comparison.mjs
  *
  * Neither rater sees the other's result — the comparison is blind by
  * construction (independent engines, independent execution).
@@ -32,15 +39,16 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { liveScore } from './live-score.mjs';
 
 const OUT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const BASE = 'https://www.designesy.org';
 const A11Y_PASS_THRESHOLD = 60; // mirrors the engine's a11y floor
 const PANEL = process.argv.includes('--panel');
 
-// ── CDP helpers (Chrome on 127.0.0.1:9222 — SYN-Chrome) ────────────────────
-const CDP_HOST = '127.0.0.1';
-const CDP_PORT = 9222;
+// ── CDP helpers (a Chromium with remote debugging on CDP_HOST:CDP_PORT) ─────
+const CDP_HOST = process.env.CDP_HOST || '127.0.0.1';
+const CDP_PORT = Number(process.env.CDP_PORT) || 9222;
 
 function newTab(url) {
   return fetch(`http://${CDP_HOST}:${CDP_PORT}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' })
@@ -219,38 +227,36 @@ async function main() {
   console.log(`[blind] ${urls.length} leaderboard sites — ${PANEL ? 'panel mode' : 'engine vs axe-core'}`);
 
   const rows = [];
+  // Sites with no verdict from one of the raters: named in the report, never
+  // counted. (An errored site used to enter the kappa as FAIL for both.)
+  const excluded = [];
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
-    try {
-      // Rater A — Designesy engine
-      const res = await fetch(`${BASE}/api/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const d = await res.json();
-      const a11yCat = d.categoryScores?.accessibility;
-      const a11yScore = a11yCat?.score ?? null;
-      const designesyVerdict = a11yScore === null ? 'SKIP' : a11yScore >= A11Y_PASS_THRESHOLD ? 'PASS' : 'FAIL';
-
-      // Rater B — axe-core (or human panel)
-      let axeVerdict = null, axeDetail = null;
-      if (PANEL) {
-        const packet = JSON.parse(readPacket());
-        const entry = packet.sites.find((s) => s.url === url);
-        axeVerdict = entry?.humanVerdict ?? 'UNRATED';
-      } else {
-        const axe = await axeAudit(url);
-        axeDetail = axe;
-        axeVerdict = axe.error ? 'ERROR' : axe.seriousCritical === 0 ? 'PASS' : 'FAIL';
-      }
-
-      rows.push({ url, a11yScore, designesyVerdict, axeVerdict, axeDetail });
-      console.log(`[${i + 1}/${urls.length}] ${url}  designesy=${designesyVerdict} (${a11yScore})  axe=${axeVerdict}`);
-    } catch (e) {
-      rows.push({ url, error: e.message });
-      console.log(`[${i + 1}/${urls.length}] ${url}  ERROR ${e.message}`);
+    // Rater A — Designesy engine. Throws on a rate limit or network failure, so
+    // a cut-short run writes nothing and the committed report stays whole.
+    const live = await liveScore(BASE, url);
+    if (live.excluded) {
+      excluded.push({ url, reason: `the engine could not read it (${live.excluded})` });
+      console.log(`[${i + 1}/${urls.length}] ${url}  left out: ${live.excluded}`);
+      continue;
     }
+    const a11yScore = live.data.categoryScores?.accessibility?.score ?? null;
+    const designesyVerdict = a11yScore === null ? 'SKIP' : a11yScore >= A11Y_PASS_THRESHOLD ? 'PASS' : 'FAIL';
+
+    // Rater B — axe-core (or human panel)
+    let axeVerdict = null, axeDetail = null;
+    if (PANEL) {
+      const packet = JSON.parse(readPacket());
+      const entry = packet.sites.find((s) => s.url === url);
+      axeVerdict = entry?.humanVerdict ?? 'UNRATED';
+    } else {
+      axeDetail = await axeAudit(url); // returns { error } rather than throwing
+      axeVerdict = axeDetail.error ? 'ERROR' : axeDetail.seriousCritical === 0 ? 'PASS' : 'FAIL';
+      if (axeDetail.error) excluded.push({ url, reason: `axe-core could not run in the browser (${axeDetail.error})` });
+    }
+
+    rows.push({ url, a11yScore, designesyVerdict, axeVerdict, axeDetail });
+    console.log(`[${i + 1}/${urls.length}] ${url}  designesy=${designesyVerdict} (${a11yScore})  axe=${axeVerdict}`);
     await new Promise((r) => setTimeout(r, 400));
   }
 
@@ -265,6 +271,7 @@ async function main() {
       : 'Engine (Designesy a11y category >= 60 = PASS) vs axe-core 4.10.2 (zero serious/critical violations = PASS), independent CDP execution',
     a11yPassThreshold: A11Y_PASS_THRESHOLD,
     kappa: kappa ? { ...kappa, label: kappaLabel(kappa.kappa) } : null,
+    excluded,
     sites: rows,
   };
 
@@ -297,17 +304,20 @@ function readPacket() {
 
 function renderMarkdown(r) {
   const lines = [];
-  lines.push('# Blind Comparison — Designesy vs Independent Assessor');
+  lines.push('# Blind comparison: Designesy against an independent assessor');
   lines.push('');
   lines.push(`- Generated: ${r.generatedAt}`);
   lines.push(`- Method: ${r.method}`);
+  if (r.excluded?.length) {
+    lines.push(`- Left out (no verdict from one rater): ${r.excluded.map((x) => `${x.url} (${x.reason})`).join('; ')}`);
+  }
   lines.push('');
   if (r.kappa) {
     lines.push(`## Agreement statistics`);
     lines.push('');
-    lines.push(`- **Cohen's κ = ${r.kappa.kappa}** (95% CI ${r.kappa.kappaCI95[0]} to ${r.kappa.kappaCI95[1]}) — ${r.kappa.label}`);
+    lines.push(`- **Cohen's κ = ${r.kappa.kappa}** (95% CI ${r.kappa.kappaCI95[0]} to ${r.kappa.kappaCI95[1]}): ${r.kappa.label}`);
     lines.push(`- n = ${r.kappa.n} sites, po = ${r.kappa.po}, pe = ${r.kappa.pe}`);
-    lines.push(`- Base rates: engine ${Math.round(r.kappa.baseRateA * 100)}% PASS vs independent ${Math.round(r.kappa.baseRateB * 100)}% PASS — the imbalance depresses κ (Feinstein–Cicchetti kappa paradox)`);
+    lines.push(`- Base rates: engine ${Math.round(r.kappa.baseRateA * 100)}% PASS against independent ${Math.round(r.kappa.baseRateB * 100)}% PASS; the imbalance depresses κ (the Feinstein–Cicchetti kappa paradox)`);
     lines.push(`- **ppos = ${r.kappa.ppos}** (proportionate positive agreement) · **pneg = ${r.kappa.pneg}** (proportionate negative agreement)`);
     lines.push(`- **MCC = ${r.kappa.mcc}** (Matthews correlation, prevalence-robust) · **Gwet's AC1 = ${r.kappa.ac1}** (prevalence-robust chance-corrected)`);
     lines.push(`- Both PASS: ${r.kappa.bothPass} · Both FAIL: ${r.kappa.bothFail} · Engine-only PASS: ${r.kappa.aPassBFail} · Independent-only PASS: ${r.kappa.aFailBPass}`);
@@ -321,12 +331,12 @@ function renderMarkdown(r) {
     const axe = s.axeDetail?.seriousCritical !== undefined && !s.axeDetail.error
       ? `${s.axeVerdict} (${s.axeDetail.seriousCritical} s/c)`
       : s.axeVerdict;
-    lines.push(`| ${s.url} | ${s.a11yScore ?? '—'} | ${s.designesyVerdict} | ${axe} |`);
+    lines.push(`| ${s.url} | ${s.a11yScore ?? 'not scored'} | ${s.designesyVerdict} | ${axe} |`);
   }
   lines.push('');
   lines.push(`## Reading this`);
   lines.push('');
-  lines.push(`Kappa measures agreement beyond chance between two independent raters. Agreement on PASS sites shows both engines agree a site is accessible; disagreement on FAIL sites shows the contract catches things axe misses (or vice versa) — the divergence itself is evidence, and the per-check detail explains which layer owns the difference.`);
+  lines.push(`Kappa measures agreement beyond chance between two independent raters. Agreement on PASS sites shows both engines agree a site is accessible; disagreement on FAIL sites shows the contract catches things axe misses (or the reverse). The divergence itself is evidence, and the per-check detail explains which layer owns the difference.`);
   lines.push('');
   return lines.join('\n');
 }
