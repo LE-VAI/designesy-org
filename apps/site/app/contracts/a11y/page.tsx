@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { a11yContract } from '../../lib/a11y-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
@@ -98,7 +99,7 @@ export default function A11yContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.4.0. Machine export at{' '}
+          Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <Link href="/contracts/a11y.json">/contracts/a11y.json</Link>.
         </div>
       </main>

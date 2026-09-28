@@ -299,6 +299,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'The contract\'s own palette is fully role-named (--ink, --paper, --surface, --signal, --ok/--warn/--error): color named by meaning rather than wavelength. Role-based naming is the documented best practice (zeroheight naming guide, Material 3), but nothing scored it. Both checks are WARN-only (style craft with no user harm) and self-SKIP when a site has no color tokens.',
     source: 'Designesy contract colors section, zeroheight naming guide 2026, Material 3 design tokens',
   },
+
+  // ── v0.4.1: editorial revision ──
+  {
+    version: 'v0.4.1',
+    date: '2026-09-28',
+    dimension: 'all',
+    change: 'modified',
+    title: 'Editorial revision: the contract text follows the public-copy rules',
+    description:
+      'The contract modules and the /contracts pages were revised together. A colon or parentheses replaces the em dash, the positive claim replaces rhetorical negation pivots, and number ranges read "to". No rule, value, token or check changed. The sibling contracts took the same pass and keep their versions.',
+    rationale:
+      'The contract asks product copy to state its claim plainly and to write ranges a screen reader can read: an unspaced en dash is skipped, so a range written with one is heard as two bare numbers. A patch version marks text that changed while every rule stayed the same.',
+    source: 'Designesy public-copy rules, GOV.UK style guide, plainlanguage.gov, NVDA symbol handling',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -503,7 +517,8 @@ export default function ChangelogPage() {
               { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
               { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
               { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
-              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored. Current version.' },
+              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored.' },
+              { version: 'v0.4.1', date: '2026-09-28', checks: 42, summary: 'Editorial revision: the contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
             ].map((v, i) => (
               <div
                 key={v.version}

@@ -70,7 +70,7 @@ const INDEX: SearchItem[] = [
   { title: 'Spring physics validator', href: '/spring-validator', group: 'Verify', keywords: 'spring physics damping stiffness mass overshoot reduced-motion accessibility vestibular validation m3 expressive framer motion react spring ios', meta: 'motion frontier' },
   { title: 'Specs', href: '/specs', group: 'Verify', keywords: 'specification engine checks detail', meta: '' },
   // Contract
-  { title: 'Design system contract', href: '/contracts/design-system', group: 'Contract', keywords: 'tokens motion acoustic takt cadence typography rules v0.4.0', meta: CONTRACT_VERSION },
+  { title: 'Design system contract', href: '/contracts/design-system', group: 'Contract', keywords: 'tokens motion acoustic takt cadence typography rules ' + CONTRACT_VERSION, meta: CONTRACT_VERSION },
   { title: 'Contracts index', href: '/contracts', group: 'Contract', keywords: 'agreements verification portable', meta: '' },
   { title: 'Tokens', href: '/contracts/tokens', group: 'Contract', keywords: 'color spacing type dtcg values', meta: 'W3C DTCG' },
   { title: 'Motion', href: '/contracts/motion', group: 'Contract', keywords: 'animation duration easing spring reduced', meta: '' },
