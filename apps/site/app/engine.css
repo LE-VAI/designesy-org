@@ -2173,7 +2173,8 @@ button.mt-row {
   min-height: 13rem;
   padding: var(--space-14) var(--ctl-inset);
   border-radius: inherit;
-  font: 400 0.9rem/1.6 var(--mono);
+  /* 16 px, the input floor: below it iOS zooms the page on focus. */
+  font: 400 1rem/1.6 var(--mono);
   resize: vertical;
 }
 
