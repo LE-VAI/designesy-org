@@ -15,7 +15,7 @@ export const graph = {
     {
       stage: 'Source',
       description:
-        'Observed material — external design intelligence, prior work, real artifacts.',
+        'Observed material: external design intelligence, prior work, real artifacts.',
       public_examples: [
         'External design intelligence research (W3C DTCG, Apple HIG, Material 3)',
         'Cuelume interaction sound library',
@@ -37,7 +37,7 @@ export const graph = {
       stage: 'Claim',
       description: 'A stated position derived from observation.',
       public_examples: [
-        'Motion is structural communication, not ornament',
+        'Motion is structural communication',
         'Acoustic tokens should be first-class design contract material',
         'If the response is louder than the action, it fails',
       ],
@@ -102,9 +102,9 @@ export const graph = {
       description: 'Real artifacts produced using the contract.',
       public_examples: [
         'designesy.org (live, ' + CONTRACT_VERSION + ', 23 packages, 10 machine exports)',
-        'Tile — interactive series composer (617 views on X)',
-        'Compile — principle compiler (built, pending hosting)',
-        'Continuity — founder narrative (shipped, underperformed, failure documented)',
+        'Tile: interactive series composer (617 views on X)',
+        'Compile: principle compiler (built, pending hosting)',
+        'Continuity: founder narrative (shipped, underperformed, failure documented)',
       ],
     },
   ],
