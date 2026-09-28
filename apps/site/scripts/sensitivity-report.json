@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-28T07:08:53.249Z",
+  "generatedAt": "2026-09-28T20:20:14.400Z",
   "base": "https://www.designesy.org",
-  "contractVersion": "v0.4.0",
+  "contractVersion": "v0.4.1",
   "method": "Real check statuses from live /api/score; composite recomputed locally under each perturbation, mirroring engine math.",
   "sites": 27,
   "excluded": [
@@ -244,6 +244,229 @@
       }
     },
     {
+      "url": "https://wikipedia.org",
+      "baseline": {
+        "score": 87.9,
+        "grade": "B",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 87.9,
+      "realGrade": "B",
+      "knobs": {
+        "w-10pct": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 81.3,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 94.6,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 82.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 85.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 89.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 76.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 94.6,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 80.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 92.6,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 94.6,
+          "grade": "A",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 82.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 87.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 87.5,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 89,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 88.1,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 88.7,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 87.7,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 88.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 88.5,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 85.7,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 88.4,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 87.9,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 88.2,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
       "url": "https://atlassian.design",
       "baseline": {
         "score": 86.1,
@@ -460,229 +683,6 @@
         },
         "oat-copywriting": {
           "score": 86.9,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        }
-      }
-    },
-    {
-      "url": "https://x.com",
-      "baseline": {
-        "score": 84.2,
-        "grade": "B",
-        "a11yFloorApplied": false,
-        "hardFailCeilingApplied": false
-      },
-      "realScore": 84.2,
-      "realGrade": "B",
-      "knobs": {
-        "w-10pct": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w+10pct": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w-20pct": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w+20pct": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn-0.25": {
-          "score": 74.7,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn-0.75": {
-          "score": 93.6,
-          "grade": "A",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "orig+5": {
-          "score": 81.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "bands-tight": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "bands-loose": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "a11y-50": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "a11y-70": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "nocaps": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×slop+5": {
-          "score": 93.6,
-          "grade": "A",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.25×slop+5": {
-          "score": 74.7,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×a11y70": {
-          "score": 93.6,
-          "grade": "A",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.25×a11y70": {
-          "score": 70,
-          "grade": "C",
-          "a11yFloorApplied": true,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5×orig+5": {
-          "score": 81.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×orig+5": {
-          "score": 90.6,
-          "grade": "A",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×nocaps": {
-          "score": 93.6,
-          "grade": "A",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5×nocaps": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-cadence": {
-          "score": 83.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-accessibility": {
-          "score": 83.7,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-semantic": {
-          "score": 82.1,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-motion": {
-          "score": 85.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-tokens": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-takt": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-poise": {
-          "score": 84.9,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-identity": {
-          "score": 84,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-interaction": {
-          "score": 84.8,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-performance": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-responsive": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-security": {
-          "score": 84.7,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-spec": {
-          "score": 84.2,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-copywriting": {
-          "score": 85,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -915,52 +915,52 @@
     {
       "url": "https://apple.com",
       "baseline": {
-        "score": 83.1,
+        "score": 82.1,
         "grade": "B",
         "a11yFloorApplied": false,
         "hardFailCeilingApplied": false
       },
-      "realScore": 83.1,
+      "realScore": 82.1,
       "realGrade": "B",
       "knobs": {
         "w-10pct": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+10pct": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w-20pct": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+20pct": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.25": {
-          "score": 73.6,
+          "score": 72.6,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.75": {
-          "score": 92.7,
+          "score": 91.7,
           "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "slop+5": {
-          "score": 78.1,
+          "score": 77.1,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -972,49 +972,49 @@
           "hardFailCeilingApplied": false
         },
         "bands-tight": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "bands-loose": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-50": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-70": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "nocaps": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×slop+5": {
-          "score": 87.7,
+          "score": 86.7,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.25×slop+5": {
-          "score": 68.6,
+          "score": 67.6,
           "grade": "D",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×a11y70": {
-          "score": 92.7,
+          "score": 91.7,
           "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -1038,97 +1038,97 @@
           "hardFailCeilingApplied": false
         },
         "warn0.75×nocaps": {
-          "score": 92.7,
+          "score": 91.7,
           "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "slop+5×nocaps": {
-          "score": 78.1,
+          "score": 77.1,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-cadence": {
-          "score": 82.3,
+          "score": 81.3,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-accessibility": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-semantic": {
-          "score": 81.8,
+          "score": 80.8,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-motion": {
-          "score": 81.2,
+          "score": 80.2,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-tokens": {
-          "score": 84.2,
+          "score": 83.2,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-takt": {
-          "score": 84.1,
+          "score": 83.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-poise": {
-          "score": 84,
+          "score": 83,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-identity": {
-          "score": 83.8,
+          "score": 82.8,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-interaction": {
-          "score": 83.8,
+          "score": 82.8,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-performance": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-responsive": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-security": {
-          "score": 83.7,
+          "score": 82.7,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-spec": {
-          "score": 83.1,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-copywriting": {
-          "score": 82.7,
+          "score": 81.7,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -1359,109 +1359,109 @@
       }
     },
     {
-      "url": "https://wikipedia.org",
+      "url": "https://x.com",
       "baseline": {
-        "score": 80.7,
+        "score": 81.5,
         "grade": "B",
         "a11yFloorApplied": false,
         "hardFailCeilingApplied": false
       },
-      "realScore": 80.7,
+      "realScore": 81.5,
       "realGrade": "B",
       "knobs": {
         "w-10pct": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+10pct": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w-20pct": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "w+20pct": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.25": {
-          "score": 74.1,
+          "score": 70.8,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn-0.75": {
-          "score": 87.4,
-          "grade": "B",
+          "score": 92.3,
+          "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "slop+5": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "orig+5": {
-          "score": 77.7,
+          "score": 78.5,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "bands-tight": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "bands-loose": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-50": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "a11y-70": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "nocaps": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×slop+5": {
-          "score": 87.4,
-          "grade": "B",
+          "score": 92.3,
+          "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.25×slop+5": {
-          "score": 74.1,
+          "score": 70.8,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×a11y70": {
-          "score": 87.4,
-          "grade": "B",
+          "score": 92.3,
+          "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
@@ -1472,67 +1472,67 @@
           "hardFailCeilingApplied": false
         },
         "slop+5×orig+5": {
-          "score": 77.7,
+          "score": 78.5,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×orig+5": {
-          "score": 84.4,
+          "score": 89.3,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×nocaps": {
-          "score": 87.4,
-          "grade": "B",
+          "score": 92.3,
+          "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "slop+5×nocaps": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-cadence": {
-          "score": 80.1,
+          "score": 80.9,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-accessibility": {
-          "score": 80.6,
+          "score": 81.3,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-semantic": {
-          "score": 82,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-motion": {
-          "score": 79.5,
+          "score": 79.8,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
+        "oat-motion": {
+          "score": 82.6,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
         "oat-tokens": {
-          "score": 81.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-takt": {
-          "score": 80.6,
+          "score": 80.4,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-poise": {
-          "score": 81.5,
+          "score": 82.3,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -1544,37 +1544,37 @@
           "hardFailCeilingApplied": false
         },
         "oat-interaction": {
-          "score": 78.6,
-          "grade": "C",
+          "score": 82.2,
+          "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-performance": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-responsive": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-security": {
-          "score": 81.3,
+          "score": 82.1,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-spec": {
-          "score": 80.7,
+          "score": 81.5,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "oat-copywriting": {
-          "score": 81.1,
+          "score": 82.4,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -2028,229 +2028,6 @@
       }
     },
     {
-      "url": "https://awwwards.com",
-      "baseline": {
-        "score": 71.6,
-        "grade": "C",
-        "a11yFloorApplied": false,
-        "hardFailCeilingApplied": false
-      },
-      "realScore": 71.6,
-      "realGrade": "C",
-      "knobs": {
-        "w-10pct": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w+10pct": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w-20pct": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "w+20pct": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn-0.25": {
-          "score": 61.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn-0.75": {
-          "score": 81.6,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "orig+5": {
-          "score": 68.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "bands-tight": {
-          "score": 71.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "bands-loose": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "a11y-50": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "a11y-70": {
-          "score": 70,
-          "grade": "C",
-          "a11yFloorApplied": true,
-          "hardFailCeilingApplied": false
-        },
-        "nocaps": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×slop+5": {
-          "score": 81.6,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.25×slop+5": {
-          "score": 61.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×a11y70": {
-          "score": 81.6,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.25×a11y70": {
-          "score": 61.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5×orig+5": {
-          "score": 68.6,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×orig+5": {
-          "score": 78.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "warn0.75×nocaps": {
-          "score": 81.6,
-          "grade": "B",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "slop+5×nocaps": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-cadence": {
-          "score": 72.1,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-accessibility": {
-          "score": 71.5,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-semantic": {
-          "score": 71.9,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-motion": {
-          "score": 70,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-tokens": {
-          "score": 72.9,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-takt": {
-          "score": 70.9,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-poise": {
-          "score": 71,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-identity": {
-          "score": 72.5,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-interaction": {
-          "score": 69.7,
-          "grade": "D",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-performance": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-responsive": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-security": {
-          "score": 72.3,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-spec": {
-          "score": 71.6,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        },
-        "oat-copywriting": {
-          "score": 72.8,
-          "grade": "C",
-          "a11yFloorApplied": false,
-          "hardFailCeilingApplied": false
-        }
-      }
-    },
-    {
       "url": "https://roastbyai.com",
       "baseline": {
         "score": 71.2,
@@ -2474,6 +2251,229 @@
       }
     },
     {
+      "url": "https://awwwards.com",
+      "baseline": {
+        "score": 70.3,
+        "grade": "C",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false
+      },
+      "realScore": 70.3,
+      "realGrade": "C",
+      "knobs": {
+        "w-10pct": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+10pct": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w-20pct": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "w+20pct": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.25": {
+          "score": 59.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn-0.75": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "orig+5": {
+          "score": 67.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-tight": {
+          "score": 70.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "bands-loose": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-50": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "a11y-70": {
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
+          "hardFailCeilingApplied": false
+        },
+        "nocaps": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×slop+5": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×slop+5": {
+          "score": 59.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×a11y70": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.25×a11y70": {
+          "score": 59.7,
+          "grade": "F",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×orig+5": {
+          "score": 67.3,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×orig+5": {
+          "score": 78,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "warn0.75×nocaps": {
+          "score": 81,
+          "grade": "B",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "slop+5×nocaps": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-cadence": {
+          "score": 70.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-accessibility": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-semantic": {
+          "score": 70.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-motion": {
+          "score": 68.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-tokens": {
+          "score": 71.7,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-takt": {
+          "score": 69.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-poise": {
+          "score": 69.7,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-identity": {
+          "score": 71.2,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-interaction": {
+          "score": 68.4,
+          "grade": "D",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-performance": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-responsive": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-security": {
+          "score": 71.1,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-spec": {
+          "score": 70.3,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        },
+        "oat-copywriting": {
+          "score": 70.9,
+          "grade": "C",
+          "a11yFloorApplied": false,
+          "hardFailCeilingApplied": false
+        }
+      }
+    },
+    {
       "url": "https://zeroheight.com",
       "baseline": {
         "score": 70,
@@ -2509,13 +2509,13 @@
           "hardFailCeilingApplied": false
         },
         "warn-0.25": {
-          "score": 65.5,
-          "grade": "D",
-          "a11yFloorApplied": false,
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
           "hardFailCeilingApplied": false
         },
         "warn-0.75": {
-          "score": 83,
+          "score": 85.9,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -2545,7 +2545,7 @@
           "hardFailCeilingApplied": false
         },
         "a11y-50": {
-          "score": 74.3,
+          "score": 79.3,
           "grade": "C",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -2563,8 +2563,8 @@
           "hardFailCeilingApplied": false
         },
         "warn0.75×slop+5": {
-          "score": 88,
-          "grade": "B",
+          "score": 90.9,
+          "grade": "A",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
@@ -2581,9 +2581,9 @@
           "hardFailCeilingApplied": false
         },
         "warn0.25×a11y70": {
-          "score": 65.5,
-          "grade": "D",
-          "a11yFloorApplied": false,
+          "score": 70,
+          "grade": "C",
+          "a11yFloorApplied": true,
           "hardFailCeilingApplied": false
         },
         "slop+5×orig+5": {
@@ -2593,13 +2593,13 @@
           "hardFailCeilingApplied": false
         },
         "warn0.75×orig+5": {
-          "score": 80,
+          "score": 82.9,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
         },
         "warn0.75×nocaps": {
-          "score": 83,
+          "score": 85.9,
           "grade": "B",
           "a11yFloorApplied": false,
           "hardFailCeilingApplied": false
@@ -6073,31 +6073,31 @@
     },
     "warn-0.25": {
       "label": "WARN credit 0.5 → 0.25",
-      "gradeChanges": 20,
+      "gradeChanges": 18,
       "maxScoreDelta": 16.1,
-      "meanScoreDelta": 9.61,
-      "rankPositionsMoved": 20
+      "meanScoreDelta": 9.51,
+      "rankPositionsMoved": 21
     },
     "warn-0.75": {
       "label": "WARN credit 0.5 → 0.75",
-      "gradeChanges": 21,
-      "maxScoreDelta": 14.8,
-      "meanScoreDelta": 9.06,
+      "gradeChanges": 22,
+      "maxScoreDelta": 15.9,
+      "meanScoreDelta": 9.24,
       "rankPositionsMoved": 22
     },
     "slop+5": {
       "label": "slop deduction +5",
       "gradeChanges": 12,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 4.68,
-      "rankPositionsMoved": 26
+      "meanScoreDelta": 4.87,
+      "rankPositionsMoved": 25
     },
     "orig+5": {
       "label": "originality lift +5",
       "gradeChanges": 6,
       "maxScoreDelta": 5,
-      "meanScoreDelta": 2.63,
-      "rankPositionsMoved": 15
+      "meanScoreDelta": 2.56,
+      "rankPositionsMoved": 16
     },
     "bands-tight": {
       "label": "grade bands tightened 2pts (92/82/72/62)",
@@ -6116,16 +6116,16 @@
     "a11y-50": {
       "label": "a11y floor 60% → 50%",
       "gradeChanges": 0,
-      "maxScoreDelta": 4.3,
-      "meanScoreDelta": 0.22,
-      "rankPositionsMoved": 4
+      "maxScoreDelta": 9.3,
+      "meanScoreDelta": 0.4,
+      "rankPositionsMoved": 6
     },
     "a11y-70": {
       "label": "a11y floor 60% → 70%",
       "gradeChanges": 2,
       "maxScoreDelta": 16.1,
-      "meanScoreDelta": 1.56,
-      "rankPositionsMoved": 6
+      "meanScoreDelta": 1.51,
+      "rankPositionsMoved": 5
     },
     "nocaps": {
       "label": "hard-fail ceilings removed",
@@ -6139,119 +6139,119 @@
       "gradeChanges": 23,
       "maxScoreDelta": 26.1,
       "meanScoreDelta": 12.15,
-      "rankPositionsMoved": 26
+      "rankPositionsMoved": 24
     },
     "warn0.25×slop+5": {
       "label": "INTERACTION: WARN 0.25 × slop +5",
       "gradeChanges": 15,
       "maxScoreDelta": 19.8,
-      "meanScoreDelta": 8.3,
-      "rankPositionsMoved": 24
+      "meanScoreDelta": 8.55,
+      "rankPositionsMoved": 25
     },
     "warn0.75×a11y70": {
       "label": "INTERACTION: WARN 0.75 × a11y floor 70%",
-      "gradeChanges": 20,
+      "gradeChanges": 21,
       "maxScoreDelta": 14.8,
-      "meanScoreDelta": 8.01,
-      "rankPositionsMoved": 21
+      "meanScoreDelta": 8.09,
+      "rankPositionsMoved": 23
     },
     "warn0.25×a11y70": {
       "label": "INTERACTION: WARN 0.25 × a11y floor 70%",
-      "gradeChanges": 20,
-      "maxScoreDelta": 16.1,
-      "meanScoreDelta": 10.07,
+      "gradeChanges": 19,
+      "maxScoreDelta": 17.9,
+      "meanScoreDelta": 10.06,
       "rankPositionsMoved": 19
     },
     "slop+5×orig+5": {
       "label": "INTERACTION: slop +5 × originality +5",
       "gradeChanges": 15,
       "maxScoreDelta": 16,
-      "meanScoreDelta": 4.98,
+      "meanScoreDelta": 5.09,
       "rankPositionsMoved": 20
     },
     "warn0.75×orig+5": {
       "label": "INTERACTION: WARN 0.75 × originality +5",
       "gradeChanges": 18,
       "maxScoreDelta": 19.8,
-      "meanScoreDelta": 8.8,
-      "rankPositionsMoved": 24
+      "meanScoreDelta": 9.06,
+      "rankPositionsMoved": 25
     },
     "warn0.75×nocaps": {
       "label": "INTERACTION: WARN 0.75 × ceilings removed",
-      "gradeChanges": 21,
-      "maxScoreDelta": 14.8,
-      "meanScoreDelta": 9.06,
+      "gradeChanges": 22,
+      "maxScoreDelta": 15.9,
+      "meanScoreDelta": 9.24,
       "rankPositionsMoved": 22
     },
     "slop+5×nocaps": {
       "label": "INTERACTION: slop +5 × ceilings removed",
       "gradeChanges": 12,
       "maxScoreDelta": 15,
-      "meanScoreDelta": 4.68,
-      "rankPositionsMoved": 26
+      "meanScoreDelta": 4.87,
+      "rankPositionsMoved": 25
     },
     "oat-cadence": {
       "label": "OAT: cadence weight ×1.5",
       "gradeChanges": 1,
       "maxScoreDelta": 2.1,
       "meanScoreDelta": 0.62,
-      "rankPositionsMoved": 5
+      "rankPositionsMoved": 4
     },
     "oat-accessibility": {
       "label": "OAT: accessibility weight ×1.5",
       "gradeChanges": 1,
       "maxScoreDelta": 2.5,
-      "meanScoreDelta": 0.82,
-      "rankPositionsMoved": 7
+      "meanScoreDelta": 0.81,
+      "rankPositionsMoved": 9
     },
     "oat-semantic": {
       "label": "OAT: semantic weight ×1.5",
-      "gradeChanges": 0,
-      "maxScoreDelta": 2.1,
-      "meanScoreDelta": 0.62,
-      "rankPositionsMoved": 8
+      "gradeChanges": 1,
+      "maxScoreDelta": 1.7,
+      "meanScoreDelta": 0.6,
+      "rankPositionsMoved": 7
     },
     "oat-motion": {
       "label": "OAT: motion weight ×1.5",
       "gradeChanges": 3,
       "maxScoreDelta": 1.9,
-      "meanScoreDelta": 1,
-      "rankPositionsMoved": 18
+      "meanScoreDelta": 0.97,
+      "rankPositionsMoved": 19
     },
     "oat-tokens": {
       "label": "OAT: tokens weight ×1.5",
       "gradeChanges": 1,
       "maxScoreDelta": 1.8,
       "meanScoreDelta": 0.67,
-      "rankPositionsMoved": 0
+      "rankPositionsMoved": 2
     },
     "oat-takt": {
       "label": "OAT: takt weight ×1.5",
-      "gradeChanges": 1,
+      "gradeChanges": 2,
       "maxScoreDelta": 1.2,
-      "meanScoreDelta": 0.39,
-      "rankPositionsMoved": 6
+      "meanScoreDelta": 0.43,
+      "rankPositionsMoved": 11
     },
     "oat-poise": {
       "label": "OAT: poise weight ×1.5",
-      "gradeChanges": 1,
+      "gradeChanges": 2,
       "maxScoreDelta": 1.1,
       "meanScoreDelta": 0.61,
-      "rankPositionsMoved": 7
+      "rankPositionsMoved": 9
     },
     "oat-identity": {
       "label": "OAT: identity weight ×1.5",
       "gradeChanges": 2,
       "maxScoreDelta": 0.9,
-      "meanScoreDelta": 0.4,
+      "meanScoreDelta": 0.39,
       "rankPositionsMoved": 0
     },
     "oat-interaction": {
       "label": "OAT: interaction weight ×1.5",
-      "gradeChanges": 5,
+      "gradeChanges": 4,
       "maxScoreDelta": 2.5,
       "meanScoreDelta": 1.14,
-      "rankPositionsMoved": 12
+      "rankPositionsMoved": 14
     },
     "oat-performance": {
       "label": "OAT: performance weight ×1.5",
@@ -6279,14 +6279,14 @@
       "gradeChanges": 0,
       "maxScoreDelta": 1.4,
       "meanScoreDelta": 0.18,
-      "rankPositionsMoved": 0
+      "rankPositionsMoved": 4
     },
     "oat-copywriting": {
       "label": "OAT: copywriting weight ×1.5",
       "gradeChanges": 2,
       "maxScoreDelta": 2,
-      "meanScoreDelta": 0.74,
-      "rankPositionsMoved": 6
+      "meanScoreDelta": 0.72,
+      "rankPositionsMoved": 7
     }
   },
   "mostSensitive": [
@@ -6296,63 +6296,63 @@
       "gradeChanges": 23,
       "maxScoreDelta": 26.1,
       "meanScoreDelta": 12.15,
-      "rankPositionsMoved": 26
+      "rankPositionsMoved": 24
     },
     {
       "id": "warn-0.75",
       "label": "WARN credit 0.5 → 0.75",
-      "gradeChanges": 21,
-      "maxScoreDelta": 14.8,
-      "meanScoreDelta": 9.06,
+      "gradeChanges": 22,
+      "maxScoreDelta": 15.9,
+      "meanScoreDelta": 9.24,
       "rankPositionsMoved": 22
     },
     {
       "id": "warn0.75×nocaps",
       "label": "INTERACTION: WARN 0.75 × ceilings removed",
-      "gradeChanges": 21,
-      "maxScoreDelta": 14.8,
-      "meanScoreDelta": 9.06,
+      "gradeChanges": 22,
+      "maxScoreDelta": 15.9,
+      "meanScoreDelta": 9.24,
       "rankPositionsMoved": 22
-    },
-    {
-      "id": "warn-0.25",
-      "label": "WARN credit 0.5 → 0.25",
-      "gradeChanges": 20,
-      "maxScoreDelta": 16.1,
-      "meanScoreDelta": 9.61,
-      "rankPositionsMoved": 20
-    },
-    {
-      "id": "warn0.25×a11y70",
-      "label": "INTERACTION: WARN 0.25 × a11y floor 70%",
-      "gradeChanges": 20,
-      "maxScoreDelta": 16.1,
-      "meanScoreDelta": 10.07,
-      "rankPositionsMoved": 19
     },
     {
       "id": "warn0.75×a11y70",
       "label": "INTERACTION: WARN 0.75 × a11y floor 70%",
-      "gradeChanges": 20,
+      "gradeChanges": 21,
       "maxScoreDelta": 14.8,
-      "meanScoreDelta": 8.01,
-      "rankPositionsMoved": 21
+      "meanScoreDelta": 8.09,
+      "rankPositionsMoved": 23
+    },
+    {
+      "id": "warn0.25×a11y70",
+      "label": "INTERACTION: WARN 0.25 × a11y floor 70%",
+      "gradeChanges": 19,
+      "maxScoreDelta": 17.9,
+      "meanScoreDelta": 10.06,
+      "rankPositionsMoved": 19
     },
     {
       "id": "warn0.75×orig+5",
       "label": "INTERACTION: WARN 0.75 × originality +5",
       "gradeChanges": 18,
       "maxScoreDelta": 19.8,
-      "meanScoreDelta": 8.8,
-      "rankPositionsMoved": 24
+      "meanScoreDelta": 9.06,
+      "rankPositionsMoved": 25
+    },
+    {
+      "id": "warn-0.25",
+      "label": "WARN credit 0.5 → 0.25",
+      "gradeChanges": 18,
+      "maxScoreDelta": 16.1,
+      "meanScoreDelta": 9.51,
+      "rankPositionsMoved": 21
     },
     {
       "id": "warn0.25×slop+5",
       "label": "INTERACTION: WARN 0.25 × slop +5",
       "gradeChanges": 15,
       "maxScoreDelta": 19.8,
-      "meanScoreDelta": 8.3,
-      "rankPositionsMoved": 24
+      "meanScoreDelta": 8.55,
+      "rankPositionsMoved": 25
     }
   ]
 }
