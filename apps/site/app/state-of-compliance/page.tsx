@@ -376,7 +376,7 @@ export default function StateOfCompliancePage() {
               <dt>Open</dt>
               <dd>
                 Every check, weight and band is on the <Link href="/methodology">methodology page</Link>. Score any URL at{' '}
-                <Link href="/score">/score</Link>, or run the engine yourself with <code>npx designesy-score</code>.
+                <Link href="/score">/score</Link>, or run the engine yourself with <code>npx @designesy/score</code>.
               </dd>
             </div>
           </dl>
