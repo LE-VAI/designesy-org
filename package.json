@@ -40,7 +40,7 @@
   "engines": {
     "node": ">=18"
   },
-  "private": false,
+  "private": true,
   "scripts": {
     "dev": "cd apps/site && npm run dev",
     "build": "cd apps/site && npm run build && cd packages/score && npx tsc -p tsconfig.json",

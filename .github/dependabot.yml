@@ -229,13 +229,17 @@ updates:
           - httpx
           - anyio
 
-  # ── npm: the published root package + the vendored haptics copy ──────────
+  # ── npm: the root package + the vendored haptics copy ───────────────────
   #
-  # The root package.json is `designesy-score`, published on npm (v1.0.4). It
-  # declares ZERO dependencies today, so nothing is missed right now — but it is
-  # a published artifact, so the first dependency it gains would be silently
-  # unmonitored for scheduled updates. Security alerts still cover it repo-wide;
-  # this closes the version-freshness gap.
+  # The root package.json is `designesy-score`, published on npm as v1.0.4 from
+  # an older tree, and it shares packages/score/dist/engine.js with the
+  # @designesy/score release line. It declares ZERO dependencies today, so
+  # nothing is missed right now — but it is a real artifact, so the first
+  # dependency it gains would be silently unmonitored for scheduled updates.
+  # Security alerts still cover it repo-wide; this closes the version-freshness
+  # gap. It is watched even though `private: true` now blocks an accidental
+  # republish from the root (npm returns EPRIVATE on real publish; a --dry-run
+  # does not run that check): the dependency surface still deserves watching.
   #
   # apps/site/vendor/web-haptics is a vendored copy of web-haptics@0.0.6 with two
   # peer dependencies and NO lockfile of its own. Covered here so it is watched
