@@ -157,7 +157,7 @@ const CORRECTIONS = [
 
 const VERIFICATION = [
   'Live route inspected: /labs/cadence structure, demo blocks, status language',
-  'Live CSS audit (48,755 bytes) — font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select all parsed',
+  'Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select all parsed',
   'Compared to design system contract ' + CONTRACT_VERSION + ' typography block',
   'Compared to Use Kit One · Design Review output format',
   'Checked anti-patterns: no px font sizes, no decorative display fonts, no default ::selection',

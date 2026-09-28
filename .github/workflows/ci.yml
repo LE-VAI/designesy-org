@@ -174,6 +174,17 @@ jobs:
         if: always()
         run: node scripts/check-data-surfaces.js
 
+      # No page may gain em dashes or rhetorical negation pivots beyond
+      # scripts/voice-baseline.json (the rules are in AGENTS.md, Public Copy).
+      - name: Voice ratchet
+        if: always()
+        run: node scripts/check-voice.js
+
+      # No sentence may wrap so that JSX glues two words ("the42-check").
+      - name: JSX glue
+        if: always()
+        run: node scripts/check-jsx-glue.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
