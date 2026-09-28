@@ -634,6 +634,15 @@
   .m3-go .eg-bar-go {
     width: 100%;
   }
+  /* Phone widths: the format's label goes above its choices, so the two long
+     choices ("CSS custom properties") get the row and wrap once at most. */
+  .m3-head .eg-seg {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "label"
+      "track"
+      "hint";
+  }
 }
 
 /* --- Motion preferences --------------------------------------------------- */
