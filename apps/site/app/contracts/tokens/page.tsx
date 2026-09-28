@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { tokensContract } from '../../lib/tokens-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
@@ -109,7 +110,7 @@ export default function TokensContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.4.0. Machine export at{' '}
+          Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>. The
           live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) passes
           all 10 conformance checks (verified 2026-08-09).

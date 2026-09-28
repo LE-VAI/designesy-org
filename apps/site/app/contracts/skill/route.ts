@@ -23,7 +23,7 @@ version: ${c.version}
 description: Design intelligence rules for building interfaces that match the Designesy contract. Use when building UI for Designesy, reviewing against the contract, or proposing design changes that must cite contract tokens.
 ---
 
-# Designesy Design System — v${c.version}
+# Designesy Design System: v${c.version}
 
 > ${c.provenance.doctrine}
 
@@ -115,19 +115,19 @@ AI coding agents. Updated ${c.updated}.
 - Supporting note: ${c.typography.supporting_note}
 - Rule: ${c.typography.rule}
 
-## Rules — Interaction (Poise, adopted v${c.interaction.adopted_in})
+## Rules: Interaction (Poise, adopted v${c.interaction.adopted_in})
 
 ${c.interaction.rules.map((r) => `- ${r}`).join('\n')}
 
-## Rules — Interface Feel (Takt, adopted v${c.takt.adopted_in})
+## Rules: Interface Feel (Takt, adopted v${c.takt.adopted_in})
 
 ${c.takt.rules.map((r) => `- ${r}`).join('\n')}
 
-## Rules — Typography (Cadence, adopted v${c.cadence.adopted_in})
+## Rules: Typography (Cadence, adopted v${c.cadence.adopted_in})
 
 ${c.cadence.rules.map((r) => `- ${r}`).join('\n')}
 
-## Rules — Motion
+## Rules: Motion
 
 ${c.motion.rules.map((r) => `- ${r}`).join('\n')}
 
@@ -139,7 +139,7 @@ ${c.components.map((comp) => `- **${comp.name}**: ${comp.states}`).join('\n')}
 
 ${c.accessibility.map((a) => `- ${a}`).join('\n')}
 
-## Anti-patterns — do not
+## Anti-patterns: do not
 
 ${c.anti_patterns.map((a) => `- ${a}`).join('\n')}
 
@@ -147,13 +147,13 @@ ${c.anti_patterns.map((a) => `- ${a}`).join('\n')}
 
 ${c.implementation.map((i) => `- ${i}`).join('\n')}
 
-## Verification — evidence requirements
+## Verification: evidence requirements
 
 Before shipping, verify:
 
 ${c.verification.map((v) => `- ${v}`).join('\n')}
 
-## Open tensions — unresolved
+## Open tensions: unresolved
 
 These are known gaps. If you encounter them, name the tension instead of inventing policy:
 
@@ -175,9 +175,9 @@ ${c.open_tensions.map((t) => `- ${t}`).join('\n')}
 
 ### Source labs
 
-- [Lab One · Poise](${c.provenance.first_lab.url}) — ${c.provenance.first_lab.role}
-- [Lab Two · Takt](${c.provenance.second_lab.url}) — ${c.provenance.second_lab.role}
-- [Lab Three · Cadence](${c.provenance.third_lab.url}) — ${c.provenance.third_lab.role}
+- [Lab One · Poise](${c.provenance.first_lab.url}): ${c.provenance.first_lab.role}
+- [Lab Two · Takt](${c.provenance.second_lab.url}): ${c.provenance.second_lab.role}
+- [Lab Three · Cadence](${c.provenance.third_lab.url}): ${c.provenance.third_lab.role}
 
 ### Field checks
 
@@ -187,11 +187,11 @@ ${c.cadence.verification.map((v) => `- ${v}`).join('\n')}
 
 ### External ingests
 
-${c.provenance.external_ingests.map((e) => `- [${e.name}](${e.url}) by ${e.author} — ${e.role}${'license' in e ? ` (${e.license})` : ''}`).join('\n')}
+${c.provenance.external_ingests.map((e) => `- [${e.name}](${e.url}) by ${e.author}: ${e.role}${'license' in e ? ` (${e.license})` : ''}`).join('\n')}
 
 ### Adoption history
 
-${c.adoption_history.map((h) => `- **v${h.version}** (${h.date}): ${h.summary}${'from_lab' in h ? ` — from Lab ${h.from_lab}` : ''}${'evidence' in h ? `\n  Evidence: ${h.evidence.join(', ')}` : ''}`).join('\n')}
+${c.adoption_history.map((h) => `- **v${h.version}** (${h.date}): ${h.summary}${'from_lab' in h ? `: from Lab ${h.from_lab}` : ''}${'evidence' in h ? `\n  Evidence: ${h.evidence.join(', ')}` : ''}`).join('\n')}
 `;
 
   return new Response(body, {

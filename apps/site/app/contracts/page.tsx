@@ -9,7 +9,10 @@ import { DemoCell, DemoGrid } from '../lib/demo-cell';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
-import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { CONTRACT_VERSION, designSystemContract } from '../lib/design-system-contract';
+
+// The version copywriting arrived in: history, not the live version.
+const COPYWRITING_SINCE = 'v' + designSystemContract.copywriting.adopted_in;
 
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
@@ -90,8 +93,8 @@ const PRIMITIVE_SHAPE_MOTION = [
 const SPACING_RULES = [
   { name: 'Shell horizontal', value: '1.5rem (1rem ≤560px)', note: '.site-shell / .surface-page' },
   { name: 'Section vertical', value: '3.5rem / 3rem doctrine', note: '.section / .doctrine-section' },
-  { name: 'Card padding', value: '1.25–1.5rem', note: 'pillars, surfaces, items' },
-  { name: 'Grid gap', value: '0.75–1rem', note: 'pillar / surface grids' },
+  { name: 'Card padding', value: '1.25 to 1.5rem', note: 'pillars, surfaces, items' },
+  { name: 'Grid gap', value: '0.75 to 1rem', note: 'pillar / surface grids' },
   { name: 'Control min height', value: '42px buttons, 32px sound toggle', note: 'touch-friendly targets' },
   { name: 'Breakpoints', value: '860px · 720px · 560px', note: 'grids · topbar · single-column' },
 ];
@@ -100,9 +103,9 @@ const TYPOGRAPHY_RULES = [
   'Body: 16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
   'Headings: weight 700, line-height 1.08, letter-spacing -0.02em',
   'Hero wordmark: clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
-  'Eyebrows: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
-  'Lede: 1.1–1.5rem, weight 500, ink — one clear claim, not a paragraph stack',
-  'Supporting note: 0.85–0.95rem, muted, max-width ~520–580px',
+  'Eyebrows: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
+  'Lede: 1.1 to 1.5rem, weight 500, ink (one clear claim in a single paragraph)',
+  'Supporting note: 0.85 to 0.95rem, muted, max-width ~520 to 580px',
   'Never invent decorative display fonts for public UI; system stack is the contract',
 ];
 
@@ -129,28 +132,28 @@ const A11Y_REQUIREMENTS = [
 const MOTION_RULES = [
   'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
   'Interactive settle: 160ms --ease-out on press scale',
-  'Hover lift only under (hover: hover) and (pointer: fine) — no fake hover on touch',
-  'Wordmark signal pulse: opacity heartbeat only; no blur glow, no gradient blobs',
+  'Hover lift only under (hover: hover) and (pointer: fine); touch gets no fake hover',
+  'Wordmark dot pulse: opacity heartbeat only; no blur glow, no gradient blobs',
   'prefers-reduced-motion: reduce → disable non-essential motion; sound defaults off as acoustic proxy',
 ];
 
 const TEN_MOTION_STANDARDS = [
-  'Easing is deliberate — use contract cubicBezier tokens, not bare CSS keywords',
-  'Properties are explicit — never transition:all; name the exact properties',
-  'Entrances have opacity — animate from scale(0.9–0.97) + opacity, never scale(0)',
-  'Keyboard is still — no motion on keyboard-initiated or 100+/day actions',
-  'Layout is not animated — never animate width, height, margin, padding, top, left',
-  'Touch is gated — :hover motion on touch-visible surfaces requires explicit gating',
-  'Duration is bounded — UI animation stays ≤ 300ms unless justified',
-  'Reduced-motion is handled — every movement has a prefers-reduced-motion path',
-  'Press is asymmetric — press and release use asymmetric timing',
-  'Easing is never ease-in — deceleration (ease-out) or custom curves only',
+  'Easing is deliberate: use contract cubicBezier tokens instead of bare CSS keywords',
+  'Properties are explicit: never transition:all; name the exact properties',
+  'Entrances have opacity: animate from scale(0.9 to 0.97) + opacity, never scale(0)',
+  'Keyboard is still: no motion on keyboard-initiated or 100+/day actions',
+  'Layout is not animated: never animate width, height, margin, padding, top, left',
+  'Touch is gated: :hover motion on touch-visible surfaces requires explicit gating',
+  'Duration is bounded: UI animation stays ≤ 300ms unless justified',
+  'Reduced-motion is handled: every movement has a prefers-reduced-motion path',
+  'Press is asymmetric: press and release use asymmetric timing',
+  'Easing is never ease-in: deceleration (ease-out) or custom curves only',
 ];
 
 const MOTION_BLOCK_ON_SIGHT = [
   'Using ease-in on any UI interaction',
   'Using transition: all instead of explicit properties',
-  'Animating from scale(0) instead of scale(0.9–0.97) + opacity',
+  'Animating from scale(0) instead of scale(0.9 to 0.97) + opacity',
   'Animating on keyboard-initiated or 100+/day actions',
   'Animating layout properties: width, height, margin, padding, top, left',
   'Ungated :hover motion on touch-visible surfaces',
@@ -164,13 +167,13 @@ const MOTION_CAUTION = [
 ];
 
 const ACOUSTIC_TOKENS_REF = [
-  'Engine: Cuelume v0.2.2 (MIT) — interaction sound synthesis via Web Audio API',
-  'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
-  '19 cues mapped to 19 interaction roles — see /acoustic-tokens for the full table',
+  'Engine: Cuelume v0.2.2 (MIT), interaction sound synthesis via the Web Audio API',
+  'Custom $type: sound via $extensions.designesy; net-new relative to W3C DTCG 2025.10',
+  '19 cues mapped to 19 interaction roles: see /acoustic-tokens for the full table',
   'Preference key: designesy:sound in localStorage; engine follows Designesy',
   'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
-  'No focus sounds — sounds fire on pointer/click, not on focus',
-  'No ambient audio — Cuelume is interaction-only; no background music or mood beds',
+  'No focus sounds: sounds fire on pointer/click, never on focus',
+  'No ambient audio: Cuelume is interaction-only; no background music or mood beds',
 ];
 
 const SPRING_TOKENS = [
@@ -193,7 +196,7 @@ const ANTI_PATTERNS = [
 ];
 
 const IMPLEMENTATION_NOTES = [
-  'Single live token source of truth — no secondary theme framework',
+  'Single live token source of truth: no secondary theme framework',
   'Server-rendered by default; client only for sound, bind, and preference controls',
   'metadataBase is https://www.designesy.org (apex redirects); public label is Designesy',
   'Interaction audio via Cuelume; middle-click guard is required',
@@ -209,61 +212,61 @@ const VERIFICATION = [
   'prefers-reduced-motion disables entrance and wordmark breath',
   'Contrast: ink on paper, muted on paper, accent on paper remain readable',
   'No public surface displays internal control-plane naming',
-  'Button text is a verb phrase or recognized command — not a bare noun (copywriting v38)',
+  'Button text is a verb phrase or recognized command, never a bare noun (copywriting v38)',
   'No trailing period on button text, labels, or tab text (copywriting v39)',
-  'Link text is descriptive — not bare "click here", "learn more", "here" (copywriting v40)',
+  'Link text is descriptive, never bare "click here", "learn more", "here" (copywriting v40)',
   'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
 ];
 
 const OPEN_TENSIONS = [
-  'Light theme is not contracted — dark technical foundation is provisional',
+  'Light theme is not contracted; the dark technical foundation is provisional',
   '--activation exists but has limited public surface usage',
   'Inter is named in the stack but not self-hosted; system fallback is intentional',
   'Shadow tokens exist; elevation language is still light-touch (borders lead)',
   'Human contract page and machine export remain dual sources until a single generator owns both',
-  'Keyboard-path verification packets are published for Poise only — not every public route',
-  'Inline-axis logical properties (margin-inline, padding-inline) applied — block-axis and border-inline remain physical',
-  'Block-axis logical properties (margin-block-start/end) not yet migrated — direction-ready is partial',
-  'border-inline-start not yet used — decorative borders still physical',
+  'Keyboard-path verification packets cover Poise only; other public routes have none yet',
+  'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical',
+  'Block-axis logical properties (margin-block-start/end) not yet migrated; direction-ready is partial',
+  'border-inline-start not yet used; decorative borders are still physical',
 ];
 
 const COPYWRITING_PRINCIPLES = [
-  'Button copy is a verb phrase (or a recognized single-word command), never a bare noun — "Save changes" not "Changes", "Delete file" not "File"',
+  'Button copy is a verb phrase (or a recognized single-word command), never a bare noun: "Save changes" not "Changes", "Delete file" not "File"',
   'Button text is ≤ 4 words; articles (a/an/the) removed for scannability',
-  'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs — the label must state the action',
+  'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs: the label must state the action',
   'Commands that open a further-input dialog end with an ellipsis (…); immediate commands do not',
-  'Error messages state what happened, what to do, and what to expect next — not just "An error occurred"',
-  'Error messages use plain language — no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
+  'Error messages state what happened, what to do, and what to expect next, beyond a bare "An error occurred"',
+  'Error messages use plain language: no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
   'Error messages don\'t overapologize and don\'t introduce "we/us" unless the system caused the error',
-  'Empty states have a clear next action (button or link with a verb), not just a message',
-  'Link text is descriptive of the destination, not bare "click here / learn more / read more / here"',
-  'All UI text uses sentence case — not title case, not ALL CAPS (except eyebrows per typography contract)',
+  'Empty states offer a clear next action (a button or link with a verb) alongside the message',
+  'Link text describes the destination; never bare "click here / learn more / read more / here"',
+  'All UI text uses sentence case, never title case or ALL CAPS (except eyebrows, per the typography contract)',
   'No trailing period on buttons, labels, radio/checkbox text, tab text; periods only on full sentences (tooltips, error bodies, dialog bodies)',
-  'Active voice, not passive, except when the system is the subject of an error',
+  'Active voice, except when the system is the subject of an error',
   'Second person (you/your) for user-facing copy; "I/me" never used for the app\'s voice; "we" only when the system is the actor',
-  'No "please / thank you" in standard UI — only when the user is genuinely inconvenienced',
-  'Voice is constant; tone adapts to the user\'s emotional state — error tone is economical and direct, not humorous',
-  'Don\'t blame the user — error messages describe the problem and the fix, not the user\'s mistake',
+  'No "please / thank you" in standard UI, except when the user is genuinely inconvenienced',
+  'Voice is constant; tone adapts to the user\'s emotional state: error tone is economical and direct, never humorous',
+  'Don\'t blame the user: error messages describe the problem and the fix, never the user\'s mistake',
 ];
 
 const COPYWRITING_VERIFICATION = [
-  'v38: Button text is a verb phrase or recognized command — not a bare noun',
+  'v38: Button text is a verb phrase or recognized command (not a bare noun)',
   'v39: No trailing period on button text, labels, or tab text',
-  'v40: Link text is descriptive — not bare "click here", "learn more", "here"',
+  'v40: Link text is descriptive (not bare "click here", "learn more", "here")',
   'v41: No ALL CAPS UI text (except eyebrow labels per typography contract)',
 ];
 
 const COPYWRITING_GOVERNANCE = [
-  'Error message completeness (what happened + what to do + what to expect) — human review using NN/g 12-guideline rubric',
-  'Empty-state next-action presence — human review if no automated DOM check',
-  'Voice and tone consistency — human review against Mailchimp-style voice-and-tone guide',
+  'Error message completeness (what happened + what to do + what to expect): human review using NN/g 12-guideline rubric',
+  'Empty-state next-action presence: human review if no automated DOM check',
+  'Voice and tone consistency: human review against Mailchimp-style voice-and-tone guide',
   'Consistency map: one canonical label per action across the product (no "Sign in" vs "Log in")',
 ];
 
 const COPYWRITING_TOOLING = [
-  'Vale (errata-ai/vale) — YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
-  'textlint — pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
-  'alex — inclusive/insensitive-language linter for the blame-words subset',
+  'Vale (errata-ai/vale): YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
+  'textlint: pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
+  'alex: inclusive/insensitive-language linter for the blame-words subset',
 ];
 
 function TokenTable({
@@ -474,7 +477,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Copywriting adopted</span>
                   <span className="row-meta">
-                    UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, Carbon, Fluent, and HIG
+                    UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, Carbon, Fluent, and HIG
                   </span>
                 </span>
               </Link>
@@ -866,8 +869,7 @@ export default function ContractsPage() {
               <p className="definition-label">Signal roles</p>
               <p>
                 signal = brand action and wordmark dot · signal-light = hover and
-                focus lift · signal-dim = badge/wash · activation = reserved
-                highlight, not general chrome
+                focus lift · signal-dim = badge/wash · activation = highlights only
               </p>
             </div>
             <div className="definition">
@@ -915,12 +917,12 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
           <CheckGrid items={checkItemsFromStrings([
-              'Default radius 6px; compact controls 4px — no pill inflation',
+              'Default radius 6px, compact controls 4px, no pill inflation',
               'Borders define structure first; shadows are secondary depth',
               'Dark technical foundation: paper black, surfaces near-black',
               'One signal accent family; do not invent secondary brand hues',
-              'Cards stay flat until interaction — lift is earned on hover',
-              'Status notes use soft surface + line, not loud callout chrome',
+              'Cards stay flat until interaction: lift is earned on hover',
+              'Status notes use a soft surface and a line instead of loud callout chrome',
             ])} />
         </section>
 
@@ -1093,9 +1095,9 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="09e-copywriting">
-          <h2 className="doctrine-heading">09e · Copywriting ({CONTRACT_VERSION})</h2>
+          <h2 className="doctrine-heading">09e · Copywriting ({COPYWRITING_SINCE})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, IBM
+            UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, IBM
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
             <a
               href="https://detail.design"

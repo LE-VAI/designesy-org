@@ -86,7 +86,7 @@ export function GET() {
   // ── Build DTCG document ─────────────────────────────────────────────────
   const dtcg: Record<string, unknown> = {
     $schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
-    $description: `Designesy design system contract v${c.version} — W3C DTCG 2025.10 format. Custom types (spring, sound) declared via $extensions.designesy.`,
+    $description: `Designesy design system contract v${c.version}: W3C DTCG 2025.10 format. Custom types (spring, sound) declared via $extensions.designesy.`,
     // $version is NOT a DTCG 2025.10 property. Verified against the shipped
     // schema: its root permits exactly $schema, $type, $description,
     // $extensions, $extends, $deprecated, $root — with additionalProperties:
