@@ -1,47 +1,42 @@
-// /state-of-compliance — the annual "State of Design Compliance" report.
-//
-// This page is the trust-asset hub: it synthesizes existing leaderboard data
-// into a narrative that establishes Designesy as the institution of record
-// for design-system contract compliance. Pattern extracted from four
-// competitive audits (Artificial Analysis, zeroheight, Material Design 3,
-// Arena): "the trust asset IS the product; the product monetizes around it."
-//
-// Data sources (all existing — no new infrastructure):
-//   - leaderboard/seed.ts (30 scored sites, grade distribution, delta badges)
-//   - leaderboard/batch-data.ts (per-category breakdowns for M3 flagship finding)
-//   - methodology/page.tsx CHECKS array (40 checks, 14 categories, weights)
-//   - hero-stats.ts (engine check count, contract version, self-score)
-//
-// Sections:
-//   1. The Trust Contract — independence firewall
-//   2. The Cohort — aggregate stats + grade distribution histogram
-//   3. The Flagship Finding — Material 3 scores 59/F
-//   4. Framework Rankings — Design Systems category sorted by score
-//   5. Methodology — summary + link to full /methodology
-//   6. The Cadence — 24h SLA + weekly re-score + next report
+// /state-of-compliance: the annual report on the scored cohort. Every figure
+// is computed from the leaderboard's data (lib/data/cohort): the grades, the
+// categories the cohort struggles in, one system read against the cohort, and
+// the design-system ranking. Edition 1 is the baseline later editions compare
+// against.
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../instrument.css';
+import '../engine.css';
+import '../data.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
-import { CountUp } from '../lib/count-up';
-import {
-  SEED,
-  LEADERBOARD_LAST_SCORED,
-  LEADERBOARD_SCORED_COUNT,
-  type Grade,
-} from '../leaderboard/seed';
-import { BATCH_CATEGORY_SCORES } from '../leaderboard/batch-data';
 import { AgentActions } from '../lib/agent-actions';
+import { ENGINE_CHECK_COUNT, CONTRACT_VERSION } from '../hero-stats';
+import { CATEGORY_WEIGHTS, ENGINE_VERSION } from '../lib/check-definitions';
+import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import {
-  ENGINE_CHECK_COUNT,
-  CONTRACT_VERSION,
-  SELF_SCORE,
-  SELF_GRADE,
-} from '../hero-stats';
-
-export const revalidate = 3600;
+  COHORT,
+  COHORT_STATS,
+  GRADE_COUNTS,
+  GRADES,
+  GRADE_BANDS,
+  BATCH_CATEGORIES,
+  BATCH_RUN_DATE,
+  SCORES_DATE,
+  CATEGORY_LABELS,
+  WEIGHT_TOTAL,
+  categoryStats,
+  inCategory,
+  byUrl,
+  fmt,
+  round1,
+  toneOf,
+  scoreTone,
+} from '../lib/data/cohort';
+import { DataFigure, DataTable } from '../lib/data/figure';
+import { BarList } from '../lib/data/bars';
 
 export const metadata: Metadata = pageMeta({
   title: 'State of Design Compliance',
@@ -55,779 +50,381 @@ export const metadata: Metadata = pageMeta({
     'State of Design Compliance — 30 sites scored, only 1 passes. Material 3 scores 59/F. designesy.org/state-of-compliance',
 });
 
-// ── Derived data ───────────────────────────────────────────────────────────
+export const revalidate = 3600;
 
-const SCORED_SITES = SEED.filter((s) => s.score !== null);
-const GRADE_COUNTS: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
-for (const s of SCORED_SITES) {
-  if (s.grade && s.grade in GRADE_COUNTS) GRADE_COUNTS[s.grade]++;
-}
-const SCORE_VALUES = SCORED_SITES.map((s) => s.score as number);
-const MEAN_SCORE =
-  SCORE_VALUES.length > 0
-    ? Math.round((SCORE_VALUES.reduce((a, b) => a + b, 0) / SCORE_VALUES.length) * 10) / 10
-    : 0;
-const MEDIAN_SCORE =
-  SCORE_VALUES.length > 0
-    ? Math.round(
-        (SCORE_VALUES.slice().sort((a, b) => a - b)[Math.floor(SCORE_VALUES.length / 2)]) * 10,
-      ) / 10
-    : 0;
-
-const GRADE_BANDS = [
-  { grade: 'A' as Grade, count: GRADE_COUNTS['A'], min: 90, color: 'var(--signal-light)', bg: 'var(--signal-dim)' },
-  { grade: 'B' as Grade, count: GRADE_COUNTS['B'], min: 80, color: 'var(--activation)', bg: 'rgba(254,204,52,0.14)' },
-  { grade: 'C' as Grade, count: GRADE_COUNTS['C'], min: 70, color: 'var(--line-strong)', bg: 'var(--surface-hover)' },
-  { grade: 'D' as Grade, count: GRADE_COUNTS['D'], min: 60, color: 'var(--muted)', bg: 'var(--surface-soft)' },
-  { grade: 'F' as Grade, count: GRADE_COUNTS['F'], min: 0, color: 'var(--muted-dim)', bg: 'transparent' },
-];
-const MAX_GRADE_COUNT = Math.max(1, ...GRADE_BANDS.map((g) => g.count));
-
-// Framework rankings — Design Systems category, sorted by score desc
-const DESIGN_SYSTEMS_SITES = SCORED_SITES.filter((s) => s.category === 'Design Systems').sort(
-  (a, b) => (b.score as number) - (a.score as number),
-);
-
-// M3 flagship finding — pull its specific category breakdown
-const M3_URL = 'https://m3.material.io';
-const M3_SITE = SEED.find((s) => s.url === M3_URL);
-const M3_CATEGORIES = BATCH_CATEGORY_SCORES[M3_URL] || {};
-const M3_SCORED_CATEGORIES = Object.entries(M3_CATEGORIES).filter(
-  ([, v]) => v.score !== null,
-);
-const M3_BEST_CATEGORY = M3_SCORED_CATEGORIES.sort(
-  (a, b) => (b[1].score as number) - (a[1].score as number),
-)[0];
-const M3_WORST_CATEGORY = M3_SCORED_CATEGORIES.sort(
-  (a, b) => (a[1].score as number) - (b[1].score as number),
-)[0];
-
-// Universal fail patterns — categories where most of the cohort struggles
-function categoryFailRate(categoryKey: string): { passRate: number; avgScore: number } {
-  let totalScore = 0;
-  let count = 0;
-  for (const [url, cats] of Object.entries(BATCH_CATEGORY_SCORES)) {
-    const cat = cats[categoryKey];
-    if (cat && cat.score !== null) {
-      totalScore += cat.score;
-      count++;
-    }
-  }
-  return {
-    avgScore: count > 0 ? Math.round((totalScore / count) * 10) / 10 : 0,
-    passRate: count > 0 ? Math.round((totalScore / count)) : 0,
-  };
-}
-
-const COHORT_STRUGGLES = [
-  { category: 'interaction', label: 'Focus visibility', ...categoryFailRate('interaction') },
-  { category: 'takt', label: 'Interaction feel', ...categoryFailRate('takt') },
-  { category: 'motion', label: 'Motion hygiene', ...categoryFailRate('motion') },
-  { category: 'tokens', label: 'Token architecture', ...categoryFailRate('tokens') },
-  { category: 'cadence', label: 'Typography discipline', ...categoryFailRate('cadence') },
-].sort((a, b) => a.avgScore - b.avgScore);
-
-// Compliance index version — exposed in the API response, stated here for transparency
+// Stated in the API response too; the report names the index version it was built on.
 const COMPLIANCE_INDEX_VERSION = '1.0';
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
+const BAND_TEXT: Record<string, string> = {
+  A: '90 and up',
+  B: '80 to 89.9',
+  C: '70 to 79.9',
+  D: '60 to 69.9',
+  F: 'under 60',
+};
+const MAX_COUNT = Math.max(1, ...GRADES.map((g) => GRADE_COUNTS[g]));
+
+// Every category the batch recorded, lowest cohort mean first. Categories the
+// batch could not score anywhere are named, never drawn as zero.
+const CATS = BATCH_CATEGORIES.map((k) => ({ key: k, ...categoryStats(k) }));
+const SCORED_CATS = CATS.filter((c) => c.mean !== null).sort((a, b) => (a.mean as number) - (b.mean as number));
+const UNSCORED_CATS = CATS.filter((c) => c.mean === null);
+const LOWEST = SCORED_CATS[0];
+const HIGHEST = SCORED_CATS[SCORED_CATS.length - 1];
+
+const SYSTEMS = inCategory('Design Systems');
+const OUTSIDE = SYSTEMS.filter((s) => !s.self);
+const SPREAD = SYSTEMS.length ? round1(SYSTEMS[0].score - SYSTEMS[SYSTEMS.length - 1].score) : 0;
+
+const M3 = byUrl('https://m3.material.io');
+const M3_ROWS = M3
+  ? BATCH_CATEGORIES.map((k) => ({ key: k, m3: M3.categories?.[k]?.score ?? null, mean: categoryStats(k).mean }))
+  : [];
+const M3_SCORED = M3_ROWS.filter((r) => r.m3 !== null) as { key: string; m3: number; mean: number | null }[];
+const M3_BEST = [...M3_SCORED].sort((a, b) => b.m3 - a.m3)[0];
+const M3_WORST = [...M3_SCORED].sort((a, b) => a.m3 - b.m3)[0];
+const M3_IN_SYSTEMS = M3 ? SYSTEMS.findIndex((s) => s.url === M3.url) + 1 : 0;
+
+const label = (k: string) => CATEGORY_LABELS[k] ?? k;
 
 export default function StateOfCompliancePage() {
   return (
     <>
       <Topbar scrolled />
-
-      <main
-        id="main-content"
-        className="surface-page soc-page"
-        data-pagefind-meta="priority:high"
-      >
-        <style>{`
-          .soc-page .soc-section { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
-          .soc-page .soc-prose { max-width: 66ch; }
-          .soc-page .soc-prose p { color: var(--muted); font-size: 1rem; line-height: 1.65; margin: 0 0 1rem; }
-          .soc-page .soc-prose strong { color: var(--ink); font-weight: 600; }
-          .soc-page .soc-prose code { color: var(--ink); background: var(--surface-soft); padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.88em; font-family: var(--mono, ui-monospace, monospace); }
-          .soc-page .soc-trust { padding: 1.5rem 1.75rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-left: 3px solid var(--signal); border-radius: var(--radius); margin: 0 0 2rem; max-width: 66ch; box-shadow: var(--inner-light); }
-          .soc-page .soc-trust-eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--signal-light); font-weight: 700; margin: 0 0 0.75rem; font-family: var(--mono, ui-monospace, monospace); }
-          .soc-page .soc-trust p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; margin: 0; }
-          .soc-page .soc-trust strong { color: var(--ink); font-weight: 600; }
-          .soc-page .soc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
-          .soc-page .soc-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); text-align: center; }
-          .soc-page .soc-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-          .soc-page .soc-stat-suffix { font-size: 0.85rem; font-weight: 400; color: var(--muted-dim); }
-          .soc-page .soc-stat-label { display: block; margin-top: 0.4rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .soc-page .soc-histogram { margin: 1.5rem 0; }
-          .soc-page .soc-histogram-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; padding: 0.5rem 0; }
-          .soc-page .soc-hist-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-          .soc-page .soc-hist-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; height: 100px; }
-          .soc-page .soc-hist-bar { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; border: 1px solid var(--line-faint); border-bottom: none; transform-origin: bottom center; animation: socBarGrow var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
-          @keyframes socBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-          @media (prefers-reduced-motion: reduce) { .soc-page .soc-hist-bar { animation: none; transform: none; } }
-          .soc-page .soc-hist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
-          .soc-page .soc-hist-label { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 0.3rem; border-top: 1px solid var(--line); width: 100%; }
-          .soc-page .soc-hist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.92rem; }
-          .soc-page .soc-hist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
-          .soc-page .soc-flagship { padding: 1.75rem 2rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius-md); margin: 1.5rem 0; box-shadow: var(--inner-light); }
-          .soc-page .soc-flagship-header { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
-          .soc-page .soc-flagship-grade { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: var(--radius); font-weight: 700; font-size: 1.1rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line-faint); background: transparent; color: var(--muted-dim); flex-shrink: 0; }
-          .soc-page .soc-flagship-score { font-family: var(--mono, ui-monospace, monospace); font-size: 2rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-          .soc-page .soc-flagship-score-suffix { color: var(--muted-dim); font-weight: 400; font-size: 1rem; }
-          .soc-page .soc-flagship-name { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
-          .soc-page .soc-flagship-sub { font-size: 0.85rem; color: var(--muted-dim); margin-top: 0.2rem; }
-          .soc-page .soc-cat-bars { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; }
-          .soc-page .soc-cat-bar-row { display: grid; grid-template-columns: 7rem 1fr 3rem; gap: 0.75rem; align-items: center; }
-          .soc-page .soc-cat-bar-label { font-size: 0.78rem; color: var(--muted); text-align: right; }
-          .soc-page .soc-cat-bar-track { height: 6px; background: var(--surface-soft); border-radius: 3px; overflow: hidden; }
-          .soc-page .soc-cat-bar-fill { height: 100%; border-radius: 3px; transition: width var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
-          .soc-page .soc-cat-bar-val { font-family: var(--mono, ui-monospace, monospace); font-size: 0.75rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; text-align: right; }
-          .soc-page .soc-rank-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-          .soc-page .soc-rank-table th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
-          .soc-page .soc-rank-table th.soc-th-score { text-align: right; }
-          .soc-page .soc-rank-table td { padding: 0.7rem 0.625rem; border-bottom: 1px solid var(--line-faint); vertical-align: middle; }
-          .soc-page .soc-rank-table td.soc-td-score { text-align: right; font-family: var(--mono, ui-monospace, monospace); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
-          .soc-page .soc-rank-name { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; font-weight: 500; }
-          .soc-page .soc-rank-name:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .soc-page .soc-rank-host { font-size: 0.75rem; color: var(--muted-dim); margin-top: 0.15rem; }
-          .soc-page .soc-rank-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.72rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); }
-          .soc-page .soc-rank-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); }
-          .soc-page .soc-rank-grade-c { background: var(--surface-hover); color: var(--ink); border-color: var(--line-strong); }
-          .soc-page .soc-rank-grade-d { background: var(--surface-hover); color: var(--muted); border-color: var(--line); }
-          .soc-page .soc-rank-grade-f { background: transparent; color: var(--muted-dim); border-color: var(--line-faint); }
-          .soc-page .soc-rank-self { background: var(--signal-dim); }
-          .soc-page .soc-rank-self:hover { background: var(--signal-dim); }
-          .soc-page .soc-struggle-bars { display: flex; flex-direction: column; gap: 0.625rem; margin: 1rem 0; }
-          .soc-page .soc-struggle-row { display: grid; grid-template-columns: 9rem 1fr 3rem; gap: 0.75rem; align-items: center; }
-          .soc-page .soc-struggle-label { font-size: 0.82rem; color: var(--muted); }
-          .soc-page .soc-struggle-track { height: 8px; background: var(--surface-soft); border-radius: var(--radius-sm); overflow: hidden; }
-          .soc-page .soc-struggle-fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
-          .soc-page .soc-struggle-val { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; text-align: right; }
-          .soc-page .soc-cadence-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
-          .soc-page .soc-cadence-card { padding: 1.25rem 1.5rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); }
-          .soc-page .soc-cadence-card-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); font-weight: 600; margin: 0 0 0.5rem; font-family: var(--mono, ui-monospace, monospace); }
-          .soc-page .soc-cadence-card-val { font-size: 0.95rem; color: var(--ink); font-weight: 600; line-height: 1.4; }
-          .soc-page .soc-cadence-card-detail { font-size: 0.82rem; color: var(--muted); margin-top: 0.35rem; line-height: 1.45; }
-          .soc-page .soc-version-stamp { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; padding: 0.4rem 0.75rem; background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: var(--radius-sm); display: inline-block; }
-          @media (max-width: 560px) {
-            .soc-page .soc-histogram-bars { gap: 0.375rem; }
-            .soc-page .soc-hist-bar-wrap { height: 70px; }
-            .soc-page .soc-hist-range { display: none; }
-            .soc-page .soc-cat-bar-row { grid-template-columns: 5rem 1fr 2.5rem; gap: 0.5rem; }
-            .soc-page .soc-cat-bar-label { font-size: 0.72rem; }
-            .soc-page .soc-struggle-row { grid-template-columns: 7rem 1fr 2.5rem; gap: 0.5rem; }
-            .soc-page .soc-struggle-label { font-size: 0.75rem; }
-            .soc-page .soc-flagship { padding: 1.25rem 1.25rem; }
-          }
-        `}</style>
-
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <section className="surface-header fade-up soc-section">
-          <p className="surface-eyebrow" data-scramble>
-            Annual report · Edition 1
-          </p>
-          <h1 className="surface-title" data-scramble>
-            State of Design Compliance
-          </h1>
-          <p className="surface-lede">
-            The first deterministic report on design-system contract compliance
-            across the web. <strong>{LEADERBOARD_SCORED_COUNT}</strong> sites
-            scored against a <strong>{ENGINE_CHECK_COUNT}-check</strong> engine.
-            No surveys. No votes. No self-reported data. Every score is computed
-            from the live CSS the site ships at <code>{':root'}</code>.
-          </p>
-          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
+      <main id="main-content" data-pagefind-body className="eg dx" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/state-of-compliance"
+          name="State of Design Compliance"
+          thesis={`Edition 1: ${COHORT_STATS.count} sites, one deterministic engine, ${ENGINE_CHECK_COUNT} checks. Every figure here comes from the same data as the public leaderboard; none of it is surveyed, voted on or self-reported.`}
+          facts={[`edition 1`, `index v${COMPLIANCE_INDEX_VERSION}`, `contract ${CONTRACT_VERSION}`, `scored ${SCORES_DATE}`]}
+          contract={{ href: '/leaderboard', label: 'the leaderboard' }}
+        >
+          <div className="dx-actions">
             <Link className="button primary" href="/leaderboard" data-cuelume-press>
               View the leaderboard
             </Link>
-            <Link
-              className="button ghost"
-              href="/methodology"
-              data-cuelume-press
-              style={{ marginLeft: '0.5rem' }}
-            >
+            <Link className="button ghost" href="/methodology" data-cuelume-press>
               Read the methodology
             </Link>
           </div>
-          <p
-            className="surface-note"
-            style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}
-          >
-            <span className="soc-version-stamp">
-              compliance_index_version: {COMPLIANCE_INDEX_VERSION}
-            </span>
-            <span className="soc-version-stamp">contract {CONTRACT_VERSION}</span>
-            <span className="soc-version-stamp">last scored {LEADERBOARD_LAST_SCORED}</span>
-          </p>
           <AgentActions mdPath="/state-of-compliance.md" label="the state of compliance report" />
-        </section>
+        </EngineHead>
 
-        {/* ── §1 The Trust Contract ──────────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">The trust contract</h2>
-          <div className="soc-trust">
-            <p className="soc-trust-eyebrow">Independence firewall</p>
-            <p>
-              <strong>Designesy does not accept payment for scores, methodology
-              changes, or leaderboard placement.</strong> Every score is computed
-              by the same deterministic {ENGINE_CHECK_COUNT}-check engine against
-              the same published contract. Enterprise customers pay for private
-              scoring, custom contracts, and CI integration — never for public
-              leaderboard placement. If a scored site is also an enterprise
-              customer, their public score is computed identically to any
-              non-customer&rsquo;s score. No pre-release optimization. No score
-              suppression. The engine is open: run it yourself with{' '}
-              <code>npx designesy-score</code> or the{' '}
-              <Link href="/docs/mcp">MCP server</Link>.
-            </p>
+        <section className="eg-section" aria-labelledby="soc-cohort-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="soc-cohort-h">
+                The cohort
+              </h2>
+              <p className="eg-section-sub">composite scores, weekly run of {SCORES_DATE}</p>
+            </div>
           </div>
-          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
-            <p className="surface-note">
-              This is the structural separation Artificial Analysis and Arena
-              pioneered: the public trust asset is non-monetizable; the consulting
-              and private-scoring layer around it is. The difference is that
-              Designesy&rsquo;s data is deterministic — there is no vote to
-              manipulate, no survey to game, no subjective judge to influence.
-            </p>
-          </div>
-        </section>
-
-        {/* ── §2 The Cohort ──────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">The cohort</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            {LEADERBOARD_SCORED_COUNT} sites across five tiers — frontier
-            references, competitors, design-system exemplars, inspiration, and
-            high-traffic surfaces. Scored against contract {CONTRACT_VERSION}{' '}
-            with the {ENGINE_CHECK_COUNT}-check engine. Re-scored weekly.
+          <p className="dx-lead">
+            {COHORT_STATS.count} sites across five tiers: frontier references, competitors, design-system exemplars,
+            inspiration and high-traffic surfaces, scored against contract {CONTRACT_VERSION} and re-scored every week.
           </p>
+          <dl className="dx-stats">
+            <div>
+              <dt>Sites</dt>
+              <dd>{COHORT_STATS.count}</dd>
+            </div>
+            <div>
+              <dt>Median</dt>
+              <dd>{fmt(COHORT_STATS.median)}</dd>
+            </div>
+            <div>
+              <dt>Mean</dt>
+              <dd>{fmt(COHORT_STATS.mean)}</dd>
+            </div>
+            <div>
+              <dt>Grade A</dt>
+              <dd>{GRADE_COUNTS.A}</dd>
+            </div>
+            <div>
+              <dt>Grade F</dt>
+              <dd>{GRADE_COUNTS.F}</dd>
+            </div>
+          </dl>
 
-          <div className="soc-stats">
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={LEADERBOARD_SCORED_COUNT} />
-              </span>
-              <span className="soc-stat-label">Sites scored</span>
-            </div>
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={ENGINE_CHECK_COUNT} />
-              </span>
-              <span className="soc-stat-label">Checks per site</span>
-            </div>
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={MEAN_SCORE} decimals={1} />
-                <span className="soc-stat-suffix">%</span>
-              </span>
-              <span className="soc-stat-label">Cohort mean</span>
-            </div>
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={MEDIAN_SCORE} decimals={1} />
-                <span className="soc-stat-suffix">%</span>
-              </span>
-              <span className="soc-stat-label">Median</span>
-            </div>
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={GRADE_COUNTS['A']} />
-              </span>
-              <span className="soc-stat-label">A-grade sites</span>
-            </div>
-            <div className="soc-stat">
-              <span className="soc-stat-num">
-                <CountUp value={GRADE_COUNTS['F']} />
-              </span>
-              <span className="soc-stat-label">F-grade sites</span>
+          <DataFigure
+            id="soc-grades"
+            title="How the grades fall"
+            note={
+              <>
+                Sites per grade. {GRADE_COUNTS.D} of {COHORT_STATS.count} land in D, the widest band; {GRADE_COUNTS.A} reaches A, and
+                that one is designesy.org, scored by its own engine.
+              </>
+            }
+            source={`Weekly run of ${SCORES_DATE}, engine ${ENGINE_VERSION}.`}
+            table={
+              <DataTable
+                caption={`Sites per grade, weekly run of ${SCORES_DATE}.`}
+                head={['Grade', 'Band', 'Sites', 'Share']}
+                numeric={[2, 3]}
+                rows={GRADES.map((g) => [
+                  g,
+                  BAND_TEXT[g],
+                  GRADE_COUNTS[g],
+                  `${Math.round((GRADE_COUNTS[g] / COHORT_STATS.count) * 100)}%`,
+                ])}
+              />
+            }
+          >
+            <BarList
+              max={MAX_COUNT}
+              label={`Sites per grade, of ${COHORT_STATS.count}: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}.`}
+              bars={GRADES.map((g) => ({
+                key: g,
+                label: `Grade ${g}`,
+                meta: BAND_TEXT[g],
+                value: GRADE_COUNTS[g],
+                display: String(GRADE_COUNTS[g]),
+                tone: toneOf(g),
+              }))}
+            />
+          </DataFigure>
+        </section>
+
+        <section className="eg-section" aria-labelledby="soc-struggle-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="soc-struggle-h">
+                Where the cohort struggles
+              </h2>
+              <p className="eg-section-sub">category means, batch run of {BATCH_RUN_DATE}</p>
             </div>
           </div>
+          <DataFigure
+            id="soc-cats"
+            title="Mean score by category, lowest first"
+            note={
+              <>
+                {label(LOWEST.key)} is the weakest category at {fmt(LOWEST.mean as number)}, and {LOWEST.failing} of{' '}
+                {LOWEST.scored} sites fail at least one of its checks. {label(HIGHEST.key)} is the strongest at{' '}
+                {fmt(HIGHEST.mean as number)}.
+                {UNSCORED_CATS.length > 0 && (
+                  <>
+                    {' '}
+                    The batch scored no site in {UNSCORED_CATS.map((c) => label(c.key).toLowerCase()).join(', ')}, so those stay
+                    off the chart.
+                  </>
+                )}
+              </>
+            }
+            source={`Batch run of ${BATCH_RUN_DATE}: every site's category scores from one engine pass.`}
+            table={
+              <DataTable
+                caption={`Cohort mean by category, batch run of ${BATCH_RUN_DATE}.`}
+                head={['Category', 'Weight', 'Mean', 'Sites scored', 'With a failed check']}
+                numeric={[1, 2, 3, 4]}
+                opt={[1, 3]}
+                rows={CATS.map((c) => [
+                  label(c.key),
+                  CATEGORY_WEIGHTS[c.key],
+                  c.mean === null ? '–' : fmt(c.mean),
+                  c.scored,
+                  c.failing,
+                ])}
+              />
+            }
+          >
+            <BarList
+              label={`Mean category score across the cohort, lowest first: ${SCORED_CATS.map(
+                (c) => `${label(c.key)} ${fmt(c.mean as number)}`,
+              ).join(', ')}.`}
+              bars={SCORED_CATS.map((c) => ({
+                key: c.key,
+                label: label(c.key),
+                meta: `${c.failing} of ${c.scored} sites fail a check`,
+                value: c.mean,
+                tone: scoreTone(c.mean as number),
+              }))}
+            />
+          </DataFigure>
+        </section>
 
-          <h3 className="doctrine-subheading" style={{ marginTop: '2rem' }}>
-            Grade distribution
-          </h3>
-          <div className="soc-histogram">
-            <div
-              className="soc-histogram-bars"
-              role="img"
-              aria-label={`Grade distribution: ${GRADE_COUNTS['A']} A, ${GRADE_COUNTS['B']} B, ${GRADE_COUNTS['C']} C, ${GRADE_COUNTS['D']} D, ${GRADE_COUNTS['F']} F`}
+        {M3 && M3_BEST && M3_WORST && (
+          <section className="eg-section" aria-labelledby="soc-m3-h">
+            <div className="eg-section-head">
+              <div>
+                <h2 className="eg-h2" id="soc-m3-h">
+                  One system up close: Material 3
+                </h2>
+                <p className="eg-section-sub">
+                  m3.material.io · {fmt(M3.score)} · grade {M3.grade} · rank {M3.rank} of {COHORT_STATS.count}
+                </p>
+              </div>
+            </div>
+            <p className="dx-lead">
+              Material Design 3 publishes its guidance on accessibility, motion and tokens in prose, and ships no public
+              checker for it. Read by the same engine as everything else, m3.material.io scores <b>{fmt(M3.score)}</b>, grade{' '}
+              <b>{M3.grade}</b>: {M3_IN_SYSTEMS} of {SYSTEMS.length} among the design systems scored here. Its strongest
+              category is {label(M3_BEST.key).toLowerCase()} at {fmt(M3_BEST.m3)}; its weakest is{' '}
+              {label(M3_WORST.key).toLowerCase()} at {fmt(M3_WORST.m3)}.
+            </p>
+            <DataFigure
+              id="soc-m3"
+              title="Material 3 by category, against the cohort"
+              note="Each bar is m3.material.io's score in one category; the tick is the cohort's mean in the same category."
+              source={`Batch run of ${BATCH_RUN_DATE}. Composite and rank from ${SCORES_DATE}.`}
+              table={
+                <DataTable
+                  caption={`Material 3 against the cohort mean, by category, batch run of ${BATCH_RUN_DATE}.`}
+                  head={['Category', 'Material 3', 'Cohort mean', 'Difference']}
+                  numeric={[1, 2, 3]}
+                  rows={M3_ROWS.map((r) => [
+                    label(r.key),
+                    r.m3 === null ? '–' : fmt(r.m3),
+                    r.mean === null ? '–' : fmt(r.mean),
+                    r.m3 === null || r.mean === null
+                      ? '–'
+                      : `${r.m3 - r.mean >= 0 ? '+' : '−'}${fmt(Math.abs(round1(r.m3 - r.mean)))}`,
+                  ])}
+                />
+              }
             >
-              {GRADE_BANDS.map((band) => (
-                <div key={band.grade} className="soc-hist-col">
-                  <span className="soc-hist-bar-count">
-                    <CountUp value={band.count} />
-                  </span>
-                  <div className="soc-hist-bar-wrap">
-                    <div
-                      className="soc-hist-bar"
-                      style={{
-                        height: `${(band.count / MAX_GRADE_COUNT) * 100}%`,
-                        background: band.bg,
-                        borderColor: band.color,
-                      }}
-                      title={`${band.grade}: ${band.count} site${band.count !== 1 ? 's' : ''} (score ≥ ${band.min})`}
-                    />
-                  </div>
-                  <div className="soc-hist-label">
-                    <span className="soc-hist-grade" style={{ color: band.color }}>
-                      {band.grade}
-                    </span>
-                    <span className="soc-hist-range">≥{band.min}</span>
-                  </div>
-                </div>
-              ))}
+              <BarList
+                label={`Material 3 by category with the cohort mean for comparison: ${M3_SCORED.map(
+                  (r) => `${label(r.key)} ${fmt(r.m3)} against ${r.mean === null ? 'no mean' : fmt(r.mean)}`,
+                ).join(', ')}.`}
+                markName="cohort mean"
+                bars={M3_ROWS.map((r) => ({
+                  key: r.key,
+                  label: label(r.key),
+                  value: r.m3,
+                  mark: r.mean,
+                  tone: r.m3 === null ? undefined : scoreTone(r.m3),
+                }))}
+              />
+            </DataFigure>
+            <p className="dx-src">
+              Material&apos;s design-token tooling (DSP) was{' '}
+              <a href="https://github.com/material-foundation/material-tokens" target="_blank" rel="noopener noreferrer">
+                archived in October 2024
+              </a>{' '}
+              and emits no W3C DTCG. The <Link href="/m3-bridge">M3 bridge</Link> converts its tokens. Re-run the score:{' '}
+              <Link href="/score?url=m3.material.io">/score?url=m3.material.io</Link>.
+            </p>
+          </section>
+        )}
+
+        <section className="eg-section" aria-labelledby="soc-systems-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="soc-systems-h">
+                Design systems, ranked
+              </h2>
+              <p className="eg-section-sub">
+                {SYSTEMS.length} systems and documentation platforms · weekly run of {SCORES_DATE}
+              </p>
             </div>
           </div>
-          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
-            <p className="surface-note" style={{ maxWidth: '66ch' }}>
-              <strong>One A-grade site</strong> in a cohort of{' '}
-              {LEADERBOARD_SCORED_COUNT}. The contract is demanding — most sites
-              land in D or F because they don&rsquo;t ship the primitives (token
-              systems, reduced-motion blocks, font-synthesis rules) at{' '}
-              <code style={{ color: 'var(--ink)' }}>{':root'}</code>. That is the
-              point: the gap between what a site <em>documents</em> and what it{' '}
-              <em>ships</em> is exactly what this report surfaces.
-            </p>
-          </div>
-
-          <h3 className="doctrine-subheading" style={{ marginTop: '2.5rem' }}>
-            Where the cohort struggles
-          </h3>
-          <div className="text-cell" style={{ marginBottom: '0.75rem' }}>
-            <p className="surface-note">
-              Average category scores across the scored cohort. The lowest-scoring
-              categories reveal which contract primitives the industry has not yet
-              adopted at the shipped-surface level.
-            </p>
-          </div>
-          <div className="soc-struggle-bars">
-            {COHORT_STRUGGLES.map((cat) => (
-              <div key={cat.category} className="soc-struggle-row">
-                <span className="soc-struggle-label">{cat.label}</span>
-                <div className="soc-struggle-track">
-                  <div
-                    className="soc-struggle-fill"
-                    style={{
-                      width: `${cat.avgScore}%`,
-                      background:
-                        cat.avgScore < 55
-                          ? 'var(--muted-dim)'
-                          : cat.avgScore < 70
-                            ? 'var(--muted)'
-                            : 'var(--signal)',
-                    }}
-                  />
-                </div>
-                <span className="soc-struggle-val">{cat.avgScore.toFixed(1)}%</span>
-              </div>
-            ))}
+          <p className="dx-lead">
+            The spread between the highest and lowest design system is <b>{fmt(SPREAD)} points</b>. Among systems other than
+            designesy.org, {OUTSIDE[0].name} leads at {fmt(OUTSIDE[0].score)} ({OUTSIDE[0].grade}). The contract grades
+            every system on the same scale, with no curve.
+          </p>
+          <div className="dx-table-box">
+            <DataTable
+              caption={`Design systems in the cohort, ranked by composite score, weekly run of ${SCORES_DATE}.`}
+              head={['System', 'Grade', 'Score', 'Cohort rank', 'Pass · warn · fail']}
+              numeric={[2, 3, 4]}
+              opt={[3, 4]}
+              rows={SYSTEMS.map((s) => [
+                <Link key={s.slug} href={`/frameworks/${s.slug}`}>
+                  {s.name}
+                  {s.self ? ' (self-scored)' : ''}
+                </Link>,
+                <span key="g" className="dx-grade" data-tone={toneOf(s.grade)}>
+                  {s.grade}
+                </span>,
+                fmt(s.score),
+                s.rank,
+                `${s.pass} · ${s.warn} · ${s.fail}`,
+              ])}
+            />
           </div>
         </section>
 
-        {/* ── §3 The Flagship Finding — M3 ───────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">The flagship finding</h2>
-          <p className="soc-prose">
-            <strong>Material Design 3</strong> — Google&rsquo;s design system,
-            the most influential on Earth — has no public conformance,
-            verification, or certification tool. None. m3.material.io provides
-            guidelines but no automated conformance checker. We scored it.
-          </p>
-
-          {M3_SITE && M3_SITE.score !== null && M3_SITE.grade !== null && (
-            <div className="soc-flagship">
-              <div className="soc-flagship-header">
-                <span className="soc-flagship-grade soc-rank-grade-f">
-                  {M3_SITE.grade}
-                </span>
-                <div>
-                  <div>
-                    <span className="soc-flagship-score">
-                      <CountUp value={M3_SITE.score} decimals={1} />
-                    </span>
-                    <span className="soc-flagship-score-suffix">%</span>
-                  </div>
-                  <div className="soc-flagship-name">Material Design 3</div>
-                  <div className="soc-flagship-sub">
-                    {M3_SITE.pass} pass · {M3_SITE.fail} fail ·{' '}
-                    {M3_SITE.warn} warn · {M3_SITE.skip} skip ·{' '}
-                    {M3_SITE.tokens} tokens detected
-                  </div>
-                </div>
-              </div>
-
-              <p
-                className="surface-note"
-                style={{ margin: '1rem 0 0', maxWidth: '60ch' }}
-              >
-                M3&rsquo;s guidelines specify accessibility, motion, and token
-                architecture in prose. The contract verifies whether those
-                guidelines are actually <em>shipped</em> on the live surface.
-                The gap between documented and shipped is the finding.
-              </p>
-
-              {M3_BEST_CATEGORY && M3_WORST_CATEGORY && (
-                <div className="soc-cat-bars">
-                  {Object.entries(M3_CATEGORIES)
-                    .filter(([, v]) => v.score !== null)
-                    .sort((a, b) => (b[1].score as number) - (a[1].score as number))
-                    .map(([catKey, cat]) => (
-                      <div key={catKey} className="soc-cat-bar-row">
-                        <span className="soc-cat-bar-label">
-                          {catKey.charAt(0).toUpperCase() + catKey.slice(1)}
-                        </span>
-                        <div className="soc-cat-bar-track">
-                          <div
-                            className="soc-cat-bar-fill"
-                            style={{
-                              width: `${cat.score}%`,
-                              background:
-                                (cat.score as number) >= 75
-                                  ? 'var(--signal)'
-                                  : (cat.score as number) >= 50
-                                    ? 'var(--muted)'
-                                    : 'var(--muted-dim)',
-                            }}
-                          />
-                        </div>
-                        <span className="soc-cat-bar-val">
-                          {(cat.score as number).toFixed(1)}%
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              <p
-                className="surface-note"
-                style={{ marginTop: '1rem', fontSize: '0.82rem' }}
-              >
-                Best category: <strong>{M3_BEST_CATEGORY[0]}</strong> at{' '}
-                {(M3_BEST_CATEGORY[1].score as number).toFixed(1)}%. Worst
-                scored category: <strong>{M3_WORST_CATEGORY[0]}</strong> at{' '}
-                {(M3_WORST_CATEGORY[1].score as number).toFixed(1)}%. M3&rsquo;s
-                token architecture (DSP) was{' '}
-                <a
-                  href="https://github.com/material-foundation/material-tokens"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}
-                >
-                  archived October 2024
-                </a>{' '}
-                and does not emit W3C DTCG format. M3 Expressive ships
-                spring-based motion with no published reduced-motion token. The
-                contract catches what the guidelines leave as prose.
-              </p>
-
-              <div style={{ marginTop: '1rem' }}>
-                <Link
-                  href={`/score?url=${encodeURIComponent('m3.material.io')}`}
-                  className="lb-score-link"
-                  style={{ fontSize: '0.85rem' }}
-                  data-cuelume-press
-                >
-                  Re-score m3.material.io live →
-                </Link>
-              </div>
+        <section className="eg-section" aria-labelledby="soc-method-h">
+          <h2 className="eg-h2" id="soc-method-h">
+            How the scores are made
+          </h2>
+          <dl className="dx-defs">
+            <div>
+              <dt>Deterministic</dt>
+              <dd>
+                The same {ENGINE_CHECK_COUNT}-check engine for every site: regex, token resolution and spec tests against the CSS
+                and HTML a site serves. No language model, no human judgment, no vote.
+              </dd>
             </div>
-          )}
+            <div>
+              <dt>Weighted</dt>
+              <dd>
+                {Object.keys(CATEGORY_WEIGHTS).length} categories weighted from {Math.min(...Object.values(CATEGORY_WEIGHTS))} to{' '}
+                {Math.max(...Object.values(CATEGORY_WEIGHTS))}, {WEIGHT_TOTAL} in all, normalised over the checks a site can be
+                scored on. A pass counts 1, a warning half.
+              </dd>
+            </div>
+            <div>
+              <dt>Floors and caps</dt>
+              <dd>
+                Accessibility under 60 caps the grade at C. Six severe failures, such as unreadable contrast, cap the score
+                lower. Anti-slop rules take off up to 20 points; originality credit adds up to 8.
+              </dd>
+            </div>
+            <div>
+              <dt>Open</dt>
+              <dd>
+                Every check, weight and band is on the <Link href="/methodology">methodology page</Link>. Score any URL at{' '}
+                <Link href="/score">/score</Link>, or run the engine yourself with <code>npx designesy-score</code>.
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-          <p className="soc-prose" style={{ marginTop: '1.25rem' }}>
-            This is the demonstration. The system that wrote the guidelines
-            doesn&rsquo;t have a tool to verify its own output — we do. The same
-            engine that scores M3 scores designesy.org (self-score:{' '}
-            <strong>{SELF_SCORE.toFixed(1)}% / {SELF_GRADE}</strong>), in
-            public, with the same {ENGINE_CHECK_COUNT} checks. Transparency earns trust.
+        <section className="eg-section" aria-labelledby="soc-trust-h">
+          <h2 className="eg-h2" id="soc-trust-h">
+            Independence and cadence
+          </h2>
+          <dl className="dx-defs">
+            <div>
+              <dt>No paid placement</dt>
+              <dd>
+                Designesy accepts no payment for scores, method changes or placement. Enterprise work (private scoring, custom
+                contracts, CI) is billed separately, and a customer&apos;s public score is computed like anyone else&apos;s.
+              </dd>
+            </div>
+            <div>
+              <dt>Weekly</dt>
+              <dd>
+                A GitHub Action re-scores every site on Mondays at 10:00 UTC and keeps the previous week&apos;s score, so each
+                change is visible on the <Link href="/leaderboard">leaderboard</Link>.
+              </dd>
+            </div>
+            <div>
+              <dt>Yearly</dt>
+              <dd>
+                Each edition of this report adds year-over-year tables: which categories rose, which systems moved. Edition 1
+                sets the baseline.
+              </dd>
+            </div>
+          </dl>
+          <p className="dx-src">
+            State of Design Compliance · edition 1 · compliance index v{COMPLIANCE_INDEX_VERSION} · {COHORT_STATS.count} sites ·
+            contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · scored {SCORES_DATE} · categories from the batch of{' '}
+            {BATCH_RUN_DATE}
           </p>
         </section>
 
-        {/* ── §4 Framework Rankings ──────────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">Framework rankings</h2>
-          <div className="text-cell" style={{ marginBottom: '1rem' }}>
-            <p className="surface-note">
-              Design-system frameworks and documentation platforms in the cohort,
-              ranked by compliance score. Each framework is a potential case
-              study — each score is a piece of content.
-            </p>
-          </div>
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <table className="soc-rank-table">
-              <thead>
-                <tr>
-                  <th scope="col">Framework</th>
-                  <th scope="col" className="soc-th-score">Grade</th>
-                  <th scope="col" className="soc-th-score">Score</th>
-                  <th scope="col" className="soc-th-score">Checks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {DESIGN_SYSTEMS_SITES.map((site) => {
-                  const isSelf = site.url === 'https://www.designesy.org';
-                  const gradeClass = `soc-rank-grade-${(site.grade as string).toLowerCase()}`;
-                  return (
-                    <tr
-                      key={site.url}
-                      className={isSelf ? 'soc-rank-self' : ''}
-                      style={isSelf ? { background: 'var(--signal-dim)' } : undefined}
-                    >
-                      <td>
-                        <Link
-                          href={`/score?url=${encodeURIComponent(hostOf(site.url))}`}
-                          className="soc-rank-name"
-                          data-cuelume-hover="whisper"
-                          data-cuelume-press
-                        >
-                          {site.name}
-                          {isSelf && (
-                            <span
-                              className="lb-self-tag"
-                              style={{ marginLeft: '0.5rem' }}
-                            >
-                              self
-                            </span>
-                          )}
-                        </Link>
-                        <div className="soc-rank-host">{hostOf(site.url)}</div>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span className={`soc-rank-grade ${gradeClass}`}>
-                          {site.grade}
-                        </span>
-                      </td>
-                      <td className="soc-td-score">
-                        <CountUp value={site.score as number} decimals={1} />
-                        {/* No space before the percent sign — "93.0%" is the
-                            correct form. This carried an explicit {' '} that
-                            rendered "93.0 %" on all 14 cohort rows. Found by
-                            the prose gate, not by eye: a single space before a
-                            symbol is exactly the kind of thing that survives
-                            every review because it reads as almost-right. */}
-                        <span style={{ color: 'var(--muted-dim)', fontWeight: 400 }}>
-                          %
-                        </span>
-                      </td>
-                      <td className="soc-td-score" style={{ fontSize: '0.75rem', color: 'var(--muted-dim)' }}>
-                        {site.pass}p · {site.fail}f · {site.warn}w
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="text-cell" style={{ marginTop: '0.75rem' }}>
-            <p className="surface-note" style={{ maxWidth: '66ch' }}>
-              The spread is <strong>{Math.round((DESIGN_SYSTEMS_SITES[0].score as number) - (DESIGN_SYSTEMS_SITES[DESIGN_SYSTEMS_SITES.length - 1].score as number))} points</strong>{' '}
-              between the highest and lowest design-system framework. Primer leads
-              the non-self cohort at 77.6/C. Material 3 — the most influential
-              system on Earth — scores 59/F. The contract does not grade on a
-              curve.
-            </p>
-          </div>
-        </section>
-
-        {/* ── §5 Methodology ─────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">Methodology</h2>
-          <div className="soc-prose">
-            <p>
-              Every score in this report is computed by the same deterministic{' '}
-              {ENGINE_CHECK_COUNT}-check engine — no LLM, no human judgment, no
-              subjective vote. Each check is a regex, token-resolution, or
-              spec-linter test against the live fetched CSS and HTML. The engine
-              extracts CSS from the URL, parses <code>{':root'}</code> custom
-              properties, and runs {ENGINE_CHECK_COUNT} checks across{' '}
-              <strong>14 weighted categories</strong>.
-            </p>
-            <p>
-              The score is a weighted average of PASS/WARN/FAIL results, with an
-              accessibility floor: if the accessibility category scores below
-              60%, the overall grade is capped at C. Twelve anti-slop rules
-              subtract up to 20 points. Seven originality signals add up to 8
-              points. Taste is part of the number.
-            </p>
-            <p>
-              The full methodology — every check, its category weight, the
-              scoring math, the grade bands, and what the engine cannot measure
-              — is documented in full on the{' '}
-              <Link href="/methodology" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                methodology page
-              </Link>
-              . The engine is open: score any URL at{' '}
-              <Link href="/score" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                /score
-              </Link>
-              , run it locally with{' '}
-              <code>npx designesy-score</code>, or integrate it in CI with the{' '}
-              <a
-                href="https://github.com/marketplace/actions/designesy-contract-check"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}
-              >
-                GitHub Action
-              </a>
-              .
-            </p>
-          </div>
-        </section>
-
-        {/* ── §6 The Cadence ─────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">The cadence</h2>
-          <div className="soc-cadence-grid">
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">24-hour SLA</p>
-              <p className="soc-cadence-card-val">
-                New framework releases scored within 24 hours
-              </p>
-              <p className="soc-cadence-card-detail">
-                When Radix, shadcn/ui, Mantine, Park UI, or Ark UI ship a new
-                version, Designesy re-scores their default theme against the
-                contract within 24 hours and publishes the result.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Weekly re-score</p>
-              <p className="soc-cadence-card-val">
-                Every site re-scored weekly with delta badges
-              </p>
-              <p className="soc-cadence-card-detail">
-                The leaderboard is re-scored every week via a GitHub Action
-                (Mondays 10:00 UTC). Each site shows a delta badge — up, down,
-                or flat — since the previous week&rsquo;s score.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Annual report</p>
-              <p className="soc-cadence-card-val">
-                State of Design Compliance published yearly with YoY trends
-              </p>
-              <p className="soc-cadence-card-detail">
-                Each annual edition adds year-over-year trend tables: which
-                categories improved, which frameworks moved, which primitives
-                the industry adopted. Edition 1 establishes the baseline.
-              </p>
-            </div>
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
-            This is the content engine. Each scored site is a data point. Each
-            framework release is a scoring event. Each annual report is a link
-            magnet. The longer the leaderboard runs, the more unreplicable the
-            dataset becomes — competitors can build a verification engine; they
-            cannot replicate years of accumulated scores and trust.
-          </p>
-        </section>
-
-        {/* ── §7 The Expanding Surface ──────────────────────────────────── */}
-        <section className="doctrine-section fade-up soc-section">
-          <h2 className="doctrine-heading">The expanding surface</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '66ch' }}>
-            Scoring is the foundation. But verification is bigger than a single
-            number. Edition 1 ships with five tools that expand what Designesy
-            verifies — from a score to a maturity profile, a per-framework
-            evaluation, a format bridge, and frontier physics validation.
-          </p>
-          <div className="soc-cadence-grid">
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Maturity</p>
-              <p className="soc-cadence-card-val">
-                <Link href="/maturity" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                  Compliance maturity self-assessment
-                </Link>
-              </p>
-              <p className="soc-cadence-card-detail">
-                24 questions across 6 axes — token discipline, motion
-                consistency, accessibility readiness, platform fit, identity &amp;
-                copy, verification maturity. Shareable radar chart. The
-                self-diagnostic that complements the deterministic score.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Evaluations</p>
-              <p className="soc-cadence-card-val">
-                <Link href="/frameworks" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                  Per-framework evaluation pages
-                </Link>
-              </p>
-              <p className="soc-cadence-card-detail">
-                Every scored site gets a dedicated page with a score dial,
-                per-category breakdown, auto-generated narrative, peer comparison,
-                and cohort context. 30 evaluations — each one a piece of content.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Changelog</p>
-              <p className="soc-cadence-card-val">
-                <Link href="/changelog" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                  Contract changelog by dimension
-                </Link>
-              </p>
-              <p className="soc-cadence-card-detail">
-                14 entries across 11 design dimensions — tokens, motion, cadence,
-                accessibility, takt, poise, acoustics, copywriting, identity,
-                security, verification. Every contract change is traceable to a
-                version bump and a dimension.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">M3 Bridge</p>
-              <p className="soc-cadence-card-val">
-                <Link href="/m3-bridge" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                  M3 → DTCG token bridge
-                </Link>
-              </p>
-              <p className="soc-cadence-card-detail">
-                M3&rsquo;s DSP export was archived October 2024 and doesn&rsquo;t
-                emit W3C DTCG. This tool converts M3 token CSS or JSON to DTCG
-                2025.10 format with validation. The neutral bridge between
-                Google&rsquo;s two non-interoperating design-data initiatives.
-              </p>
-            </div>
-            <div className="soc-cadence-card">
-              <p className="soc-cadence-card-label">Frontier</p>
-              <p className="soc-cadence-card-val">
-                <Link href="/spring-validator" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--line-faint)' }}>
-                  Spring physics accessibility validator
-                </Link>
-              </p>
-              <p className="soc-cadence-card-detail">
-                No one validates spring-based motion against a reduced-motion
-                contract. M3 Expressive ships springs with no published
-                reduced-motion token. This tool simulates the physics, computes
-                overshoot, and renders an accessibility verdict. Green-field.
-              </p>
-            </div>
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem', maxWidth: '66ch' }}>
-            The pattern: score → evaluate → bridge → validate. Each tool deepens
-            the verification surface. The maturity assessment turns a score into
-            a diagnostic. The evaluations turn a score into a per-framework
-            article. The M3 bridge turns a format gap into a tool. The spring
-            validator turns a frontier into a check. The scoring engine remains
-            the foundation — but verification is now a platform, not a single
-            number.
-          </p>
-        </section>
-
-        <div className="status-note">
-          State of Design Compliance · Edition 1 ·{' '}
-          {LEADERBOARD_SCORED_COUNT} sites scored against contract{' '}
-          {CONTRACT_VERSION} ({ENGINE_CHECK_COUNT} checks, compliance index v
-          {COMPLIANCE_INDEX_VERSION}) · last scored{' '}
-          {LEADERBOARD_LAST_SCORED} · data derived from the{' '}
-          <Link href="/leaderboard">public leaderboard</Link> · re-scored weekly
-          via GitHub Action
-        </div>
+        <EngineNext
+          items={[
+            { title: 'The leaderboard', desc: 'Every site in this report, ranked, with its category profile and weekly change.', route: '/leaderboard' },
+            { title: 'Framework evaluations', desc: 'One page per scored site: every category against the cohort, and its peers.', route: '/frameworks' },
+            { title: 'The methodology', desc: 'Each check, its weight, the grade bands and what the engine cannot see.', route: '/methodology' },
+          ]}
+        />
       </main>
-
       <Footer />
     </>
   );
