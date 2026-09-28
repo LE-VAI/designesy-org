@@ -381,7 +381,7 @@ export default function McpDocsPage() {
           <h2 className="doctrine-heading">Tools</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Seven read-only tools fetch public machine exports from
-            designesy.org. Nine executable tools run live verification: the
+            designesy.org. Nine executable tools run live verification: the{' '}
             {ENGINE_CHECK_COUNT}-check score engine, DTCG token validation, Lottie motion
             validation, drift scoring, AI-readiness scoring, guardrails
             generation, monitor scoring, design-system comparison, and the

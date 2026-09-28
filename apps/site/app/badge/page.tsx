@@ -135,7 +135,7 @@ export default function BadgePage() {
             <ol className="badge-steps">
               <li>
                 <strong>Score your site</strong> at{' '}
-                <Link href="/score" className="text-link">/score</Link>:
+                <Link href="/score" className="text-link">/score</Link>:{' '}
                 {ENGINE_CHECK_COUNT} automated checks against the design contract, real-time, no login.
               </li>
               <li>
@@ -181,7 +181,7 @@ export default function BadgePage() {
               ))}
             </div>
             <p className="definition-note">
-              The score is the percentage of checks that pass (warnings count as half).
+              The score is the percentage of checks that pass (warnings count as half).{' '}
               {ENGINE_CHECK_COUNT} checks total. See the{' '}
               <Link href="/contracts/design-system" className="text-link">
                 contract
