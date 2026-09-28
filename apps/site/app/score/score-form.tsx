@@ -14,6 +14,7 @@ import {
 import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { EngineBar, Segmented } from '../lib/engine/command-bar';
+import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
@@ -243,6 +244,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [animatedCatScores, setAnimatedCatScores] = useState<Record<string, number>>({});
   const [animatedCounts, setAnimatedCounts] = useState({ pass: 0, fail: 0, warn: 0, manual: 0, skip: 0, total: 0, origPoints: 0, slopTotal: 0 });
   const [delta, setDelta] = useState<number | null>(null);
+  // A run the visitor started lands in view: on a phone the results open
+  // under the bar, below the fold, and the key's spinner was all that moved.
+  // Only if they are still where they started it (they may have scrolled on).
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  const landRun = useRef<{ y: number } | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
   const filterSegmentedRef = useRef<HTMLDivElement>(null);
 
@@ -381,11 +387,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (status !== 'ok' || !landRun.current) return;
+    const { y } = landRun.current;
+    landRun.current = null;
+    if (Math.abs(window.scrollY - y) > 48) return;
+    requestAnimationFrame(() => bringIntoView(resultsRef.current));
+  }, [status]);
+
   async function runScore(targetUrl: string) {
     if (status === 'loading') return;
     if (!targetUrl) return;
 
     setStatus('loading');
+    landRun.current = userJustActed() ? { y: window.scrollY } : null;
     setResult(null);
     setExpandedId(null);
     setCollapsedGroups({});
@@ -741,7 +756,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       )}
 
       {status === 'ok' && result && result.ok && (
-        <div className="score-results fade-up">
+        <div className="score-results fade-up" ref={resultsRef}>
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
             {/* Verdict line — leads before the number (PSI verdict-first pattern).

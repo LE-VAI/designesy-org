@@ -10,6 +10,7 @@
 // and result in the side column; activating it opens the matching finding.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
 
@@ -147,6 +148,18 @@ export function Instrument(props: Props) {
     leave.current = window.setTimeout(() => setInspect(null), 140);
   };
   useEffect(() => () => { if (leave.current) window.clearTimeout(leave.current); }, []);
+
+  // A run the visitor just started plays out where they can see it: on a
+  // phone the instrument sits under the bar, below the fold (bring-into-view).
+  // An engine that answers at once (the M3 converter) goes idle to done.
+  const root = useRef<HTMLElement | null>(null);
+  const was = useRef(phase);
+  useEffect(() => {
+    const before = was.current;
+    was.current = phase;
+    const started = phase === 'running' || (phase === 'done' && before === 'idle');
+    if (started && before !== 'running' && userJustActed()) bringIntoView(root.current);
+  }, [phase]);
 
   const cellProps = (c: RegistryCheck) => {
     const o = outcomes[c.id];
@@ -451,6 +464,7 @@ export function Instrument(props: Props) {
 
   return (
     <section
+      ref={root}
       className="eg-inst"
       data-phase={phase}
       aria-label={`${name}: ${registry.checks.length} checks`}
