@@ -58,7 +58,10 @@ jobs:
       - name: Detect changes
         id: changes
         run: |
-          if git diff --quiet apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json; then
+          # Every file the script writes. self-report.json and batch-data.ts were
+          # written each week but never committed, so /docs' receipt and the data
+          # pages' category breakdowns went stale while the composites moved.
+          if git diff --quiet apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json apps/site/app/leaderboard/batch-data.ts apps/site/app/docs/self-report.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No score changes since last week — skipping PR."
           else
@@ -75,7 +78,7 @@ jobs:
           git config user.name 'LE-VAI'
           git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git checkout -b "${BRANCH}"
-          git add apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json
+          git add apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json apps/site/app/leaderboard/batch-data.ts apps/site/app/docs/self-report.json
           git commit -m "chore(leaderboard): weekly re-score ${DATE_STAMP}
 
           Automated re-score of all leaderboard seed sites against the live
@@ -98,7 +101,7 @@ jobs:
             --base main \
             --head "${BRANCH}" \
             --title "chore(leaderboard): weekly re-score ${DATE_STAMP}" \
-            --body "Automated weekly re-score of the leaderboard cohort. Updates seed.ts and snapshot.json from the live /api/score engine. Diff is expected to be small score deltas + the prevScore field on each row.
+            --body "Automated weekly re-score of the leaderboard cohort. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Diff is expected to be small score deltas + the prevScore field on each row.
 
           No code review needed — this is the canonical write path for the public leaderboard (was failing weekly for 3 weeks before the PR-flow fix). CI gate: CI / Build site + CI / Build & test MCP package." \
             --label "leaderboard,automated" \

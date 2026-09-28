@@ -36,7 +36,7 @@ standards:
 
 ## Overview
 
-Organization-first design system with deterministic verification. The contract is the scoring basis — ${ENGINE_CHECK_COUNT} automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
+Organization-first design system with deterministic verification. The contract is the scoring basis: ${ENGINE_CHECK_COUNT} automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
 
 ## Tokens
 
@@ -48,21 +48,21 @@ ${colorRows}
 
 ## Typography
 
-- **Root font size:** 16px (never lower — iOS Safari auto-zooms inputs below 16px)
+- **Root font size:** 16px (never lower: iOS Safari auto-zooms inputs below 16px)
 - **Heading line-height:** 1.08 (tight, deliberate)
 - **Body line-height:** 1.55 (relaxed, confident)
 - **Font smoothing:** antialiased + grayscale (prevents subpixel artifacts on dark backgrounds)
 - **Font synthesis:** none (prevents browser from synthesizing missing weights)
 - **Text wrap:** balance (headings) + pretty (body)
 - **Underline position:** from-font (uses font designer's position, not browser default)
-- **Skip ink:** auto (underlines skip descenders — g, j, p, q, y)
+- **Skip ink:** auto (underlines skip descenders: g, j, p, q, y)
 - **Tabular nums:** required on numeric displays (scores, counts, prices, timestamps)
 
 ## Motion
 
 - **Durations:** 150ms (quick), 250ms (fast), 350ms (medium), 400ms (slow), 600ms (default)
 - **Easing:** cubic-bezier(0.22, 1, 0.36, 1) primary out; cubic-bezier(0.65, 0, 0.35, 1) in-out
-- **Press scale (Takt):** 0.96 cells, 0.985 cards, 0.995 large surfaces — all above 0.95 floor
+- **Press scale (Takt):** 0.96 cells, 0.985 cards, 0.995 large surfaces: all above 0.95 floor
 - **Reduced motion:** prefers-reduced-motion disables all animations and transitions
 - **No transition:all:** use named properties to avoid layout-thrash
 
@@ -82,7 +82,7 @@ ${colorRows}
 
 ## Verification
 
-- **Checks:** 40 (v01–v41 + x01–x03)
+- **Checks:** 40 (v01 to v41 + x01–x03)
 - **Categories:** 14 weighted (cadence 18, accessibility 15, semantic 12, motion 10, copywriting 8, tokens 9, takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3, security 5, spec 4)
 - **A11y floor:** 60% (accessibility category below 60% caps overall score at C/70)
 - **Standards:** WCAG 2.1 AA + APCA supplementary + DTCG 2025.10 + EU AI Act Art 50

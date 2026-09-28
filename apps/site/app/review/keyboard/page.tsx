@@ -11,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Keyboard path',
   description:
-    'Site-wide keyboard path for designesy.org — skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
+    'Site-wide keyboard path for designesy.org: skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
   path: '/review/keyboard',
   ogDescription:
     'Public verification packet for shared chrome and default surface routes: skip to content, tab order, focus rings, activation.',
   twitterDescription:
-    'Site-wide keyboard verification — designesy.org/review/keyboard',
+    'Site-wide keyboard verification · designesy.org/review/keyboard',
 });
 
 const SCOPE = [
@@ -180,8 +180,8 @@ const RESULTS = [
 
 const METHOD = [
   'Open any public route on https://www.designesy.org',
-  'Press Tab once — confirm Skip to content appears and is first',
-  'Activate skip link — focus should land at main content',
+  'Press Tab once, then confirm Skip to content appears and is first',
+  'Activate the skip link; focus should land at main content',
   'Tab through wordmark, primary nav, sound toggle, then body controls',
   'Confirm focus-visible rings on each interactive control',
   'On sound toggle: Space/Enter flips aria-pressed; no audio on focus alone',
@@ -320,22 +320,22 @@ export default function SiteKeyboardPage() {
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
             {RELATED.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -343,7 +343,7 @@ export default function SiteKeyboardPage() {
         <div className="status-note">
           Keyboard path is part of public legitimacy. If a new interactive
           pattern ships without native focus and activation, treat that as an
-          open tension — silence is not accessibility adoption.
+          open tension; silence is not accessibility adoption.
         </div>
       </main>
 

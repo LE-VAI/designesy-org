@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Monitor contract',
   description:
-    'Designesy Monitor Contract v0.1.0 — continuous design-drift monitoring. Re-scores a URL on a cadence, stores snapshots, computes drift deltas against the baseline, emails you when drift is detected, and surfaces regressions before they compound. 10 verification checks.',
+    'Designesy Monitor Contract v0.1.0: continuous design-drift monitoring. Re-scores a URL on a cadence, stores snapshots, computes drift deltas against the baseline, emails you when drift is detected, and surfaces regressions before they compound. 10 verification checks.',
   path: '/contracts/monitor',
   ogTitle: 'Monitor contract · Designesy',
   ogDescription:
-    'Continuous design-drift monitoring with email alerts — 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
-  twitterDescription: 'Designesy monitor — designesy.org/contracts/monitor',
+    'Continuous design-drift monitoring with email alerts: 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
+  twitterDescription: 'Designesy monitor · designesy.org/contracts/monitor',
 });
 
 const c = monitorContract;
@@ -115,7 +115,7 @@ export default function MonitorContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -161,8 +161,8 @@ export default function MonitorContractPage() {
         </section>
 
         <div className="status-note">
-          The monitor contract is the continuous-governance layer — it turns
-          every prior designesy surface from a snapshot into a watched series.
+          The monitor contract is the continuous-governance layer: it turns
+          every prior designesy surface from a snapshot into a watched series.{' '}
           <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>

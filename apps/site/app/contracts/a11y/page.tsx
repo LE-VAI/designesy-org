@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { a11yContract } from '../../lib/a11y-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
@@ -10,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Accessibility contract',
   description:
-    'Designesy accessibility contract v0.1.0 — axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with provenance chain.',
+    'Designesy accessibility contract v0.1.0: axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with provenance chain.',
   path: '/contracts/a11y',
   ogTitle: 'Accessibility contract · v0.1.0',
   ogDescription:
     'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks. Machine export available.',
-  twitterDescription: 'Designesy accessibility contract — designesy.org/contracts/a11y',
+  twitterDescription: 'Designesy accessibility contract · designesy.org/contracts/a11y',
 });
 
 export default function A11yContractPage() {
@@ -68,7 +69,7 @@ export default function A11yContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification — <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
@@ -98,7 +99,7 @@ export default function A11yContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.4.0. Machine export at{' '}
+          Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <Link href="/contracts/a11y.json">/contracts/a11y.json</Link>.
         </div>
       </main>

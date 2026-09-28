@@ -13,11 +13,11 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Open handoff',
   description:
-    'First public handoff pack for Designesy Open — short share copy, agent prompt, package links, and verification paths pointing at /open.',
+    'First public handoff pack for Designesy Open: short share copy, agent prompt, package links, and verification paths pointing at /open.',
   path: '/open/handoff',
   ogDescription:
     'Portable share packet for open design intelligence: human path, machine feed, and first post copy.',
-  twitterDescription: 'Share open design intelligence — designesy.org/open/handoff',
+  twitterDescription: 'Share open design intelligence · designesy.org/open/handoff',
 });
 
 const SHARE_POSTS = [
@@ -58,7 +58,7 @@ const VERIFY = [
   },
   {
     title: 'Handoff stays short',
-    meta: 'Share copy points at /open — no private control-plane names',
+    meta: 'Share copy points at /open, with no private control-plane names',
   },
 ];
 
@@ -113,68 +113,72 @@ export default function OpenHandoffPage() {
             <p>{o.handoff_line}</p>
           </div>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
-            Shows a short human line. Click copies the full agent brief —
-            paste into your AI tool so it can fetch open.json and apply packages.
+            Shows a short human line. Click copies the full agent brief:
+            paste it into your AI tool so it can fetch open.json and apply packages.
           </p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Primary paths</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Human index</span>
-                <span className="row-meta">designesy.org/open</span>
-              </span>
-            </Link>
-            <Link
-              href="/open.json"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Machine feed</span>
-                <span className="row-meta">designesy.org/open.json · CORS-open</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">
-                  Human + machine · first agent-ready package
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Human index</span>
+                  <span className="row-meta">designesy.org/open</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">Portable judgment · human + machine</span>
-              </span>
-            </Link>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/open.json"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Machine feed</span>
+                  <span className="row-meta">designesy.org/open.json · CORS-open</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">
+                    Human + machine · first agent-ready package
+                  </span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">Portable judgment · human + machine</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -219,28 +223,28 @@ export default function OpenHandoffPage() {
           <h2 className="doctrine-heading">Catalog snapshot</h2>
           <div className="row-stack" role="list">
             {o.packages.map((pkg, i) => (
-              <Link
-                key={pkg.id}
-                href={pkg.path}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">
-                    {pkg.title}
-                    {pkg.version ? ` · v${pkg.version}` : ''}
+              <div role="listitem" key={pkg.id}>
+                <Link
+                  href={pkg.path}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="row-meta">
-                    {pkg.path}
-                    {pkg.machine_path ? ` · ${pkg.machine_path}` : ' · human surface'}
+                  <span className="row-body">
+                    <span className="row-title">
+                      {pkg.title}
+                      {pkg.version ? ` · v${pkg.version}` : ''}
+                    </span>
+                    <span className="row-meta">
+                      {pkg.path}
+                      {pkg.machine_path ? ` · ${pkg.machine_path}` : ' · human surface'}
+                    </span>
                   </span>
-                </span>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

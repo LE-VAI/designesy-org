@@ -9,7 +9,7 @@ export default function TwitterImage() {
   return renderOgCard({
     eyebrow: 'Contracts · Design system',
     title: 'Design system contract',
-    lede: `Portable design judgment for designesy.org — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted through ${CONTRACT_VERSION}.`,
+    lede: `Portable design judgment for designesy.org: Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted through ${CONTRACT_VERSION}.`,
     path: 'designesy.org/contracts/design-system',
     kind: 'contract',
     badge: CONTRACT_VERSION,

@@ -4,7 +4,7 @@ import { scoreUrl, normalizeInputUrl, isValidUrl } from '../api/score/route';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Report — One URL, three engines';
+export const alt = 'Designesy Report: One URL, three engines';
 
 export default async function OpenGraphImage({
   searchParams,
@@ -37,7 +37,7 @@ export default async function OpenGraphImage({
     const result = await scoreUrl(url);
     return renderOgCard({
       eyebrow: 'Designesy Report',
-      title: result.score === null ? 'Not scored' : `Grade ${result.grade} — ${result.score}%`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} · ${result.score}%`,
       lede:
         result.score === null
           ? 'The target could not be read, so no score is reported.'

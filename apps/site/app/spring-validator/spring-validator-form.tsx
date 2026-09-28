@@ -9,7 +9,7 @@
 //
 // All computation is client-side.
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -179,12 +179,12 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
   {
     name: 'M3 Default',
     params: { stiffness: 200, damping: 28, mass: 1 },
-    source: 'Material 3 Expressive — default spring',
+    source: 'Material 3 Expressive · default spring',
   },
   {
     name: 'M3 Momentum',
     params: { stiffness: 300, damping: 24, mass: 1 },
-    source: 'Material 3 Expressive — momentum spring',
+    source: 'Material 3 Expressive · momentum spring',
   },
   {
     name: 'iOS Snappy',
@@ -204,12 +204,12 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
   {
     name: 'Bouncy (risky)',
     params: { stiffness: 400, damping: 10, mass: 1 },
-    source: 'High overshoot — likely vestibular trigger',
+    source: 'High overshoot, a likely vestibular trigger',
   },
   {
     name: 'Critically damped',
     params: { stiffness: 200, damping: 28.28, mass: 1 },
-    source: 'ζ = 1.0 — fastest settle, no overshoot',
+    source: 'ζ = 1.0: fastest settle, no overshoot',
   },
   {
     name: 'Designesy contract',
@@ -256,6 +256,8 @@ export function SpringValidator() {
           {PRESETS.map((preset) => (
             <button
               key={preset.name}
+              type="button"
+              className="sv-preset"
               onClick={() => handlePreset(preset)}
               style={{
                 padding: '0.35rem 0.75rem',
@@ -336,9 +338,9 @@ export function SpringValidator() {
             margin: 0,
             textTransform: 'capitalize',
           }}>
-            {result.verdict === 'safe' && '✓ Safe — no reduced-motion concern'}
-            {result.verdict === 'caution' && '⚠ Caution — minor overshoot'}
-            {result.verdict === 'violation' && '✗ Violation — overshoot requires suppression'}
+            {result.verdict === 'safe' && '✓ Safe: no reduced-motion concern'}
+            {result.verdict === 'caution' && '⚠ Caution: minor overshoot'}
+            {result.verdict === 'violation' && '✗ Violation: overshoot requires suppression'}
           </p>
           {result.reducedMotionRequired && (
             <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.5rem 0 0', maxWidth: '60ch' }}>
@@ -379,7 +381,7 @@ export function SpringValidator() {
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
           <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-            Spring response — displacement over time
+            Spring response: displacement over time
           </p>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer', minHeight: '44px' }}>
             <input
@@ -435,14 +437,14 @@ export function SpringValidator() {
         <ChecklistItem
           checked={true}
           label="Spring uses transform/opacity only (no layout animation)"
-          detail="Never animate width, height, margin, padding — use transform and opacity"
+          detail="Never animate width, height, margin, or padding; use transform and opacity"
         />
       </div>
 
       {/* CSS output */}
       <div style={{ marginBottom: '1.5rem' }}>
         <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
-          CSS snippet — with reduced-motion fallback
+          CSS snippet with reduced-motion fallback
         </p>
         <pre style={{
           padding: '1.25rem',
@@ -463,7 +465,7 @@ export function SpringValidator() {
 
 @media (prefers-reduced-motion: reduce) {
   .spring-${result.classification} {
-    /* Suppress overshoot — linear or ease-out at ${Math.min(result.settleTime, 150).toFixed(0)}ms */
+    /* Suppress overshoot: linear or ease-out at ${Math.min(result.settleTime, 150).toFixed(0)}ms */
     transition: transform ${Math.min(result.settleTime, 150).toFixed(0)}ms ease-out;
   }
 }`}
@@ -487,7 +489,7 @@ export function SpringValidator() {
           Score your site →
         </Link>
         <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: 'auto' }}>
-          All computation is client-side — no data sent to any server.
+          All computation is client-side; no data is sent to any server.
         </span>
       </div>
     </div>
@@ -528,29 +530,14 @@ function ParamSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        style={{
-          // height was '4px' — the VISUAL track height, which with
-          // appearance:none ALSO became the element's box, so the whole drag
-          // target measured 4px tall.
-          //
-          // 44px box, thin track drawn by a centred gradient, so the look is
-          // unchanged and the hit area is real.
-          //
-          // The gradient is not cosmetic: with appearance:none and no
-          // ::-webkit-slider-thumb rule, Chrome draws NO HANDLE. Measured here:
-          // the "thumb" reported geometry of the entire element (361x4), which
-          // means there is nothing to render as one. A slider with no visible
-          // thumb still works (the track is clickable) but gives the user no
-          // affordance that it is draggable — so the handle is drawn explicitly,
-          // below, matching the 14px circular thumb the orb lab already uses.
-          width: '100%',
-          height: '44px',
-          background:
-            'linear-gradient(to bottom, transparent calc(50% - 2px), var(--line) calc(50% - 2px), var(--line) calc(50% + 2px), transparent calc(50% + 2px))',
-          outline: 'none',
-          appearance: 'none',
-          cursor: 'pointer',
-        }}
+        aria-label={label}
+        aria-valuetext={`${value.toFixed(1)} ${unit}`}
+        className="sv-range"
+        // --v fills the track up to the value. The 44 px box, thin track and
+        // drawn handle live in globals.css (.sv-range): with appearance:none
+        // and no thumb rule Chrome draws no handle at all, and a 4 px box
+        // left the whole drag target 4 px tall.
+        style={{ '--v': ((value - min) / (max - min)) * 100 } as CSSProperties}
       />
     </div>
   );

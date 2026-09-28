@@ -13,6 +13,8 @@ import {
 } from '../lib/score-history';
 import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { EngineBar, Segmented } from '../lib/engine/command-bar';
+import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
@@ -159,13 +161,13 @@ function verdictLine(r: ScoreResponse): string {
   const total = r.total ?? 0;
   const fails = r.fail ?? 0;
   if (fails === 0 && (r.warn ?? 0) <= Math.max(1, Math.floor(total * 0.15))) {
-    return 'Strong conformance — this design system reads as engineered, not assembled.';
+    return 'Strong conformance: this design system reads as engineered rather than assembled.';
   }
   if (fails > 0) {
     const worst = topCategories(r, 'worst');
-    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? ` — weakest in ${worst.label}` : ''}.`;
+    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
   }
-  return 'Partial conformance — passes the floor, but the contract sees warnings the eye forgives.';
+  return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
 }
 
 // Strongest / weakest scored categories for the hero meta line.
@@ -205,10 +207,25 @@ function normalizeInput(input: string): string {
   return clean;
 }
 
+type ScopeMode = 'auto' | 'universal' | 'contract';
+
+// The scope names are the API's (?scope=auto|universal|contract), so what the
+// page says is what a request sends. Each carries its reading, shown under the
+// control for the one selected and read with each option.
+const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to the full contract; every other site gets the Universal reading.' },
+  {
+    value: 'universal',
+    label: 'Universal',
+    hint: "Optional polish a site leaves out (sound, font synthesis, a selection color) is skipped instead of failed, as are the checks tied to Designesy's own token names.",
+  },
+  { value: 'contract', label: 'Contract', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
+];
+
 export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState(initialUrl);
-  const [scopeMode, setScopeMode] = useState<'auto' | 'contract' | 'universal'>('auto');
+  const [scopeMode, setScopeMode] = useState<ScopeMode>('auto');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
@@ -227,8 +244,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [animatedCatScores, setAnimatedCatScores] = useState<Record<string, number>>({});
   const [animatedCounts, setAnimatedCounts] = useState({ pass: 0, fail: 0, warn: 0, manual: 0, skip: 0, total: 0, origPoints: 0, slopTotal: 0 });
   const [delta, setDelta] = useState<number | null>(null);
+  // A run the visitor started lands in view: on a phone the results open
+  // under the bar, below the fold, and the key's spinner was all that moved.
+  // Only if they are still where they started it (they may have scrolled on).
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  const verdictRef = useRef<HTMLParagraphElement | null>(null);
+  const landRun = useRef<{ y: number } | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const filterSegmentedRef = useRef<HTMLDivElement>(null);
 
   // Sliding indicator: measure the active filter tab and position a
@@ -366,11 +388,28 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (status !== 'ok' || !landRun.current) return;
+    const { y } = landRun.current;
+    landRun.current = null;
+    if (Math.abs(window.scrollY - y) > 48) return;
+    // The loading log's live region leaves with the run, so the result itself
+    // was never announced: focus goes to the verdict line, which opens with
+    // the grade and score, if the visitor's focus is still in the form.
+    const active = document.activeElement;
+    const stillHere = !active || active === document.body || !!active.closest('.score-form');
+    requestAnimationFrame(() => {
+      bringIntoView(resultsRef.current);
+      if (stillHere) verdictRef.current?.focus({ preventScroll: true });
+    });
+  }, [status]);
+
   async function runScore(targetUrl: string) {
     if (status === 'loading') return;
     if (!targetUrl) return;
 
     setStatus('loading');
+    landRun.current = userJustActed() ? { y: window.scrollY } : null;
     setResult(null);
     setExpandedId(null);
     setCollapsedGroups({});
@@ -432,13 +471,8 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       playExtended('processing-stop');
       if (soundIsEnabled()) playExtended('error');
       setStatus('error');
-      setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
+      setResult({ ok: false, error: 'Network error: could not reach the scoring server.' });
     }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    await runScore(normalizeInput(url));
   }
 
   const checks = useMemo(() => result?.checks || [], [result]);
@@ -546,7 +580,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // in the text causes X's crawler to attach a card for the scored brand instead
   // of the Designesy grade card.
   const shareText = result?.grade
-    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%) — see the full design-system audit`
+    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%). See the full design-system audit`
     : `Score any site against the Designesy design system contract`;
 
   function copyShareLink() {
@@ -657,12 +691,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         for (const c of merged.filter((c) => c.status === 'FAIL')) {
           let cap: number | null = null;
           let reason: string | null = null;
-          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum — text is unreadable for many users.'; }
-          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA — the most important interaction on the page is hard to read.'; }
-          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
-          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target — inaccessible on touch devices.'; }
-          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
-          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px — triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
+          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
+          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target, which makes them inaccessible on touch devices.'; }
+          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: the document outline is broken.'; }
+          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom and breaks mobile UX.'; }
           if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
         }
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
@@ -671,93 +705,29 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setAuditStatus('ok');
     } catch {
       setAuditStatus('error');
-      setAuditError('Network error — could not reach the audit server.');
+      setAuditError('Network error: could not reach the audit server.');
     }
   }
 
   return (
     <div className="score-form">
-      <form ref={formRef} onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-col">
-          <div className="score-input-flex-box">
-            <span className="score-input-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z" />
-              </svg>
-            </span>
-            <input
-              type="text"
-              inputMode="url"
-              enterKeyHint="go"
-              autoComplete="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="Enter any website URL…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={status === 'loading'}
-              aria-label="Site URL to score"
-              data-cuelume-hover="tick"
-              className="score-url-input-inner"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={status === 'loading' || !url.trim()}
-            data-cuelume-press="sparkle"
-            className="button primary score-submit"
-          >
-            {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" />
-                Running {ENGINE_CHECK_COUNT} checks…
-              </span>
-            ) : (
-              'Score it'
-            )}
-          </button>
-        </div>
-
-        {/* Scope toggle — controls how absence is treated.
-            auto: designesy.org → contract, everything else → universal (default)
-            contract: all {ENGINE_CHECK_COUNT} checks penalize absence (strictest, for self-scoring)
-            universal: optional features SKIP on absence (fair to external sites) */}
-        <div className="score-form-foot">
-        <div className="score-scope-toggle" role="radiogroup" aria-label="Scoring scope">
-          <span className="score-scope-label">Scope:</span>
-          {(['auto', 'universal', 'contract'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              role="radio"
-              aria-checked={scopeMode === mode}
-              className={`score-scope-option ${scopeMode === mode ? 'is-active' : ''}`}
-              onClick={() => setScopeMode(mode)}
-              disabled={status === 'loading'}
-              data-cuelume-hover="tick"
-              title={
-                mode === 'auto'
-                  ? 'Auto-detect: designesy.org uses contract scope, all other sites use universal scope'
-                  : mode === 'universal'
-                    ? 'Universal: optional features (sound, font-synthesis, text-wrap, etc.) are SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
-                    : `Contract: all ${ENGINE_CHECK_COUNT} checks penalize absence. The strictest mode: Designesy patterns are mandatory.`
-              }
-            >
-              {mode === 'auto' ? 'Detect' : mode === 'universal' ? 'Assess' : 'Enforce'}
-            </button>
-          ))}
-        </div>
-        {status === 'idle' && !result && (
-          <p className="score-note">
-            No login. Any public URL, {ENGINE_CHECK_COUNT} checks, a grade in seconds.
-          </p>
-        )}
-        </div>
-      </form>
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'Site URL to score', placeholder: 'Any public URL, like stripe.com' }]}
+        onSubmit={() => void runScore(normalizeInput(url))}
+        busy={status === 'loading'}
+        go="Score it"
+        goBusy="Scoring"
+        choices={
+          <Segmented<ScopeMode>
+            label="Scope"
+            value={scopeMode}
+            onChange={setScopeMode}
+            options={SCOPE_OPTIONS}
+            disabled={status === 'loading'}
+          />
+        }
+        note={`No login. ${ENGINE_CHECK_COUNT} checks, a grade in seconds.`}
+      />
 
       {status === 'error' && result?.error && (
         <div className="score-error-card">
@@ -795,14 +765,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       )}
 
       {status === 'ok' && result && result.ok && (
-        <div className="score-results fade-up">
+        <div className="score-results fade-up" ref={resultsRef}>
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
             {/* Verdict line — leads before the number (PSI verdict-first pattern).
                 The LottieHint check draws a one-shot confirmation when results
                 arrive — subtle, 0.4s, removed under reduced-motion. */}
-            <p className="score-verdict-line">
+            <p className="score-verdict-line" tabIndex={-1} ref={verdictRef}>
               <LottieHint type="check" size={20} trigger="visible" className="score-verdict-check" />
+              <span className="sr-only">Grade {result.grade}, {result.score}%. </span>
               {verdictLine(result)}
             </p>
 
@@ -950,7 +921,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                           style={{ width: `${Math.round(animatedCatScores[k] ?? 0)}%`, ['--bar-i' as string]: i }}
                         />
                       </span>
-                      <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
+                      <span className="score-cat-legend-score">{cat.score === null ? <><span aria-hidden="true">–</span><span className="sr-only">Not measured</span></> : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
                     </button>
                   </li>
                 );
@@ -960,10 +931,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {/* Score-scale legend — per Lighthouse PR #8121: never show a
                 colored gauge without a legend so users can verify the bands. */}
             <div className="score-scale-legend" aria-hidden="true">
-              <span className="score-scale-band is-fail"><span className="score-scale-dot" />0–49 Fail</span>
-              <span className="score-scale-band is-warn"><span className="score-scale-dot" />50–69 Needs work</span>
-              <span className="score-scale-band is-pass"><span className="score-scale-dot" />70–89 Good</span>
-              <span className="score-scale-band is-a"><span className="score-scale-dot" />90–100 Excellent</span>
+              <span className="score-scale-band is-fail"><span className="score-scale-dot" />Fail: 0 to 49</span>
+              <span className="score-scale-band is-warn"><span className="score-scale-dot" />Needs work: 50 to 69</span>
+              <span className="score-scale-band is-pass"><span className="score-scale-dot" />Good: 70 to 89</span>
+              <span className="score-scale-band is-a"><span className="score-scale-dot" />Excellent: 90 to 100</span>
             </div>
 
             {/* Scoring rubric — Socket.dev published-math pattern. The exact
@@ -986,8 +957,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {rubricOpen && (
                 <div className="score-rubric-body" id="score-rubric-body">
                   <p className="score-rubric-formula">
-                    score = Σ (category<sub>earned</sub> / category<sub>weight</sub>) × 100 —
-                    PASS 1.0 · WARN 0.5 · FAIL 0, MANUAL + N/A excluded. Each category contributes its
+                    score = Σ (category<sub>earned</sub> /
+                    category<sub>weight</sub>) × 100. PASS 1.0 · WARN 0.5 · FAIL
+                    0; MANUAL and N/A excluded. Each category contributes its
                     full contract weight, split evenly across its checks. Accessibility &lt; 60% caps the grade at C.
                   </p>
                   <ol className="score-rubric-weights">
@@ -1072,7 +1044,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 ) : auditStatus === 'ok' ? (
                   'Audit complete ✓'
                 ) : auditStatus === 'error' ? (
-                  'Audit failed — retry'
+                  'Audit failed · retry'
                 ) : (
                   'Run full browser audit'
                 )}
@@ -1082,7 +1054,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 href={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
                 className="score-action-btn"
                 data-cuelume-press="tick"
-                title="Open the full verification report — shareable URL, print-friendly."
+                title="Open the full verification report: shareable URL, print-friendly."
               >
                 View full report →
               </a>
@@ -1205,7 +1177,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {result.originality && result.originality.signals.length > 0 && (
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-originality">
-                    Originality — positive craft signals
+                    Originality: positive craft signals
                     <span className="score-signals-group-chip">+{animatedCounts.origPoints}pt{result.originality.points !== 1 ? 's' : ''}{result.originality.slopGateApplied ? ' · slop-gated ×0.5' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
@@ -1225,7 +1197,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {result.slop && result.slop.findings.length > 0 && (
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-slop">
-                    Anti-slop — generic/template patterns
+                    Anti-slop: generic/template patterns
                     <span className="score-signals-group-chip is-neg">−{animatedCounts.slopTotal}pt{result.slop.total !== 1 ? 's' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
@@ -1496,7 +1468,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <span className="score-a11y-floor-notice"> · Anti-slop: −{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''} ({result.slop.findings.length} pattern{result.slop.findings.length !== 1 ? 's' : ''} detected)</span>
             )}
             {result.originality && result.originality.points > 0 && (
-              <span className="score-originality-notice"> · Originality: +{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''} — {result.originality.summary}{result.originality.slopGateApplied ? ' (halved by anti-slop gate)' : ''}</span>
+              <span className="score-originality-notice"> · Originality: +{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''}, {result.originality.summary}{result.originality.slopGateApplied ? ' (halved by anti-slop gate)' : ''}</span>
             )}
           </p>
         </div>
@@ -1506,7 +1478,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-welcome-card">
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
-            Enter any public website URL above — no https:// needed. We fetch its CSS,
+            Enter any public website URL above (no https:// needed). We fetch its CSS,
             extract design tokens, and evaluate {ENGINE_CHECK_COUNT} verification checks against the Designesy
             contract {CONTRACT_VERSION}. Real-time. No login required.
           </p>

@@ -11,13 +11,13 @@ import { AgentActions } from '../../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Poise keyboard path',
   description:
-    'Public keyboard-path verification for Lab One · Poise — tab order, focus-visible, activation, and reduced-motion notes.',
+    'Public keyboard-path verification for Lab One · Poise: tab order, focus-visible, activation, and reduced-motion notes.',
   path: '/review/poise/keyboard',
   ogTitle: 'Poise · keyboard path',
   ogDescription:
     'Verification artifact for Lab One controls: tab order, focus rings, Enter/Space, reduced motion.',
   twitterDescription:
-    'Keyboard verification for Lab One — designesy.org/review/poise/keyboard',
+    'Keyboard verification for Lab One · designesy.org/review/poise/keyboard',
 });
 
 const SCOPE = [
@@ -120,7 +120,7 @@ const ACTIVATION = [
   },
   {
     title: 'Buttons (press demo)',
-    meta: 'Space or Enter · press feedback is visual settle, not a route change',
+    meta: 'Space or Enter · press feedback is a visual settle on the same route',
   },
   {
     title: 'Sound toggle',
@@ -186,7 +186,7 @@ const RESULTS = [
 
 const METHOD = [
   'Open https://www.designesy.org/labs/poise in a desktop browser',
-  'Use keyboard only — Tab / Shift+Tab through the page',
+  'Use keyboard only: Tab / Shift+Tab through the page',
   'Confirm each stop matches the tab order table',
   'On buttons: Space and Enter activate without pointer',
   'On sound toggle: confirm aria-pressed flips and no audio on focus alone',
@@ -245,7 +245,7 @@ export default function PoiseKeyboardVerificationPage() {
             Public proof that Lab One controls are operable without a pointer.
           </p>
           <p className="surface-note">
-            This is a verification artifact, not a redesign. It records tab
+            This is a verification artifact. It records tab
             order, focus-visible criteria, activation rules, reduced-motion
             notes, and re-run method for /labs/poise.
           </p>
@@ -332,30 +332,30 @@ export default function PoiseKeyboardVerificationPage() {
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
             {RELATED.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
 
         <div className="status-note">
           Keyboard-path verification for Lab One · Poise. Published so inclusion
-          claims cite proof, not intention. Site-wide route packets remain an
-          open system state — this artifact does not claim them.
+          claims cite proof. Site-wide route packets remain an open system
+          state; this artifact covers Lab One only.
         </div>
       </main>
 

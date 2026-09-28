@@ -10,14 +10,14 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Continuity — case study',
+  title: 'Continuity: case study',
   description:
     'A founder-narrative article published as a single X post. Channel-format mismatch documented with eight-dimension review.',
   path: '/work/continuity',
   ogTitle: 'Continuity · case study',
   ogDescription:
     'A founder-narrative article reviewed against the design system contract. Outcome: channel-format mismatch.',
-  twitterDescription: 'Continuity case study — designesy.org/work/continuity',
+  twitterDescription: 'Continuity case study · designesy.org/work/continuity',
   type: 'article',
 });
 
@@ -34,23 +34,23 @@ const DIMENSIONS = [
     num: '02',
     title: 'Clarity',
     observation:
-      'Clean structure, clear sections. Yellow-field addressing with black rounded cards — a distinct mode from the dark default.',
-    judgment: 'Clarity is strong in the artifact. The publication format was the constraint, not the writing.',
-    action: 'Retain at the hosted URL. Reference, not feed post.',
+      'Clean structure, clear sections. Yellow-field addressing with black rounded cards, a distinct mode from the dark default.',
+    judgment: 'Clarity is strong in the artifact. The publication format was the constraint; the writing held up.',
+    action: 'Retain at the hosted URL as a reference.',
   },
   {
     num: '03',
     title: 'Context',
     observation:
-      'Deployed on GitHub Pages. X audience (1,891 followers, building-in-public) rewards shipped product demos over narrative content. The context is a feed, not a reading surface.',
+      'Deployed on GitHub Pages. X audience (1,891 followers, building-in-public) rewards shipped product demos over narrative content. The context is a feed rather than a reading surface.',
     judgment: 'Channel-format mismatch. The artifact is sound; the distribution channel was wrong for this format.',
-    action: 'Match format to channel. Hosted URL as a profile reference, not a feed post.',
+    action: 'Match format to channel. Keep the hosted URL as a profile reference.',
   },
   {
     num: '04',
     title: 'Inclusion',
     observation:
-      'Yellow-field mode is a deliberate VAI surface choice — dark default with a toggle into yellow addressing. Article text is readable. No dark pattern.',
+      'Yellow-field mode is a deliberate VAI surface choice: dark default with a toggle into yellow addressing. Article text is readable. No dark pattern.',
     judgment: 'Inclusion is sound. The dark/yellow toggle is an accessibility-aware choice.',
     action: 'Retain the dark/yellow toggle.',
   },
@@ -59,7 +59,7 @@ const DIMENSIONS = [
     title: 'System coherence',
     observation:
       'VAI yellow #FFC400 as the field, black rounded cards, VAI wordmark only. Designesy activation yellow #FECC34 is deliberately suppressed. Deployment pattern matches Tile.',
-    judgment: 'Coherent within the VAI surface. The yellow-field mode is a distinct address, not a doctrine violation.',
+    judgment: 'Coherent within the VAI surface. The yellow-field mode is a distinct address within the doctrine.',
     action: 'Retain as a VAI-specific surface option. Do not import into Designesy.',
   },
   {
@@ -74,7 +74,7 @@ const DIMENSIONS = [
     num: '07',
     title: 'Delight',
     observation:
-      'Yellow-field mode is visually striking. Article voice is sincere. Feed-context delight requires immediate payoff — a long backstory does not deliver that.',
+      'Yellow-field mode is visually striking. Article voice is sincere. Feed-context delight requires immediate payoff, and a long backstory delays it.',
     judgment: 'Delight is present in the artifact but is channel-dependent.',
     action: 'Retain the artifact; change the distribution.',
   },
@@ -94,13 +94,13 @@ const FINDINGS = [
   'Artifact is durable as a reference; distribution channel was the constraint',
   'Yellow-field VAI surface mode is coherent and retained',
   'Full documentation preserved: ARTICLE_DRAFT, VISUAL_BRIEF, STATUS, build scripts',
-  'Single engagement data point — pattern is consistent, sample is not statistically robust',
+  'Single engagement data point: the pattern is consistent, but the sample is too small to be statistically robust',
 ];
 
 const SOURCES = [
   {
     href: 'https://le-vai.github.io/continuity/',
-    title: 'Continuity — live artifact',
+    title: 'Continuity · live artifact',
     meta: 'Founder narrative article',
   },
   {
@@ -115,12 +115,12 @@ const SOURCES = [
   },
   {
     href: '/work/tile',
-    title: 'Tile — case study',
+    title: 'Tile · case study',
     meta: 'Comparison: product demo format',
   },
   {
     href: '/work',
-    title: 'Work — case studies',
+    title: 'Work · case studies',
     meta: 'Index',
   },
 ];
@@ -207,7 +207,7 @@ export default function ContinuityCaseStudyPage() {
               <span className="row-body">
                 <span className="row-title">Audience and context</span>
                 <span className="row-meta">
-                  Public builders on X via @levainbey — feed context, not reading
+                  Public builders on X via @levainbey, in a feed context
                 </span>
               </span>
             </ToggleRow>
@@ -225,7 +225,7 @@ export default function ContinuityCaseStudyPage() {
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Dimension findings</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each dimension: observation, judgment, action — Kit One format.
+            Each dimension in Kit One format: observation, judgment, action.
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (
@@ -264,30 +264,30 @@ export default function ContinuityCaseStudyPage() {
           <h2 className="doctrine-heading">Sources used</h2>
           <div className="row-stack" role="list">
             {SOURCES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
 
         <div className="status-note">
           Case study · Continuity. Outcome: needs revision. Channel-format
-          mismatch — the artifact is retained as a reference; the feed
-          format is not reused.
+          mismatch: the artifact is retained as a reference, and the feed
+          format is retired.
         </div>
       </main>
 

@@ -15,9 +15,9 @@ export const metadata: Metadata = pageMeta({
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
-    'A public surface checked against its own contract — holds, tensions, and standing rules.',
+    'A public surface checked against its own contract: holds, tensions, and standing rules.',
   twitterDescription:
-    'Field check against design system contract ' + CONTRACT_VERSION + ' — designesy.org/review/designesy-org',
+    'Field check against design system contract ' + CONTRACT_VERSION + ' · designesy.org/review/designesy-org',
 });
 
 const HOLDS = [
@@ -29,12 +29,12 @@ const HOLDS = [
   {
     dim: 'Clarity',
     finding:
-      'Hierarchy is quiet and readable. Primary paths — Docs, Review, Contracts, Labs, Poise — are discoverable without competing chrome.',
+      'Hierarchy is quiet and readable. Primary paths (Docs, Review, Contracts, Labs, Poise) are discoverable without competing chrome.',
   },
   {
     dim: 'System coherence',
     finding:
-      'Live UI draws from a single token foundation. Contract ' + CONTRACT_VERSION + ', the machine export, Poise, Takt, Cadence, and Acoustics reference the same values — including adopted interaction, interface-feel, typography, and acoustic rules. New public UI is expected to cite a contract token or an open tension.',
+      'Live UI draws from a single token foundation. Contract ' + CONTRACT_VERSION + ', the machine export, Poise, Takt, Cadence, and Acoustics reference the same values, including adopted interaction, interface-feel, typography, and acoustic rules. New public UI is expected to cite a contract token or an open tension.',
   },
   {
     dim: 'Delight',
@@ -59,14 +59,14 @@ const TENSIONS = [
   {
     dim: 'Durability',
     finding:
-      'Human contract page and machine export remain dual sources until a single generator owns both. That is an open tension, not a failure.',
+      'Human contract page and machine export remain dual sources until a single generator owns both. That is an open tension rather than a failure.',
     next: 'Token changes update both the human contract and the machine export together.',
   },
   {
     dim: 'Responsibility',
     finding:
       'Web Analytics is active. Public privacy language for measurement is not yet published.',
-    next: 'Privacy language ships when ready as clear visitor-facing copy — not as a placeholder.',
+    next: 'Privacy language ships when ready, as clear visitor-facing copy.',
   },
 ];
 
@@ -127,7 +127,7 @@ const EVIDENCE = [
   },
   {
     title: 'Tokens',
-    meta: 'Live design tokens — paper, surface, accent, radius, motion',
+    meta: 'Live design tokens: paper, surface, accent, radius, motion',
   },
   {
     title: 'Motion',
@@ -158,9 +158,9 @@ export default function PublicSurfaceReviewPage() {
             A public review against design system contract {CONTRACT_VERSION}.
           </p>
           <p className="surface-note">
-            Review leads with consequences, not taste. This packet checks the
-            live public site — including Lab One · Poise, Lab Two · Takt, Lab
-            Three · Cadence, and Lab Four · Acoustics — for purpose, clarity,
+            Review leads with consequences. This packet checks the live public
+            site (including Lab One · Poise, Lab Two · Takt, Lab Three · Cadence,
+            and Lab Four · Acoustics) for purpose, clarity,
             coherence, and what remains open.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -175,22 +175,22 @@ export default function PublicSurfaceReviewPage() {
           <h2 className="doctrine-heading">Scope</h2>
           <div className="row-stack" role="list">
             {SCOPE.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.label}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.label}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -203,7 +203,7 @@ export default function PublicSurfaceReviewPage() {
               The public surface is functional and largely considered. It earns
               its restraint. What remains is synchronization, fuller
               verification proof, and keeping adopted Poise, Takt, Cadence, and
-              Acoustics rules synchronized — not a redesign.
+              Acoustics rules synchronized. The design itself stands.
             </p>
           </div>
         </section>
@@ -272,8 +272,8 @@ export default function PublicSurfaceReviewPage() {
 
         <div className="status-note">
           Public review of the live designesy.org surface against contract{' '}
-          {CONTRACT_VERSION}. This is institutional quality discipline, not a client report
-          or legal audit. Poise, Takt, Cadence, and Acoustics rules are adopted; the labs remain the
+          {CONTRACT_VERSION}. This is institutional quality discipline. It is not a client report
+          or a legal audit. Poise, Takt, Cadence, and Acoustics rules are adopted; the labs remain the
           inspectable source demos.
         </div>
       </main>

@@ -8,10 +8,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/score-loop-poster.png">
-  <img src="docs/media/score-loop.webp" width="800" alt="A sweep arm runs the engine's checks around the contract ring while the page regions each check inspects outline in blue. Two findings pin to a generic page: v03 fails because no focus-visible ring is declared, and v06 warns because muted text measures 3.8 to 1. The page grades A.">
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/verify-loop-poster.png">
+  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org against contract v0.4.1. Its 42 check cells, in 14 category rows, light up one by one while a log names each check and the pass count climbs. The verdict lands: grade A, 93%, with 39 checks passed, 3 left to a person, and none warning or failing.">
 </picture>
-<p><sub>A 6-second loop. It plays once and rests, and shows a still frame if you prefer reduced motion. <a href="https://le-vai.github.io/LE-VAI/loops/#designesy">Watch it on repeat</a>.</sub></p>
+<p><sub>A 12-second loop, recorded from the homepage. It plays once and rests on the verdict, and shows a still frame if you prefer reduced motion. <a href="https://www.designesy.org/">Watch it run on designesy.org</a>.</sub></p>
 
 [designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
 

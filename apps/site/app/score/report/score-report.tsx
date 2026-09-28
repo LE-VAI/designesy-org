@@ -280,7 +280,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </div>
           {result.a11yFloorApplied && (
             <p className="report-hero-floor">
-              Accessibility floor applied — overall capped at 70.
+              Accessibility floor applied: overall capped at 70.
             </p>
           )}
           <p className="report-hero-scored">
@@ -320,7 +320,10 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   {cat.score}%
                 </span>
               ) : (
-                <span className="report-cat-score report-cat-score--null">—</span>
+                <span className="report-cat-score report-cat-score--null">
+                  <span aria-hidden="true">–</span>
+                  <span className="sr-only">Not measured</span>
+                </span>
               )}
               <span className="report-cat-detail">
                 {cat.pass}p/{cat.warn}w/{cat.fail}f/{cat.manual || 0}m/{cat.skip}s
@@ -334,9 +337,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       {notMeasured.length > 0 && (
         <div className="report-not-measured">
           <p>
-            <strong>Not measured:</strong> {notMeasured.join(', ')} — these
+            <strong>Not measured (–):</strong> {notMeasured.join(', ')}. These
             categories require a live browser and were excluded from scoring.
-            A missing dimension is visible, not silently averaged.
+            A missing dimension stays visible instead of being silently averaged.
           </p>
         </div>
       )}
@@ -440,7 +443,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   {cat.checks.filter((c) => c.status === 'MANUAL').length !== 1
                     ? 's'
                     : ''}{' '}
-                  manual (require live browser — run the audit)
+                  manual (require a live browser; run the audit)
                 </summary>
                 <div className="report-check-list">
                   {cat.checks
@@ -515,8 +518,8 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <ShareButton
             url={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
             text={result?.grade
-              ? `Designesy score: Grade ${result.grade} (${result.score}%) — ${scoredUrl}`
-              : `Designesy design verification report — ${scoredUrl}`}
+              ? `Designesy score: Grade ${result.grade} (${result.score}%) for ${scoredUrl}`
+              : `Designesy design verification report for ${scoredUrl}`}
             label="Share this report"
             compact
           />
@@ -533,12 +536,13 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           {total} checks evaluated
         </p>
         <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>
-          A high score means the site ships the contract primitives the engine can
-          detect — token architecture, motion hygiene, accessibility, typography
-          discipline. It does <strong style={{ color: 'var(--muted)' }}>not</strong> mean the
+          A high score means the site ships the contract primitives the engine
+          can detect: token architecture, motion hygiene, accessibility,
+          typography discipline. It does{' '}
+          <strong style={{ color: 'var(--muted)' }}>not</strong> mean the
           design is good. Conformance &ne; quality. A site can pass every check and
           still be mediocre, or fail many and still be excellent. The score is a{' '}
-          <em>calibration signal</em>, not a verdict. See the{' '}
+          <em>calibration point</em> for your own judgment. See the{' '}
           <a href="/methodology#what-engine-measures" style={{ color: 'var(--signal-light)' }}>methodology</a>{' '}
           for what the engine can and cannot measure.
         </p>

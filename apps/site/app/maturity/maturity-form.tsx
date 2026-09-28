@@ -10,8 +10,11 @@
 //
 // All state is client-side. No data is sent to any server.
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
+// The step keys use the control surface's key (.eg-bar-go) on their own.
+import '../lib/engine/command-bar.css';
+import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -211,7 +214,7 @@ const QUESTIONS: Question[] = [
     prompt: 'How are heading hierarchy and landmarks structured?',
     answers: [
       { stage: 1, label: 'No consistent heading order; divs for layout sections' },
-      { stage: 2, label: 'h1–h3 used, but order skips levels on some pages' },
+      { stage: 2, label: 'h1 to h3 used, but order skips levels on some pages' },
       { stage: 3, label: 'Single h1, no skipped levels, main/header/nav landmarks on all pages' },
       { stage: 4, label: 'Landmarks + heading audit in CI + skip-to-content link + ARIA labels verified' },
     ],
@@ -521,6 +524,22 @@ export function MaturityAssessment() {
   const scores = useMemo(() => AXES.map((a) => axisScore(answers, a.id)), [answers]);
   const overall = useMemo(() => overallScore(answers), [answers]);
 
+  // A step swaps its content in place, above wherever the visitor tapped:
+  // on a phone the next axis's first question landed 800px above the screen,
+  // and the result 400px above. Bring the new step's start into view and put
+  // focus on its heading (a screen reader starts reading there), but not on
+  // first load or when a shared result link opens on the result.
+  const bench = useRef<HTMLDivElement | null>(null);
+  const stepHeading = useRef<HTMLHeadingElement | null>(null);
+  const shown = useRef({ axis: currentAxis, phase });
+  useEffect(() => {
+    const before = shown.current;
+    shown.current = { axis: currentAxis, phase };
+    if ((before.axis === currentAxis && before.phase === phase) || !userJustActed()) return;
+    bringIntoView(bench.current);
+    stepHeading.current?.focus({ preventScroll: true });
+  }, [currentAxis, phase]);
+
   function showResults() {
     setPhase('results');
     const encoded = encodeAnswers(answers);
@@ -589,14 +608,14 @@ export function MaturityAssessment() {
   if (phase === 'quiz') {
     const axis = AXES[currentAxis];
     return (
-      <div className="eg-bench">
+      <div className="eg-bench" ref={bench}>
         <div className="mt-grid">
           <section className="mt-quiz" aria-labelledby="mt-axis-h">
             <p className="mt-axis-meta">
               Axis {currentAxis + 1} of {AXES.length} · {axis.categories} · {axis.contractWeight}
             </p>
             {/* h2: the one heading inside the tool, directly under the page h1. */}
-            <h2 className="eg-h2" id="mt-axis-h">{axis.label}</h2>
+            <h2 className="eg-h2" id="mt-axis-h" tabIndex={-1} ref={stepHeading}>{axis.label}</h2>
             <p className="mt-axis-desc">{axis.description}</p>
 
             <ol className="mt-questions">
@@ -676,12 +695,12 @@ export function MaturityAssessment() {
   const strongest = scores.indexOf(Math.max(...scores));
 
   return (
-    <div className="eg-bench">
+    <div className="eg-bench" ref={bench}>
       <div className="mt-grid is-results">
         <div className="mt-side">{matrixPanel(false)}</div>
         <section className="mt-reading" aria-labelledby="mt-result-h">
           <span className="eg-label">Overall, self-assessed</span>
-          <h2 className="mt-overall" id="mt-result-h">
+          <h2 className="mt-overall" id="mt-result-h" tabIndex={-1} ref={stepHeading}>
             <span className="eg-grade">{overall > 0 ? overall : 0}</span>
             <span className="mt-overall-stage">
               Stage {overallStage}, {STAGE_LABELS[overallStage].toLowerCase()}

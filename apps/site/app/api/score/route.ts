@@ -93,7 +93,7 @@ function applyScopeFilter(
         return {
           ...c,
           status: 'SKIP',
-          detail: `${c.detail} (skipped: scope=universal — this check verifies Designesy-specific token naming; the site may use different token names)`,
+          detail: `${c.detail} (skipped: scope=universal; this check verifies Designesy-specific token naming, and the site may use different token names)`,
         };
       }
       return c;
@@ -106,7 +106,7 @@ function applyScopeFilter(
         return {
           ...c,
           status: 'SKIP',
-          detail: `${c.detail} (skipped: scope=universal — this feature is optional; not present on this site)`,
+          detail: `${c.detail} (skipped: scope=universal; this feature is optional and not present on this site)`,
         };
       }
       // If the pattern doesn't match, it's a real violation — keep as-is
@@ -588,50 +588,50 @@ export type CheckResult = { id: string; item: string; category: string; status: 
 // contract v0.3.0 names so the guidance is self-contained.
 const REMEDIATION: Record<string, string> = {
   v01: 'Declare --paper (and the full :root token set) in your global stylesheet. The contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation.',
-  v02: 'Test at 375px, 720px, 860px, and 1080px+ viewports. Common causes: fixed-width containers, negative margins, or images without max-width: 100%. Add overflow-x: hidden only as a last resort — find the overflowing element instead.',
+  v02: 'Test at 375px, 720px, 860px, and 1080px+ viewports. Common causes: fixed-width containers, negative margins, or images without max-width: 100%. Add overflow-x: hidden only as a last resort; find the overflowing element instead.',
   v03: 'Add :focus-visible { outline: 2px solid var(--signal-light); outline-offset: 2px; } to interactive elements. Never remove focus without replacing it. Test by tabbing through the page with a keyboard.',
-  v04: 'Sound toggle should flip aria-pressed="true"/"false" on click and apply a [data-audio] attribute on <html> or <body> that the audio layer reads. Wire the state both ways — visual + accessibility tree.',
-  v05: 'Add @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } } — disable entrance loops, parallax, and wordmark breath.',
+  v04: 'Sound toggle should flip aria-pressed="true"/"false" on click and apply a [data-audio] attribute on <html> or <body> that the audio layer reads. Wire the state both ways: visual + accessibility tree.',
+  v05: 'Add @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } } to disable entrance loops, parallax, and wordmark breath.',
   v06: 'Adjust your --ink, --muted, --muted-dim token values against --paper until contrast clears WCAG AA: 4.5:1 for body text, 3:1 for large text. Use oklch() or a contrast checker. --muted-dim is the usual offender.',
   v07: 'Add semantic HTML landmarks: exactly one <h1> per page, a descriptive <title>, <meta name="description"> with a one-sentence summary, and at least one <main>/<header>/<nav> landmark element. These are Lighthouse a11y basics and the foundation of document structure.',
   v08: 'Wire the Poise interaction rules from contract.interaction into your component layer: hover lifts (translateY -1px), press scales (0.96 cells / 0.985 cards), focus rings, and the data-cuelume-press haptic attribute on every tappable element.',
   v09: 'Publish a keyboard-path page or section documenting the tab order, focus visibility, and key bindings. Every interactive element must be reachable by Tab, operable by Enter/Space, and dismissible by Esc.',
-  v10: 'Apply the Takt feel rules: press scale 0.96 on cells (buttons, chips, toggles), 0.985 on cards/rows, 0.995 on large surfaces. All scales must stay above the 0.95 floor — anything lower reads as a glitch, not a press.',
+  v10: 'Apply the Takt feel rules: press scale 0.96 on cells (buttons, chips, toggles), 0.985 on cards/rows, 0.995 on large surfaces. All scales must stay above the 0.95 floor; anything lower reads as a glitch.',
   v11: 'Replace transition: all with named properties: transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out). transition: all causes layout-thrash and surprises.',
-  v12: 'Restrict will-change to transform and opacity only, and only on elements actively animating. Remove will-change from static elements. Setting it on everything forces the browser to promote every layer — memory and paint cost.',
+  v12: 'Restrict will-change to transform and opacity only, and only on elements actively animating. Remove will-change from static elements. Setting it on everything forces the browser to promote every layer, which costs memory and paint time.',
   v13: 'Set press scales to 0.96 (cells), 0.985 (cards/rows), 0.995 (large surfaces). All must be above 0.95. Use transform: scale() on :active, with transition: transform var(--duration-quick) var(--ease-out).',
   v14: 'Apply the Cadence typography rules: font-synthesis: none, text-underline-position: from-font, text-decoration-skip-ink: auto, -webkit-font-smoothing: antialiased, -moz-osx-font-smoothing: grayscale. Root font-size: 16px (never lower). All sizes in rem.',
   v15: 'Add to your :root or html rule: -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; This prevents subpixel rendering artifacts on dark backgrounds and gives type its intended weight.',
-  v16: 'Set html { font-size: 16px } and express all text sizes in rem (not px, not em for the global scale). The 16px root is the Cadence floor — iOS Safari auto-zooms inputs below 16px, which breaks mobile UX.',
-  v17: 'Set heading line-height to 1.08 and body line-height to 1.55. Tight headings read as deliberate; relaxed body copy reads as confident. Avoid 1.0 (cramped) and 2.0 (loose) — both signal amateur typography.',
-  v18: 'Add text-wrap: balance to headings and text-wrap: pretty to paragraphs. balance prevents orphaned headline words; pretty prevents orphaned words in body copy. Both are progressive enhancement — unsupported browsers ignore them.',
-  v19: 'Add font-feature-settings: "tnum" or font-variant-numeric: tabular-nums to numeric displays: scores, counts, prices, timestamps. This prevents digits from shifting width as values change — essential for any live-updating number.',
-  v20: 'Add ::selection { background: var(--signal); color: var(--paper); } — never leave the browser default. The selection color is a small but loud brand surface; using your signal token here reinforces identity on every text selection.',
+  v16: 'Set html { font-size: 16px } and express all text sizes in rem (not px, not em for the global scale). The 16px root is the Cadence floor: iOS Safari auto-zooms inputs below 16px, which breaks mobile UX.',
+  v17: 'Set heading line-height to 1.08 and body line-height to 1.55. Tight headings read as deliberate; relaxed body copy reads as confident. Avoid 1.0 (cramped) and 2.0 (loose); both read as amateur typography.',
+  v18: 'Add text-wrap: balance to headings and text-wrap: pretty to paragraphs. balance prevents orphaned headline words; pretty prevents orphaned words in body copy. Both are progressive enhancement: unsupported browsers ignore them.',
+  v19: 'Add font-feature-settings: "tnum" or font-variant-numeric: tabular-nums to numeric displays: scores, counts, prices, timestamps. This keeps digits from shifting width as values change, which matters for any live-updating number.',
+  v20: 'Add ::selection { background: var(--signal); color: var(--paper); } instead of leaving the browser default. The selection color is a small but loud brand surface; using your --signal token there carries the brand into every text selection.',
   v21: 'Audit Core Web Vitals with Lighthouse or PageSpeed Insights. LCP < 2.5s (optimize hero image + fonts), INP < 200ms (defer non-critical JS, use CSS for entrance animations), CLS < 0.1 (reserve space for images/ads, avoid late layout shifts).',
   v22: 'Primary button text must clear WCAG AA 4.5:1 against its fill. If --ink on --signal is too low, either darken --ink, lighten --signal, or switch the button to --paper-on--signal. Never ship a button where the label is hard to read.',
-  v23: 'Declare the five duration tokens in :root: --duration (0.6s default), --duration-quick (150ms), --duration-fast (250ms), --duration-medium (350ms), --duration-slow (400ms). Use them everywhere — never hardcode ms values in component CSS.',
-  x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded — a common cause of blurry headlines on Windows.',
+  v23: 'Declare the five duration tokens in :root: --duration (0.6s default), --duration-quick (150ms), --duration-fast (250ms), --duration-medium (350ms), --duration-slow (400ms). Use them everywhere instead of hardcoding ms values in component CSS.',
+  x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded: a common cause of blurry headlines on Windows.',
   x02: 'Add text-underline-position: from-font to links and underlined text. This uses the font designer\'s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
-  x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
-  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA — the 44px convention shared with Apple HIG; WCAG 2.5.8 Minimum AA is 24px, this check enforces the stricter 44px). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors — full verification needs a browser.',
+  x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y), a small typographic refinement that shows attention to craft.',
+  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA, which matches the 44px convention in Apple HIG; WCAG 2.5.8 Minimum AA is 24px, and this check enforces the stricter 44px). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors; full verification needs a browser.',
   v25: 'Use exactly one <h1> per page as the main heading, and don\'t skip heading levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline. Audit your heading order with a browser extension or Lighthouse.',
   v26: 'Limit font-family declarations to 3 or fewer (1 body family, 1 heading family, 1 mono for code). More than 3 families signals inconsistency and hurts performance. Consolidate by removing unused families or using weight variations of a single family.',
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
   v28: 'Constrain body/article/paragraph max-width to 45-75ch (66ch ideal) for readable line length. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Use max-width: 66ch on prose containers.',
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
-  v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage — when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
-  v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning — a score badge, a form error, and a toast all read the same token — and stay legible when the palette evolves.',
+  v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage: when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
+  v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
-  v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
-  v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters — e.g. Cyrillic а (U+0430) looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format — 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 42-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only — for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
-  v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic) — review flagged buttons manually.',
+  v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
+  v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 42-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
-  v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels (per typography contract: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em) and acronyms should be uppercase. Use CSS text-transform: uppercase on eyebrow elements if needed, but keep the HTML text in sentence case for screen readers.',
+  v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels (per typography contract: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em) and acronyms should be uppercase. Use CSS text-transform: uppercase on eyebrow elements if needed, but keep the HTML text in sentence case for screen readers.',
   S1: 'Replace overused AI-signal fonts with a distinctive choice from your brand system. Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, and Geist are the fonts AI defaults to when it has no design brief. A custom or less common font signals intentionality.',
   S2: 'Remove or reduce full-page gradient backgrounds. The 60%+ viewport gradient is the most recognizable AI slop pattern. Use a solid or subtle textured background instead. If a gradient serves a purpose (e.g., a data visualization), scope it to a small area.',
-  S3: 'Remove purple/violet gradient overlays (#615fff, #8e51ff, #4f39f6, #7f22fe family). This is the "VibeCode Purple" tell — the most hardcoded gradient in AI-generated UIs. Replace with your brand signal color or a neutral surface.',
+  S3: 'Remove purple/violet gradient overlays (#615fff, #8e51ff, #4f39f6, #7f22fe family). This is the "VibeCode Purple" tell: the most hardcoded gradient in AI-generated UIs. Replace with your brand signal color or a neutral surface.',
   S4: 'Remove gradient text (background-clip: text + color: transparent). Gradient text is decorative, harms readability, and kills scannability. Use solid text colors that pass WCAG contrast.',
   S5: 'Replace default Tailwind/Bootstrap hex values with brand-specific colors. Default indigo-500 (#6366f1), violet-500 (#8b5cf6), slate-900 (#0f172a), Bootstrap primary (#0d6efd) signal no design system. Extend your token set with brand-specific values.',
   S6: 'Vary your card layouts. Repeated identical cards in a rigid grid are the universal AI feature-card template. Mix sizes, use asymmetric layouts, vary content density, or use a different component for your features section.',
@@ -676,7 +676,7 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
   const ratioStr = `${bestRatio.toFixed(2)}:1`;
   if (bestRatio >= 4.5) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'PASS', detail: `${bestName} on --signal = ${ratioStr} (≥ 4.5:1 AA)` };
   if (bestRatio >= 3) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: `${bestName} on --signal = ${ratioStr} (passes 3:1 large-text, fails 4.5:1 body)` };
-  return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'FAIL', detail: `${bestName} on --signal = ${ratioStr} (below 3:1 — illegible)` };
+  return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'FAIL', detail: `${bestName} on --signal = ${ratioStr} (below 3:1, illegible)` };
 }
 
 // v06 — REAL contrast check for ink/muted/muted-dim on paper.
@@ -685,7 +685,7 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
 // change pass/fail, but surfaces dark-mode contrast issues WCAG 2.1 misses.
 function checkContrastReadable(tokens: Record<string, string>): CheckResult {
   const paperVal = tokens['--paper'];
-  if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared — cannot test contrast' };
+  if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared: cannot test contrast' };
   const paperRgb = resolveColor(paperVal, tokens);
   if (!paperRgb) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: `--paper value ${paperVal} unresolvable to RGB` };
 
@@ -710,8 +710,8 @@ function checkContrastReadable(tokens: Record<string, string>): CheckResult {
     else if (st === 'WARN' && worst.status !== 'FAIL') { if (worst.status !== 'WARN' || ratio < worst.ratio) worst = { name, ratio, status: 'WARN' }; }
   }
   const detail = results.join(', ');
-  if (worst.status === 'FAIL') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'FAIL', detail: `${detail} — ${worst.name} below 3:1` };
-  if (worst.status === 'WARN') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'WARN', detail: `${detail} — ${worst.name} below 4.5:1 AA` };
+  if (worst.status === 'FAIL') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'FAIL', detail: `${detail}; ${worst.name} below 3:1` };
+  if (worst.status === 'WARN') return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'WARN', detail: `${detail}; ${worst.name} below 4.5:1 AA` };
   return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', status: 'PASS', detail };
 }
 
@@ -817,7 +817,7 @@ function checkReducedMotion(css: string): CheckResult {
   if (sawNoPreference) {
     return {
       id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
-      detail: 'a prefers-reduced-motion media query exists but uses `no-preference` — that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+      detail: 'a prefers-reduced-motion media query exists but uses `no-preference`: that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
     };
   }
   return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
@@ -892,7 +892,7 @@ function checkPressScale(css: string): CheckResult {
 
   // FAIL only if a below-floor scale is in an :active/press context.
   if (activeBelowFloor) {
-    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'FAIL', detail: `found scale(${activeBelowVal}) in :active context — below 0.95 floor, reads as a glitch` };
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'FAIL', detail: `found scale(${activeBelowVal}) in :active context: below 0.95 floor, reads as a glitch` };
   }
 
   // Decorative below-floor scales: WARN (not a press glitch, but worth reviewing).
@@ -900,19 +900,19 @@ function checkPressScale(css: string): CheckResult {
     const realPressScales = pressScales.filter(s => s >= 0.95 && s < 1);
     if (realPressScales.length > 0) {
       const vals = realPressScales.map(s => s.toFixed(3)).join(', ');
-      return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}; ${decorativeBelowFloor.length} decorative scale(s) below floor (non-press, ignored)` };
+      return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}; ${decorativeBelowFloor.length} decorative scale(s) below floor (non-press, ignored)` };
     }
-    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: `${decorativeBelowFloor.length} decorative scale(s) below 0.95 floor: ${decorativeBelowFloor.join(', ')} — not in :active context, but no valid press scales found` };
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'WARN', detail: `${decorativeBelowFloor.length} decorative scale(s) below 0.95 floor: ${decorativeBelowFloor.join(', ')} (outside :active context); no valid press scales found` };
   }
 
   const realPressScales = pressScales.filter(s => s > 0);
   if (realPressScales.length > 0) {
     const vals = realPressScales.map(s => s.toFixed(3)).join(', ');
-    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}` };
+    return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'PASS', detail: `${realPressScales.length} press-scale(s) found: ${vals}` };
   }
   // Only scale(0) found (animation initial states) — not a press scale signal.
-  if (pressScales.length > 0) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: 'only scale(0) found (animation initial states) — no press scale detected' };
-  return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor', category: 'takt', status: 'WARN', detail: 'no press-scale (scale() < 1) found in CSS' };
+  if (pressScales.length > 0) return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'WARN', detail: 'only scale(0) found (animation initial states): no press scale detected' };
+  return { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', status: 'WARN', detail: 'no press-scale (scale() < 1) found in CSS' };
 }
 
 // v17 — REAL line-height by role check. Scans for heading-tight (1.0-1.15)
@@ -940,12 +940,12 @@ function checkLineHeightByRole(css: string): CheckResult {
 // #000/#fff text on #0000ff blue background — any custom rule beats that.
 function checkSelectionStyled(css: string): CheckResult {
   const selMatch = css.match(/::selection\s*\{[^}]*\}/gi);
-  if (!selMatch || selMatch.length === 0) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'WARN', detail: 'no ::selection rule found — browser default will show' };
+  if (!selMatch || selMatch.length === 0) return { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', status: 'WARN', detail: 'no ::selection rule found: browser default will show' };
   const usesSignal = selMatch.some(r => /var\(\s*--signal/i.test(r));
   const hasColor = selMatch.some(r => /(background|color)\s*:/i.test(r));
-  if (usesSignal) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: '::selection uses --signal token' };
-  if (hasColor) return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'PASS', detail: '::selection styled with custom color (token reference recommended)' };
-  return { id: 'v20', item: '::selection styled with var(--signal) — not browser default', category: 'cadence', status: 'WARN', detail: '::selection rule exists but no color/background set' };
+  if (usesSignal) return { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', status: 'PASS', detail: '::selection uses --signal token' };
+  if (hasColor) return { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', status: 'PASS', detail: '::selection styled with custom color (token reference recommended)' };
+  return { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', status: 'WARN', detail: '::selection rule exists but no color/background set' };
 }
 
 // v23 — REAL duration-token check. Verifies the contract's 5 duration tokens
@@ -966,7 +966,7 @@ function checkDurationTokens(tokens: Record<string, string>): CheckResult {
 function checkFontSynthesis(css: string): CheckResult {
   if (/font-synthesis\s*:\s*none/i.test(css)) return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'font-synthesis: none declared' };
   if (/font-synthesis\s*:/i.test(css)) return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'font-synthesis declared but not set to none' };
-  return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no font-synthesis rule found — browser may synthesize missing weights' };
+  return { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no font-synthesis rule found: browser may synthesize missing weights' };
 }
 
 // x02 — REAL text-underline-position check. Verifies from-font (or
@@ -974,7 +974,7 @@ function checkFontSynthesis(css: string): CheckResult {
 function checkUnderlinePosition(css: string): CheckResult {
   if (/text-underline-position\s*:\s*(from-font|under)/i.test(css)) return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'PASS', detail: 'text-underline-position set to from-font/under' };
   if (/text-underline-position\s*:/i.test(css)) return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'text-underline-position declared but not from-font/under' };
-  return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no text-underline-position rule — browser default may clip descenders' };
+  return { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', status: 'WARN', detail: 'no text-underline-position rule: browser default may clip descenders' };
 }
 
 // x03 — REAL text-decoration-skip-ink check. Verifies auto (or none) is set
@@ -982,7 +982,7 @@ function checkUnderlinePosition(css: string): CheckResult {
 function checkSkipInk(css: string): CheckResult {
   if (/text-decoration-skip-ink\s*:\s*(auto|none)/i.test(css)) return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'PASS', detail: 'text-decoration-skip-ink set to auto/none' };
   if (/text-decoration-skip-ink\s*:/i.test(css)) return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'text-decoration-skip-ink declared but not auto/none' };
-  return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'no text-decoration-skip-ink rule — underlines may cross letterforms' };
+  return { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', status: 'WARN', detail: 'no text-decoration-skip-ink rule: underlines may cross letterforms' };
 }
 
 // ── Tier 3 coverage checks (v24-v28) — high-impact gaps from the audit ──────
@@ -1001,7 +1001,7 @@ function checkTouchTargets(css: string): CheckResult {
     const px = unit === 'rem' ? val * 16 : val;
     targets.push(px);
   }
-  if (targets.length === 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: 'no explicit min-height/min-width on interactive selectors — full verification needs browser' };
+  if (targets.length === 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: 'no explicit min-height/min-width on interactive selectors: full verification needs browser' };
   const below = targets.filter(t => t < 44);
   if (below.length > 0) return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'WARN', detail: `${targets.length} target(s) found, ${below.length} below 44px floor (${below.join(', ')}px)` };
   return { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', status: 'PASS', detail: `${targets.length} interactive element(s) with min-height/width ≥44px` };
@@ -1012,7 +1012,7 @@ function checkTouchTargets(css: string): CheckResult {
 function checkHeadingHierarchy(html: string): CheckResult {
   const visibleHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
   const headings = [...visibleHtml.matchAll(/<h([1-6])\b/gi)];
-  if (headings.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: 'no heading elements found — page may lack structure' };
+  if (headings.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: 'no heading elements found: page may lack structure' };
   const levels = headings.map(h => parseInt(h[1]));
   const h1Count = levels.filter(l => l === 1).length;
   const h1Issue = h1Count === 0 ? 'no h1' : h1Count > 1 ? `${h1Count} h1s` : '';
@@ -1114,7 +1114,7 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
   const list = [...families].slice(0, 6).join(', ');
   if (count <= 3) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'PASS', detail: `${count} family/families: ${list}` };
   if (count <= 5) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'WARN', detail: `${count} families (recommended ≤3): ${list}` };
-  return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families — palette drift (recommended ≤3): ${list}` };
+  return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families, palette drift (recommended ≤3): ${list}` };
 }
 
 // v27 — Input font-size 16px floor (iOS Safari auto-zoom prevention).
@@ -1137,7 +1137,7 @@ function checkInputFontFloor(css: string): CheckResult {
     const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css)
       || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
-    return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected — iOS Safari may auto-zoom on focus' };
+    return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
   }
   return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
 }
@@ -1190,7 +1190,7 @@ function checkReadingWidth(css: string): CheckResult {
   if (nonProse.length > 0 && proseOutOfRange.length === 0) {
     return {
       id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
-      detail: `${nonProse.length} ch-based max-width rule(s) found (${nonProse.join(', ')}ch) but none target a prose container — line length on paragraphs is unconstrained. Add the measure to your prose selectors (p, article, .prose), not to a grid or table.`,
+      detail: `${nonProse.length} ch-based max-width rule(s) found (${nonProse.join(', ')}ch) but none target a prose container: line length on paragraphs is unconstrained. Add the measure to your prose selectors (p, article, .prose), not to a grid or table.`,
     };
   }
 
@@ -1203,7 +1203,7 @@ function checkReadingWidth(css: string): CheckResult {
 
   return {
     id: 'v28', item: ITEM, category: CATEGORY, status: 'WARN',
-    detail: 'no max-width in ch units found — line length may exceed 75ch on wide screens',
+    detail: 'no max-width in ch units found: line length may exceed 75ch on wide screens',
   };
 }
 
@@ -1253,17 +1253,17 @@ function checkTokenLayerDepth(tokens: Record<string, string>): CheckResult {
     return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'SKIP', detail: 'no design tokens detected in :root' };
   }
   if (!hasVarRefs) {
-    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${primitiveCount} primitive token(s), zero var() references — no aliasing layer` };
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${primitiveCount} primitive token(s), zero var() references: no aliasing layer` };
   }
   const layers = (primitiveCount > 0 ? 1 : 0) + (semanticCount > 0 ? 1 : 0) + (componentCount > 0 ? 1 : 0);
   const detail = `${layers} layer(s): ${primitiveCount} primitive, ${semanticCount} semantic, ${componentCount} component`;
   if (layers >= 3) {
-    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail} — full 3-tier architecture (DSAF A1.1 maturity)` };
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail}: full 3-tier architecture (DSAF A1.1 maturity)` };
   }
   if (layers >= 2) {
-    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail} — 2-tier aliasing detected` };
+    return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'PASS', detail: `${detail}: 2-tier aliasing detected` };
   }
-  return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${detail} — only 1 layer, no aliasing` };
+  return { id: 'v29', item: 'Token architecture: primitive → semantic → component layers', category: 'tokens', status: 'WARN', detail: `${detail}: only 1 layer, no aliasing` };
 }
 
 // ── Semantic category checks (v42, v43) ─────────────────────────────────────
@@ -1311,7 +1311,7 @@ function classifyColorToken(name: string): 'role' | 'hue' | 'neutral' {
 }
 
 function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResult {
-  const item = 'Semantic color vocabulary: role-named tokens, not hue-named';
+  const item = 'Semantic color vocabulary: tokens named by role rather than hue';
   const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
   if (colorTokens.length < 4) {
     return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${colorTokens.length})` };
@@ -1325,13 +1325,13 @@ function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResu
   }
   const named = role + hue;
   if (named === 0) {
-    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named — vocabulary unclassifiable` };
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named: vocabulary unclassifiable` };
   }
   const share = Math.round((role / named) * 100);
   if (role >= 3 && share >= 60) {
-    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color speaks in meaning` };
+    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): colors are named by role` };
   }
-  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share) — color vocabulary leans on hue names` };
+  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): color vocabulary leans on hue names` };
 }
 
 function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
@@ -1351,9 +1351,9 @@ function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
   const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
   const missing = Object.entries(families).filter(([, v]) => !v).map(([k]) => k);
   if (found.length >= 3) {
-    return { id: 'v43', item, category: 'semantic', status: 'PASS', detail: `${found.length}/4 status families present (${found.join(', ')}) — states expressed as semantic roles` };
+    return { id: 'v43', item, category: 'semantic', status: 'PASS', detail: `${found.length}/4 status families present (${found.join(', ')}): states expressed as semantic roles` };
   }
-  return { id: 'v43', item, category: 'semantic', status: 'WARN', detail: `${found.length}/4 status families present${found.length ? ` (${found.join(', ')})` : ''} — missing: ${missing.join(', ')}` };
+  return { id: 'v43', item, category: 'semantic', status: 'WARN', detail: `${found.length}/4 status families present${found.length ? ` (${found.join(', ')})` : ''}; missing: ${missing.join(', ')}` };
 }
 
 function checkFontSmoothing(css: string): CheckResult {
@@ -1562,16 +1562,16 @@ function checkAiDisclosure(html: string): CheckResult {
   if (surfaceSignals.length === 0) {
     const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
     if (ambiguousRe.test(html)) {
-      return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'possible AI-interactive surface (ambiguous widget) — manual review recommended for Art 50 compliance' };
+      return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'possible AI-interactive surface (ambiguous widget): manual review recommended for Art 50 compliance' };
     }
-    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'no AI-interactive surface detected — disclosure not required' };
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'no AI-interactive surface detected: disclosure not required' };
   }
 
   if (disclosureSignals.length > 0) {
     return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `AI surface detected (${surfaceSignals.join(', ')}); disclosure present (${disclosureSignals.join(', ')})` };
   }
 
-  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found — EU AI Act Art 50(1) requires disclosure at first interaction` };
+  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found: EU AI Act Art 50(1) requires disclosure at first interaction` };
 }
 
 // v35 — Forced-colors readiness (Windows High Contrast Mode / Chrome forced-colors).
@@ -1601,12 +1601,12 @@ function checkForcedColors(css: string): CheckResult {
     return { id: 'v35', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'legacy -ms-high-contrast + forced-color-adjust present (modernize to forced-colors: active)' };
   }
   if (hasHighContrast) {
-    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'legacy -ms-high-contrast media query present — modernize to @media (forced-colors: active) and add forced-color-adjust: none on brand-critical elements' };
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'legacy -ms-high-contrast media query present: modernize to @media (forced-colors: active) and add forced-color-adjust: none on brand-critical elements' };
   }
   if (hasForcedColorAdjust) {
-    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'forced-color-adjust used but no @media (forced-colors: active) block — add the media query guard' };
+    return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'forced-color-adjust used but no @media (forced-colors: active) block (add the media query guard)' };
   }
-  return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'no forced-colors media query or forced-color-adjust detected — Windows HCM users may see illegible UI' };
+  return { id: 'v35', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'no forced-colors media query or forced-color-adjust detected: Windows HCM users may see illegible UI' };
 }
 
 // v36 — Unicode Security: UTS #39 Confusable Detection in design tokens + CSS identifiers.
@@ -1806,7 +1806,7 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
       item: ITEM,
       category: CATEGORY,
       status: 'PASS',
-      detail: `scanned ${Object.keys(tokens).length} token names, ${scannedClasses.size} classes, ${scannedIds.size} ids, ${scannedUrls.size} url refs — no UTS #39 confusables detected (Unicode 16.0.0)`,
+      detail: `scanned ${Object.keys(tokens).length} token names, ${scannedClasses.size} classes, ${scannedIds.size} ids, ${scannedUrls.size} url refs: no UTS #39 confusables detected (Unicode 16.0.0)`,
     };
   }
 
@@ -1825,7 +1825,7 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
       item: ITEM,
       category: CATEGORY,
       status: 'FAIL',
-      detail: `${totalConfusables} confusable(s) found — ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. Token-name confusables enable shadowing attacks: a --соlor-bg token (Cyrillic с) looks identical to --color-bg but resolves to a different value.`,
+      detail: `${totalConfusables} confusable(s) found: ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. Token-name confusables enable shadowing attacks: a --соlor-bg token (Cyrillic с) looks identical to --color-bg but resolves to a different value.`,
     };
   }
 
@@ -1834,7 +1834,7 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
     item: ITEM,
     category: CATEGORY,
     status: 'WARN',
-    detail: `${totalConfusables} confusable(s) in identifiers/urls — ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. No token names affected, but class/id/url confusables can spoof UI elements or redirect asset loads.`,
+    detail: `${totalConfusables} confusable(s) in identifiers/urls: ${allFindings.slice(0, 5).join('; ')}${allFindings.length > 5 ? ` (+${allFindings.length - 5} more)` : ''}. No token names affected, but class/id/url confusables can spoof UI elements or redirect asset loads.`,
   };
 }
 
@@ -1911,7 +1911,7 @@ function isSelectionControl(openTag: string): boolean {
 }
 
 function checkButtonTextVerb(html: string): CheckResult {
-  const ITEM = 'Button text is a verb phrase or recognized command — not a bare noun';
+  const ITEM = 'Button text is a verb phrase or recognized command (not a bare noun)';
   const CATEGORY = 'copywriting';
 
   // Extract <button> and [role="button"] text content
@@ -2062,7 +2062,7 @@ function checkButtonTextVerb(html: string): CheckResult {
   }
 
   if (violations.length === 0) {
-    return { id: 'v38', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${buttonTexts.length} button(s) checked — all start with a verb or recognized command` };
+    return { id: 'v38', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${buttonTexts.length} button(s) checked: all start with a verb or recognized command` };
   }
   return {
     id: 'v38',
@@ -2111,7 +2111,7 @@ function checkNoTrailingPeriod(html: string): CheckResult {
   );
 
   if (violations.length === 0) {
-    return { id: 'v39', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${texts.length} element(s) checked — no trailing periods on buttons, labels, or tabs` };
+    return { id: 'v39', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${texts.length} element(s) checked: no trailing periods on buttons, labels, or tabs` };
   }
   return {
     id: 'v39',
@@ -2130,7 +2130,7 @@ function checkNoTrailingPeriod(html: string): CheckResult {
 const NON_DESCRIPTIVE_LINK_TEXT = /^(click here|here|learn more|read more|more|link|this|that|continue|see more|view details)$/i;
 
 function checkLinkTextDescriptive(html: string): CheckResult {
-  const ITEM = 'Link text is descriptive — not bare "click here", "learn more", "here"';
+  const ITEM = 'Link text is descriptive (not bare "click here", "learn more", "here")';
   const CATEGORY = 'copywriting';
 
   const linkRe = /<a[^>]*>([\s\S]*?)<\/a>/gi;
@@ -2148,7 +2148,7 @@ function checkLinkTextDescriptive(html: string): CheckResult {
   const violations = linkTexts.filter(t => NON_DESCRIPTIVE_LINK_TEXT.test(t));
 
   if (violations.length === 0) {
-    return { id: 'v40', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${linkTexts.length} link(s) checked — all have descriptive text` };
+    return { id: 'v40', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${linkTexts.length} link(s) checked: all have descriptive text` };
   }
   return {
     id: 'v40',
@@ -2261,7 +2261,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
         item: ITEM,
         category: CATEGORY,
         status: 'SKIP',
-        detail: `/DESIGN.md not publicly served (HTTP ${resp.status}). No public convention exists — this is expected. Designesy scores the shipped CSS directly.`,
+        detail: `/DESIGN.md not publicly served (HTTP ${resp.status}). No public convention exists yet, so this is expected. Designesy scores the shipped CSS directly.`,
       };
     }
     designMdContent = await resp.text();
@@ -2281,7 +2281,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
       item: ITEM,
       category: CATEGORY,
       status: 'SKIP',
-      detail: `could not fetch /DESIGN.md — designesy scores the shipped CSS directly (spec layer optional)`,
+      detail: `could not fetch /DESIGN.md: designesy scores the shipped CSS directly (spec layer optional)`,
     };
   }
 
@@ -2390,7 +2390,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     return {
       unreachable: true as const,
       unreachableReason: page.reason,
-      unreachableDetail: `Could not read ${targetUrl} — ${why}. No score is reported: a site we cannot fetch is not a site we can grade.`,
+      unreachableDetail: `Could not read ${targetUrl}: ${why}. No score is reported, because a site that cannot be fetched cannot be graded.`,
       attemptedUrls: page.attempted,
       score: null,
       grade: null,
@@ -2417,9 +2417,9 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 
   let checks: CheckResult[] = [
     checkPaperToken(tokens),
-    { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace — run the full audit to resolve' },
+    { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace: run the full audit to resolve' },
     checkFocusVisible(css),
-    { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'MANUAL', detail: 'requires live DOM interaction — run the full audit to resolve' },
+    { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'MANUAL', detail: 'requires live DOM interaction: run the full audit to resolve' },
     checkReducedMotion(css),
     checkContrastReadable(tokens),
     checkNoAtlasNaming(html),
@@ -2436,7 +2436,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkTextWrap(css),
     checkTabularNums(css),
     checkSelectionStyled(css),
-    { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'MANUAL', detail: 'requires CDP trace — run the full audit to resolve' },
+    { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'MANUAL', detail: 'requires CDP trace: run the full audit to resolve' },
     checkContrastSignal(tokens),
     checkDurationTokens(tokens),
     checkFontSynthesis(css),
@@ -3150,17 +3150,17 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     let reason: string | null = null;
 
     // v06 Contrast readable — fundamental legibility failure
-    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum — text is unreadable for many users.'; }
+    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
-    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA — the most important interaction on the page is hard to read.'; }
+    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
     // v02 Horizontal overflow — broken layout on mobile
-    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
+    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
     // v24 Touch targets — interactive elements too small to use
-    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target (WCAG 2.5.5 Enhanced) — inaccessible on touch devices.'; }
+    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target (WCAG 2.5.5 Enhanced): inaccessible on touch devices.'; }
     // v25 Heading hierarchy — broken document outline
-    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
+    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: document outline is broken.'; }
     // v16 Rem scale — root font-size under 16px (iOS zoom break)
-    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px — triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom, breaks mobile UX.'; }
 
     if (cap !== null && score > cap) {
       score = cap;
@@ -3385,18 +3385,18 @@ function emitReview(url: string, result: ScoreResult): string {
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) {
-    lines.push('| — | — | — | — | No actionable findings | — | — |');
+    lines.push('| | | | | No actionable findings | | |');
   }
   lines.push('');
 
   // Verdict
   lines.push('## Verdict\n');
   const verdict = deriveVerdict(result);
-  if (verdict === 'fail') lines.push('**Block** — at least one HIGH finding (FAIL) remains.');
-  else if (verdict === 'needs-changes') lines.push('**Needs changes** — only MEDIUM findings (WARN) remain.');
-  else lines.push('**Approve** — no actionable findings remain.');
+  if (verdict === 'fail') lines.push('**Block**: at least one HIGH finding (FAIL) remains.');
+  else if (verdict === 'needs-changes') lines.push('**Needs changes**: only MEDIUM findings (WARN) remain.');
+  else lines.push('**Approve**: no actionable findings remain.');
   lines.push('');
-  lines.push(`**Score: ${result.score}% (Grade ${result.grade})** — ${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.manual} MANUAL / ${result.skip} N/A / ${result.total} total`);
+  lines.push(`**Score: ${result.score}% (Grade ${result.grade})** (${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.manual} MANUAL / ${result.skip} N/A / ${result.total} total)`);
 
   return lines.join('\n');
 }

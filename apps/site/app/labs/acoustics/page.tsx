@@ -16,26 +16,26 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
   description:
-    'Lab Four — interaction sound as a token system. Nineteen cues, nineteen roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
+    'Lab Four: interaction sound as a token system. Nineteen cues, nineteen roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
   path: '/labs/acoustics',
-  ogTitle: 'Acoustics · Lab Four — Designesy',
+  ogTitle: 'Acoustics · Lab Four · Designesy',
   ogDescription:
     'Interaction sound as a token system. Nineteen cues, nineteen roles, Cuelume v0.2.2 + cuelume-extend. No sound without a token name and rationale.',
   twitterDescription:
-    'Interaction sound lab — nineteen cues, nineteen roles. designesy.org/labs/acoustics',
+    'Interaction sound lab: nineteen cues, nineteen roles. designesy.org/labs/acoustics',
 });
 
 const ANATOMY_DONE = [
   'Thesis',
-  'Live artifact — cue grid',
-  'Principle — three rules',
-  'Portable contract — nine mapping rules',
-  'Implementation notes — builder prompt',
-  'Review checklist — what to inspect',
-  'Provenance — Cuelume + W3C DTCG context',
-  'Anti-patterns — what acoustics is not',
-  'Remix notes — how to adapt',
-  'Verification — evidence on designesy.org',
+  'Live artifact: cue grid',
+  'Principle: three rules',
+  'Portable contract: nine mapping rules',
+  'Implementation notes: builder prompt',
+  'Review checklist: what to inspect',
+  'Provenance: Cuelume + W3C DTCG context',
+  'Anti-patterns: what acoustics is not',
+  'Remix notes: how to adapt',
+  'Verification: evidence on designesy.org',
 ];
 
 const REVIEW_CHECKS = [
@@ -43,7 +43,7 @@ const REVIEW_CHECKS = [
   'Is sound opt-in, with preference stored and respected across sessions?',
   'Does sound default off under prefers-reduced-motion?',
   'Are hover sounds fine-pointer only, with touch mapped to a single tap?',
-  'Are focus events silent — no hover cues fired on keyboard focus?',
+  'Are focus events silent, with no hover cues fired on keyboard focus?',
   'Is there a silent fallback when Web Audio is blocked or unavailable?',
   'Is the toggle keyboard-accessible with aria-pressed state?',
   'Is there any ambient audio, background music, or mood bed? (Must be none.)',
@@ -55,21 +55,21 @@ const ANTI = [
   'Loading sounds that play without a user gesture',
   'Hover sounds on touch devices (false hover)',
   'Focus-event sounds that bombard screen reader users',
-  'Randomized cues — a different sound per page for the same role',
-  'Unmapped sounds — any audio without a token name and rationale here',
+  'Randomized cues: a different sound per page for the same role',
+  'Unmapped sounds: any audio without a token name and rationale here',
   'Volume sliders as a substitute for a clean mute toggle',
   'Audio that cannot be silenced by reduced-motion preference',
 ];
 
 const PROVENANCE = [
-  'Cuelume v0.2.2 (MIT, Daniel Belyi) + cuelume-extend v0.2.0 — interaction audio engine',
-  'W3C Design Tokens Format Module 2025.10 — acoustic type is net-new',
-  'Designesy design system contract v0.3.0 — acoustic section adopted',
-  'Site-wide integration — data-cuelume-* attributes on every interactive element',
-  'Preference storage — localStorage key designesy:sound, owned by Designesy',
+  'Cuelume v0.2.2 (MIT, Daniel Belyi) + cuelume-extend v0.2.0: interaction audio engine',
+  'W3C Design Tokens Format Module 2025.10: the acoustic type is net-new',
+  'Designesy design system contract v0.3.0: acoustic section adopted',
+  'Site-wide integration: data-cuelume-* attributes on every interactive element',
+  'Preference storage: localStorage key designesy:sound, owned by Designesy',
 ];
 
-const PROMPT = `Build interaction audio as a token system, not decoration.
+const PROMPT = `Build interaction audio as a token system.
 
 Rules:
 1. Every sound maps to a named token (--cue:role). No unmapped sounds anywhere.
@@ -77,7 +77,7 @@ Rules:
 3. Sound is opt-in via a single toggle; store preference in localStorage; default off when prefers-reduced-motion.
 4. Hover sounds fire on fine-pointer only. On touch, map the same hover cue to a single tap.
 5. No focus sounds. Sounds fire on pointer and click, never on focus events.
-6. No ambient audio — interaction-only. No background music, no loading sounds, no mood beds.
+6. No ambient audio: interaction-only. No background music, no loading sounds, no mood beds.
 7. Silent fallback when Web Audio is blocked. No errors, no visual degradation.
 8. Reduced motion is an acoustic-reduction proxy. The user can still enable sound manually.
 9. Every cue must trace to a token document. A sound in the markup without a token here is a contract violation.`;
@@ -157,8 +157,8 @@ export default function AcousticsLabPage() {
           <div className="definition">
             <p className="definition-label">What Acoustics tests</p>
             <p>
-              Sound is a token, not a decoration. Each cue has a name, a role,
-              and a character. The system is interaction-only — no ambient
+              Sound is a token. Each cue has a name, a role, and a character.
+              The system is interaction-only: no ambient
               audio, no mood beds, no unmapped sounds. Preference is user-owned;
               reduced motion is an acoustic-reduction proxy.
             </p>
@@ -335,8 +335,8 @@ export default function AcousticsLabPage() {
           <p className="surface-note">
             Reuse the token model on any Designesy surface. Add a new cue by
             extending the acoustic-tokens module before wiring the sound into
-            markup — the token document is the source of truth, not the
-            attribute. Do not remix interaction cues into ambient beds or
+            markup: the token document is the source of truth, and the
+            attribute follows it. Do not remix interaction cues into ambient beds or
             loading sounds; Cuelume is interaction-only. If a new role needs
             audio, start from the closest existing cue family before inventing a
             new character.
@@ -366,7 +366,7 @@ export default function AcousticsLabPage() {
               },
               {
                 title:
-                  'No focus-event sounds — keyboard navigation through cue grid is silent',
+                  'No focus-event sounds: keyboard navigation through the cue grid is silent',
               },
               {
                 title:
@@ -407,7 +407,7 @@ export default function AcousticsLabPage() {
         </section>
 
         <div className="status-note">
-          Acoustics is Lab Four — a public experiment whose nineteen-cue token
+          Acoustics is Lab Four: a public experiment whose nineteen-cue token
           system was adopted into design system contract v0.3.0. The lab remains the
           inspectable source demo. Token reference lives at /acoustic-tokens;
           machine export at /acoustic-tokens.json.

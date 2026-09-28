@@ -9,14 +9,14 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Graph — provenance chain',
+  title: 'Graph: provenance chain',
   description:
     'The living knowledge tree: how sources become shipped work through the Designesy pipeline. Source to Observation to Claim to Tension to Principle to Pattern to Contract Rule to Token to Verification to Shipped Work.',
   path: '/graph',
   ogTitle: 'Graph · Designesy',
   ogDescription:
     'Provenance chain from source to shipped work. No competitor exposes this chain publicly.',
-  twitterDescription: 'Provenance graph — designesy.org/graph',
+  twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
 export default function GraphPage() {
@@ -33,7 +33,7 @@ export default function GraphPage() {
           </p>
           <p className="surface-note">
             {graph.description} The Graph prevents design knowledge from
-            becoming anonymous taste — every shipped artifact should trace
+            becoming anonymous taste: every shipped artifact should trace
             backwards through this chain to a source.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -47,7 +47,7 @@ export default function GraphPage() {
           <h2 className="doctrine-heading" data-scramble>The chain</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Ten stages from source to shipped work. Each stage has public
-            examples — real evidence, not abstract theory.
+            examples drawn from real evidence.
           </p>
           <div className="chain-rail" data-reveal-group>
             {graph.chain.map((stage, i) => {
@@ -94,9 +94,9 @@ export default function GraphPage() {
             <p className="definition-label">Public read-only surface</p>
             <p>
               The Graph is the internal knowledge tree of Designesy. This
-              public surface shows the chain with real examples — but
-              without internal paths, control-plane naming, or private
-              doctrine. It is the provenance layer: a visitor can trace how
+              public surface shows the chain with real examples, leaving out
+              internal paths, control-plane naming,
+              and private doctrine. It is the provenance layer: a visitor can trace how
               a source became a principle, a principle became a contract,
               a contract became a token, a token became a verification, and
               a verification became shipped work.
@@ -107,9 +107,9 @@ export default function GraphPage() {
         <section className="doctrine-section fade-up" id="boundaries">
           <h2 className="doctrine-heading" data-scramble>Boundaries</h2>
           <ul className="checkmark-list">
-            <li>A knowledge graph of design concepts — curated, versioned, and read-only.</li>
-            <li>Examples are selected, not live-streamed from production.</li>
-            <li>Companion to the contract and review surfaces, not a substitute.</li>
+            <li>A knowledge graph of design concepts: curated, versioned, and read-only.</li>
+            <li>Examples are hand-selected rather than live-streamed from production.</li>
+            <li>Companion to the contract and review surfaces.</li>
             <li>Internal paths and control-plane naming stay private.</li>
           </ul>
         </section>
@@ -117,71 +117,76 @@ export default function GraphPage() {
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading" data-scramble>Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">Contract rules and tokens</span>
-              </span>
-            </Link>
-            <Link
-              href="/review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Review surface</span>
-                <span className="row-meta">Verification artifacts</span>
-              </span>
-            </Link>
-            <Link
-              href="/work"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Work — case studies</span>
-                <span className="row-meta">Shipped work</span>
-              </span>
-            </Link>
-            <Link
-              href="/graph.json"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Machine export</span>
-                <span className="row-meta">graph.json</span>
-              </span>
-            </Link>
-            <Link
-              href="/docs"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Docs</span>
-                <span className="row-meta">Architecture and seven layers</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">Contract rules and tokens</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Review surface</span>
+                  <span className="row-meta">Verification artifacts</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/work"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Work · case studies</span>
+                  <span className="row-meta">Shipped work</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/graph.json"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Machine export</span>
+                  <span className="row-meta">graph.json</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/docs"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Docs</span>
+                  <span className="row-meta">Architecture and seven layers</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

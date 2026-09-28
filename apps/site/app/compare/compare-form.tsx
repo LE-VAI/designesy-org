@@ -249,14 +249,14 @@ export function CompareForm({ initialA, initialB, registry }: { initialA: string
     <div className="eg-bench">
       <EngineBar
         fields={[
-          { value: urlA, onChange: setUrlA, label: 'First URL, site A', placeholder: 'Site A, like stripe.com' },
-          { value: urlB, onChange: setUrlB, label: 'Second URL, site B', placeholder: 'Site B, like adyen.com' },
+          { value: urlA, onChange: setUrlA, label: 'First URL, site A', placeholder: 'Your site, like stripe.com', mark: 'A' },
+          { value: urlB, onChange: setUrlB, label: 'Second URL, site B', placeholder: 'A reference, like adyen.com', mark: 'B' },
         ]}
         onSubmit={() => start(urlA, urlB)}
         busy={phase === 'running'}
         go="Compare"
         goBusy="Comparing"
-        foot={<p className="eg-bar-foot-note">A is usually yours and B the reference. Each side is fetched fresh, then diffed token by token.</p>}
+        note="Each side is fetched fresh, then diffed token by token."
       />
       <Instrument
         name="Compare"

@@ -39,7 +39,7 @@ export function websiteJsonLd() {
     name: 'Designesy',
     url: 'https://www.designesy.org',
     description:
-      'Design intelligence infrastructure — contracts, kits, labs, and field checks for people and agents.',
+      'Design intelligence infrastructure: contracts, kits, labs, and field checks for people and agents.',
     publisher: {
       '@type': 'Organization',
       name: 'Designesy LLC',

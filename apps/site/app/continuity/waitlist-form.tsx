@@ -53,7 +53,7 @@ export function ContinuityWaitlistForm() {
 
       setStatus('ok');
       setMessage(
-        'You are on the list. We write when founding access opens — only about Continuity.'
+        'You are on the list. We write when founding access opens, and only about Continuity.'
       );
       form.reset();
     } catch {
@@ -94,41 +94,45 @@ export function ContinuityWaitlistForm() {
       <div className="waitlist-row">
         <div className="waitlist-field">
           <label htmlFor="role">You are</label>
-          <select id="role" name="role" defaultValue="" disabled={status === 'loading'}>
-            <option value="">Select…</option>
-            <option value="solo">Solo builder / founder</option>
-            <option value="designer">Product / brand designer</option>
-            <option value="engineer">Engineer / agent operator</option>
-            <option value="studio">Studio (2–10)</option>
-            <option value="other">Other</option>
-          </select>
+          <span className="waitlist-select">
+            <select id="role" name="role" defaultValue="" disabled={status === 'loading'}>
+              <option value="">Choose one</option>
+              <option value="solo">Solo builder / founder</option>
+              <option value="designer">Product / brand designer</option>
+              <option value="engineer">Engineer / agent operator</option>
+              <option value="studio">Studio (2 to 10 people)</option>
+              <option value="other">Other</option>
+            </select>
+          </span>
         </div>
         <div className="waitlist-field">
           <label htmlFor="interest">Most useful first</label>
-          <select
-            id="interest"
-            name="interest"
-            defaultValue=""
-            disabled={status === 'loading'}
-          >
-            <option value="">Select…</option>
-            <option value="continuity">Continuity ($29/site/mo — scans + alerts)</option>
-            <option value="enterprise">Enterprise (CI gates + on-prem)</option>
-            <option value="unsure">Not sure yet</option>
-          </select>
+          <span className="waitlist-select">
+            <select
+              id="interest"
+              name="interest"
+              defaultValue=""
+              disabled={status === 'loading'}
+            >
+              <option value="">Choose one</option>
+              <option value="continuity">Continuity ($29/site/mo, scans and alerts)</option>
+              <option value="enterprise">Enterprise (CI gates + on-prem)</option>
+              <option value="unsure">Not sure yet</option>
+            </select>
+          </span>
         </div>
       </div>
 
       <div className="waitlist-field">
         <label htmlFor="site">
-          Site or product URL <span className="waitlist-optional">(optional)</span>
+          Site or product URL <span className="waitlist-optional">Optional</span>
         </label>
         <input
           id="site"
           name="site"
           type="url"
           inputMode="url"
-          placeholder="https://"
+          placeholder="Like stripe.com"
           disabled={status === 'loading'}
         />
       </div>
@@ -136,7 +140,7 @@ export function ContinuityWaitlistForm() {
       <div className="waitlist-field">
         <label htmlFor="note">
           What should stay continuous?{' '}
-          <span className="waitlist-optional">(optional)</span>
+          <span className="waitlist-optional">Optional</span>
         </label>
         <textarea
           id="note"
@@ -158,7 +162,7 @@ export function ContinuityWaitlistForm() {
           {status === 'loading' ? 'Sending…' : 'Request access'}
         </button>
         <p className="waitlist-trust">
-          No charge. No spam cadence. Used only for Continuity access — see{' '}
+          Your email is used only for Continuity access. See{' '}
           <a href="/privacy" data-cuelume-hover="bloom">
             Privacy
           </a>

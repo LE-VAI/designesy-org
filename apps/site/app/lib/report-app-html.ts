@@ -111,9 +111,14 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 
   .re-run { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
   .re-run-form { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-  .re-run-input { flex: 1; min-width: 200px; font-family: var(--sans); font-size: 0.85rem; padding: 0.5rem 0.75rem; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); }
-  .re-run-input:focus { outline: none; border-color: var(--line-strong); }
-  .re-run-btn { font-family: var(--sans); font-size: 0.85rem; font-weight: 500; padding: 0.5rem 1rem; background: var(--ink); color: var(--surface); border: 1px solid var(--ink); border-radius: var(--radius); cursor: pointer; transition: opacity 150ms var(--ease); }
+  /* 16px text (no zoom on iOS), 44px targets, and a focus ring in the app's
+     own ink: the hosts that embed this page vary, so it keeps its palette. */
+  .re-run-input { flex: 1; min-width: 200px; min-height: 2.75rem; font-family: var(--sans); font-size: 1rem; padding: 0 0.875rem; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
+  .re-run-input::placeholder { color: var(--muted-dim); }
+  .re-run-input:focus { outline: none; }
+  .re-run-input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .re-run-btn { min-height: 2.75rem; font-family: var(--sans); font-size: 0.9rem; font-weight: 500; padding: 0 1.1rem; background: var(--ink); color: var(--surface); border: 1px solid var(--ink); border-radius: var(--radius); cursor: pointer; transition: opacity 150ms var(--ease); }
+  .re-run-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .re-run-btn:hover { opacity: 0.85; }
   .re-run-btn:disabled { opacity: 0.5; cursor: wait; }
 
@@ -133,7 +138,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 <body>
 <div class="eyebrow">Designesy Unified Report</div>
 <h1 id="title">Design-Intelligence Report</h1>
-<p class="target" id="targetLine">Target: <code id="targetUrl">—</code></p>
+<p class="target" id="targetLine">Target: <code id="targetUrl"><span aria-hidden="true">–</span></code></p>
 
 <div id="composite" class="composite hidden"></div>
 <div id="engines" class="engines hidden"></div>
@@ -147,7 +152,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 
 <div class="re-run hidden" id="rerun">
   <form class="re-run-form" id="rerunForm">
-    <input class="re-run-input" id="rerunInput" type="text" placeholder="Run a report on another URL…" autocomplete="off" spellcheck="false" />
+    <input class="re-run-input" id="rerunInput" type="text" inputmode="url" enterkeyhint="go" aria-label="URL for another report" placeholder="Run a report on another URL…" autocomplete="off" autocapitalize="none" spellcheck="false" />
     <button class="re-run-btn" id="rerunBtn" type="submit">Re-run report</button>
   </form>
 </div>
@@ -216,7 +221,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   function engineCard(label, weight, result, desc) {
     if (!result || !result.ok) {
       return '<div class="engine-card"><p class="engine-label">' + label + ' ' + weight + '</p>' +
-        '<p class="engine-grade" style="color:var(--muted-dim)">—</p>' +
+        '<p class="engine-grade" style="color:var(--muted-dim)" aria-hidden="true">–</p>' +
         '<p class="engine-fail">' + (result && result.error ? result.error : 'Engine did not return a score') + '</p></div>';
     }
     var s = result.score, g = result.grade;
@@ -333,7 +338,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
         render(r.data);
       })
       .catch(function(err) {
-        setState('Network error — could not reach the report engine. ' + (err && err.message ? err.message : ''), true, false);
+        setState('Network error: could not reach the report engine. ' + (err && err.message ? err.message : ''), true, false);
       });
   }
 

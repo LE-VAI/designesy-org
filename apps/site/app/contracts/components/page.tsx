@@ -9,14 +9,14 @@ import { componentsContract } from '../../lib/components-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Components contract',
   description:
-    'Machine-readable component contract for the Designesy design system — every component with its allowed states, the tokens each state binds, and the accessibility obligations it carries. Derived from the design system contract, so the two cannot disagree.',
+    'Machine-readable component contract for the Designesy design system: every component with its allowed states, the tokens each state binds, and the accessibility obligations it carries. Derived from the design system contract, so the two cannot disagree.',
   path: '/contracts/components',
 
   machineSibling: '/contracts/components.json',
   ogTitle: 'Components contract · Designesy',
   ogDescription:
-    'Machine-readable component contract — allowed states, token bindings, and accessibility obligations per component.',
-  twitterDescription: 'Designesy components contract — machine-readable states and token bindings.',
+    'Machine-readable component contract: allowed states, token bindings, and accessibility obligations per component.',
+  twitterDescription: 'Designesy components contract: machine-readable states and token bindings.',
 });
 
 export default function ComponentsContractPage() {
@@ -48,7 +48,7 @@ export default function ComponentsContractPage() {
             <p className="definition-label">Why this file exists</p>
             <p>
               A token file tells an agent which values are legal. It does not
-              tell it which <em>combinations</em> are legal — that a card
+              tell it which <em>combinations</em> are legal: that a card
               presses at 0.985 while a button presses at 0.96, or that a sound
               toggle carries an <code>aria-pressed</code> obligation a nav link
               does not. Those rules lived in prose on the human contract page,

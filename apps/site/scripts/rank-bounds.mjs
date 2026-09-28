@@ -29,6 +29,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { liveScore } from './live-score.mjs';
 
 const BASE = process.argv.find((a) => a.startsWith('--base='))?.split('=')[1] ?? 'https://www.designesy.org';
 const OUT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -113,20 +114,20 @@ async function main() {
 
   // Score each site once, keep real checks + slop/originality
   const sites = [];
+  // Sites the engine could not read: named in the report, never ranked as 0.
+  // A rate limit or network failure throws instead (live-score.mjs), and the
+  // run writes nothing.
+  const excluded = [];
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
-    try {
-      const res = await fetch(`${BASE}/api/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const d = await res.json();
-      if (!d.checks) throw new Error(`no checks`);
+    const live = await liveScore(BASE, url);
+    if (live.excluded) {
+      excluded.push({ url, reason: live.excluded });
+      console.log(`[${i + 1}/${urls.length}] ${url}  EXCLUDED (${live.excluded})`);
+    } else {
+      const d = live.data;
       sites.push({ url, checks: d.checks, slop: d.slop?.total ?? 0, originality: d.originality?.points ?? 0 });
       console.log(`[${i + 1}/${urls.length}] ${url}`);
-    } catch (e) {
-      console.log(`[${i + 1}/${urls.length}] ${url}  ERROR ${e.message}`);
     }
     await new Promise((r) => setTimeout(r, 300));
   }
@@ -187,6 +188,7 @@ async function main() {
     method: 'Real check statuses from live /api/score; composite recomputed under 29 weight scenarios (baseline, uniform, per-category ×2 and ×0.5). Rank band = best to worst rank across scenarios.',
     scenarios: scenarios.length,
     sites: sites.length,
+    excluded,
     top5Stable,
     top5Fragile,
     perSite,
@@ -207,6 +209,7 @@ function renderMarkdown(r) {
   lines.push('');
   lines.push(`- Generated: ${r.generatedAt}`);
   lines.push(`- Base: ${r.base}`);
+  if (r.excluded && r.excluded.length) lines.push(`- Excluded, the engine could not read them: ${r.excluded.map((x) => x.url).join(', ')}`);
   lines.push(`- Method: ${r.method}`);
   lines.push('');
   lines.push(`## Top-5 stability`);

@@ -11,18 +11,18 @@ import { AgentActions } from '../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Privacy',
   description:
-    'Designesy privacy — what this public surface collects, what it does not, and how machine exports stay open without turning visitors into product.',
+    'Designesy privacy: what this public surface collects, what it does not, and how machine exports stay open without turning visitors into product.',
   path: '/privacy',
   ogDescription:
     'Plain-language trust surface for designesy.org: logs, contact, open exports, and what we do not track.',
-  twitterDescription: 'Trust language for designesy.org — designesy.org/privacy',
+  twitterDescription: 'Trust language for designesy.org · designesy.org/privacy',
 });
 
 const PRINCIPLES = [
   {
     num: '01',
-    title: 'Public by design, not extractive by default',
-    desc: 'designesy.org is an institutional surface for design intelligence. Its purpose is clarity, review, and portable rules — not harvesting personal data for ads or resale.',
+    title: 'Public by design, minimal by default',
+    desc: 'designesy.org is an institutional surface for design intelligence. Its purpose is clarity, review, and portable rules. It does not harvest personal data for ads or resale.',
   },
   {
     num: '02',
@@ -32,12 +32,12 @@ const PRINCIPLES = [
   {
     num: '03',
     title: 'Open packages are intentional',
-    desc: 'Machine exports such as open.json and kit JSON are public so people and agents can fetch design rules. That openness is a product choice, not a silent data leak about you.',
+    desc: 'Machine exports such as open.json and kit JSON are public so people and agents can fetch design rules. That openness is a product choice. The exports carry design rules and no data about you.',
   },
   {
     num: '04',
     title: 'Contact stays voluntary',
-    desc: 'Email is the contact path. Writing to us is optional. Messages are used to respond and operate the organization, not to build marketing profiles.',
+    desc: 'Email is the contact path. Writing to us is optional. Messages are used to respond and operate the organization. They are never used to build marketing profiles.',
   },
 ];
 
@@ -48,7 +48,7 @@ const COLLECT = [
   },
   {
     title: 'Continuity waitlist',
-    meta: 'If you join /continuity, we collect the work email and optional role, interest, site URL, and note you submit. Used only to operate the Continuity early-access list and related product access — not sold, not ad profiles.',
+    meta: 'If you join /continuity, we collect the work email and optional role, interest, site URL, and note you submit. Used only to operate the Continuity early-access list and related product access. It is not sold and not used for ad profiles.',
   },
   {
     title: 'What the host may log',
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
           <p className="surface-eyebrow" data-scramble>Trust surface</p>
           <h1 className="surface-title" data-scramble>Privacy</h1>
           <p className="surface-lede">
-            Designesy treats privacy as infrastructure, not decoration.
+            Designesy treats privacy as infrastructure.
           </p>
           <p className="surface-note">
             This page states how the public designesy.org surface handles
@@ -182,22 +182,22 @@ export default function PrivacyPage() {
           </p>
           <div className="row-stack" role="list">
             {OPEN_SCOPE.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -233,8 +233,7 @@ export default function PrivacyPage() {
             <a href="mailto:hello@designesy.org" data-cuelume-hover="droplet">
               hello@designesy.org
             </a>
-            . Include enough context to locate the request. We respond as an
-            organization, not as an automated dark pattern.
+            . Include enough context to locate the request. We respond as an organization.
           </p>
           <div className="lab-meta" style={{ marginTop: '1.25rem' }}>
             <Link href="/docs" data-cuelume-hover="tick" data-cuelume-press="tick">

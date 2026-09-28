@@ -1,0 +1,9 @@
+{
+ "_about": "Per-route [em dashes, negation pivots] in visible copy. check-voice.js fails a route that rises above these; lower them with --update when a route improves.",
+ "routes": {
+  "/contracts/guardrails": [
+   0,
+   2
+  ]
+ }
+}

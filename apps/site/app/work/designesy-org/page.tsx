@@ -10,15 +10,15 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'designesy.org — D to A case study',
+  title: 'designesy.org: D to A case study',
   description:
     'The publisher scored itself, got a D, fixed the gaps, and published the grade. Real before/after scores from the live /api/score endpoint: D 67.4 → A 96.3 in one session.',
   path: '/work/designesy-org',
   type: 'article',
   ogTitle: 'designesy.org · D to A · Designesy',
   ogDescription:
-    'The same engine that grades every other site graded the publisher. D 67.4 → A 96.3 — the fixes, the delta table, and the lessons.',
-  twitterDescription: 'designesy.org D to A case study — designesy.org/work/designesy-org',
+    'The same engine that grades every other site graded the publisher. D 67.4 → A 96.3: the fixes, the delta table, and the lessons.',
+  twitterDescription: 'designesy.org D to A case study · designesy.org/work/designesy-org',
 });
 
 const BEFORE_COUNTS = { pass: 12, fail: 9, warn: 2, skip: 3 };
@@ -38,11 +38,11 @@ const DELTA = [
 ];
 
 const LESSONS = [
-  'A private score is not a score — running the engine against the publisher is the only honest test',
+  'A score counts once it is public: running the engine against the publisher is the only honest test',
   '9 failures in one session is recoverable; the contract is reachable from a low baseline',
   'SKIPs that hide behind "browser-only" can often be partially resolved with static contract-diff halves',
-  'The biggest single jump came from token discipline — replacing raw hex and magic numbers moved 4 checks at once',
-  'The remaining 3 SKIPs are honest: v02/v04 need a browser, v21 needs PSI or CDP — they are not hidden, just unrun',
+  'The biggest single jump came from token discipline: replacing raw hex and magic numbers moved 4 checks at once',
+  'The remaining 3 SKIPs are honest: v02/v04 need a browser, v21 needs PSI or CDP; each is shown as unrun',
 ];
 
 export default function DesignesyOrgCaseStudy() {
@@ -66,7 +66,7 @@ export default function DesignesyOrgCaseStudy() {
           </p>
           <p className="surface-note">
             The same /api/score engine that grades every other site graded
-            designesy.org. The result was a D — 9 failures, 2 warnings, 3
+            designesy.org. The result was a D: 9 failures, 2 warnings, 3
             skips. The fixes were real: token discipline, focus-visible
             rings, reduced-motion tiering, Cadence typography rules, and the
             static halves of the Poise/Takt checks. The score is now A,
@@ -94,7 +94,7 @@ export default function DesignesyOrgCaseStudy() {
               no font-synthesis guards). One session resolved all 9 failures
               and 2 warnings, plus converted 3 SKIPs to PASSes by implementing
               the static contract-diff halves. The score moved from D 67.4 to
-              A 96.3 — a 28.9-point gain in a single working session.
+              A 96.3, a 28.9-point gain in a single working session.
             </p>
           </div>
         </section>
@@ -159,11 +159,11 @@ export default function DesignesyOrgCaseStudy() {
               Replaced raw hex values with contract tokens across component
               CSS. Added focus-visible rings on every interactive element,
               tiered reduced-motion (Tier 1 remove, Tier 2 soften ≤200ms,
-              Tier 3 keep — never a kill switch). Implemented the Cadence
+              Tier 3 keep; never a kill switch). Implemented the Cadence
               typography rules: text-wrap balance + pretty, tabular-nums in
               numeric contexts, font-synthesis guards, skip-ink on
               underlines. Shipped the static contract-diff halves of the
-              Poise interaction, Poise keyboard-path, and Takt feel checks —
+              Poise interaction, Poise keyboard-path, and Takt feel checks,
               converting 3 SKIPs to PASSes without a browser path.
             </p>
           </div>
@@ -184,8 +184,7 @@ export default function DesignesyOrgCaseStudy() {
               (Core Web Vitals). All three need a browser path. The audit
               endpoint at /api/score/audit returns honest SKIPs with
               diagnostic strings until ENABLE_BROWSER_AUDIT=1 and PSI_API_KEY
-              are set on the deployment. They are not hidden — they are
-              unrun, and labeled as such.
+              are set on the deployment. Each one is labeled as unrun.
             </p>
           </div>
         </section>
@@ -193,64 +192,68 @@ export default function DesignesyOrgCaseStudy() {
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=designesy.org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score designesy.org now</span>
-                <span className="row-meta">Run the live engine against the publisher</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">The standard the score runs against</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/why-we-built-a-public-design-score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Why a public score</span>
-                <span className="row-meta">The argument this case study is evidence for</span>
-              </span>
-            </Link>
-            <Link
-              href="/work"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Work — case studies</span>
-                <span className="row-meta">Index</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=designesy.org"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score designesy.org now</span>
+                  <span className="row-meta">Run the live engine against the publisher</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">The standard the score runs against</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/why-we-built-a-public-design-score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Why a public score</span>
+                  <span className="row-meta">The argument this case study is evidence for</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/work"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Work · case studies</span>
+                  <span className="row-meta">Index</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
           Case study · designesy.org · D to A. Real before/after scores from
-          /api/score, captured 2026-07-25. Three honest SKIPs remain —
+          /api/score, captured 2026-07-25. Three honest SKIPs remain:
           browser-only checks, unrun on the current deployment.
         </div>
       </main>

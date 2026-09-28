@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Report contract',
   description:
-    'Designesy Report Contract v0.1.0 — the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.',
+    'Designesy Report Contract v0.1.0: the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.',
   path: '/contracts/report',
   ogTitle: 'Report contract · Designesy',
   ogDescription:
-    'The synthesis capstone — one URL, three engines, one composite grade. Score + drift + readiness in a single report.',
-  twitterDescription: 'Designesy report — designesy.org/contracts/report',
+    'The synthesis capstone: one URL, three engines, one composite grade. Score + drift + readiness in a single report.',
+  twitterDescription: 'Designesy report · designesy.org/contracts/report',
 });
 
 const c = reportContract;
@@ -89,7 +89,7 @@ export default function ReportContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> synthesis checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> synthesis checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -163,7 +163,7 @@ export default function ReportContractPage() {
         </section>
 
         <div className="status-note">
-          The report contract is the synthesis capstone — it answers &ldquo;how
+          The report contract is the synthesis capstone: it answers &ldquo;how
           good is this design, is AI breaking it, and can agents use it&rdquo; in
           one composite grade. <Link href={c.machine_url}>Machine export</Link>.
         </div>

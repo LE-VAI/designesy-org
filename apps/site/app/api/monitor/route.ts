@@ -282,30 +282,30 @@ function createSnapshot(timestamp: string, checks: DriftCheckResult[], tokensExt
 // ── The 10 monitor checks ────────────────────────────────────────────────────
 
 function checkM01ScheduleRegistered(): MonitorCheckResult {
-  return { id: 'm01', item: 'Schedule registered', status: 'PASS', detail: 'Monitor run executed — the URL is being watched' };
+  return { id: 'm01', item: 'Schedule registered', status: 'PASS', detail: 'Monitor run executed: the URL is being watched' };
 }
 
 function checkM02LastRunFresh(): MonitorCheckResult {
-  return { id: 'm02', item: 'Last run fresh', status: 'PASS', detail: 'This run is happening now — within the cadence window' };
+  return { id: 'm02', item: 'Last run fresh', status: 'PASS', detail: 'This run is happening now: within the cadence window' };
 }
 
 function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
   if (!baseline) {
-    return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: 'No baseline yet — this is the first run (baseline established)' };
+    return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: 'No baseline yet: this is the first run (baseline established)' };
   }
   const delta = current.score - baseline.score;
   if (delta >= 0) {
-    return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: `Score ${current.score} vs baseline ${baseline.score} — stable or improved (+${delta})` };
+    return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: `Score ${current.score} vs baseline ${baseline.score}: stable or improved (+${delta})` };
   }
   if (delta <= -10) {
-    return { id: 'm03', item: 'Drift delta vs baseline', status: 'FAIL', detail: `Score ${current.score} vs baseline ${baseline.score} — degraded by ${Math.abs(delta)} points` };
+    return { id: 'm03', item: 'Drift delta vs baseline', status: 'FAIL', detail: `Score ${current.score} vs baseline ${baseline.score}: degraded by ${Math.abs(delta)} points` };
   }
-  return { id: 'm03', item: 'Drift delta vs baseline', status: 'WARN', detail: `Score ${current.score} vs baseline ${baseline.score} — slipped ${Math.abs(delta)} points` };
+  return { id: 'm03', item: 'Drift delta vs baseline', status: 'WARN', detail: `Score ${current.score} vs baseline ${baseline.score}: slipped ${Math.abs(delta)} points` };
 }
 
 function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
   if (history.length < 3) {
-    return { id: 'm04', item: 'Drift trend slope', status: 'PASS', detail: `Insufficient data for trend (${history.length} run${history.length === 1 ? '' : 's'} — need 3 for slope)` };
+    return { id: 'm04', item: 'Drift trend slope', status: 'PASS', detail: `Insufficient data for trend (${history.length} run${history.length === 1 ? '' : 's'}: need 3 for slope)` };
   }
   const recent = history.slice(-3);
   const slope = recent[2].score - recent[0].score;
@@ -320,7 +320,7 @@ function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
 
 function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
   if (!previous) {
-    return { id: 'm05', item: 'New violations since last run', status: 'PASS', detail: 'No previous run to compare — baseline established' };
+    return { id: 'm05', item: 'New violations since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
   const prevFailIds = new Set(previous.checks.filter((c) => c.status === 'FAIL').map((c) => c.id));
   const newFails = current.checks.filter((c) => c.status === 'FAIL' && !prevFailIds.has(c.id));
@@ -335,12 +335,12 @@ function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): Mo
 
 function checkM06Resolved(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
   if (!previous) {
-    return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: 'No previous run to compare — baseline established' };
+    return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
   const prevFailIds = new Set(previous.checks.filter((c) => c.status === 'FAIL').map((c) => c.id));
   const resolved = current.checks.filter((c) => c.status === 'PASS' && prevFailIds.has(c.id));
   if (resolved.length > 0) {
-    return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: `${resolved.length} check${resolved.length === 1 ? '' : 's'} newly passed: ${resolved.map((c) => c.id).join(', ')} — the system is healing` };
+    return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: `${resolved.length} check${resolved.length === 1 ? '' : 's'} newly passed: ${resolved.map((c) => c.id).join(', ')}; the system is healing` };
   }
   // Check for FAIL→WARN improvement
   const prevFailMap = new Map(previous.checks.filter((c) => c.status === 'FAIL').map((c) => [c.id, c]));
@@ -353,21 +353,21 @@ function checkM06Resolved(current: Snapshot, previous: Snapshot | null): Monitor
 
 function checkM07ScoreDegradation(current: Snapshot, previous: Snapshot | null, threshold = 5): MonitorCheckResult {
   if (!previous) {
-    return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: 'No previous run — threshold check starts now' };
+    return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: 'No previous run: threshold check starts now' };
   }
   const drop = previous.score - current.score;
   if (drop <= 0) {
-    return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: `Score ${current.score} vs previous ${previous.score} — no degradation` };
+    return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: `Score ${current.score} vs previous ${previous.score}: no degradation` };
   }
   if (drop > threshold) {
-    return { id: 'm07', item: 'Score degradation threshold', status: 'FAIL', detail: `Score dropped ${drop} points (threshold: ${threshold}) — alert condition` };
+    return { id: 'm07', item: 'Score degradation threshold', status: 'FAIL', detail: `Score dropped ${drop} points (threshold: ${threshold}), an alert condition` };
   }
   return { id: 'm07', item: 'Score degradation threshold', status: 'WARN', detail: `Score dropped ${drop} points (within threshold of ${threshold})` };
 }
 
 function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
   if (!baseline) {
-    return { id: 'm08', item: 'Token-set mutation', status: 'PASS', detail: 'No baseline — token set recorded as initial state' };
+    return { id: 'm08', item: 'Token-set mutation', status: 'PASS', detail: 'No baseline: token set recorded as initial state' };
   }
   // We can't directly compare token names from snapshots (they store check results, not token maps)
   // But tokensExtracted count change is a proxy signal
@@ -376,7 +376,7 @@ function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): Mo
     return { id: 'm08', item: 'Token-set mutation', status: 'PASS', detail: `Token count stable (${current.tokensExtracted} vs baseline ${baseline.tokensExtracted})` };
   }
   if (Math.abs(delta) > 10) {
-    return { id: 'm08', item: 'Token-set mutation', status: 'FAIL', detail: `Token count changed by ${delta > 0 ? '+' : ''}${delta} (${baseline.tokensExtracted} → ${current.tokensExtracted}) — significant token-set mutation (silent breaking changes)` };
+    return { id: 'm08', item: 'Token-set mutation', status: 'FAIL', detail: `Token count changed by ${delta > 0 ? '+' : ''}${delta} (${baseline.tokensExtracted} → ${current.tokensExtracted}): significant token-set mutation (silent breaking changes)` };
   }
   return { id: 'm08', item: 'Token-set mutation', status: 'WARN', detail: `Token count changed by ${delta > 0 ? '+' : ''}${delta} (${baseline.tokensExtracted} → ${current.tokensExtracted})` };
 }
@@ -397,7 +397,7 @@ async function checkM09ContractVersion(targetUrl: string, previous: Snapshot | n
   }
 
   if (!version) {
-    return { id: 'm09', item: 'Contract version drift', status: 'WARN', detail: 'Could not detect contract version — no agent.json version field found' };
+    return { id: 'm09', item: 'Contract version drift', status: 'WARN', detail: 'Could not detect contract version: no agent.json version field found' };
   }
 
   if (!previous) {
@@ -406,21 +406,21 @@ async function checkM09ContractVersion(targetUrl: string, previous: Snapshot | n
 
   // We don't store the version in snapshots in v0.1.0, so we can't compare
   // This check will PASS (version detected) and note the limitation
-  return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} detected — version history comparison requires v0.2` };
+  return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} detected: version history comparison requires v0.2` };
 }
 
 function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }): MonitorCheckResult {
   if (alerts.length === 0) {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered — no alert needed' };
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered: no alert needed' };
   }
   if (emailAlert?.delivered) {
     return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} delivered to ${emailAlert.recipient} via email${emailAlert.fromAddress ? ` (from ${emailAlert.fromAddress})` : ''}` };
   }
   if (emailAlert?.fromAddress === 'suppressed (cooldown)') {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} active — email suppressed (1-hour cooldown, same alert set already delivered)` };
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} active: email suppressed (1-hour cooldown, same alert set already delivered)` };
   }
   if (emailAlert?.attempted && !emailAlert.delivered) {
-    return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI — email delivery failed (${emailAlert.error || 'unknown error'})` };
+    return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI: email delivery failed (${emailAlert.error || 'unknown error'})` };
   }
   // No email provided or no Resend key — alerts surfaced in-UI only
   return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI (add an email address to get drift alerts by mail)` };
@@ -454,7 +454,7 @@ async function sendAlertEmail(
     const scoreDelta = previous ? currentSnapshot.score - previous.score : 0;
     const deltaStr = scoreDelta >= 0 ? `+${scoreDelta}` : `${scoreDelta}`;
 
-    const subject = `[Designesy] Drift alert for ${host} — ${currentSnapshot.grade}/${currentSnapshot.score}`;
+    const subject = `[Designesy] Drift alert for ${host}: ${currentSnapshot.grade}/${currentSnapshot.score}`;
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -473,7 +473,7 @@ async function sendAlertEmail(
       <td style="background:#16161b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
         <p style="margin:0 0 0.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Score</p>
         <p style="margin:0;font-size:2rem;font-weight:700;color:${currentSnapshot.score >= 70 ? '#4ade80' : currentSnapshot.score >= 50 ? '#facc15' : '#f87171'};">${currentSnapshot.grade} · ${currentSnapshot.score}/100</p>
-        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? `Previous: ${prevScore}/100 (${deltaStr} points)` : 'First run — baseline established'}</p>
+        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? `Previous: ${prevScore}/100 (${deltaStr} points)` : 'First run: baseline established'}</p>
       </td>
     </tr>
     <tr>

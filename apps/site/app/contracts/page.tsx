@@ -9,17 +9,20 @@ import { DemoCell, DemoGrid } from '../lib/demo-cell';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
-import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { CONTRACT_VERSION, designSystemContract } from '../lib/design-system-contract';
+
+// The version copywriting arrived in: history, not the live version.
+const COPYWRITING_SINCE = 'v' + designSystemContract.copywriting.adopted_in;
 
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system ' + CONTRACT_VERSION + ' is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
+    'Designesy Contracts: portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system ' + CONTRACT_VERSION + ' is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract ' + CONTRACT_VERSION + ' is live — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
+    'Portable design agreements for people and agents. Design system contract ' + CONTRACT_VERSION + ' is live: Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
   twitterDescription:
-    'Portable design judgment — designesy.org/contracts/design-system',
+    'Portable design judgment · designesy.org/contracts/design-system',
 });
 
 const CONTRACT_CONTENTS = [
@@ -90,8 +93,8 @@ const PRIMITIVE_SHAPE_MOTION = [
 const SPACING_RULES = [
   { name: 'Shell horizontal', value: '1.5rem (1rem ≤560px)', note: '.site-shell / .surface-page' },
   { name: 'Section vertical', value: '3.5rem / 3rem doctrine', note: '.section / .doctrine-section' },
-  { name: 'Card padding', value: '1.25–1.5rem', note: 'pillars, surfaces, items' },
-  { name: 'Grid gap', value: '0.75–1rem', note: 'pillar / surface grids' },
+  { name: 'Card padding', value: '1.25 to 1.5rem', note: 'pillars, surfaces, items' },
+  { name: 'Grid gap', value: '0.75 to 1rem', note: 'pillar / surface grids' },
   { name: 'Control min height', value: '42px buttons, 32px sound toggle', note: 'touch-friendly targets' },
   { name: 'Breakpoints', value: '860px · 720px · 560px', note: 'grids · topbar · single-column' },
 ];
@@ -100,9 +103,9 @@ const TYPOGRAPHY_RULES = [
   'Body: 16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
   'Headings: weight 700, line-height 1.08, letter-spacing -0.02em',
   'Hero wordmark: clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
-  'Eyebrows: 0.72–0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
-  'Lede: 1.1–1.5rem, weight 500, ink — one clear claim, not a paragraph stack',
-  'Supporting note: 0.85–0.95rem, muted, max-width ~520–580px',
+  'Eyebrows: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
+  'Lede: 1.1 to 1.5rem, weight 500, ink (one clear claim in a single paragraph)',
+  'Supporting note: 0.85 to 0.95rem, muted, max-width ~520 to 580px',
   'Never invent decorative display fonts for public UI; system stack is the contract',
 ];
 
@@ -129,28 +132,28 @@ const A11Y_REQUIREMENTS = [
 const MOTION_RULES = [
   'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
   'Interactive settle: 160ms --ease-out on press scale',
-  'Hover lift only under (hover: hover) and (pointer: fine) — no fake hover on touch',
-  'Wordmark signal pulse: opacity heartbeat only; no blur glow, no gradient blobs',
+  'Hover lift only under (hover: hover) and (pointer: fine); touch gets no fake hover',
+  'Wordmark dot pulse: opacity heartbeat only; no blur glow, no gradient blobs',
   'prefers-reduced-motion: reduce → disable non-essential motion; sound defaults off as acoustic proxy',
 ];
 
 const TEN_MOTION_STANDARDS = [
-  'Easing is deliberate — use contract cubicBezier tokens, not bare CSS keywords',
-  'Properties are explicit — never transition:all; name the exact properties',
-  'Entrances have opacity — animate from scale(0.9–0.97) + opacity, never scale(0)',
-  'Keyboard is still — no motion on keyboard-initiated or 100+/day actions',
-  'Layout is not animated — never animate width, height, margin, padding, top, left',
-  'Touch is gated — :hover motion on touch-visible surfaces requires explicit gating',
-  'Duration is bounded — UI animation stays ≤ 300ms unless justified',
-  'Reduced-motion is handled — every movement has a prefers-reduced-motion path',
-  'Press is asymmetric — press and release use asymmetric timing',
-  'Easing is never ease-in — deceleration (ease-out) or custom curves only',
+  'Easing is deliberate: use contract cubicBezier tokens instead of bare CSS keywords',
+  'Properties are explicit: never transition:all; name the exact properties',
+  'Entrances have opacity: animate from scale(0.9 to 0.97) + opacity, never scale(0)',
+  'Keyboard is still: no motion on keyboard-initiated or 100+/day actions',
+  'Layout is not animated: never animate width, height, margin, padding, top, left',
+  'Touch is gated: :hover motion on touch-visible surfaces requires explicit gating',
+  'Duration is bounded: UI animation stays ≤ 300ms unless justified',
+  'Reduced-motion is handled: every movement has a prefers-reduced-motion path',
+  'Press is asymmetric: press and release use asymmetric timing',
+  'Easing is never ease-in: deceleration (ease-out) or custom curves only',
 ];
 
 const MOTION_BLOCK_ON_SIGHT = [
   'Using ease-in on any UI interaction',
   'Using transition: all instead of explicit properties',
-  'Animating from scale(0) instead of scale(0.9–0.97) + opacity',
+  'Animating from scale(0) instead of scale(0.9 to 0.97) + opacity',
   'Animating on keyboard-initiated or 100+/day actions',
   'Animating layout properties: width, height, margin, padding, top, left',
   'Ungated :hover motion on touch-visible surfaces',
@@ -164,13 +167,13 @@ const MOTION_CAUTION = [
 ];
 
 const ACOUSTIC_TOKENS_REF = [
-  'Engine: Cuelume v0.2.2 (MIT) — interaction sound synthesis via Web Audio API',
-  'Custom $type: sound via $extensions.designesy — net-new relative to W3C DTCG 2025.10',
-  '19 cues mapped to 19 interaction roles — see /acoustic-tokens for the full table',
+  'Engine: Cuelume v0.2.2 (MIT), interaction sound synthesis via the Web Audio API',
+  'Custom $type: sound via $extensions.designesy; net-new relative to W3C DTCG 2025.10',
+  '19 cues mapped to 19 interaction roles: see /acoustic-tokens for the full table',
   'Preference key: designesy:sound in localStorage; engine follows Designesy',
   'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
-  'No focus sounds — sounds fire on pointer/click, not on focus',
-  'No ambient audio — Cuelume is interaction-only; no background music or mood beds',
+  'No focus sounds: sounds fire on pointer/click, never on focus',
+  'No ambient audio: Cuelume is interaction-only; no background music or mood beds',
 ];
 
 const SPRING_TOKENS = [
@@ -193,7 +196,7 @@ const ANTI_PATTERNS = [
 ];
 
 const IMPLEMENTATION_NOTES = [
-  'Single live token source of truth — no secondary theme framework',
+  'Single live token source of truth: no secondary theme framework',
   'Server-rendered by default; client only for sound, bind, and preference controls',
   'metadataBase is https://www.designesy.org (apex redirects); public label is Designesy',
   'Interaction audio via Cuelume; middle-click guard is required',
@@ -209,61 +212,61 @@ const VERIFICATION = [
   'prefers-reduced-motion disables entrance and wordmark breath',
   'Contrast: ink on paper, muted on paper, accent on paper remain readable',
   'No public surface displays internal control-plane naming',
-  'Button text is a verb phrase or recognized command — not a bare noun (copywriting v38)',
+  'Button text is a verb phrase or recognized command, never a bare noun (copywriting v38)',
   'No trailing period on button text, labels, or tab text (copywriting v39)',
-  'Link text is descriptive — not bare "click here", "learn more", "here" (copywriting v40)',
+  'Link text is descriptive, never bare "click here", "learn more", "here" (copywriting v40)',
   'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
 ];
 
 const OPEN_TENSIONS = [
-  'Light theme is not contracted — dark technical foundation is provisional',
+  'Light theme is not contracted; the dark technical foundation is provisional',
   '--activation exists but has limited public surface usage',
   'Inter is named in the stack but not self-hosted; system fallback is intentional',
   'Shadow tokens exist; elevation language is still light-touch (borders lead)',
   'Human contract page and machine export remain dual sources until a single generator owns both',
-  'Keyboard-path verification packets are published for Poise only — not every public route',
-  'Inline-axis logical properties (margin-inline, padding-inline) applied — block-axis and border-inline remain physical',
-  'Block-axis logical properties (margin-block-start/end) not yet migrated — direction-ready is partial',
-  'border-inline-start not yet used — decorative borders still physical',
+  'Keyboard-path verification packets cover Poise only; other public routes have none yet',
+  'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical',
+  'Block-axis logical properties (margin-block-start/end) not yet migrated; direction-ready is partial',
+  'border-inline-start not yet used; decorative borders are still physical',
 ];
 
 const COPYWRITING_PRINCIPLES = [
-  'Button copy is a verb phrase (or a recognized single-word command), never a bare noun — "Save changes" not "Changes", "Delete file" not "File"',
+  'Button copy is a verb phrase (or a recognized single-word command), never a bare noun: "Save changes" not "Changes", "Delete file" not "File"',
   'Button text is ≤ 4 words; articles (a/an/the) removed for scannability',
-  'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs — the label must state the action',
+  'Generic confirmation labels (OK, Submit, Continue, Yes/No) are rejected for confirmation dialogs: the label must state the action',
   'Commands that open a further-input dialog end with an ellipsis (…); immediate commands do not',
-  'Error messages state what happened, what to do, and what to expect next — not just "An error occurred"',
-  'Error messages use plain language — no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
+  'Error messages state what happened, what to do, and what to expect next, beyond a bare "An error occurred"',
+  'Error messages use plain language: no jargon, no exposed error codes, no blame words (invalid, illegal, incorrect)',
   'Error messages don\'t overapologize and don\'t introduce "we/us" unless the system caused the error',
-  'Empty states have a clear next action (button or link with a verb), not just a message',
-  'Link text is descriptive of the destination, not bare "click here / learn more / read more / here"',
-  'All UI text uses sentence case — not title case, not ALL CAPS (except eyebrows per typography contract)',
+  'Empty states offer a clear next action (a button or link with a verb) alongside the message',
+  'Link text describes the destination; never bare "click here / learn more / read more / here"',
+  'All UI text uses sentence case, never title case or ALL CAPS (except eyebrows, per the typography contract)',
   'No trailing period on buttons, labels, radio/checkbox text, tab text; periods only on full sentences (tooltips, error bodies, dialog bodies)',
-  'Active voice, not passive, except when the system is the subject of an error',
+  'Active voice, except when the system is the subject of an error',
   'Second person (you/your) for user-facing copy; "I/me" never used for the app\'s voice; "we" only when the system is the actor',
-  'No "please / thank you" in standard UI — only when the user is genuinely inconvenienced',
-  'Voice is constant; tone adapts to the user\'s emotional state — error tone is economical and direct, not humorous',
-  'Don\'t blame the user — error messages describe the problem and the fix, not the user\'s mistake',
+  'No "please / thank you" in standard UI, except when the user is genuinely inconvenienced',
+  'Voice is constant; tone adapts to the user\'s emotional state: error tone is economical and direct, never humorous',
+  'Don\'t blame the user: error messages describe the problem and the fix, never the user\'s mistake',
 ];
 
 const COPYWRITING_VERIFICATION = [
-  'v38: Button text is a verb phrase or recognized command — not a bare noun',
+  'v38: Button text is a verb phrase or recognized command (not a bare noun)',
   'v39: No trailing period on button text, labels, or tab text',
-  'v40: Link text is descriptive — not bare "click here", "learn more", "here"',
+  'v40: Link text is descriptive (not bare "click here", "learn more", "here")',
   'v41: No ALL CAPS UI text (except eyebrow labels per typography contract)',
 ];
 
 const COPYWRITING_GOVERNANCE = [
-  'Error message completeness (what happened + what to do + what to expect) — human review using NN/g 12-guideline rubric',
-  'Empty-state next-action presence — human review if no automated DOM check',
-  'Voice and tone consistency — human review against Mailchimp-style voice-and-tone guide',
+  'Error message completeness (what happened + what to do + what to expect): human review using NN/g 12-guideline rubric',
+  'Empty-state next-action presence: human review if no automated DOM check',
+  'Voice and tone consistency: human review against Mailchimp-style voice-and-tone guide',
   'Consistency map: one canonical label per action across the product (no "Sign in" vs "Log in")',
 ];
 
 const COPYWRITING_TOOLING = [
-  'Vale (errata-ai/vale) — YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
-  'textlint — pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
-  'alex — inclusive/insensitive-language linter for the blame-words subset',
+  'Vale (errata-ai/vale): YAML-rule prose linter; ships Microsoft Writing Style Guide + Google Developer Docs Style Guide implementations',
+  'textlint: pluggable rule engine for custom checks (button verb phrase, label ≤ 4 words, no trailing period)',
+  'alex: inclusive/insensitive-language linter for the blame-words subset',
 ];
 
 function TokenTable({
@@ -309,8 +312,8 @@ export default function ContractsPage() {
             <p className="surface-note">
               Designesy Contracts are portable design agreements that let people
               and agents carry design judgment across tools, sessions, codebases,
-              and artifacts. They make design judgment inspectable — not reliant
-              on slogans or vibes.
+              and artifacts. They make design judgment inspectable, with
+              evidence in place of slogans or vibes.
             </p>
           </div>
           <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
@@ -335,261 +338,278 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Published now</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system · {CONTRACT_VERSION}</span>
-                <span className="row-meta">
-                  Human overview, full tables below, machine JSON export
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system · {CONTRACT_VERSION}</span>
+                  <span className="row-meta">
+                    Human overview, full tables below, machine JSON export
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/tokens"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Tokens · v0.1.0</span>
-                <span className="row-meta">
-                  W3C DTCG 2025.10 format conformance — color spaces, custom types, validation
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/tokens"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Tokens · v0.1.0</span>
+                  <span className="row-meta">
+                    W3C DTCG 2025.10 format conformance: color spaces, custom types, validation
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/a11y"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Accessibility · v0.1.0</span>
-                <span className="row-meta">
-                  WCAG 2.2 AA via axe-core 4.13.0 — 11 verification checks
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/a11y"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Accessibility · v0.1.0</span>
+                  <span className="row-meta">
+                    11 verification checks: WCAG 2.2 AA via axe-core 4.13.0
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/motion"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Motion · v0.1.0</span>
-                <span className="row-meta">
-                  Lottie spec v1.0.1 + Ten Non-Negotiable Motion Standards — 10 verification checks
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/motion"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Motion · v0.1.0</span>
+                  <span className="row-meta">
+                    10 verification checks: Lottie spec v1.0.1 and the Ten Non-Negotiable Motion Standards
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Poise adopted</span>
-                <span className="row-meta">
-                  Lab One interaction rules adopted in contract v0.1.1
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Poise adopted</span>
+                  <span className="row-meta">
+                    Lab One interaction rules adopted in contract v0.1.1
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Takt adopted</span>
-                <span className="row-meta">
-                  Lab Two interface-feel rules adopted in contract v0.1.2
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Takt adopted</span>
+                  <span className="row-meta">
+                    Lab Two interface-feel rules adopted in contract v0.1.2
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">07</span>
-              <span className="row-body">
-                <span className="row-title">Cadence adopted</span>
-                <span className="row-meta">
-                  Lab Three typography rules adopted in contract v0.1.3
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">07</span>
+                <span className="row-body">
+                  <span className="row-title">Cadence adopted</span>
+                  <span className="row-meta">
+                    Lab Three typography rules adopted in contract v0.1.3
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">08</span>
-              <span className="row-body">
-                <span className="row-title">Acoustics adopted</span>
-                <span className="row-meta">
-                  Lab Four acoustic mapping rules adopted in contract v0.3.0
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">08</span>
+                <span className="row-body">
+                  <span className="row-title">Acoustics adopted</span>
+                  <span className="row-meta">
+                    Lab Four acoustic mapping rules adopted in contract v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts#09e-copywriting"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">09</span>
-              <span className="row-body">
-                <span className="row-title">Copywriting adopted</span>
-                <span className="row-meta">
-                  UX copy principles adopted in {CONTRACT_VERSION} — NN/g, Polaris, Carbon, Fluent, HIG
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts#09e-copywriting"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">09</span>
+                <span className="row-body">
+                  <span className="row-title">Copywriting adopted</span>
+                  <span className="row-meta">
+                    UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, Carbon, Fluent, and HIG
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/skill"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">10</span>
-              <span className="row-body">
-                <span className="row-title">Agent skill export</span>
-                <span className="row-meta">
-                  SKILL.md format for AI coding agents — same source as JSON
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/skill"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">10</span>
+                <span className="row-body">
+                  <span className="row-title">Agent skill export</span>
+                  <span className="row-meta">
+                    SKILL.md format for AI coding agents, built from the same source as the JSON
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/designesy-org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">11</span>
-              <span className="row-body">
-                <span className="row-title">Field check</span>
-                <span className="row-meta">
-                  Live site reviewed against this contract
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/designesy-org"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">11</span>
+                <span className="row-body">
+                  <span className="row-title">Field check</span>
+                  <span className="row-meta">
+                    Live site reviewed against this contract
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/drift"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">12</span>
-              <span className="row-body">
-                <span className="row-title">Drift · v0.1.0</span>
-                <span className="row-meta">
-                  AI-generated UI drift detection — 12 checks for token fabrication, value variance, off-contract patterns
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/drift"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">12</span>
+                <span className="row-body">
+                  <span className="row-title">Drift · v0.1.0</span>
+                  <span className="row-meta">
+                    AI-generated UI drift detection: 12 checks for token fabrication, value variance, and off-contract patterns
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/readiness"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">13</span>
-              <span className="row-body">
-                <span className="row-title">AI Readiness · v0.1.0</span>
-                <span className="row-meta">
-                  The 6th maturity axis — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/readiness"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">13</span>
+                <span className="row-body">
+                  <span className="row-title">AI Readiness · v0.1.0</span>
+                  <span className="row-meta">
+                    The 6th maturity axis: 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, and DESIGN.md
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/guardrails"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">14</span>
-              <span className="row-body">
-                <span className="row-title">Guardrails · v0.1.0</span>
-                <span className="row-meta">
-                  The product layer — emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/guardrails"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">14</span>
+                <span className="row-body">
+                  <span className="row-title">Guardrails · v0.1.0</span>
+                  <span className="row-meta">
+                    The product layer: emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/monitor"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">15</span>
-              <span className="row-body">
-                <span className="row-title">Monitor · v0.1.0</span>
-                <span className="row-meta">
-                  The continuous-governance layer — re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/monitor"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">15</span>
+                <span className="row-body">
+                  <span className="row-title">Monitor · v0.1.0</span>
+                  <span className="row-meta">
+                    The continuous-governance layer: re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/compare"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">16</span>
-              <span className="row-body">
-                <span className="row-title">Compare · v0.1.0</span>
-                <span className="row-meta">
-                  The diff engine — fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions: added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/compare"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">16</span>
+                <span className="row-body">
+                  <span className="row-title">Compare · v0.1.0</span>
+                  <span className="row-meta">
+                    The diff engine: fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions (added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta)
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/report"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">17</span>
-              <span className="row-body">
-                <span className="row-title">Report · v0.1.0</span>
-                <span className="row-meta">
-                  The synthesis capstone — fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/report"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">17</span>
+                <span className="row-body">
+                  <span className="row-title">Report · v0.1.0</span>
+                  <span className="row-meta">
+                    The synthesis capstone: fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -616,7 +636,7 @@ export default function ContractsPage() {
           <h2 className="doctrine-heading">Contract contents</h2>
           <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
             <p className="surface-note">
-              A Designesy Contract should include all of the following —
+              A Designesy Contract should include all of the following:
               structured values for machines, rationale for humans, and
               verification criteria for both.
             </p>
@@ -634,8 +654,8 @@ export default function ContractsPage() {
               <code style={{ color: 'var(--ink)' }}>rounded</code>,{' '}
               <code style={{ color: 'var(--ink)' }}>spacing</code>,{' '}
               <code style={{ color: 'var(--ink)' }}>components</code>. Use local
-              extensions for doctrine, review, provenance, agent instructions, and
-              verification — but do not hide the standard contract from tools.
+              extensions for doctrine, review, provenance, agent instructions,
+              and verification, and keep the standard contract visible to tools.
             </p>
           </div>
           <h3
@@ -660,8 +680,7 @@ export default function ContractsPage() {
               Public design contract for designesy.org. Derived from the live
               site token foundation, with Lab One · Poise, Lab Two · Takt, Lab
               Three · Cadence, and Lab Four · Acoustics rules adopted. Provisional, doctrine-referenced, and
-              meant to be verified against the running site — not a frozen brand
-              bible.
+              meant to be verified against the running site and revised as the site changes.
             </p>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
@@ -693,7 +712,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Doctrine lineage',
-                meta: 'Designesy design doctrine — operational values only on the public surface',
+                meta: 'Designesy design doctrine, with only operational values on the public surface',
               },
               {
                 title: 'Motion references',
@@ -701,11 +720,11 @@ export default function ContractsPage() {
               },
               {
                 title: 'Interaction audio',
-                meta: 'Cuelume v0.2.2 — preference owned by Designesy',
+                meta: 'Cuelume v0.2.2, with the sound preference owned by Designesy',
               },
               {
                 title: 'Contract status',
-                meta: 'Public ' + CONTRACT_VERSION + ' — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
+                meta: 'Public ' + CONTRACT_VERSION + ', with Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
               },
             ]} />
         </section>
@@ -736,7 +755,7 @@ export default function ContractsPage() {
           <DemoGrid>
             <DemoCell
               label="Color roles"
-              note={<>Each chip renders the exact token value. Dark roles on dark surfaces — contrast is the product.</>}
+              note={<>Each chip renders the exact token value. Dark roles on dark surfaces: contrast is the product.</>}
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
@@ -772,7 +791,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Surface depth"
-              note={<>Near-black surfaces, not gray. Depth from opacity layers, not heavy shadows.</>}
+              note={<>Surfaces are near-black. Depth comes from opacity layers first, shadows second.</>}
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
@@ -808,7 +827,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Radius scale"
-              note={<>6px default · 4px compact — no pill inflation.</>}
+              note={<>6px default · 4px compact. No pill inflation.</>}
             >
               <div className="demo-radius-pair">
                 <div className="demo-radius-card">
@@ -850,8 +869,7 @@ export default function ContractsPage() {
               <p className="definition-label">Signal roles</p>
               <p>
                 signal = brand action and wordmark dot · signal-light = hover and
-                focus lift · signal-dim = badge/wash · activation = reserved
-                highlight, not general chrome
+                focus lift · signal-dim = badge/wash · activation = highlights only
               </p>
             </div>
             <div className="definition">
@@ -899,12 +917,12 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
           <CheckGrid items={checkItemsFromStrings([
-              'Default radius 6px; compact controls 4px — no pill inflation',
+              'Default radius 6px, compact controls 4px, no pill inflation',
               'Borders define structure first; shadows are secondary depth',
               'Dark technical foundation: paper black, surfaces near-black',
               'One signal accent family; do not invent secondary brand hues',
-              'Cards stay flat until interaction — lift is earned on hover',
-              'Status notes use soft surface + line, not loud callout chrome',
+              'Cards stay flat until interaction: lift is earned on hover',
+              'Status notes use a soft surface and a line instead of loud callout chrome',
             ])} />
         </section>
 
@@ -967,7 +985,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Easing curves"
-              note={<>Four timing functions. Watch the dot travel — same distance, different feel.</>}
+              note={<>Four timing functions. Watch the dot travel: same distance, different feel.</>}
             >
               <div className="demo-easing">
                 <div className="demo-easing-row" data-ease="default">
@@ -1077,10 +1095,10 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id="09e-copywriting">
-          <h2 className="doctrine-heading">09e · Copywriting ({CONTRACT_VERSION})</h2>
+          <h2 className="doctrine-heading">09e · Copywriting ({COPYWRITING_SINCE})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, IBM
-            Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap signal:{' '}
+            UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, IBM
+            Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
             <a
               href="https://detail.design"
               style={{ color: 'var(--signal-light)' }}
@@ -1088,7 +1106,7 @@ export default function ContractsPage() {
               detail.design
             </a>{' '}
             Copywriting discipline. 4 principles are codified as verification
-            checks (v38–v41); 12 are governance.
+            checks (v38 to v41); 12 are governance.
           </p>
           <p className="surface-note" style={{ marginBottom: '0.5rem' }}>
             <strong style={{ color: 'var(--ink)' }}>Principles</strong>
@@ -1129,8 +1147,9 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract {CONTRACT_VERSION} — public artifact discipline,
-          not legal advice or a client service agreement. Values are taken from
+          Designesy design system contract {CONTRACT_VERSION}: public artifact
+          discipline. It is not legal advice or a client service agreement.
+          Values are taken from
           the live site tokens. Poise, Takt, Cadence, Acoustics, and Copywriting rules are
           adopted. Contract home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>

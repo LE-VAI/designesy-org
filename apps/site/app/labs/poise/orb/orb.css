@@ -146,59 +146,89 @@
 }
 
 .orb-param input[type='range'] {
+  --v: 50;
   width: 100%;
-  height: 1.5rem;
-  background: transparent;
-  appearance: none;
-  -webkit-appearance: none;
+  height: var(--space-24);
   margin: 0;
   padding: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
 }
 
+/* The track fills up to the value (--v, set inline); the handle is
+   --signal-access, which clears 3:1 on the dark ground where --signal read
+   1.9:1, parted from the track by a ring of the page's paper. */
 .orb-param input[type='range']::-webkit-slider-runnable-track {
-  height: 1px;
-  background: var(--line-strong);
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(to right, var(--signal-access) calc(var(--v) * 1%), var(--line-strong) 0);
 }
 
 .orb-param input[type='range']::-moz-range-track {
-  height: 1px;
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
   background: var(--line-strong);
+}
+
+.orb-param input[type='range']::-moz-range-progress {
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--signal-access);
 }
 
 .orb-param input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: var(--space-16);
+  height: var(--space-16);
+  margin-top: calc((var(--space-2) - var(--space-16)) / 2);
   border-radius: 50%;
-  background: var(--signal);
-  border: 2px solid var(--paper);
-  box-shadow: 0 0 0 1px var(--signal-light);
-  margin-top: -7px;
-  cursor: pointer;
-  transition: transform 160ms var(--ease-out);
-}
-
-.orb-param input[type='range']:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px rgba(51, 88, 232, 0.25);
-}
-
-.orb-param input[type='range']:active::-webkit-slider-thumb {
-  transform: scale(0.92);
+  background: var(--signal-access);
+  box-shadow: 0 0 0 2px var(--paper);
+  cursor: grab;
+  transition: transform var(--duration-quick) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .orb-param input[type='range']::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: var(--space-16);
+  height: var(--space-16);
+  border: 0;
   border-radius: 50%;
-  background: var(--signal);
-  border: 2px solid var(--paper);
-  box-shadow: 0 0 0 1px var(--signal-light);
-  cursor: pointer;
+  background: var(--signal-access);
+  box-shadow: 0 0 0 2px var(--paper);
+  cursor: grab;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .orb-param input[type='range']:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+}
+
+.orb-param input[type='range']:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.orb-param input[type='range']:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.orb-param input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 6px color-mix(in srgb, var(--signal-access) 35%, transparent);
 }
 
 .orb-param input[type='range']:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 4px rgba(51, 88, 232, 0.25);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 6px color-mix(in srgb, var(--signal-access) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-param input[type='range']::-webkit-slider-thumb {
+    transition: none;
+  }
 }
 
 /* ── Actions (copy + reset) ────────────────────────────────────────────── */
@@ -223,7 +253,7 @@
   transition: transform 160ms var(--ease-out), background-color 200ms var(--ease),
     border-color 200ms var(--ease);
   border: 1px solid transparent;
-  min-height: 38px;
+  min-height: 2.75rem;
   font-family: inherit;
 }
 
@@ -232,8 +262,10 @@
   color: var(--ink);
 }
 
-.orb-button-primary:hover {
-  background: var(--signal-light);
+@media (hover: hover) {
+  .orb-button-primary:hover {
+    background: var(--signal-light);
+  }
 }
 
 .orb-button-primary:active {
@@ -251,10 +283,12 @@
   border-color: var(--line);
 }
 
-.orb-button-ghost:hover {
-  background: var(--surface-soft);
-  color: var(--ink);
-  border-color: var(--line-strong);
+@media (hover: hover) {
+  .orb-button-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
 }
 
 .orb-button-ghost:active {
@@ -290,9 +324,11 @@
   transition: color 160ms var(--ease-out), border-color 160ms var(--ease-out);
 }
 
-.orb-attr-link:hover {
-  color: var(--ink);
-  border-bottom-color: var(--signal-light);
+@media (hover: hover) {
+  .orb-attr-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--signal-light);
+  }
 }
 
 .orb-attr-link:focus-visible {

@@ -98,7 +98,7 @@ async function checkR01TokenFile(origin: string): Promise<CheckResult> {
 async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/llms.txt', '/.well-known/llms.txt']);
   if (!result.found) {
-    return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'FAIL', detail: 'No /llms.txt found — agents have no orientation brief' };
+    return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'FAIL', detail: 'No /llms.txt found: agents have no orientation brief' };
   }
   return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'PASS', detail: `/llms.txt returns ${result.body?.length || 0} bytes of agent-facing brief` };
 }
@@ -106,7 +106,7 @@ async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
 async function checkR03AgentJson(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/.well-known/agent.json', '/agent.json']);
   if (!result.found) {
-    return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'FAIL', detail: 'No /.well-known/agent.json — agents have no discovery endpoint' };
+    return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'FAIL', detail: 'No /.well-known/agent.json: agents have no discovery endpoint' };
   }
   const hasIdentity = result.body?.includes('identity') || result.body?.includes('authority');
   if (hasIdentity) {
@@ -190,7 +190,7 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
           item: 'MCP endpoint responds to tools/list',
           category: 'mcp',
           status: 'PASS',
-          detail: `MCP endpoint at /api/mcp serves ${names.length} tool(s) (self-verified in-process — no network hop)`,
+          detail: `MCP endpoint at /api/mcp serves ${names.length} tool(s) (self-verified in-process: no network hop)`,
         };
       }
     } catch {
@@ -244,7 +244,7 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
 async function checkR05DesignMd(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/DESIGN.md', '/design.md']);
   if (!result.found) {
-    return { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md — missing the machine-readable design brief' };
+    return { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md: missing the machine-readable design brief' };
   }
   return { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', category: 'discovery', status: 'PASS', detail: `/DESIGN.md found (${result.body?.length || 0} bytes)` };
 }
@@ -253,13 +253,13 @@ async function checkR06TokenDescription(origin: string): Promise<CheckResult> {
   // This is checked alongside r01 — if tokens were found, check for $description
   const tokenResult = await probePaths(origin, ['/tokens.json', '/design-tokens.json', '/contracts/tokens.json', '/export/tokens.json']);
   if (!tokenResult.found || !tokenResult.body) {
-    return { id: 'r06', item: 'Token documentation — tokens carry $description', category: 'tokens', status: 'FAIL', detail: 'No token file found to check for $description' };
+    return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'FAIL', detail: 'No token file found to check for $description' };
   }
   const hasDescription = tokenResult.body.includes('$description');
   if (hasDescription) {
-    return { id: 'r06', item: 'Token documentation — tokens carry $description', category: 'tokens', status: 'PASS', detail: 'Tokens found with $description metadata' };
+    return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'PASS', detail: 'Tokens found with $description metadata' };
   }
-  return { id: 'r06', item: 'Token documentation — tokens carry $description', category: 'tokens', status: 'WARN', detail: 'Tokens found but no $description — agents lack context' };
+  return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'WARN', detail: 'Tokens found but no $description: agents lack context' };
 }
 
 async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
@@ -279,15 +279,15 @@ async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
 async function checkR08Sitemap(origin: string): Promise<CheckResult> {
   const result = await probeUrl(new URL('/sitemap.xml', origin).href, 'GET');
   if (result.ok && result.body && result.body.includes('<urlset')) {
-    return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'PASS', detail: '/sitemap.xml found — site is crawlable' };
+    return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'PASS', detail: '/sitemap.xml found: site is crawlable' };
   }
-  return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'FAIL', detail: 'No /sitemap.xml — agents cannot discover pages' };
+  return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'FAIL', detail: 'No /sitemap.xml: agents cannot discover pages' };
 }
 
 async function checkR09RobotsTxt(origin: string): Promise<CheckResult> {
   const result = await probeUrl(new URL('/robots.txt', origin).href, 'GET');
   if (!result.ok || !result.body) {
-    return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'FAIL', detail: 'No /robots.txt — crawling rules undefined' };
+    return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'FAIL', detail: 'No /robots.txt: crawling rules undefined' };
   }
   const disallowAll = /User-agent:\s*\*\s*\n\s*Disallow:\s*\//i.test(result.body);
   if (disallowAll) {
@@ -305,7 +305,7 @@ async function checkR10OpenGraph(html: string): Promise<CheckResult> {
   if (hasOg || hasTwitter) {
     return { id: 'r10', item: 'Open Graph + Twitter card meta tags', category: 'social', status: 'WARN', detail: 'Partial social meta (OG or Twitter, not both)' };
   }
-  return { id: 'r10', item: 'Open Graph + Twitter card meta tags', category: 'social', status: 'FAIL', detail: 'No social meta tags — missing share context' };
+  return { id: 'r10', item: 'Open Graph + Twitter card meta tags', category: 'social', status: 'FAIL', detail: 'No social meta tags: missing share context' };
 }
 
 // ── Score computation ────────────────────────────────────────────────────────

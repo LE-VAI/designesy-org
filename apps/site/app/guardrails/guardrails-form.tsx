@@ -114,7 +114,7 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
         busy={phase === 'running'}
         go="Emit the contract"
         goBusy="Emitting"
-        foot={<p className="eg-bar-foot-note">Reads the site&apos;s CSS once and writes six files an AI coding agent can follow.</p>}
+        note="Reads the site's CSS once and writes six files an AI coding agent can follow."
       />
       <Instrument
         name="Guardrails"

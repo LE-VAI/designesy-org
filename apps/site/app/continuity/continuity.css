@@ -97,10 +97,11 @@
   padding: var(--space-fine-135) var(--space-20) var(--space-24);
 }
 
+/* One rhythm for the whole form: 20 px between fields, on the 4 px grid. */
 .waitlist-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-fine-15);
+  gap: var(--space-20);
 }
 
 .waitlist-hp {
@@ -113,55 +114,71 @@
 }
 
 .waitlist-field {
-  margin-bottom: var(--space-fine-95);
+  margin: 0;
 }
 
+/* Labels in the instrument's label voice: mono, small caps, one step of
+   tracking. The optional marker is a quieter tag on the same line. */
 .waitlist-field label {
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  margin-bottom: var(--space-8);
+  font: 500 0.6875rem/1rem var(--mono);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-fine-40);
+  color: var(--muted);
 }
 
 .waitlist-optional {
   color: var(--muted-dim);
-  letter-spacing: 0;
-  text-transform: none;
-  font-family: inherit;
-  font-size: 0.85em;
 }
 
+/* The fields are wells, the same material as the site's URL bars
+   (lib/engine/command-bar.css): set into the panel, a hairline at rest, the
+   signal ring when in use. */
 .waitlist-field input,
 .waitlist-field select,
 .waitlist-field textarea {
   width: 100%;
-  background: var(--paper);
+  min-height: var(--space-48);
+  padding: var(--space-12) var(--space-16);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow:
+    inset 0 0 0 1px var(--lv-well-line),
+    inset 0 1px 2px color-mix(in srgb, var(--paper) 30%, transparent);
   color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: var(--space-12) var(--space-fine-80);
-  font: inherit;
-  font-size: 1rem;
-  line-height: 1.4;
-  transition: border-color var(--duration-fast) var(--ease),
-    background var(--duration-fast) var(--ease);
+  font: 400 1rem/1.5 var(--sans);
+  caret-color: var(--signal-access);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.waitlist-field input:hover,
-.waitlist-field select:hover,
-.waitlist-field textarea:hover {
-  border-color: var(--line-strong);
+.waitlist-field input::placeholder,
+.waitlist-field textarea::placeholder {
+  color: var(--muted-dim);
+  opacity: 1;
 }
 
-.waitlist-field input:focus,
-.waitlist-field select:focus,
-.waitlist-field textarea:focus {
-  outline: 2px solid var(--signal-light);
-  outline-offset: 2px;
-  border-color: var(--signal-light);
+@media (hover: hover) and (pointer: fine) {
+  .waitlist-field input:hover,
+  .waitlist-field select:hover,
+  .waitlist-field textarea:hover {
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      inset 0 1px 2px color-mix(in srgb, var(--paper) 30%, transparent);
+  }
+}
+
+.waitlist-field input:focus-visible,
+.waitlist-field select:focus-visible,
+.waitlist-field textarea:focus-visible {
+  outline: none;
+  border-radius: var(--radius-md);
+  box-shadow:
+    inset 0 0 0 1px var(--signal-access),
+    0 0 0 3px color-mix(in srgb, var(--signal-access) 22%, transparent);
 }
 
 .waitlist-field input:disabled,
@@ -176,9 +193,46 @@
   resize: vertical;
 }
 
+/* A drawn chevron in place of the platform's: the select keeps its native
+   list, only the closed face is ours. */
+.waitlist-select {
+  position: relative;
+  display: block;
+}
+
+.waitlist-select select {
+  appearance: none;
+  padding-right: var(--space-40);
+  cursor: pointer;
+}
+
+.waitlist-select::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: var(--space-16);
+  width: var(--space-8);
+  height: var(--space-8);
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .waitlist-field input,
+  .waitlist-field select,
+  .waitlist-field textarea {
+    border: 1px solid CanvasText;
+  }
+  .waitlist-select::after {
+    border-color: CanvasText;
+  }
+}
+
 .waitlist-row {
   display: grid;
-  gap: var(--space-fine-85);
+  gap: var(--space-16);
 }
 
 @media (min-width: 640px) {
@@ -207,8 +261,9 @@
   border-bottom: 1px solid var(--line);
 }
 
-.waitlist-trust a:hover {
-  color: var(--ink);
-  border-color: var(--signal);
+@media (hover: hover) {
+  .waitlist-trust a:hover {
+    color: var(--ink);
+    border-color: var(--signal);
+  }
 }
-

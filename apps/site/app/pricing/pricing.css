@@ -103,7 +103,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 2.75rem;
   padding: var(--space-fine-55) var(--space-16);
   border-radius: var(--radius-sm);
   background: var(--signal);
@@ -117,8 +117,10 @@
     transform var(--duration-quick) var(--ease-out);
 }
 
-.pricing-cta-link:hover {
-  background: var(--signal-light);
+@media (hover: hover) {
+  .pricing-cta-link:hover {
+    background: var(--signal-light);
+  }
 }
 
 .pricing-cta-link:active {
@@ -166,8 +168,10 @@
   text-decoration-thickness: 1px;
 }
 
-.pricing-desk-note a:hover {
-  text-decoration-thickness: 2px;
+@media (hover: hover) {
+  .pricing-desk-note a:hover {
+    text-decoration-thickness: 2px;
+  }
 }
 
 .pricing-faq {
@@ -204,8 +208,10 @@
   display: none;
 }
 
-.pricing-faq-q:hover {
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .pricing-faq-q:hover {
+    background: var(--surface-hover);
+  }
 }
 
 .pricing-faq-item[open] .pricing-faq-q {
@@ -320,4 +326,3 @@
     padding: 0 var(--space-16) var(--space-16);
   }
 }
-

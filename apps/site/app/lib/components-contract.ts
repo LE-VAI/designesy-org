@@ -63,7 +63,7 @@ const BINDINGS: Record<string, { state: string; tokens: string[]; obligation?: s
   ],
   'Card / pillar': [
     { state: 'default', tokens: ['--surface', '--line'] },
-    { state: 'hover', tokens: ['--surface-raised', '--line-strong'], obligation: 'fine pointer only — gated on (hover: hover) and (pointer: fine)' },
+    { state: 'hover', tokens: ['--surface-raised', '--line-strong'], obligation: 'fine pointer only: gated on (hover: hover) and (pointer: fine)' },
     { state: 'active', tokens: [], obligation: 'press scale, see takt.press_scale.card' },
   ],
   'Sound toggle': [
@@ -88,7 +88,7 @@ export const componentsContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/components',
   machine_url: 'https://www.designesy.org/contracts/components.json',
-  updated: '2026-09-24',
+  updated: '2026-09-28',
   source_authority: {
     derived_from: 'designesy.design-system',
     contract_version: designSystemContract.version,

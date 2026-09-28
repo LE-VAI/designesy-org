@@ -23,7 +23,7 @@ export const metadata: Metadata = pageMeta({
   ogDescription:
     'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
   twitterDescription:
-    'Restrained interaction lab — designesy.org/labs/poise',
+    'Restrained interaction lab · designesy.org/labs/poise',
 });
 
 const ANATOMY_DONE = [
@@ -59,14 +59,14 @@ const ANTI = [
 ];
 
 const PROVENANCE = [
-  'Designesy design system contract v0.1.1 — live tokens and adopted Poise interaction rules',
-  'Live token foundation — accent, ease-out, ease-in-out, duration',
-  'Cuelume v0.2.2 — interaction audio; preference owned by Designesy',
-  'Motion stance — short settles, entrance economy, reduced-motion respect',
-  'Public naming — human, premium product names; no research-demo vocabulary',
+  'Designesy design system contract v0.1.1: live tokens and adopted Poise interaction rules',
+  'Live token foundation: accent, ease-out, ease-in-out, duration',
+  'Cuelume v0.2.2: interaction audio; preference owned by Designesy',
+  'Motion stance: short settles, entrance economy, reduced-motion respect',
+  'Public naming: human, premium product names; no research-demo vocabulary',
 ];
 
-const PROMPT = `Build interaction feedback that feels finished, not flashy.
+const PROMPT = `Build interaction feedback that feels finished and restrained.
 
 Rules:
 1. Primary press: scale(0.97) over ~160ms using ease-out. No bounce.
@@ -75,7 +75,7 @@ Rules:
 4. Hover lift only under (hover: hover) and (pointer: fine).
 5. prefers-reduced-motion collapses non-essential animation to near-zero duration.
 6. Cite contract tokens (accent, ease-out, duration) or name an open tension.
-7. Public name must sound like a product, not a research demo.`;
+7. Public name must sound like a shipped product.`;
 
 export default function PoiseLabPage() {
   return (
@@ -161,7 +161,7 @@ export default function PoiseLabPage() {
 
             <DemoCell
               label="Haptics preference"
-              note="Default on when Vibration API is present. Toggle hides on unsupported devices. Press/tap only — never hover."
+              note="Default on when Vibration API is present. Toggle hides on unsupported devices. Press/tap only; never hover."
             >
               <HapticsToggle />
             </DemoCell>
@@ -188,7 +188,7 @@ export default function PoiseLabPage() {
             <p className="definition-label">What Poise tests</p>
             <p>
               Contact should feel intentional. Feedback exists to confirm the
-              action, not to perform. Restraint is the product quality.
+              action. Restraint is the product quality.
             </p>
           </div>
         </section>
@@ -222,8 +222,8 @@ export default function PoiseLabPage() {
               <div className="principle-body">
                 <h3>Preference is part of craft</h3>
                 <p>
-                  Sound and motion are not defaults forced on every visitor.
-                  Reduced motion and mute are first-class states, not afterthoughts.
+                  Sound and motion follow each visitor&rsquo;s preference. Reduced
+                  motion and mute are first-class states.
                 </p>
               </div>
             </li>
@@ -239,7 +239,7 @@ export default function PoiseLabPage() {
             {[
               {
                 title: 'Wordmark mark',
-                meta: 'Opacity breath only — never blur, glow, or gradient decoration',
+                meta: 'Opacity breath only; never blur, glow, or gradient decoration',
               },
               {
                 title: 'Press settle',
@@ -307,8 +307,8 @@ export default function PoiseLabPage() {
           <h2 className="doctrine-heading">Remix notes</h2>
           <p className="surface-note">
             Reuse the press settle and preference model on any Designesy surface.
-            Do not remix the wordmark breath into cards, icons, or backgrounds —
-            that belongs only to the mark. If a new control needs feedback,
+            Keep the wordmark breath on the mark itself, out of cards, icons,
+            and backgrounds. If a new control needs feedback,
             start from press + focus-visible before inventing a new motion.
           </p>
         </section>
@@ -355,22 +355,23 @@ export default function PoiseLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Experiments in this lab</h2>
           <div className="row-stack" role="list" style={{ marginBottom: '1.5rem' }}>
-            <Link
-              href="/labs/poise/orb"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Orb · WebGL2 in Designesy blue</span>
-                <span className="row-meta">
-                  32KB shader, six parameters, one-line embed · painted from
-                  Martin Štrba&rsquo;s editor at postgeneric.com
+            <div role="listitem">
+              <Link
+                href="/labs/poise/orb"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Orb · WebGL2 in Designesy blue</span>
+                  <span className="row-meta">
+                    32KB shader, six parameters, one-line embed · painted from
+                    Martin Štrba&rsquo;s editor at postgeneric.com
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -391,32 +392,33 @@ export default function PoiseLabPage() {
               Design Review applied to this lab.
             </p>
             <p className="lab-card-desc">
-              Eight dimensions, holds, tensions, and corrections — the kit
+              Eight dimensions, holds, tensions, and corrections: the kit
               output format made public for Lab One.
             </p>
             <span className="lab-card-arrow">Open field check →</span>
           </Link>
           <div className="row-stack" role="list" style={{ marginTop: '0.75rem' }}>
-            <Link
-              href="/review/poise/keyboard"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Keyboard path verification</span>
-                <span className="row-meta">
-                  Tab order, focus-visible, activation, reduced motion
+            <div role="listitem">
+              <Link
+                href="/review/poise/keyboard"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Keyboard path verification</span>
+                  <span className="row-meta">
+                    Tab order, focus-visible, activation, reduced motion
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
-          Poise is Lab One — a public experiment whose portable interaction rules
+          Poise is Lab One: a public experiment whose portable interaction rules
           were adopted into design system contract v0.1.1. The lab remains the
           inspectable source demo. Public judgment lives at /review/poise;
           keyboard proof at /review/poise/keyboard.

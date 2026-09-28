@@ -13,9 +13,9 @@ export const metadata: Metadata = pageMeta({
   path: '/labs/poise/orb',
   ogTitle: 'Orb · Poise Lab experiment',
   ogDescription:
-    'A 32KB WebGL2 orb in Designesy blue — colors, flow, light. Edit any parameter; export a one-line embed.',
+    'A 32KB WebGL2 orb in Designesy blue: colors, flow, light. Edit any parameter; export a one-line embed.',
   twitterDescription:
-    'Orb — Designesy-blue WebGL2 shader lab at designesy.org/labs/poise/orb',
+    'Orb: Designesy-blue WebGL2 shader lab at designesy.org/labs/poise/orb',
 });
 
 export default function OrbLabPage() {
@@ -37,7 +37,7 @@ export default function OrbLabPage() {
           </p>
           <h1 className="orb-hero-title">A quiet surface that knows how to look alive.</h1>
           <p className="orb-hero-lede">
-            Orb is a 32KB WebGL2 shader in Designesy blue — colors, flow, light.
+            Orb is a 32KB WebGL2 shader in Designesy blue: colors, flow, light.
             Edit any of the six parameters that matter; export a one-line embed
             for your own page. No build, no dependency, no account.
           </p>

@@ -73,14 +73,14 @@ export function TargetLanding({
               <>
                 <strong>{platform}</strong> currently scores{' '}
                 <strong>{exampleScore}</strong> on the contract. Score your own{' '}
-                {platform} site below — the engine runs the same {ENGINE_CHECK_COUNT} checks
+                {platform} site below: the engine runs the same {ENGINE_CHECK_COUNT} checks
                 against your URL.
               </>
             ) : (
               <>
-                Score your <strong>{platform}</strong> site below — the engine
-                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it does against
-                any other.
+                Score your <strong>{platform}</strong> site below: the engine
+                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it
+                does against any other.
               </>
             )}
           </p>
@@ -91,19 +91,20 @@ export function TargetLanding({
           <section className="doctrine-section fade-up fade-up-delay-2">
             <h2 className="doctrine-heading">Proof</h2>
             <div className="row-stack" role="list">
-              <Link
-                href={caseStudyHref}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">{caseStudyTitle}</span>
-                  <span className="row-meta">{caseStudyMeta}</span>
-                </span>
-              </Link>
+              <div role="listitem">
+                <Link
+                  href={caseStudyHref}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">01</span>
+                  <span className="row-body">
+                    <span className="row-title">{caseStudyTitle}</span>
+                    <span className="row-meta">{caseStudyMeta}</span>
+                  </span>
+                </Link>
+              </div>
             </div>
           </section>
         )}

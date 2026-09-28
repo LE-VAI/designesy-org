@@ -333,7 +333,7 @@ function EngineTile({
         </>
       ) : (
         <span className="score-engine-tile-grade is-empty">
-          {result?.error ? 'Failed' : '—'}
+          {result?.error ? 'Failed' : <><span aria-hidden="true">–</span><span className="sr-only">Not measured</span></>}
         </span>
       )}
     </button>
@@ -703,8 +703,8 @@ export function VerifyForm({
         onSubmit={() => runVerify(normalizeInput(url))}
         busy={status === 'loading'}
         go="Run all four"
-        goBusy="Running four engines"
-        foot={<p className="eg-bar-foot-note">No login. The four engines fire in parallel and each fetches the page itself.</p>}
+        goBusy="Running"
+        note="No login. The four engines fire in parallel and each fetches the page itself."
       />
 
       <Instrument
@@ -795,7 +795,7 @@ export function VerifyForm({
             <p className="score-error-msg">
               {reportResult?.error ||
                 guardrailsResult?.error ||
-                'All engines failed — check that the URL is correct and publicly accessible.'}
+                'All engines failed. Check that the URL is correct and publicly accessible.'}
             </p>
           </div>
         </div>
@@ -922,7 +922,7 @@ export function VerifyForm({
                     href={`/report?url=${encodeURIComponent(scoredUrl)}`}
                     className="score-action-btn"
                     data-cuelume-press="tick"
-                    title="Open the full synthesis report — 8 synthesis checks, MCP App, export."
+                    title="Open the full synthesis report: 8 synthesis checks, MCP App, export."
                   >
                     Open /report →
                   </a>
@@ -952,7 +952,7 @@ export function VerifyForm({
                   {shareUrl && (
                     <a
                       href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                        `Designesy composite: Grade ${reportResult.compositeGrade} (${fmtPct(reportResult.compositeScore)}%) — ${scoredUrl}`,
+                        `Designesy composite: Grade ${reportResult.compositeGrade} (${fmtPct(reportResult.compositeScore)}%) for ${scoredUrl}`,
                       )}&url=${encodeURIComponent(shareUrl)}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1061,7 +1061,7 @@ export function VerifyForm({
                   scoreData.originality.signals.length > 0 && (
                     <div className="score-signals-group">
                       <p className="score-signals-group-title is-originality">
-                        Originality — positive craft signals
+                        Originality: positive craft signals
                         <span className="score-signals-group-chip">
                           +{scoreData.originality.points}pt
                           {scoreData.originality.points !== 1 ? 's' : ''}
@@ -1096,7 +1096,7 @@ export function VerifyForm({
                 {scoreData.slop && scoreData.slop.findings.length > 0 && (
                   <div className="score-signals-group">
                     <p className="score-signals-group-title is-slop">
-                      Anti-slop — generic/template patterns
+                      Anti-slop: generic/template patterns
                       <span className="score-signals-group-chip is-neg">
                         −{scoreData.slop.total}pt
                         {scoreData.slop.total !== 1 ? 's' : ''}

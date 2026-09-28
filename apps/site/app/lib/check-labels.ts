@@ -6,7 +6,7 @@
  * console's log and the /score instrument both draw from this one table.
  *
  * The registry's item text is the engine's specification ("::selection styled
- * with var(--signal) — not browser default"): exact, and written for the
+ * with var(--signal) instead of the browser default"): exact, and written for the
  * methodology page. On the homepage it becomes visible prose, where the voice
  * rules apply (no em dashes, no negation pivots, token names kept out of
  * running text), so the log carries these labels instead. A check added to the

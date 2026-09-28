@@ -57,6 +57,9 @@ export function Footer() {
   const machineTrackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // The rails hold still on touch screens and under reduced motion
+    // (globals.css), so there is nothing to drag there.
+    if (window.matchMedia('(hover: none), (prefers-reduced-motion: reduce)').matches) return;
     const cleanups: (() => void)[] = [];
     if (surfaceClipRef.current && surfaceTrackRef.current) {
       cleanups.push(initScrollPause(surfaceClipRef.current, surfaceTrackRef.current, 'horizontal'));
