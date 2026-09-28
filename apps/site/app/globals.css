@@ -12403,11 +12403,13 @@ select {
    column simply stopped at the screen edge. Now the edge fades where content
    continues past it, and the fade follows the scroll position (a scroll
    timeline), so it leaves the start once the visitor has scrolled and leaves
-   the end when they reach it. Where scroll timelines are unsupported, or the
-   content fits, there is no fade. A mask hides whatever is drawn outside the
-   box, a focus ring included, so a focused box drops its fade. The fade is a
-   reading of position, not motion, so it keeps working with motion paused.
-   (lib/scroll-regions gives the boxes that scroll a keyboard stop.)
+   the end when they reach it. Only a box that overflows gets it:
+   lib/scroll-regions marks those with data-overflow (and gives the table and
+   code boxes a keyboard stop), so a box that fits is never masked; nor is
+   one where scroll timelines are unsupported. A mask hides whatever is drawn
+   outside the box, a focus ring included, so a focused box drops its fade.
+   The fade is a reading of position, not motion, so it keeps working with
+   motion paused.
    ========================================================================== */
 @property --edge-l {
   syntax: "<length>";
@@ -12422,7 +12424,7 @@ select {
 }
 
 @supports (animation-timeline: scroll()) {
-  :is(.dx-table-box, .eg-path, .dx-toc ol, .score-category-chips, .score-filter-segmented, pre):not(:focus-visible) {
+  :is(.dx-table-box, .eg-path, .dx-toc ol, .score-category-chips, .score-filter-segmented, pre)[data-overflow]:not(:focus-visible) {
     -webkit-mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
     mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
     animation: edge-fade linear both;
