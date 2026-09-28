@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24",
+  "generatedAt": "2026-09-28",
   "formula": "score * 0.5 + drift * 0.3 + readiness * 0.2",
   "engines": {
     "score": {
@@ -8,63 +8,28 @@
       "pass": 39,
       "warn": 0,
       "fail": 0,
-      "checks": 42,
-      "tokenCount": 151,
-      "notes": [
-        {
-          "id": "v02",
-          "status": "MANUAL",
-          "detail": "requires browser viewport trace — run the full audit to resolve"
-        },
-        {
-          "id": "v04",
-          "status": "MANUAL",
-          "detail": "requires live DOM interaction — run the full audit to resolve"
-        },
-        {
-          "id": "v21",
-          "status": "MANUAL",
-          "detail": "requires CDP trace — run the full audit to resolve"
-        }
-      ]
+      "skip": 0,
+      "checks": 39
     },
     "drift": {
-      "score": 96,
+      "score": 100,
       "grade": "A",
-      "pass": 11,
-      "warn": 1,
+      "pass": 12,
+      "warn": 0,
       "fail": 0,
       "checks": 12,
-      "tokenCount": 162,
-      "notes": [
-        {
-          "id": "d07",
-          "status": "WARN",
-          "detail": "10 distinct hardcoded border-radius values"
-        }
-      ]
+      "tokenCount": 234,
+      "notes": []
     },
     "readiness": {
-      "score": 90,
+      "score": 100,
       "grade": "A",
-      "pass": 8,
-      "warn": 2,
+      "pass": 10,
+      "warn": 0,
       "fail": 0,
       "checks": 10,
-      "notes": [
-        {
-          "id": "r04",
-          "status": "WARN",
-          "detail": "Endpoint exists but did not respond with a tool list"
-        },
-        {
-          "id": "r07",
-          "status": "WARN",
-          "detail": "Component documentation found but not machine-readable"
-        }
-      ]
+      "notes": []
     }
   },
-  "composite": 93.3,
-  "tokenCount": 162
+  "composite": 96.5
 }
