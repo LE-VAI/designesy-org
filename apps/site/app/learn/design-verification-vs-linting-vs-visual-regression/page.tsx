@@ -9,14 +9,14 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Design verification vs design linting vs visual regression',
   description:
-    'Three adjacent practices, three different questions. Token drift, baseline diffing, and contract conformance — and where each one fails alone.',
+    'Three adjacent practices, three different questions. Token drift, baseline diffing, and contract conformance, plus where each one fails alone.',
   path: '/learn/design-verification-vs-linting-vs-visual-regression',
   type: 'article',
   ogTitle: 'Verification vs linting vs regression · Designesy',
   ogDescription:
-    'Three adjacent practices, three different questions — and where each one fails alone. The case for layering them.',
+    'Three adjacent practices, three different questions, and where each one fails alone. The case for layering them.',
   twitterDescription:
-    'Design verification vs linting vs regression — designesy.org/learn',
+    'Design verification vs linting vs regression · designesy.org/learn',
 });
 
 const PRACTICES = [

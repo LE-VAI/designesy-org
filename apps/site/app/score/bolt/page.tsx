@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
   ogTitle: 'Score your Bolt site · Designesy',
   ogDescription:
     `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. Built on Bolt? Score your site.`,
-  twitterDescription: 'Score your Bolt site — designesy.org/score/bolt',
+  twitterDescription: 'Score your Bolt site · designesy.org/score/bolt',
 });
 
 export default function ScoreBoltPage() {

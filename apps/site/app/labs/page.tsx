@@ -11,11 +11,11 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
   description:
-    'Designesy Labs — experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Cadence (text rhythm). Lab Four is Acoustics (interaction sound).',
+    'Designesy Labs: experiments that compile into contracts. Lab One is Poise (restrained interaction). Lab Two is Takt (interface feel). Lab Three is Cadence (text rhythm). Lab Four is Acoustics (interaction sound).',
   path: '/labs',
   ogDescription:
     'Experiments that compile into contracts. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics are live.',
-  twitterDescription: 'Experiments that compile into contracts — designesy.org/labs',
+  twitterDescription: 'Experiments that compile into contracts · designesy.org/labs',
 });
 
 const LAB_ANATOMY = [

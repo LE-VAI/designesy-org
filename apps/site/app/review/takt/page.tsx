@@ -12,12 +12,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Takt field check',
   description:
-    'Public Design Review of Lab Two · Takt — Kit One output format: eight dimensions, holds, tensions, corrections, and verification. Interface feel rules adopted into contract v0.1.2.',
+    'Public Design Review of Lab Two · Takt in the Kit One output format: eight dimensions, holds, tensions, corrections, and verification. Interface feel rules adopted into contract v0.1.2.',
   path: '/review/takt',
   ogTitle: 'Takt · field check',
   ogDescription:
-    'Lab Two reviewed with Use Kit One · Design Review. Pass with notes — takt rules adopted in contract v0.1.2.',
-  twitterDescription: 'Design Review of Lab Two — designesy.org/review/takt',
+    'Lab Two reviewed with Use Kit One · Design Review. Pass with notes: takt rules adopted in contract v0.1.2.',
+  twitterDescription: 'Design Review of Lab Two · designesy.org/review/takt',
 });
 
 const DIMENSIONS = [

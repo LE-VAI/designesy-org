@@ -11,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Motion contract',
   description:
-    'Designesy motion contract v0.1.0 — Lottie spec v1.0.1 JSON Schema + Designesy §16 Ten Non-Negotiable Motion Standards. Reduced-motion, format conformance, 10 verification checks.',
+    'Designesy motion contract v0.1.0: Lottie spec v1.0.1 JSON Schema + Designesy §16 Ten Non-Negotiable Motion Standards. Reduced-motion, format conformance, 10 verification checks.',
   path: '/contracts/motion',
   ogTitle: 'Motion contract · v0.1.0',
   ogDescription:
     'Lottie v1.0.1 JSON Schema validation + Designesy §16 block-on-sight list. Reduced-motion via markers/slots. Machine export available.',
-  twitterDescription: 'Designesy motion contract — designesy.org/contracts/motion',
+  twitterDescription: 'Designesy motion contract · designesy.org/contracts/motion',
 });
 
 export default function MotionContractPage() {

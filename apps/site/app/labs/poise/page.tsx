@@ -23,7 +23,7 @@ export const metadata: Metadata = pageMeta({
   ogDescription:
     'How Designesy responds when someone touches it. Restrained interaction, made inspectable.',
   twitterDescription:
-    'Restrained interaction lab — designesy.org/labs/poise',
+    'Restrained interaction lab · designesy.org/labs/poise',
 });
 
 const ANATOMY_DONE = [

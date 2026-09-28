@@ -11,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Keyboard path',
   description:
-    'Site-wide keyboard path for designesy.org — skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
+    'Site-wide keyboard path for designesy.org: skip link, shared chrome tab order, focus-visible criteria, activation, and reduced-motion notes.',
   path: '/review/keyboard',
   ogDescription:
     'Public verification packet for shared chrome and default surface routes: skip to content, tab order, focus rings, activation.',
   twitterDescription:
-    'Site-wide keyboard verification — designesy.org/review/keyboard',
+    'Site-wide keyboard verification · designesy.org/review/keyboard',
 });
 
 const SCOPE = [

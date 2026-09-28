@@ -37,12 +37,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Design Compliance Maturity',
   description:
-    'Chart your design system across six compliance axes. A 24-question self-assessment — ~6 minutes — with a shareable radar result. Adapted from the zeroheight maturity model pattern, tuned to design contract compliance.',
+    'Chart your design system across six compliance axes. A 24-question self-assessment (~6 minutes) with a shareable radar result. Adapted from the zeroheight maturity model pattern, tuned to design contract compliance.',
   path: '/maturity',
   ogTitle: 'Design Compliance Maturity · Designesy',
   ogDescription:
     'Where does your design system land across six compliance axes? 24 questions, 6 minutes, shareable result.',
-  twitterDescription: 'Design Compliance Maturity — designesy.org/maturity',
+  twitterDescription: 'Design Compliance Maturity · designesy.org/maturity',
 });
 
 export default function MaturityPage() {

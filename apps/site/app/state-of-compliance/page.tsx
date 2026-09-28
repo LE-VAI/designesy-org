@@ -41,13 +41,13 @@ import { BarList } from '../lib/data/bars';
 export const metadata: Metadata = pageMeta({
   title: 'State of Design Compliance',
   description:
-    `The first deterministic report on design-system contract compliance across the web. 30 sites scored against a ${ENGINE_CHECK_COUNT}-check engine. Material 3 scores 59/F. Only 1 site passes. No surveys, no votes — computed scores.`,
+    `The first deterministic report on design-system contract compliance across the web. 30 sites scored against a ${ENGINE_CHECK_COUNT}-check engine. Material 3 scores 59/F. Only 1 site passes. Computed scores, with no surveys or votes.`,
   path: '/state-of-compliance',
   ogTitle: 'State of Design Compliance · Designesy',
   ogDescription:
-    '30 sites. 40 deterministic checks. 1 A-grade. Material 3 scores 59/F. The first computed report on design compliance — not a survey, not a vote.',
+    '30 sites. 40 deterministic checks. 1 A-grade. Material 3 scores 59/F. The first computed report on design compliance, measured rather than surveyed.',
   twitterDescription:
-    'State of Design Compliance — 30 sites scored, only 1 passes. Material 3 scores 59/F. designesy.org/state-of-compliance',
+    'State of Design Compliance: 30 sites scored, only 1 passes. Material 3 scores 59/F. designesy.org/state-of-compliance',
 });
 
 export const revalidate = 3600;

@@ -14,14 +14,14 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails',
   description:
-    'Generate a frozen build contract for AI coding agents from any design system — DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
+    'Generate a frozen build contract for AI coding agents from any design system: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
   path: '/guardrails',
 
   machineSibling: '/contracts/guardrails.json',
   ogTitle: 'Guardrails · Designesy',
   ogDescription:
-    'Turn your design system into the file AI agents read and the lint that enforces it — now with DESIGN.md emission.',
-  twitterDescription: 'Designesy guardrails — designesy.org/guardrails',
+    'Turn your design system into the file AI agents read and the lint that enforces it, now with DESIGN.md emission.',
+  twitterDescription: 'Designesy guardrails · designesy.org/guardrails',
 });
 
 export default async function GuardrailsPage({ searchParams }: { searchParams?: Promise<{ url?: string }> }) {

@@ -11,13 +11,13 @@ import { AgentActions } from '../../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Poise keyboard path',
   description:
-    'Public keyboard-path verification for Lab One · Poise — tab order, focus-visible, activation, and reduced-motion notes.',
+    'Public keyboard-path verification for Lab One · Poise: tab order, focus-visible, activation, and reduced-motion notes.',
   path: '/review/poise/keyboard',
   ogTitle: 'Poise · keyboard path',
   ogDescription:
     'Verification artifact for Lab One controls: tab order, focus rings, Enter/Space, reduced motion.',
   twitterDescription:
-    'Keyboard verification for Lab One — designesy.org/review/poise/keyboard',
+    'Keyboard verification for Lab One · designesy.org/review/poise/keyboard',
 });
 
 const SCOPE = [

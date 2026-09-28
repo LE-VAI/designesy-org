@@ -17,12 +17,12 @@ const COPYWRITING_SINCE = 'v' + designSystemContract.copywriting.adopted_in;
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
   description:
-    'Designesy Contracts — portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system ' + CONTRACT_VERSION + ' is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
+    'Designesy Contracts: portable design agreements with exact values, roles, behavior, anti-patterns, and verification. Design system ' + CONTRACT_VERSION + ' is public (Poise + Takt + Cadence + Acoustics + Copywriting adopted).',
   path: '/contracts',
   ogDescription:
-    'Portable design agreements for people and agents. Design system contract ' + CONTRACT_VERSION + ' is live — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
+    'Portable design agreements for people and agents. Design system contract ' + CONTRACT_VERSION + ' is live: Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted.',
   twitterDescription:
-    'Portable design judgment — designesy.org/contracts/design-system',
+    'Portable design judgment · designesy.org/contracts/design-system',
 });
 
 const CONTRACT_CONTENTS = [

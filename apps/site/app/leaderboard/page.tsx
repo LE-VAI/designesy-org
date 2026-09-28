@@ -32,12 +32,12 @@ import { CategoryProfile } from '../lib/data/cells';
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
   description:
-    `Public design-verification leaderboard — 30 curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
+    `Public design-verification leaderboard: 30 curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
   path: '/leaderboard',
   ogDescription:
     `30 sites scored by the same deterministic ${ENGINE_CHECK_COUNT}-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.`,
   twitterDescription:
-    'Public design-verification leaderboard — designesy.org/leaderboard',
+    'Public design-verification leaderboard · designesy.org/leaderboard',
 });
 
 // The leaderboard is the cohort the engine scored: one scale, one engine, the

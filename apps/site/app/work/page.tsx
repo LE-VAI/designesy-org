@@ -7,14 +7,14 @@ import { CASE_STUDIES, type CaseStudy } from '../lib/case-studies';
 import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Work — case studies',
+  title: 'Work: case studies',
   description:
     'Shipped artifacts and before/after scores reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, including the publisher scoring itself.',
   path: '/work',
   ogTitle: 'Work · Designesy',
   ogDescription:
-    'Case studies — shipped artifacts and before/after scores reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
-  twitterDescription: 'Case studies — designesy.org/work',
+    'Case studies: shipped artifacts and before/after scores reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
+  twitterDescription: 'Case studies · designesy.org/work',
 });
 
 function scoreLine(cs: CaseStudy): string {

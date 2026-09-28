@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
   path: '/badge',
   ogTitle: 'Verified by Designesy',
   ogDescription:
-    'Embed the badge. Link to your live score. Design coherence as a trust signal.',
+    'Embed the badge. Link to your live score. Design coherence anyone can check.',
 });
 
 const VARIANTS = [

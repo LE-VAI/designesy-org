@@ -11,12 +11,12 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Kits',
   description:
-    'Designesy Use Kits — portable instruction packages for people and agents. Kit One is Design Review.',
+    'Designesy Use Kits: portable instruction packages for people and agents. Kit One is Design Review.',
   path: '/kits',
   ogDescription:
     'Portable instruction packages agents and teams can run. Kit One · Design Review is live.',
   twitterDescription:
-    'Portable instruction packages for people and agents — designesy.org/kits',
+    'Portable instruction packages for people and agents · designesy.org/kits',
 });
 
 const KIT_ANATOMY = [

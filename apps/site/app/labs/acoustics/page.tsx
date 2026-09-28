@@ -16,13 +16,13 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
   description:
-    'Lab Four — interaction sound as a token system. Nineteen cues, nineteen roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
+    'Lab Four: interaction sound as a token system. Nineteen cues, nineteen roles, one documented engine. The sound parallel to the visual token system, made inspectable.',
   path: '/labs/acoustics',
-  ogTitle: 'Acoustics · Lab Four — Designesy',
+  ogTitle: 'Acoustics · Lab Four · Designesy',
   ogDescription:
     'Interaction sound as a token system. Nineteen cues, nineteen roles, Cuelume v0.2.2 + cuelume-extend. No sound without a token name and rationale.',
   twitterDescription:
-    'Interaction sound lab — nineteen cues, nineteen roles. designesy.org/labs/acoustics',
+    'Interaction sound lab: nineteen cues, nineteen roles. designesy.org/labs/acoustics',
 });
 
 const ANATOMY_DONE = [

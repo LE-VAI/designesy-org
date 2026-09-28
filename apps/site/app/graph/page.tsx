@@ -9,14 +9,14 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Graph — provenance chain',
+  title: 'Graph: provenance chain',
   description:
     'The living knowledge tree: how sources become shipped work through the Designesy pipeline. Source to Observation to Claim to Tension to Principle to Pattern to Contract Rule to Token to Verification to Shipped Work.',
   path: '/graph',
   ogTitle: 'Graph · Designesy',
   ogDescription:
     'Provenance chain from source to shipped work. No competitor exposes this chain publicly.',
-  twitterDescription: 'Provenance graph — designesy.org/graph',
+  twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
 export default function GraphPage() {

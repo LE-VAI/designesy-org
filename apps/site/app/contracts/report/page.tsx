@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Report contract',
   description:
-    'Designesy Report Contract v0.1.0 — the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.',
+    'Designesy Report Contract v0.1.0: the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.',
   path: '/contracts/report',
   ogTitle: 'Report contract · Designesy',
   ogDescription:
-    'The synthesis capstone — one URL, three engines, one composite grade. Score + drift + readiness in a single report.',
-  twitterDescription: 'Designesy report — designesy.org/contracts/report',
+    'The synthesis capstone: one URL, three engines, one composite grade. Score + drift + readiness in a single report.',
+  twitterDescription: 'Designesy report · designesy.org/contracts/report',
 });
 
 const c = reportContract;

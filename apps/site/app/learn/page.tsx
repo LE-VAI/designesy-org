@@ -6,14 +6,14 @@ import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Learn — design verification',
+  title: 'Learn: design verification',
   description:
     'Reference articles on design verification: what it is, how it differs from design linting and visual regression, and why a public design score matters.',
   path: '/learn',
   ogTitle: 'Learn · Designesy',
   ogDescription:
-    'Reference articles on design verification — the category Designesy operates in. What it is, how it differs from adjacent practices, and why a public score matters.',
-  twitterDescription: 'Reference articles on design verification — designesy.org/learn',
+    'Reference articles on design verification: the category Designesy operates in. What it is, how it differs from adjacent practices, and why a public score matters.',
+  twitterDescription: 'Reference articles on design verification · designesy.org/learn',
 });
 
 const ARTICLES = [

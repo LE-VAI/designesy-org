@@ -7,7 +7,7 @@ export const metadata: Metadata = pageMeta({
   description: '60% scored D or F. Zero scored a B. The gap between "looks good" and "passes a deterministic design contract" is enormous.',
   path: '/blog/scoring-30-sites',
   ogTitle: 'We scored 30 real websites against a 40-check design contract',
-  ogDescription: '60% scored D or F. Zero scored a B. One site scored A — the publisher.',
+  ogDescription: '60% scored D or F. Zero scored a B. One site scored A: the publisher.',
 });
 
 export default function BlogPost() {

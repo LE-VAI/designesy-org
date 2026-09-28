@@ -9,7 +9,7 @@ export default function TwitterImage() {
   return renderOgCard({
     eyebrow: 'Review · Public surface',
     title: 'designesy.org',
-    lede: `A public field check against design system contract ${CONTRACT_VERSION} — holds, tensions, and standing rules.`,
+    lede: `A public field check against design system contract ${CONTRACT_VERSION}: holds, tensions, and standing rules.`,
     path: 'designesy.org/review/designesy-org',
     kind: 'review',
     badge: 'Published',

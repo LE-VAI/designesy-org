@@ -25,12 +25,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Spring Physics Validator',
   description:
-    'Validate spring-based motion against an accessibility contract. Input stiffness, damping, and mass — get the damping ratio, overshoot percentage, settle time, and a reduced-motion recommendation. No one else validates spring physics against reduced-motion requirements.',
+    'Validate spring-based motion against an accessibility contract. Input stiffness, damping, and mass to get the damping ratio, overshoot percentage, settle time, and a reduced-motion recommendation. No one else validates spring physics against reduced-motion requirements.',
   path: '/spring-validator',
   ogTitle: 'Spring Physics Validator · Designesy',
   ogDescription:
     'Simulate spring motion, compute overshoot, and get a reduced-motion accessibility recommendation. The first spring-physics validation tool.',
-  twitterDescription: 'Spring physics validator — designesy.org/spring-validator',
+  twitterDescription: 'Spring physics validator · designesy.org/spring-validator',
 });
 
 export default function SpringValidatorPage() {

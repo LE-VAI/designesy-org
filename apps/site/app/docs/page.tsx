@@ -57,12 +57,12 @@ const readinessNotes = (readinessEngine?.notes ?? []).filter((n) => n.status !==
 export const metadata: Metadata = pageMeta({
   title: 'Docs',
   description:
-    'Designesy orientation — mission, nine operating principles, architecture layers, public voice, and paths to live engines.',
+    'Designesy orientation: mission, nine operating principles, architecture layers, public voice, and paths to live engines.',
   path: '/docs',
   ogDescription:
-    'Mission, principles, architecture, and public voice — with paths to live contract, labs, and review.',
+    'Mission, principles, architecture, and public voice, with paths to live contract, labs, and review.',
   twitterDescription:
-    'Orientation for a live design intelligence system — designesy.org/docs',
+    'Orientation for a live design intelligence system · designesy.org/docs',
 });
 
 const LAYERS = [

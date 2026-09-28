@@ -60,12 +60,12 @@ import BLIND from '../../scripts/blind-comparison-report.json';
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
   description:
-    `How the Designesy ${ENGINE_CHECK_COUNT}-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.`,
+    `How the Designesy ${ENGINE_CHECK_COUNT}-check engine scores a URL. The full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.`,
   path: '/methodology',
   ogDescription:
-    `The ${ENGINE_CHECK_COUNT}-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.`,
+    `The ${ENGINE_CHECK_COUNT}-check Designesy scoring methodology: weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.`,
   twitterDescription:
-    `Designesy scoring methodology — ${ENGINE_CHECK_COUNT} checks, 14 categories, deterministic · designesy.org/methodology`,
+    `Designesy scoring methodology: ${ENGINE_CHECK_COUNT} checks, 14 categories, deterministic · designesy.org/methodology`,
 });
 
 // ── Check definitions (mirror apps/site/app/api/score/route.ts) ──

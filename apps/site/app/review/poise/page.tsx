@@ -12,12 +12,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Poise field check',
   description:
-    'Public Design Review of Lab One · Poise — Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
+    'Public Design Review of Lab One · Poise in the Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
   path: '/review/poise',
   ogTitle: 'Poise · field check',
   ogDescription:
-    'Lab One reviewed with Use Kit One · Design Review. Pass with notes — interaction rules adopted in contract v0.1.1.',
-  twitterDescription: 'Design Review of Lab One — designesy.org/review/poise',
+    'Lab One reviewed with Use Kit One · Design Review. Pass with notes: interaction rules adopted in contract v0.1.1.',
+  twitterDescription: 'Design Review of Lab One · designesy.org/review/poise',
 });
 
 const DIMENSIONS = [

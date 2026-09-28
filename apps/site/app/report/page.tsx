@@ -26,14 +26,14 @@ export async function generateMetadata({
   const base = pageMeta({
     title: 'Design-intelligence report',
     description:
-      'Generate a unified design-intelligence report for any URL — score + drift + readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone of the Designesy dynasty.',
+      'Generate a unified design-intelligence report for any URL: score, drift, and readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone.',
     path: '/report',
 
     machineSibling: '/contracts/report.json',
     ogTitle: 'Design-intelligence report · Designesy',
     ogDescription:
       'One URL, three engines, one composite grade. Score + drift + readiness in a single report.',
-    twitterDescription: 'Designesy report — designesy.org/report',
+    twitterDescription: 'Designesy report · designesy.org/report',
   });
 
   if (scoredUrl) {
@@ -43,11 +43,11 @@ export async function generateMetadata({
       ...base,
       openGraph: {
         ...base.openGraph,
-        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Report — One URL, three engines' }],
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Report: One URL, three engines' }],
       },
       twitter: {
         ...base.twitter,
-        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Report — One URL, three engines' }],
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Report: One URL, three engines' }],
       },
     };
   }

@@ -63,7 +63,7 @@ export async function generateMetadata({
     path: `/frameworks/${slug}`,
     ogTitle: `${site.name} · ${grade} · ${score}/100 · Designesy`,
     ogDescription: description,
-    twitterDescription: `${site.name} scored ${score}/${grade} on the Designesy Compliance Index — designesy.org/frameworks/${slug}`,
+    twitterDescription: `${site.name} scored ${score}/${grade} on the Designesy Compliance Index · designesy.org/frameworks/${slug}`,
   });
 }
 

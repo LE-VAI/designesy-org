@@ -3,7 +3,7 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Score — Score your v0 site';
+export const alt = 'Designesy Score: Score your v0 site';
 
 export default function OpenGraphImage() {
   return renderOgCard({

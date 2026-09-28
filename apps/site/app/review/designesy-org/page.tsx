@@ -15,9 +15,9 @@ export const metadata: Metadata = pageMeta({
   path: '/review/designesy-org',
   ogTitle: 'designesy.org · public surface review',
   ogDescription:
-    'A public surface checked against its own contract — holds, tensions, and standing rules.',
+    'A public surface checked against its own contract: holds, tensions, and standing rules.',
   twitterDescription:
-    'Field check against design system contract ' + CONTRACT_VERSION + ' — designesy.org/review/designesy-org',
+    'Field check against design system contract ' + CONTRACT_VERSION + ' · designesy.org/review/designesy-org',
 });
 
 const HOLDS = [

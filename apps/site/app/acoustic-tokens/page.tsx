@@ -10,12 +10,12 @@ import { AgentActions } from '../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustic tokens',
   description:
-    'Designesy acoustic token system — the sound parallel to the visual token system. Net-new relative to the W3C Design Tokens Format Module. Engine: Cuelume v0.2.2.',
+    'Designesy acoustic token system: the sound parallel to the visual token system. Net-new relative to the W3C Design Tokens Format Module. Engine: Cuelume v0.2.2.',
   path: '/acoustic-tokens',
   ogTitle: 'Acoustic tokens · Designesy',
   ogDescription:
     'Ten acoustic cues, ten interaction roles, one documented system. No sound without a token name and rationale.',
-  twitterDescription: 'Acoustic token system — designesy.org/acoustic-tokens',
+  twitterDescription: 'Acoustic token system · designesy.org/acoustic-tokens',
 });
 
 export default function AcousticTokensPage() {

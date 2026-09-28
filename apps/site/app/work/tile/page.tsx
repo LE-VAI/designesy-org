@@ -10,14 +10,14 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Tile — case study',
+  title: 'Tile: case study',
   description:
-    'Interactive series composer reviewed against the design system contract. 617 views, 3 likes, 1 reply — the only post in 24 hours to break out of the noise floor.',
+    'Interactive series composer reviewed against the design system contract. 617 views, 3 likes, 1 reply: the only post in 24 hours to break out of the noise floor.',
   path: '/work/tile',
   ogTitle: 'Tile · case study',
   ogDescription:
-    'One story, many tiles, shared spine. Shipped, published, reviewed — 617 views on X, the breakout format.',
-  twitterDescription: 'Tile case study — designesy.org/work/tile',
+    'One story, many tiles, shared spine. Shipped, published, reviewed: 617 views on X, the breakout format.',
+  twitterDescription: 'Tile case study · designesy.org/work/tile',
   type: 'article',
 });
 

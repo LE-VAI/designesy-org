@@ -25,13 +25,13 @@ const ANATOMY_HREFS: Record<string, string> = {
 export const metadata: Metadata = pageMeta({
   title: 'Design Review',
   description:
-    'Use Kit One · Design Review — portable design judgment for people and agents. Eight dimensions, agent prompt, output format, verification.',
+    'Use Kit One · Design Review: portable design judgment for people and agents. Eight dimensions, agent prompt, output format, verification.',
   path: '/kits/design-review',
   ogTitle: 'Design Review · Kit One',
   ogDescription:
     'Turn taste into inspection. Portable review package for interfaces, systems, and agent output.',
   twitterDescription:
-    'Eight dimensions and a portable agent prompt — designesy.org/kits/design-review',
+    'Eight dimensions and a portable agent prompt · designesy.org/kits/design-review',
 });
 
 export default function DesignReviewKitPage() {
