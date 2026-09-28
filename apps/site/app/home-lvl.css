@@ -716,9 +716,11 @@
   text-decoration: none;
 }
 
-.hero-cohort-link:hover .hero-cohort-name {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+@media (hover: hover) {
+  .hero-cohort-link:hover .hero-cohort-name {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
 }
 
 .hero-cohort-score,
@@ -908,11 +910,18 @@
 }
 
 .field-card.is-featured .field-card-icon,
-.field-card:hover .field-card-icon,
 .field-card:focus-visible .field-card-icon {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
   box-shadow: inset 0 1px 0 var(--lv-shine-soft), 0 6px 16px -8px var(--lv-pass-glow);
+}
+
+@media (hover: hover) {
+  .field-card:hover .field-card-icon {
+    color: var(--paper-on-signal);
+    background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+    box-shadow: inset 0 1px 0 var(--lv-shine-soft), 0 6px 16px -8px var(--lv-pass-glow);
+  }
 }
 
 /* --- The static headline wraps like text ---------------------------------

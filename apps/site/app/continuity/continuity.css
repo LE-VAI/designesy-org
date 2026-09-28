@@ -261,7 +261,9 @@
   border-bottom: 1px solid var(--line);
 }
 
-.waitlist-trust a:hover {
-  color: var(--ink);
-  border-color: var(--signal);
+@media (hover: hover) {
+  .waitlist-trust a:hover {
+    color: var(--ink);
+    border-color: var(--signal);
+  }
 }
