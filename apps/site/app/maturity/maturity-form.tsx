@@ -12,6 +12,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+// The step keys use the control surface's key (.eg-bar-go) on their own.
+import '../lib/engine/command-bar.css';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 // ── Types ───────────────────────────────────────────────────────────────────

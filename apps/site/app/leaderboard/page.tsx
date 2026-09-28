@@ -379,15 +379,7 @@ export default function LeaderboardPage() {
             .lb-hist-bar-wrap { height: 70px; }
             .lb-hist-range { display: none; }
           }
-          .lb-submit { max-width: 480px; }
-          .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
-          .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
-          .lb-field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; }
-          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: 1rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
-          .lb-input:focus { border-color: var(--signal); }
-          .lb-input:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 2px var(--signal-dim); }
-          .lb-input:disabled { opacity: 0.5; cursor: not-allowed; }
-          .lb-submit-btn { margin-top: 0.25rem; align-self: flex-start; min-height: 44px; padding: 0.625rem 1.5rem; }
+          .lb-submit { max-width: 46rem; }
           .lb-submit-result { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--radius); border: 1px solid var(--line); }
           .lb-result-ok { background: var(--signal-dim); border-color: var(--signal-light); }
           .lb-result-err { background: var(--surface-soft); border-color: var(--line-strong); }

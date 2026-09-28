@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../instrument.css';
 import './continuity.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
@@ -34,7 +35,7 @@ const CARDS = [
   {
     tag: 'For',
     title: 'Builders who ship with agents',
-    body: 'Solo operators, product designers, and small studios who need a portable standard — not another token GUI.',
+    body: 'Solo operators, product designers, and small studios who need a portable standard instead of another token GUI.',
   },
   {
     tag: 'Not',
@@ -76,11 +77,11 @@ export default function ContinuityPage() {
           </h1>
           <p className="surface-lede">
             Continuity keeps score, contract, and verification on the work you
-            ship — so taste does not reset every sprint or every agent run.
+            ship, so taste does not reset every sprint or every agent run.
           </p>
           <p className="surface-note">
             Open core stays free: {ENGINE_CHECK_COUNT}-check scoring, drift radar, AI readiness,
-            DTCG validation. Continuity is the layer that remembers — scheduled
+            DTCG validation. Continuity is the layer that remembers: scheduled
             scans, drift alerts, and score history at $29/site/month.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -107,7 +108,7 @@ export default function ContinuityPage() {
           <h2 className="doctrine-heading">Offer ladder</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             No live prices on this page. Founding access opens after early
-            conversations — open tools stay free either way.
+            conversations. Open tools stay free either way.
           </p>
           <div className="continuity-ladder" role="list">
             {LADDER.map((row) => (
@@ -128,8 +129,8 @@ export default function ContinuityPage() {
               Join the Continuity waitlist
             </h2>
             <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-              No charge. No spam cadence. We write when founding access opens —
-              and only about Continuity.
+              No charge, no spam. We write when founding access opens, and only
+              about Continuity.
             </p>
             <ContinuityWaitlistForm />
           </div>
