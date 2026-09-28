@@ -10,6 +10,7 @@ import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
+import { ScrollRegions } from './lib/scroll-regions';
 
 /*
   Brand faces — self-hosted at build time by next/font.
@@ -218,6 +219,7 @@ export default function RootLayout({
         <EffectEnhancer />
         <ScrambleEnhancer />
         <ScrollDepth />
+        <ScrollRegions />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits
             behind all content (z-index 0 with grid + noise). Pure CSS, no
             JS. Replaces the old hero-bounded mesh that showed a cutoff at

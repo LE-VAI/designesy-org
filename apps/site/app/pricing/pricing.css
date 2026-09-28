@@ -103,7 +103,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 2.75rem;
   padding: var(--space-fine-55) var(--space-16);
   border-radius: var(--radius-sm);
   background: var(--signal);
@@ -320,4 +320,3 @@
     padding: 0 var(--space-16) var(--space-16);
   }
 }
-

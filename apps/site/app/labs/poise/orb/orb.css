@@ -253,7 +253,7 @@
   transition: transform 160ms var(--ease-out), background-color 200ms var(--ease),
     border-color 200ms var(--ease);
   border: 1px solid transparent;
-  min-height: 38px;
+  min-height: 2.75rem;
   font-family: inherit;
 }
 

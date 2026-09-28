@@ -305,6 +305,11 @@ const CHANGELOG: ChangelogEntry[] = [
 
 const SORTED_CHANGELOG = [...CHANGELOG].sort((a, b) => b.date.localeCompare(a.date));
 
+// Index of each dimension's newest entry: the one its link above jumps to.
+const FIRST_OF_DIMENSION = new Set(
+  SORTED_CHANGELOG.map((e, i) => SORTED_CHANGELOG.findIndex((f) => f.dimension === e.dimension) === i ? i : -1).filter((i) => i >= 0),
+);
+
 // ── Change badges ───────────────────────────────────────────────────────────
 
 const CHANGE_COLORS: Record<string, string> = {
@@ -391,7 +396,9 @@ export default function ChangelogPage() {
                 key={`${entry.version}-${entry.dimension}-${i}`}
                 className="row"
                 role="listitem"
-                id={`dim-${entry.dimension}`}
+                // The dimension links above jump to a dimension's first entry;
+                // an id on every entry repeated it (ids must be unique).
+                id={FIRST_OF_DIMENSION.has(i) ? `dim-${entry.dimension}` : undefined}
                 style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
               >
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>

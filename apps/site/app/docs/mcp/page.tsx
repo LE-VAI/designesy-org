@@ -460,6 +460,8 @@ export default function McpDocsPage() {
                     fontFamily: 'var(--font-mono, monospace)',
                     marginBottom: '0.75rem',
                     whiteSpace: 'pre-wrap',
+                    // A Windows config path is one 45-character word.
+                    overflowWrap: 'anywhere',
                   }}
                 >
                   {cfg.file}

@@ -256,6 +256,8 @@ export function SpringValidator() {
           {PRESETS.map((preset) => (
             <button
               key={preset.name}
+              type="button"
+              className="sv-preset"
               onClick={() => handlePreset(preset)}
               style={{
                 padding: '0.35rem 0.75rem',
