@@ -10,11 +10,18 @@ import { useEffect } from 'react';
  * width gets the tab stop, named after what it holds, so nobody meets a stop
  * where nothing scrolls; the stop goes again if a wider screen makes it fit.
  *
+ * Every sideways scroller it watches also carries data-overflow while its
+ * content runs past its edge: the edge fade in globals.css keys off it, so a
+ * box that fits never gets a mask (a mask puts the box on its own layer,
+ * where text loses subpixel antialiasing on Windows).
+ *
  * Added once to the root layout. A ResizeObserver keeps each box right as
  * widths change; a MutationObserver finds new boxes after client navigation.
  * Attributes the page set itself are never touched.
  */
-const SELECTOR = '.dx-table-box, pre, [data-scroll-region]';
+const SELECTOR = '.dx-table-box, pre, .eg-path, .dx-toc ol, .score-category-chips, .score-filter-segmented, [data-scroll-region]';
+// The boxes that take a keyboard stop of their own; the rest hold links.
+const FOCUS = '.dx-table-box, pre, [data-scroll-region]';
 const MARK = 'data-scroll-focus';
 
 function nameOf(el: HTMLElement): string {
@@ -27,6 +34,8 @@ function nameOf(el: HTMLElement): string {
 
 function sync(el: HTMLElement) {
   const over = el.scrollWidth > el.clientWidth + 1;
+  el.toggleAttribute('data-overflow', over);
+  if (!el.matches(FOCUS)) return;
   const added = (el.getAttribute(MARK) || '').split(' ').filter(Boolean);
   if (over && !added.length) {
     if (el.hasAttribute('tabindex')) return;
