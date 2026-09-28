@@ -22,7 +22,7 @@ export function GET() {
     })
     .join('\n\n');
 
-  const body = `# Designesy — full agent ingest brief
+  const body = `# Designesy: full agent ingest brief
 
 > ${o.identity}
 
@@ -73,7 +73,7 @@ ${packages}
 
 ## Machine exports
 
-${o.machine_exports.map((m) => `- ${m.title}: ${m.url} — ${m.meta}`).join('\n')}
+${o.machine_exports.map((m) => `- ${m.title}: ${m.url}: ${m.meta}`).join('\n')}
 
 ## Standing rules
 
