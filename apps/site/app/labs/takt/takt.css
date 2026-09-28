@@ -43,9 +43,11 @@
     border-color 0.18s var(--ease);
 }
 
-.demo-press-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--signal-light);
+@media (hover: hover) {
+  .demo-press-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--signal-light);
+  }
 }
 
 .demo-press-btn:active {

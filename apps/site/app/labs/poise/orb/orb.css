@@ -262,8 +262,10 @@
   color: var(--ink);
 }
 
-.orb-button-primary:hover {
-  background: var(--signal-light);
+@media (hover: hover) {
+  .orb-button-primary:hover {
+    background: var(--signal-light);
+  }
 }
 
 .orb-button-primary:active {
@@ -281,10 +283,12 @@
   border-color: var(--line);
 }
 
-.orb-button-ghost:hover {
-  background: var(--surface-soft);
-  color: var(--ink);
-  border-color: var(--line-strong);
+@media (hover: hover) {
+  .orb-button-ghost:hover {
+    background: var(--surface-soft);
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
 }
 
 .orb-button-ghost:active {
@@ -320,9 +324,11 @@
   transition: color 160ms var(--ease-out), border-color 160ms var(--ease-out);
 }
 
-.orb-attr-link:hover {
-  color: var(--ink);
-  border-bottom-color: var(--signal-light);
+@media (hover: hover) {
+  .orb-attr-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--signal-light);
+  }
 }
 
 .orb-attr-link:focus-visible {

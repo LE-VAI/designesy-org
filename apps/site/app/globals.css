@@ -822,9 +822,11 @@ p {
   min-height: 2.75rem;
 }
 
-.nav-links a:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .nav-links a:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
 }
 
 .nav-links a.is-active,
@@ -858,9 +860,11 @@ p {
               background var(--duration-quick) var(--ease-out);
 }
 
-.theme-toggle:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .theme-toggle:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+  }
 }
 
 .theme-toggle:active {
@@ -1046,10 +1050,12 @@ p {
   transform: scale(0.97);
 }
 
-.sense-toggle:hover {
-  color: var(--ink);
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .sense-toggle:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+  }
 }
 
 .sense-toggle[aria-pressed="true"] {
@@ -1136,10 +1142,12 @@ html[data-motion="paused"] *::after {
   flex-shrink: 0;
 }
 
-.cmdk-trigger:hover {
-  color: var(--ink);
-  border-color: var(--line-strong);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .cmdk-trigger:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+  }
 }
 
 .cmdk-trigger-icon {
@@ -1917,10 +1925,12 @@ html[data-motion="paused"] *::after {
   overflow: visible;
 }
 
-.button.primary:hover {
-  background: var(--signal-light);
-  border-color: var(--signal-light);
-  box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
+@media (hover: hover) {
+  .button.primary:hover {
+    background: var(--signal-light);
+    border-color: var(--signal-light);
+    box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
+  }
 }
 
 .button.primary:active {
@@ -1938,9 +1948,11 @@ html[data-motion="paused"] *::after {
   overflow: hidden;
 }
 
-.button.ghost:hover {
-  background: var(--surface-hover);
-  border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+@media (hover: hover) {
+  .button.ghost:hover {
+    background: var(--surface-hover);
+    border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+  }
 }
 
 /* --- Pipeline diagram — continuous rail, stable across widths --- */
@@ -2092,12 +2104,14 @@ html[data-motion="paused"] *::after {
   .surface-card-arrow { grid-row: 4; }
 }
 
-.surface-card:hover {
-  border-left-color: var(--signal);
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-  background-image: var(--surface-card-gradient);
-  box-shadow: var(--inner-light), 0 8px 24px color-mix(in srgb, var(--paper) 25%, transparent);
+@media (hover: hover) {
+  .surface-card:hover {
+    border-left-color: var(--signal);
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+    background-image: var(--surface-card-gradient);
+    box-shadow: var(--inner-light), 0 8px 24px color-mix(in srgb, var(--paper) 25%, transparent);
+  }
 }
 
 a.surface-card:active {
@@ -2114,8 +2128,10 @@ a.surface-card:active {
 }
 
 
-.surface-card:hover .surface-card-arrow {
-  color: var(--ink);
+@media (hover: hover) {
+  .surface-card:hover .surface-card-arrow {
+    color: var(--ink);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2152,8 +2168,10 @@ a.surface-card:active {
   position: relative;
   overflow: hidden;
 }
-.field-card:hover::before {
-  opacity: 0.5;
+@media (hover: hover) {
+  .field-card:hover::before {
+    opacity: 0.5;
+  }
 }
 .field-card > * {
   position: relative;
@@ -2180,8 +2198,10 @@ a.surface-card:active {
   z-index: 0;
   transition: opacity 200ms var(--ease);
 }
-.surface-card:hover::before {
-  opacity: 0.5;
+@media (hover: hover) {
+  .surface-card:hover::before {
+    opacity: 0.5;
+  }
 }
 .surface-card > * {
   position: relative;
@@ -2202,8 +2222,10 @@ a.surface-card:active {
   z-index: 2;
   transition: transform 400ms var(--ease-out);
 }
-.surface-card:hover::after {
-  transform: translateX(100%);
+@media (hover: hover) {
+  .surface-card:hover::after {
+    transform: translateX(100%);
+  }
 }
 
 /* --- Tilt: 3D tilt toward cursor on field cards (fine pointer only) --- */
@@ -2217,13 +2239,15 @@ a.surface-card:active {
 }
 
 /* --- Fill: signal-dim washes up into the pipeline node on hover --- */
-.pipeline-step:hover .pipeline-node {
-  background: var(--signal-dim);
-  border-color: var(--signal);
-}
-.pipeline-step:hover .pipeline-node-core {
-  background: var(--signal);
-  transform: scale(1.2);
+@media (hover: hover) {
+  .pipeline-step:hover .pipeline-node {
+    background: var(--signal-dim);
+    border-color: var(--signal);
+  }
+  .pipeline-step:hover .pipeline-node-core {
+    background: var(--signal);
+    transform: scale(1.2);
+  }
 }
 
 /* --- Underline: signal underline grows under nav links on hover --- */
@@ -2245,10 +2269,12 @@ a.surface-card:active {
   transition: left 250ms var(--ease-out), right 250ms var(--ease-out),
     opacity 200ms var(--ease);
 }
-.nav-links a:hover::after {
-  left: 0.65rem;
-  right: 0.65rem;
-  opacity: 0.7;
+@media (hover: hover) {
+  .nav-links a:hover::after {
+    left: 0.65rem;
+    right: 0.65rem;
+    opacity: 0.7;
+  }
 }
 /* Active link keeps its static underline, overrides the hover animation */
 .nav-links a.is-active::after,
@@ -2300,9 +2326,11 @@ a.surface-card:active {
   .pipeline-step.is-shaking {
     animation: none;
   }
-  .surface-card:hover .surface-card-label,
+  @media (hover: hover) {
+    .surface-card:hover .surface-card-label,
   .surface-card:hover .surface-card-desc {
-    transform: none;
+      transform: none;
+    }
   }
 }
 
@@ -2334,8 +2362,10 @@ a.surface-card:active {
   z-index: 2;
   transition: transform 400ms var(--ease-out);
 }
-.lab-card:hover::after {
-  transform: translateX(100%);
+@media (hover: hover) {
+  .lab-card:hover::after {
+    transform: translateX(100%);
+  }
 }
 .lab-card-title,
 .lab-card-lede {
@@ -2354,8 +2384,10 @@ a.surface-card:active {
 .row-index {
   transition: color 200ms var(--ease);
 }
-.row:hover .row-index {
-  color: var(--signal-light);
+@media (hover: hover) {
+  .row:hover .row-index {
+    color: var(--signal-light);
+  }
 }
 
 /* --- Check cells: fill sweep from bottom + arrow slide --- */
@@ -2372,9 +2404,11 @@ a.surface-card:active {
   z-index: 0;
   pointer-events: none;
 }
-.check-cell:hover::before {
-  transform: translateY(0);
-  opacity: 0.3;
+@media (hover: hover) {
+  .check-cell:hover::before {
+    transform: translateY(0);
+    opacity: 0.3;
+  }
 }
 .check-cell > * {
   position: relative;
@@ -2404,8 +2438,10 @@ a.surface-card:active {
   transition: transform 300ms var(--ease-out);
   z-index: 0;
 }
-.definition:hover::after {
-  transform: scaleY(1);
+@media (hover: hover) {
+  .definition:hover::after {
+    transform: scaleY(1);
+  }
 }
 
 /* --- Buttons: signal glow ring on hover (primary) --- */
@@ -2421,9 +2457,11 @@ a.surface-card:active {
   pointer-events: none;
   z-index: -1;
 }
-.button.primary:hover::after {
-  opacity: 0.4;
-  transform: scale(1);
+@media (hover: hover) {
+  .button.primary:hover::after {
+    opacity: 0.4;
+    transform: scale(1);
+  }
 }
 
 /* --- Ghost buttons: signal-dim underline sweep --- */
@@ -2439,8 +2477,10 @@ a.surface-card:active {
   transition: transform 300ms var(--ease-out);
   pointer-events: none;
 }
-.button.ghost:hover::after {
-  transform: translateX(0);
+@media (hover: hover) {
+  .button.ghost:hover::after {
+    transform: translateX(0);
+  }
 }
 
 /* --- Toggle (pillar): signal left-edge trace on hover --- */
@@ -2450,9 +2490,11 @@ a.surface-card:active {
 .principle {
   transition: transform 200ms var(--ease-out);
 }
-.principle:hover .principle-num::before {
-  background: var(--signal-light);
-  box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
+@media (hover: hover) {
+  .principle:hover .principle-num::before {
+    background: var(--signal-light);
+    box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
+  }
 }
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
@@ -2495,9 +2537,11 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.footer-dock-pill:hover::after,
+@media (hover: hover) {
+  .footer-dock-pill:hover::after,
 .footer-link:hover::after {
-  right: 0;
+    right: 0;
+  }
 }
 
 /* --- Lab meta links: signal underline grow --- */
@@ -2514,8 +2558,10 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.lab-meta-item a:hover::after {
-  right: 0;
+@media (hover: hover) {
+  .lab-meta-item a:hover::after {
+    right: 0;
+  }
 }
 
 /* --- Lab crumbs: signal underline grow --- */
@@ -2532,8 +2578,10 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.lab-crumb:hover::after {
-  right: 0;
+@media (hover: hover) {
+  .lab-crumb:hover::after {
+    right: 0;
+  }
 }
 
 /* --- Text links: signal underline grow (replaces static border) --- */
@@ -2553,8 +2601,10 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.text-link:hover::after {
-  right: 0;
+@media (hover: hover) {
+  .text-link:hover::after {
+    right: 0;
+  }
 }
 
 /* --- Scope path links: signal underline grow --- */
@@ -2573,15 +2623,19 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.scope-path-link:hover::after,
+@media (hover: hover) {
+  .scope-path-link:hover::after,
 .scope-line a:hover::after {
-  right: 0;
+    right: 0;
+  }
 }
 
 /* --- Sense toggles: signal ring on hover when active --- */
-.sense-toggle[aria-pressed="true"]:hover {
-  border-color: var(--signal-light);
-  box-shadow: 0 0 0 2px var(--signal-dim);
+@media (hover: hover) {
+  .sense-toggle[aria-pressed="true"]:hover {
+    border-color: var(--signal-light);
+    box-shadow: 0 0 0 2px var(--signal-dim);
+  }
 }
 
 /* --- Copy prompt button: signal glow on hover --- */
@@ -2599,8 +2653,10 @@ a.surface-card:active {
   transition: opacity 200ms var(--ease);
   pointer-events: none;
 }
-.copy-prompt-btn:hover::after {
-  opacity: 0.6;
+@media (hover: hover) {
+  .copy-prompt-btn:hover::after {
+    opacity: 0.6;
+  }
 }
 
 /* --- Copy row: signal left trace on hover --- */
@@ -2610,8 +2666,10 @@ a.surface-card:active {
 .wordmark {
   position: relative;
 }
-.wordmark:hover .dot {
-  animation: dot-brighten 400ms var(--ease-out);
+@media (hover: hover) {
+  .wordmark:hover .dot {
+    animation: dot-brighten 400ms var(--ease-out);
+  }
 }
 @keyframes dot-brighten {
   0% { color: var(--signal-access); }
@@ -2644,8 +2702,10 @@ a.surface-card:active {
   background: var(--signal);
   transition: right 200ms var(--ease-out);
 }
-.open-package-paths a:hover::after {
-  right: 0;
+@media (hover: hover) {
+  .open-package-paths a:hover::after {
+    right: 0;
+  }
 }
 
 /* --- Back button: signal glow ring on hover --- */
@@ -2663,8 +2723,10 @@ a.surface-card:active {
   transition: opacity 200ms var(--ease);
   pointer-events: none;
 }
-.back-button:hover::after {
-  opacity: 0.5;
+@media (hover: hover) {
+  .back-button:hover::after {
+    opacity: 0.5;
+  }
 }
 
 
@@ -2672,8 +2734,10 @@ a.surface-card:active {
 .token-table-row {
   transition: background 200ms var(--ease);
 }
-.token-table-row:hover {
-  background: var(--surface-soft);
+@media (hover: hover) {
+  .token-table-row:hover {
+    background: var(--surface-soft);
+  }
 }
 
 /* --- Checkmark list items: glyph color shift on hover --- */
@@ -2681,8 +2745,10 @@ a.surface-card:active {
 .avoid-list li {
   transition: color 200ms var(--ease);
 }
-.checkmark-list li:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .checkmark-list li:hover {
+    color: var(--ink);
+  }
 }
 
 /* --- Reduced motion: disable all second-pass effects --- */
@@ -2706,8 +2772,10 @@ a.surface-card:active {
     display: none;
   }
   /* Keep hover text lifts — subtle transform on hover is interaction feedback */
-  .wordmark:hover .dot {
-    animation-duration: 12s;
+  @media (hover: hover) {
+    .wordmark:hover .dot {
+      animation-duration: 12s;
+    }
   }
 }
 
@@ -2788,8 +2856,10 @@ a.surface-card:active {
   min-height: 44px;
 }
 
-.footer-badge:hover {
-  opacity: 1;
+@media (hover: hover) {
+  .footer-badge:hover {
+    opacity: 1;
+  }
 }
 
 /*
@@ -2933,15 +3003,16 @@ a.surface-card:active {
   transition: opacity 0.18s var(--ease);
 }
 
-.footer-dock-pill--surface:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-  color: var(--ink);
-  transform: scale(1.06);
-}
-
-.footer-dock-pill--surface:hover::before {
-  opacity: 1;
+@media (hover: hover) {
+  .footer-dock-pill--surface:hover {
+    background: var(--surface-hover);
+    border-color: var(--line-strong);
+    color: var(--ink);
+    transform: scale(1.06);
+  }
+  .footer-dock-pill--surface:hover::before {
+    opacity: 1;
+  }
 }
 
 .footer-dock-pill--machine {
@@ -2963,15 +3034,16 @@ a.surface-card:active {
   transition: opacity 0.18s var(--ease);
 }
 
-.footer-dock-pill--machine:hover {
-  background: var(--surface-hover);
-  border-color: var(--line-strong);
-  color: var(--muted);
-  transform: scale(1.06);
-}
-
-.footer-dock-pill--machine:hover::before {
-  opacity: 0.8;
+@media (hover: hover) {
+  .footer-dock-pill--machine:hover {
+    background: var(--surface-hover);
+    border-color: var(--line-strong);
+    color: var(--muted);
+    transform: scale(1.06);
+  }
+  .footer-dock-pill--machine:hover::before {
+    opacity: 0.8;
+  }
 }
 
 /* During an active drag, suppress hover effects and transitions on all
@@ -3008,8 +3080,10 @@ a.surface-card:active {
   transition: color 0.2s var(--ease);
 }
 
-.footer-link:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .footer-link:hover {
+    color: var(--ink);
+  }
 }
 
 /* --- Route page shells --- */
@@ -3151,9 +3225,11 @@ a.surface-card:active {
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 
-.text-link:hover {
-  color: var(--signal-light);
-  border-bottom-color: var(--signal-light);
+@media (hover: hover) {
+  .text-link:hover {
+    color: var(--signal-light);
+    border-bottom-color: var(--signal-light);
+  }
 }
 
 /* Definition block — standalone statement with left signal border */
@@ -3168,9 +3244,11 @@ a.surface-card:active {
   transition: background 0.2s var(--ease);
 }
 
-.definition:hover {
-  background: var(--surface-raised);
-  border-color: color-mix(in srgb, var(--signal-dim) 60%, var(--line));
+@media (hover: hover) {
+  .definition:hover {
+    background: var(--surface-raised);
+    border-color: color-mix(in srgb, var(--signal-dim) 60%, var(--line));
+  }
 }
 
 .definition p {
@@ -3376,9 +3454,11 @@ a.surface-card:active {
     transform var(--duration-fast, 180ms) var(--ease, ease);
 }
 
-.docs-card-grid .row:hover {
-  border-color: var(--line-strong);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .docs-card-grid .row:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+  }
 }
 
 /* Focus ring must remain visible on the card surface — the row is a link. */
@@ -3409,8 +3489,10 @@ a.surface-card:active {
   .docs-card-grid .row {
     transition: border-color 0.01ms;
   }
-  .docs-card-grid .row:hover {
-    transform: none;
+  @media (hover: hover) {
+    .docs-card-grid .row:hover {
+      transform: none;
+    }
   }
 }
 
@@ -3521,13 +3603,22 @@ a.surface-card:active {
   transition: opacity 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
 }
 
-.state-marquee-toggle:hover,
 .state-marquee-toggle:focus-visible {
   opacity: 1;
   border-color: var(--line-strong);
   color: var(--ink);
   outline: 2px solid var(--signal-light);
   outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .state-marquee-toggle:hover {
+    opacity: 1;
+    border-color: var(--line-strong);
+    color: var(--ink);
+    outline: 2px solid var(--signal-light);
+    outline-offset: 1px;
+  }
 }
 
 /* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
@@ -3587,21 +3678,23 @@ a.surface-card:active {
 }
 
 /* Pills are links — hover lifts and brightens like the footer dock */
-.state-marquee-pill:hover {
-  transform: scale(1.04);
-  border-color: var(--line-strong);
-}
-.state-marquee-pill--live:hover {
-  color: var(--signal-light);
-  background: color-mix(in srgb, var(--signal) 22%, transparent);
-}
-.state-marquee-pill--adopted:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
-}
-.state-marquee-pill--info:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .state-marquee-pill:hover {
+    transform: scale(1.04);
+    border-color: var(--line-strong);
+  }
+  .state-marquee-pill--live:hover {
+    color: var(--signal-light);
+    background: color-mix(in srgb, var(--signal) 22%, transparent);
+  }
+  .state-marquee-pill--adopted:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
+  .state-marquee-pill--info:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
 }
 
 /* Keyboard path — focus ring from the contract's own --focus-ring token.
@@ -3711,10 +3804,12 @@ a.surface-card:active {
   border-top: 1px solid var(--line-faint);
 }
 
-.row:hover,
+@media (hover: hover) {
+  .row:hover,
 .layer-item:hover {
-  border-left-color: var(--signal);
-  background: var(--surface-soft);
+    border-left-color: var(--signal);
+    background: var(--surface-soft);
+  }
 }
 
 a.row:active,
@@ -3795,9 +3890,11 @@ button.row:active {
   border-left-color: var(--line-faint);
 }
 
-.row.is-avoid:hover {
-  border-left-color: var(--muted-dim);
-  background: var(--surface-soft);
+@media (hover: hover) {
+  .row.is-avoid:hover {
+    border-left-color: var(--muted-dim);
+    background: var(--surface-soft);
+  }
 }
 
 .row.is-avoid .row-index {
@@ -3841,10 +3938,12 @@ button.layer-item {
   transition: opacity 0.3s var(--ease);
 }
 
-.row.is-checked:hover,
+@media (hover: hover) {
+  .row.is-checked:hover,
 .pillar.is-checked:hover,
 .layer-item.is-checked:hover {
-  opacity: 0.68;
+    opacity: 0.68;
+  }
 }
 
 .row.is-checked .row-title,
@@ -3882,9 +3981,14 @@ button.layer-item {
   transition: opacity 0.2s var(--ease), color 0.2s var(--ease);
   align-self: center;
 }
-.row:hover .row-copy-badge,
 .row:focus-visible .row-copy-badge {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .row:hover .row-copy-badge {
+    opacity: 1;
+  }
 }
 .row.is-copied .row-copy-badge {
   opacity: 1;
@@ -3918,8 +4022,10 @@ button.row {
   transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
 }
 
-.definition.is-copyable:hover {
-  border-color: var(--line);
+@media (hover: hover) {
+  .definition.is-copyable:hover {
+    border-color: var(--line);
+  }
 }
 
 .definition.is-copied {
@@ -3940,8 +4046,10 @@ button.row {
   pointer-events: none;
 }
 
-.definition.is-copyable:hover .definition-copy-badge {
-  opacity: 0.7;
+@media (hover: hover) {
+  .definition.is-copyable:hover .definition-copy-badge {
+    opacity: 0.7;
+  }
 }
 
 .definition.is-copied .definition-copy-badge {
@@ -4075,9 +4183,11 @@ button.check-cell {
   transition: transform 160ms var(--ease-out), color 160ms var(--ease);
 }
 
-a.check-cell:hover .check-cell-arrow {
-  color: var(--signal);
-  transform: translateX(3px);
+@media (hover: hover) {
+  a.check-cell:hover .check-cell-arrow {
+    color: var(--signal);
+    transform: translateX(3px);
+  }
 }
 
 .check-cell-check {
@@ -4115,8 +4225,10 @@ a.check-cell:hover .check-cell-arrow {
   opacity: 0.48;
 }
 
-.check-cell.is-checked:hover {
-  opacity: 0.68;
+@media (hover: hover) {
+  .check-cell.is-checked:hover {
+    opacity: 0.68;
+  }
 }
 
 .check-cell.is-checked .check-cell-title {
@@ -4130,9 +4242,11 @@ a.check-cell:hover .check-cell-arrow {
 }
 
 /* equal visual weight: title can wrap; cell stretches to row height */
-.check-cell:hover {
-  background: var(--surface-soft);
-  z-index: 1;
+@media (hover: hover) {
+  .check-cell:hover {
+    background: var(--surface-soft);
+    z-index: 1;
+  }
 }
 
 .check-cell:active {
@@ -4146,8 +4260,10 @@ a.check-cell:hover .check-cell-arrow {
   z-index: 2;
 }
 
-a.check-cell:hover .check-cell-title {
-  color: var(--ink);
+@media (hover: hover) {
+  a.check-cell:hover .check-cell-title {
+    color: var(--ink);
+  }
 }
 
 .check-cell-index {
@@ -4199,8 +4315,10 @@ a.check-cell:hover .check-cell-title {
   font-weight: 600;
 }
 
-.check-cell.is-avoid:hover {
-  background: color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover));
+@media (hover: hover) {
+  .check-cell.is-avoid:hover {
+    background: color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover));
+  }
 }
 
 /* optional status chip in meta-rich result cells */
@@ -4547,10 +4665,12 @@ a.check-cell:hover .check-cell-title {
       border-color var(--duration-fast) var(--ease),
       background var(--duration-fast) var(--ease);
   }
-  .nav-drawer-close:hover {
-    color: var(--ink);
-    border-color: var(--line-strong);
-    background: var(--surface-hover);
+  @media (hover: hover) {
+    .nav-drawer-close:hover {
+      color: var(--ink);
+      border-color: var(--line-strong);
+      background: var(--surface-hover);
+    }
   }
   .nav-drawer-close:focus-visible {
     outline: 2px solid var(--signal-light);
@@ -4578,9 +4698,11 @@ a.check-cell:hover .check-cell-title {
     transition: color var(--duration-fast) var(--ease),
       background var(--duration-fast) var(--ease);
   }
-  .nav-drawer a:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
+  @media (hover: hover) {
+    .nav-drawer a:hover {
+      color: var(--ink);
+      background: var(--surface-hover);
+    }
   }
   .nav-drawer a.is-active,
   .nav-drawer a[aria-current='page'] {
@@ -4683,8 +4805,10 @@ a.check-cell:hover .check-cell-title {
   transition: color 0.2s var(--ease);
 }
 
-.lab-crumb:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .lab-crumb:hover {
+    color: var(--ink);
+  }
 }
 
 .lab-meta {
@@ -4709,9 +4833,11 @@ a.check-cell:hover .check-cell-title {
   transition: color 0.2s var(--ease), text-decoration-color 0.2s var(--ease);
 }
 
-.lab-meta-item a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--line-strong);
+@media (hover: hover) {
+  .lab-meta-item a:hover {
+    color: var(--ink);
+    text-decoration-color: var(--line-strong);
+  }
 }
 
 .open-package-paths {
@@ -4730,9 +4856,11 @@ a.check-cell:hover .check-cell-title {
   word-break: break-all;
 }
 
-.open-package-paths a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--line-strong);
+@media (hover: hover) {
+  .open-package-paths a:hover {
+    color: var(--ink);
+    text-decoration-color: var(--line-strong);
+  }
 }
 
 .open-path-sep {
@@ -4763,10 +4891,12 @@ a.check-cell:hover .check-cell-title {
   max-width: min(100%, 980px);
 }
 
-.lab-card:hover {
-  border-left-color: var(--signal);
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
+@media (hover: hover) {
+  .lab-card:hover {
+    border-left-color: var(--signal);
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+  }
 }
 
 .lab-card:active {
@@ -4828,8 +4958,10 @@ a.check-cell:hover .check-cell-title {
   transition: color 0.2s var(--ease);
 }
 
-.lab-card:hover .lab-card-arrow {
-  color: var(--ink);
+@media (hover: hover) {
+  .lab-card:hover .lab-card-arrow {
+    color: var(--ink);
+  }
 }
 
 
@@ -5429,25 +5561,24 @@ html:not(.js-ready) .demo-stagger-bar {
   border-left-color: color-mix(in srgb, var(--signal-light) 75%, transparent);
 }
 
-.field-card:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-}
-
-.field-card--open:hover,
+@media (hover: hover) {
+  .field-card:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+  }
+  .field-card--open:hover,
 .field-card--contract:hover {
-  border-left-color: var(--signal);
-  border-color: var(--line-strong);
-}
-
-.field-card--lab:hover {
-  border-left-color: var(--signal-light);
-  border-color: var(--line-strong);
-}
-
-.field-card--kit:hover {
-  border-left-color: var(--signal-light);
-  border-color: var(--line-strong);
+    border-left-color: var(--signal);
+    border-color: var(--line-strong);
+  }
+  .field-card--lab:hover {
+    border-left-color: var(--signal-light);
+    border-color: var(--line-strong);
+  }
+  .field-card--kit:hover {
+    border-left-color: var(--signal-light);
+    border-color: var(--line-strong);
+  }
 }
 
 a.field-card:active {
@@ -5479,8 +5610,10 @@ a.field-card:active {
 }
 
 
-.field-card:hover .field-card-arrow {
-  color: var(--ink);
+@media (hover: hover) {
+  .field-card:hover .field-card-arrow {
+    color: var(--ink);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5489,11 +5622,13 @@ a.field-card:active {
   }
 }
 
-.field-card--open:hover .field-card-arrow,
+@media (hover: hover) {
+  .field-card--open:hover .field-card-arrow,
 .field-card--contract:hover .field-card-arrow,
 .field-card--lab:hover .field-card-arrow,
 .field-card--kit:hover .field-card-arrow {
-  color: var(--signal-light);
+    color: var(--signal-light);
+  }
 }
 
 /* Kind badges — same family, different weight */
@@ -5698,14 +5833,19 @@ a.field-card:active {
     color 0.2s var(--ease), background 0.2s var(--ease),
     transform 160ms var(--ease-out);
 }
-.copy-prompt-wrap:hover .copy-prompt-btn,
 .copy-prompt-btn:focus-visible {
   opacity: 1;
 }
-.copy-prompt-btn:hover {
-  border-color: var(--line-strong);
-  color: var(--ink);
-  background: var(--surface-hover);
+
+@media (hover: hover) {
+  .copy-prompt-wrap:hover .copy-prompt-btn {
+    opacity: 1;
+  }
+  .copy-prompt-btn:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
 }
 .copy-prompt-btn:active {
   transform: scale(0.97);
@@ -5928,10 +6068,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   animation: back-button-in 0.4s var(--ease-out) 0.4s forwards;
 }
 
-.back-button:hover {
-  opacity: 1;
-  border-color: var(--line);
-  color: var(--ink);
+@media (hover: hover) {
+  .back-button:hover {
+    opacity: 1;
+    border-color: var(--line);
+    color: var(--ink);
+  }
 }
 
 .back-button:active {
@@ -6044,10 +6186,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-width: 2.75rem;
 }
 
-.director-dock:hover {
-  opacity: 1;
-  border-color: var(--line-strong);
-  color: var(--ink);
+@media (hover: hover) {
+  .director-dock:hover {
+    opacity: 1;
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
 }
 
 .director-dock:focus-visible {
@@ -6080,10 +6224,16 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: opacity 0.2s var(--ease), transform 0.2s var(--ease-out);
 }
 
-.director-dock:hover .director-dock-label,
 .director-dock:focus-visible .director-dock-label {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
+}
+
+@media (hover: hover) {
+  .director-dock:hover .director-dock-label {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
 @keyframes director-dock-in {
@@ -7113,11 +7263,13 @@ a.lab-card:focus-visible .lab-card-arrow {
               color var(--duration-fast) var(--ease-out);
 }
 
-.score-action-btn:hover {
-  background: var(--surface-lifted);
-  border-color: var(--signal);
-  box-shadow: var(--inner-light);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .score-action-btn:hover {
+    background: var(--surface-lifted);
+    border-color: var(--signal);
+    box-shadow: var(--inner-light);
+    transform: translateY(-1px);
+  }
 }
 .score-action-btn:active {
   transform: translateY(0);
@@ -7146,10 +7298,12 @@ a.lab-card:focus-visible .lab-card-arrow {
      the previous --paper value read as near-black against the signal fill. */
   color: var(--paper-on-signal);
 }
-.score-audit-btn:hover:not(:disabled) {
-  background: var(--signal);
-  border-color: var(--ink);
-  color: var(--paper-on-signal);
+@media (hover: hover) {
+  .score-audit-btn:hover:not(:disabled) {
+    background: var(--signal);
+    border-color: var(--ink);
+    color: var(--paper-on-signal);
+  }
 }
 .score-audit-btn:disabled {
   opacity: 0.7;
@@ -7334,10 +7488,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   overflow: hidden;
 }
 
-.score-engine-tile:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-lifted);
-  transform: translateY(-1px);
+@media (hover: hover) {
+  .score-engine-tile:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-lifted);
+    transform: translateY(-1px);
+  }
 }
 
 .score-engine-tile:active {
@@ -7446,9 +7602,11 @@ a.lab-card:focus-visible .lab-card-arrow {
               background var(--duration-fast) var(--ease-out);
 }
 
-.score-check-group-header:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-lifted);
+@media (hover: hover) {
+  .score-check-group-header:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-lifted);
+  }
 }
 
 .score-check-group-dot {
@@ -7529,9 +7687,11 @@ a.lab-card:focus-visible .lab-card-arrow {
               border-color var(--duration-fast) var(--ease-out);
 }
 
-.score-url-link:hover {
-  color: var(--signal);
-  border-bottom-color: var(--signal);
+@media (hover: hover) {
+  .score-url-link:hover {
+    color: var(--signal);
+    border-bottom-color: var(--signal);
+  }
 }
 
 /* ── Open-site action button (primary next-step affordance) ───────────────── */
@@ -7542,9 +7702,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--paper-on-signal) !important;
 }
 
-.score-open-site-btn:hover {
-  background: var(--ink) !important;
-  border-color: var(--ink) !important;
+@media (hover: hover) {
+  .score-open-site-btn:hover {
+    background: var(--ink) !important;
+    border-color: var(--ink) !important;
+  }
 }
 
 .score-note {
@@ -7691,8 +7853,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 @media (prefers-reduced-motion: no-preference) {
   .score-signal-row { transition: background var(--duration-fast) var(--ease-out); }
-  .score-signal-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-  [data-theme="light"] .score-signal-row:hover { background: rgba(0, 0, 0, 0.04); }
+  @media (hover: hover) {
+    .score-signal-row:hover {
+      background: color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+    [data-theme="light"] .score-signal-row:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
 }
 
 
@@ -7764,8 +7932,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: color var(--duration-fast) var(--ease-out);
 }
 
-.score-filter-tab:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .score-filter-tab:hover {
+    color: var(--ink);
+  }
 }
 
 /* The active tab no longer carries its own background — the sliding
@@ -7937,9 +8107,11 @@ a.lab-card:focus-visible .lab-card-arrow {
               color var(--duration-fast) var(--ease-out);
 }
 
-.score-category-chip:hover {
-  border-color: var(--line-strong);
-  color: var(--ink);
+@media (hover: hover) {
+  .score-category-chip:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
 }
 
 .score-category-chip.is-active {
@@ -8017,10 +8189,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
-.score-card-item:hover {
-  background: var(--surface-lifted);
-  border-color: var(--line-strong);
-  box-shadow: var(--inner-light);
+@media (hover: hover) {
+  .score-card-item:hover {
+    background: var(--surface-lifted);
+    border-color: var(--line-strong);
+    box-shadow: var(--inner-light);
+  }
 }
 
 .score-card-item.is-expanded {
@@ -8544,12 +8718,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   );
 }
 
-.pricing-card--primary:hover {
-  background: linear-gradient(
+@media (hover: hover) {
+  .pricing-card--primary:hover {
+    background: linear-gradient(
     to bottom,
     var(--signal-dim),
     var(--surface-raised) 45%
   );
+  }
 }
 
 
@@ -8579,8 +8755,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   .pricing-faq-q {
     transition: none;
   }
-  .pricing-card:hover {
-    transform: none;
+  @media (hover: hover) {
+    .pricing-card:hover {
+      transform: none;
+    }
   }
   .pricing-cta-link:active,
   .pricing-card:active {
@@ -8629,8 +8807,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: color var(--motion-short) var(--ease-quiet);
 }
 
-.score-history-clear:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .score-history-clear:hover {
+    color: var(--text);
+  }
 }
 
 .score-history-list {
@@ -8656,8 +8836,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: border-color var(--motion-short) var(--ease-quiet);
 }
 
-.score-history-item:hover {
-  border-color: var(--line-strong);
+@media (hover: hover) {
+  .score-history-item:hover {
+    border-color: var(--line-strong);
+  }
 }
 
 .score-history-emblem {
@@ -8722,8 +8904,10 @@ a.lab-card:focus-visible .lab-card-arrow {
               color var(--motion-short) var(--ease-quiet);
 }
 
-.score-history-rerun:hover {
-  border-color: var(--line-strong);
+@media (hover: hover) {
+  .score-history-rerun:hover {
+    border-color: var(--line-strong);
+  }
 }
 
 .score-history-foot {
@@ -8744,8 +8928,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   transition: border-color var(--motion-short) var(--ease-quiet);
 }
 
-.score-history-foot .text-link:hover {
-  border-color: var(--signal);
+@media (hover: hover) {
+  .score-history-foot .text-link:hover {
+    border-color: var(--signal);
+  }
 }
 
 /* Mobile: collapse the history item to two rows so the URL has room. */
@@ -9055,9 +9241,11 @@ a.lab-card:focus-visible .lab-card-arrow {
     background var(--duration-fast) var(--ease);
 }
 
-.report-cat-chip:hover {
-  border-color: var(--line);
-  color: var(--ink);
+@media (hover: hover) {
+  .report-cat-chip:hover {
+    border-color: var(--line);
+    color: var(--ink);
+  }
 }
 
 .report-cat-chip.expanded {
@@ -9174,8 +9362,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-height: 2.75rem;
 }
 
-.report-check-summary:hover {
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .report-check-summary:hover {
+    background: var(--surface-hover);
+  }
 }
 
 .report-check-status {
@@ -9712,10 +9902,16 @@ select {
   transition: stroke-dasharray var(--duration-fast) var(--ease-out);
 }
 
-.constel-node:hover .constel-node-track,
 .constel-node.is-active .constel-node-track {
   stroke: var(--signal);
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .constel-node:hover .constel-node-track {
+    stroke: var(--signal);
+    opacity: 1;
+  }
 }
 
 .constel-node.is-active .constel-node-fill {
@@ -9862,9 +10058,11 @@ select {
               border-color var(--duration-fast) var(--ease-out);
 }
 
-.score-cat-legend-row:hover {
-  color: var(--ink);
-  background: var(--surface-soft);
+@media (hover: hover) {
+  .score-cat-legend-row:hover {
+    color: var(--ink);
+    background: var(--surface-soft);
+  }
 }
 
 .score-cat-legend-row.is-active {
@@ -9954,8 +10152,10 @@ select {
   transition: color var(--duration-fast) var(--ease-out);
 }
 
-.score-rubric-toggle:hover {
-  color: var(--signal-access);
+@media (hover: hover) {
+  .score-rubric-toggle:hover {
+    color: var(--signal-access);
+  }
 }
 
 .score-rubric-body {
@@ -10902,9 +11102,11 @@ select {
   letter-spacing: 0.01em;
 }
 
-.lottie-tip-close:hover {
-  color: var(--ink);
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .lottie-tip-close:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
 }
 
 .lottie-tip-close:focus-visible {
@@ -11356,7 +11558,11 @@ select {
 .score-card-item[data-category='copywriting']::before { background: var(--grade-c); }
 .score-card-item[data-category='identity']::before { background: var(--error); }
 .score-card-item[data-category='platform']::before { background: var(--muted); }
-.score-card-item:hover::before { opacity: 1; }
+@media (hover: hover) {
+  .score-card-item:hover::before {
+    opacity: 1;
+  }
+}
 
 /* --------------------------------------------------------------------------
    Docs TOC — right-rail on-page navigation for /docs.
@@ -11423,9 +11629,11 @@ select {
               color var(--duration-fast, 180ms) var(--ease, ease);
 }
 
-.docs-toc-list a:hover {
-  color: var(--ink);
-  border-left-color: var(--line-strong);
+@media (hover: hover) {
+  .docs-toc-list a:hover {
+    color: var(--ink);
+    border-left-color: var(--line-strong);
+  }
 }
 
 /* The active marker is a border-color + weight change, not a background block:
@@ -11532,9 +11740,11 @@ select {
     color var(--duration-fast) var(--ease);
 }
 
-.agent-action:hover {
-  color: var(--ink);
-  border-color: var(--line-strong, rgba(255, 255, 255, 0.22));
+@media (hover: hover) {
+  .agent-action:hover {
+    color: var(--ink);
+    border-color: var(--line-strong, rgba(255, 255, 255, 0.22));
+  }
 }
 
 .agent-action:focus-visible {
@@ -11643,13 +11853,14 @@ select {
   transition: transform var(--duration-fast) var(--ease-out);
 }
 
-.wordmark:hover .wordmark-mark {
-  border-color: var(--signal-access);
-  transform: rotate(-8deg);
-}
-
-.wordmark:hover .wordmark-mark i {
-  transform: scale(1.25);
+@media (hover: hover) {
+  .wordmark:hover .wordmark-mark {
+    border-color: var(--signal-access);
+    transform: rotate(-8deg);
+  }
+  .wordmark:hover .wordmark-mark i {
+    transform: scale(1.25);
+  }
 }
 
 .wordmark-type {
@@ -11695,11 +11906,18 @@ select {
     transform var(--duration-quick) var(--ease-out);
 }
 
-.senses-trigger:hover,
 .senses.is-open .senses-trigger {
   color: var(--ink);
   border-color: var(--line-strong);
   background: var(--surface-hover);
+}
+
+@media (hover: hover) {
+  .senses-trigger:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+  }
 }
 
 .senses-trigger:active {
@@ -11952,8 +12170,10 @@ select {
     transform var(--duration-quick) var(--ease-out);
 }
 
-.topbar-cta:hover {
-  background: var(--signal-light);
+@media (hover: hover) {
+  .topbar-cta:hover {
+    background: var(--signal-light);
+  }
 }
 
 .topbar-cta:active {
@@ -12002,10 +12222,15 @@ select {
   .senses-row[aria-pressed="true"] .sg-wave {
     animation: none;
   }
-  .wordmark:hover .wordmark-mark,
-  .wordmark:hover .wordmark-mark i,
   .senses.is-open .senses-glyph i {
     transform: none;
+  }
+
+  @media (hover: hover) {
+    .wordmark:hover .wordmark-mark,
+  .wordmark:hover .wordmark-mark i {
+      transform: none;
+    }
   }
 }
 
@@ -12066,9 +12291,11 @@ select {
 .back-button { left: max(1.25rem, env(safe-area-inset-left)); }
 .director-dock { right: max(1.25rem, env(safe-area-inset-right)); }
 
-.back-button:hover,
+@media (hover: hover) {
+  .back-button:hover,
 .director-dock:hover {
-  color: var(--ink);
+    color: var(--ink);
+  }
 }
 
 .back-button:active,
@@ -12093,9 +12320,14 @@ select {
   pointer-events: none;
 }
 
-.director-dock:hover .director-dock-label,
 .director-dock:focus-visible .director-dock-label {
   transform: none;
+}
+
+@media (hover: hover) {
+  .director-dock:hover .director-dock-label {
+    transform: none;
+  }
 }
 
 @keyframes dock-in {
