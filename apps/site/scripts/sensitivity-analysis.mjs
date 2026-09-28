@@ -24,6 +24,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { liveScore } from './live-score.mjs';
 
 const BASE = process.argv.find((a) => a.startsWith('--base='))?.split('=')[1] ?? 'https://www.designesy.org';
 const OUT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -169,16 +170,18 @@ async function main() {
 
   // Score each site once (24h-cached server-side) and keep the real checks.
   const sites = [];
+  // Sites the engine could not read: named in the report, never scored as 0.
+  // A rate limit or network failure throws instead (live-score.mjs), and the
+  // run writes nothing.
+  const excluded = [];
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
-    try {
-      const res = await fetch(`${BASE}/api/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const d = await res.json();
-      if (!d.checks) throw new Error(`no checks: ${JSON.stringify(d).slice(0, 120)}`);
+    const live = await liveScore(BASE, url);
+    if (live.excluded) {
+      excluded.push({ url, reason: live.excluded });
+      console.log(`[${i + 1}/${urls.length}] ${url}  EXCLUDED (${live.excluded})`);
+    } else {
+      const d = live.data;
       // Capture the engine's REAL slop deduction + originality lift so the
       // baseline recompute matches the live score exactly (fidelity check).
       const realSlop = d.slop?.total ?? 0;
@@ -188,8 +191,6 @@ async function main() {
       const drift = Math.abs(baseline.score - d.score);
       const flag = drift > 0.5 ? '  ⚠ DRIFT' : '';
       console.log(`[${i + 1}/${urls.length}] ${url}  api=${d.score} (${d.grade})  recomputed=${baseline.score}${flag}`);
-    } catch (e) {
-      console.log(`[${i + 1}/${urls.length}] ${url}  ERROR ${e.message}`);
     }
     await new Promise((r) => setTimeout(r, 300)); // polite to the API
   }
@@ -204,6 +205,7 @@ async function main() {
     contractVersion: 'v0.4.0',
     method: 'Real check statuses from live /api/score; composite recomputed locally under each perturbation, mirroring engine math.',
     sites: sites.length,
+    excluded,
     knobs: allKnobs.length,
     perSite: [],
     leaderboard: {},
@@ -272,6 +274,7 @@ function renderMarkdown(r) {
   lines.push(`- Base: ${r.base}`);
   lines.push(`- Contract: ${r.contractVersion}`);
   lines.push(`- Sites: ${r.sites} · Knobs: ${r.knobs}`);
+  if (r.excluded && r.excluded.length) lines.push(`- Excluded, the engine could not read them: ${r.excluded.map((x) => x.url).join(', ')}`);
   lines.push(`- Method: real check statuses from the live engine; composite recomputed locally under each perturbation (engine math mirrored exactly).`);
   lines.push('');
   lines.push(`## Leaderboard-level stability`);
