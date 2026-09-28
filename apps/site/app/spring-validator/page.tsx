@@ -65,8 +65,8 @@ export default function SpringValidatorPage() {
             Material Design 3 Expressive introduced spring-based motion backed
             by 46 research studies. But M3 has <em>no published reduced-motion
             token</em> for springs. The spec describes spring physics (damping,
-            response) but does not address what happens when a user has
-            <code style={{ fontSize: '0.85rem' }}> prefers-reduced-motion: reduce</code>
+            response) but does not address what happens when a user has{' '}
+            <code style={{ fontSize: '0.85rem' }}>prefers-reduced-motion: reduce</code>{' '}
             set and a spring with a low damping ratio produces visible overshoot.
           </p>
           <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '70ch' }}>

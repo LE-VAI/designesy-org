@@ -59,7 +59,7 @@ const TENSIONS = [
   {
     dim: 'Durability',
     finding:
-      'Human contract page and machine export remain dual sources until a single generator owns both. That is an open tension, not a failure.',
+      'Human contract page and machine export remain dual sources until a single generator owns both. That is an open tension rather than a failure.',
     next: 'Token changes update both the human contract and the machine export together.',
   },
   {

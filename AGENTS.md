@@ -42,6 +42,10 @@ sources → principles → contracts → tools → systems → better designed w
   reader.
 - Quotations stay verbatim. Contract text changes only with its contract: the
   `*-contract.ts` modules and the `/contracts` pages move together.
+- The build holds the line: `scripts/check-voice.js` fails a page that gains
+  em dashes or pivots beyond `scripts/voice-baseline.json`, and
+  `scripts/check-jsx-glue.js` fails a sentence that wraps so JSX glues two
+  words together (add `{' '}` at the boundary).
 
 ## Workflow Expectation
 
