@@ -22,7 +22,7 @@
     "check-cross-engine-agreement": "node scripts/check-cross-engine-agreement.js"
   },
   "dependencies": {
-    "@designesy/read-along": "^0.2.1",
+    "@designesy/read-along": "^0.2.3",
     "@google/design.md": "0.4.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@sparticuz/chromium": "^149.0.0",
