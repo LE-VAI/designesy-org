@@ -132,45 +132,48 @@ export default function WhyPublicScorePage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Run it</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=designesy.org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score designesy.org</span>
-                <span className="row-meta">The verifier against its own publisher</span>
-              </span>
-            </Link>
-            <Link
-              href="/score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Score any URL</span>
-                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/what-is-design-verification"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">What is design verification?</span>
-                <span className="row-meta">The category definition this score belongs to</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=designesy.org"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score designesy.org</span>
+                  <span className="row-meta">The verifier against its own publisher</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Score any URL</span>
+                  <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/what-is-design-verification"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">What is design verification?</span>
+                  <span className="row-meta">The category definition this score belongs to</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

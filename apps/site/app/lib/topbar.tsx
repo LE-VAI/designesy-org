@@ -22,6 +22,50 @@ const NAV_ROUTES = [
   { href: '/docs', label: 'Docs' },
 ];
 
+// The phone menu's second tier. On a phone these pages were reachable only
+// through the footer's moving rails. Three groups of at most six, each under a
+// short label, below the five primary rows and styled as the lower tier: the
+// shape NN/g's menu research and Baymard's (~10 options at one level) point to.
+// Labels are the pages' own titles.
+const MORE_GROUPS = [
+  {
+    id: 'tools',
+    label: 'Tools',
+    links: [
+      { href: '/drift', label: 'Drift radar' },
+      { href: '/readiness', label: 'AI readiness' },
+      { href: '/compare', label: 'Compare' },
+      { href: '/monitor', label: 'Drift monitor' },
+      { href: '/guardrails', label: 'Guardrails' },
+      { href: '/badge', label: 'Badge' },
+    ],
+  },
+  {
+    id: 'scoring',
+    label: 'How scoring works',
+    links: [
+      { href: '/methodology', label: 'Methodology' },
+      { href: '/benchmarks', label: 'Benchmarks' },
+      { href: '/specs', label: 'Specs' },
+      { href: '/frameworks', label: 'Frameworks' },
+      { href: '/state-of-compliance', label: 'State of compliance' },
+      { href: '/changelog', label: 'Changelog' },
+    ],
+  },
+  {
+    id: 'explore',
+    label: 'Explore',
+    links: [
+      { href: '/work', label: 'Work' },
+      { href: '/review', label: 'Review' },
+      { href: '/labs', label: 'Labs' },
+      { href: '/open', label: 'Open' },
+      { href: '/continuity', label: 'Continuity' },
+      { href: '/pricing', label: 'Pricing' },
+    ],
+  },
+];
+
 function isActiveRoute(pathname: string, href: string) {
   if (pathname === href) return true;
   return pathname.startsWith(`${href}/`);
@@ -260,6 +304,32 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
               </Link>
             );
           })}
+        </nav>
+        <nav className="nav-drawer-more" aria-label="More pages">
+          {MORE_GROUPS.map((group) => (
+            <div className="nav-drawer-group" key={group.id}>
+              <p className="nav-drawer-group-label" id={`nav-more-${group.id}`}>
+                {group.label}
+              </p>
+              {/* role="list": Safari drops list semantics once list-style is none. */}
+              <ul className="nav-drawer-group-list" role="list" aria-labelledby={`nav-more-${group.id}`}>
+                {group.links.map((route) => {
+                  const active = isActiveRoute(pathname, route.href);
+                  return (
+                    <li key={route.href}>
+                      <Link
+                        href={route.href}
+                        className={active ? 'is-active' : undefined}
+                        aria-current={active ? 'page' : undefined}
+                      >
+                        {route.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
         {/* On phones the Studio pill tucks away while reading, so the menu
             carries the Studio as well. */}

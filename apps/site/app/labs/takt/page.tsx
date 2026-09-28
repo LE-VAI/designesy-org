@@ -422,84 +422,90 @@ export default function TaktLabPage() {
             </span>
           </Link>
           <div className="row-stack" role="list" style={{ marginTop: '1.5rem' }}>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/poise"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">Restrained interaction — motion, sound, reduced motion</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/contracts/design-system"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/kits/design-review"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Eight dimensions, portable agent prompt</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/review/poise"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Poise</span>
-                <span className="row-meta">Lab One reviewed — pass with notes</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/cadence"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab Three · Cadence</span>
-                <span className="row-meta">Text rhythm — scale, leading, tracking, measure</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/acoustics"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/poise"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">Restrained interaction — motion, sound, reduced motion</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/contracts/design-system"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/kits/design-review"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">Eight dimensions, portable agent prompt</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/review/poise"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Poise</span>
+                  <span className="row-meta">Lab One reviewed — pass with notes</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/cadence"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Three · Cadence</span>
+                  <span className="row-meta">Text rhythm — scale, leading, tracking, measure</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/acoustics"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

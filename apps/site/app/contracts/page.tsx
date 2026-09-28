@@ -335,261 +335,278 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Published now</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system · {CONTRACT_VERSION}</span>
-                <span className="row-meta">
-                  Human overview, full tables below, machine JSON export
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system · {CONTRACT_VERSION}</span>
+                  <span className="row-meta">
+                    Human overview, full tables below, machine JSON export
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/tokens"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Tokens · v0.1.0</span>
-                <span className="row-meta">
-                  W3C DTCG 2025.10 format conformance — color spaces, custom types, validation
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/tokens"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Tokens · v0.1.0</span>
+                  <span className="row-meta">
+                    W3C DTCG 2025.10 format conformance — color spaces, custom types, validation
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/a11y"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Accessibility · v0.1.0</span>
-                <span className="row-meta">
-                  WCAG 2.2 AA via axe-core 4.13.0 — 11 verification checks
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/a11y"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Accessibility · v0.1.0</span>
+                  <span className="row-meta">
+                    WCAG 2.2 AA via axe-core 4.13.0 — 11 verification checks
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/motion"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Motion · v0.1.0</span>
-                <span className="row-meta">
-                  Lottie spec v1.0.1 + Ten Non-Negotiable Motion Standards — 10 verification checks
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/motion"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Motion · v0.1.0</span>
+                  <span className="row-meta">
+                    Lottie spec v1.0.1 + Ten Non-Negotiable Motion Standards — 10 verification checks
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Poise adopted</span>
-                <span className="row-meta">
-                  Lab One interaction rules adopted in contract v0.1.1
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Poise adopted</span>
+                  <span className="row-meta">
+                    Lab One interaction rules adopted in contract v0.1.1
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Takt adopted</span>
-                <span className="row-meta">
-                  Lab Two interface-feel rules adopted in contract v0.1.2
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Takt adopted</span>
+                  <span className="row-meta">
+                    Lab Two interface-feel rules adopted in contract v0.1.2
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">07</span>
-              <span className="row-body">
-                <span className="row-title">Cadence adopted</span>
-                <span className="row-meta">
-                  Lab Three typography rules adopted in contract v0.1.3
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">07</span>
+                <span className="row-body">
+                  <span className="row-title">Cadence adopted</span>
+                  <span className="row-meta">
+                    Lab Three typography rules adopted in contract v0.1.3
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">08</span>
-              <span className="row-body">
-                <span className="row-title">Acoustics adopted</span>
-                <span className="row-meta">
-                  Lab Four acoustic mapping rules adopted in contract v0.3.0
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">08</span>
+                <span className="row-body">
+                  <span className="row-title">Acoustics adopted</span>
+                  <span className="row-meta">
+                    Lab Four acoustic mapping rules adopted in contract v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts#09e-copywriting"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">09</span>
-              <span className="row-body">
-                <span className="row-title">Copywriting adopted</span>
-                <span className="row-meta">
-                  UX copy principles adopted in {CONTRACT_VERSION} — NN/g, Polaris, Carbon, Fluent, HIG
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts#09e-copywriting"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">09</span>
+                <span className="row-body">
+                  <span className="row-title">Copywriting adopted</span>
+                  <span className="row-meta">
+                    UX copy principles adopted in {CONTRACT_VERSION} — NN/g, Polaris, Carbon, Fluent, HIG
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/skill"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">10</span>
-              <span className="row-body">
-                <span className="row-title">Agent skill export</span>
-                <span className="row-meta">
-                  SKILL.md format for AI coding agents — same source as JSON
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/skill"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">10</span>
+                <span className="row-body">
+                  <span className="row-title">Agent skill export</span>
+                  <span className="row-meta">
+                    SKILL.md format for AI coding agents — same source as JSON
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/designesy-org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">11</span>
-              <span className="row-body">
-                <span className="row-title">Field check</span>
-                <span className="row-meta">
-                  Live site reviewed against this contract
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/designesy-org"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">11</span>
+                <span className="row-body">
+                  <span className="row-title">Field check</span>
+                  <span className="row-meta">
+                    Live site reviewed against this contract
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/drift"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">12</span>
-              <span className="row-body">
-                <span className="row-title">Drift · v0.1.0</span>
-                <span className="row-meta">
-                  AI-generated UI drift detection — 12 checks for token fabrication, value variance, off-contract patterns
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/drift"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">12</span>
+                <span className="row-body">
+                  <span className="row-title">Drift · v0.1.0</span>
+                  <span className="row-meta">
+                    AI-generated UI drift detection — 12 checks for token fabrication, value variance, off-contract patterns
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/readiness"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">13</span>
-              <span className="row-body">
-                <span className="row-title">AI Readiness · v0.1.0</span>
-                <span className="row-meta">
-                  The 6th maturity axis — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/readiness"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">13</span>
+                <span className="row-body">
+                  <span className="row-title">AI Readiness · v0.1.0</span>
+                  <span className="row-meta">
+                    The 6th maturity axis — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/guardrails"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">14</span>
-              <span className="row-body">
-                <span className="row-title">Guardrails · v0.1.0</span>
-                <span className="row-meta">
-                  The product layer — emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/guardrails"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">14</span>
+                <span className="row-body">
+                  <span className="row-title">Guardrails · v0.1.0</span>
+                  <span className="row-meta">
+                    The product layer — emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/monitor"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">15</span>
-              <span className="row-body">
-                <span className="row-title">Monitor · v0.1.0</span>
-                <span className="row-meta">
-                  The continuous-governance layer — re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/monitor"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">15</span>
+                <span className="row-body">
+                  <span className="row-title">Monitor · v0.1.0</span>
+                  <span className="row-meta">
+                    The continuous-governance layer — re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/compare"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">16</span>
-              <span className="row-body">
-                <span className="row-title">Compare · v0.1.0</span>
-                <span className="row-meta">
-                  The diff engine — fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions: added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/compare"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">16</span>
+                <span className="row-body">
+                  <span className="row-title">Compare · v0.1.0</span>
+                  <span className="row-meta">
+                    The diff engine — fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions: added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/report"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">17</span>
-              <span className="row-body">
-                <span className="row-title">Report · v0.1.0</span>
-                <span className="row-meta">
-                  The synthesis capstone — fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/report"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">17</span>
+                <span className="row-body">
+                  <span className="row-title">Report · v0.1.0</span>
+                  <span className="row-meta">
+                    The synthesis capstone — fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 

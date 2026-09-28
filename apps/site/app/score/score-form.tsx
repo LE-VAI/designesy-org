@@ -248,6 +248,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // under the bar, below the fold, and the key's spinner was all that moved.
   // Only if they are still where they started it (they may have scrolled on).
   const resultsRef = useRef<HTMLDivElement | null>(null);
+  const verdictRef = useRef<HTMLParagraphElement | null>(null);
   const landRun = useRef<{ y: number } | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
   const filterSegmentedRef = useRef<HTMLDivElement>(null);
@@ -392,7 +393,15 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const { y } = landRun.current;
     landRun.current = null;
     if (Math.abs(window.scrollY - y) > 48) return;
-    requestAnimationFrame(() => bringIntoView(resultsRef.current));
+    // The loading log's live region leaves with the run, so the result itself
+    // was never announced: focus goes to the verdict line, which opens with
+    // the grade and score, if the visitor's focus is still in the form.
+    const active = document.activeElement;
+    const stillHere = !active || active === document.body || !!active.closest('.score-form');
+    requestAnimationFrame(() => {
+      bringIntoView(resultsRef.current);
+      if (stillHere) verdictRef.current?.focus({ preventScroll: true });
+    });
   }, [status]);
 
   async function runScore(targetUrl: string) {
@@ -762,8 +771,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {/* Verdict line — leads before the number (PSI verdict-first pattern).
                 The LottieHint check draws a one-shot confirmation when results
                 arrive — subtle, 0.4s, removed under reduced-motion. */}
-            <p className="score-verdict-line">
+            <p className="score-verdict-line" tabIndex={-1} ref={verdictRef}>
               <LottieHint type="check" size={20} trigger="visible" className="score-verdict-check" />
+              <span className="sr-only">Grade {result.grade}, {result.score}%. </span>
               {verdictLine(result)}
             </p>
 

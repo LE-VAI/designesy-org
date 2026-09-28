@@ -96,111 +96,118 @@ export default function KitsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open design intelligence</span>
-                <span className="row-meta">
-                  Package catalog · human + machine feed
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open design intelligence</span>
+                  <span className="row-meta">
+                    Package catalog · human + machine feed
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Review</span>
-                <span className="row-meta">
-                  Quality gate and public field checks
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Review</span>
+                  <span className="row-meta">
+                    Quality gate and public field checks
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">
-                  Portable values and verification · {CONTRACT_VERSION}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">
+                    Portable values and verification · {CONTRACT_VERSION}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">
-                  Source lab · rules adopted into contract v0.1.1
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">
+                    Source lab · rules adopted into contract v0.1.1
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab Two · Takt</span>
-                <span className="row-meta">
-                  Source lab · rules adopted into contract v0.1.2
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Two · Takt</span>
+                  <span className="row-meta">
+                    Source lab · rules adopted into contract v0.1.2
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Lab Three · Cadence</span>
-                <span className="row-meta">
-                  Source lab · rules adopted into contract v0.1.3
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Three · Cadence</span>
+                  <span className="row-meta">
+                    Source lab · rules adopted into contract v0.1.3
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">07</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">
-                  Source lab · rules adopted into contract v0.3.0
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">07</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">
+                    Source lab · rules adopted into contract v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 

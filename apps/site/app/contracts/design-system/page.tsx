@@ -234,212 +234,226 @@ export default function DesignSystemContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Surfaces</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts#design-system-contract"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Human contract</span>
-                <span className="row-meta">
-                  Full published contract on /contracts
+            <div role="listitem">
+              <Link
+                href="/contracts#design-system-contract"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Human contract</span>
+                  <span className="row-meta">
+                    Full published contract on /contracts
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system.json"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Machine export</span>
-                <span className="row-meta">/contracts/design-system.json</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/skill"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Agent skill</span>
-                <span className="row-meta">/contracts/skill — SKILL.md format for AI coding agents</span>
-              </span>
-            </Link>
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Open design intelligence</span>
-                <span className="row-meta">
-                  Package catalog · this contract is entry one
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system.json"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Machine export</span>
+                  <span className="row-meta">/contracts/design-system.json</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">
-                  Source lab · interaction rules adopted in v{c.interaction.adopted_in}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/skill"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Agent skill</span>
+                  <span className="row-meta">/contracts/skill — SKILL.md format for AI coding agents</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Lab Two · Takt</span>
-                <span className="row-meta">
-                  Source lab · interface-feel rules adopted in v{c.takt.adopted_in}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Open design intelligence</span>
+                  <span className="row-meta">
+                    Package catalog · this contract is entry one
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">07</span>
-              <span className="row-body">
-                <span className="row-title">Lab Three · Cadence</span>
-                <span className="row-meta">
-                  Source lab · typography rules adopted in v{c.cadence.adopted_in}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">
+                    Source lab · interaction rules adopted in v{c.interaction.adopted_in}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">08</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">
-                  Source lab · interaction-sound rules adopted in v{c.acoustic.adopted_in}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Two · Takt</span>
+                  <span className="row-meta">
+                    Source lab · interface-feel rules adopted in v{c.takt.adopted_in}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">09</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Poise</span>
-                <span className="row-meta">
-                  Kit One review that supported adoption
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">07</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Three · Cadence</span>
+                  <span className="row-meta">
+                    Source lab · typography rules adopted in v{c.cadence.adopted_in}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">10</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Takt</span>
-                <span className="row-meta">
-                  Kit One review that supported adoption
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">08</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">
+                    Source lab · interaction-sound rules adopted in v{c.acoustic.adopted_in}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">11</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Cadence</span>
-                <span className="row-meta">
-                  Kit One review that supported adoption
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">09</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Poise</span>
+                  <span className="row-meta">
+                    Kit One review that supported adoption
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">12</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Acoustics</span>
-                <span className="row-meta">
-                  Kit One review of Lab Four
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">10</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Takt</span>
+                  <span className="row-meta">
+                    Kit One review that supported adoption
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/designesy-org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">13</span>
-              <span className="row-body">
-                <span className="row-title">Public review</span>
-                <span className="row-meta">
-                  Field check of designesy.org against this contract
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">11</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Cadence</span>
+                  <span className="row-meta">
+                    Kit One review that supported adoption
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">14</span>
-              <span className="row-body">
-                <span className="row-title">Live verification</span>
-                <span className="row-meta">
-                  Score any URL against this contract — {ENGINE_CHECK_COUNT} checks, one grade
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">12</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Acoustics</span>
+                  <span className="row-meta">
+                    Kit One review of Lab Four
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/designesy-org"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">13</span>
+                <span className="row-body">
+                  <span className="row-title">Public review</span>
+                  <span className="row-meta">
+                    Field check of designesy.org against this contract
+                  </span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/score"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">14</span>
+                <span className="row-body">
+                  <span className="row-title">Live verification</span>
+                  <span className="row-meta">
+                    Score any URL against this contract — {ENGINE_CHECK_COUNT} checks, one grade
+                  </span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

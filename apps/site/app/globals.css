@@ -3085,6 +3085,31 @@ a.surface-card:active {
   }
 }
 
+/* Touch screens, and anyone who asked for reduced motion: the rails hold
+   still. A phone has no hover to pause them, and a link that moves under the
+   finger is a missed or wrong tap (WCAG 2.2.2, NN/g, Baymard: carousels and
+   tickers should not move on their own on mobile). Each rail becomes its
+   links, wrapped, once each: the loop's second copy is aria-hidden and goes. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .footer-dock-clip {
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+    touch-action: auto;
+    user-select: auto;
+  }
+  .footer-dock-track {
+    flex-wrap: wrap;
+    row-gap: var(--space-8);
+    width: auto;
+    margin-left: 0;
+    animation: none;
+  }
+  .footer-dock-track > [aria-hidden="true"] {
+    display: none;
+  }
+}
+
 .footer-link {
   font-size: 0.8rem;
   color: var(--muted);
@@ -3416,13 +3441,14 @@ a.surface-card:active {
   flex-shrink: 0;
 }
 
-/* Wraps each toggleable .row to carry role="listitem" (aria-pressed only valid
-   on interactive roles). display:contents lets the flex parent see the inner row
-   directly so the original layout is preserved. Only the wrapper: a .row that
-   is its own listitem (/changelog) keeps its box, or it loses its row styling
-   and, having no box, cannot be scrolled to by an in-page link. */
-.row-stack > [role="listitem"]:not(.row) {
-  display: contents;
+/* A row that is a link or a button sits in a wrapper that carries the list
+   item role (a link keeps its link role; aria-pressed is valid only on the
+   button). The wrapper is a real box, never display: contents, which some
+   browsers have dropped from the accessibility tree along with the role it
+   carried; the row fills it, as it filled the list before. A .row that is
+   its own listitem (/changelog) needs no wrapper. */
+.row-stack > [role="listitem"] > .row {
+  width: 100%;
 }
 
 /*
@@ -3808,10 +3834,9 @@ a.surface-card:active {
   border-top: 1px solid var(--line-faint);
 }
 
-/* ToggleRow wraps each .row in a div[role="listitem"]; preserve the between-rows
-   divider via the wrapper's sibling relationship since the buttons are no longer
-   direct siblings. */
-.row-stack > div + div > .row {
+/* Between rows, whether each sits in a wrapper or is its own list item. */
+.row-stack > * + [role="listitem"] > .row,
+.row-stack > * + .row {
   border-top: 1px solid var(--line-faint);
 }
 
@@ -4123,10 +4148,19 @@ button.row {
 }
 
 /* Wraps each .check-cell to carry role="listitem" (aria-pressed is only valid
-   on interactive roles). display:contents lets the grid see the cell directly
-   so the original layout is preserved. */
+   on interactive roles). The wrapper is a real box, never display: contents,
+   which some browsers have dropped from the accessibility tree together with
+   the list item role it carried (Safari and Chrome, re-broken as recently as
+   2025-26). The grid stretches the wrapper to the row, and the cell fills it:
+   the same layout as when the cell was the grid item. */
 .check-grid > [role="listitem"] {
-  display: contents;
+  display: flex;
+  min-width: 0;
+}
+
+.check-grid > [role="listitem"] > .check-cell {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* denser tiles for short labels (anatomy, maps, do-not lists) */
@@ -4748,6 +4782,9 @@ button.check-cell {
    away while reading on phones, so the menu carries it too. */
 @media (max-width: 720px) {
   .nav-drawer {
+    /* Nearly opaque: at 72% the page's blue primary button blurred through
+       behind a menu row and read as that row being selected. */
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
     /* Clear of an iPhone's status bar and home indicator: with
        viewport-fit=cover a fixed layer at 0.5rem sits under the clock. */
     top: max(0.5rem, env(safe-area-inset-top));
@@ -4785,6 +4822,38 @@ button.check-cell {
   }
   .nav-drawer-studio + .motion-toggle-row {
     margin-top: 0;
+  }
+  /* The second tier: smaller, two columns, under a hairline. */
+  .nav-drawer-more {
+    display: grid;
+    gap: var(--space-16);
+    margin-top: var(--space-12);
+    margin-bottom: var(--space-16);
+    padding-top: var(--space-16);
+    border-top: 1px solid var(--line);
+  }
+  .nav-drawer-group-label {
+    margin: 0 0 var(--space-4);
+    padding: 0 var(--space-12);
+    font: 500 0.6875rem/1rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+  .nav-drawer-group-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .nav-drawer .nav-drawer-group-list a {
+    min-height: 2.75rem;
+    margin: 0;
+    padding: var(--space-6) var(--space-12);
+    font-size: 0.9375rem;
+    line-height: 1.2;
   }
 }
 

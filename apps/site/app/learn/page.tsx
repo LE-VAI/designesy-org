@@ -69,24 +69,24 @@ export default function LearnPage() {
           </p>
           <div className="row-stack" role="list">
             {ARTICLES.map((article, i) => (
-              <Link
-                key={article.slug}
-                href={`/learn/${article.slug}`}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{article.title}</span>
-                  <span className="row-meta">
-                    {article.lede} · {article.meta}
+              <div role="listitem" key={article.slug}>
+                <Link
+                  href={`/learn/${article.slug}`}
+                  className="row"
+                  data-cuelume-hover="whisper"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
+                  <span className="row-body">
+                    <span className="row-title">{article.title}</span>
+                    <span className="row-meta">
+                      {article.lede} · {article.meta}
+                    </span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

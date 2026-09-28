@@ -560,66 +560,70 @@ export default function McpDocsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/docs"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Docs · orientation</span>
-                <span className="row-meta">
-                  Mission, principles, architecture, public voice
+            <div role="listitem">
+              <Link
+                href="/docs"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Docs · orientation</span>
+                  <span className="row-meta">
+                    Mission, principles, architecture, public voice
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Open design intelligence</span>
-                <span className="row-meta">
-                  Human index and machine feed of portable packages
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Open design intelligence</span>
+                  <span className="row-meta">
+                    Human index and machine feed of portable packages
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/open.json"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">open.json</span>
-                <span className="row-meta">
-                  Machine catalog — the same data the MCP server serves
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/open.json"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">open.json</span>
+                  <span className="row-meta">
+                    Machine catalog — the same data the MCP server serves
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">
-                  {CONTRACT_VERSION} — the contract behind designesy_contract
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">
+                    {CONTRACT_VERSION} — the contract behind designesy_contract
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 

@@ -201,58 +201,62 @@ export default function WhatIsDesignVerificationPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Where to see it</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score a URL</span>
-                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Read the contract</span>
-                <span className="row-meta">Designesy design system {CONTRACT_VERSION} — tokens, rules, behavior, verification</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/design-verification-vs-linting-vs-visual-regression"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Comparison article</span>
-                <span className="row-meta">Design verification vs design linting vs visual regression</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/why-we-built-a-public-design-score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Why a public score</span>
-                <span className="row-meta">The argument for publishing the grade instead of keeping it internal</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score a URL</span>
+                  <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Read the contract</span>
+                  <span className="row-meta">Designesy design system {CONTRACT_VERSION} — tokens, rules, behavior, verification</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/design-verification-vs-linting-vs-visual-regression"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Comparison article</span>
+                  <span className="row-meta">Design verification vs design linting vs visual regression</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/why-we-built-a-public-design-score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Why a public score</span>
+                  <span className="row-meta">The argument for publishing the grade instead of keeping it internal</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

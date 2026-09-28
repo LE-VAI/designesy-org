@@ -171,24 +171,24 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">Machine exports</h2>
           <div className="row-stack" role="list">
             {o.machine_exports.map((item, i) => (
-              <Link
-                className="row"
-                role="listitem"
-                href={item.path}
-                key={item.path}
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">
-                    {item.path} · {item.meta}
+              <div role="listitem" key={item.path}>
+                <Link
+                  className="row"
+                  href={item.path}
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">
+                      {item.path} · {item.meta}
+                    </span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -208,79 +208,84 @@ export default function OpenPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              className="row"
-              role="listitem"
-              href="/contracts/design-system"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">{CONTRACT_VERSION} · human + machine</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/kits/design-review"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">
-                  Portable agent prompt · human + machine
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/contracts/design-system"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">{CONTRACT_VERSION} · human + machine</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/open/handoff"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Open handoff pack</span>
-                <span className="row-meta">
-                  Share copy, agent prompt, verification paths
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/kits/design-review"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">
+                    Portable agent prompt · human + machine
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/review/keyboard"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Keyboard path · site-wide</span>
-                <span className="row-meta">
-                  Skip link, main landmark, shared chrome
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/open/handoff"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Open handoff pack</span>
+                  <span className="row-meta">
+                    Share copy, agent prompt, verification paths
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/docs"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Docs</span>
-                <span className="row-meta">
-                  Mission, principles, architecture
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/review/keyboard"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Keyboard path · site-wide</span>
+                  <span className="row-meta">
+                    Skip link, main landmark, shared chrome
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/docs"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Docs</span>
+                  <span className="row-meta">
+                    Mission, principles, architecture
+                  </span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -291,98 +296,104 @@ export default function OpenPage() {
             libraries. These are the external surfaces cited in the contract and labs.
           </p>
           <div className="row-stack" role="list">
-            <a
-              href="https://www.designtokens.org/"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">W3C Design Tokens Format Module 2025.10</span>
-                <span className="row-meta">Canonical token standard — color, dimension, motion (duration, cubicBezier, transition)</span>
-              </span>
-            </a>
-            <a
-              href="https://llmstxt.org"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">llms.txt</span>
-                <span className="row-meta">Agent-facing website context standard (Jeremy Howard, 2024)</span>
-              </span>
-            </a>
-            <a
-              href="https://agents.md"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">AGENTS.md</span>
-                <span className="row-meta">Repo-level agent guidance format (Linux Foundation, 60k+ projects)</span>
-              </span>
-            </a>
-            <a
-              href="https://github.com/Danilaa1/cuelume"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Cuelume v0.2.2</span>
-                <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi) — powers acoustic tokens</span>
-              </span>
-            </a>
-            <a
-              href="https://transitions.dev"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">transitions.dev</span>
-                <span className="row-meta">Transition gallery (Matthew Antalik) — duration scale cross-referenced in contract</span>
-              </span>
-            </a>
-            <a
-              href="https://github.com/google-labs-code/design.md"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="chime"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">design.md (Google Labs)</span>
-                <span className="row-meta">
-                  Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
+            <div role="listitem">
+              <a
+                href="https://www.designtokens.org/"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">W3C Design Tokens Format Module 2025.10</span>
+                  <span className="row-meta">Canonical token standard — color, dimension, motion (duration, cubicBezier, transition)</span>
                 </span>
-              </span>
-            </a>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://llmstxt.org"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">llms.txt</span>
+                  <span className="row-meta">Agent-facing website context standard (Jeremy Howard, 2024)</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://agents.md"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">AGENTS.md</span>
+                  <span className="row-meta">Repo-level agent guidance format (Linux Foundation, 60k+ projects)</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://github.com/Danilaa1/cuelume"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Cuelume v0.2.2</span>
+                  <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi) — powers acoustic tokens</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://transitions.dev"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">transitions.dev</span>
+                  <span className="row-meta">Transition gallery (Matthew Antalik) — duration scale cross-referenced in contract</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://github.com/google-labs-code/design.md"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="chime"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">design.md (Google Labs)</span>
+                  <span className="row-meta">
+                    Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
+                  </span>
+                </span>
+              </a>
+            </div>
           </div>
         </section>
 
