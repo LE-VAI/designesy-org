@@ -35,7 +35,7 @@ import {
   toneOf,
   scoreTone,
 } from '../lib/data/cohort';
-import { DataFigure, DataTable } from '../lib/data/figure';
+import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { BarList } from '../lib/data/bars';
 
 export const metadata: Metadata = pageMeta({
@@ -221,7 +221,7 @@ export default function StateOfCompliancePage() {
                 rows={CATS.map((c) => [
                   label(c.key),
                   CATEGORY_WEIGHTS[c.key],
-                  c.mean === null ? '–' : fmt(c.mean),
+                  c.mean === null ? <NotMeasured /> : fmt(c.mean),
                   c.scored,
                   c.failing,
                 ])}
@@ -274,10 +274,9 @@ export default function StateOfCompliancePage() {
                   numeric={[1, 2, 3]}
                   rows={M3_ROWS.map((r) => [
                     label(r.key),
-                    r.m3 === null ? '–' : fmt(r.m3),
-                    r.mean === null ? '–' : fmt(r.mean),
-                    r.m3 === null || r.mean === null
-                      ? '–'
+                    r.m3 === null ? <NotMeasured /> : fmt(r.m3),
+                    r.mean === null ? <NotMeasured /> : fmt(r.mean),
+                    r.m3 === null || r.mean === null ? <NotMeasured />
                       : `${r.m3 - r.mean >= 0 ? '+' : '−'}${fmt(Math.abs(round1(r.m3 - r.mean)))}`,
                   ])}
                 />

@@ -32,7 +32,7 @@ import {
   round1,
   scoreTone,
 } from '../../lib/data/cohort';
-import { DataFigure, DataTable } from '../../lib/data/figure';
+import { DataFigure, DataTable, NotMeasured } from '../../lib/data/figure';
 import { CohortStrip } from '../../lib/data/strip';
 import { BarList } from '../../lib/data/bars';
 import { SiteTable } from '../../lib/data/site-table';
@@ -218,8 +218,8 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
                 rows={rows.map((r) => [
                   label(r.key),
                   CATEGORY_WEIGHTS[r.key],
-                  r.c && r.c.score !== null ? fmt(r.c.score) : '–',
-                  r.mean === null ? '–' : fmt(r.mean),
+                  r.c && r.c.score !== null ? fmt(r.c.score) : <NotMeasured />,
+                  r.mean === null ? <NotMeasured /> : fmt(r.mean),
                   r.c?.pass ?? 0,
                   r.c?.warn ?? 0,
                   r.c?.fail ?? 0,

@@ -85,8 +85,8 @@ export default function DesignReviewKitPage() {
             <p>{k.handoff_line}</p>
           </div>
           <p className="surface-note">
-            Shows a human share line. Click copies the full agent prompt —
-            paste into your AI tool, replace the placeholders, run the review.
+            Shows a human share line. Click copies the full agent prompt:
+            paste it into your AI tool, replace the placeholders, run the review.
             Human face: this page. Machine face:{' '}
             <Link href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
@@ -114,8 +114,8 @@ export default function DesignReviewKitPage() {
         <section className="doctrine-section fade-up" id="anatomy">
           <h2 className="doctrine-heading">Kit anatomy</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Package map first — jump cells land on sections so the rest of the
-            kit does not have to be read as one long stack.
+            Package map first: jump cells land on sections, so the rest of the
+            kit reads in any order.
           </p>
           <CheckGrid
             dense

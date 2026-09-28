@@ -25,7 +25,7 @@ export default function ScoreBoltPage() {
       eyebrow="Score · Bolt"
       headline="Score your Bolt site"
       lede={`${ENGINE_CHECK_COUNT} checks. One grade. Built on Bolt? See how close you are to a published design contract.`}
-      body={`Bolt ships full-stack apps from prompts. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any Bolt-built URL and returns an honest grade — pass, fail, warn, or skip — against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with bolt.new — score it live to see where it stands today.`}
+      body={`Bolt ships full-stack apps from prompts. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any Bolt-built URL and returns an honest grade (pass, fail, warn, or skip) against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with bolt.new: score it live to see where it stands today.`}
       exampleUrl="bolt.new"
     />
   );

@@ -58,7 +58,7 @@ const VERIFY = [
   },
   {
     title: 'Handoff stays short',
-    meta: 'Share copy points at /open — no private control-plane names',
+    meta: 'Share copy points at /open, with no private control-plane names',
   },
 ];
 
@@ -113,8 +113,8 @@ export default function OpenHandoffPage() {
             <p>{o.handoff_line}</p>
           </div>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
-            Shows a short human line. Click copies the full agent brief —
-            paste into your AI tool so it can fetch open.json and apply packages.
+            Shows a short human line. Click copies the full agent brief:
+            paste it into your AI tool so it can fetch open.json and apply packages.
           </p>
         </section>
 

@@ -176,15 +176,15 @@ function convertValue(value: string, type: DTCGToken['$type']): unknown {
 // ── Description generation ──────────────────────────────────────────────────
 
 function describeToken(tokenName: string, type: DTCGToken['$type']): string {
-  if (tokenName.includes('ref-palette')) return `M3 reference palette token — raw color value`;
-  if (tokenName.includes('sys-color')) return `M3 system color token — semantic color role`;
-  if (tokenName.includes('sys-shape')) return `M3 system shape token — corner radius`;
+  if (tokenName.includes('ref-palette')) return `M3 reference palette token: raw color value`;
+  if (tokenName.includes('sys-color')) return `M3 system color token: semantic color role`;
+  if (tokenName.includes('sys-shape')) return `M3 system shape token: corner radius`;
   if (tokenName.includes('sys-motion-duration')) return `M3 motion duration token`;
   if (tokenName.includes('sys-motion-easing')) return `M3 motion easing token`;
   if (tokenName.includes('sys-typescale')) return `M3 typography token`;
   if (tokenName.includes('sys-elevation')) return `M3 elevation token`;
   if (tokenName.includes('sys-state')) return `M3 state layer token`;
-  if (tokenName.includes('comp-')) return `M3 component token — component-specific override`;
+  if (tokenName.includes('comp-')) return `M3 component token: component-specific override`;
   return `Material 3 ${type} token`;
 }
 
@@ -356,7 +356,7 @@ function validateDtcg(tokens: DTCGFile): { valid: boolean; checks: { name: strin
     detail: colorCount > 0
       ? structuredColors
         ? `${colorCount} colors use colorSpace + components format`
-        : `${colorCount} colors are bare strings — should use { colorSpace, components }`
+        : `${colorCount} colors are bare strings; they should use { colorSpace, components }`
       : 'No color tokens to check',
   });
 

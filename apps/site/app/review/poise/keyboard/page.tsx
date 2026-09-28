@@ -120,7 +120,7 @@ const ACTIVATION = [
   },
   {
     title: 'Buttons (press demo)',
-    meta: 'Space or Enter · press feedback is visual settle, not a route change',
+    meta: 'Space or Enter · press feedback is a visual settle on the same route',
   },
   {
     title: 'Sound toggle',
@@ -186,7 +186,7 @@ const RESULTS = [
 
 const METHOD = [
   'Open https://www.designesy.org/labs/poise in a desktop browser',
-  'Use keyboard only — Tab / Shift+Tab through the page',
+  'Use keyboard only: Tab / Shift+Tab through the page',
   'Confirm each stop matches the tab order table',
   'On buttons: Space and Enter activate without pointer',
   'On sound toggle: confirm aria-pressed flips and no audio on focus alone',
@@ -245,7 +245,7 @@ export default function PoiseKeyboardVerificationPage() {
             Public proof that Lab One controls are operable without a pointer.
           </p>
           <p className="surface-note">
-            This is a verification artifact, not a redesign. It records tab
+            This is a verification artifact. It records tab
             order, focus-visible criteria, activation rules, reduced-motion
             notes, and re-run method for /labs/poise.
           </p>
@@ -354,8 +354,8 @@ export default function PoiseKeyboardVerificationPage() {
 
         <div className="status-note">
           Keyboard-path verification for Lab One · Poise. Published so inclusion
-          claims cite proof, not intention. Site-wide route packets remain an
-          open system state — this artifact does not claim them.
+          claims cite proof. Site-wide route packets remain an open system
+          state; this artifact covers Lab One only.
         </div>
       </main>
 

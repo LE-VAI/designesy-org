@@ -32,8 +32,8 @@ export default function AcousticTokensPage() {
           </p>
           <p className="surface-note">
             No sound appears on a Designesy surface without a token name and a
-            rationale here. The W3C Design Tokens Format Module 2025.10 does
-            not define acoustic token types — this system is net-new relative
+            rationale here. The W3C Design Tokens Format Module 2025.10 does not
+            define acoustic token types; this system is net-new relative
             to the canonical standard.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -215,7 +215,7 @@ export default function AcousticTokensPage() {
 
         <div className="status-note">
           Acoustic token system v{acousticTokens.version}. Engine: {acousticTokens.engine}.
-          Net-new relative to W3C DTCG 2025.10 — proposed as a future token type
+          Net-new relative to W3C DTCG 2025.10; proposed as a future token type
           contribution via $type: sound with $extensions.designesy namespacing.
         </div>
       </main>

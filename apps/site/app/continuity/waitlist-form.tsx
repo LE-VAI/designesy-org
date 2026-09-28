@@ -100,7 +100,7 @@ export function ContinuityWaitlistForm() {
               <option value="solo">Solo builder / founder</option>
               <option value="designer">Product / brand designer</option>
               <option value="engineer">Engineer / agent operator</option>
-              <option value="studio">Studio (2–10)</option>
+              <option value="studio">Studio (2 to 10 people)</option>
               <option value="other">Other</option>
             </select>
           </span>

@@ -180,8 +180,8 @@ const RESULTS = [
 
 const METHOD = [
   'Open any public route on https://www.designesy.org',
-  'Press Tab once — confirm Skip to content appears and is first',
-  'Activate skip link — focus should land at main content',
+  'Press Tab once, then confirm Skip to content appears and is first',
+  'Activate the skip link; focus should land at main content',
   'Tab through wordmark, primary nav, sound toggle, then body controls',
   'Confirm focus-visible rings on each interactive control',
   'On sound toggle: Space/Enter flips aria-pressed; no audio on focus alone',
@@ -343,7 +343,7 @@ export default function SiteKeyboardPage() {
         <div className="status-note">
           Keyboard path is part of public legitimacy. If a new interactive
           pattern ships without native focus and activation, treat that as an
-          open tension — silence is not accessibility adoption.
+          open tension; silence is not accessibility adoption.
         </div>
       </main>
 

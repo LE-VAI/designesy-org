@@ -25,7 +25,7 @@ import {
   toneOf,
   type CohortSite,
 } from '../lib/data/cohort';
-import { DataFigure, DataTable } from '../lib/data/figure';
+import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { CohortStrip } from '../lib/data/strip';
 import { CategoryProfile } from '../lib/data/cells';
 
@@ -266,7 +266,7 @@ export default function LeaderboardPage() {
                   s.name,
                   ...BATCH_CATEGORIES.map((k) => {
                     const c = s.categories?.[k];
-                    return c && c.score !== null ? fmt(c.score) : '–';
+                    return c && c.score !== null ? fmt(c.score) : <NotMeasured />;
                   }),
                 ])}
               />

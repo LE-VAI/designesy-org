@@ -35,7 +35,7 @@ const DIMENSIONS = [
     num: '02',
     title: 'Clarity',
     observation:
-      'Primary path is immediate: pick a look, pick an accent, compose tiles, download set. Human language leads — Opening, Main point, Proof, Detail, Ending — not role jargon.',
+      'Primary path is immediate: pick a look, pick an accent, compose tiles, download set. Human language leads (Opening, Main point, Proof, Detail, Ending) in place of role jargon.',
     judgment:
       'Primary action is discoverable. The tool does not explain itself before it works. One screen, one job.',
     action: 'Keep the human-language labels. Do not expose grammar terminology in the public UI.',
@@ -46,7 +46,7 @@ const DIMENSIONS = [
     observation:
       'Self-contained single index.html, no framework, no CDN, no backend. Deployed on GitHub Pages. Screen-records cleanly in 10 to 20 seconds. Works on desktop and mobile.',
     judgment:
-      'Context fit is strong — the deployment pattern is minimal and portable. No dependency risk.',
+      'Context fit is strong: the deployment pattern is minimal and portable. No dependency risk.',
     action: 'Keep the zero-dependency deployment pattern. Document it as the reference for future tools.',
   },
   {
@@ -55,17 +55,17 @@ const DIMENSIONS = [
     observation:
       'Dark default with four look options (Dark, Paper, Slate, Night). Six accent options including Muted. No required audio, no required motion. Keyboard-navigable controls.',
     judgment:
-      'Inclusion is structural — look options and accent variety are first-class, not afterthoughts. No dark-pattern defaults.',
+      'Inclusion is structural: look options and accent variety are first-class. No dark-pattern defaults.',
     action: 'Keep the look variety. Add a reduced-motion audit when motion is introduced.',
   },
   {
     num: '05',
     title: 'System coherence',
     observation:
-      'Visual system aligns with VAI brand: dark default, VAI yellow signal #FFC400. Designesy activation yellow #FECC34 is deliberately suppressed in the VAI surface. The tool follows the same deployment pattern as Continuity.',
+      'Visual system aligns with VAI brand: dark default, VAI yellow accent #FFC400. Designesy activation yellow #FECC34 is deliberately suppressed in the VAI surface. The tool follows the same deployment pattern as Continuity.',
     judgment:
       'Coherent within the VAI surface. The Designesy graduation path is documented: Lab feel on LE-VAI, then contract, then series production for Designesy public surfaces.',
-    action: 'Keep the VAI/Designesy separation explicit. When Tile graduates to Designesy /labs, use Designesy tokens, not VAI yellow.',
+    action: 'Keep the VAI/Designesy separation explicit. When Tile graduates to Designesy /labs, switch from VAI yellow to Designesy tokens.',
   },
   {
     num: '06',
@@ -80,38 +80,38 @@ const DIMENSIONS = [
     num: '07',
     title: 'Delight',
     observation:
-      'Re-harmonizing the whole set from one spine change is the delight moment. No glow, no bounce, no particle trail. The emotional quality is precision, not spectacle.',
+      'Re-harmonizing the whole set from one spine change is the delight moment. No glow, no bounce, no particle trail. The emotional quality is precision.',
     judgment:
-      'Delight is earned. The tool feels good to use because the composition model is strong, not because of decorative effects.',
+      'Delight is earned. The tool feels good to use because the composition model is strong.',
     action: 'Keep restraint. Reject proposals to add animations or effects that do not serve composition.',
   },
   {
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in the tool. Export is plain — ordered PNGs, set.json, README.txt, no watermark or lock-in. Publication on X used a one-word root post with a screen recording.',
+      'No dark pattern in the tool. Export is plain: ordered PNGs, set.json, README.txt, with no watermark or lock-in. Publication on X used a one-word root post with a screen recording.',
     judgment:
-      'Export format shows the tool as it is. The publication format was chosen to show the tool, not to manipulate reach.',
+      'Export format shows the tool as it is. The publication format was chosen to show the tool honestly.',
     action: 'Keep the publication format. Do not add engagement hooks to the tool or the post copy.',
   },
 ];
 
 const FINDINGS = [
   'Purpose is sharp: compose a series grid that stays related without template energy',
-  'Zero-dependency deployment — single index.html, no framework, no CDN',
-  'Human-language labels lead, not grammar jargon',
-  'Full documentation: BRIEF, STATUS, HOST — intent through hosting',
+  'Zero-dependency deployment: single index.html, no framework, no CDN',
+  'Human-language labels lead in place of grammar jargon',
+  'Full documentation: BRIEF, STATUS, HOST, from intent through hosting',
   'Publication format: one word + screen recording = 617 views (breakout)',
   'Designesy graduation path documented and gated',
-  'VAI surface, not Designesy surface — graduation requires token reconciliation',
-  'No machine export yet — tile.json would make the tool machine-consumable',
-  'Single engagement data point — 617 views is one post on one day',
+  'Built on the VAI surface; graduating to Designesy requires token reconciliation',
+  'No machine export yet; tile.json would make the tool machine-consumable',
+  'Single engagement data point: 617 views is one post on one day',
 ];
 
 const SOURCES = [
   {
     href: 'https://le-vai.github.io/tile/',
-    title: 'Tile — live artifact',
+    title: 'Tile · live artifact',
     meta: 'Interactive series composer',
   },
   {
@@ -131,7 +131,7 @@ const SOURCES = [
   },
   {
     href: '/work',
-    title: 'Work — case studies',
+    title: 'Work · case studies',
     meta: 'Index',
   },
 ];
@@ -152,7 +152,7 @@ export default function TileCaseStudyPage() {
           </p>
           <h1 className="surface-title">Tile</h1>
           <p className="surface-lede">
-            Interactive series composer — one story, many tiles, shared spine.
+            Interactive series composer: one story, many tiles, shared spine.
           </p>
           <p className="surface-note">
             A self-contained tool for composing visual tile series from one
@@ -175,9 +175,9 @@ export default function TileCaseStudyPage() {
             <p className="definition-label">Outcome · pass with notes</p>
             <p>
               Tile is a considered tool. The live artifact proves a composition
-              model — one spine, many tiles, human-language roles, zero
+              model: one spine, many tiles, human-language roles, zero
               dependencies. Published with a one-word root post and screen
-              recording, it earned 617 views on X — the only post in 24 hours
+              recording, it earned 617 views on X, the only post in 24 hours
               to break out of the 20 to 60 view noise floor. Remaining work:
               Designesy graduation, machine export, and format re-testing.
             </p>
@@ -236,7 +236,7 @@ export default function TileCaseStudyPage() {
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Dimension findings</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each dimension: observation, judgment, action — Kit One format.
+            Each dimension in Kit One format: observation, judgment, action.
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (

@@ -47,7 +47,7 @@ export default function DriftContractPage() {
             <p>{c.source_authority.drift_modes}</p>
           </div>
           <div className="definition">
-            <p className="definition-label">Scale signal</p>
+            <p className="definition-label">Scale of the problem</p>
             <p>{c.source_authority.scale_signal}</p>
           </div>
           <div className="definition">
@@ -82,7 +82,7 @@ export default function DriftContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -129,8 +129,8 @@ export default function DriftContractPage() {
 
         <div className="status-note">
           The drift contract is the first scoring engine that detects
-          AI-generated UI drift deterministically — not prose advice, but
-          12 checks against compiled CSS. <Link href={c.machine_url}>Machine export</Link>.
+          AI-generated UI drift deterministically: 12 checks against compiled
+          CSS. <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>
 

@@ -80,7 +80,7 @@ export default function TokensContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification — <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>

@@ -41,8 +41,8 @@ export default function WorkPage() {
             contract.
           </p>
           <p className="surface-note">
-            The pipeline promises to turn tools into better designed work. These are
-            the artifacts — real tools, real publication, real engagement,
+            The pipeline promises to turn tools into better designed work. These
+            are the artifacts: real tools, real publication, real engagement,
             reviewed with Use Kit One. The review format is the same
             eight-dimension method used on Labs and the public surface itself.
             Before/after scores are real values from the live /api/score
@@ -90,11 +90,11 @@ export default function WorkPage() {
             <p>
               Sources become principles. Principles become contracts. Contracts
               become tools. Tools become better designed work. These case
-              studies are the evidence for that last step — shipped artifacts,
+              studies are the evidence for that last step: shipped artifacts,
               reviewed against the contract, with engagement metrics and
               documented outcomes. The before/after pattern is newer: it
-              scores a real URL, fixes the gaps, and scores again — on the
-              same engine, with the same thresholds, as every other site.
+              scores a real URL, fixes the gaps, and scores again on the same
+              engine, with the same thresholds, as every other site.
             </p>
           </div>
         </section>

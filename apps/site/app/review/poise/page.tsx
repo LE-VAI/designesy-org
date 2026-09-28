@@ -43,7 +43,7 @@ const DIMENSIONS = [
     num: '03',
     title: 'Context',
     observation:
-      'Built for the public designesy.org surface — dark foundation, shared topbar, institutional voice. Demo assumes desktop and mobile browsers; long anatomy sections still ask for scroll patience on small screens.',
+      'Built for the public designesy.org surface: dark foundation, shared topbar, institutional voice. Demo assumes desktop and mobile browsers; long anatomy sections still ask for scroll patience on small screens.',
     judgment:
       'Context fits a public lab. Dense doctrine below the fold is acceptable; the live artifact stays above the scroll of judgment.',
     action:
@@ -55,9 +55,9 @@ const DIMENSIONS = [
     observation:
       'prefers-reduced-motion collapses non-essential animation. Sound is opt-in and defaults off under reduced motion. Buttons are standard controls with focus-visible from the system. Keyboard-path verification for Poise is published at /review/poise/keyboard.',
     judgment:
-      'Structural inclusion is real for motion, sound, and keyboard proof on this lab. Site-wide route packets remain open — this packet covers Poise only.',
+      'Structural inclusion is real for motion, sound, and keyboard proof on this lab. Site-wide route packets remain open; this packet covers Poise only.',
     action:
-      'Keep the Poise keyboard artifact current when controls change. Expand to other routes as separate packets, not silent claims.',
+      'Keep the Poise keyboard artifact current when controls change. Expand to other routes as separate, published packets.',
   },
   {
     num: '05',
@@ -92,20 +92,20 @@ const DIMENSIONS = [
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in sound or motion. Preference and reduced motion are first-class. Public naming stays human (Poise), not research-demo jargon. Adoption into v0.1.1 is explicit and public.',
+      'No dark pattern in sound or motion. Preference and reduced motion are first-class. Public naming stays human (Poise), free of research-demo jargon. Adoption into v0.1.1 is explicit and public.',
     judgment:
       'Status is explicit: live experiment whose rules are now contract material. Status accuracy is a standing hold.',
     action:
-      'Keep status language accurate. Future rule changes require a new contract version, not silent edits.',
+      'Keep status language accurate. Future rule changes require a new contract version.',
   },
 ];
 
 const HOLDS = [
   'Thesis is sharp: if the response is louder than the action, it fails',
   'Live artifact demonstrates wordmark, press, sound preference, reduced motion',
-  'Token-cited behaviors — no anonymous taste motion',
+  'Token-cited behaviors; no anonymous taste motion',
   'Full lab anatomy shipped (thesis through verification)',
-  'Public name is human and premium — Poise',
+  'Public name is human and premium: Poise',
   'Interaction rules adopted into design system contract v0.1.1',
 ];
 
@@ -124,7 +124,7 @@ const TENSIONS = [
   },
   {
     title: 'Lab remains the demo surface',
-    meta: 'Adopted rules still need the live lab for inspectable proof — do not archive Poise',
+    meta: 'Adopted rules still need the live lab for inspectable proof; do not archive Poise',
   },
 ];
 
@@ -135,7 +135,7 @@ const CORRECTIONS = [
   },
   {
     title: 'Version future interaction changes',
-    meta: 'New contact rules require a contract bump after v0.1.1 — not silent edits',
+    meta: 'New contact rules require a contract bump after v0.1.1, never silent edits',
   },
   {
     title: 'Expand keyboard packets route by route',
@@ -209,8 +209,8 @@ export default function PoiseFieldCheckPage() {
             Lab One reviewed with Use Kit One · Design Review.
           </p>
           <p className="surface-note">
-            This packet applies the public Design Review kit to a live
-            experiment — not the whole site. Outcome leads with consequences:
+            This packet applies the public Design Review kit to a single live
+            experiment. Outcome leads with consequences:
             what holds, what stays open, and what to do next.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -229,11 +229,11 @@ export default function PoiseFieldCheckPage() {
             <p>
               Poise is a considered lab. The live artifact proves restrained
               contact: opacity-only wordmark breath, short press settle, opt-in
-              sound, and reduced-motion respect — all token-cited. Full anatomy
+              sound, and reduced-motion respect, all token-cited. Full anatomy
               is present. Keyboard-path verification is published. Interaction
               rules are adopted into design system contract v0.1.1. Remaining
-              work is synchronization and site-wide proof expansion — not
-              re-arguing adoption.
+              work is synchronization and site-wide proof expansion; adoption is
+              settled.
             </p>
           </div>
         </section>
@@ -279,7 +279,7 @@ export default function PoiseFieldCheckPage() {
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Dimension findings</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each dimension: observation, judgment, action — Kit One format.
+            Each dimension in Kit One format: observation, judgment, action.
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (

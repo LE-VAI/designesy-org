@@ -49,7 +49,7 @@ export default function ReviewPage() {
           <p className="surface-eyebrow" data-scramble>Quality gate</p>
           <h1 className="surface-title" data-scramble>Review</h1>
           <p className="surface-lede">
-            Review leads with consequences, not personal taste.
+            Review leads with consequences and evidence.
           </p>
           <p className="surface-note">
             Designesy Review is the quality-control layer for interfaces,
@@ -95,7 +95,7 @@ export default function ReviewPage() {
           <p className="surface-note">
             Functional is the baseline. Considered is the bar. An artifact is
             ready when every dimension above has been checked, tradeoffs have
-            been named, and the remaining tensions are documented — not hidden.
+            been named, and the remaining tensions are documented in the open.
           </p>
         </section>
 
@@ -117,8 +117,8 @@ export default function ReviewPage() {
                 Kit One output format on the live lab.
               </p>
               <p className="lab-card-desc">
-                Eight dimensions, holds, tensions, corrections, and keyboard-path
-                proof — rules adopted into contract v0.1.1.
+                Eight dimensions, holds, tensions, corrections, and
+                keyboard-path proof, with rules adopted into contract v0.1.1.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
@@ -137,7 +137,7 @@ export default function ReviewPage() {
                 Kit One output format on the interface-feel lab.
               </p>
               <p className="lab-card-desc">
-                Radii, press scale, outlines, hit areas, stagger — five takt
+                Radii, press scale, outlines, hit areas, and stagger: five takt
                 rules adopted into contract v0.1.2.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -158,7 +158,7 @@ export default function ReviewPage() {
               </p>
               <p className="lab-card-desc">
                 Font smoothing, scale, leading, tracking, measure, text-wrap,
-                tabular numbers, selection — 10 cadence rules adopted into
+                tabular numbers, and selection: 10 cadence rules adopted into
                 contract v0.1.3.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -178,7 +178,7 @@ export default function ReviewPage() {
                 Kit One output format on the interaction sound lab.
               </p>
               <p className="lab-card-desc">
-                Nineteen cues, nineteen roles, Cuelume v0.2.2 — nine acoustic
+                Nineteen cues, nineteen roles, Cuelume v0.2.2: nine acoustic
                 mapping rules adopted into contract v0.3.0.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -198,7 +198,7 @@ export default function ReviewPage() {
                 Public review against design system contract {CONTRACT_VERSION}.
               </p>
               <p className="lab-card-desc">
-                Holds, tensions, and standing rules for the live site — including
+                Holds, tensions, and standing rules for the live site, including
                 Poise, Takt, Cadence, and Acoustics.
               </p>
               <span className="lab-card-arrow">Open review →</span>
@@ -218,7 +218,7 @@ export default function ReviewPage() {
                 Site-wide skip link, tab order, and focus-visible proof.
               </p>
               <p className="lab-card-desc">
-                Shared chrome packet for every public route — complements the
+                Shared chrome packet for every public route, complementing the
                 Lab One keyboard path.
               </p>
               <span className="lab-card-arrow">Open keyboard path →</span>
@@ -247,7 +247,7 @@ export default function ReviewPage() {
               Portable package of these dimensions for agents and teams.
             </p>
             <p className="lab-card-desc">
-              Prompt, output format, verification, and anti-patterns — ready to
+              Prompt, output format, verification, and anti-patterns, ready to
               hand off as a shareable path.
             </p>
             <span className="lab-card-arrow">Open kit →</span>
@@ -358,7 +358,7 @@ export default function ReviewPage() {
           Review language and quality discipline for public artifacts. Published
           reviews live under /review. Field checks for Poise, Takt, Cadence,
           Acoustics, the public surface, and keyboard paths judge against the
-          live contract — not taste.
+          live contract.
         </div>
       </main>
 

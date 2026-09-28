@@ -33,12 +33,12 @@ const KIT_ANATOMY = [
 ];
 
 const KIT_BOUNDARIES = [
-  'Portable instruction packages, not loose prompt sets',
-  'Named methods with verification, not template commerce',
-  'Contract-cited, not contract replacements',
-  'Permission-scoped, not open agent authorizations',
-  'Reusable methods, not opinion posts',
-  'Published kits, not placeholder cards',
+  'Portable instruction packages',
+  'Named methods with verification',
+  'Contract-cited, working alongside the contract',
+  'Permission-scoped agent authorizations',
+  'Reusable methods',
+  'Published, working kits',
 ];
 
 export default function KitsPage() {
@@ -80,7 +80,7 @@ export default function KitsPage() {
             </p>
             <p className="lab-card-desc">
               Eight dimensions, a portable agent prompt, output format, and
-              verification — for interfaces, systems, and agent output.
+              verification for interfaces, systems, and agent output.
             </p>
             <span className="lab-card-arrow">Open kit →</span>
           </Link>

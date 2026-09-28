@@ -161,13 +161,13 @@ function verdictLine(r: ScoreResponse): string {
   const total = r.total ?? 0;
   const fails = r.fail ?? 0;
   if (fails === 0 && (r.warn ?? 0) <= Math.max(1, Math.floor(total * 0.15))) {
-    return 'Strong conformance — this design system reads as engineered, not assembled.';
+    return 'Strong conformance: this design system reads as engineered rather than assembled.';
   }
   if (fails > 0) {
     const worst = topCategories(r, 'worst');
-    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? ` — weakest in ${worst.label}` : ''}.`;
+    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
   }
-  return 'Partial conformance — passes the floor, but the contract sees warnings the eye forgives.';
+  return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
 }
 
 // Strongest / weakest scored categories for the hero meta line.
@@ -471,7 +471,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       playExtended('processing-stop');
       if (soundIsEnabled()) playExtended('error');
       setStatus('error');
-      setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
+      setResult({ ok: false, error: 'Network error: could not reach the scoring server.' });
     }
   }
 
@@ -580,7 +580,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // in the text causes X's crawler to attach a card for the scored brand instead
   // of the Designesy grade card.
   const shareText = result?.grade
-    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%) — see the full design-system audit`
+    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%). See the full design-system audit`
     : `Score any site against the Designesy design system contract`;
 
   function copyShareLink() {
@@ -691,12 +691,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         for (const c of merged.filter((c) => c.status === 'FAIL')) {
           let cap: number | null = null;
           let reason: string | null = null;
-          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum — text is unreadable for many users.'; }
-          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA — the most important interaction on the page is hard to read.'; }
-          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected — content is cut off or scrolls sideways on smaller viewports.'; }
-          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target — inaccessible on touch devices.'; }
-          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels — document outline is broken.'; }
-          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px — triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
+          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
+          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target, which makes them inaccessible on touch devices.'; }
+          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: the document outline is broken.'; }
+          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom and breaks mobile UX.'; }
           if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
         }
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
@@ -705,7 +705,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setAuditStatus('ok');
     } catch {
       setAuditStatus('error');
-      setAuditError('Network error — could not reach the audit server.');
+      setAuditError('Network error: could not reach the audit server.');
     }
   }
 
@@ -921,7 +921,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                           style={{ width: `${Math.round(animatedCatScores[k] ?? 0)}%`, ['--bar-i' as string]: i }}
                         />
                       </span>
-                      <span className="score-cat-legend-score">{cat.score === null ? '—' : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
+                      <span className="score-cat-legend-score">{cat.score === null ? <><span aria-hidden="true">–</span><span className="sr-only">Not measured</span></> : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
                     </button>
                   </li>
                 );
@@ -931,10 +931,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {/* Score-scale legend — per Lighthouse PR #8121: never show a
                 colored gauge without a legend so users can verify the bands. */}
             <div className="score-scale-legend" aria-hidden="true">
-              <span className="score-scale-band is-fail"><span className="score-scale-dot" />0–49 Fail</span>
-              <span className="score-scale-band is-warn"><span className="score-scale-dot" />50–69 Needs work</span>
-              <span className="score-scale-band is-pass"><span className="score-scale-dot" />70–89 Good</span>
-              <span className="score-scale-band is-a"><span className="score-scale-dot" />90–100 Excellent</span>
+              <span className="score-scale-band is-fail"><span className="score-scale-dot" />Fail: 0 to 49</span>
+              <span className="score-scale-band is-warn"><span className="score-scale-dot" />Needs work: 50 to 69</span>
+              <span className="score-scale-band is-pass"><span className="score-scale-dot" />Good: 70 to 89</span>
+              <span className="score-scale-band is-a"><span className="score-scale-dot" />Excellent: 90 to 100</span>
             </div>
 
             {/* Scoring rubric — Socket.dev published-math pattern. The exact
@@ -957,8 +957,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {rubricOpen && (
                 <div className="score-rubric-body" id="score-rubric-body">
                   <p className="score-rubric-formula">
-                    score = Σ (category<sub>earned</sub> / category<sub>weight</sub>) × 100 —
-                    PASS 1.0 · WARN 0.5 · FAIL 0, MANUAL + N/A excluded. Each category contributes its
+                    score = Σ (category<sub>earned</sub> /
+                    category<sub>weight</sub>) × 100. PASS 1.0 · WARN 0.5 · FAIL
+                    0; MANUAL and N/A excluded. Each category contributes its
                     full contract weight, split evenly across its checks. Accessibility &lt; 60% caps the grade at C.
                   </p>
                   <ol className="score-rubric-weights">
@@ -1043,7 +1044,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 ) : auditStatus === 'ok' ? (
                   'Audit complete ✓'
                 ) : auditStatus === 'error' ? (
-                  'Audit failed — retry'
+                  'Audit failed · retry'
                 ) : (
                   'Run full browser audit'
                 )}
@@ -1053,7 +1054,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 href={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
                 className="score-action-btn"
                 data-cuelume-press="tick"
-                title="Open the full verification report — shareable URL, print-friendly."
+                title="Open the full verification report: shareable URL, print-friendly."
               >
                 View full report →
               </a>
@@ -1176,7 +1177,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {result.originality && result.originality.signals.length > 0 && (
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-originality">
-                    Originality — positive craft signals
+                    Originality: positive craft signals
                     <span className="score-signals-group-chip">+{animatedCounts.origPoints}pt{result.originality.points !== 1 ? 's' : ''}{result.originality.slopGateApplied ? ' · slop-gated ×0.5' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
@@ -1196,7 +1197,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               {result.slop && result.slop.findings.length > 0 && (
                 <div className="score-signals-group">
                   <p className="score-signals-group-title is-slop">
-                    Anti-slop — generic/template patterns
+                    Anti-slop: generic/template patterns
                     <span className="score-signals-group-chip is-neg">−{animatedCounts.slopTotal}pt{result.slop.total !== 1 ? 's' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
@@ -1467,7 +1468,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <span className="score-a11y-floor-notice"> · Anti-slop: −{result.slop.total}pt{result.slop.total !== 1 ? 's' : ''} ({result.slop.findings.length} pattern{result.slop.findings.length !== 1 ? 's' : ''} detected)</span>
             )}
             {result.originality && result.originality.points > 0 && (
-              <span className="score-originality-notice"> · Originality: +{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''} — {result.originality.summary}{result.originality.slopGateApplied ? ' (halved by anti-slop gate)' : ''}</span>
+              <span className="score-originality-notice"> · Originality: +{result.originality.points}pt{result.originality.points !== 1 ? 's' : ''}, {result.originality.summary}{result.originality.slopGateApplied ? ' (halved by anti-slop gate)' : ''}</span>
             )}
           </p>
         </div>
@@ -1477,7 +1478,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-welcome-card">
           <p className="score-welcome-title">Legitimacy Audit Engine</p>
           <p className="score-hint">
-            Enter any public website URL above — no https:// needed. We fetch its CSS,
+            Enter any public website URL above (no https:// needed). We fetch its CSS,
             extract design tokens, and evaluate {ENGINE_CHECK_COUNT} verification checks against the Designesy
             contract {CONTRACT_VERSION}. Real-time. No login required.
           </p>

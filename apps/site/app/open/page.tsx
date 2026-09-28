@@ -72,7 +72,7 @@ export default function OpenPage() {
           <p className="surface-note">
             Portable design rules, prompts, and verification people and agents
             can fetch, run, and remix. This is the canonical Designesy
-            reference — human index and machine feed stay synchronized.
+            reference: human index and machine feed stay synchronized.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Public</span>
@@ -121,7 +121,7 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">Packages</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Live portable cargo. Machine URLs are CORS-open JSON for agents and
-            tools. Each package carries a spoken abstract — automated voice,
+            tools. Each package carries a spoken abstract: automated voice,
             synthesized at build time, served as static audio.
           </p>
           <div className="row-stack" role="list">
@@ -308,7 +308,7 @@ export default function OpenPage() {
                 <span className="row-index">01</span>
                 <span className="row-body">
                   <span className="row-title">W3C Design Tokens Format Module 2025.10</span>
-                  <span className="row-meta">Canonical token standard — color, dimension, motion (duration, cubicBezier, transition)</span>
+                  <span className="row-meta">Canonical token standard: color, dimension, motion (duration, cubicBezier, transition)</span>
                 </span>
               </a>
             </div>
@@ -356,7 +356,7 @@ export default function OpenPage() {
                 <span className="row-index">04</span>
                 <span className="row-body">
                   <span className="row-title">Cuelume v0.2.2</span>
-                  <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi) — powers acoustic tokens</span>
+                  <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi): powers acoustic tokens</span>
                 </span>
               </a>
             </div>
@@ -372,7 +372,7 @@ export default function OpenPage() {
                 <span className="row-index">05</span>
                 <span className="row-body">
                   <span className="row-title">transitions.dev</span>
-                  <span className="row-meta">Transition gallery (Matthew Antalik) — duration scale cross-referenced in contract</span>
+                  <span className="row-meta">Transition gallery (Matthew Antalik): duration scale cross-referenced in contract</span>
                 </span>
               </a>
             </div>
@@ -389,7 +389,7 @@ export default function OpenPage() {
                 <span className="row-body">
                   <span className="row-title">design.md (Google Labs)</span>
                   <span className="row-meta">
-                    Input format for AI coding agents — YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
+                    Input format for AI coding agents: YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
                   </span>
                 </span>
               </a>
