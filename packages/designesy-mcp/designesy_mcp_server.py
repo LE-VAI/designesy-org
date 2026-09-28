@@ -1321,9 +1321,11 @@ def _contrast_ratio(fg: str, bg: str) -> float:
 def _score_remote(url: str) -> dict[str, Any] | None:
     """POST to the canonical 42-check engine at /api/score.
 
-    The site API is the single source of truth for the v0.4.0 contract
-    (42 checks, 14 categories). Returns the normalized response, or None
-    if the API is unreachable (caller falls back to the local engine).
+    The site API is the single source of truth for the contract it serves
+    (42 checks, 14 categories). The version is reported from that reply, not
+    asserted here, so this docstring names no version to fall stale.
+    Returns the normalized response, or None if the API is unreachable
+    (caller falls back to the local engine).
     """
     try:
         req = urllib.request.Request(
@@ -1366,8 +1368,13 @@ def _score_remote(url: str) -> dict[str, Any] | None:
             }
             for c in checks
         ],
-        "note": (
-            f"Canonical 42-check engine (v0.4.0). {data.get('pass', 0)} passed, "
+            "note": (
+                # Version read from the engine's own reply rather than pinned
+                # here. This read "v0.4.0" while the site served v0.4.1: a
+                # second copy of a fact the response already carries, which is
+                # the shape that drifts every time the contract moves.
+                f"Canonical 42-check engine ({data.get('contractVersion', 'unknown')}). "
+                f"{data.get('pass', 0)} passed, "
             f"{data.get('fail', 0)} failed, {data.get('warn', 0)} warned, "
             f"{data.get('skip', 0)} skipped, {data.get('manual', 0)} manual "
             f"(browser-only). Score {round(data.get('score', 0), 1)}% "
