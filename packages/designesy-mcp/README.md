@@ -84,7 +84,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 | Tool | What it does |
 |---|---|
 | `designesy_catalog` | Get the 23-package catalog (versions, URLs, statuses) from `/open.json` |
-| `designesy_contract` | Get the full design-system contract v0.4.0 (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section |
+| `designesy_contract` | Get the full design-system contract (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section. The version travels in the response, so none is pinned here |
 | `designesy_design_review` | Get the Design Review kit (8 dimensions, agent prompt, output format, verification checklist) |
 | `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns |
 | `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) — identity, authority, ingest protocol |
