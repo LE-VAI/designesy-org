@@ -33,6 +33,11 @@ const BATCH_PATH = join(ROOT, 'apps/site/app/leaderboard/batch-data.ts');
 const SCORE_API = process.env.SCORE_API || 'https://www.designesy.org/api/score';
 const CATEGORIES_ONLY = process.argv.includes('--categories-only');
 
+// Last-resort check count, used only if the engine reply omits `total`. The
+// engine's own number is preferred so the seed header cannot drift from the
+// engine it describes; this value is a fallback, not the source of truth.
+const ENGINE_CHECK_COUNT_FALLBACK = 42;
+
 // ── The per-category batch (batch-data.ts) ──────────────────────────────────
 //
 // The data pages draw each site's category breakdown beside its composite.
@@ -188,6 +193,14 @@ async function fetchScore(url) {
     skip: data.skip ?? 0,
     tokens: data.tokensExtracted ?? 0,
     categoryScores: data.categoryScores ?? null,
+    // The contract version the engine scored against, captured so the seed's
+    // LEADERBOARD_VERSION can be kept in step instead of hand-maintained.
+    // Dropping this field is why that constant sat at 0.4.0 while the engine
+    // served v0.4.1: the API had it all along and nobody read it.
+    contractVersion: data.contractVersion ?? null,
+    // The engine's own check count, so the seed header describes the engine that
+    // actually ran rather than a number pinned in this script.
+    totalChecks: data.total ?? null,
   };
 }
 
@@ -204,14 +217,47 @@ async function fetchScore(url) {
 // date, LEADERBOARD_LAST_SCORED, and the count in LEADERBOARD_POLICY.
 // Unknown present or FUTURE fields pass through untouched, so schema
 // additions no longer break the weekly re-score.
-function generateSeedTS(src, entries, lastScored) {
+function generateSeedTS(src, entries, lastScored, contractVersion, totalChecks) {
   let out = src;
 
-  // 1. Header comment: "All N sites re-scored DATE with the 40-check engine"
+  // 1. Header comment: "All N sites re-scored DATE with the N-check engine
+  //    (contract vX.Y.Z)."
+  //
+  // The engine-check count and the contract version are captured rather than
+  // hardcoded. The previous pattern pinned the literal words "40-check engine",
+  // so when the site moved to 42 checks the regex stopped matching and the
+  // header date froze at 2026-08-30 for weeks — silently, because a `.replace`
+  // that matches nothing returns the input unchanged and throws nothing. A
+  // date field this script claims to own must not be able to stop updating
+  // without saying so.
+  const headerRe = /(\/\/ All \d+ sites re-scored )\d{4}-\d{2}-\d{2}( with the )\d+(?:-\d+)?(-check engine \(contract v)[\d.]+(\))/;
+  if (!headerRe.test(out)) {
+    throw new Error(
+      'generateSeedTS: seed.ts header comment did not match the expected shape ' +
+      '"// All N sites re-scored DATE with the N-check engine (contract vX.Y.Z)." ' +
+      'Refusing to continue, because the alternative is a field that silently stops updating.'
+    );
+  }
+  const checkCount = totalChecks ?? ENGINE_CHECK_COUNT_FALLBACK;
+  // The header's "contract v" already carries the v, so strip any leading v from
+  // the engine's own version string before interpolating it. Without this the
+  // header renders "contract vv0.4.1".
+  const headerVersion = contractVersion ? String(contractVersion).replace(/^v/, '') : 'unknown';
   out = out.replace(
-    /(\/\/ All \d+ sites re-scored )\d{4}-\d{2}-\d{2}( with the 40-check engine)/,
-    `$1${lastScored}$2`
+    headerRe,
+    (_, p1, p2, p3, p4) => `${p1}${lastScored}${p2}${checkCount}${p3}${headerVersion}${p4}`
   );
+
+  // 1b. LEADERBOARD_VERSION — the contract version these scores were computed
+  //     against. Derived from the engine's own reply, never hand-authored.
+  if (contractVersion) {
+    const bare = String(contractVersion).replace(/^v/, '');
+    const verRe = /(export const LEADERBOARD_VERSION = ')[\d.]+(';)/;
+    if (!verRe.test(out)) {
+      throw new Error('generateSeedTS: LEADERBOARD_VERSION declaration not found in seed.ts');
+    }
+    out = out.replace(verRe, `$1${bare}$2`);
+  }
 
   // 2. Each entry: rewrite the fields we own inside its object literal.
   //    Match each RAW_SEED entry by its url: '...' anchor, then swap the
@@ -342,6 +388,12 @@ async function main() {
   /** URLs the engine could not read — reported at the end, never republished. */
   const unreachable = [];
 
+  // Captured from the engine's own reply during the run, then written into the
+  // seed so LEADERBOARD_VERSION and the header's check count describe the engine
+  // that actually produced these numbers rather than being hand-maintained.
+  let runContractVersion = null;
+  let runTotalChecks = null;
+
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     try {
@@ -380,6 +432,16 @@ async function main() {
       entry.skip = result.skip;
       entry.tokens = result.tokens;
       success++;
+
+      // Record the contract version and engine check count this run was scored
+      // against, taken from the engine's own reply. Captured on the first
+      // successful score; every site in a run is scored by the same engine.
+      if (runContractVersion === null && result.contractVersion) {
+        runContractVersion = result.contractVersion;
+      }
+      if (runTotalChecks === null && result.totalChecks) {
+        runTotalChecks = result.totalChecks;
+      }
 
       const delta = entry.prevScore !== null && entry.score !== null
         ? ` (prev ${entry.prevScore}, Δ${(entry.score - entry.prevScore).toFixed(1)})`
@@ -421,7 +483,8 @@ async function main() {
 
   // Write the updated seed.ts
   console.log(`Writing updated seed.ts (last scored ${lastScored})...`);
-  const newSeedTS = generateSeedTS(src, entries, lastScored);
+  console.log(`  engine reported: contract ${runContractVersion ?? 'unknown'}, ${runTotalChecks ?? '?'} checks`);
+  const newSeedTS = generateSeedTS(src, entries, lastScored, runContractVersion, runTotalChecks);
   writeFileSync(SEED_PATH, newSeedTS, 'utf-8');
 
   // Write this week's snapshot (for next week's delta)
