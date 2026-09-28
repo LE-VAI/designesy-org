@@ -770,7 +770,9 @@
   --hm-gap: 3px;
   --hm-h: 12px;
   --hm-step: calc(var(--hm-cw) + var(--hm-gap));
-  --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Crect width='9' height='12' rx='2.25'/%3E%3C/svg%3E");
+  /* viewBox + preserveAspectRatio none: the cell scales with its step, so a
+     meter narrower than its twenty cells draws them narrower (see .hm-meter). */
+  --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' preserveAspectRatio='none' width='12' height='12'%3E%3Crect width='9' height='12' rx='2.25'/%3E%3C/svg%3E");
   display: grid;
   gap: 0.7rem;
   margin: 0;
@@ -803,11 +805,18 @@
   width: calc(20 * var(--hm-step) - var(--hm-gap));
   max-width: 100%;
   height: var(--hm-h);
+  /* A phone's card leaves the meter less room than twenty cells take, and the
+     cells used to keep their size and run on over the score beside them
+     (every width below about 420px). The meter is a size container instead,
+     and inside it a step is its width over twenty, never more than the
+     design's step: full size where there is room, finer where there is not. */
+  container-type: inline-size;
 }
 
 /* The idle cells, and the lit run, share one mask: a rounded cell every step. */
 .hm-meter::before,
 .hm-lit {
+  --hm-step: min(var(--hm-cw) + var(--hm-gap), (100cqw + var(--hm-gap)) / 20);
   -webkit-mask: var(--hm-mask) left top / var(--hm-step) var(--hm-h) repeat-x;
   mask: var(--hm-mask) left top / var(--hm-step) var(--hm-h) repeat-x;
 }
@@ -870,7 +879,6 @@
   .hm {
     --hm-cw: 8px;
     --hm-step: calc(var(--hm-cw) + var(--hm-gap));
-    --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='12'%3E%3Crect width='8' height='12' rx='2'/%3E%3C/svg%3E");
   }
   .hm-row {
     grid-template-columns: 4.8rem minmax(0, 1fr) 1.8rem;
@@ -919,10 +927,6 @@
 }
 
 @media (max-width: 560px) {
-  /* A real gutter on phones (the shell drops to ~2px here). */
-  main.site-shell.home {
-    padding-inline: var(--space-16);
-  }
   .home .hero-display {
     font-size: clamp(1.85rem, 1.1rem + 3.4vw, 2.6rem);
     line-height: 1.08;
@@ -932,5 +936,14 @@
   }
   .home .home-kicker {
     font-size: 0.72rem;
+  }
+}
+
+/* Narrow phones: the kicker keeps to one line (at line-height 1 in a round
+   capsule, two lines looked pinched). The clause that goes, "rescored
+   weekly", is also the console's caption just below. */
+@media (max-width: 480px) {
+  .home-kicker-more {
+    display: none;
   }
 }

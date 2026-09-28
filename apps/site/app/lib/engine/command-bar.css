@@ -525,8 +525,14 @@
   .eg-seg-track {
     justify-self: stretch;
   }
+  /* A choice that does not fit wraps to a second line inside its segment
+     instead of losing its end to an ellipsis (/m3-bridge at 320: "CSS cust…"). */
   .eg-seg-opt {
-    padding: 0 var(--space-8);
+    padding: var(--space-4) var(--space-8);
+    white-space: normal;
+    text-wrap: balance;
+    line-height: 1.15;
+    text-overflow: clip;
   }
   .eg-more-body {
     grid-template-columns: minmax(0, 1fr);
@@ -551,6 +557,82 @@
   }
   .eg-seg-hint {
     padding-left: var(--space-8);
+  }
+}
+
+/* --- M3 bridge: the input bench ------------------------------------------ */
+
+/* Moved here from engine.css (mobile pass, 2026-09-28): these read the bar's
+   own measures (--ctl-inset), which this sheet declares and which load only
+   where a bar renders. In engine.css every engine page carried the rules
+   without the declaration, and the site's own drift check read the
+   references as undeclared tokens (d02, d12). */
+
+/* The converter's input is the control surface (command-bar.css) with a
+   textarea for its well: the format choice and the sample above it, the note
+   and the key below, all on the well's content edge. */
+.m3-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-12) var(--space-16);
+  padding: var(--space-4) var(--ctl-inset) var(--space-4);
+}
+
+/* The format's reading stays under the choice here, at every width: the
+   sample button holds the row's right end. */
+.m3-head .eg-seg {
+  flex: 1 1 20rem;
+  grid-template-columns: auto minmax(0, max-content);
+  grid-template-areas:
+    "label track"
+    "hint hint";
+  justify-content: start;
+}
+
+.m3-head .eg-seg-hint {
+  padding-left: 0;
+}
+
+/* As tall as the choice track beside it, so the two share a centre line. */
+.m3-head .eg-share-btn {
+  min-height: var(--space-48);
+}
+
+.eg-seg-hint code {
+  font: 500 0.78rem/1 var(--mono);
+  color: var(--ink);
+}
+
+/* Qualified by the well: command-bar.css may load after this sheet, and its
+   input rule sets the same properties at single-class specificity. */
+.eg-bar-field > .m3-textarea {
+  display: block;
+  width: 100%;
+  min-height: 13rem;
+  padding: var(--space-14) var(--ctl-inset);
+  border-radius: inherit;
+  /* 16 px, the input floor: below it iOS zooms the page on focus. */
+  font: 400 1rem/1.6 var(--mono);
+  resize: vertical;
+}
+
+.m3-go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12) var(--space-16);
+}
+
+.m3-go .eg-bar-status {
+  padding-left: var(--ctl-inset);
+}
+
+@container ctl (width < 30rem) {
+  .m3-go .eg-bar-go {
+    width: 100%;
   }
 }
 

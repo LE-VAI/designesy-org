@@ -440,6 +440,15 @@ html {
   overflow-x: clip;
 }
 
+/* A modal layer is open (lib/scroll-lock): the page behind holds still. It has
+   to be the root: with overflow-x: clip above, the root's overflow is not
+   visible, so body's overflow never reaches the viewport and a lock on body
+   lets the page scroll behind the layer. The gutter stays reserved, so
+   nothing shifts sideways. */
+html[data-scroll-lock] {
+  overflow: hidden;
+}
+
 /* Prevent double-tap zoom on interactive elements — touch-action: manipulation
    disables double-tap-to-zoom on buttons/links while preserving single-tap
    and pinch-zoom on the page body. WCAG 2.5.8 spacing-friendly.
@@ -1512,8 +1521,10 @@ html[data-motion="paused"] *::after {
 /* Small screens: pull the panel higher and give the list more room to
    breathe, so tap targets stay reachable and results read at a glance. */
 @media (max-width: 720px) {
+  /* The safe-area terms keep the panel clear of an iPhone's status bar and
+     home indicator (viewport-fit=cover). */
   .cmdk-overlay {
-    padding: 12vh var(--space-12) var(--space-12);
+    padding: max(12vh, calc(env(safe-area-inset-top) + var(--space-12))) var(--space-12) max(var(--space-12), env(safe-area-inset-bottom));
   }
   .cmdk-list {
     max-height: min(28rem, calc(100dvh - 30vh));
@@ -1534,10 +1545,38 @@ html[data-motion="paused"] *::after {
   }
 }
 
+/* Touch screens: no keyboard, so no key hints (the prefix tip stays, it is
+   about typing), and a Cancel button in the field row takes esc's place. */
+.cmdk-cancel {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .cmdk-esc,
+  .cmdk-footer-hint:not(.cmdk-footer-tip) {
+    display: none;
+  }
+  .cmdk-cancel {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 2.75rem;
+    margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-4)) calc(-1 * var(--space-8)) 0;
+    padding: 0 var(--space-4);
+    border: 0;
+    background: none;
+    color: var(--signal-light);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+}
+
 /* Very small screens: pull almost to the top, maximize list room */
 @media (max-width: 480px) {
   .cmdk-overlay {
-    padding: 6vh var(--space-8) var(--space-8);
+    padding: max(6vh, calc(env(safe-area-inset-top) + var(--space-8))) var(--space-8) max(var(--space-8), env(safe-area-inset-bottom));
   }
   .cmdk-panel {
     border-radius: calc(var(--radius-lg) * 0.9);
@@ -2037,17 +2076,20 @@ html[data-motion="paused"] *::after {
 }
 
 /* Subgrid: surface cards in the same row share track sizing so meta, label,
-   and desc align horizontally. Falls back to flex column without subgrid. */
+   desc and arrow align horizontally. Falls back to flex column without
+   subgrid. Four rows: with three, the arrow had no row of its own and was
+   clamped into the description's, drawn over its text. */
 @supports (grid-template-rows: subgrid) {
   .surface-card {
     display: grid;
-    grid-row: span 3;
+    grid-row: span 4;
     grid-template-rows: subgrid;
     row-gap: var(--space-fine-45);
   }
   .surface-card-meta { grid-row: 1; }
   .surface-card-label { grid-row: 2; }
   .surface-card-desc { grid-row: 3; }
+  .surface-card-arrow { grid-row: 4; }
 }
 
 .surface-card:hover {
@@ -2784,7 +2826,7 @@ a.surface-card:active {
 .footer-dock-label {
   display: block;
   padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2906,7 +2948,7 @@ a.surface-card:active {
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
 }
 
 /* Dim dot accent before each machine pill */
@@ -3136,6 +3178,10 @@ a.surface-card:active {
   color: var(--ink);
   line-height: 1.5;
   text-wrap: pretty;
+  /* A definition clips what overflows it (its accent bar needs overflow:
+     hidden), so a long URL or a line of JSON has to break instead: on a phone
+     they were cut off mid-token (up to 179px lost). */
+  overflow-wrap: anywhere;
 }
 
 .definition-label {
@@ -3256,6 +3302,14 @@ a.surface-card:active {
   gap: var(--space-40);
 }
 
+/* A grid item's default min-width is its content's, so one long code line in
+   a column widened the whole grid past a phone screen (/docs/mcp: 293px past
+   the edge). At zero the column holds its share and the code scrolls in its
+   own box. */
+.doctrine-cols > * {
+  min-width: 0;
+}
+
 /* Row stack — universal classification rows (Seven Layers lineage)
    Use for ordered/inspectable sets: scope, evidence, layers, anatomy.
    Cards remain for named destinations. Plain lists only for short prose. */
@@ -3275,8 +3329,10 @@ a.surface-card:active {
 
 /* Wraps each toggleable .row to carry role="listitem" (aria-pressed only valid
    on interactive roles). display:contents lets the flex parent see the inner row
-   directly so the original layout is preserved. */
-.row-stack > [role="listitem"] {
+   directly so the original layout is preserved. Only the wrapper: a .row that
+   is its own listitem (/changelog) keeps its box, or it loses its row styling
+   and, having no box, cannot be scrolled to by an in-page link. */
+.row-stack > [role="listitem"]:not(.row) {
   display: contents;
 }
 
@@ -3701,9 +3757,13 @@ button.row:active {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  max-width: 100%;
   color: var(--ink);
   font-weight: 700;
   text-wrap: balance;
+  /* A URL or a tool name (designesy_readiness_score) is one unbreakable word,
+     and as the flex box's minimum width it pushed titles past a phone's edge. */
+  overflow-wrap: anywhere;
 }
 
 .row-meta,
@@ -3830,6 +3890,14 @@ button.layer-item {
   opacity: 1;
   color: var(--signal);
 }
+
+/* Touch has no hover to reveal it: the badge rests visible, so a tap is
+   known to copy (the definition badge does the same). */
+@media (hover: none) {
+  .row .row-copy-badge {
+    opacity: 0.7;
+  }
+}
 @media (hover: none), (pointer: coarse) {
   .row-copy-badge {
     opacity: 1;
@@ -3862,7 +3930,7 @@ button.row {
   position: absolute;
   top: 0.6rem;
   right: 0.75rem;
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3879,6 +3947,14 @@ button.row {
 .definition.is-copied .definition-copy-badge {
   opacity: 1;
   color: var(--signal);
+}
+
+/* Touch has no hover to reveal it, so a phone never learned a definition
+   copies on tap: the badge rests at the hover emphasis there. */
+@media (hover: none) {
+  .definition.is-copyable .definition-copy-badge {
+    opacity: 0.7;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4135,7 +4211,7 @@ a.check-cell:hover .check-cell-title {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4323,8 +4399,12 @@ a.check-cell:hover .check-cell-title {
   .desktop-only {
     display: none;
   }
+  /* Phone gutter: 16px, the capsule bar's own inset, so page edges line up
+     with the bar above them. (This was `0 1rem` until a tokenising pass
+     rewrote it as var(--space-fine-10), 0.1rem on every side, which left
+     text 2px from the screen edge on every surface page.) */
   .surface-page {
-    padding: var(--space-fine-10);
+    padding: 0 max(var(--space-16), env(safe-area-inset-right)) 0 max(var(--space-16), env(safe-area-inset-left));
   }
   .surface-header {
     padding: var(--space-48) 0 var(--space-32);
@@ -4524,6 +4604,60 @@ a.check-cell:hover .check-cell-title {
   }
 
   .nav-trigger-bar {
+    transition: none;
+  }
+}
+
+/* Phone menu as a modal dialog (2026-09-28). Closed, it is hidden as well as
+   parked off-screen (and inert, lib/topbar), so nothing in it can take focus
+   or be read out; visibility flips only once the slide out has finished. The
+   Studio row sits at the foot with the motion switch: the Studio pill tucks
+   away while reading on phones, so the menu carries it too. */
+@media (max-width: 720px) {
+  .nav-drawer {
+    /* Clear of an iPhone's status bar and home indicator: with
+       viewport-fit=cover a fixed layer at 0.5rem sits under the clock. */
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.5rem, env(safe-area-inset-right));
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    visibility: hidden;
+    overscroll-behavior: contain;
+    transition: transform var(--duration-slow) var(--ease-drawer),
+      visibility 0s linear var(--duration-slow);
+  }
+  .nav-drawer.open {
+    visibility: visible;
+    transition: transform var(--duration-slow) var(--ease-drawer), visibility 0s;
+  }
+  .nav-drawer-links {
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-drawer .nav-drawer-studio {
+    gap: var(--space-10);
+    margin-top: auto;
+    margin-bottom: var(--space-8);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-size: 0.95rem;
+  }
+  .nav-drawer-studio svg {
+    flex: none;
+    color: var(--signal-access);
+  }
+  .nav-drawer-studio-out {
+    margin-left: auto;
+    color: var(--muted-dim);
+  }
+  .nav-drawer-studio + .motion-toggle-row {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 720px) {
+  .nav-drawer,
+  .nav-drawer.open {
     transition: none;
   }
 }
@@ -5217,8 +5351,9 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 @media (max-width: 560px) {
+  /* 16px phone gutter; see .surface-page above for how it was lost. */
   .site-shell {
-    padding: var(--space-fine-10);
+    padding: 0 max(var(--space-16), env(safe-area-inset-right)) 0 max(var(--space-16), env(safe-area-inset-left));
   }
 
   .pillar-grid,
@@ -5585,9 +5720,19 @@ a.field-card:active {
   color: var(--signal);
   background: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
 }
+/* Touch: no hover to reveal the button, so it is always there, and it gets a
+   band of its own at the top of the block (it sat over the prompt's first
+   lines) at a full 44px. */
 @media (hover: none), (pointer: coarse) {
   .copy-prompt-btn {
     opacity: 1;
+    top: var(--space-8);
+    right: var(--space-8);
+    min-height: 2.75rem;
+    padding: 0 var(--space-12);
+  }
+  .copy-prompt-wrap .copy-prompt-pre {
+    padding-top: calc(2.75rem + var(--space-16));
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -6906,7 +7051,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-lbl {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -7471,7 +7616,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-signals-group-chip {
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   padding: var(--space-fine-10) var(--space-fine-45);
   border-radius: 999px;
@@ -7804,7 +7949,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-chip-num {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   opacity: 0.7;
 }
 
@@ -7914,7 +8059,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-status-pill {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: var(--space-2) var(--space-6);
@@ -7936,7 +8081,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-card-cat {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* muted-dim (var(--muted-dim)) on the card surface (~#19191d) is 4.25:1 — below
@@ -8216,7 +8361,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 
   .score-metric-lbl {
-    font-size: 0.6rem;
+    font-size: 0.6875rem;
   }
 }
 
@@ -9091,7 +9236,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-hard-fail {
   max-width: var(--maxw);
   margin: var(--space-24) auto;
-  padding: var(--space-fine-20);
+  padding: 0 var(--space-32);
 }
 
 .report-hard-fail p {
@@ -9114,7 +9259,17 @@ a.lab-card:focus-visible .lab-card-arrow {
 .report-slop {
   max-width: var(--maxw);
   margin: var(--space-24) auto;
-  padding: var(--space-fine-20);
+  padding: 0 var(--space-32);
+}
+
+/* `0 2rem` insets these two notices on wide screens (a tokenising pass had
+   turned it into 0.2rem all round); on phones they sit flush with the
+   report blocks around them. */
+@media (max-width: 720px) {
+  .report-hard-fail,
+  .report-slop {
+    padding-inline: 0;
+  }
 }
 
 .report-slop-title {
@@ -9659,7 +9814,7 @@ select {
   margin-left: var(--space-8);
   padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
-  font-size: 0.62rem;
+  font-size: 0.6875rem;
   font-family: var(--mono);
   color: var(--signal-light);
   background: color-mix(in oklch, var(--signal) 8%, transparent);
@@ -11965,11 +12120,158 @@ select {
   .director-dock-label-lead {
     display: none;
   }
+  /* Every phone browser already has a back control (its toolbar button, the
+     edge swipe), and the pill sat over whatever the bottom-left corner held,
+     so phones drop it. */
+  .back-button {
+    display: none;
+  }
+  /* The Studio pill tucks below the screen edge while the visitor reads down
+     the page and returns when they scroll up or reach the end (the pacing
+     lives in lib/director-dock). Hidden, it is also out of the tab order. */
+  .director-dock {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(calc(100% + var(--space-24)));
+    transition: transform var(--duration-medium) var(--ease-out),
+      opacity var(--duration-fast) var(--ease),
+      visibility 0s linear var(--duration-medium);
+  }
+  .director-dock[data-shown] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: transform var(--duration-medium) var(--ease-out),
+      opacity var(--duration-fast) var(--ease), visibility 0s;
+  }
+  .director-dock[data-shown]:active {
+    transform: scale(0.97);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .back-button,
   .director-dock {
     animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 720px) {
+  .director-dock,
+  .director-dock[data-shown] {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Sideways scroll boxes (mobile pass, 2026-09-28)
+   A table, a path line, a chip rail or a code block that is wider than its
+   column scrolls inside its own box. On a phone nothing said so: the last
+   column simply stopped at the screen edge. Now the edge fades where content
+   continues past it, and the fade follows the scroll position (a scroll
+   timeline), so it leaves the start once the visitor has scrolled and leaves
+   the end when they reach it. Where scroll timelines are unsupported, or the
+   content fits, there is no fade. A mask hides whatever is drawn outside the
+   box, a focus ring included, so a focused box drops its fade. The fade is a
+   reading of position, not motion, so it keeps working with motion paused.
+   (lib/scroll-regions gives the boxes that scroll a keyboard stop.)
+   ========================================================================== */
+@property --edge-l {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --edge-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@supports (animation-timeline: scroll()) {
+  :is(.dx-table-box, .eg-path, .dx-toc ol, .score-category-chips, .score-filter-segmented, pre):not(:focus-visible) {
+    -webkit-mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
+    mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
+    animation: edge-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  html[data-motion="paused"] :is(.dx-table-box, .eg-path, .dx-toc ol, .score-category-chips, .score-filter-segmented, pre) {
+    animation-play-state: running !important;
+  }
+}
+
+@keyframes edge-fade {
+  0% {
+    --edge-l: 0px;
+    --edge-r: var(--space-24);
+  }
+  8%,
+  92% {
+    --edge-l: var(--space-24);
+    --edge-r: var(--space-24);
+  }
+  100% {
+    --edge-l: var(--space-24);
+    --edge-r: 0px;
+  }
+}
+
+/* ==========================================================================
+   Touch floor (mobile pass, 2026-09-28)
+   The contract this site publishes holds touch targets to 44px (the engine's
+   own v24), and on a touch screen these controls were 25 to 40px tall. Where
+   the pointer is coarse they meet it; a mouse keeps the denser sizes. The
+   score page's action bar also stops being seven full-width buttons stacked
+   on a phone: the audit leads at full width, the rest pair up.
+   ========================================================================== */
+@media (pointer: coarse) {
+  .score-action-btn {
+    height: auto;
+    min-height: 2.75rem;
+  }
+  .score-category-chip,
+  .score-filter-tab,
+  .score-cat-legend-row {
+    height: 2.75rem;
+  }
+  .score-check-group-header {
+    min-height: 2.75rem;
+  }
+  .lab-meta > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+  .sv-preset {
+    min-height: 2.75rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .score-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-8);
+  }
+  .score-hero-actions .score-action-btn {
+    min-width: 0;
+    height: auto;
+    min-height: 2.75rem;
+    padding-block: var(--space-6);
+    white-space: normal;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  .score-hero-actions .score-audit-btn,
+  .score-hero-actions .score-tokens-badge {
+    grid-column: 1 / -1;
+  }
+  .score-hero-actions .score-audit-btn {
+    order: -1;
+  }
+  .score-hero-actions .score-tokens-badge {
+    justify-self: center;
   }
 }

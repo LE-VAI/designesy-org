@@ -4,6 +4,7 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { lockScroll } from './scroll-lock';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { useTheme } from './use-theme';
@@ -783,14 +784,13 @@ export function CommandPalette() {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // The page behind stays put: scroll is locked (html reserves its scrollbar
-  // gutter, so nothing shifts sideways).
+  // The page behind stays put: scroll is locked on the root (lib/scroll-lock;
+  // html reserves its scrollbar gutter, so nothing shifts sideways).
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlock = lockScroll();
     return () => {
-      document.body.style.overflow = prev;
+      unlock();
       window.dispatchEvent(new Event('scroll'));
     };
   }, [open]);
@@ -853,7 +853,12 @@ export function CommandPalette() {
                   ref={inputRef}
                   type="text"
                   className="cmdk-input"
-                  placeholder="Search pages, or type a URL to score it"
+                  // Phones get the short form: the long one was cut mid-word.
+                  placeholder={
+                    window.matchMedia('(max-width: 480px)').matches
+                      ? 'Search, or paste a URL'
+                      : 'Search pages, or type a URL to score it'
+                  }
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onInputKeyDown}
@@ -864,11 +869,21 @@ export function CommandPalette() {
                   aria-autocomplete="list"
                   spellCheck={false}
                   autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  inputMode="search"
+                  enterKeyHint="go"
                 />
                 {searching && <span className="cmdk-searching-dot" aria-hidden="true" />}
                 <kbd className="cmdk-esc" aria-hidden="true">
                   esc
                 </kbd>
+                {/* Touch screens have no Escape key and the scrim is a thin
+                    strip around a tall panel: a real way out (CSS shows it on
+                    coarse pointers, where the esc hint hides). */}
+                <button type="button" className="cmdk-cancel" onClick={close}>
+                  Cancel
+                </button>
               </div>
 
               <div

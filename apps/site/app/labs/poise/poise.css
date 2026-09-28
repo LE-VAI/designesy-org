@@ -17,17 +17,19 @@
   margin-bottom: var(--space-12);
 }
 
+/* Two bars, each named underneath: the breathing one is motion on, the still
+   one is what reduced motion leaves. (The names used to be screen-reader only,
+   which left sighted visitors two unlabelled rectangles.) */
 .poise-reduced-demo {
-  display: flex;
-  gap: var(--space-12);
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8) var(--space-12);
   width: 100%;
-  max-width: 14rem;
+  max-width: 16rem;
   margin-inline: auto;
 }
 
 .poise-reduced-bar {
-  flex: 1;
   height: 2rem;
   border-radius: 2px;
 }
@@ -45,17 +47,14 @@
 }
 
 .poise-reduced-labels {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+  display: contents;
 }
 
 .poise-reduced-tag {
-  font-size: 0.6rem;
+  font: 500 0.6875rem/1.3 var(--mono);
   color: var(--muted-dim);
   letter-spacing: 0.06em;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -65,4 +64,3 @@
     opacity: 0.35;
   }
 }
-

@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MotionToggle } from './motion-toggle';
 import { CommandPalette } from './command-palette';
 import { SensesMenu } from './senses-menu';
+import { StudioGlyph, STUDIO_HREF, STUDIO_LABEL } from './director-dock';
+import { inertOutside, lockScroll, scrollLocked } from './scroll-lock';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -37,15 +39,24 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const [progress, setProgress] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeRef = useRef<HTMLAnchorElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const scrimRef = useRef<HTMLDivElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+  // Closing by Escape, Close or the scrim hands focus back to the trigger;
+  // closing because a link was followed does not (the next page takes it).
+  const returnFocus = useRef(true);
+  const closeDrawer = useCallback((restoreFocus = true) => {
+    returnFocus.current = restoreFocus;
+    setDrawerOpen(false);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      // Skip state updates when the command palette (or any modal) has
-      // scroll-locked the body — body.overflow:hidden can reset scrollY
-      // to 0, which would falsely collapse the search pill and cause the
-      // topbar to re-render while the user is interacting with the palette.
-      if (document.body.style.overflow === 'hidden') return;
+      // Skip state updates while a modal layer (the palette, the phone menu)
+      // holds the scroll lock, so the bar does not re-render under it.
+      if (scrollLocked()) return;
 
       setIsScrolled(y > 40 || scrolled);
       setDeepScrolled(y > 320);
@@ -71,27 +82,34 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
   // Close drawer on route change
   useEffect(() => {
-    setDrawerOpen(false);
-  }, [pathname]);
+    closeDrawer(false);
+  }, [pathname, closeDrawer]);
 
   // Close drawer on Escape
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setDrawerOpen(false);
+      if (e.key === 'Escape') closeDrawer();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen]);
+  }, [drawerOpen, closeDrawer]);
 
-  // Lock body scroll when drawer is open
+  // The open menu is modal. The page behind holds still (lib/scroll-lock:
+  // the lock sits on html, since a lock on body let a phone scroll the page
+  // behind) and goes inert, so Tab and a screen reader stay inside the menu.
+  // Focus starts on Close; closing hands it back to the trigger.
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
+    if (!drawerOpen || !drawerRef.current) return;
+    const unlock = lockScroll();
+    const restore = inertOutside(drawerRef.current, [scrimRef.current]);
+    closeRef.current?.focus({ preventScroll: true });
+    return () => {
+      restore();
+      unlock();
+      if (returnFocus.current) triggerRef.current?.focus({ preventScroll: true });
+      returnFocus.current = true;
+    };
   }, [drawerOpen]);
 
   // Scroll the active nav link into view — only needed when the nav-links
@@ -171,10 +189,15 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
               </Link>
             )}
             <button
+              ref={triggerRef}
+              type="button"
               className="nav-trigger"
-              aria-label="Toggle navigation"
+              // A verb phrase (the contract's own v38); while the menu is open the
+              // trigger sits behind it, inert, so "open" is always what it does.
+              aria-label="Open menu"
               aria-expanded={drawerOpen}
-              onClick={() => setDrawerOpen((o) => !o)}
+              aria-controls="site-menu"
+              onClick={() => (drawerOpen ? closeDrawer() : setDrawerOpen(true))}
             >
               <span className="nav-trigger-bar" />
               <span className="nav-trigger-bar" />
@@ -192,43 +215,67 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
       </header>
       {drawerOpen && (
         <div
+          ref={scrimRef}
           className="nav-scrim open"
-          onClick={() => setDrawerOpen(false)}
+          onClick={() => closeDrawer()}
           aria-hidden="true"
         />
       )}
-      <nav
+      {/* The phone menu: a modal dialog. Closed, it is inert and hidden, so a
+          keyboard cannot tab into links parked off-screen. */}
+      <div
+        ref={drawerRef}
+        id="site-menu"
         className={`nav-drawer${drawerOpen ? ' open' : ''}`}
-        aria-label="Mobile navigation"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        inert={!drawerOpen}
       >
         {/* Explicit close control — always visible inside the drawer. The
             hamburger→X CSS rotation is subtle and easy to miss on a real
             device; an obvious "Close" labelled button means users don't
             feel forced to select a route to escape. */}
         <button
+          ref={closeRef}
           type="button"
           className="nav-drawer-close"
-          aria-label="Close navigation"
-          onClick={() => setDrawerOpen(false)}
+          aria-label="Close menu"
+          onClick={() => closeDrawer()}
         >
           <span className="nav-drawer-close-icon" aria-hidden="true">✕</span>
           <span className="nav-drawer-close-label">Close</span>
         </button>
-        {NAV_ROUTES.map((route) => {
-          const active = isActiveRoute(pathname, route.href);
-          return (
-            <Link
-              href={route.href}
-              key={route.href}
-              className={active ? 'is-active' : undefined}
-              aria-current={active ? 'page' : undefined}
-            >
-              {route.label}
-            </Link>
-          );
-        })}
+        <nav className="nav-drawer-links" aria-label="Pages">
+          {NAV_ROUTES.map((route) => {
+            const active = isActiveRoute(pathname, route.href);
+            return (
+              <Link
+                href={route.href}
+                key={route.href}
+                className={active ? 'is-active' : undefined}
+                aria-current={active ? 'page' : undefined}
+              >
+                {route.label}
+              </Link>
+            );
+          })}
+        </nav>
+        {/* On phones the Studio pill tucks away while reading, so the menu
+            carries the Studio as well. */}
+        <a
+          className="nav-drawer-studio"
+          href={STUDIO_HREF}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={STUDIO_LABEL}
+        >
+          <StudioGlyph />
+          <span>Ask the Studio</span>
+          <span className="nav-drawer-studio-out" aria-hidden="true">↗</span>
+        </a>
         <MotionToggle variant="row" />
-      </nav>
+      </div>
     </>
   );
 }

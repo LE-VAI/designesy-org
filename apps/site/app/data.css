@@ -124,7 +124,15 @@
 @container dxstats (width < 34rem) {
   .dx-stats > div {
     padding-left: 0;
+    padding-right: var(--space-12);
     border-left: 0;
+  }
+}
+
+/* A phone's two columns: a value like "44.9 to 93.0" keeps to one line. */
+@container dxstats (width < 22rem) {
+  .dx-stats dd {
+    font-size: 1.375rem;
   }
 }
 
@@ -370,6 +378,10 @@
 }
 
 .dx-strip-plot {
+  /* Defaults for what each chart sets inline, so every var() here resolves
+     to a declaration: the site's own drift check (d02, d12) reads a var()
+     with no declaration anywhere as a fabricated token. */
+  --rows: 1;
   --step: var(--space-12);
   --pad: var(--space-12);
   --dot: var(--space-10);
@@ -383,6 +395,8 @@
 }
 
 .dx-zone {
+  --a: 0;
+  --b: 0;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -411,6 +425,7 @@
 }
 
 .dx-dot {
+  --row: 0;
   position: absolute;
   left: calc(var(--at) * 1%);
   bottom: calc(var(--pad) + var(--row) * var(--step));
@@ -560,6 +575,7 @@
 }
 
 .dx-bar-mark {
+  --m: 0;
   position: absolute;
   top: calc(-1 * var(--space-4));
   bottom: calc(-1 * var(--space-4));
@@ -614,6 +630,8 @@
 }
 
 .dx-range-seg {
+  --a: 0;
+  --b: 0;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -1315,4 +1333,17 @@ html[data-motion="paused"] .dx-toc a {
 .dx-band-range,
 .dx-lead b {
   font-variant-numeric: tabular-nums;
+}
+
+/* Touch (mobile pass, 2026-09-28): a site's name is the row's link, and a
+   short one ("X") was an 11px by 24px target; a row header's link was 18px
+   tall. Padding widens and deepens the hit area to 44px; the matching
+   negative margin keeps the row's layout as it was. */
+@media (pointer: coarse) {
+  .dx-rank-site a,
+  .dx-table tbody th a {
+    display: inline-block;
+    padding: var(--space-12) var(--space-8);
+    margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-8));
+  }
 }
