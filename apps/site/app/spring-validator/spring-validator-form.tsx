@@ -9,7 +9,7 @@
 //
 // All computation is client-side.
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -528,29 +528,14 @@ function ParamSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        style={{
-          // height was '4px' — the VISUAL track height, which with
-          // appearance:none ALSO became the element's box, so the whole drag
-          // target measured 4px tall.
-          //
-          // 44px box, thin track drawn by a centred gradient, so the look is
-          // unchanged and the hit area is real.
-          //
-          // The gradient is not cosmetic: with appearance:none and no
-          // ::-webkit-slider-thumb rule, Chrome draws NO HANDLE. Measured here:
-          // the "thumb" reported geometry of the entire element (361x4), which
-          // means there is nothing to render as one. A slider with no visible
-          // thumb still works (the track is clickable) but gives the user no
-          // affordance that it is draggable — so the handle is drawn explicitly,
-          // below, matching the 14px circular thumb the orb lab already uses.
-          width: '100%',
-          height: '44px',
-          background:
-            'linear-gradient(to bottom, transparent calc(50% - 2px), var(--line) calc(50% - 2px), var(--line) calc(50% + 2px), transparent calc(50% + 2px))',
-          outline: 'none',
-          appearance: 'none',
-          cursor: 'pointer',
-        }}
+        aria-label={label}
+        aria-valuetext={`${value.toFixed(1)} ${unit}`}
+        className="sv-range"
+        // --v fills the track up to the value. The 44 px box, thin track and
+        // drawn handle live in globals.css (.sv-range): with appearance:none
+        // and no thumb rule Chrome draws no handle at all, and a 4 px box
+        // left the whole drag target 4 px tall.
+        style={{ '--v': ((value - min) / (max - min)) * 100 } as CSSProperties}
       />
     </div>
   );

@@ -13,6 +13,7 @@ import {
 } from '../lib/score-history';
 import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { EngineBar, Segmented } from '../lib/engine/command-bar';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
@@ -205,10 +206,25 @@ function normalizeInput(input: string): string {
   return clean;
 }
 
+type ScopeMode = 'auto' | 'universal' | 'contract';
+
+// The scope names are the API's (?scope=auto|universal|contract), so what the
+// page says is what a request sends. Each carries its reading, shown under the
+// control for the one selected and read with each option.
+const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to the full contract; every other site gets the Universal reading.' },
+  {
+    value: 'universal',
+    label: 'Universal',
+    hint: "Optional polish a site leaves out (sound, font synthesis, a selection color) is skipped instead of failed, as are the checks tied to Designesy's own token names.",
+  },
+  { value: 'contract', label: 'Contract', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
+];
+
 export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState(initialUrl);
-  const [scopeMode, setScopeMode] = useState<'auto' | 'contract' | 'universal'>('auto');
+  const [scopeMode, setScopeMode] = useState<ScopeMode>('auto');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('ALL');
@@ -228,7 +244,6 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [animatedCounts, setAnimatedCounts] = useState({ pass: 0, fail: 0, warn: 0, manual: 0, skip: 0, total: 0, origPoints: 0, slopTotal: 0 });
   const [delta, setDelta] = useState<number | null>(null);
   const [rubricOpen, setRubricOpen] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const filterSegmentedRef = useRef<HTMLDivElement>(null);
 
   // Sliding indicator: measure the active filter tab and position a
@@ -434,11 +449,6 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setStatus('error');
       setResult({ ok: false, error: 'Network error — could not reach the scoring server.' });
     }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    await runScore(normalizeInput(url));
   }
 
   const checks = useMemo(() => result?.checks || [], [result]);
@@ -677,87 +687,23 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   return (
     <div className="score-form">
-      <form ref={formRef} onSubmit={handleSubmit} className="score-input-card">
-        <div className="score-input-col">
-          <div className="score-input-flex-box">
-            <span className="score-input-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z" />
-              </svg>
-            </span>
-            <input
-              type="text"
-              inputMode="url"
-              enterKeyHint="go"
-              autoComplete="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="Enter any website URL…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={status === 'loading'}
-              aria-label="Site URL to score"
-              data-cuelume-hover="tick"
-              className="score-url-input-inner"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={status === 'loading' || !url.trim()}
-            data-cuelume-press="sparkle"
-            className="button primary score-submit"
-          >
-            {status === 'loading' ? (
-              <span className="score-loading-state">
-                <span className="score-spinner" />
-                Running {ENGINE_CHECK_COUNT} checks…
-              </span>
-            ) : (
-              'Score it'
-            )}
-          </button>
-        </div>
-
-        {/* Scope toggle — controls how absence is treated.
-            auto: designesy.org → contract, everything else → universal (default)
-            contract: all {ENGINE_CHECK_COUNT} checks penalize absence (strictest, for self-scoring)
-            universal: optional features SKIP on absence (fair to external sites) */}
-        <div className="score-form-foot">
-        <div className="score-scope-toggle" role="radiogroup" aria-label="Scoring scope">
-          <span className="score-scope-label">Scope:</span>
-          {(['auto', 'universal', 'contract'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              role="radio"
-              aria-checked={scopeMode === mode}
-              className={`score-scope-option ${scopeMode === mode ? 'is-active' : ''}`}
-              onClick={() => setScopeMode(mode)}
-              disabled={status === 'loading'}
-              data-cuelume-hover="tick"
-              title={
-                mode === 'auto'
-                  ? 'Auto-detect: designesy.org uses contract scope, all other sites use universal scope'
-                  : mode === 'universal'
-                    ? 'Universal: optional features (sound, font-synthesis, text-wrap, etc.) are SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
-                    : `Contract: all ${ENGINE_CHECK_COUNT} checks penalize absence. The strictest mode: Designesy patterns are mandatory.`
-              }
-            >
-              {mode === 'auto' ? 'Detect' : mode === 'universal' ? 'Assess' : 'Enforce'}
-            </button>
-          ))}
-        </div>
-        {status === 'idle' && !result && (
-          <p className="score-note">
-            No login. Any public URL, {ENGINE_CHECK_COUNT} checks, a grade in seconds.
-          </p>
-        )}
-        </div>
-      </form>
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'Site URL to score', placeholder: 'Any public URL, like stripe.com' }]}
+        onSubmit={() => void runScore(normalizeInput(url))}
+        busy={status === 'loading'}
+        go="Score it"
+        goBusy="Scoring"
+        choices={
+          <Segmented<ScopeMode>
+            label="Scope"
+            value={scopeMode}
+            onChange={setScopeMode}
+            options={SCOPE_OPTIONS}
+            disabled={status === 'loading'}
+          />
+        }
+        note={`No login. ${ENGINE_CHECK_COUNT} checks, a grade in seconds.`}
+      />
 
       {status === 'error' && result?.error && (
         <div className="score-error-card">

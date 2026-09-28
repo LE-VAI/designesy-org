@@ -18,7 +18,7 @@
  * in createOrb); the entire orb pauses on the OS-level preference.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, type CSSProperties } from 'react';
 
 // ── Orb factory (Martin Štrba's exact shader + JS, ported to Designesy blue) ──
 //
@@ -516,11 +516,11 @@ const PARAM_LABELS: Record<ParamKey, string> = {
 };
 
 const PARAM_HINTS: Record<ParamKey, string> = {
-  colorShift: 'Palette position — animates where the colors sit on the ramp',
-  flow: 'Domain-warp magnitude — how far the noise field carries each pixel',
-  turbulence: 'Nested warp — marbled ink-in-water vs smooth blob',
-  grain: 'Display-space noise — film grain, not motion blur',
-  glow: 'Outside-radius halo — 0 reads as a clean brand surface',
+  colorShift: 'Palette position: animates where the colors sit on the ramp',
+  flow: 'Domain-warp magnitude: how far the noise field carries each pixel',
+  turbulence: 'Nested warp: marbled ink-in-water vs a smooth blob',
+  grain: 'Display-space noise, like film grain',
+  glow: 'Outside-radius halo: 0 reads as a clean brand surface',
 };
 
 export function OrbLab() {
@@ -608,7 +608,8 @@ export function OrbLab() {
                 value={state[k]}
                 onChange={(e) => updateParam(k, parseFloat(e.target.value))}
                 aria-label={PARAM_LABELS[k]}
-                aria-valuetext={`${state[k].toFixed(2)} — ${PARAM_HINTS[k]}`}
+                aria-valuetext={`${state[k].toFixed(2)}, ${PARAM_HINTS[k]}`}
+                style={{ '--v': (state[k] / (k === 'glow' ? 2 : 1)) * 100 } as CSSProperties}
               />
               <span className="orb-param-hint" aria-hidden="true">
                 {PARAM_HINTS[k]}

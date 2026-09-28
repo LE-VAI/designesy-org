@@ -131,7 +131,8 @@
   color: var(--muted);
 }
 
-/* --- Command bar: the score form as one glass line ---------------------- */
+/* --- Command bar: the shared control surface (lib/engine/command-bar.css),
+   placed in the hero column. ---------------------------------------------- */
 
 .home-hero .score-hero-input {
   width: 100%;
@@ -142,73 +143,6 @@
 .home-hero .score-hero-input .score-form {
   max-width: none;
   margin: 0;
-}
-
-.home-hero .score-hero-input .score-input-card {
-  padding: 6px;
-  border: 0;
-  border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  transition: box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.home-hero .score-hero-input .score-input-card:focus-within {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
-    inset 0 1px 0 var(--lv-glass-edge),
-    var(--lv-glass-shadow);
-}
-
-.home-hero .score-hero-input .score-input-col {
-  flex-direction: row;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.home-hero .score-hero-input .score-input-flex-box {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.home-hero .score-hero-input .score-url-input-inner,
-.home-hero .score-hero-input .score-url-input-inner:focus {
-  height: 3.25rem;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: 1.02rem;
-}
-
-.home-hero .score-hero-input .score-submit {
-  width: auto;
-  flex: 0 0 auto;
-  min-height: 3.25rem;
-  padding-inline: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.home-hero .score-hero-input .score-scope-toggle {
-  margin: 0;
-  padding: 0 0.3rem;
-  border-top: 0;
-}
-
-.home-hero .score-hero-input .score-form-foot {
-  margin-top: 0.2rem;
-  padding-right: 0.6rem;
-}
-
-@media (max-width: 560px) {
-  .home-hero .score-hero-input .score-input-col {
-    flex-direction: column;
-  }
-  .home-hero .score-hero-input .score-submit {
-    width: 100%;
-  }
 }
 
 /* ==========================================================================

@@ -703,8 +703,8 @@ export function VerifyForm({
         onSubmit={() => runVerify(normalizeInput(url))}
         busy={status === 'loading'}
         go="Run all four"
-        goBusy="Running four engines"
-        foot={<p className="eg-bar-foot-note">No login. The four engines fire in parallel and each fetches the page itself.</p>}
+        goBusy="Running"
+        note="No login. The four engines fire in parallel and each fetches the page itself."
       />
 
       <Instrument

@@ -545,15 +545,15 @@ export function M3BridgeTool() {
 
   return (
     <div className="eg-bench">
-      <div className="m3-input">
-        <div className="eg-bar-foot">
+      <div className="eg-bar m3-input">
+        <div className="m3-head">
           <Segmented<'css' | 'json'>
-            label="input"
+            label="Input"
             value={inputFormat}
             onChange={setInputFormat}
             options={[
-              { value: 'css', label: 'CSS custom properties' },
-              { value: 'json', label: 'JSON tokens' },
+              { value: 'css', label: 'CSS custom properties', hint: <>A <code>:root</code> block of <code>--md-sys-*</code> custom properties.</> },
+              { value: 'json', label: 'JSON tokens', hint: <>A flat map of <code>md.sys.*</code> names to values.</> },
             ]}
           />
           <button type="button" className="eg-share-btn" onClick={handleLoadSample} data-cuelume-press="tick">
@@ -561,22 +561,31 @@ export function M3BridgeTool() {
           </button>
         </div>
         <label className="sr-only" htmlFor="m3-input">Material 3 tokens to convert</label>
-        <textarea
-          id="m3-input"
-          className="m3-textarea"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          spellCheck={false}
-          placeholder={
-            inputFormat === 'css'
-              ? ':root {\n  --md-sys-color-primary: #6750A4;\n  --md-sys-color-on-primary: #FFFFFF;\n  --md-sys-shape-corner-medium: 12px;\n  --md-sys-motion-duration-short-2: 100ms;\n}'
+        <div className="eg-bar-field is-area">
+          <textarea
+            id="m3-input"
+            className="eg-bar-input m3-textarea"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            spellCheck={false}
+            placeholder={
+              inputFormat === 'css'
+                ? ':root {\n  --md-sys-color-primary: #6750A4;\n  --md-sys-color-on-primary: #FFFFFF;\n  --md-sys-shape-corner-medium: 12px;\n  --md-sys-motion-duration-short-2: 100ms;\n}'
               : '{\n  "md.sys.color.primary": "#6750A4",\n  "md.sys.color.onPrimary": "#FFFFFF"\n}'
-          }
-        />
+            }
+          />
+        </div>
         <div className="m3-go">
-          <p className="eg-bar-foot-note">Converted in your browser. Nothing is sent anywhere.</p>
+          <p className="eg-bar-status">
+            <span>Converted in your browser. Nothing is sent anywhere.</span>
+          </p>
           <button type="button" className="eg-bar-go" onClick={() => (input.trim() ? handleConvert() : document.getElementById('m3-input')?.focus())} data-cuelume-press="sparkle">
-            Convert to DTCG
+            <span className="eg-go-l">
+              Convert to DTCG
+              <svg className="eg-go-glyph" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 10h11M11 5.5 15.5 10 11 14.5" />
+              </svg>
+            </span>
           </button>
         </div>
       </div>

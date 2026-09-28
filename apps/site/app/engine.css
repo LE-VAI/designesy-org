@@ -137,217 +137,6 @@
   min-width: 0;
 }
 
-/* --- Command bar: one glass line ----------------------------------------- */
-
-.eg-bar {
-  display: grid;
-  gap: var(--space-4);
-  max-width: 46rem;
-  padding: var(--space-6);
-  border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  transition: box-shadow var(--eg-t-move);
-}
-
-.eg-bar-line {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-6);
-}
-
-.eg-bar:focus-within {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
-    inset 0 1px 0 var(--lv-glass-edge),
-    var(--lv-glass-shadow);
-}
-
-/* The field keeps its own outline off: the whole bar shows the focus. */
-.eg-bar-line .eg-bar-input:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-.eg-bar-field {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-10);
-  padding-inline: var(--space-12) var(--space-6);
-}
-
-.eg-bar-field svg {
-  flex: 0 0 auto;
-  color: var(--lv-ink-accent);
-}
-
-.eg-bar-input {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 3.25rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: 400 1rem/1.2 var(--sans);
-}
-
-.eg-bar-input::placeholder {
-  color: var(--muted-dim);
-}
-
-.eg-bar-go {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-8);
-  min-height: 3.25rem;
-  padding-inline: var(--space-24);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--signal-light), var(--signal));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
-  color: var(--paper-on-signal);
-  font: 600 0.95rem/1 var(--sans);
-  cursor: pointer;
-  transition: transform var(--eg-t-press), opacity var(--eg-t-press);
-}
-
-.eg-bar-go:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.eg-bar-go[aria-busy="true"] {
-  opacity: 0.72;
-  cursor: progress;
-}
-
-.eg-bar-go:focus-visible {
-  outline: 2px solid var(--paper-on-signal);
-  outline-offset: -4px;
-}
-
-.eg-bar-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-8) var(--space-16);
-  padding: var(--space-4) var(--space-4) var(--space-2);
-  font-size: 0.8rem;
-  color: var(--muted-dim);
-}
-
-.eg-bar-foot-note {
-  margin: 0;
-}
-
-/* Two URLs (compare): the fields share one bar, a divider between them. */
-.eg-bar-line.is-pair .eg-bar-field + .eg-bar-field {
-  border-left: 1px solid var(--line-faint);
-  padding-left: var(--space-14);
-}
-
-@container bench (width < 36rem) {
-  .eg-bar-line {
-    flex-direction: column;
-  }
-  .eg-bar-go {
-    width: 100%;
-  }
-  .eg-bar-line.is-pair .eg-bar-field + .eg-bar-field {
-    border-left: 0;
-    border-top: 1px solid var(--line-faint);
-    padding-left: var(--space-12);
-  }
-}
-
-/* --- Segmented control (radiogroup, roving focus) ------------------------ */
-
-.eg-seg {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-8);
-  max-width: 100%;
-  min-width: 0;
-}
-
-.eg-seg-label {
-  font: 500 0.72rem/1 var(--mono);
-  color: var(--muted-dim);
-}
-
-.eg-seg-track {
-  position: relative;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  display: inline-grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  padding: 3px;
-  border-radius: var(--radius-md);
-  background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--lv-well-line);
-}
-
-/* The selection is one moving tile, so a change of choice reads as motion
-   from the old choice to the new one. */
-.eg-seg-thumb {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc((100% - 6px) / var(--seg-n));
-  border-radius: var(--radius-sm);
-  background: var(--surface-lifted);
-  box-shadow: 0 0 0 1px var(--line), inset 0 1px 0 var(--lv-glass-edge);
-  transform: translateX(calc(var(--seg-i) * 100%));
-  transition: transform var(--eg-t-move);
-  pointer-events: none;
-}
-
-.eg-seg-track {
-  --seg-n: 1;
-  --seg-i: 0;
-}
-
-.eg-seg-opt {
-  position: relative;
-  z-index: 1;
-  min-height: 2rem;
-  padding: 0 var(--space-12);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font: 500 0.78rem/1 var(--sans);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--eg-t-move);
-}
-
-.eg-seg-opt[aria-checked="true"] {
-  color: var(--ink);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .eg-seg-opt:hover {
-    color: var(--ink);
-  }
-}
-
-.eg-seg-opt:disabled {
-  cursor: default;
-}
-
 /* --- Instrument panel ------------------------------------------------------ */
 
 .eg-inst {
@@ -390,17 +179,6 @@
   min-width: 0;
   color: var(--ink);
   white-space: nowrap;
-}
-
-/* Narrow bench: the target pill steps out (the findings name the host), so the
-   engine's name and its state never collide. */
-@container bench (width < 36rem) {
-  .eg-inst-bar {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .eg-inst-target {
-    display: none;
-  }
 }
 
 .eg-mark {
@@ -452,6 +230,20 @@
   font: 500 0.72rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Narrow bench: the target pill steps out (the findings name the host), so the
+   engine's name and its state share one row and never collide. This block
+   follows the pill's own rule: at equal specificity the later rule wins, and
+   placed before it the override never applied (measured on /score at 390 px:
+   the pill stayed, the state wrapped under the name onto the bar's border). */
+@container bench (width < 36rem) {
+  .eg-inst-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .eg-inst-target {
+    display: none;
+  }
 }
 
 .eg-dot {
@@ -2336,42 +2128,53 @@ button.mt-row {
 
 /* --- M3 bridge: the input bench and the conversion pipeline ----------------- */
 
-.m3-input {
-  display: grid;
-  gap: var(--space-8);
-  padding: var(--space-6);
-  border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+/* The converter's input is the control surface (command-bar.css) with a
+   textarea for its well: the format choice and the sample above it, the note
+   and the key below, all on the well's content edge. */
+.m3-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-12) var(--space-16);
+  padding: var(--space-4) var(--ctl-inset) var(--space-4);
 }
 
-.m3-input:focus-within {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
-    inset 0 1px 0 var(--lv-glass-edge),
-    var(--lv-glass-shadow);
+/* The format's reading stays under the choice here, at every width: the
+   sample button holds the row's right end. */
+.m3-head .eg-seg {
+  flex: 1 1 20rem;
+  grid-template-columns: auto minmax(0, max-content);
+  grid-template-areas:
+    "label track"
+    "hint hint";
+  justify-content: start;
 }
 
-.m3-textarea {
+.m3-head .eg-seg-hint {
+  padding-left: 0;
+}
+
+/* As tall as the choice track beside it, so the two share a centre line. */
+.m3-head .eg-share-btn {
+  min-height: var(--space-48);
+}
+
+.eg-seg-hint code {
+  font: 500 0.78rem/1 var(--mono);
+  color: var(--ink);
+}
+
+/* Qualified by the well: command-bar.css may load after this sheet, and its
+   input rule sets the same properties at single-class specificity. */
+.eg-bar-field > .m3-textarea {
+  display: block;
   width: 100%;
   min-height: 13rem;
-  padding: var(--space-14) var(--space-16);
-  border: 0;
-  border-radius: var(--radius-lg);
-  background: var(--lv-well);
-  color: var(--ink);
+  padding: var(--space-14) var(--ctl-inset);
+  border-radius: inherit;
   font: 400 0.9rem/1.6 var(--mono);
   resize: vertical;
-}
-
-.m3-textarea:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-.m3-textarea::placeholder {
-  color: var(--muted-dim);
 }
 
 .m3-go {
@@ -2379,8 +2182,17 @@ button.mt-row {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8) var(--space-16);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-6);
+  gap: var(--space-12) var(--space-16);
+}
+
+.m3-go .eg-bar-status {
+  padding-left: var(--ctl-inset);
+}
+
+@container ctl (width < 30rem) {
+  .m3-go .eg-bar-go {
+    width: 100%;
+  }
 }
 
 .m3-pipe {
@@ -2587,7 +2399,6 @@ button.mt-row {
   .eg-inst[data-phase="done"] .eg-minicell[data-status] {
     animation: none;
   }
-  .eg-seg-thumb,
   .eg-chev,
   .eg-go-arrow {
     transition: none;
@@ -2616,8 +2427,7 @@ html[data-motion="paused"] .eg .eg-rule {
     border: 1px solid CanvasText;
   }
   .eg-cell,
-  .eg-inst,
-  .eg-bar-line {
+  .eg-inst {
     border: 1px solid CanvasText;
   }
 }

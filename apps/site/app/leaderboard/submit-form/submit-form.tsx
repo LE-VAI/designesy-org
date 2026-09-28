@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { EngineBar, Well } from '../../lib/engine/command-bar';
 
 type SubmitResult = {
   ok: boolean;
@@ -25,8 +26,7 @@ export function SubmitForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit() {
     if (!url.trim()) return;
     setLoading(true);
     setResult(null);
@@ -47,53 +47,25 @@ export function SubmitForm() {
 
   return (
     <div className="lb-submit">
-      <form onSubmit={handleSubmit} className="lb-submit-form">
-        <label className="lb-field">
-          <span className="lb-field-label">URL</span>
-          <input
-            type="url"
-            name="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com"
-            required
-            disabled={loading}
-            className="lb-input"
-          />
-        </label>
-        <label className="lb-field">
-          <span className="lb-field-label">Name (optional)</span>
-          <input
-            type="text"
-            name="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Site name"
-            disabled={loading}
-            className="lb-input"
-          />
-        </label>
-        <label className="lb-field">
-          <span className="lb-field-label">Category (optional)</span>
-          <input
-            type="text"
-            name="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="SaaS, Design System, Editorial…"
-            disabled={loading}
-            className="lb-input"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={loading || !url.trim()}
-          className="button primary lb-submit-btn"
-          data-cuelume-press
-        >
-          {loading ? 'Scoring…' : 'Submit & score'}
-        </button>
-      </form>
+      <EngineBar
+        fields={[{ value: url, onChange: setUrl, label: 'URL to submit to the leaderboard', placeholder: 'Any public URL, like stripe.com' }]}
+        onSubmit={() => void submit()}
+        busy={loading}
+        go="Submit and score"
+        goBusy="Scoring"
+        choices={
+          <details className="eg-more">
+            <summary>
+              Add a name and a category <small>Optional</small>
+            </summary>
+            <div className="eg-more-body">
+              <Well tag="Name" value={name} onChange={setName} placeholder="Site name" readOnly={loading} />
+              <Well tag="Category" value={category} onChange={setCategory} placeholder="SaaS, design system, editorial" readOnly={loading} />
+            </div>
+          </details>
+        }
+        note="Scored on submit. Reviewed for the seed list at the next weekly run."
+      />
 
       {result && (
         <div className={`lb-submit-result ${result.ok ? 'lb-result-ok' : 'lb-result-err'}`}>
