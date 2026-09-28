@@ -17,9 +17,9 @@ export const metadata: Metadata = pageMeta({
   type: 'article',
   ogTitle: 'What is design verification? · Designesy',
   ogDescription:
-    'The automated evaluation of a live site against a published design system contract — defined, distinguished from linting and regression, and made runnable.',
+    'The automated evaluation of a live site against a published design system contract: defined, distinguished from linting and regression, and made runnable.',
   twitterDescription:
-    'Design verification, defined — designesy.org/learn/what-is-design-verification',
+    'Design verification, defined · designesy.org/learn/what-is-design-verification',
 });
 
 const CONTRACT_LAYERS = [

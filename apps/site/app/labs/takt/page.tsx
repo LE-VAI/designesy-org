@@ -15,13 +15,13 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Takt',
   description:
-    'Lab Two — interface feel: radius nesting, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and verified against designesy.org.',
+    'Lab Two covers interface feel: radius nesting, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and verified against designesy.org.',
   path: '/labs/takt',
-  ogTitle: 'Takt · Lab Two — Designesy',
+  ogTitle: 'Takt · Lab Two · Designesy',
   ogDescription:
-    'How an interface feels under your hands. Concentric radii, press feedback, image outlines, hit areas, stagger rhythm — portable rules with exact values.',
+    'How an interface feels under your hands. Concentric radii, press feedback, image outlines, hit areas, stagger rhythm: portable rules with exact values.',
   twitterDescription:
-    'Interface feel as portable rules — concentric radii, press scale, hit areas, stagger rhythm. designesy.org/labs/takt',
+    'Interface feel as portable rules: concentric radii, press scale, hit areas, stagger rhythm. designesy.org/labs/takt',
 });
 
 /**

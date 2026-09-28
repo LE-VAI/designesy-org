@@ -18,12 +18,12 @@ import { SiteTable } from '../lib/data/site-table';
 export const metadata: Metadata = pageMeta({
   title: 'Framework Evaluations',
   description:
-    `Every scored site, each with its own evaluation article. 30 sites scored against the ${ENGINE_CHECK_COUNT}-check engine — browse by category, compare scores, read the findings.`,
+    `Every scored site, each with its own evaluation article. 30 sites scored against the ${ENGINE_CHECK_COUNT}-check engine: browse by category, compare scores, read the findings.`,
   path: '/frameworks',
   ogTitle: 'Framework Evaluations · Designesy',
   ogDescription:
     `30 sites scored against a ${ENGINE_CHECK_COUNT}-check design contract engine. Each has a dedicated evaluation page with per-category breakdowns.`,
-  twitterDescription: 'Framework evaluations — designesy.org/frameworks',
+  twitterDescription: 'Framework evaluations · designesy.org/frameworks',
 });
 
 export const revalidate = 3600;

@@ -4,7 +4,7 @@ import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Score — design legitimacy grade';
+export const alt = 'Designesy Score: design legitimacy grade';
 
 // Contract tokens — keep in sync with app/lib/og-card.tsx
 const T = {
@@ -78,7 +78,7 @@ export default async function ScoreOpenGraphImage({
     const result = await scoreUrl(url);
     return renderCard({
       eyebrow: 'Designesy Score',
-      title: result.score === null ? 'Not scored' : `Grade ${result.grade} — ${result.score}%`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} · ${result.score}%`,
       lede:
         result.score === null
           ? 'The target could not be read, so no score is reported.'

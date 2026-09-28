@@ -10,12 +10,12 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
   description:
-    'Designesy design intelligence over MCP — Streamable HTTP at https://www.designesy.org/api/mcp. Seventeen tools + one MCP App (interactive report dashboard). Stateless 2026-07-28 spec. Connect Claude Desktop, Cursor, or ZCode.',
+    'Designesy design intelligence over MCP: Streamable HTTP at https://www.designesy.org/api/mcp. Seventeen tools + one MCP App (interactive report dashboard). Stateless 2026-07-28 spec. Connect Claude Desktop, Cursor, or ZCode.',
   path: '/docs/mcp',
   ogTitle: 'MCP server · Designesy',
   ogDescription:
     'Streamable HTTP endpoint with 17 design-intelligence tools + an MCP App (interactive report dashboard). Stateless 2026-07-28 spec. Copy-paste client configs for Claude Desktop, Cursor, and ZCode.',
-  twitterDescription: 'Designesy MCP server — designesy.org/docs/mcp',
+  twitterDescription: 'Designesy MCP server · designesy.org/docs/mcp',
 });
 
 const ENDPOINT = 'https://www.designesy.org/api/mcp';

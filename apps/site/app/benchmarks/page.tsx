@@ -22,12 +22,12 @@ import { DataTable } from '../lib/data/figure';
 export const metadata: Metadata = pageMeta({
   title: 'Benchmarks',
   description:
-    'Designesy vs hallmark vs slop-eval — a side-by-side benchmark of design verification engines. What each catches that the others do not, plus the wider emerging landscape.',
+    'Designesy vs hallmark vs slop-eval: a side-by-side benchmark of design verification engines. What each catches that the others do not, plus the wider emerging landscape.',
   path: '/benchmarks',
   ogDescription:
-    'Three tools, three questions: hallmark prevents slop, slop-eval scores slop, designesy verifies contract conformance — plus the wider landscape.',
+    'Three tools, three questions: hallmark prevents slop, slop-eval scores slop, designesy verifies contract conformance, plus the wider landscape.',
   twitterDescription:
-    'Competitive benchmark — designesy.org/benchmarks',
+    'Competitive benchmark · designesy.org/benchmarks',
 });
 
 const RESEARCHED = '2026-08-01';

@@ -12,13 +12,13 @@ import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 export const metadata: Metadata = pageMeta({
   title: 'Continuity',
   description:
-    'Designesy Continuity — design judgment that stays current. Score, contract, verify, and keep the receipt. Early access waitlist. Open core stays free.',
+    'Designesy Continuity: design judgment that stays current. Score, contract, verify, and keep the receipt. Early access waitlist. Open core stays free.',
   path: '/continuity',
   ogTitle: 'Continuity · Designesy',
   ogDescription:
-    'Design judgment that stays current. Early access for Continuity — scheduled scans, drift alerts, and score history on work you ship with agents.',
+    'Design judgment that stays current. Early access for Continuity: scheduled scans, drift alerts, and score history on work you ship with agents.',
   twitterDescription:
-    'Design judgment that stays current — early access waitlist. designesy.org/continuity',
+    'Design judgment that stays current: early access waitlist. designesy.org/continuity',
 });
 
 const CARDS = [

@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Drift contract',
   description:
-    'Designesy Drift Contract v0.1.0 — detects the four documented AI-generated UI drift failure modes: token fabrication, within-session drift, between-session amnesia, silent breaking changes. 12 verification checks.',
+    'Designesy Drift Contract v0.1.0 detects the four documented AI-generated UI drift failure modes: token fabrication, within-session drift, between-session amnesia, silent breaking changes. 12 verification checks.',
   path: '/contracts/drift',
   ogTitle: 'Drift contract · Designesy',
   ogDescription:
-    'Detect AI-generated UI drift — 12 checks for token fabrication, value variance, and off-contract patterns.',
-  twitterDescription: 'Designesy drift detection — designesy.org/contracts/drift',
+    'Detect AI-generated UI drift: 12 checks for token fabrication, value variance, and off-contract patterns.',
+  twitterDescription: 'Designesy drift detection · designesy.org/contracts/drift',
 });
 
 const c = driftContract;

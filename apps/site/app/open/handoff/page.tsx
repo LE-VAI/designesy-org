@@ -13,11 +13,11 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Open handoff',
   description:
-    'First public handoff pack for Designesy Open — short share copy, agent prompt, package links, and verification paths pointing at /open.',
+    'First public handoff pack for Designesy Open: short share copy, agent prompt, package links, and verification paths pointing at /open.',
   path: '/open/handoff',
   ogDescription:
     'Portable share packet for open design intelligence: human path, machine feed, and first post copy.',
-  twitterDescription: 'Share open design intelligence — designesy.org/open/handoff',
+  twitterDescription: 'Share open design intelligence · designesy.org/open/handoff',
 });
 
 const SHARE_POSTS = [

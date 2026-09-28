@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
   ogTitle: 'Score your v0 site · Designesy',
   ogDescription:
     `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. Built on v0? Score your site.`,
-  twitterDescription: 'Score your v0 site — designesy.org/score/v0',
+  twitterDescription: 'Score your v0 site · designesy.org/score/v0',
 });
 
 export default function ScoreV0Page() {

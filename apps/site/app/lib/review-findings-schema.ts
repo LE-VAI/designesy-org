@@ -185,8 +185,8 @@ export const REVIEW_FINDINGS_SCHEMA = {
             pass: { type: 'integer' },
             fail: { type: 'integer' },
             warn: { type: 'integer' },
-            skip: { type: 'integer', description: 'Not applicable — convention not met (no tokens, no buttons, no DESIGN.md). Excluded from score.' },
-            manual: { type: 'integer', description: 'Requires a live browser/CDP trace to verify (Core Web Vitals, sound toggle, overflow). Excluded from score — run the full audit to resolve.' },
+            skip: { type: 'integer', description: 'Not applicable: convention not met (no tokens, no buttons, no DESIGN.md). Excluded from score.' },
+            manual: { type: 'integer', description: 'Requires a live browser/CDP trace to verify (Core Web Vitals, sound toggle, overflow). Excluded from score: run the full audit to resolve.' },
           },
         },
         countsBySeverity: {
@@ -198,7 +198,7 @@ export const REVIEW_FINDINGS_SCHEMA = {
             info: { type: 'integer', description: 'Maps to Google info, Lighthouse informative.' },
             pass: { type: 'integer', description: 'Maps to designesy PASS, Lighthouse pass.' },
             skip: { type: 'integer', description: 'Maps to designesy SKIP (N/A), Lighthouse notApplicable.' },
-            manual: { type: 'integer', description: 'Maps to designesy MANUAL, Lighthouse manual — requires browser verification.' },
+            manual: { type: 'integer', description: 'Maps to designesy MANUAL, Lighthouse manual: requires browser verification.' },
           },
         },
         scored: {

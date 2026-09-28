@@ -10,15 +10,15 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'lovable.dev — A on arrival case study',
+  title: 'lovable.dev: A on arrival case study',
   description:
-    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract — without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
+    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
   path: '/work/lovable-dev',
   type: 'article',
   ogTitle: 'lovable.dev · A on arrival · Designesy',
   ogDescription:
-    'An AI app platform site that scored A on the Designesy contract without citing it. The upper bound of what an AI-built site can score — snapshot, 2026-07-25.',
-  twitterDescription: 'lovable.dev A on arrival case study — designesy.org/work/lovable-dev',
+    'An AI app platform site that scored A on the Designesy contract without citing it. The upper bound of what an AI-built site can score (snapshot, 2026-07-25).',
+  twitterDescription: 'lovable.dev A on arrival case study · designesy.org/work/lovable-dev',
 });
 
 const COUNTS = { pass: 19, fail: 0, warn: 3, skip: 4 };

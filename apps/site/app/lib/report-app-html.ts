@@ -138,7 +138,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 <body>
 <div class="eyebrow">Designesy Unified Report</div>
 <h1 id="title">Design-Intelligence Report</h1>
-<p class="target" id="targetLine">Target: <code id="targetUrl">—</code></p>
+<p class="target" id="targetLine">Target: <code id="targetUrl"><span aria-hidden="true">–</span></code></p>
 
 <div id="composite" class="composite hidden"></div>
 <div id="engines" class="engines hidden"></div>
@@ -221,7 +221,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   function engineCard(label, weight, result, desc) {
     if (!result || !result.ok) {
       return '<div class="engine-card"><p class="engine-label">' + label + ' ' + weight + '</p>' +
-        '<p class="engine-grade" style="color:var(--muted-dim)">—</p>' +
+        '<p class="engine-grade" style="color:var(--muted-dim)" aria-hidden="true">–</p>' +
         '<p class="engine-fail">' + (result && result.error ? result.error : 'Engine did not return a score') + '</p></div>';
     }
     var s = result.score, g = result.grade;
@@ -338,7 +338,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
         render(r.data);
       })
       .catch(function(err) {
-        setState('Network error — could not reach the report engine. ' + (err && err.message ? err.message : ''), true, false);
+        setState('Network error: could not reach the report engine. ' + (err && err.message ? err.message : ''), true, false);
       });
   }
 

@@ -10,14 +10,14 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Compile — case study',
+  title: 'Compile: case study',
   description:
-    'Principle compiler — takes plain language and compiles it into verifiable design contracts. Built and locally verified. Demonstrates the Sources to Contracts to Tools chain.',
+    'Principle compiler: takes plain language and compiles it into verifiable design contracts. Built and locally verified. Demonstrates the Sources to Contracts to Tools chain.',
   path: '/work/compile',
   ogTitle: 'Compile · case study',
   ogDescription:
     'A principle compiled into tokens, a test, and a checklist. Built, verified, pending hosting. From contract to tool.',
-  twitterDescription: 'Compile case study — designesy.org/work/compile',
+  twitterDescription: 'Compile case study · designesy.org/work/compile',
   type: 'article',
 });
 

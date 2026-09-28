@@ -10,15 +10,15 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'designesy.org — D to A case study',
+  title: 'designesy.org: D to A case study',
   description:
     'The publisher scored itself, got a D, fixed the gaps, and published the grade. Real before/after scores from the live /api/score endpoint: D 67.4 → A 96.3 in one session.',
   path: '/work/designesy-org',
   type: 'article',
   ogTitle: 'designesy.org · D to A · Designesy',
   ogDescription:
-    'The same engine that grades every other site graded the publisher. D 67.4 → A 96.3 — the fixes, the delta table, and the lessons.',
-  twitterDescription: 'designesy.org D to A case study — designesy.org/work/designesy-org',
+    'The same engine that grades every other site graded the publisher. D 67.4 → A 96.3: the fixes, the delta table, and the lessons.',
+  twitterDescription: 'designesy.org D to A case study · designesy.org/work/designesy-org',
 });
 
 const BEFORE_COUNTS = { pass: 12, fail: 9, warn: 2, skip: 3 };

@@ -21,12 +21,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Contract Changelog',
   description:
-    'Every contract change, organized by design dimension. Track what was added, modified, and removed across versions — Tokens, Motion, Cadence, Accessibility, Takt, Poise, Acoustics, Copywriting, Identity, Security.',
+    'Every contract change, organized by design dimension. Track what was added, modified, and removed across versions: Tokens, Motion, Cadence, Accessibility, Takt, Poise, Acoustics, Copywriting, Identity, Security.',
   path: '/changelog',
   ogTitle: 'Contract Changelog · Designesy',
   ogDescription:
-    'Design contract changes by dimension. Every version bump, every new check, every rule adoption — filterable by design dimension.',
-  twitterDescription: 'Contract changelog — designesy.org/changelog',
+    'Design contract changes by dimension. Every version bump, every new check, every rule adoption, filterable by design dimension.',
+  twitterDescription: 'Contract changelog · designesy.org/changelog',
 });
 
 // ── Dimensions ──────────────────────────────────────────────────────────────

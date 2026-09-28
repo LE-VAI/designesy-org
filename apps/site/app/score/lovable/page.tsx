@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
   ogTitle: 'Score your Lovable site · Designesy',
   ogDescription:
     `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. Built on Lovable? Score your site.`,
-  twitterDescription: 'Score your Lovable site — designesy.org/score/lovable',
+  twitterDescription: 'Score your Lovable site · designesy.org/score/lovable',
 });
 
 export default function ScoreLovablePage() {

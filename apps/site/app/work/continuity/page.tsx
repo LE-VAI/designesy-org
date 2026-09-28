@@ -10,14 +10,14 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Continuity — case study',
+  title: 'Continuity: case study',
   description:
     'A founder-narrative article published as a single X post. Channel-format mismatch documented with eight-dimension review.',
   path: '/work/continuity',
   ogTitle: 'Continuity · case study',
   ogDescription:
     'A founder-narrative article reviewed against the design system contract. Outcome: channel-format mismatch.',
-  twitterDescription: 'Continuity case study — designesy.org/work/continuity',
+  twitterDescription: 'Continuity case study · designesy.org/work/continuity',
   type: 'article',
 });
 

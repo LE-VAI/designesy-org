@@ -5,7 +5,7 @@ import { scoreUrl, normalizeInputUrl, isValidUrl } from '../../api/score/route';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Score Report — Full verification report';
+export const alt = 'Designesy Score Report: Full verification report';
 
 export default async function OpenGraphImage({
   searchParams,
@@ -39,11 +39,11 @@ export default async function OpenGraphImage({
     const result = await scoreUrl(url);
     return renderOgCard({
       eyebrow: 'Score Report',
-      title: result.score === null ? 'Not scored' : `Grade ${result.grade} — ${result.score}%`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} · ${result.score}%`,
       lede:
         result.score === null
           ? 'The target could not be read, so no score is reported.'
-          : `${result.pass} passed · ${result.fail} failed · ${result.warn} warnings — full verification report`,
+          : `${result.pass} passed · ${result.fail} failed · ${result.warn} warnings in the full verification report`,
       path: 'designesy.org/score/report',
       // null (unreachable) becomes undefined so the card omits the badge rather
       // than rendering a letter for a site we never read.

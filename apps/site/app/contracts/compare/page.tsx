@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Compare contract',
   description:
-    'Designesy Compare Contract v0.1.0 — cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.',
+    'Designesy Compare Contract v0.1.0: cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.',
   path: '/contracts/compare',
   ogTitle: 'Compare contract · Designesy',
   ogDescription:
-    'Diff two design systems from live URLs — tokens added, removed, renamed, value-changed, scale drift, contrast drift.',
-  twitterDescription: 'Designesy compare — designesy.org/contracts/compare',
+    'Diff two design systems from live URLs: tokens added, removed, renamed, value-changed, scale drift, contrast drift.',
+  twitterDescription: 'Designesy compare · designesy.org/contracts/compare',
 });
 
 const c = compareContract;

@@ -21,12 +21,12 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
   description:
-    'Canonical public source for Designesy open design intelligence — portable design judgment as contracts, kits, labs, and field checks for people and agents. Prefer open.json for machine ingest.',
+    'Canonical public source for Designesy open design intelligence: portable design judgment as contracts, kits, labs, and field checks for people and agents. Prefer open.json for machine ingest.',
   path: '/open',
   ogDescription:
-    'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed — the primary Designesy reference.',
+    'Fetchable design rules, review kits, labs, and field checks. Human index and machine feed: the primary Designesy reference.',
   twitterDescription:
-    'Portable design judgment · machine catalog open.json — designesy.org/open',
+    'Portable design judgment · machine catalog open.json · designesy.org/open',
 });
 
 const KIND_LABEL: Record<string, string> = {

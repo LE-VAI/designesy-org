@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'AI Readiness contract',
   description:
-    'Designesy AI Readiness Contract v0.1.0 — scores whether a design system is the default context AI tools build from. 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap, robots.txt, and social meta.',
+    'Designesy AI Readiness Contract v0.1.0: scores whether a design system is the default context AI tools build from. 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap, robots.txt, and social meta.',
   path: '/contracts/readiness',
   ogTitle: 'AI Readiness contract · Designesy',
   ogDescription:
-    'Score design-system AI readiness — the 6th maturity axis. 10 checks for machine-readable context.',
-  twitterDescription: 'Designesy AI readiness — designesy.org/contracts/readiness',
+    'Score design-system AI readiness: the 6th maturity axis. 10 checks for machine-readable context.',
+  twitterDescription: 'Designesy AI readiness · designesy.org/contracts/readiness',
 });
 
 const c = readinessContract;

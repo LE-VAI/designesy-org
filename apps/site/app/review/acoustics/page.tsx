@@ -12,12 +12,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics field check',
   description:
-    'Public Design Review of Lab Four · Acoustics — Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
+    'Public Design Review of Lab Four · Acoustics in the Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
   path: '/review/acoustics',
   ogTitle: 'Acoustics · field check',
   ogDescription:
-    'Lab Four reviewed with Use Kit One · Design Review. Pass with notes — acoustic rules adopted in contract v0.3.0.',
-  twitterDescription: 'Design Review of Lab Four — designesy.org/review/acoustics',
+    'Lab Four reviewed with Use Kit One · Design Review. Pass with notes: acoustic rules adopted in contract v0.3.0.',
+  twitterDescription: 'Design Review of Lab Four · designesy.org/review/acoustics',
 });
 
 const DIMENSIONS = [

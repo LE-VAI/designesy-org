@@ -8,7 +8,7 @@ export default function TwitterImage() {
   return renderOgCard({
     eyebrow: 'Open · Design intelligence',
     title: 'Open design intelligence',
-    lede: 'Portable contracts, kits, labs, and field checks — human index and machine feed.',
+    lede: 'Portable contracts, kits, labs, and field checks: human index and machine feed.',
     path: 'designesy.org/open',
     kind: 'docs',
     badge: 'v0.1',

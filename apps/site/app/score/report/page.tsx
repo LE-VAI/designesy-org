@@ -24,7 +24,7 @@ export async function generateMetadata({
   const base = pageMeta({
     title: 'Score Report',
     description:
-      `Full verification report — ${ENGINE_SCORED_CHECK_COUNT} deterministic checks against the Designesy design system contract, ${CONTRACT_VERSION}.`,
+      `Full verification report: ${ENGINE_SCORED_CHECK_COUNT} deterministic checks against the Designesy design system contract, ${CONTRACT_VERSION}.`,
     path: '/score/report',
   });
 
@@ -35,11 +35,11 @@ export async function generateMetadata({
       ...base,
       openGraph: {
         ...base.openGraph,
-        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score Report — Full verification report' }],
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score Report: Full verification report' }],
       },
       twitter: {
         ...base.twitter,
-        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score Report — Full verification report' }],
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score Report: Full verification report' }],
       },
     };
   }

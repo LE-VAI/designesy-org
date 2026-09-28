@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 42-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally — **no server required**. Zero dependencies.
+Standalone 42-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. Zero dependencies.
 
 ## Install
 
@@ -14,19 +14,19 @@ npx @designesy/score <url>
 
 ```bash
 # Score a site (prints formatted report)
-npx designesy-score designesy.org
+npx @designesy/score designesy.org
 
-# CI gate — fail if below threshold
-npx designesy-score linear.app --min-score 70 --min-grade B
+# CI gate: fail if below threshold
+npx @designesy/score linear.app --min-score 70 --min-grade B
 
 # JSON output for pipelines
-npx designesy-score vercel.com --json
+npx @designesy/score vercel.com --json
 
 # Markdown review format (jakubkrehel-compatible)
-npx designesy-score stripe.com --format review
+npx @designesy/score stripe.com --format review
 
 # Scoring scope: contract (strict, all checks penalize absence) or universal (fair to external sites)
-npx designesy-score designesy.org --scope contract
+npx @designesy/score designesy.org --scope contract
 ```
 
 ### Options
@@ -58,22 +58,22 @@ console.log(result.checks);  // [{ id: 'v01', status: 'PASS', detail: '...' }, .
 
 | Category | Checks | Weight |
 |---|---|---|
-| cadence | v14, v15, v16, v17, v18, v19, x01, x02, x03, v28 | 18 |
-| accessibility | v03, v05, v06, v22, v24, v34, v35 | 15 |
-| semantic | v07, v25 | 12 |
-| motion | v08, v11, v12, v23 | 10 |
+| cadence | v14, v15, v16, v17, v18, v19, v20, v26, v28, x01, x02, x03 | 18 |
+| accessibility | v06, v22, v24, v25, v27, v35 | 15 |
+| semantic | v42, v43 | 12 |
+| motion | v05, v11, v12, v23 | 10 |
 | tokens | v01, v29 | 9 |
 | takt | v10, v13 | 8 |
 | copywriting | v38, v39, v40, v41 | 8 |
-| poise | v04, v09 | 7 |
-| identity | v07, v20, v26 | 6 |
-| interaction | — | 6 |
+| poise | v04, v08, v09 | 7 |
+| identity | v07, v34 | 6 |
+| interaction | v03 | 6 |
 | performance | v21 | 6 |
 | security | v36 | 5 |
 | spec | v37 | 4 |
-| responsive | v02, v27 | 3 |
+| responsive | v02 | 3 |
 
-Plus 12 anti-slop deductions (S1–S12) and 7 originality lifts (O1–O7).
+Plus 12 anti-slop deductions (S1 to S12) and 7 originality lifts (O1 to O7).
 
 ## Scoring
 

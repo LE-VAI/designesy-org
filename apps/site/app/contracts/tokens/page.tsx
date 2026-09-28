@@ -11,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Tokens contract',
   description:
-    'Designesy tokens contract v0.1.0 — W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria. Live export passes 10/10 checks.',
+    'Designesy tokens contract v0.1.0: W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria. Live export passes 10/10 checks.',
   path: '/contracts/tokens',
   ogTitle: 'Tokens contract · v0.1.0',
   ogDescription:
     'Token-format conformance for W3C DTCG 2025.10. OKLCH mandatory, custom types via $extensions. Machine export available.',
-  twitterDescription: 'Designesy tokens contract — designesy.org/contracts/tokens',
+  twitterDescription: 'Designesy tokens contract · designesy.org/contracts/tokens',
 });
 
 export default function TokensContractPage() {

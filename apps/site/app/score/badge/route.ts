@@ -59,15 +59,17 @@ function renderBadge(state: BadgeState): string {
     gradeFill = GRADE_FILL[state.grade] || '#6b6b6b';
     valueText = `${state.score}%`;
   } else if (state.kind === 'unreachable') {
-    gradeText = '—';
+    gradeText = '–';
     gradeFill = '#6b6b6b';
     valueText = 'unreachable';
   } else {
-    gradeText = '—';
+    gradeText = '–';
     gradeFill = '#6b6b6b';
     valueText = 'enter a URL';
   }
 
+  // The grade glyph is visual only: the spoken label says it in words.
+  const spoken = state.kind === 'scored' ? `Grade ${gradeText} ${valueText}` : valueText;
   const displayUrl =
     state.kind === 'scored'
       ? state.url
@@ -84,8 +86,8 @@ function renderBadge(state: BadgeState): string {
   const segGrade = 36;
   const segValue = W - segLabel - segGrade;
 
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Designesy score: Grade ${escapeXml(gradeText)} ${escapeXml(valueText)} for ${escapeXml(host)}">
-  <title>Designesy score — ${escapeXml(host)}</title>
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Designesy score: ${escapeXml(spoken)} for ${escapeXml(host)}">
+  <title>Designesy score: ${escapeXml(host)}</title>
   <linearGradient id="bg" x2="0" y2="1">
     <stop offset="0" stop-color="#101010"/>
     <stop offset="1" stop-color="#0a0a0a"/>

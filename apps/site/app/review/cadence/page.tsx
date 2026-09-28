@@ -12,12 +12,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Cadence field check',
   description:
-    'Public Design Review of Lab Three · Cadence — Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
+    'Public Design Review of Lab Three · Cadence in the Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
   path: '/review/cadence',
   ogTitle: 'Cadence · field check',
   ogDescription:
-    'Lab Three reviewed with Use Kit One · Design Review. Pass with notes — typography rules adopted in contract v0.1.3.',
-  twitterDescription: 'Design Review of Lab Three — designesy.org/review/cadence',
+    'Lab Three reviewed with Use Kit One · Design Review. Pass with notes: typography rules adopted in contract v0.1.3.',
+  twitterDescription: 'Design Review of Lab Three · designesy.org/review/cadence',
 });
 
 const DIMENSIONS = [

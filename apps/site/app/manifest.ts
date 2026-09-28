@@ -4,7 +4,7 @@ import { SITE_DEFAULT_DESCRIPTION, SITE_NAME } from './lib/site-meta';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${SITE_NAME} — Design intelligence infrastructure`,
+    name: `${SITE_NAME} · Design intelligence infrastructure`,
     short_name: SITE_NAME,
     description: SITE_DEFAULT_DESCRIPTION,
     start_url: '/',

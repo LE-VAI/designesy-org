@@ -11,11 +11,11 @@ import { AgentActions } from '../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Privacy',
   description:
-    'Designesy privacy — what this public surface collects, what it does not, and how machine exports stay open without turning visitors into product.',
+    'Designesy privacy: what this public surface collects, what it does not, and how machine exports stay open without turning visitors into product.',
   path: '/privacy',
   ogDescription:
     'Plain-language trust surface for designesy.org: logs, contact, open exports, and what we do not track.',
-  twitterDescription: 'Trust language for designesy.org — designesy.org/privacy',
+  twitterDescription: 'Trust language for designesy.org · designesy.org/privacy',
 });
 
 const PRINCIPLES = [

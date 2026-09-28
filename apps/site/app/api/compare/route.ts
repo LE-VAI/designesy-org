@@ -358,11 +358,11 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
 
   // c02: Token extraction
   if (countA === 0 && countB === 0) {
-    checks.push({ id: 'c02', item: 'Token extraction', status: 'FAIL', detail: 'No :root custom properties found in either URL — nothing to compare' });
+    checks.push({ id: 'c02', item: 'Token extraction', status: 'FAIL', detail: 'No :root custom properties found in either URL: nothing to compare' });
   } else if (countA === 0 || countB === 0) {
-    checks.push({ id: 'c02', item: 'Token extraction', status: 'FAIL', detail: `No :root tokens in ${countA === 0 ? 'A' : 'B'} (A: ${countA}, B: ${countB}) — one site has no token system` });
+    checks.push({ id: 'c02', item: 'Token extraction', status: 'FAIL', detail: `No :root tokens in ${countA === 0 ? 'A' : 'B'} (A: ${countA}, B: ${countB}): one site has no token system` });
   } else if (Math.abs(countA - countB) > Math.max(countA, countB) * 0.5) {
-    checks.push({ id: 'c02', item: 'Token extraction', status: 'WARN', detail: `Significant token count disparity (A: ${countA}, B: ${countB}) — may indicate an incomplete token system` });
+    checks.push({ id: 'c02', item: 'Token extraction', status: 'WARN', detail: `Significant token count disparity (A: ${countA}, B: ${countB}): may indicate an incomplete token system` });
   } else {
     checks.push({ id: 'c02', item: 'Token extraction', status: 'PASS', detail: `Tokens extracted from both URLs (A: ${countA}, B: ${countB})` });
   }
@@ -390,7 +390,7 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
   }
 
   if (countA === 0 && countB === 0) {
-    checks.push({ id: 'c03', item: 'Token-set diff computed', status: 'FAIL', detail: 'Cannot compute diff — token maps are empty' });
+    checks.push({ id: 'c03', item: 'Token-set diff computed', status: 'FAIL', detail: 'Cannot compute diff: token maps are empty' });
   } else {
     checks.push({
       id: 'c03',
@@ -435,7 +435,7 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
         : 'No rename candidates detected (no similar names with different values)',
     });
   } else {
-    checks.push({ id: 'c04', item: 'Rename detection', status: 'FAIL', detail: 'Cannot detect renames — token parsing incomplete' });
+    checks.push({ id: 'c04', item: 'Rename detection', status: 'FAIL', detail: 'Cannot detect renames: token parsing incomplete' });
   }
 
   // c05: Scale diff
@@ -518,7 +518,7 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
   }
 
   if (sharedColorTokens.length === 0) {
-    checks.push({ id: 'c07', item: 'Contrast drift', status: 'WARN', detail: 'No shared color tokens with different values — contrast drift not computable' });
+    checks.push({ id: 'c07', item: 'Contrast drift', status: 'WARN', detail: 'No shared color tokens with different values: contrast drift not computable' });
   } else {
     checks.push({
       id: 'c07',
@@ -554,7 +554,7 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
         gradeB: scoreB.grade,
       };
       if (scoreA.score < 50 || scoreB.score < 50) {
-        checks.push({ id: 'c08', item: 'Score delta', status: 'WARN', detail: `Score delta computed (A: ${scoreA.grade}/${scoreA.score}, B: ${scoreB.grade}/${scoreB.score}, Δ${scoreA.score - scoreB.score > 0 ? '+' : ''}${scoreA.score - scoreB.score}) — one or both scores are low` });
+        checks.push({ id: 'c08', item: 'Score delta', status: 'WARN', detail: `Score delta computed (A: ${scoreA.grade}/${scoreA.score}, B: ${scoreB.grade}/${scoreB.score}, Δ${scoreA.score - scoreB.score > 0 ? '+' : ''}${scoreA.score - scoreB.score}): one or both scores are low` });
       } else {
         checks.push({ id: 'c08', item: 'Score delta', status: 'PASS', detail: `Score delta computed (A: ${scoreA.grade}/${scoreA.score}, B: ${scoreB.grade}/${scoreB.score}, Δ${scoreA.score - scoreB.score > 0 ? '+' : ''}${scoreA.score - scoreB.score})` });
       }
@@ -562,7 +562,7 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
       checks.push({ id: 'c08', item: 'Score delta', status: 'FAIL', detail: 'Could not run /score on one or both URLs' });
     }
   } catch {
-    checks.push({ id: 'c08', item: 'Score delta', status: 'FAIL', detail: 'Score API error — could not compute score delta' });
+    checks.push({ id: 'c08', item: 'Score delta', status: 'FAIL', detail: 'Score API error: could not compute score delta' });
   }
 
   // Compute compare score (diff completeness, not design quality)
@@ -638,7 +638,7 @@ export async function POST(request: Request) {
 
   if (targetA === targetB) {
     return NextResponse.json(
-      { ok: false, error: 'Both URLs are identical — comparison requires two different URLs.' },
+      { ok: false, error: 'Both URLs are identical: comparison requires two different URLs.' },
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
     );
   }

@@ -60,7 +60,7 @@ function applyDriftScopeFilter(checks: CheckResult[], scope: DriftScope): CheckR
         return {
           ...c,
           status: 'SKIP' as CheckResult['status'],
-          detail: `${c.detail} (skipped: scope=universal — absence of CSS custom properties is an architectural choice, not drift)`,
+          detail: `${c.detail} (skipped: scope=universal; absence of CSS custom properties is an architectural choice, not drift)`,
         };
       }
     }

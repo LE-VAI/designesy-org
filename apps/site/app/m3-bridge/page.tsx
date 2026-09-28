@@ -31,8 +31,8 @@ export const metadata: Metadata = pageMeta({
   path: '/m3-bridge',
   ogTitle: 'M3 → DTCG Bridge · Designesy',
   ogDescription:
-    'M3\'s DSP export is archived. Convert Material 3 tokens to W3C DTCG format — the neutral bridge between Google\'s non-interoperating design-data initiatives.',
-  twitterDescription: 'M3 → DTCG bridge — designesy.org/m3-bridge',
+    'M3\'s DSP export is archived. Convert Material 3 tokens to W3C DTCG format: the neutral bridge between Google\'s non-interoperating design-data initiatives.',
+  twitterDescription: 'M3 → DTCG bridge · designesy.org/m3-bridge',
 });
 
 export default function M3BridgePage() {

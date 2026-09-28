@@ -15,13 +15,13 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Cadence',
   description:
-    'Lab Three — text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence and verified against designesy.org.',
+    'Lab Three covers text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence and verified against designesy.org.',
   path: '/labs/cadence',
-  ogTitle: 'Cadence · Lab Three — Designesy',
+  ogTitle: 'Cadence · Lab Three · Designesy',
   ogDescription:
-    'The rhythm of text on a page. Font declaration, scale, leading, tracking, measure, wrapping, tabular numbers, and selection styling — portable rules with exact values.',
+    'The rhythm of text on a page. Font declaration, scale, leading, tracking, measure, wrapping, tabular numbers, and selection styling: portable rules with exact values.',
   twitterDescription:
-    'Text rhythm as portable rules — scale, leading, tracking, measure, wrapping, numbers. designesy.org/labs/cadence',
+    'Text rhythm as portable rules: scale, leading, tracking, measure, wrapping, numbers. designesy.org/labs/cadence',
 });
 
 /**

@@ -11,14 +11,14 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 export const metadata: Metadata = pageMeta({
   title: 'Why we built a public design score',
   description:
-    'A score is a contract you can run. Making it public forces honesty — the same checks that score your site score ours, with the same thresholds.',
+    'A score is a contract you can run. Making it public forces honesty: the same checks that score your site score ours, with the same thresholds.',
   path: '/learn/why-we-built-a-public-design-score',
   type: 'article',
   ogTitle: 'Why a public design score · Designesy',
   ogDescription:
     'A score is a contract you can run. Making it public forces the same checks to grade your site and ours.',
   twitterDescription:
-    'Why Designesy publishes its own score — designesy.org/learn',
+    'Why Designesy publishes its own score · designesy.org/learn',
 });
 
 const REASONS = [

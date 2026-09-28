@@ -11,11 +11,11 @@ import { AgentActions } from '../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Review',
   description:
-    'Designesy Review — quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
+    'Designesy Review: quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
   path: '/review',
   ogDescription:
-    'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
-  twitterDescription: 'Quality gate for public artifacts — designesy.org/review',
+    'Review leads with consequences instead of personal taste. Eight dimensions and live field checks.',
+  twitterDescription: 'Quality gate for public artifacts · designesy.org/review',
 });
 
 const DIMENSIONS = [

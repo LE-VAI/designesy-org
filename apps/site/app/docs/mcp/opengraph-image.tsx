@@ -2,7 +2,7 @@ import { renderOgCard } from '../../lib/og-card';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy MCP server — 17 tools over Streamable HTTP';
+export const alt = 'Designesy MCP server: 17 tools over Streamable HTTP';
 
 export default function OpenGraphImage() {
   return renderOgCard({

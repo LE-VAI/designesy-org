@@ -13,7 +13,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Pricing',
   description:
-    'Designesy pricing — open core stays free. Continuity adds scheduled scans, drift alerts, and score history at $29/site/month. Enterprise for CI/CD gates and on-prem scoring.',
+    'Designesy pricing: open core stays free. Continuity adds scheduled scans, drift alerts, and score history at $29/site/month. Enterprise for CI/CD gates and on-prem scoring.',
   path: '/pricing',
   ogTitle: 'Pricing · Designesy',
   ogDescription:

@@ -11,15 +11,15 @@ import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Design system contract — reference format',
+  title: 'Design system contract: reference format',
   description:
-    `Designesy design system contract v${designSystemContract.version} — a reference format for AI-readable design contracts. Richer than design.md: ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
+    `Designesy design system contract v${designSystemContract.version}: a reference format for AI-readable design contracts. Richer than design.md: ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
   path: '/contracts/design-system',
-  ogTitle: `Design system contract · v${designSystemContract.version} — reference format`,
+  ogTitle: `Design system contract · v${designSystemContract.version}: reference format`,
   ogDescription:
-    `A reference format for AI-readable design contracts. Input + verification — not just tokens and prose, but ${ENGINE_CHECK_COUNT} automated checks that prove the output passes. Richer than design.md.`,
+    `A reference format for AI-readable design contracts. Input plus verification: tokens and prose, and ${ENGINE_CHECK_COUNT} automated checks that prove the output passes. Richer than design.md.`,
   twitterDescription:
-    'A reference format for AI-readable design contracts — input + verification. designesy.org/contracts/design-system',
+    'A reference format for AI-readable design contracts: input + verification. designesy.org/contracts/design-system',
 });
 
 const SECTIONS = [
