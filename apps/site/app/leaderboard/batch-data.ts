@@ -8,6 +8,10 @@
 
 import type { CategoryBreakdown } from './seed';
 
+/** The day the batch below was run: the date every per-category figure on the
+    data pages carries, beside the composite's weekly re-score date. */
+export const BATCH_RUN_DATE = '2026-07-29';
+
 export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakdown>> = {
   "https://www.designesy.org": {
     "cadence": { score: 95.8, weight: 18, pass: 11, fail: 0, warn: 1, skip: 0 },
