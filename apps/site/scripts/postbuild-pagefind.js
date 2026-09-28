@@ -160,12 +160,11 @@ function main() {
   // Stage a clean route-shaped index dir so Pagefind stores canonical URLs.
   if (!buildStageIndex()) return;
 
-  const pagefindBin = path.join(
-    ROOT,
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'pagefind.cmd' : 'pagefind'
-  );
+  // Run Pagefind's own entry script with this node, not the .bin shim: since
+  // Node 20.12 / 22 (CVE-2024-27980) spawning a .cmd without a shell throws
+  // EINVAL on Windows, and a shell would need every path quoted. The shim is
+  // a one-line wrapper around this same file.
+  const pagefindEntry = path.join(ROOT, 'node_modules', 'pagefind', 'lib', 'runner', 'bin.cjs');
 
   const args = [
     // Index the STAGED route tree (not .next/server/app), so result URLs are
@@ -176,14 +175,17 @@ function main() {
 
   console.log(`[postbuild-pagefind] indexing ${path.relative(ROOT, STAGE_DIR)} -> ${path.relative(ROOT, OUT_DIR)}`);
   try {
-    execFileSync(pagefindBin, args, { stdio: 'inherit' });
+    execFileSync(process.execPath, [pagefindEntry, ...args], { stdio: 'inherit' });
     // Sanity: report how many fragments were written so a silent empty index is
     // visible in the build log rather than discovered as 404s in the browser.
-    try {
-      const files = fs.readdirSync(OUT_DIR);
-      const frags = files.filter((f) => f.endsWith('.pf_fragment') || f.endsWith('.pf_index')).length;
-      console.log(`[postbuild-pagefind] index written — ${files.length} files, ${frags} shard(s)`);
-    } catch { /* index dir may not exist on failure — already logged by pagefind */ }
+    // Pagefind 1.x writes page fragments and index shards into fragment/ and
+    // index/, so the top level alone always counted 0 of either.
+    const countIn = (sub) => {
+      try { return fs.readdirSync(path.join(OUT_DIR, sub)).length; } catch { return 0; }
+    };
+    console.log(
+      `[postbuild-pagefind] index written: ${countIn('fragment')} page fragment(s), ${countIn('index')} index shard(s)`
+    );
 
     // Patch pagefind.js to append a cache-busting query param to the Worker
     // URL and all WASM shard fetches. Pagefind constructs the Worker URL as

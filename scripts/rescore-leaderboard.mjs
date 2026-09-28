@@ -126,15 +126,15 @@ function extractSeedEntries(src) {
   const matches = arrayText.match(objRegex) || [];
 
   for (const m of matches) {
+    // A quoted value is read whole, commas and escaped quotes included; a bare
+    // value (number, null) runs to the next comma or brace. The old single
+    // pattern stopped every string at its first comma.
     const extract = (key) => {
-      const r = new RegExp(`${key}:\\s*([^,}]+)`);
+      const r = new RegExp(`\\b${key}:\\s*('(?:[^'\\\\]|\\\\.)*'|"(?:[^"\\\\]|\\\\.)*"|[^,}]+)`);
       const match = m.match(r);
       if (!match) return null;
-      let val = match[1].trim();
-      // Handle strings (strip quotes)
-      if (val.startsWith("'") || val.startsWith('"')) {
-        val = val.slice(1, val.lastIndexOf(val[0]));
-      }
+      const val = match[1].trim();
+      if (val.startsWith("'") || val.startsWith('"')) return val.slice(1, -1).replace(/\\(.)/g, '$1');
       return val;
     };
 
