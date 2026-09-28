@@ -474,7 +474,14 @@ const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineR
 const WIDEST = [...RANKS].sort((a, b) => b.bandWidth - a.bandWidth)[0];
 
 type DiffRow = { url: string; v030: { score: number; grade: string }; v040: { score: number; grade: string }; delta: number };
-const DIFF_ROWS = SCORE_DIFF.rows as DiffRow[];
+// A site the engine could not read on a run is an error row in that report:
+// named under the table, never scored (scripts/live-score.mjs).
+const DIFF_ALL = SCORE_DIFF.rows as unknown as (DiffRow | { url: string; error: string })[];
+const DIFF_ROWS = DIFF_ALL.filter((r): r is DiffRow => !('error' in r));
+const DIFF_UNREAD = DIFF_ALL.filter((r) => 'error' in r);
+/** " Left out, the engine could not read them on that run: a, b." or "". */
+const unread = (list: readonly { url: string }[] | undefined) =>
+  list && list.length ? ` Left out, the engine could not read them on that run: ${list.map((x) => hostOf(x.url)).join(', ')}.` : '';
 const ORDER = 'FDCBA';
 const DIFF_UP = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) > ORDER.indexOf(r.v030.grade)).length;
 const DIFF_DOWN = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) < ORDER.indexOf(r.v030.grade)).length;
@@ -966,7 +973,7 @@ export default function MethodologyPage() {
                       id="m-sens"
                       title="Grades that change under each perturbation"
                       note={`The ${MOVING.length} perturbations that change any grade, most first; the other ${STILL} change none.`}
-                      source={`sensitivity-report.json, generated ${day(SENSITIVITY.generatedAt)} for contract ${SENSITIVITY.contractVersion}. Regenerate: node scripts/sensitivity-analysis.mjs.`}
+                      source={`sensitivity-report.json, generated ${day(SENSITIVITY.generatedAt)} for contract ${SENSITIVITY.contractVersion}.${unread(SENSITIVITY.excluded)} Regenerate: node scripts/sensitivity-analysis.mjs.`}
                       table={
                         <DataTable
                           caption={`All ${KNOBS.length} perturbations: grades changed, rank positions moved, largest score change.`}
@@ -1029,7 +1036,7 @@ export default function MethodologyPage() {
                       />
                     </div>
                     <p className="dx-src">
-                      score-diff-report.json, generated {day(SCORE_DIFF.generatedAt)}. Regenerate: node scripts/score-diff.mjs --all.
+                      score-diff-report.json, generated {day(SCORE_DIFF.generatedAt)}.{unread(DIFF_UNREAD)} Regenerate: node scripts/score-diff.mjs --all.
                     </p>
                   </div>
                 </details>
@@ -1086,8 +1093,10 @@ export default function MethodologyPage() {
                         best and worst rank reported.
                       </p>
                       <p>
-                        On {day(RANK_BOUNDS.generatedAt)}, the top five held under every scenario, and{' '}
-                        {RANK_BOUNDS.top5Fragile.length === 0 ? 'none of them was fragile' : `${RANK_BOUNDS.top5Fragile.length} were fragile`}. The widest band
+                        On {day(RANK_BOUNDS.generatedAt)},{' '}
+                        {RANK_BOUNDS.top5Fragile.length === 0
+                          ? 'the top five held under every scenario'
+                          : `${RANK_BOUNDS.top5Fragile.length} of the top five could be pushed out by some weighting`}. The widest band
                         was {hostOf(WIDEST.url)}, ranks {WIDEST.bestRank} to {WIDEST.worstRank}. Ranks here are that run&apos;s, which
                         can differ from today&apos;s leaderboard.
                       </p>
@@ -1096,7 +1105,7 @@ export default function MethodologyPage() {
                       id="m-ranks"
                       title="Each site's rank band across the weight scenarios"
                       note="The segment runs from the best rank to the worst any scenario gave; the dot is the published rank. Rank 1 is at the left."
-                      source={`rank-bounds-report.json, generated ${day(RANK_BOUNDS.generatedAt)}. Regenerate: node scripts/rank-bounds.mjs.`}
+                      source={`rank-bounds-report.json, generated ${day(RANK_BOUNDS.generatedAt)}.${unread(RANK_BOUNDS.excluded)} Regenerate: node scripts/rank-bounds.mjs.`}
                       table={
                         <DataTable
                           caption={`Best, published and worst rank per site across ${RANK_BOUNDS.scenarios} weight scenarios.`}
