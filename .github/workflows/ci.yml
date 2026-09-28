@@ -170,6 +170,10 @@ jobs:
         if: always()
         run: node scripts/check-engine-registry.js
 
+      - name: Data surfaces
+        if: always()
+        run: node scripts/check-data-surfaces.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
