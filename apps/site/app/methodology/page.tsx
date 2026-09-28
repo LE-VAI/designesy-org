@@ -232,7 +232,7 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v13',
-    item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
+    item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)',
     category: 'takt',
     how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (a glitch rather than a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum; lower reads as a glitch.',
   },
@@ -276,7 +276,7 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v20',
-    item: '::selection styled with var(--signal) — not browser default',
+    item: '::selection styled with var(--signal) instead of the browser default',
     category: 'cadence',
     how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token instead of the browser default. The selection color is a small but loud brand surface.',
   },
@@ -331,7 +331,7 @@ const CHECKS: CheckDef[] = [
   // ── Copywriting (8%) — v0.4.0 ──
   {
     id: 'v38',
-    item: 'Button text is a verb phrase or recognized command — not a bare noun',
+    item: 'Button text is a verb phrase or recognized command (not a bare noun)',
     category: 'copywriting',
     how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic: review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
   },
@@ -343,7 +343,7 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v40',
-    item: 'Link text is descriptive — not bare "click here", "learn more", "here"',
+    item: 'Link text is descriptive (not bare "click here", "learn more", "here")',
     category: 'copywriting',
     how: 'Parses anchor elements and checks link text against a blocklist of non-descriptive patterns (click here, here, learn more, read more, more, link, this, that, continue, see more, view details). WARN if matched. N/A if no anchors. WCAG 2.4.4 Link Purpose: link text should describe the destination.',
   },

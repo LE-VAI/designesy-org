@@ -167,14 +167,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     const hasUnscored = hasManual || hasSkips;
     synthesis.push({
       id: 'rp02',
-      item: `Score engine completed — ${ENGINE_CHECK_COUNT}-check audit ran`,
+      item: `Score engine completed: ${ENGINE_CHECK_COUNT}-check audit ran`,
       status: hasUnscored ? 'WARN' : 'PASS',
       detail: `Score engine returned ${scoreResult.grade}/${scoreResult.score} (${scoreResult.pass} pass, ${scoreResult.warn} warn, ${scoreResult.fail} fail${hasManual ? `, ${scoreResult.manual} manual` : ''}${hasSkips ? `, some N/A` : ''})`,
     });
   } else {
     synthesis.push({
       id: 'rp02',
-      item: `Score engine completed — ${ENGINE_CHECK_COUNT}-check audit ran`,
+      item: `Score engine completed: ${ENGINE_CHECK_COUNT}-check audit ran`,
       status: 'FAIL',
       detail: scoreResult?.error || 'Score engine did not return a valid result',
     });
@@ -184,14 +184,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
   if (driftResult?.ok && typeof driftResult.score === 'number') {
     synthesis.push({
       id: 'rp03',
-      item: 'Drift engine completed — 12-check drift radar ran',
+      item: 'Drift engine completed: 12-check drift radar ran',
       status: 'PASS',
       detail: `Drift engine returned ${driftResult.grade}/${driftResult.score} (${driftResult.pass} pass, ${driftResult.warn} warn, ${driftResult.fail} fail)`,
     });
   } else {
     synthesis.push({
       id: 'rp03',
-      item: 'Drift engine completed — 12-check drift radar ran',
+      item: 'Drift engine completed: 12-check drift radar ran',
       status: 'FAIL',
       detail: driftResult?.error || 'Drift engine did not return a valid result',
     });
@@ -201,14 +201,14 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
   if (readinessResult?.ok && typeof readinessResult.score === 'number') {
     synthesis.push({
       id: 'rp04',
-      item: 'Readiness engine completed — 10-check readiness probe ran',
+      item: 'Readiness engine completed: 10-check readiness probe ran',
       status: 'PASS',
       detail: `Readiness engine returned ${readinessResult.grade}/${readinessResult.score} (${readinessResult.pass} pass, ${readinessResult.warn} warn, ${readinessResult.fail} fail)`,
     });
   } else {
     synthesis.push({
       id: 'rp04',
-      item: 'Readiness engine completed — 10-check readiness probe ran',
+      item: 'Readiness engine completed: 10-check readiness probe ran',
       status: 'FAIL',
       detail: readinessResult?.error || 'Readiness engine did not return a valid result',
     });
@@ -228,7 +228,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     compositeScore = Math.round(scoreScore * 0.5 + driftScore * 0.3 + readinessScore * 0.2);
     synthesis.push({
       id: 'rp05',
-      item: 'Composite score computed — weighted synthesis',
+      item: 'Composite score computed: weighted synthesis',
       status: 'PASS',
       detail: `Composite ${compositeScore}/100 = score(${scoreScore})×0.5 + drift(${driftScore})×0.3 + readiness(${readinessScore})×0.2`,
     });
@@ -250,16 +250,16 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     }
     synthesis.push({
       id: 'rp05',
-      item: 'Composite score computed — weighted synthesis',
+      item: 'Composite score computed: weighted synthesis',
       status: 'WARN',
-      detail: `Composite ${compositeScore}/100 computed from partial results (${validScores.length}/3 engines returned scores) — re-weighted to compensate`,
+      detail: `Composite ${compositeScore}/100 computed from partial results (${validScores.length}/3 engines returned scores): re-weighted to compensate`,
     });
   } else {
     synthesis.push({
       id: 'rp05',
-      item: 'Composite score computed — weighted synthesis',
+      item: 'Composite score computed: weighted synthesis',
       status: 'FAIL',
-      detail: 'No sub-engine returned a score — composite cannot be computed',
+      detail: 'No sub-engine returned a score: composite cannot be computed',
     });
   }
 
@@ -276,7 +276,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
       id: 'rp06',
       item: 'Composite grade derived',
       status: 'FAIL',
-      detail: 'Composite score missing — cannot derive grade',
+      detail: 'Composite score missing: cannot derive grade',
     });
   }
 
@@ -316,16 +316,16 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
   if (allChecks.length > 0) {
     synthesis.push({
       id: 'rp07',
-      item: 'Check inventory aggregated — all checks across engines collected',
+      item: 'Check inventory aggregated: all checks across engines collected',
       status: 'PASS',
-      detail: `${allChecks.length} checks aggregated (score: ${scoreResult?.checks?.length || 0}, drift: ${driftResult?.checks?.length || 0}, readiness: ${readinessResult?.checks?.length || 0}) — ${totalPass} pass, ${totalWarn} warn, ${totalFail} fail, ${totalManual} manual, ${totalSkip} N/A`,
+      detail: `${allChecks.length} checks aggregated (score: ${scoreResult?.checks?.length || 0}, drift: ${driftResult?.checks?.length || 0}, readiness: ${readinessResult?.checks?.length || 0}): ${totalPass} pass, ${totalWarn} warn, ${totalFail} fail, ${totalManual} manual, ${totalSkip} N/A`,
     });
   } else {
     synthesis.push({
       id: 'rp07',
-      item: 'Check inventory aggregated — all checks across engines collected',
+      item: 'Check inventory aggregated: all checks across engines collected',
       status: 'FAIL',
-      detail: 'No checks returned from any engine — engine results are malformed',
+      detail: 'No checks returned from any engine: engine results are malformed',
     });
   }
 
@@ -335,31 +335,31 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     if (maxDivergence > 30) {
       synthesis.push({
         id: 'rp08',
-        item: 'Report is coherent — no engine contradicts the composite',
+        item: 'Report is coherent: no engine contradicts the composite',
         status: 'FAIL',
-        detail: `Max divergence ${maxDivergence} points — one or more engine scores are more than 30 points from the composite (${compositeScore}). The grade is not defensible.`,
+        detail: `Max divergence ${maxDivergence} points: one or more engine scores are more than 30 points from the composite (${compositeScore}). The grade is not defensible.`,
       });
     } else if (maxDivergence > 20) {
       synthesis.push({
         id: 'rp08',
-        item: 'Report is coherent — no engine contradicts the composite',
+        item: 'Report is coherent: no engine contradicts the composite',
         status: 'WARN',
-        detail: `Max divergence ${maxDivergence} points — one engine score is 20–30 points from the composite (${compositeScore}). The grade is borderline.`,
+        detail: `Max divergence ${maxDivergence} points: one engine score is 20 to 30 points from the composite (${compositeScore}). The grade is borderline.`,
       });
     } else {
       synthesis.push({
         id: 'rp08',
-        item: 'Report is coherent — no engine contradicts the composite',
+        item: 'Report is coherent: no engine contradicts the composite',
         status: 'PASS',
-        detail: `Max divergence ${maxDivergence} points — all engine scores are within 20 points of the composite (${compositeScore}). The grade is defensible.`,
+        detail: `Max divergence ${maxDivergence} points: all engine scores are within 20 points of the composite (${compositeScore}). The grade is defensible.`,
       });
     }
   } else {
     synthesis.push({
       id: 'rp08',
-      item: 'Report is coherent — no engine contradicts the composite',
+      item: 'Report is coherent: no engine contradicts the composite',
       status: 'FAIL',
-      detail: 'Composite score or sub-scores missing — cannot assess coherence',
+      detail: 'Composite score or sub-scores missing: cannot assess coherence',
     });
   }
 
@@ -368,7 +368,7 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
     return {
       ok: false,
       url: targetUrl,
-      error: 'All three engines failed — could not generate a report. Check that the URL is correct and publicly accessible.',
+      error: 'All three engines failed: could not generate a report. Check that the URL is correct and publicly accessible.',
       synthesis,
     };
   }

@@ -101,9 +101,9 @@ function formatReport(result: Awaited<ReturnType<typeof scoreUrl>>, url: string)
 
 function printUsage(): void {
   console.log(`
-designesy-score — Score a URL against the 42-check Designesy engine.
+designesy-score: Score a URL against the 42-check Designesy engine.
 
-Runs locally — no server required. Fetches the URL, extracts CSS + tokens,
+Runs locally: no server required. Fetches the URL, extracts CSS + tokens,
 and runs all 42 checks in one process.
 
 Usage:

@@ -132,8 +132,8 @@ export function buildReceipt(input: ReceiptInput, retrievedAt: Date = new Date()
       instructions:
         'POST the same subject to /api/score and compare `receipt.digest`. ' +
         'An equal digest means the same verdict set was reproduced. ' +
-        'A different digest means the page, the contract, or the engine build changed — ' +
-        'check `engine_version` and `contract_version` first: if those match, the page changed.',
+        'A different digest means the page, the contract, or the engine build changed. ' +
+        'Check `engine_version` and `contract_version` first: if those match, the page changed.',
     },
   };
 }

@@ -209,7 +209,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
         item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
         category: 'performance',
         status: 'SKIP',
-        detail: `${detail} — source: ${source}. No CrUX field data for this origin, so these are throttled lab figures only, not real-user metrics. SKIP rather than WARN: a lab simulation that has not been corroborated by field data is not evidence about user experience.`,
+        detail: `${detail} (source: ${source}). No CrUX field data for this origin, so these are throttled lab figures only, not real-user metrics. SKIP rather than WARN: a lab simulation that has not been corroborated by field data is not evidence about user experience.`,
       };
     }
 
@@ -218,7 +218,7 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
       category: 'performance',
       status: overall,
-      detail: `${detail} — source: ${source}`,
+      detail: `${detail} (source: ${source})`,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -296,7 +296,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, 
       item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
       category: 'performance',
       status: overall,
-      detail: `${lcpStr}, ${clsStr}, INP=SKIP(lab) — source: Chromium CDP lab (PSI fallback: ${fallbackReason.slice(0, 60)})`,
+      detail: `${lcpStr}, ${clsStr}, INP=SKIP(lab) (source: Chromium CDP lab; PSI fallback: ${fallbackReason.slice(0, 60)})`,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -468,7 +468,7 @@ async function checkResponsiveOverflow(targetUrl: string, shared?: import('playw
       item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
       category: 'responsive',
       status: 'MANUAL',
-      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
+      detail: 'this check needs a live browser session, which this deployment does not run, so no result is reported rather than a guessed one',
     };
   }
   const viewports = [
@@ -547,7 +547,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
       item: 'Sound toggle flips aria-pressed and applies the audio preference',
       category: 'poise',
       status: 'MANUAL',
-      detail: 'this check needs a live browser session, which this deployment does not run — no result is reported rather than a guessed one',
+      detail: 'this check needs a live browser session, which this deployment does not run, so no result is reported rather than a guessed one',
     };
   }
   let browser;
@@ -589,7 +589,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
         category: 'poise',
         status: absenceStatus as 'SKIP' | 'WARN',
         detail: scope === 'universal'
-          ? 'no sound toggle element found on page (skipped: scope=universal — sound is optional)'
+          ? 'no sound toggle element found on page (skipped: scope=universal; sound is optional)'
           : 'no sound toggle element found on page',
       };
     }

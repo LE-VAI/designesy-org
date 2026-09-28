@@ -53,14 +53,14 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 /** Render a scalar for a table cell or list item. */
 function scalar(v: unknown): string {
-  if (v === null || v === undefined) return '—';
+  if (v === null || v === undefined) return 'none';
   if (typeof v === 'string') return v.replace(/\|/g, '\\|').replace(/\n+/g, ' ');
   if (typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (Array.isArray(v)) {
     // Arrays of scalars read fine inline; anything deeper is summarized and
     // the depth is stated rather than silently truncated.
-    if (v.every((x) => !isPlainObject(x) && !Array.isArray(x))) return v.map(scalar).join(', ') || '—';
-    return `${v.length} item(s) — see JSON`;
+    if (v.every((x) => !isPlainObject(x) && !Array.isArray(x))) return v.map(scalar).join(', ') || 'none';
+    return `${v.length} item(s); see JSON`;
   }
   return 'see JSON';
 }
@@ -84,7 +84,7 @@ function tableFor(rows: Array<Record<string, unknown>>): string {
     .map((r) => `| ${capped.map((c) => scalar(r[c])).join(' | ')} |`)
     .join('\n');
   const extraCols = cols.length > capped.length
-    ? `\n\n_(showing ${capped.length} of ${cols.length} columns — see the JSON for the full record)_`
+    ? `\n\n_(showing ${capped.length} of ${cols.length} columns; see the JSON for the full record)_`
     : '';
   const extraRows = rows.length > 20 ? `\n\n_(showing 20 of ${rows.length} rows)_` : '';
   return [head, sep, body].join('\n') + extraCols + extraRows;
