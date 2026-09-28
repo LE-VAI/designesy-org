@@ -139,49 +139,52 @@ export default function ContinuityPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Already live free</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open index</span>
-                <span className="row-meta">Portable design intelligence catalog</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Kit One · Design Review</span>
-                <span className="row-meta">Eight-dimension inspection method</span>
-              </span>
-            </Link>
-            <a
-              href="https://designesy.ai.studio/"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Score a site</span>
-                <span className="row-meta">
-                  Director + portable score export on designesy.ai.studio
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open index</span>
+                  <span className="row-meta">Portable design intelligence catalog</span>
                 </span>
-              </span>
-            </a>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Kit One · Design Review</span>
+                  <span className="row-meta">Eight-dimension inspection method</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://designesy.ai.studio/"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Score a site</span>
+                  <span className="row-meta">
+                    Director + portable score export on designesy.ai.studio
+                  </span>
+                </span>
+              </a>
+            </div>
           </div>
         </section>
       </main>

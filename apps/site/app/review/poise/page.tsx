@@ -333,22 +333,22 @@ export default function PoiseFieldCheckPage() {
           <h2 className="doctrine-heading">Sources used</h2>
           <div className="row-stack" role="list">
             {SOURCES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -356,45 +356,48 @@ export default function PoiseFieldCheckPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open Lab One · Poise</span>
-                <span className="row-meta">Live artifact</span>
-              </span>
-            </Link>
-            <Link
-              href="/review/poise/keyboard"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Keyboard path verification</span>
-                <span className="row-meta">Public proof for Lab One controls</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Run the same method on your work</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open Lab One · Poise</span>
+                  <span className="row-meta">Live artifact</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/poise/keyboard"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Keyboard path verification</span>
+                  <span className="row-meta">Public proof for Lab One controls</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">Run the same method on your work</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

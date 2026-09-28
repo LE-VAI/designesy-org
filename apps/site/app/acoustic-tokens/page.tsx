@@ -150,62 +150,66 @@ export default function AcousticTokensPage() {
         <section className="doctrine-section fade-up" id="provenance">
           <h2 className="doctrine-heading">Provenance</h2>
           <div className="row-stack" role="list">
-            <a
-              href={acousticTokens.provenance.npm}
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Cuelume v0.2.2 (MIT)</span>
-                <span className="row-meta">{acousticTokens.provenance.library}</span>
-              </span>
-            </a>
-            <a
-              href={acousticTokens.provenance.repo}
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">GitHub repository</span>
-                <span className="row-meta">{acousticTokens.provenance.repo}</span>
-              </span>
-            </a>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">Visual token system</span>
-              </span>
-            </Link>
-            <Link
-              href="/acoustic-tokens.json"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Machine export</span>
-                <span className="row-meta">acoustic-tokens.json</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <a
+                href={acousticTokens.provenance.npm}
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Cuelume v0.2.2 (MIT)</span>
+                  <span className="row-meta">{acousticTokens.provenance.library}</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <a
+                href={acousticTokens.provenance.repo}
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">GitHub repository</span>
+                  <span className="row-meta">{acousticTokens.provenance.repo}</span>
+                </span>
+              </a>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">Visual token system</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/acoustic-tokens.json"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Machine export</span>
+                  <span className="row-meta">acoustic-tokens.json</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

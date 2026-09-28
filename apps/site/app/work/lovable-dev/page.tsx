@@ -163,58 +163,62 @@ export default function LovableCaseStudy() {
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=lovable.dev"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score lovable.dev now</span>
-                <span className="row-meta">Re-run the live engine against the same URL</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">The contract lovable.dev passes without citing</span>
-              </span>
-            </Link>
-            <Link
-              href="/score/lovable"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Score your Lovable site</span>
-                <span className="row-meta">Target landing page for Lovable-built sites</span>
-              </span>
-            </Link>
-            <Link
-              href="/work"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Work — case studies</span>
-                <span className="row-meta">Index</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=lovable.dev"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score lovable.dev now</span>
+                  <span className="row-meta">Re-run the live engine against the same URL</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">The contract lovable.dev passes without citing</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/score/lovable"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Score your Lovable site</span>
+                  <span className="row-meta">Target landing page for Lovable-built sites</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/work"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Work — case studies</span>
+                  <span className="row-meta">Index</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

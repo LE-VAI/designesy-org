@@ -153,158 +153,168 @@ export default function LabsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">
-                  Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">
+                    Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Poise</span>
-                <span className="row-meta">
-                  Kit One review of Lab One · pass with notes
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/poise"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Poise</span>
+                  <span className="row-meta">
+                    Kit One review of Lab One · pass with notes
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Takt</span>
-                <span className="row-meta">
-                  Kit One review of Lab Two · pass with notes
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/takt"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Takt</span>
+                  <span className="row-meta">
+                    Kit One review of Lab Two · pass with notes
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Cadence</span>
-                <span className="row-meta">
-                  Kit One review of Lab Three · pass with notes
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/cadence"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Cadence</span>
+                  <span className="row-meta">
+                    Kit One review of Lab Three · pass with notes
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/acoustic-tokens"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Acoustic token reference</span>
-                <span className="row-meta">
-                  Nineteen cues, nineteen roles — the sound parallel to the visual token system
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/acoustic-tokens"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Acoustic token reference</span>
+                  <span className="row-meta">
+                    Nineteen cues, nineteen roles — the sound parallel to the visual token system
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Acoustics</span>
-                <span className="row-meta">
-                  Kit One review of Lab Four · pass with notes
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/acoustics"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Acoustics</span>
+                  <span className="row-meta">
+                    Kit One review of Lab Four · pass with notes
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/review/designesy-org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">07</span>
-              <span className="row-body">
-                <span className="row-title">Public surface review</span>
-                <span className="row-meta">
-                  designesy.org checked against contract {CONTRACT_VERSION}
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/designesy-org"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">07</span>
+                <span className="row-body">
+                  <span className="row-title">Public surface review</span>
+                  <span className="row-meta">
+                    designesy.org checked against contract {CONTRACT_VERSION}
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">08</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">
-                  Eight-dimension inspection method for any artifact
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">08</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">
+                    Eight-dimension inspection method for any artifact
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <a
-              href="https://designesy.ai.studio/"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">09</span>
-              <span className="row-body">
-                <span className="row-title">Try the Studio</span>
-                <span className="row-meta">
-                  The contract, conversational — type, motion, spacing, or score any site
+              </Link>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://designesy.ai.studio/"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">09</span>
+                <span className="row-body">
+                  <span className="row-title">Try the Studio</span>
+                  <span className="row-meta">
+                    The contract, conversational — type, motion, spacing, or score any site
+                  </span>
                 </span>
-              </span>
-            </a>
-            <Link
-              href="/continuity"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">10</span>
-              <span className="row-body">
-                <span className="row-title">Continuity waitlist</span>
-                <span className="row-meta">
-                  Design judgment that stays current — early access, no charge to join
+              </a>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/continuity"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">10</span>
+                <span className="row-body">
+                  <span className="row-title">Continuity waitlist</span>
+                  <span className="row-meta">
+                    Design judgment that stays current — early access, no charge to join
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 

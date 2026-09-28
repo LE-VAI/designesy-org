@@ -61,24 +61,24 @@ export default function WorkPage() {
           </p>
           <div className="row-stack" role="list">
             {CASE_STUDIES.map((cs, i) => (
-              <Link
-                key={cs.slug}
-                href={`/work/${cs.slug}`}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{cs.title}</span>
-                  <span className="row-meta">
-                    {cs.lede} · {cs.status} · {scoreLine(cs)}
+              <div role="listitem" key={cs.slug}>
+                <Link
+                  href={`/work/${cs.slug}`}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
+                  <span className="row-body">
+                    <span className="row-title">{cs.title}</span>
+                    <span className="row-meta">
+                      {cs.lede} · {cs.status} · {scoreLine(cs)}
+                    </span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

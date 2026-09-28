@@ -257,94 +257,100 @@ export default function ReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review against</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">
-                  Restrained interaction · adopted in v0.1.1
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Lab Two · Takt</span>
-                <span className="row-meta">
-                  Interface feel · adopted in v0.1.2
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">
+                    Restrained interaction · adopted in v0.1.1
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Lab Three · Cadence</span>
-                <span className="row-meta">
-                  Text rhythm · adopted in v0.1.3
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Two · Takt</span>
+                  <span className="row-meta">
+                    Interface feel · adopted in v0.1.2
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">
-                  Interaction sound · adopted in v0.3.0
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Three · Cadence</span>
+                  <span className="row-meta">
+                    Text rhythm · adopted in v0.1.3
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">
-                  Runnable package of these dimensions
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">
+                    Interaction sound · adopted in v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">
+                    Runnable package of these dimensions
+                  </span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

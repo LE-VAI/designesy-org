@@ -123,32 +123,34 @@ export default function ComparisonPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Read next</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/learn/what-is-design-verification"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">What is design verification?</span>
-                <span className="row-meta">The category definition article</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/why-we-built-a-public-design-score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Why a public score</span>
-                <span className="row-meta">The argument for publishing the grade</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/learn/what-is-design-verification"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">What is design verification?</span>
+                  <span className="row-meta">The category definition article</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/why-we-built-a-public-design-score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Why a public score</span>
+                  <span className="row-meta">The argument for publishing the grade</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

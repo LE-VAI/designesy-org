@@ -91,19 +91,20 @@ export function TargetLanding({
           <section className="doctrine-section fade-up fade-up-delay-2">
             <h2 className="doctrine-heading">Proof</h2>
             <div className="row-stack" role="list">
-              <Link
-                href={caseStudyHref}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">{caseStudyTitle}</span>
-                  <span className="row-meta">{caseStudyMeta}</span>
-                </span>
-              </Link>
+              <div role="listitem">
+                <Link
+                  href={caseStudyHref}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">01</span>
+                  <span className="row-body">
+                    <span className="row-title">{caseStudyTitle}</span>
+                    <span className="row-meta">{caseStudyMeta}</span>
+                  </span>
+                </Link>
+              </div>
             </div>
           </section>
         )}

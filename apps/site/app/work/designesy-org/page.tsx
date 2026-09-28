@@ -193,58 +193,62 @@ export default function DesignesyOrgCaseStudy() {
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=designesy.org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score designesy.org now</span>
-                <span className="row-meta">Run the live engine against the publisher</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">The standard the score runs against</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/why-we-built-a-public-design-score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Why a public score</span>
-                <span className="row-meta">The argument this case study is evidence for</span>
-              </span>
-            </Link>
-            <Link
-              href="/work"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Work — case studies</span>
-                <span className="row-meta">Index</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=designesy.org"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score designesy.org now</span>
+                  <span className="row-meta">Run the live engine against the publisher</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">The standard the score runs against</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/why-we-built-a-public-design-score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Why a public score</span>
+                  <span className="row-meta">The argument this case study is evidence for</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/work"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Work — case studies</span>
+                  <span className="row-meta">Index</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

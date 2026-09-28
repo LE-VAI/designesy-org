@@ -333,22 +333,22 @@ export default function AcousticsFieldCheckPage() {
           <h2 className="doctrine-heading">Sources used</h2>
           <div className="row-stack" role="list">
             {SOURCES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -356,58 +356,62 @@ export default function AcousticsFieldCheckPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open Lab Four · Acoustics</span>
-                <span className="row-meta">Live artifact</span>
-              </span>
-            </Link>
-            <Link
-              href="/acoustic-tokens"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Acoustic token reference</span>
-                <span className="row-meta">Nineteen cues, nineteen roles</span>
-              </span>
-            </Link>
-            <Link
-              href="/review/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Cadence</span>
-                <span className="row-meta">Prior field check pattern (Lab Three)</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Run the same method on your work</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open Lab Four · Acoustics</span>
+                  <span className="row-meta">Live artifact</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/acoustic-tokens"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Acoustic token reference</span>
+                  <span className="row-meta">Nineteen cues, nineteen roles</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/cadence"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Cadence</span>
+                  <span className="row-meta">Prior field check pattern (Lab Three)</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">Run the same method on your work</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

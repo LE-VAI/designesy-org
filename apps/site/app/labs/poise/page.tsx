@@ -355,22 +355,23 @@ export default function PoiseLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Experiments in this lab</h2>
           <div className="row-stack" role="list" style={{ marginBottom: '1.5rem' }}>
-            <Link
-              href="/labs/poise/orb"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Orb · WebGL2 in Designesy blue</span>
-                <span className="row-meta">
-                  32KB shader, six parameters, one-line embed · painted from
-                  Martin Štrba&rsquo;s editor at postgeneric.com
+            <div role="listitem">
+              <Link
+                href="/labs/poise/orb"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Orb · WebGL2 in Designesy blue</span>
+                  <span className="row-meta">
+                    32KB shader, six parameters, one-line embed · painted from
+                    Martin Štrba&rsquo;s editor at postgeneric.com
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -397,21 +398,22 @@ export default function PoiseLabPage() {
             <span className="lab-card-arrow">Open field check →</span>
           </Link>
           <div className="row-stack" role="list" style={{ marginTop: '0.75rem' }}>
-            <Link
-              href="/review/poise/keyboard"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Keyboard path verification</span>
-                <span className="row-meta">
-                  Tab order, focus-visible, activation, reduced motion
+            <div role="listitem">
+              <Link
+                href="/review/poise/keyboard"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Keyboard path verification</span>
+                  <span className="row-meta">
+                    Tab order, focus-visible, activation, reduced motion
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
           </div>
         </section>
 
