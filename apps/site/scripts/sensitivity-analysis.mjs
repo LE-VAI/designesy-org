@@ -174,6 +174,11 @@ async function main() {
   // A rate limit or network failure throws instead (live-score.mjs), and the
   // run writes nothing.
   const excluded = [];
+  // The contract version the engine scored against, read from its own reply.
+  // This used to be the literal 'v0.4.0', so the report kept naming a
+  // superseded contract after the site shipped v0.4.1 — the same
+  // one-owner-never-updated problem as LEADERBOARD_VERSION. Derived now.
+  let runContractVersion = null;
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
     const live = await liveScore(BASE, url);
@@ -182,6 +187,7 @@ async function main() {
       console.log(`[${i + 1}/${urls.length}] ${url}  EXCLUDED (${live.excluded})`);
     } else {
       const d = live.data;
+      if (runContractVersion === null && d.contractVersion) runContractVersion = d.contractVersion;
       // Capture the engine's REAL slop deduction + originality lift so the
       // baseline recompute matches the live score exactly (fidelity check).
       const realSlop = d.slop?.total ?? 0;
@@ -202,7 +208,7 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     base: BASE,
-    contractVersion: 'v0.4.0',
+    contractVersion: runContractVersion ?? 'unknown',
     method: 'Real check statuses from live /api/score; composite recomputed locally under each perturbation, mirroring engine math.',
     sites: sites.length,
     excluded,
