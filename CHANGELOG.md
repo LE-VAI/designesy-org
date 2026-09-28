@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   keeps its deliberate npm-runtime adaptations (SSRF-safe httpsFetch,
   optional-linter fallback).
 
+## [1.12.2] — 2026-09-28
+
+### Fixed
+
+- **The published package now names the org, not a person.** `pyproject.toml`
+  declared `authors = [{ name = "Le Vain Bey", ... }]`, and PyPI renders that as
+  `author_email` on the project page. The npm packages moved to
+  `Designesy <hello@designesy.org>` in the same change, so the artifacts now
+  agree. Registry metadata is immutable per published version, which is why this
+  needs a release rather than an edit: 1.12.1 still carries the old field.
+- **The sdist LICENSE now reads `Copyright (c) 2026 LE-VAI`**, matching the
+  licence holder used across the other packages. The bundled copy had drifted.
+
 ## [1.12.0] — 2026-08-30
 
 ### Added
