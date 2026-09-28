@@ -56,8 +56,20 @@
   position: relative;
   z-index: 1;
   display: grid;
+  /* One column that never grows past the hero: an implicit auto column took
+     the width of the widest unbreakable thing in a score's results, and on a
+     phone the whole hero (headline, lede, bar) ran 330px off the screen once
+     a score landed. */
+  grid-template-columns: minmax(0, 1fr);
   justify-items: start;
   max-width: 58rem;
+}
+
+/* The score form sizes to its content like the rest of the hero column, but
+   never past the column: its results hold rows that scroll on their own. */
+.home-hero-copy > .score-hero-input {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .home .home-kicker {
