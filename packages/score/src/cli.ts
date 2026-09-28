@@ -9,8 +9,8 @@
  *
  * Usage:
  *   designesy-score <url> [options]
- *   npx designesy-score linear.app --min-score 70 --min-grade B
- *   npx designesy-score designesy.org --format canonical --json
+ *   npx @designesy/score linear.app --min-score 70 --min-grade B
+ *   npx @designesy/score designesy.org --format canonical --json
  *
  * Options:
  *   --format <f>      Emission format: designesy (default), canonical, review, google

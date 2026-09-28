@@ -2499,14 +2499,21 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
 
 // ── Emission formats ────────────────────────────────────────────────────────
 
+/**
+ * The contract revision these checks implement, reported by every emission.
+ * The site derives its copy from the contract source; this standalone engine
+ * pins it here, once, and each release moves it.
+ */
+export const CONTRACT_VERSION = 'v0.4.1';
+
 export function emitDesignesy(result: ScoreResult): Record<string, unknown> {
-  return { ok: true, contractVersion: 'v0.4.0', ...result };
+  return { ok: true, contractVersion: CONTRACT_VERSION, ...result };
 }
 
 export function emitCanonical(url: string, result: ScoreResult): Record<string, unknown> {
   return {
     schemaVersion: '1.0', generatedAt: new Date().toISOString(),
-    tool: { name: 'designesy', version: 'v0.4.0' },
+    tool: { name: 'designesy', version: CONTRACT_VERSION },
     subject: { type: 'url', requested: url, scope: result.scope },
     categories: Object.entries(result.categoryScores).map(([id, cs]) => ({ id, score: cs.score, weight: cs.weight, counts: { pass: cs.pass, fail: cs.fail, warn: cs.warn, skip: cs.skip, manual: cs.manual } })),
     findings: result.checks.map((c) => ({ id: c.id, item: c.item, category: c.category, status: c.status, severity: c.status === 'FAIL' ? 'error' : c.status === 'WARN' ? 'warning' : c.status === 'PASS' ? 'pass' : c.status === 'SKIP' ? 'skip' : 'manual', severityRaw: c.status, message: c.detail, detail: c.detail, remediation: c.remediation })),
