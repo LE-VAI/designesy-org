@@ -321,7 +321,7 @@ export default function HomePage() {
             <p className="home-kicker">
               <span className="home-kicker-live" aria-hidden="true" />
               <span>
-                Contract <b>{CONTRACT_VERSION}</b> is live · <b>{ENGINE_CHECK_COUNT}</b> checks, rescored weekly
+                Contract <b>{CONTRACT_VERSION}</b> is live · <b>{ENGINE_CHECK_COUNT}</b> checks<span className="home-kicker-more">, rescored weekly</span>
               </span>
             </p>
             <h1 className="hero-title hero-display" id="hero-title" aria-label={HERO_HEADLINE}>

@@ -67,15 +67,15 @@ export async function generateMetadata({
     // and it keeps that vocabulary.
     title: 'Score',
     description:
-      `Four engines. One composite grade. Score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6) — all on one URL. Real-time. No login.`,
+      `Four engines. One composite grade. Score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6), all on one URL. Real-time. No login.`,
     path: '/score',
-    ogTitle: 'Score any site — Designesy',
+    ogTitle: 'Score any site · Designesy',
     // The total is COMPUTED from the four engines' own check lists. This string
     // read "68 automated checks" while the engines actually sum to 70
     // (42+12+10+6) — a literal that had drifted from the engines it described,
     // on the page whose job is to count them. Deriving it means adding a check
     // to any engine updates this line automatically.
-    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines — score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.`,
+    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines: score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.`,
   });
 
   // When a URL is being scored, explicitly point social images to the dynamic
@@ -87,11 +87,11 @@ export async function generateMetadata({
       ...base,
       openGraph: {
         ...base.openGraph,
-        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score — design legitimacy grade' }],
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score: design legitimacy grade' }],
       },
       twitter: {
         ...base.twitter,
-        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score — design legitimacy grade' }],
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score: design legitimacy grade' }],
       },
     };
   }

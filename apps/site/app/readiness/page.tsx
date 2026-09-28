@@ -15,14 +15,14 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'AI Readiness score',
   description:
-    'Score any URL for design-system AI readiness — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots.txt, and social meta. The 6th maturity axis, automated.',
+    'Score any URL for design-system AI readiness: 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots.txt, and social meta. The 6th maturity axis, automated.',
   path: '/readiness',
 
   machineSibling: '/contracts/readiness.json',
   ogTitle: 'AI Readiness score · Designesy',
   ogDescription:
     'Is your design system the default context AI tools build from? 10 automated checks.',
-  twitterDescription: 'Designesy AI readiness — designesy.org/readiness',
+  twitterDescription: 'Designesy AI readiness · designesy.org/readiness',
 });
 
 export default async function ReadinessPage({ searchParams }: { searchParams?: Promise<{ url?: string }> }) {

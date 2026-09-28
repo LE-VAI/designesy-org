@@ -10,6 +10,7 @@ import { DefinitionCopyEnhancer } from './lib/definition-copy-enhancer';
 import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
+import { ScrollRegions } from './lib/scroll-regions';
 
 /*
   Brand faces — self-hosted at build time by next/font.
@@ -125,7 +126,7 @@ export const metadata: Metadata = {
   // often fail image fetch when og/twitter image URLs redirect.
   metadataBase: new URL(SITE_BASE),
   title: {
-    default: `${SITE_NAME} — Design intelligence infrastructure`,
+    default: `${SITE_NAME} · Design intelligence infrastructure`,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DEFAULT_DESCRIPTION,
@@ -155,7 +156,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: `${SITE_NAME} — Design intelligence infrastructure`,
+    title: `${SITE_NAME} · Design intelligence infrastructure`,
     description:
       'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
     url: SITE_BASE,
@@ -165,7 +166,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${SITE_NAME} — Design intelligence infrastructure`,
+    title: `${SITE_NAME} · Design intelligence infrastructure`,
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
   },
@@ -218,6 +219,7 @@ export default function RootLayout({
         <EffectEnhancer />
         <ScrambleEnhancer />
         <ScrollDepth />
+        <ScrollRegions />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits
             behind all content (z-index 0 with grid + noise). Pure CSS, no
             JS. Replaces the old hero-bounded mesh that showed a cutoff at

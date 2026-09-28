@@ -93,9 +93,11 @@
   flex: 1 1 auto;
 }
 
-.pillar:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
+@media (hover: hover) {
+  .pillar:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+  }
 }
 
 .pillar:active {
@@ -191,8 +193,10 @@ button.pillar::before {
   z-index: 0;
 }
 
-button.pillar:hover::before {
-  transform: scaleY(1);
+@media (hover: hover) {
+  button.pillar:hover::before {
+    transform: scaleY(1);
+  }
 }
 
 .field-card-title,
@@ -352,9 +356,11 @@ button.pillar:hover::before {
   flex: 1 1 auto;
 }
 
-.pillar:hover {
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
+@media (hover: hover) {
+  .pillar:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+  }
 }
 
 .pillar:active {
@@ -450,8 +456,10 @@ button.pillar::before {
   z-index: 0;
 }
 
-button.pillar:hover::before {
-  transform: scaleY(1);
+@media (hover: hover) {
+  button.pillar:hover::before {
+    transform: scaleY(1);
+  }
 }
 
 .field-card-title,
@@ -1087,9 +1095,14 @@ button.pillar {
   transition: color var(--duration-fast) var(--ease);
 }
 
-.home .home-pillars .pillar.is-checked .pillar-number,
-.home .home-pillars .pillar:hover .pillar-number {
+.home .home-pillars .pillar.is-checked .pillar-number {
   color: var(--signal-access);
+}
+
+@media (hover: hover) {
+  .home .home-pillars .pillar:hover .pillar-number {
+    color: var(--signal-access);
+  }
 }
 
 /* The contract: principles as cells beside the health instrument. */

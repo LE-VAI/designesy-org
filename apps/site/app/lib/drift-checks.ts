@@ -185,7 +185,7 @@ export function checkD01TokenRegistry(tokens: Record<string, string>): CheckResu
   if (count >= 5) {
     return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'PASS', detail: `Token registry found with ${count} custom properties` };
   }
-  return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'FAIL', detail: `Only ${count} :root custom properties — the site has no token system` };
+  return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'FAIL', detail: `Only ${count} :root custom properties: the site has no token system` };
 }
 
 export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[]): CheckResult {
@@ -214,13 +214,13 @@ export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs
       item: 'No fabricated tokens',
       category: 'tokens',
       status: 'PASS',
-      detail: `All ${varRefs.length} var() references resolve (${runtimeCount} runtime-injected JS tokens excluded — known JS state)`,
+      detail: `All ${varRefs.length} var() references resolve (${runtimeCount} runtime-injected JS tokens excluded as known JS state)`,
     };
   }
   if (uniqueUndeclared.length <= 2) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (${runtimeCount} runtime tokens excluded) ${uniqueUndeclared.length === 0 ? '' : '— investigate'}` };
+    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (${runtimeCount} runtime tokens excluded)${uniqueUndeclared.length === 0 ? '' : '; investigate them'}` };
   }
-  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}... — token fabrication detected (${runtimeCount} runtime tokens excluded)` };
+  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}...; token fabrication detected (${runtimeCount} runtime tokens excluded)` };
 }
 
 export function checkD03InlineColors(css: string, tokens: Record<string, string>): CheckResult {
@@ -238,12 +238,12 @@ export function checkD03InlineColors(css: string, tokens: Record<string, string>
     return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${hardcoded.length} hardcoded color values (${colorTokenCount} color tokens, ${coverage}% token coverage)` };
   }
   if (coverage >= 80) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${hardcoded.length} hardcoded color values but ${coverage}% token coverage — acceptable` };
+    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'PASS', detail: `${hardcoded.length} hardcoded color values but ${coverage}% token coverage: acceptable` };
   }
   if (hardcoded.length > 20 && coverage < 50) {
-    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'FAIL', detail: `${hardcoded.length} hardcoded color values, only ${coverage}% token coverage — color system bypassed` };
+    return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'FAIL', detail: `${hardcoded.length} hardcoded color values, only ${coverage}% token coverage: color system bypassed` };
   }
-  return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${hardcoded.length} hardcoded color values, ${coverage}% token coverage — partial token adoption` };
+  return { id: 'd03', item: 'Inline color values minimized', category: 'color', status: 'WARN', detail: `${hardcoded.length} hardcoded color values, ${coverage}% token coverage: partial token adoption` };
 }
 
 export function checkD04SpacingVariance(css: string, tokens: Record<string, string>): CheckResult {
@@ -307,9 +307,9 @@ export function checkD04SpacingVariance(css: string, tokens: Record<string, stri
       return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${distinct.length} distinct hardcoded spacing values (var()-referenced spacing excluded)` };
     }
     if (distinct.length > 15) {
-      return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct hardcoded spacing values — no spacing scale` };
+      return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `${distinct.length} distinct hardcoded spacing values: no spacing scale` };
     }
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct hardcoded spacing values — loose scale` };
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${distinct.length} distinct hardcoded spacing values: loose scale` };
   }
 
   const onScale = distinct.filter((v) => declaredScale.has(parseFloat(v)));
@@ -324,7 +324,7 @@ export function checkD04SpacingVariance(css: string, tokens: Record<string, stri
     return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'PASS', detail: `${pct}% of ${distinct.length} hardcoded spacing value(s) land on a declared --space stop (off-scale: ${offScale.slice(0, 4).join(', ')})` };
   }
   if (ratio < 0.5) {
-    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `only ${pct}% of ${distinct.length} hardcoded spacing values land on the declared ${declaredScale.size}-stop scale — spacing ignores the system (off-scale: ${offScale.slice(0, 5).join(', ')})` };
+    return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'FAIL', detail: `only ${pct}% of ${distinct.length} hardcoded spacing values land on the declared ${declaredScale.size}-stop scale; spacing ignores the system (off-scale: ${offScale.slice(0, 5).join(', ')})` };
   }
   return { id: 'd04', item: 'Spacing values cluster on a scale', category: 'spacing', status: 'WARN', detail: `${pct}% of ${distinct.length} hardcoded spacing values land on the declared scale (off-scale: ${offScale.slice(0, 5).join(', ')})` };
 }
@@ -383,12 +383,12 @@ export function checkD05ColorVariance(css: string, _tokens: Record<string, strin
   const ratio = top3Count / total;
   const distinctBases = groups.size;
   if (ratio > 0.6) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 base colors cover ${Math.round(ratio * 100)}% of ${total} declarations (${distinctBases} distinct base colors, opacity variants normalized) — consistent` };
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'PASS', detail: `Top 3 base colors cover ${Math.round(ratio * 100)}% of ${total} declarations (${distinctBases} distinct base colors, opacity variants normalized): consistent` };
   }
   if (ratio < 0.3 && distinctBases > 30) {
-    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${distinctBases} distinct base colors across ${total} declarations (opacity variants normalized) — color drift` };
+    return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'FAIL', detail: `${distinctBases} distinct base colors across ${total} declarations (opacity variants normalized): color drift` };
   }
-  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${distinctBases} distinct base colors — moderate consistency` };
+  return { id: 'd05', item: 'Color values consistent', category: 'color', status: 'WARN', detail: `${distinctBases} distinct base colors: moderate consistency` };
 }
 
 // Walk a font-family custom-property alias chain to the real face name.
@@ -469,10 +469,10 @@ export function checkD06FontFamily(css: string, tokens: Record<string, string>):
   // with display/body/ui/code/icon fonts legitimately has 5-8 stacks.
   // Old threshold (>4 = FAIL) flagged standard systems as drift.
   if (stacks.length <= 4) {
-    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'PASS', detail: `${stacks.length} distinct font-family stacks — consistent` };
+    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'PASS', detail: `${stacks.length} distinct font-family stacks: consistent` };
   }
   if (stacks.length > 8) {
-    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'FAIL', detail: `${stacks.length} distinct font-family stacks — typography drift` };
+    return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'FAIL', detail: `${stacks.length} distinct font-family stacks: typography drift` };
   }
   return { id: 'd06', item: 'Font-family consistent', category: 'typography', status: 'WARN', detail: `${stacks.length} distinct font-family stacks` };
 }
@@ -527,12 +527,12 @@ export function checkD07BorderRadius(css: string): CheckResult {
   // referencing scale tokens can have 8-12 values. Old threshold (>8) flagged
   // the industry-standard Tailwind scale as drift.
   const excluded = hardcoded.length - numeric.length;
-  const note = excluded > 0 ? ` (${excluded} geometric value(s) excluded — circles, pills, hairlines, per-corner)` : '';
+  const note = excluded > 0 ? ` (${excluded} geometric value(s) excluded: circles, pills, hairlines, per-corner)` : '';
   if (distinct.length <= 8) {
     return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'PASS', detail: `${distinct.length} distinct scale border-radius value(s)${note}` };
   }
   if (distinct.length > 15) {
-    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct scale border-radius values — radius drift${note}` };
+    return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'FAIL', detail: `${distinct.length} distinct scale border-radius values: radius drift${note}` };
   }
   return { id: 'd07', item: 'Border-radius values cluster', category: 'shape', status: 'WARN', detail: `${distinct.length} distinct scale border-radius values${note}` };
 }
@@ -550,7 +550,7 @@ export function checkD08ShadowVariance(css: string): CheckResult {
     return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'PASS', detail: `${distinct.length} distinct hardcoded box-shadow values` };
   }
   if (distinct.length > 20) {
-    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'FAIL', detail: `${distinct.length} distinct hardcoded box-shadow values — shadow drift` };
+    return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'FAIL', detail: `${distinct.length} distinct hardcoded box-shadow values: shadow drift` };
   }
   return { id: 'd08', item: 'Shadow values consistent', category: 'elevation', status: 'WARN', detail: `${distinct.length} distinct hardcoded box-shadow values` };
 }
@@ -584,7 +584,7 @@ export function checkD09TransitionVariance(css: string): CheckResult {
     return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'PASS', detail: `${distinct} distinct transition durations` };
   }
   if (distinct > 12) {
-    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'FAIL', detail: `${distinct} distinct transition durations — motion drift` };
+    return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'FAIL', detail: `${distinct} distinct transition durations: motion drift` };
   }
   return { id: 'd09', item: 'Transition duration/easing consistent', category: 'motion', status: 'WARN', detail: `${distinct} distinct transition durations` };
 }
@@ -606,7 +606,7 @@ export function checkD10ZIndex(css: string): CheckResult {
     return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'PASS', detail: `All z-index values within 0-${max}, ${distinct.length} distinct levels` };
   }
   if (max > 2000 || distinct.length > 15) {
-    return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'FAIL', detail: `Z-index values reach ${max}, ${distinct.length} distinct levels — stacking chaos` };
+    return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'FAIL', detail: `Z-index values reach ${max}, ${distinct.length} distinct levels: stacking chaos` };
   }
   return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'WARN', detail: `Z-index values reach ${max}, ${distinct.length} levels` };
 }
@@ -622,9 +622,9 @@ export function checkD11UndeclaredRatio(tokens: Record<string, string>, varRefs:
     return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'PASS', detail: `${Math.round(ratio)}% undeclared var() references (${undeclared.length}/${varRefs.length})` };
   }
   if (ratio > 20) {
-    return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'FAIL', detail: `${Math.round(ratio)}% undeclared — widespread token fabrication` };
+    return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'FAIL', detail: `${Math.round(ratio)}% undeclared: widespread token fabrication` };
   }
-  return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'WARN', detail: `${Math.round(ratio)}% undeclared — moderate fabrication` };
+  return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'WARN', detail: `${Math.round(ratio)}% undeclared: moderate fabrication` };
 }
 
 export function checkD12AliasChains(css: string, tokens: Record<string, string>): CheckResult {
@@ -637,7 +637,7 @@ export function checkD12AliasChains(css: string, tokens: Record<string, string>)
   if (dangling.length <= 2) {
     return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'WARN', detail: `${dangling.length} dangling alias chains` };
   }
-  return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'FAIL', detail: `${dangling.length} alias chains reference undeclared tokens — dangling references` };
+  return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'FAIL', detail: `${dangling.length} alias chains reference undeclared tokens: dangling references` };
 }
 
 // ── Score computation ────────────────────────────────────────────────────────

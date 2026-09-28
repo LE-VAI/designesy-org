@@ -31,6 +31,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { liveScore } from './live-score.mjs';
 
 const BASE = process.argv.find((a) => a.startsWith('--base='))?.split('=')[1] ?? 'https://www.designesy.org';
 const OUT_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -140,14 +141,14 @@ async function main() {
   const rows = [];
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
-    try {
-      const res = await fetch(`${BASE}/api/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const d = await res.json();
-      if (!d.checks) throw new Error(`no checks: ${JSON.stringify(d).slice(0, 120)}`);
+    // A page the engine could not read stays an error row; a rate limit or
+    // network failure throws (live-score.mjs) and the run writes nothing.
+    const live = await liveScore(BASE, url);
+    if (live.excluded) {
+      rows.push({ url, error: live.excluded });
+      console.log(`[${i + 1}/${urls.length}] ${url}  EXCLUDED (${live.excluded})`);
+    } else {
+      const d = live.data;
 
       // v0.4.0: real engine score (includes slop/originality from the API)
       const v040 = { score: d.score, grade: d.grade };
@@ -169,9 +170,6 @@ async function main() {
       const delta = Math.round((v040.score - v030.score) * 10) / 10;
       rows.push({ url, v030, v040, delta, newChecks });
       console.log(`[${i + 1}/${urls.length}] ${url}  v0.3.0=${v030.score}(${v030.grade})  v0.4.0=${v040.score}(${v040.grade})  Δ${delta}`);
-    } catch (e) {
-      rows.push({ url, error: e.message });
-      console.log(`[${i + 1}/${urls.length}] ${url}  ERROR ${e.message}`);
     }
     await new Promise((r) => setTimeout(r, 300));
   }

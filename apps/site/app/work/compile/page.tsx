@@ -10,14 +10,14 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Compile — case study',
+  title: 'Compile: case study',
   description:
-    'Principle compiler — takes plain language and compiles it into verifiable design contracts. Built and locally verified. Demonstrates the Sources to Contracts to Tools chain.',
+    'Principle compiler: takes plain language and compiles it into verifiable design contracts. Built and locally verified. Demonstrates the Sources to Contracts to Tools chain.',
   path: '/work/compile',
   ogTitle: 'Compile · case study',
   ogDescription:
     'A principle compiled into tokens, a test, and a checklist. Built, verified, pending hosting. From contract to tool.',
-  twitterDescription: 'Compile case study — designesy.org/work/compile',
+  twitterDescription: 'Compile case study · designesy.org/work/compile',
   type: 'article',
 });
 
@@ -26,10 +26,10 @@ const DIMENSIONS = [
     num: '01',
     title: 'Purpose',
     observation:
-      'Compile states a single thesis: a principle can be compiled into tokens, a test, and a checklist, the same way source code compiles into a binary. No existing tool does this — palette tools give swatches, Lighthouse checks performance, linters check syntax. Nothing takes a plain-language design principle and outputs a verifiable contract.',
+      'Compile states a single thesis: a principle can be compiled into tokens, a test, and a checklist, the same way source code compiles into a binary. No existing tool does this: palette tools give swatches, Lighthouse checks performance, linters check syntax. Nothing takes a plain-language design principle and outputs a verifiable contract.',
     judgment:
       'Purpose is sharp and genuinely uncrowded. The tool demonstrates the Sources to Principles to Contracts to Tools chain in a way no competitor does.',
-    action: 'Keep. The thesis is the moat — do not dilute it by adding generic design-tool features.',
+    action: 'Keep. The thesis is the moat; do not dilute it with generic design-tool features.',
   },
   {
     num: '02',
@@ -46,7 +46,7 @@ const DIMENSIONS = [
     observation:
       'Self-contained single index.html, no framework, no CDN, no backend. Follows the Tile and Continuity deployment pattern exactly. Built and verified locally. Pending hosting on GitHub Pages.',
     judgment:
-      'Context is ready. The deployment pattern is proven. The only blocker is hosting — no technical barrier remains.',
+      'Context is ready. The deployment pattern is proven. The only blocker is hosting; no technical barrier remains.',
     action: 'Host on GitHub Pages (LE-VAI/compile). Generate the OG image. Publish with the proven one-word + screen-recording format.',
   },
   {
@@ -55,14 +55,14 @@ const DIMENSIONS = [
     observation:
       'Dark default, reduced-motion safe, mobile responsive. System font stack. No required audio or motion. Compilation engine covers seven design domains: motion, color, typography, spacing, shape, interaction, acoustic.',
     judgment:
-      'Inclusion is structural. The seven-domain coverage means acoustic and interaction are first-class, not afterthoughts. No other tool compiles acoustic tokens.',
+      'Inclusion is structural. The seven-domain coverage makes acoustic and interaction first-class domains. No other tool compiles acoustic tokens.',
     action: 'Keep the seven-domain coverage. The acoustic domain is a Designesy differentiator.',
   },
   {
     num: '05',
     title: 'System coherence',
     observation:
-      'The compilation engine derives tokens from Designesy DESIGN.md v0.2.0. The output contract structure matches the Designesy contract contents list. The review checklist generates all eight Designesy review dimensions. The tool IS the Lab — its output satisfies the 10-cell Lab anatomy.',
+      'The compilation engine derives tokens from Designesy DESIGN.md v0.2.0. The output contract structure matches the Designesy contract contents list. The review checklist generates all eight Designesy review dimensions. The tool IS the Lab: its output satisfies the 10-cell Lab anatomy.',
     judgment:
       'Coherence is the strongest dimension. The tool is the pipeline made visible: a principle goes in, a contract comes out. The Lab anatomy mapping is self-documenting.',
     action: 'Keep the DESIGN.md derivation explicit. When the contract moves to ' + CONTRACT_VERSION + ', update the compilation engine.',
@@ -73,7 +73,7 @@ const DIMENSIONS = [
     observation:
       'Full BRIEF documents intent, thesis, feel, what it does, the seven-domain engine, the Lab anatomy mapping, and the substitute test. STATUS.md tracks all build items (all marked built) and pending items (OG, hosting, screen recording, X staging, Lab Four registration). Nine verification tests passed.',
     judgment:
-      'Durable as a built artifact. The documentation is the most complete of any tool in the set — it self-documents to the Lab anatomy.',
+      'Durable as a built artifact. The documentation is the most complete of any tool in the set: it self-documents to the Lab anatomy.',
     action: 'Host, generate OG, record, publish. The tool is ready; the packaging is what remains.',
   },
   {
@@ -82,8 +82,8 @@ const DIMENSIONS = [
     observation:
       'The delight moment is watching a plain-language principle compile into a structured contract with tokens, a verification script, and a review checklist. The live preview showing tokens applied to a UI skeleton makes the abstraction visible.',
     judgment:
-      'Delight is earned — the tool makes the abstract concrete. Watching a principle become a contract is a genuine aha moment.',
-    action: 'Keep the live preview. The preview is the demo — it shows the tool thinking.',
+      'Delight is earned: the tool makes the abstract concrete. Watching a principle become a contract is a genuine aha moment.',
+    action: 'Keep the live preview. The preview is the demo: it shows the tool thinking.',
   },
   {
     num: '08',
@@ -97,11 +97,11 @@ const DIMENSIONS = [
 ];
 
 const HOLDS = [
-  'Thesis is uncrowded: compile principles into verifiable contracts — no substitute exists',
+  'Thesis is uncrowded: compile principles into verifiable contracts; no substitute exists',
   'Seven-domain compilation engine: motion, color, typography, spacing, shape, interaction, acoustic',
   'Self-documenting: output satisfies the 10-cell Lab anatomy',
   'Nine verification tests passed across seven domains',
-  'Zero-dependency deployment pattern — same as Tile and Continuity',
+  'Zero-dependency deployment pattern, the same as Tile and Continuity',
   'Security fix documented: local path leak in compiled output, found and fixed 2026-07-13',
 ];
 
@@ -116,7 +116,7 @@ const TENSIONS = [
   },
   {
     title: 'DESIGN.md derivation is v0.2.0',
-    meta: 'The compilation engine derives from v0.2.0 — needs update when contract moves to ' + CONTRACT_VERSION,
+    meta: 'The compilation engine derives from v0.2.0 and needs an update when the contract moves to ' + CONTRACT_VERSION,
   },
 ];
 
@@ -137,7 +137,7 @@ const CORRECTIONS = [
 
 const VERIFICATION = [
   'Local build inspected: compilation engine, four output tabs, live preview, ZIP export',
-  'Nine test principles compiled across seven domains — all passed',
+  'Nine test principles compiled across seven domains; all passed',
   'Security audit 2026-07-13: local path leak found, fixed, verified clean',
   'Compared to design system contract v0.2.0 token derivation',
   'Compared to Use Kit One Design Review output format',
@@ -158,7 +158,7 @@ const SOURCES = [
   },
   {
     href: '/work/tile',
-    title: 'Tile — case study',
+    title: 'Tile · case study',
     meta: 'Comparison: shipped tool with proven format',
   },
   {
@@ -168,7 +168,7 @@ const SOURCES = [
   },
   {
     href: '/work',
-    title: 'Work — case studies',
+    title: 'Work · case studies',
     meta: 'Index',
   },
 ];
@@ -189,7 +189,7 @@ export default function CompileCaseStudyPage() {
           </p>
           <h1 className="surface-title">Compile</h1>
           <p className="surface-lede">
-            Principle compiler — turns plain language into verifiable design
+            Principle compiler: turns plain language into verifiable design
             contracts.
           </p>
           <p className="surface-note">
@@ -214,13 +214,13 @@ export default function CompileCaseStudyPage() {
             <p className="definition-label">Outcome · ready for review</p>
             <p>
               Compile is the most complete tool in the set. The thesis is
-              uncrowded — no existing tool compiles plain-language principles
+              uncrowded: no existing tool compiles plain-language principles
               into verifiable design contracts. The seven-domain engine
               covers motion, color, typography, spacing, shape, interaction,
               and acoustic. The output self-documents to the 10-cell Lab
               anatomy. Nine verification tests passed. A local path leak in
               compiled output was found and fixed 2026-07-13. The only
-              remaining work is hosting, packaging, and publication — no
+              remaining work is hosting, packaging, and publication; no
               technical barrier remains.
             </p>
           </div>
@@ -233,8 +233,8 @@ export default function CompileCaseStudyPage() {
             <p>
               Nine test principles compiled across seven design domains. All
               passed. A security audit found a local path leak in compiled
-              contract output (embedding internal source paths) — fixed
-              to reference public designesy.org URLs. Verified clean after
+              contract output (embedding internal source paths), fixed to
+              reference public designesy.org URLs. Verified clean after
               fix. The tool is ready for hosting.
             </p>
           </div>
@@ -253,7 +253,7 @@ export default function CompileCaseStudyPage() {
               <span className="row-body">
                 <span className="row-title">Purpose claim</span>
                 <span className="row-meta">
-                  Compile a principle into tokens, a test, and a checklist — no substitute exists
+                  Compile a principle into tokens, a test, and a checklist; no substitute exists
                 </span>
               </span>
             </ToggleRow>
@@ -279,7 +279,7 @@ export default function CompileCaseStudyPage() {
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Dimension findings</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each dimension: observation, judgment, action — Kit One format.
+            Each dimension in Kit One format: observation, judgment, action.
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (
@@ -333,31 +333,31 @@ export default function CompileCaseStudyPage() {
           <h2 className="doctrine-heading">Sources used</h2>
           <div className="row-stack" role="list">
             {SOURCES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
 
         <div className="status-note">
           Case study of Compile using Use Kit One · Design Review. Outcome:
-          ready for review. The most complete tool in the set — thesis is
-          uncrowed, seven-domain engine works, nine tests passed, security
-          fix verified. Pending hosting and publication.
+          ready for review. The most complete tool in the set: the thesis is
+          uncrowded, the seven-domain engine works, nine tests passed, and the
+          security fix is verified. Pending hosting and publication.
         </div>
       </main>
 

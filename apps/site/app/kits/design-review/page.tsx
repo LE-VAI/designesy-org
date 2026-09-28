@@ -25,13 +25,13 @@ const ANATOMY_HREFS: Record<string, string> = {
 export const metadata: Metadata = pageMeta({
   title: 'Design Review',
   description:
-    'Use Kit One · Design Review — portable design judgment for people and agents. Eight dimensions, agent prompt, output format, verification.',
+    'Use Kit One · Design Review: portable design judgment for people and agents. Eight dimensions, agent prompt, output format, verification.',
   path: '/kits/design-review',
   ogTitle: 'Design Review · Kit One',
   ogDescription:
     'Turn taste into inspection. Portable review package for interfaces, systems, and agent output.',
   twitterDescription:
-    'Eight dimensions and a portable agent prompt — designesy.org/kits/design-review',
+    'Eight dimensions and a portable agent prompt · designesy.org/kits/design-review',
 });
 
 export default function DesignReviewKitPage() {
@@ -85,8 +85,8 @@ export default function DesignReviewKitPage() {
             <p>{k.handoff_line}</p>
           </div>
           <p className="surface-note">
-            Shows a human share line. Click copies the full agent prompt —
-            paste into your AI tool, replace the placeholders, run the review.
+            Shows a human share line. Click copies the full agent prompt:
+            paste it into your AI tool, replace the placeholders, run the review.
             Human face: this page. Machine face:{' '}
             <Link href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
@@ -114,8 +114,8 @@ export default function DesignReviewKitPage() {
         <section className="doctrine-section fade-up" id="anatomy">
           <h2 className="doctrine-heading">Kit anatomy</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Package map first — jump cells land on sections so the rest of the
-            kit does not have to be read as one long stack.
+            Package map first: jump cells land on sections, so the rest of the
+            kit reads in any order.
           </p>
           <CheckGrid
             dense
@@ -204,22 +204,22 @@ export default function DesignReviewKitPage() {
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
             {k.related.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

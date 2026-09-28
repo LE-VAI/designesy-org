@@ -39,12 +39,12 @@ export function ReadinessForm({ initialUrl, registry }: { initialUrl: string; re
   return (
     <div className="eg-bench">
       <EngineBar
-        fields={[{ value: url, onChange: setUrl, label: 'URL to probe for AI readiness', placeholder: 'Any public URL, like vercel.com' }]}
+        fields={[{ value: url, onChange: setUrl, label: 'URL to probe for AI readiness', placeholder: 'Any public URL, like vercel.com', reads: 'origin' }]}
         onSubmit={() => start(url)}
         busy={phase === 'running'}
         go="Probe readiness"
         goBusy="Probing"
-        foot={<p className="eg-bar-foot-note">Probes the site&apos;s origin, so a deep link checks the same files as its homepage.</p>}
+        note="Probes the site's origin, so a deep link checks the same files as its homepage."
       />
       <Instrument
         name="AI readiness"

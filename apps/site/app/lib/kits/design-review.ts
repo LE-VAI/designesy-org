@@ -11,12 +11,12 @@ export const designReviewKit = {
   version: '0.1',
   status: 'live' as const,
   title: 'Design Review',
-  lede: 'Turn taste into inspection. Review any interface, system, or agent output against eight dimensions — with a portable prompt agents can run.',
+  lede: 'Turn taste into inspection. Review any interface, system, or agent output against eight dimensions, with a portable prompt agents can run.',
   path: '/kits/design-review',
   public_url: 'https://www.designesy.org/kits/design-review',
   machine_url: 'https://www.designesy.org/kits/design-review.json',
   handoff_line:
-    'Tell your agent to review with Designesy — designesy.org/kits/design-review',
+    'Tell your agent to review with Designesy: designesy.org/kits/design-review',
   permission: 'read-only by default · report only unless edit scope is explicit',
   related: [
     {
@@ -94,7 +94,7 @@ export const designReviewKit = {
     'Related contracts and surfaces',
   ],
   purpose:
-    'Give people and agents a shared, portable way to judge design work by consequence — not personal taste — and return concrete, reusable findings.',
+    'Give people and agents a shared, portable way to judge design work by consequence (not personal taste) and return concrete, reusable findings.',
   when_to_use: [
     'Before shipping a public interface, page, or system change',
     'When agent output looks functional but may still be generic',
@@ -187,33 +187,33 @@ If you cannot fetch URLs:
 ---
 
 ARTIFACT:
-{{ARTIFACT — URL, screenshots, route, component, or document}}
+{{ARTIFACT: URL, screenshots, route, component, or document}}
 
 PURPOSE CLAIM:
-{{PURPOSE — what the design is trying to make possible, one sentence}}
+{{PURPOSE: what the design is trying to make possible, one sentence}}
 
 AUDIENCE AND CONTEXT:
-{{CONTEXT — who uses it, on what device, under what stress or constraint}}
+{{CONTEXT: who uses it, on what device, under what stress or constraint}}
 
 GOVERNING RULES (if any):
-{{RULES — contract, lab, or prior review to measure against}}
+{{RULES: contract, lab, or prior review to measure against}}
 
 ---
 
 Review each of the eight dimensions:
-  01 Purpose — what is the design trying to make possible?
-  02 Clarity — is the primary action discoverable?
-  03 Context — what constraints shape the experience?
-  04 Inclusion — who has to work harder?
-  05 System coherence — does this follow an existing system?
-  06 Durability — will this hold up under repeated use?
-  07 Delight — does emotion clarify or distract?
-  08 Responsibility — what costs are hidden?
+  01 Purpose: what is the design trying to make possible?
+  02 Clarity: is the primary action discoverable?
+  03 Context: what constraints shape the experience?
+  04 Inclusion: who has to work harder?
+  05 System coherence: does this follow an existing system?
+  06 Durability: will this hold up under repeated use?
+  07 Delight: does emotion clarify or distract?
+  08 Responsibility: what costs are hidden?
 
 For each dimension:
-  1. Observation — what is present or missing
-  2. Judgment — consequence for the user or system
-  3. Action — keep, fix, remove, or document as open tension
+  1. Observation: what is present or missing
+  2. Judgment: consequence for the user or system
+  3. Action: keep, fix, remove, or document as open tension
 
 Then return the Output format defined by the kit:
   Summary, Outcome (pass / pass with notes / needs revision / blocked),
@@ -238,7 +238,7 @@ Then return the Output format defined by the kit:
     },
     {
       title: 'Tensions',
-      meta: 'Named open problems — not hidden taste notes',
+      meta: 'Named open problems in place of hidden taste notes',
     },
     {
       title: 'Corrections',
@@ -260,7 +260,7 @@ Then return the Output format defined by the kit:
     'Check missing states: empty, error, loading, disabled, success',
     'Verify accessibility, keyboard path, and reduced-motion behavior when UI is in scope',
     'Check responsiveness, persistence, performance, and provenance when relevant',
-    'Recommend concrete corrections, not vague polish language',
+    'Recommend concrete corrections instead of vague polish language',
     'Cite a governing contract token or name an open tension before claiming done',
     'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
     'Primary action button text passes WCAG AA 4.5:1 contrast against its fill',
@@ -272,11 +272,11 @@ Then return the Output format defined by the kit:
     },
     {
       excuse: 'The CSS matches the contract',
-      reality: 'Token matching is one verification item, not the whole review. Layout, interaction, inclusion, and delight still need dimension passes.',
+      reality: 'Token matching is one verification item of many. Layout, interaction, inclusion, and delight still need dimension passes.',
     },
     {
       excuse: 'It is just a small change',
-      reality: 'Small changes still push files past healthy sizes, add untested states, or break responsive behavior. Judge the resulting structure, not the diff size.',
+      reality: 'Small changes still push files past healthy sizes, add untested states, or break responsive behavior. Judge the resulting structure rather than the diff size.',
     },
     {
       excuse: 'Accessibility can be added later',
@@ -292,7 +292,7 @@ Then return the Output format defined by the kit:
     },
     {
       excuse: 'AI generated it, so it is probably fine',
-      reality: 'AI output needs more scrutiny, not less. It is confident and plausible even when wrong. Run every dimension.',
+      reality: 'AI output needs more scrutiny. It is confident and plausible even when wrong. Run every dimension.',
     },
   ],
   anti_patterns: [
@@ -306,7 +306,7 @@ Then return the Output format defined by the kit:
     'Claiming finality when identity, tokens, or deployment are still provisional',
   ],
   quality_bar:
-    'Functional is the baseline. Considered is the bar. An artifact is ready when every dimension has been checked, tradeoffs are named, and remaining tensions are documented — not hidden.',
+    'Functional is the baseline. Considered is the bar. An artifact is ready when every dimension has been checked, tradeoffs are named, and remaining tensions are documented in the open.',
 } as const;
 
 export type DesignReviewKit = typeof designReviewKit;

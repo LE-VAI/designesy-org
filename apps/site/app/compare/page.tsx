@@ -25,14 +25,14 @@ export const metadata: Metadata = pageMeta({
   // the one every caller already uses.
   title: 'Compare',
   description:
-    'Compare two design systems from live URLs — diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta. The only URL-scoped design-token diff engine. 8 emission checks plus score delta on both sites.',
+    'Compare two design systems from live URLs: diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta. The only URL-scoped design-token diff engine. 8 emission checks plus score delta on both sites.',
   path: '/compare',
 
   machineSibling: '/contracts/compare.json',
   ogTitle: 'Compare design systems · Designesy',
   ogDescription:
-    'Diff two design systems from live URLs — tokens added, removed, renamed, value-changed, scale drift.',
-  twitterDescription: 'Designesy compare — designesy.org/compare',
+    'Diff two design systems from live URLs: tokens added, removed, renamed, value-changed, scale drift.',
+  twitterDescription: 'Designesy compare · designesy.org/compare',
 });
 
 export default async function ComparePage({ searchParams }: { searchParams?: Promise<{ a?: string; b?: string }> }) {

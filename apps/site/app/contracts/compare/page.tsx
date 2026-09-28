@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Compare contract',
   description:
-    'Designesy Compare Contract v0.1.0 — cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.',
+    'Designesy Compare Contract v0.1.0: cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.',
   path: '/contracts/compare',
   ogTitle: 'Compare contract · Designesy',
   ogDescription:
-    'Diff two design systems from live URLs — tokens added, removed, renamed, value-changed, scale drift, contrast drift.',
-  twitterDescription: 'Designesy compare — designesy.org/contracts/compare',
+    'Diff two design systems from live URLs: tokens added, removed, renamed, value-changed, scale drift, contrast drift.',
+  twitterDescription: 'Designesy compare · designesy.org/contracts/compare',
 });
 
 const c = compareContract;
@@ -86,7 +86,7 @@ export default function CompareContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -132,7 +132,7 @@ export default function CompareContractPage() {
         </section>
 
         <div className="status-note">
-          The compare contract is the diff engine — it answers &ldquo;what
+          The compare contract is the diff engine: it answers &ldquo;what
           actually changed between two design systems&rdquo; deterministically from
           live production URLs. <Link href={c.machine_url}>Machine export</Link>.
         </div>

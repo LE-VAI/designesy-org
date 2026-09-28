@@ -22,7 +22,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const APP = path.resolve(__dirname, '..', 'app');
-const read = (p) => fs.readFileSync(path.join(APP, p), 'utf8');
+// Line endings normalized: the searches below spell `build(\n  '<engine>',`, and
+// a CRLF checkout (a Windows worktree) otherwise fails every clause.
+const read = (p) => fs.readFileSync(path.join(APP, p), 'utf8').replace(/\r\n/g, '\n');
 const registry = read('lib/engine/registry.ts');
 const problems = [];
 let clauses = 0;

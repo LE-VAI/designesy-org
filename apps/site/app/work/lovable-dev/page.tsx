@@ -10,15 +10,15 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'lovable.dev — A on arrival case study',
+  title: 'lovable.dev: A on arrival case study',
   description:
-    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract — without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
+    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
   path: '/work/lovable-dev',
   type: 'article',
   ogTitle: 'lovable.dev · A on arrival · Designesy',
   ogDescription:
-    'An AI app platform site that scored A on the Designesy contract without citing it. The upper bound of what an AI-built site can score — snapshot, 2026-07-25.',
-  twitterDescription: 'lovable.dev A on arrival case study — designesy.org/work/lovable-dev',
+    'An AI app platform site that scored A on the Designesy contract without citing it. The upper bound of what an AI-built site can score (snapshot, 2026-07-25).',
+  twitterDescription: 'lovable.dev A on arrival case study · designesy.org/work/lovable-dev',
 });
 
 const COUNTS = { pass: 19, fail: 0, warn: 3, skip: 4 };
@@ -31,16 +31,16 @@ const REMAINING = [
 
 const SKIPS = [
   { id: 'v02', item: 'Responsive overflow at 4 viewports', note: 'Needs a browser at 375/720/860/1080. ENABLE_BROWSER_AUDIT=1 on the deployment.' },
-  { id: 'v04', item: 'Sound toggle aria-pressed flip', note: 'Needs a browser to click the toggle and observe state. lovable.dev may not have a sound toggle — that would resolve as PASS or WARN.' },
+  { id: 'v04', item: 'Sound toggle aria-pressed flip', note: 'Needs a browser to click the toggle and observe state. lovable.dev may not have a sound toggle, which would resolve as PASS or WARN.' },
   { id: 'v21', item: 'Core Web Vitals (LCP/INP/CLS)', note: 'Needs PageSpeed Insights API or a Chromium CDP trace. PSI_API_KEY on the deployment.' },
-  { id: 'v22', item: 'Primary button WCAG AA contrast', note: 'Browser check — the static path cannot measure computed contrast against a signal fill.' },
+  { id: 'v22', item: 'Primary button WCAG AA contrast', note: 'Browser check: the static path cannot measure computed contrast against an accent fill.' },
 ];
 
 const LESSONS = [
-  'An AI-built site can score A on a contract it never read — good defaults are reachable from a competent generator',
-  'Zero failures is the headline; the 3 WARNs are token-strictness, not design failures',
-  'The 4 SKIPs are the deployment\'s limitation, not the site\'s — lovable.dev is not penalized for unrun checks',
-  'The projected A+ is one session of token tightening away — no architectural change required',
+  'An AI-built site can score A on a contract it never read; good defaults are reachable from a competent generator',
+  'Zero failures is the headline; the 3 WARNs are token-strictness gaps',
+  'The 4 SKIPs come from the scoring deployment\'s limits; lovable.dev is not penalized for unrun checks',
+  'The projected A+ is one session of token tightening away; no architectural change required',
   'This is the strongest argument for the contract: it does not care who built the site, only what the visitor receives',
 ];
 
@@ -61,12 +61,12 @@ export default function LovableCaseStudy() {
           <h1 className="surface-title">lovable.dev · A on arrival</h1>
           <p className="surface-lede">
             Snapshot (2026-07-25): an AI-built site that scored A on the
-            contract — without knowing it existed.
+            contract without knowing it existed.
           </p>
           <p className="surface-note">
             lovable.dev was scored by the same /api/score engine that grades
-            every other site. On 2026-07-25 the result was an A — 19 pass,
-            0 fail, 3 warn, 4 skip — without the site ever citing the Designesy
+            every other site. On 2026-07-25 the result was an A (19 pass, 0
+            fail, 3 warn, 4 skip) without the site ever citing the Designesy
             contract. Sites change and the engine evolves; score it live on
             /score to see where it stands today. This case study documents
             the snapshot: a generator that shipped good defaults and landed
@@ -86,7 +86,7 @@ export default function LovableCaseStudy() {
           <div className="definition">
             <p className="definition-label">Outcome · A · 93.2</p>
             <p>
-              lovable.dev scores A on the Designesy contract — 19 of 26
+              lovable.dev scores A on the Designesy contract: 19 of 26
               checks pass, 0 fail, 3 warn, 4 skip. The 3 warnings are
               token-strictness gaps (will-change scope, rem confirmation,
               tabular-nums). The 4 skips are browser-only checks that the
@@ -114,7 +114,7 @@ export default function LovableCaseStudy() {
               </h3>
               <p className="surface-note" style={{ fontSize: '0.85rem' }}>
                 Resolving the 3 WARNs (v12, v16, v19) would land lovable.dev
-                at A+ — no architectural change, only token tightening.
+                at A+ with token tightening alone.
               </p>
             </div>
           </div>
@@ -138,9 +138,9 @@ export default function LovableCaseStudy() {
         <section className="doctrine-section fade-up" id="skips">
           <h2 className="doctrine-heading">The 4 skips (honest)</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each skip is the deployment&rsquo;s limitation, not the
-            site&rsquo;s. lovable.dev is not penalized for an unrun check —
-            the engine returns SKIP with a diagnostic string.
+            Each skip comes from the scoring deployment&rsquo;s limits.
+            lovable.dev is not penalized for an unrun check: the engine returns
+            SKIP with a diagnostic string.
           </p>
           <div className="principle-list">
             {SKIPS.map((s) => (
@@ -163,66 +163,70 @@ export default function LovableCaseStudy() {
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=lovable.dev"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score lovable.dev now</span>
-                <span className="row-meta">Re-run the live engine against the same URL</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">The contract lovable.dev passes without citing</span>
-              </span>
-            </Link>
-            <Link
-              href="/score/lovable"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Score your Lovable site</span>
-                <span className="row-meta">Target landing page for Lovable-built sites</span>
-              </span>
-            </Link>
-            <Link
-              href="/work"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Work — case studies</span>
-                <span className="row-meta">Index</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=lovable.dev"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score lovable.dev now</span>
+                  <span className="row-meta">Re-run the live engine against the same URL</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">The contract lovable.dev passes without citing</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/score/lovable"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Score your Lovable site</span>
+                  <span className="row-meta">Target landing page for Lovable-built sites</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/work"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Work · case studies</span>
+                  <span className="row-meta">Index</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
           Case study · lovable.dev · A on arrival. Real score from
-          /api/score, captured 2026-07-25. The &ldquo;after&rdquo; is
-          projected, not measured — the 3 WARNs would need to be fixed on
-          lovable.dev itself, which is not this publisher&rsquo;s site to fix.
+          /api/score, captured 2026-07-25. The &ldquo;after&rdquo; is a
+          projection: the 3 WARNs would need to be fixed on
+          lovable.dev itself, which belongs to another publisher.
         </div>
       </main>
 

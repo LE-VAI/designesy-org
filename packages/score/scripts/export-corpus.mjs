@@ -133,7 +133,9 @@ if (checkMode) {
     console.error('corpus.json is missing — run: node scripts/export-corpus.mjs');
     process.exit(1);
   }
-  const current = readFileSync(OUT, 'utf8');
+  // Compared with line endings normalized: a CRLF checkout (Windows,
+  // core.autocrlf) holds the same document with different bytes.
+  const current = readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n');
   if (current !== serialized) {
     console.error(
       'corpus.json is STALE — the fixtures changed but the published artifact did not.\n' +

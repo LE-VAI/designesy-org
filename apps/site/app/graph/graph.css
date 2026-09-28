@@ -84,22 +84,21 @@
   z-index: 1;
 }
 
-.chain-cell:hover .chain-cell-main {
-  border-color: var(--line-strong);
-  background: var(--surface-raised);
-}
-
-.chain-cell:hover .chain-cell-main::before {
-  opacity: 0.45;
-}
-
-.chain-cell:hover .chain-cell-main::after {
-  transform: translateX(100%);
-}
-
-.chain-cell:hover .chain-rail-node {
-  border-color: var(--signal-light);
-  background: var(--signal-dim);
+@media (hover: hover) {
+  .chain-cell:hover .chain-cell-main {
+    border-color: var(--line-strong);
+    background: var(--surface-raised);
+  }
+  .chain-cell:hover .chain-cell-main::before {
+    opacity: 0.45;
+  }
+  .chain-cell:hover .chain-cell-main::after {
+    transform: translateX(100%);
+  }
+  .chain-cell:hover .chain-rail-node {
+    border-color: var(--signal-light);
+    background: var(--signal-dim);
+  }
 }
 
 .chain-cell-header {
@@ -119,8 +118,10 @@
   transition: color 200ms var(--ease);
 }
 
-.chain-cell:hover .chain-cell-num {
-  color: var(--signal-light);
+@media (hover: hover) {
+  .chain-cell:hover .chain-cell-num {
+    color: var(--signal-light);
+  }
 }
 
 .chain-cell-title {
@@ -147,8 +148,10 @@
   transition: height 200ms var(--ease-out);
 }
 
-.chain-cell:hover .chain-cell-meter-bar {
-  height: 8px;
+@media (hover: hover) {
+  .chain-cell:hover .chain-cell-meter-bar {
+    height: 8px;
+  }
 }
 
 .chain-cell-meter-fill {
@@ -160,8 +163,10 @@
   transition: width 400ms var(--ease-out), background 200ms var(--ease);
 }
 
-.chain-cell:hover .chain-cell-meter-fill {
-  background: var(--signal-light);
+@media (hover: hover) {
+  .chain-cell:hover .chain-cell-meter-fill {
+    background: var(--signal-light);
+  }
 }
 
 .chain-cell-meter-label {
@@ -244,8 +249,9 @@
   .chain-cell-meter-fill {
     transition: none;
   }
-  .chain-cell:hover .chain-cell-meter-bar {
-    height: 6px;
+  @media (hover: hover) {
+    .chain-cell:hover .chain-cell-meter-bar {
+      height: 6px;
+    }
   }
 }
-

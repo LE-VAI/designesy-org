@@ -17,21 +17,21 @@ export const metadata: Metadata = pageMeta({
   type: 'article',
   ogTitle: 'What is design verification? · Designesy',
   ogDescription:
-    'The automated evaluation of a live site against a published design system contract — defined, distinguished from linting and regression, and made runnable.',
+    'The automated evaluation of a live site against a published design system contract: defined, distinguished from linting and regression, and made runnable.',
   twitterDescription:
-    'Design verification, defined — designesy.org/learn/what-is-design-verification',
+    'Design verification, defined · designesy.org/learn/what-is-design-verification',
 });
 
 const CONTRACT_LAYERS = [
   {
     num: '01',
     name: 'Tokens',
-    desc: 'Named values — color, type, spacing, radius, motion, depth — that a site promises to use and no others. Drift here is the cheapest signal to catch.',
+    desc: 'Named values (color, type, spacing, radius, motion, depth) that a site promises to use and no others. Drift here is the cheapest problem to catch.',
   },
   {
     num: '02',
     name: 'Rules',
-    desc: 'Anti-patterns and required patterns the contract forbids or mandates — no raw hex, no magic numbers, focus-visible everywhere a pointer can go.',
+    desc: 'Anti-patterns and required patterns the contract forbids or mandates: no raw hex, no magic numbers, focus-visible everywhere a pointer can go.',
   },
   {
     num: '03',
@@ -41,21 +41,21 @@ const CONTRACT_LAYERS = [
   {
     num: '04',
     name: 'Verification',
-    desc: `A runnable checklist — ${ENGINE_CHECK_COUNT} automated checks in Designesy\'s case — that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.`,
+    desc: `A runnable checklist (${ENGINE_CHECK_COUNT} automated checks in Designesy\'s case) that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.`,
   },
 ];
 
 const DISTINGUISHING_CHECKS = [
   {
-    label: 'It runs against a live URL, not a source tree',
+    label: 'It runs against a live URL instead of a source tree',
     desc: 'Design linting reads your code. Visual regression diffs your screenshots. Design verification fetches your production site the way a visitor would, then runs checks against the CSS and HTML the browser actually receives.',
   },
   {
-    label: 'It scores against a published contract, not a private baseline',
-    desc: 'Regression compares to last week\'s snapshot. Verification compares to a contract that is published, versioned, and citable — the same contract for every site it scores.',
+    label: 'It scores against a published contract instead of a private baseline',
+    desc: 'Regression compares to last week\'s snapshot. Verification compares to a contract that is published, versioned, and citable: the same contract for every site it scores.',
   },
   {
-    label: 'It returns a grade, not a diff',
+    label: 'It returns a grade instead of a diff',
     desc: 'Linting emits warnings. Regression emits pixel deltas. Verification emits a letter grade with a per-check breakdown that resolves to a single, scorable, comparable number.',
   },
 ];
@@ -74,9 +74,9 @@ export default function WhatIsDesignVerificationPage() {
             system contract.
           </p>
           <p className="surface-note">
-            Design verification sits between three established practices —
-            design linting, visual regression, and heuristic design review —
-            and does something none of them do alone: it asks whether a live
+            Design verification sits between three established practices (design
+            linting, visual regression, and heuristic design review) and does
+            something none of them do alone: it asks whether a live
             site keeps the promises its own design system makes, and returns a
             grade that any visitor can read.
           </p>
@@ -97,18 +97,18 @@ export default function WhatIsDesignVerificationPage() {
             Three words in that sentence do the work. <em>Automated</em>{' '}
             means the same checks run the same way for every URL, with no
             human reviewer in the loop. <em>Live</em> means the input is the
-            site your visitors receive, not a source tree or a screenshot.{' '}
+            site your visitors receive, rather than a source tree or a screenshot.{' '}
             <em>Published contract</em> means the standard is public,
-            versioned, and citable — the same one for every site it scores.
+            versioned, and citable: the same one for every site it scores.
           </p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The four-part contract</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            A design system contract, in the verification sense, is not a
-            Figma library. It is a layered agreement a site makes about how
-            it will look, feel, and behave — and a checklist that scores
+            A design system contract, in the verification sense, goes beyond a
+            Figma library: it is a layered agreement a site makes about how it
+            will look, feel, and behave, plus a checklist that scores
             whether it keeps that agreement.
           </p>
           <div className="principle-list">
@@ -150,9 +150,9 @@ export default function WhatIsDesignVerificationPage() {
                 Not design linting
               </h3>
               <CheckGrid items={checkItemsFromStrings([
-                'Linters read source files — verification reads the shipped CSS',
-                'Linters warn about token misuse — verification scores contract conformance',
-                'Linters integrate into CI — verification runs against production',
+                'Linters read source files; verification reads the shipped CSS',
+                'Linters warn about token misuse; verification scores contract conformance',
+                'Linters integrate into CI; verification runs against production',
               ])} />
             </div>
             <div>
@@ -160,9 +160,9 @@ export default function WhatIsDesignVerificationPage() {
                 Not visual regression
               </h3>
               <CheckGrid items={checkItemsFromStrings([
-                'Regression diffs screenshots — verification checks behavior',
-                'Regression needs a baseline — verification needs a contract',
-                'Regression catches drift — verification catches broken promises',
+                'Regression diffs screenshots; verification checks behavior',
+                'Regression needs a baseline; verification needs a contract',
+                'Regression catches drift; verification catches broken promises',
               ])} />
             </div>
             <div>
@@ -170,9 +170,9 @@ export default function WhatIsDesignVerificationPage() {
                 Not heuristic review
               </h3>
               <CheckGrid items={checkItemsFromStrings([
-                'Heuristic review needs a reviewer — verification runs the same way every time',
-                'Heuristic findings are prose — verification findings are pass, fail, warn, or skip',
-                'Heuristic review is ungradeable — verification returns a letter grade',
+                'Heuristic review needs a reviewer; verification runs the same way every time',
+                'Heuristic findings are prose; verification findings are pass, fail, warn, or skip',
+                'Heuristic review is ungradeable; verification returns a letter grade',
               ])} />
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function WhatIsDesignVerificationPage() {
               A design system without verification is a document. A verified
               design system is a contract. The difference is whether anyone
               can run the same checks against the same URL and get the same
-              grade — including the people who wrote the contract.
+              grade, including the people who wrote the contract.
             </p>
           </div>
           <p className="surface-note">
@@ -201,63 +201,67 @@ export default function WhatIsDesignVerificationPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Where to see it</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score a URL</span>
-                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
-              </span>
-            </Link>
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Read the contract</span>
-                <span className="row-meta">Designesy design system {CONTRACT_VERSION} — tokens, rules, behavior, verification</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/design-verification-vs-linting-vs-visual-regression"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Comparison article</span>
-                <span className="row-meta">Design verification vs design linting vs visual regression</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/why-we-built-a-public-design-score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Why a public score</span>
-                <span className="row-meta">The argument for publishing the grade instead of keeping it internal</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score a URL</span>
+                  <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Read the contract</span>
+                  <span className="row-meta">Designesy design system {CONTRACT_VERSION}: tokens, rules, behavior, verification</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/design-verification-vs-linting-vs-visual-regression"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Comparison article</span>
+                  <span className="row-meta">Design verification vs design linting vs visual regression</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/why-we-built-a-public-design-score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Why a public score</span>
+                  <span className="row-meta">The argument for publishing the grade instead of keeping it internal</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
-          This is a category-defining article, not a marketing page. If you
+          This is a category-defining article. If you
           cite it, cite the contract version ({CONTRACT_VERSION}) and the score endpoint
           (/api/score) as the primary sources.
         </div>

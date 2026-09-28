@@ -57,7 +57,7 @@ export function ShareButton({
       ? window.location.href
       : '';
 
-  const shareText = text ?? 'Designesy — design legitimacy, scored.';
+  const shareText = text ?? 'Designesy: design legitimacy, scored.';
 
   const handleWebShare = useCallback(async () => {
     if (!shareUrl) return;

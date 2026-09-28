@@ -11,21 +11,21 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 export const metadata: Metadata = pageMeta({
   title: 'Why we built a public design score',
   description:
-    'A score is a contract you can run. Making it public forces honesty — the same checks that score your site score ours, with the same thresholds.',
+    'A score is a contract you can run. Making it public forces honesty: the same checks that score your site score ours, with the same thresholds.',
   path: '/learn/why-we-built-a-public-design-score',
   type: 'article',
   ogTitle: 'Why a public design score · Designesy',
   ogDescription:
     'A score is a contract you can run. Making it public forces the same checks to grade your site and ours.',
   twitterDescription:
-    'Why Designesy publishes its own score — designesy.org/learn',
+    'Why Designesy publishes its own score · designesy.org/learn',
 });
 
 const REASONS = [
   {
     num: '01',
     title: 'A private score is not a score',
-    desc: 'A score kept inside a tool, a team, or a vendor dashboard is a metric. A score that anyone can run against any URL — including the one that published the score — is a contract. The first one can drift; the second one cannot.',
+    desc: 'A score kept inside a tool, a team, or a vendor dashboard is a metric. A score that anyone can run against any URL (including the one that published the score) is a contract. The first one can drift; the second one cannot.',
   },
   {
     num: '02',
@@ -40,7 +40,7 @@ const REASONS = [
   {
     num: '04',
     title: 'It forces the contract to be publishable',
-    desc: 'You cannot publish a score against a contract you cannot publish. The score is downstream of the contract. Making the score public required making the contract public first — which is the larger commitment the score is a proxy for.',
+    desc: 'You cannot publish a score against a contract you cannot publish. The score is downstream of the contract. Making the score public required making the contract public first, which is the larger commitment the score is a proxy for.',
   },
 ];
 
@@ -57,10 +57,10 @@ export default function WhyPublicScorePage() {
             A score is a contract you can run.
           </p>
           <p className="surface-note">
-            The /score engine is not a marketing widget. It is a verifier
-            that returns the same letter grade for any URL, including the one
-            it lives on. This article is the short version of why we made
-            that choice — and what it costs.
+            The /score engine is a verifier that returns the same letter grade
+            for any URL, including the one
+            it lives on. This article is the short version of why we made that
+            choice, and what it costs.
           </p>
           <AgentActions mdPath="/learn/why-we-built-a-public-design-score.md" label="the public score article" />
         </section>
@@ -90,7 +90,7 @@ export default function WhyPublicScorePage() {
               <CheckGrid items={checkItemsFromStrings([
                 'The ability to quietly score our own site higher than yours',
                 'A private threshold we could tune without publishing the change',
-                'A score that flatters the publisher — the universal vendor sin',
+                'A score that flatters the publisher: the universal vendor sin',
               ], { avoid: true })} />
             </div>
             <div>
@@ -100,8 +100,8 @@ export default function WhyPublicScorePage() {
               <CheckGrid items={checkItemsFromStrings([
                 'A score visitors can verify by running it themselves',
                 'A contract that has to remain publishable to remain valid',
-                'A grade on designesy.org that can fall — and has',
-                'A category definition that is runnable, not aspirational',
+                'A grade on designesy.org that can fall, and has',
+                'A runnable category definition',
               ])} />
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function WhyPublicScorePage() {
             <p className="definition-label">Transparency rule</p>
             <p>
               When the engine cannot run a check because it needs a live
-              browser — viewport overflow, sound toggle, Core Web Vitals — it
+              browser (viewport overflow, sound toggle, Core Web Vitals), it
               returns a MANUAL status with a diagnostic string. When a check
               is not applicable because the site lacks the convention (no
               DESIGN.md, no tokens, no buttons), it returns N/A. It does not
@@ -132,52 +132,55 @@ export default function WhyPublicScorePage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Run it</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/score?url=designesy.org"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Score designesy.org</span>
-                <span className="row-meta">The verifier against its own publisher</span>
-              </span>
-            </Link>
-            <Link
-              href="/score"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Score any URL</span>
-                <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
-              </span>
-            </Link>
-            <Link
-              href="/learn/what-is-design-verification"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">What is design verification?</span>
-                <span className="row-meta">The category definition this score belongs to</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/score?url=designesy.org"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Score designesy.org</span>
+                  <span className="row-meta">The verifier against its own publisher</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/score"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Score any URL</span>
+                  <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/learn/what-is-design-verification"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">What is design verification?</span>
+                  <span className="row-meta">The category definition this score belongs to</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
           The score is the artifact; this article is the language around it.
           If you cite it, cite /api/score and /contracts/design-system as the
-          primary sources, not this page.
+          primary sources rather than this page.
         </div>
       </main>
 

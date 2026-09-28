@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { motionContract } from '../../lib/motion-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
@@ -10,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Motion contract',
   description:
-    'Designesy motion contract v0.1.0 — Lottie spec v1.0.1 JSON Schema + Designesy §16 Ten Non-Negotiable Motion Standards. Reduced-motion, format conformance, 10 verification checks.',
+    'Designesy motion contract v0.1.0: Lottie spec v1.0.1 JSON Schema + Designesy §16 Ten Non-Negotiable Motion Standards. Reduced-motion, format conformance, 10 verification checks.',
   path: '/contracts/motion',
   ogTitle: 'Motion contract · v0.1.0',
   ogDescription:
     'Lottie v1.0.1 JSON Schema validation + Designesy §16 block-on-sight list. Reduced-motion via markers/slots. Machine export available.',
-  twitterDescription: 'Designesy motion contract — designesy.org/contracts/motion',
+  twitterDescription: 'Designesy motion contract · designesy.org/contracts/motion',
 });
 
 export default function MotionContractPage() {
@@ -67,7 +68,7 @@ export default function MotionContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification — <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
@@ -96,7 +97,7 @@ export default function MotionContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.4.0. Machine export at{' '}
+          Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <Link href="/contracts/motion.json">/contracts/motion.json</Link>.
         </div>
       </main>

@@ -1,0 +1,1349 @@
+/* ==========================================================================
+   Data surfaces: /leaderboard /state-of-compliance /frameworks /methodology
+   /benchmarks /specs. The page shell is the engine pages' (engine.css: the
+   head, sections, grade scale); this sheet draws the cohort the engine
+   scored, on the scale it grades by.
+
+   Figures: every number that can change sits in tabular figures, in
+   Schibsted Grotesk or Geist Mono. Fraunces in the site's build has no
+   tabular figures (its digit advances do not change under tabular-nums), so
+   no number is set in it. Prose keeps proportional figures: Schibsted's tnum
+   also widens the period and the comma, which opens gaps in running text.
+
+   Marks: series and boundaries are drawn in the instrument palette's grade
+   tones, each at 3:1 or better against the ground it sits on in both themes.
+   Layout answers to each component's own width (container queries).
+   ========================================================================== */
+
+.dx {
+  --dx-pass: var(--lv-pass-a);
+  --dx-warn: var(--lv-warn-a);
+  --dx-fail: var(--lv-fail-a);
+  --dx-plain: color-mix(in srgb, var(--ink) 58%, transparent);
+  --dx-range: color-mix(in srgb, var(--ink) 45%, transparent);
+  --dx-t: var(--duration-fast) var(--ease-out);
+}
+
+
+/* The light theme takes each tone's darker step: the pale warn and fail
+   tones fall under 3:1 on white. */
+[data-theme="light"] .dx {
+  --dx-pass: var(--lv-pass-b);
+  --dx-warn: var(--lv-warn-b);
+  --dx-fail: var(--lv-fail-b);
+  --dx-range: color-mix(in srgb, var(--ink) 58%, transparent);
+}
+
+.dx [data-tone="pass"] { --tone: var(--dx-pass); }
+.dx [data-tone="warn"] { --tone: var(--dx-warn); }
+.dx [data-tone="fail"] { --tone: var(--dx-fail); }
+.dx [data-tone="plain"] { --tone: var(--dx-plain); }
+
+/* --- Head extras: the page's actions under its thesis ------------------- */
+
+.dx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+  margin-top: var(--space-24);
+}
+
+/* Text measures are in rem, never ch: a ch is the width of "0" in the face
+   that is rendering, and the fallback's is narrower than Schibsted's (65ch is
+   585px in one, 650px in the other), so a ch measure re-wraps when the web
+   font arrives. 40rem holds about 65 characters of Schibsted at 16px. */
+.dx-lead {
+  max-width: 40rem;
+  margin: 0 0 var(--space-24);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.dx-lead b,
+.dx-lead strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dx-lead a,
+.dx-prose a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+/* --- Key figures: a readout row, hairlines between ----------------------- */
+
+.dx-stats {
+  container: dxstats / inline-size;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--space-16) 0;
+  margin: 0 0 var(--space-32);
+  padding: 0;
+}
+
+.dx-stats > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+  padding: 0 var(--space-20);
+  border-left: 1px solid var(--line-faint);
+}
+
+.dx-stats > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.dx-stats dt {
+  font: 500 0.6875rem/1rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.dx-stats dd {
+  margin: 0;
+  font: 600 1.625rem/1.1 var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.dx-stats dd small {
+  margin-left: var(--space-4);
+  font: 500 0.8125rem/1 var(--sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--muted-dim);
+}
+
+@container dxstats (width < 34rem) {
+  .dx-stats > div {
+    padding-left: 0;
+    padding-right: var(--space-12);
+    border-left: 0;
+  }
+}
+
+/* A phone's two columns: a value like "44.9 to 93.0" keeps to one line. */
+@container dxstats (width < 22rem) {
+  .dx-stats dd {
+    font-size: 1.375rem;
+  }
+}
+
+/* --- Figure: title, drawing, source, the numbers ------------------------- */
+
+.dx-fig {
+  display: grid;
+  gap: var(--space-16);
+  min-width: 0;
+  margin: 0;
+}
+
+.dx-fig + .dx-fig {
+  margin-top: var(--space-40);
+}
+
+.dx-fig-cap {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dx-fig-title {
+  font: 600 1rem/1.4 var(--sans);
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.dx-fig-note {
+  max-width: 36rem;
+  font: 400 0.875rem/1.5 var(--sans);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.dx-fig-plot {
+  min-width: 0;
+}
+
+.dx-fig-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0 var(--space-16);
+}
+
+.dx-src {
+  margin: 0;
+  padding-block: var(--space-12);
+  font: 500 0.72rem/1.25rem var(--mono);
+  color: var(--muted-dim);
+}
+
+.dx-src a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.dx-data {
+  min-width: 0;
+}
+
+.dx-data[open] {
+  flex: 1 1 100%;
+  order: -1;
+}
+
+.dx-data > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  list-style: none;
+  font: 500 0.8125rem/1.25rem var(--sans);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--dx-t);
+}
+
+.dx-data > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dx-data > summary::before {
+  content: "";
+  width: var(--space-6);
+  height: var(--space-6);
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dx-t);
+}
+
+.dx-data[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-data > summary:hover {
+    color: var(--ink);
+  }
+}
+
+.dx-data > summary:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+/* --- Tables --------------------------------------------------------------- */
+
+/* The box scrolls sideways when a table is wider than its column; the page
+   never does. */
+.dx-table-box {
+  container: dxtable / inline-size;
+  min-width: 0;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.dx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 0.875rem/1.45 var(--sans);
+}
+
+.dx-table th,
+.dx-table td {
+  padding: var(--space-10) var(--space-14);
+  border-bottom: 1px solid var(--line-faint);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.dx-table thead th {
+  font: 500 0.6875rem/1rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  white-space: nowrap;
+}
+
+.dx-table tbody th {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.dx-table td {
+  color: var(--muted);
+}
+
+.dx-table [data-num] {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dx-table td[data-num] {
+  font: 500 0.8125rem/1.45 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.dx-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.dx-table code {
+  font: 500 0.78rem/1.4 var(--mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.dx-toc .dx-num {
+  font: 500 0.75rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-dim);
+}
+
+/* Columns that can step out at narrow widths carry data-opt ("wide" ones go
+   first); the row header and the numbers stay. */
+@container dxtable (width < 46rem) {
+  .dx-table [data-opt="wide"] {
+    display: none;
+  }
+}
+
+@container dxtable (width < 36rem) {
+  .dx-table [data-opt] {
+    display: none;
+  }
+  .dx-table thead th {
+    white-space: normal;
+  }
+  .dx-table th,
+  .dx-table td {
+    padding-inline: var(--space-10);
+  }
+}
+
+/* --- The cohort strip ---------------------------------------------------- */
+
+.dx-strip {
+  container: dxstrip / inline-size;
+  display: grid;
+  gap: var(--space-8);
+}
+
+.dx-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-12);
+  min-height: var(--space-24);
+  margin: 0;
+  font: 400 0.875rem/1.5rem var(--sans);
+  color: var(--muted);
+}
+
+.dx-readout b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dx-readout-num {
+  font: 500 0.875rem/1 var(--mono);
+  color: var(--ink);
+}
+
+.dx-readout-grade {
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--tone);
+  font: 600 0.75rem/1 var(--mono);
+  color: var(--ink);
+}
+
+.dx-readout-meta {
+  font: 400 0.8125rem/1 var(--sans);
+  color: var(--muted-dim);
+}
+
+.dx-strip-plot {
+  /* Defaults for what each chart sets inline, so every var() here resolves
+     to a declaration: the site's own drift check (d02, d12) reads a var()
+     with no declaration anywhere as a fabricated token. */
+  --rows: 1;
+  --step: var(--space-12);
+  --pad: var(--space-12);
+  --dot: var(--space-10);
+  position: relative;
+  height: calc(var(--rows) * var(--step) + 2 * var(--pad) + var(--space-20));
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  touch-action: pan-y;
+}
+
+.dx-zone {
+  --a: 0;
+  --b: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--a) * 1%);
+  width: calc((var(--b) - var(--a)) * 1%);
+  background: color-mix(in srgb, var(--tone) 6%, transparent);
+}
+
+.dx-zone b {
+  position: absolute;
+  top: var(--space-6);
+  left: var(--space-8);
+  font: 600 0.6875rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.dx-cut {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--at) * 1%);
+  width: 1px;
+  /* A grade boundary is part of the reading: 4.6:1 against its band in both
+     themes (--line-strong measured 1.99:1 dark, 1.51:1 light). */
+  background: var(--muted-dim);
+}
+
+.dx-dot {
+  --row: 0;
+  position: absolute;
+  left: calc(var(--at) * 1%);
+  bottom: calc(var(--pad) + var(--row) * var(--step));
+  width: var(--dot);
+  height: var(--dot);
+  margin: 0 0 calc(var(--dot) / -2) calc(var(--dot) / -2);
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 0 1.5px var(--paper);
+  transition: transform var(--dx-t);
+}
+
+/* Held over: the engine could not read the site on the last run. The dot is
+   drawn as an outline, the measurement it carries is the previous one. */
+.dx-dot[data-held] {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--tone), 0 0 0 1.5px var(--paper);
+}
+
+/* The engine's own site: ringed, so a self-score is never mistaken for an
+   outside measurement. */
+.dx-dot[data-self]::after {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--space-4));
+  right: calc(-1 * var(--space-4));
+  bottom: calc(-1 * var(--space-4));
+  left: calc(-1 * var(--space-4));
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+
+.dx-dot[data-on] {
+  z-index: 2;
+  transform: scale(1.5);
+}
+
+.dx-axis,
+.dx-median {
+  position: relative;
+  font: 500 0.6875rem/1 var(--mono);
+}
+
+.dx-axis {
+  height: var(--space-14);
+  color: var(--muted-dim);
+}
+
+.dx-axis span,
+.dx-median span {
+  position: absolute;
+  left: calc(var(--at) * 1%);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* The outermost labels stay inside the drawing's bounds. */
+.dx-axis span:first-child {
+  transform: none;
+}
+
+.dx-axis span:last-child {
+  transform: translateX(-100%);
+}
+
+.dx-median {
+  height: var(--space-24);
+  color: var(--ink);
+}
+
+.dx-median span {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.dx-median span::before {
+  content: "";
+  width: var(--space-8);
+  height: var(--space-6);
+  background: var(--ink);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+@container dxstrip (width < 30rem) {
+  .dx-strip-plot {
+    --dot: var(--space-8);
+    --step: var(--space-10);
+  }
+}
+
+/* --- Bars ------------------------------------------------------------------ */
+
+.dx-bars {
+  container: dxbars / inline-size;
+  display: grid;
+  gap: var(--space-12);
+}
+
+.dx-bar {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr) 4.5rem;
+  grid-template-areas: "label track val";
+  align-items: center;
+  gap: var(--space-6) var(--space-16);
+}
+
+.dx-bar-label {
+  grid-area: label;
+  display: grid;
+  gap: var(--space-2);
+  font: 500 0.875rem/1.3 var(--sans);
+  color: var(--ink);
+}
+
+.dx-bar-label small {
+  font: 400 0.72rem/1.3 var(--mono);
+  color: var(--muted-dim);
+}
+
+.dx-bar-track {
+  grid-area: track;
+  position: relative;
+  height: var(--space-10);
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+.dx-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-radius: inherit;
+  background: var(--tone, var(--dx-plain));
+  transform: scaleX(var(--v));
+  transform-origin: left center;
+}
+
+.dx-bar[data-tone="none"] .dx-bar-track {
+  background: transparent;
+  box-shadow: none;
+  border: 1px dashed var(--line-strong);
+}
+
+.dx-bar-mark {
+  --m: 0;
+  position: absolute;
+  top: calc(-1 * var(--space-4));
+  bottom: calc(-1 * var(--space-4));
+  left: calc(var(--m) * 100%);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--paper);
+}
+
+.dx-bar-val {
+  grid-area: val;
+  font: 500 0.8125rem/1 var(--mono);
+  text-align: right;
+  color: var(--ink);
+}
+
+.dx-bar[data-tone="none"] .dx-bar-val {
+  color: var(--muted-dim);
+}
+
+.dx-bars-key {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-12) 0 0;
+  font: 400 0.8125rem/1.25rem var(--sans);
+  color: var(--muted);
+}
+
+.dx-bars-key i {
+  width: 2px;
+  height: var(--space-16);
+  border-radius: 1px;
+  background: var(--ink);
+}
+
+@container dxbars (width < 28rem) {
+  .dx-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label val"
+      "track track";
+  }
+}
+
+/* Ranges: the track is the whole scale, the segment the band, the dot the
+   published value. */
+.dx-ranges .dx-bar-track {
+  height: var(--space-6);
+}
+
+.dx-range-seg {
+  --a: 0;
+  --b: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--a) * 100%);
+  width: max(var(--space-2), calc((var(--b) - var(--a)) * 100%));
+  border-radius: inherit;
+  /* Dimmer than the plain bars in the dark, so the published-rank dot stands
+     3:1 off the band and the band 3:1 off the track in both themes. */
+  background: var(--dx-range);
+}
+
+.dx-range-dot {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--at) * 100%);
+  width: var(--space-10);
+  height: var(--space-10);
+  margin: calc(var(--space-10) / -2) 0 0 calc(var(--space-10) / -2);
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+/* A bar grows to its value as its row comes into view. Drawn at its value by
+   default; only browsers with scroll timelines, with motion allowed, run it. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion="paused"]) .dx-bar-fill {
+      animation: dx-fill linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 25%;
+    }
+  }
+}
+
+@keyframes dx-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(var(--v));
+  }
+}
+
+/* --- A site's category profile (columns, no axes) ----------------------- */
+
+.dx-profile {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--space-6);
+  gap: var(--space-2);
+  height: var(--space-20);
+  vertical-align: middle;
+}
+
+.dx-profile i {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+.dx-profile i::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(var(--v, 0) * 100%);
+  background: var(--tone);
+}
+
+.dx-profile i[data-tone="none"] {
+  background: transparent;
+  box-shadow: none;
+  border: 1px dashed var(--line-strong);
+}
+
+/* --- Grade chip, delta, tags ---------------------------------------------- */
+
+.dx-grade {
+  display: inline-grid;
+  place-items: center;
+  width: var(--space-28);
+  height: var(--space-28);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  box-shadow: inset 0 0 0 1px var(--tone);
+  font: 600 0.8125rem/1 var(--mono);
+  color: var(--ink);
+}
+
+.dx-delta {
+  font: 500 0.72rem/1 var(--mono);
+  color: var(--muted-dim);
+  white-space: nowrap;
+}
+
+.dx-delta[data-dir="up"] {
+  color: var(--dx-pass);
+}
+
+.dx-delta[data-dir="down"] {
+  color: var(--dx-fail);
+}
+
+.dx-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font: 500 0.6875rem/1.3 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.dx-tag[data-kind="held"] {
+  box-shadow: none;
+  border: 1px dashed var(--line-strong);
+}
+
+/* --- The ranking --------------------------------------------------------- */
+
+.dx-rank td,
+.dx-rank th {
+  vertical-align: middle;
+}
+
+.dx-rank .dx-rank-n {
+  width: 3rem;
+  color: var(--muted-dim);
+}
+
+.dx-rank-site a {
+  display: inline-block;
+  padding-block: var(--space-2);
+  font: 600 0.9375rem/1.3 var(--sans);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-rank-site a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 0.2em;
+  }
+}
+
+.dx-rank-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-8);
+  margin-top: var(--space-2);
+  font: 400 0.8125rem/1.4 var(--sans);
+  color: var(--muted-dim);
+}
+
+/* Grade and score share a cell: the chip, then the number, the change under
+   the number. */
+.dx-rank-sg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+}
+
+.dx-rank-v {
+  min-width: 2.6em;
+  font: 600 0.9375rem/1.2 var(--mono);
+}
+
+.dx-rank-score .dx-delta {
+  display: block;
+  margin-top: var(--space-4);
+}
+
+@container dxtable (width < 36rem) {
+  .dx-rank .dx-rank-n {
+    width: 2rem;
+    padding-right: 0;
+  }
+}
+
+.dx-rank tr[data-self] > * {
+  background: color-mix(in srgb, var(--signal-access) 6%, transparent);
+}
+
+.dx-rank .dx-rank-checks {
+  color: var(--muted);
+}
+
+/* --- Definitions ------------------------------------------------------------ */
+
+.dx-defs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-24) var(--space-40);
+  margin: var(--space-24) 0 var(--space-8);
+}
+
+.dx-defs dt {
+  font: 600 0.9375rem/1.4 var(--sans);
+  color: var(--ink);
+}
+
+.dx-defs dd {
+  max-width: 36rem;
+  margin: var(--space-6) 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.dx-defs a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+/* --- In-page navigation --------------------------------------------------- */
+
+.dx-page {
+  container: dxpage / inline-size;
+}
+
+.dx-toc {
+  margin: 0 0 var(--space-32);
+}
+
+.dx-toc-label {
+  margin: 0 0 var(--space-8);
+  font: 500 0.6875rem/1rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.dx-toc ol {
+  display: flex;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0 0 var(--space-4);
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.dx-toc ol::-webkit-scrollbar {
+  display: none;
+}
+
+.dx-toc a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font: 500 0.8125rem/1.25 var(--sans);
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dx-t), box-shadow var(--dx-t);
+}
+
+.dx-toc a[aria-current="true"] {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toc a:hover {
+    color: var(--ink);
+  }
+}
+
+/* Wide: the navigation is a rail beside the reading column and stays in view. */
+@container dxpage (width >= 62rem) {
+  .dx-with-toc {
+    display: grid;
+    grid-template-columns: 12.5rem minmax(0, 1fr);
+    gap: var(--space-48);
+    align-items: start;
+  }
+  .dx-toc {
+    position: sticky;
+    top: var(--space-88);
+    margin: 0;
+  }
+  .dx-toc ol {
+    display: grid;
+    gap: 0;
+    overflow: visible;
+    border-left: 1px solid var(--line-faint);
+  }
+  .dx-toc a {
+    display: flex;
+    min-height: 2.25rem;
+    margin-left: -1px;
+    padding: var(--space-6) var(--space-12);
+    border-left: 1px solid transparent;
+    border-radius: 0;
+    box-shadow: none;
+    white-space: normal;
+  }
+  .dx-toc a[aria-current="true"] {
+    border-left-color: var(--ink);
+    box-shadow: none;
+  }
+}
+
+/* --- Reference pages: sections, prose, formula, disclosures --------------- */
+
+.dx-flow {
+  min-width: 0;
+}
+
+.dx-sec {
+  min-width: 0;
+  padding-top: var(--space-8);
+}
+
+.dx-sec + .dx-sec {
+  margin-top: clamp(var(--space-56), 7vw, var(--space-88));
+}
+
+.dx-sec > .eg-h2 {
+  margin-bottom: var(--space-20);
+}
+
+.dx-h3 {
+  margin: 0 0 var(--space-12);
+  font: 600 1rem/1.4 var(--sans);
+  color: var(--ink);
+}
+
+.dx-prose p {
+  max-width: 40rem;
+  margin: 0 0 var(--space-16);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.dx-prose strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dx-prose code,
+.dx-lead code,
+.dx-defs code,
+.dx-callout code,
+.dx-checks code {
+  font: 500 0.84em/1 var(--mono);
+  color: var(--ink);
+}
+
+.dx-pipeline {
+  margin-top: var(--space-32);
+}
+
+/* The formula is text from the first paint, set as code. Wide columns keep
+   each line whole and let the box scroll; narrow ones wrap with a hanging
+   indent, so no line runs off the page. */
+.dx-formula-fig {
+  margin: var(--space-40) 0 0;
+}
+
+.dx-formula-box {
+  container: dxformula / inline-size;
+  min-width: 0;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+.dx-formula {
+  margin: 0;
+  padding: var(--space-20) var(--space-24);
+  font: 400 0.8125rem/1.7 var(--mono);
+  color: var(--ink);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.dx-formula > span {
+  display: block;
+}
+
+.dx-f-c {
+  color: var(--muted-dim);
+}
+
+@container dxformula (width < 40rem) {
+  .dx-formula {
+    padding: var(--space-16);
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .dx-formula > span {
+    padding-left: var(--space-16);
+    text-indent: calc(-1 * var(--space-16));
+  }
+}
+
+.dx-scale {
+  max-width: 40rem;
+  margin: 0 0 var(--space-24);
+}
+
+.dx-bands {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--line-faint);
+}
+
+.dx-bands > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--space-8) var(--space-24);
+  align-items: baseline;
+  padding: var(--space-14) 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.dx-bands dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.dx-band-range {
+  font: 500 0.78rem/1 var(--mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dx-bands dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.dx-band-n {
+  color: var(--muted-dim);
+}
+
+@container dxpage (width < 36rem) {
+  .dx-bands > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dx-callout {
+  max-width: 40rem;
+  margin: 0 0 var(--space-20);
+  padding: var(--space-16) var(--space-20);
+  border-left: 2px solid var(--signal-access);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: var(--lv-well);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.dx-checks {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dx-checks > li {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-14) 0;
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.dx-checks > li:last-child {
+  border-bottom: 0;
+}
+
+.dx-check-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-10);
+}
+
+.dx-check-item {
+  font: 500 0.9375rem/1.4 var(--sans);
+  color: var(--ink);
+}
+
+.dx-check-how {
+  max-width: 40rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* Disclosures: a validation study, a category of checks. The summary carries
+   the headline, so a closed page still reads. */
+.dx-study,
+.dx-group {
+  border-top: 1px solid var(--line-faint);
+}
+
+.dx-study:last-of-type,
+.dx-group:last-of-type {
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.dx-study > summary,
+.dx-group > summary {
+  display: grid;
+  grid-template-columns: var(--space-16) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--space-8);
+  row-gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: var(--space-14) 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.dx-study > summary::-webkit-details-marker,
+.dx-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dx-study > summary::before,
+.dx-group > summary::before {
+  content: "";
+  grid-row: 1 / span 2;
+  align-self: start;
+  width: var(--space-6);
+  height: var(--space-6);
+  margin-top: var(--space-8);
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform var(--dx-t);
+}
+
+.dx-study[open] > summary::before,
+.dx-group[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.dx-study > summary:focus-visible,
+.dx-group > summary:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.dx-study-title,
+.dx-group-name {
+  font: 600 1rem/1.4 var(--sans);
+  color: var(--ink);
+}
+
+.dx-study-line,
+.dx-group-meta {
+  grid-column: 2;
+  font: 400 0.875rem/1.45 var(--sans);
+  color: var(--muted);
+}
+
+.dx-group-meta {
+  font: 500 0.75rem/1.45 var(--mono);
+  color: var(--muted-dim);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-study > summary:hover .dx-study-title,
+  .dx-group > summary:hover .dx-group-name {
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 0.2em;
+  }
+}
+
+.dx-study-body,
+.dx-group-body {
+  padding: 0 0 var(--space-24) var(--space-24);
+}
+
+.dx-group-note {
+  max-width: 38rem;
+  margin: 0 0 var(--space-8);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+@container dxpage (width < 36rem) {
+  .dx-study-body,
+  .dx-group-body {
+    padding-left: 0;
+  }
+}
+
+.dx-after {
+  margin-top: var(--space-20);
+}
+
+/* A long list of short checks reads in two columns where there is room. */
+.dx-checks-cols {
+  container: dxcols / inline-size;
+}
+
+@container dxpage (width >= 50rem) {
+  .dx-checks-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-32);
+  }
+  .dx-checks-cols > li:nth-last-child(2) {
+    border-bottom: 0;
+  }
+}
+
+/* --- Motion preferences --------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-dot,
+  .dx-data > summary,
+  .dx-data > summary::before,
+  .dx-study > summary::before,
+  .dx-group > summary::before,
+  .dx-toc a {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .dx-dot,
+html[data-motion="paused"] .dx-data > summary::before,
+html[data-motion="paused"] .dx-toc a {
+  transition: none;
+}
+
+/* --- Forced colors -------------------------------------------------------- */
+
+@media (forced-colors: active) {
+  .dx-dot,
+  .dx-bar-fill,
+  .dx-profile i::after,
+  .dx-bar-mark,
+  .dx-median span::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .dx-strip-plot,
+  .dx-bar-track,
+  .dx-profile i,
+  .dx-grade,
+  .dx-tag {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* --- Figures ------------------------------------------------------------------
+   Every component that prints a figure takes tabular figures. This rule stays
+   last in the sheet: each of these components sets the `font` shorthand, and
+   the shorthand resets font-variant-numeric to normal, so a tabular rule placed
+   before them is silently undone (measured: 0 of 311 figures on /leaderboard
+   resolved tabular-nums while it sat at the top). */
+.dx-stats dd,
+.dx-table [data-num],
+.dx-readout-num,
+.dx-axis,
+.dx-median,
+.dx-bar-val,
+.dx-bar-label small,
+.dx-grade,
+.dx-delta,
+.dx-tag,
+.dx-src,
+.dx-num,
+.dx-rank-v,
+.dx-band-range,
+.dx-lead b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Touch (mobile pass, 2026-09-28): a site's name is the row's link, and a
+   short one ("X") was an 11px by 24px target; a row header's link was 18px
+   tall. Padding widens and deepens the hit area to 44px; the matching
+   negative margin keeps the row's layout as it was. */
+@media (pointer: coarse) {
+  .dx-rank-site a,
+  .dx-table tbody th a {
+    display: inline-block;
+    padding: var(--space-12) var(--space-8);
+    margin: calc(-1 * var(--space-12)) calc(-1 * var(--space-8));
+  }
+}

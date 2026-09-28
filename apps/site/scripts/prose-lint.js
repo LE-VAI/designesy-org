@@ -380,4 +380,8 @@ function main() {
   process.exit(findings.length ? 1 : 0);
 }
 
-main();
+// Run as a script; when required (scripts/check-voice.js), expose the extractor so
+// both gates read a page's text the same way.
+if (require.main === module) main();
+
+module.exports = { visibleText };

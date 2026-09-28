@@ -220,7 +220,7 @@ export function MonitorForm({
         busy={phase === 'running'}
         go="Run the watch"
         goBusy="Watching"
-        foot={<p className="eg-bar-foot-note">History stays in this browser. The email is used for drift alerts and nothing else.</p>}
+        note="History stays in this browser. The email is used for drift alerts and nothing else."
       />
       <Instrument
         name="Drift monitor"

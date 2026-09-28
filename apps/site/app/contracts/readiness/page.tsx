@@ -10,12 +10,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'AI Readiness contract',
   description:
-    'Designesy AI Readiness Contract v0.1.0 — scores whether a design system is the default context AI tools build from. 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap, robots.txt, and social meta.',
+    'Designesy AI Readiness Contract v0.1.0: scores whether a design system is the default context AI tools build from. 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md, sitemap, robots.txt, and social meta.',
   path: '/contracts/readiness',
   ogTitle: 'AI Readiness contract · Designesy',
   ogDescription:
-    'Score design-system AI readiness — the 6th maturity axis. 10 checks for machine-readable context.',
-  twitterDescription: 'Designesy AI readiness — designesy.org/contracts/readiness',
+    'Score design-system AI readiness: the 6th maturity axis. 10 checks for machine-readable context.',
+  twitterDescription: 'Designesy AI readiness · designesy.org/contracts/readiness',
 });
 
 const c = readinessContract;
@@ -68,7 +68,7 @@ export default function ReadinessContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">AI-readiness signals</h2>
+          <h2 className="doctrine-heading">AI-readiness indicators</h2>
           <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
             {c.conformance.ai_readiness_signals.map((signal, i) => (
               <li key={i}>{signal}</li>
@@ -79,7 +79,7 @@ export default function ReadinessContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -126,7 +126,7 @@ export default function ReadinessContractPage() {
 
         <div className="status-note">
           The AI Readiness contract is the first automated scorer for the 6th
-          maturity axis — no questionnaire, just scan. <Link href={c.machine_url}>Machine export</Link>.
+          maturity axis: a scan replaces the questionnaire. <Link href={c.machine_url}>Machine export</Link>.
         </div>
       </main>
 

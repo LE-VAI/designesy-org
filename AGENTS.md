@@ -28,6 +28,25 @@ sources → principles → contracts → tools → systems → better designed w
 - Separate observed facts from derived design decisions.
 - Verify outputs when visual quality matters.
 
+## Public Copy
+
+- No em dashes in visible copy. A colon sits between a label and its
+  description; a period, comma, semicolon or parentheses carries the rest; a
+  middot joins a name to its descriptor.
+- State the positive claim. Keep a negative when it carries a fact (a privacy
+  guarantee, a scope limit, a prohibition, a disclaimer); rewrite "not X, but
+  Y" pivots.
+- Number ranges read "to" (5 to 10), in prose and in tables.
+- Say a missing value in words. In a dense table use `NotMeasured` from
+  `apps/site/app/lib/data/figure.tsx`: a dash for the eye, words for a screen
+  reader.
+- Quotations stay verbatim. Contract text changes only with its contract: the
+  `*-contract.ts` modules and the `/contracts` pages move together.
+- The build holds the line: `scripts/check-voice.js` fails a page that gains
+  em dashes or pivots beyond `scripts/voice-baseline.json`, and
+  `scripts/check-jsx-glue.js` fails a sentence that wraps so JSX glues two
+  words together (add `{' '}` at the boundary).
+
 ## Workflow Expectation
 
 1. Understand the system layer (docs/designesy)

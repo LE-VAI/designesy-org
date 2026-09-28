@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta({
   ogTitle: 'Score your v0 site · Designesy',
   ogDescription:
     `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. Built on v0? Score your site.`,
-  twitterDescription: 'Score your v0 site — designesy.org/score/v0',
+  twitterDescription: 'Score your v0 site · designesy.org/score/v0',
 });
 
 export default function ScoreV0Page() {
@@ -25,7 +25,7 @@ export default function ScoreV0Page() {
       eyebrow="Score · v0"
       headline="Score your v0 site"
       lede={`${ENGINE_CHECK_COUNT} checks. One grade. Built on v0? See how close you are to a published design contract.`}
-      body={`v0 generates production React. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any v0-built URL and returns an honest grade — pass, fail, warn, or skip — against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with v0.dev — score it live to see where it stands today.`}
+      body={`v0 generates production React. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any v0-built URL and returns an honest grade (pass, fail, warn, or skip) against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with v0.dev: score it live to see where it stands today.`}
       exampleUrl="v0.dev"
     />
   );

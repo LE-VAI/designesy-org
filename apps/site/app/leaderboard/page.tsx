@@ -1,617 +1,331 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../instrument.css';
+import '../engine.css';
+import '../data.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
-import { SubmitForm } from './submit-form/submit-form';
-import { MiniConstellation } from '../lib/mini-constellation';
-import { CountUp } from '../lib/count-up';
 import { PageShareButton } from '../lib/page-share';
 import { AgentActions } from '../lib/agent-actions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT, ENGINE_VERSION } from '../lib/check-definitions';
+import { EngineHead } from '../lib/engine/engine-page';
+import { SubmitForm } from './submit-form/submit-form';
+import { LEADERBOARD_VERSION } from './seed';
 import {
-  SEED,
-  LEADERBOARD_POLICY,
-  LEADERBOARD_LAST_SCORED,
-  LEADERBOARD_SCORED_COUNT,
-  type Grade,
-  type SeedSite,
-} from './seed';
-import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+  COHORT,
+  COHORT_STATS,
+  GRADE_COUNTS,
+  GRADES,
+  BATCH_CATEGORIES,
+  BATCH_RUN_DATE,
+  SCORES_DATE,
+  CATEGORY_LABELS,
+  fmt,
+  toneOf,
+  type CohortSite,
+} from '../lib/data/cohort';
+import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
+import { CohortStrip } from '../lib/data/strip';
+import { CategoryProfile } from '../lib/data/cells';
 
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
   description:
-    `Public design-verification leaderboard — 30 curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
+    `Public design-verification leaderboard: 30 curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
   path: '/leaderboard',
   ogDescription:
     `30 sites scored by the same deterministic ${ENGINE_CHECK_COUNT}-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.`,
   twitterDescription:
-    'Public design-verification leaderboard — designesy.org/leaderboard',
+    'Public design-verification leaderboard · designesy.org/leaderboard',
 });
 
-const GRADE_LABEL: Record<Grade, string> = {
-  A: 'A',
-  B: 'B',
-  C: 'C',
-  D: 'D',
-  F: 'F',
-};
+// The leaderboard is the cohort the engine scored: one scale, one engine, the
+// same checks that grade designesy.org. Every figure below is derived from the
+// seed (lib/data/cohort); nothing on this page is typed by hand.
 
-const TIER_LABEL: Record<number, string> = {
-  1: 'Reference',
-  2: 'Competitors',
-  3: 'Design-system exemplars',
-  4: 'Inspiration',
-  5: 'High-traffic',
-};
+const TOP = COHORT[0];
+const LOW = COHORT[COHORT.length - 1];
+const A_SITES = COHORT.filter((s) => s.grade === 'A');
+const GRADE_LINE = GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(' · ');
+const CATEGORY_LIST = BATCH_CATEGORIES.map((k) => CATEGORY_LABELS[k].toLowerCase()).join(', ');
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
-
-function GradeBadge({ grade, score }: { grade: Grade; score: number }) {
-  const needsWork = score < 50;
+function Delta({ s }: { s: CohortSite }) {
+  if (s.unreachable || s.prevScore === null) return null;
+  const d = Math.round((s.score - s.prevScore) * 10) / 10;
+  if (d === 0) return null;
   return (
-    <span
-      className={`lb-grade lb-grade-${grade.toLowerCase()}${needsWork ? ' lb-needs-work' : ''}`}
-      aria-label={`Grade ${grade}, ${score.toFixed(1)} percent`}
-      title={`Grade ${grade} · ${score.toFixed(1)}%${needsWork ? ' · needs work' : ''}`}
-    >
-      {GRADE_LABEL[grade]}
+    <span className="dx-delta" data-dir={d > 0 ? 'up' : 'down'}>
+      {d > 0 ? '+' : '−'}
+      {Math.abs(d).toFixed(1)}
+      <span className="sr-only"> since the previous run</span>
     </span>
   );
 }
 
-function ScoreCell({ site }: { site: SeedSite }) {
-  if (site.score === null) {
-    return <span className="lb-score lb-score-pending">pending</span>;
-  }
+function Row({ s }: { s: CohortSite }) {
   return (
-    <span className="lb-score" data-tabular>
-      <CountUp value={site.score} decimals={1} />
-      <span className="lb-score-pct">%</span>
-    </span>
-  );
-}
-
-// Delta badge — shows the change since last week's re-score.
-// null prevScore (first score or prior run failed) renders no badge.
-// Zero delta renders a neutral "•" hold mark.
-function DeltaBadge({ site }: { site: SeedSite }) {
-  // A held-over score has no delta to show. Its "previous" value IS the score
-  // being displayed, because the engine could not re-read the site — so a
-  // neutral dot would read as "measured, unchanged" when nothing was measured.
-  // The unreachable badge beside the name carries the real meaning.
-  if (site.unreachable) return null;
-  if (site.score === null || site.prevScore === null) {
-    return null;
-  }
-  const delta = site.score - site.prevScore;
-  if (Math.abs(delta) < 0.05) {
-    return (
-      <span
-        className="lb-delta lb-delta-flat"
-        aria-label="No change since last week"
-        title="No change since last week"
-      >
-        &bull;
-      </span>
-    );
-  }
-  const up = delta > 0;
-  const magnitude = Math.abs(delta).toFixed(1);
-  return (
-    <span
-      className={`lb-delta ${up ? 'lb-delta-up' : 'lb-delta-down'}`}
-      aria-label={`${up ? 'Up' : 'Down'} ${magnitude} since last week`}
-      title={`${up ? 'Up' : 'Down'} ${magnitude} since last week (${site.prevScore.toFixed(1)} → ${site.score.toFixed(1)})`}
-    >
-      {up ? '↑' : '↓'} {magnitude}
-    </span>
-  );
-}
-
-function SiteRow({ site }: { site: SeedSite }) {
-  const isSelf = site.url === 'https://www.designesy.org';
-  const needsWork = site.score !== null && site.score < 50;
-  const scoreHref = `/score?url=${encodeURIComponent(hostOf(site.url))}`;
-  const externalHref = site.url;
-  const evalHref = `/frameworks/${site.url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').replace(/[./]/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase()}`;
-
-  return (
-    <tr className={`lb-row${isSelf ? ' lb-row-self' : ''}${needsWork ? ' lb-row-needs-work' : ''}`}>
-      <th scope="row" className="lb-rank-cell">
-        <span className="lb-rank" data-tabular>
-          {site.rank !== null ? String(site.rank).padStart(2, '0') : '—'}
+    <tr data-self={s.self || undefined}>
+      <td data-num className="dx-rank-n">
+        {s.rank}
+      </td>
+      <th scope="row" className="dx-rank-site">
+        <Link href={`/frameworks/${s.slug}`}>{s.name}</Link>
+        <span className="dx-rank-meta">
+          <span>
+            {s.host} · {s.category}
+          </span>
+          {s.self && <span className="dx-tag">self-scored</span>}
+          {s.unreachable && (
+            <span className="dx-tag" data-kind="held">
+              held over from {s.scoredAt}
+            </span>
+          )}
         </span>
       </th>
-      <td className="lb-name-cell">
-        <div className="lb-row-head">
-          <Link href={scoreHref} className="row-title lb-name" data-cuelume-hover="whisper" data-cuelume-press>
-            {site.name}
-            {isSelf && <span className="lb-self-tag">self</span>}
-          </Link>
-          {isSelf && (
-            <>
-              <span className="lb-seeded-because" title={site.seededBecause}>
-                {site.seededBecause}
-              </span>
-              {site.coiDisclosure && (
-                <span className="lb-coi-badge" title={site.coiDisclosure}>
-                  COI: {site.coiDisclosure}
-                </span>
-              )}
-              {site.liveScoreUrl && (
-                <Link
-                  href={site.liveScoreUrl}
-                  className="lb-live-score-link"
-                  data-cuelume-hover="tick"
-                >
-                  view live report ↗
-                </Link>
-              )}
-            </>
-          )}
-          {/* Held-over grade marker. Sibling of the isSelf block, not inside it:
-              an unreachable row is never the self row, so nesting it there made
-              it unrenderable. Every entry can be held over. */}
-          {site.unreachable && (
-            <span
-              className="lb-unreachable-badge"
-              title={`The scoring engine could not read this site on the most recent run, so the grade shown is the measurement from ${site.scoredAt ?? 'an earlier run'}. It is NOT a fresh score.`}
-            >
-              not re-measured · {site.scoredAt ?? 'earlier'}
-            </span>
-          )}
-          <span className="lb-row-meta">
-            <a
-              href={externalHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lb-host"
-            >
-              {hostOf(site.url)}
-            </a>
-            <span className="lb-tier-tag" aria-label={`Tier ${site.tier}: ${TIER_LABEL[site.tier]}`}>
-              T{site.tier} · {site.category}
-            </span>
-            <Link href={evalHref} className="lb-eval-link" style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textDecoration: 'none' }} data-cuelume-hover="tick">
-              evaluation →
-            </Link>
+      <td data-num className="dx-rank-score">
+        <span className="dx-rank-sg">
+          <span className="dx-grade" data-tone={toneOf(s.grade)}>
+            {s.grade}
           </span>
-        </div>
+          <span className="dx-rank-v">{fmt(s.score)}</span>
+        </span>
+        <Delta s={s} />
       </td>
-      <td className="lb-grade-cell">
-        {site.score !== null && site.grade !== null ? (
-          <GradeBadge grade={site.grade} score={site.score} />
-        ) : (
-          <span className="lb-pending-note">—</span>
-        )}
+      <td data-opt className="dx-rank-profile">
+        <CategoryProfile name={s.name} cats={s.categories} order={BATCH_CATEGORIES} />
       </td>
-      <td className="lb-score-cell">
-        {site.score !== null ? (
-          <div className="lb-score-stack">
-            <ScoreCell site={site} />
-            <DeltaBadge site={site} />
-          </div>
-        ) : (
-          <span className="lb-pending-note">pending</span>
-        )}
-      </td>
-      <td className="lb-breakdown-cell" data-tabular>
-        {site.score !== null ? (
-          <span className="lb-breakdown">
-            <MiniConstellation
-              categories={site.categoryScores || {}}
-              score={site.score}
-              grade={site.grade}
-              label={
-                site.categoryScores
-                  ? `${site.name}: grade ${site.grade}, ${site.score.toFixed(1)}% — per-category verification breakdown`
-                  : `${site.name}: grade ${site.grade}, ${site.score.toFixed(1)}% — no per-category data yet`
-              }
-            />
-            <span className="lb-breakdown-counts">
-              {site.pass}p · {site.fail}f · {site.warn}w · {site.skip}sk
-            </span>
-          </span>
-        ) : (
-          <span className="lb-pending-note">unscored</span>
-        )}
-      </td>
-      <td className="lb-action-cell">
-        <div className="lb-action-stack">
-          <Link href={scoreHref} className="lb-score-link" data-cuelume-press>
-            re-score →
-          </Link>
-          <Link
-            href="/methodology"
-            className="lb-bench-link"
-            data-cuelume-press
-            title={`What this score measures — the ${ENGINE_CHECK_COUNT} checks, their weights, and the accessibility floor`}
-          >
-            what it means ↗
-          </Link>
-        </div>
+      <td data-num data-opt="wide" className="dx-rank-checks">
+        {s.pass} · {s.warn} · {s.fail} · {s.skip}
       </td>
     </tr>
   );
 }
 
 export default function LeaderboardPage() {
-  // Sort: scored by rank asc, unscored at the end.
-  const ranked = [...SEED].sort((a, b) => {
-    if (a.rank === null && b.rank === null) return a.name.localeCompare(b.name);
-    if (a.rank === null) return 1;
-    if (b.rank === null) return -1;
-    return a.rank - b.rank;
-  });
-
-  const aCount = SEED.filter((s) => s.grade === 'A').length;
-  const bCount = SEED.filter((s) => s.grade === 'B').length;
-  const cCount = SEED.filter((s) => s.grade === 'C').length;
-  const dCount = SEED.filter((s) => s.grade === 'D').length;
-  const fCount = SEED.filter((s) => s.grade === 'F').length;
-  const needsWorkCount = SEED.filter((s) => s.score !== null && s.score < 50).length;
-
-  // A–F grand-totals histogram — score distribution across the cohort.
-  // Pattern from DesignSystems.one Agent-Ready Index: the histogram + the
-  // "nobody scores X" headline is the credibility signal.
-  const gradeBands = [
-    { grade: 'A' as Grade, count: aCount, min: 90, color: 'var(--signal-light)', bg: 'var(--signal-dim)' },
-    { grade: 'B' as Grade, count: bCount, min: 80, color: 'var(--activation)', bg: 'rgba(254,204,52,0.14)' },
-    { grade: 'C' as Grade, count: cCount, min: 70, color: 'var(--line-strong)', bg: 'var(--surface-hover)' },
-    { grade: 'D' as Grade, count: dCount, min: 60, color: 'var(--muted)', bg: 'var(--surface-soft)' },
-    { grade: 'F' as Grade, count: fCount, min: 0, color: 'var(--muted-dim)', bg: 'transparent' },
-  ];
-  const maxCount = Math.max(...gradeBands.map((g) => g.count), 1);
-  const scoredTotal = SEED.filter((s) => s.score !== null).length;
+  const shareText =
+    A_SITES.length === 1 && A_SITES[0].self
+      ? `${COHORT.length} sites scored by one deterministic ${ENGINE_CHECK_COUNT}-check engine. Only designesy.org, scored by its own engine, reaches A.`
+      : `${COHORT.length} sites scored by one deterministic ${ENGINE_CHECK_COUNT}-check engine. ${A_SITES.length} reach A.`;
 
   return (
     <>
       <Topbar scrolled />
-
-      <main id="main-content" data-pagefind-body className="surface-page lb-page">
-        <style>{`
-          .lb-page .lb-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-          .lb-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-          .lb-caption { text-align: left; padding: 0 0 0.75rem; font-size: 0.78rem; color: var(--muted-dim); caption-side: top; }
-          .lb-th-rank { width: 2.75rem; }
-          .lb-th-grade { width: 3.25rem; }
-          .lb-th-score { width: 4.5rem; }
-          .lb-th-breakdown { width: 9rem; }
-          .lb-th-action { width: 4.5rem; }
-          .lb-th-name { width: auto; }
-          .lb-table thead th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
-          .lb-table thead th.lb-th-score, .lb-table thead th.lb-th-grade, .lb-table thead th.lb-th-breakdown { text-align: right; }
-          .lb-rank-cell, .lb-name-cell, .lb-grade-cell, .lb-score-cell, .lb-breakdown-cell, .lb-action-cell { padding: 0.875rem 0.625rem; border-bottom: 1px solid var(--line-faint); vertical-align: middle; }
-          .lb-row { content-visibility: auto; contain-intrinsic-size: 0 64px; }
-          .lb-row:hover { background: var(--surface-soft); }
-          .lb-rank-cell { font-family: var(--mono, ui-monospace, monospace); font-size: 0.85rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; text-align: left; }
-          .lb-row:hover .lb-rank { color: var(--ink); }
-          .lb-name-cell { min-width: 0; }
-          .lb-row-head { display: flex; flex-direction: column; gap: 0.25rem; }
-          .lb-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; font-size: 0.78rem; color: var(--muted-dim); }
-          .lb-host { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
-          .lb-host:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .lb-tier-tag { font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.04em; }
-          .lb-grade-cell { text-align: right; }
-          .lb-grade { display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; font-family: var(--mono, ui-monospace, monospace); border: 1px solid var(--line); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), var(--inner-light); }
-          .lb-grade-a { background: var(--signal-dim); color: var(--ink); border-color: var(--signal-light); box-shadow: inset 0 0 0 1px rgba(51,88,232,0.18), var(--inner-light); }
-          .lb-grade-b { background: rgba(254,204,52,0.18); color: var(--ink); border-color: var(--activation); }
-          .lb-grade-c { background: var(--surface-hover); color: var(--ink); border-color: var(--line-strong); }
-          .lb-grade-d { background: var(--surface-hover); color: var(--muted); border-color: var(--line); }
-          .lb-grade-f { background: transparent; color: var(--muted-dim); border-color: var(--line-faint); box-shadow: none; }
-          .lb-needs-work { opacity: 0.85; }
-          .lb-score-cell { text-align: right; }
-          .lb-score { font-family: var(--mono, ui-monospace, monospace); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
-          .lb-score-pending { color: var(--muted-dim); font-style: italic; font-weight: 400; font-family: inherit; font-size: 0.82rem; }
-          .lb-score-pct { color: var(--muted-dim); font-weight: 400; margin-left: 0.125rem; font-size: 0.78rem; }
-          .lb-score-stack { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.18rem; }
-          .lb-delta { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; line-height: 1; padding: 0.1rem 0.3rem; border-radius: 3px; border: 1px solid transparent; white-space: nowrap; }
-          .lb-delta-up { color: var(--signal-light); background: var(--signal-dim); border-color: var(--signal-light); }
-          .lb-delta-down { color: var(--ink); background: var(--surface-hover); border-color: var(--line-strong); }
-          .lb-delta-flat { color: var(--muted-dim); background: transparent; border-color: var(--line-faint); }
-          .lb-breakdown-cell { text-align: right; font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted-dim); letter-spacing: 0.02em; }
-          .lb-breakdown { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; }
-          .lb-breakdown-counts { font-family: var(--mono, ui-monospace, monospace); font-size: 0.66rem; color: var(--muted-dim); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
-          .lb-pending-note { color: var(--muted-dim); font-style: italic; font-size: 0.8rem; }
-          .lb-action-cell { text-align: right; }
-          .lb-action-stack { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0.22rem; }
-          /* 44px minimum hit area. The ROW is already 112px+ tall, so this costs no
-             layout: the links simply claim vertical space the cell was already
-             giving them. Measured before the change: lb-eval-link was 68x17px and
-             lb-score-link 52x39px -- both below the 44px target, and neither
-             qualifies for WCAG 2.5.8's inline exception because they are
-             display:block inside table cells, not links flowing in a sentence. */
-          .lb-score-link, .lb-eval-link, .lb-bench-link, .lb-host { display: inline-flex; align-items: center; min-height: 44px; }
-          .lb-score-link { font-size: 0.78rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; }
-          .lb-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .lb-bench-link { font-size: 0.7rem; color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; font-family: var(--mono, ui-monospace, monospace); letter-spacing: 0.02em; }
-          .lb-bench-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .lb-self-tag { display: inline-block; margin-left: 0.5rem; padding: 0.05rem 0.4rem; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); background: var(--signal-dim); border-radius: 3px; vertical-align: middle; }
-          /* Held-over grade marker. Uses --muted (not an alarm colour): the
-             row is not wrong, its provenance is old. A red badge would imply a
-             bad score; this needs to read as "stale", not "failed". */
-          /* align-self: flex-start is load-bearing. The parent .lb-row-head is a
-             COLUMN flex container, so an inline-block child stretches to the full
-             row width and the badge renders as a full-width dashed bar rather
-             than a chip. shrink-wrapping it keeps it reading as a badge. */
-          .lb-unreachable-badge { align-self: flex-start; display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; line-height: 1.5; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px dashed var(--line); border-radius: 3px; letter-spacing: 0.02em; white-space: nowrap; }
-          .lb-row-self { background: var(--signal-dim); }
-          .lb-row-self:hover { background: var(--signal-dim); }
-          .lb-row-self .lb-rank-cell, .lb-row-self .lb-name-cell, .lb-row-self .lb-grade-cell, .lb-row-self .lb-score-cell, .lb-row-self .lb-breakdown-cell, .lb-row-self .lb-action-cell { border-bottom-color: var(--signal-light); }
-          .lb-seeded-because { display: block; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--signal-light); letter-spacing: 0.01em; line-height: 1.4; max-width: 280px; }
-          .lb-coi-badge { display: inline-block; margin-top: 0.2rem; padding: 0.05rem 0.4rem; font-size: 0.58rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 3px; letter-spacing: 0.02em; line-height: 1.4; max-width: 280px; }
-          /* 44px target. At 0.66rem this measured 728x17px -- the width made it look
-             fine, but 17px of height is well under target and it is a real
-             action link. inline-flex so min-height takes effect on a block-level
-             element without disturbing the cell layout. */
-          .lb-live-score-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.15rem; font-size: 0.66rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); text-decoration: none; border-bottom: 1px solid transparent; letter-spacing: 0.01em; }
-          .lb-live-score-link:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .lb-row-needs-work .lb-name { color: var(--muted); display: inline-flex; align-items: center; min-height: 44px; }
-          .lb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
-          .lb-stat { padding: 0.875rem 1rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); }
-          .lb-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.4rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-          .lb-stat-label { display: block; margin-top: 0.35rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .lb-policy { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); font-size: 0.88rem; line-height: 1.55; max-width: 66ch; }
-          .lb-policy strong { color: var(--ink); font-weight: 600; }
-          .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-          .lb-histogram { margin: 1.5rem 0; }
-          .lb-histogram-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; padding: 0.5rem 0; }
-          .lb-hist-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-          .lb-hist-bar-wrap { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; height: 100px; }
-          .lb-hist-bar { width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; border: 1px solid var(--line-faint); border-bottom: none; transform-origin: bottom center; animation: lbBarGrow var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
-          @keyframes lbBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-          @media (prefers-reduced-motion: reduce) { .lb-hist-bar { animation: none; transform: none; } }
-          .lb-hist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
-          .lb-hist-label { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding-top: 0.3rem; border-top: 1px solid var(--line); width: 100%; }
-          .lb-hist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.92rem; }
-          .lb-hist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.62rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
-          .lb-hist-headline { font-size: 0.92rem; color: var(--muted); line-height: 1.5; margin: 1rem 0 0; max-width: 66ch; }
-          .lb-hist-headline strong { color: var(--ink); font-weight: 600; }
-          @media (max-width: 560px) {
-            .lb-histogram-bars { gap: 0.375rem; }
-            .lb-hist-bar-wrap { height: 70px; }
-            .lb-hist-range { display: none; }
-          }
-          .lb-submit { max-width: 480px; }
-          .lb-submit-form { display: flex; flex-direction: column; gap: 0.875rem; }
-          .lb-field { display: flex; flex-direction: column; gap: 0.3rem; }
-          .lb-field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; }
-          .lb-input { padding: 0.625rem 0.75rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); font-size: 1rem; font-family: inherit; outline: none; transition: border-color 150ms; min-height: 44px; }
-          .lb-input:focus { border-color: var(--signal); }
-          .lb-input:focus-visible { border-color: var(--signal); box-shadow: 0 0 0 2px var(--signal-dim); }
-          .lb-input:disabled { opacity: 0.5; cursor: not-allowed; }
-          .lb-submit-btn { margin-top: 0.25rem; align-self: flex-start; min-height: 44px; padding: 0.625rem 1.5rem; }
-          .lb-submit-result { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: var(--radius); border: 1px solid var(--line); }
-          .lb-result-ok { background: var(--signal-dim); border-color: var(--signal-light); }
-          .lb-result-err { background: var(--surface-soft); border-color: var(--line-strong); }
-          .lb-result-head { font-family: var(--mono, ui-monospace, monospace); font-size: 1.2rem; font-weight: 700; color: var(--ink); margin: 0 0 0.25rem; }
-          .lb-result-detail { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted); margin: 0 0 0.5rem; }
-          .lb-result-msg { font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.5; }
-          .lb-result-err-msg { font-size: 0.85rem; color: var(--ink); margin: 0; }
-          @media (max-width: 720px) {
-            .lb-th-breakdown, .lb-breakdown-cell { display: none; }
-            .lb-th-action, .lb-action-cell { display: none; }
-          }
-          @media (max-width: 560px) {
-            .lb-th-rank, .lb-rank-cell { width: 2rem; padding-left: 0.5rem; padding-right: 0.5rem; }
-            .lb-th-grade, .lb-grade-cell { width: 2.75rem; padding-left: 0.25rem; padding-right: 0.25rem; }
-            .lb-th-score, .lb-score-cell { width: 3.5rem; }
-            .lb-grade { width: 1.5rem; height: 1.5rem; font-size: 0.72rem; }
-            .lb-row-meta { font-size: 0.72rem; gap: 0.25rem 0.5rem; }
-            .lb-tier-tag { display: none; }
-          }
-        `}</style>
-
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Public verification</p>
-          <h1 className="surface-title" data-scramble>Leaderboard</h1>
-          <p className="surface-lede">
-            30 curated sites scored by the same deterministic {ENGINE_CHECK_COUNT}-check engine
-            that scores designesy.org. No LLM, no paywall, no pay-to-remove.
-          </p>
-          <p className="surface-note">
-            Scores reflect what the engine measures on the live fetched surface
-            — token architecture, motion hygiene, accessibility primitives,
-            typography discipline. A site can look world-class and still score
-            low if it doesn&rsquo;t ship the contract primitives at{' '}
-            <code style={{ color: 'var(--ink)' }}>{':root'}</code>. That is the
-            point.
-          </p>
-          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
-            <Link
-              className="button primary"
-              href="/score"
-              data-cuelume-press
-            >
+      <main id="main-content" data-pagefind-body className="eg dx">
+        <EngineHead
+          route="/leaderboard"
+          name="Leaderboard"
+          thesis={`${COHORT.length} sites on one scale. The engine that grades designesy.org grades every one of them with the same ${ENGINE_CHECK_COUNT} checks, and re-scores them every Monday.`}
+          facts={[`${COHORT.length} sites`, `scored ${SCORES_DATE}`, `engine ${ENGINE_VERSION}`]}
+          contract={{ href: '/methodology', label: 'how a score is made' }}
+        >
+          <div className="dx-actions">
+            <Link className="button primary" href="/score" data-cuelume-press>
               Score a site
             </Link>
-            <PageShareButton
-              text={`30 sites scored by the same deterministic ${ENGINE_CHECK_COUNT}-check engine. Designesy is the only A-grade site.`}
-              label="Share the leaderboard"
-            />
+            <PageShareButton text={shareText} label="Share the leaderboard" />
           </div>
           <AgentActions mdPath="/leaderboard.md" label="the leaderboard" />
-        </section>
+        </EngineHead>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Submit a site</h2>
-          <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Enter a URL to score it against the same {ENGINE_CHECK_COUNT}-check engine. Submissions
-            are scored instantly and curated into the seed list on the next weekly
-            batch. No paywall, no pay-to-remove.
-          </p>
-          <SubmitForm />
-        </section>
-
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Cohort snapshot</h2>
-          <div className="lb-stats">
-            <div className="lb-stat">
-              <span className="lb-stat-num"><CountUp value={LEADERBOARD_SCORED_COUNT} /></span>
-              <span className="lb-stat-label">Scored</span>
-            </div>
-            <div className="lb-stat">
-              <span className="lb-stat-num"><CountUp value={aCount} /></span>
-              <span className="lb-stat-label">A grade</span>
-            </div>
-            <div className="lb-stat">
-              <span className="lb-stat-num"><CountUp value={dCount} /></span>
-              <span className="lb-stat-label">D grade</span>
-            </div>
-            <div className="lb-stat">
-              <span className="lb-stat-num"><CountUp value={needsWorkCount} /></span>
-              <span className="lb-stat-label">Needs work (&lt;50)</span>
-            </div>
-            <div className="lb-stat">
-              <span className="lb-stat-num" title={LEADERBOARD_LAST_SCORED}>{LEADERBOARD_LAST_SCORED.slice(5)}</span>
-              <span className="lb-stat-label">Last scored</span>
+        <section className="eg-section" aria-labelledby="lb-cohort-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="lb-cohort-h">
+                The cohort
+              </h2>
+              <p className="eg-section-sub">
+                composite scores, weekly run of {SCORES_DATE}
+              </p>
             </div>
           </div>
-          <p className="lb-policy">
-            <strong>Policy.</strong> {LEADERBOARD_POLICY}{' '}
-            Scores re-run weekly. The seed list is curated across five tiers
-            (reference, competitors, design-system exemplars, inspiration,
-            high-traffic). Open submission is live — use the form above.
-          </p>
-        </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Score distribution</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            How the {scoredTotal} scored sites distribute across grade bands.
-            The histogram shows the shape of the cohort — not a bell curve.
-          </p>
-          <div className="lb-histogram">
-            <div className="lb-histogram-bars" role="img" aria-label={`Score distribution: ${aCount} A, ${bCount} B, ${cCount} C, ${dCount} D, ${fCount} F`}>
-              {gradeBands.map((band) => (
-                <div key={band.grade} className="lb-hist-col">
-                  <span className="lb-hist-bar-count"><CountUp value={band.count} /></span>
-                  <div className="lb-hist-bar-wrap">
-                    <div
-                      className="lb-hist-bar"
-                      style={{
-                        height: `${(band.count / maxCount) * 100}%`,
-                        background: band.bg,
-                        borderColor: band.color,
-                      }}
-                      title={`${band.grade}: ${band.count} site${band.count !== 1 ? 's' : ''} (score ≥ ${band.min})`}
-                    />
-                  </div>
-                  <div className="lb-hist-label">
-                    <span className="lb-hist-grade" style={{ color: band.color }}>{band.grade}</span>
-                    <span className="lb-hist-range">≥{band.min}</span>
-                  </div>
-                </div>
-              ))}
+          <dl className="dx-stats">
+            <div>
+              <dt>Sites</dt>
+              <dd>{COHORT_STATS.count}</dd>
             </div>
-            <p className="lb-hist-headline">
-              {aCount === 1 ? (
+            <div>
+              <dt>Median</dt>
+              <dd>{fmt(COHORT_STATS.median)}</dd>
+            </div>
+            <div>
+              <dt>Range</dt>
+              <dd>
+                {fmt(COHORT_STATS.min)}
+                <small>to</small> {fmt(COHORT_STATS.max)}
+              </dd>
+            </div>
+            <div>
+              <dt>At A or B</dt>
+              <dd>
+                {GRADE_COUNTS.A + GRADE_COUNTS.B}
+                <small>of {COHORT_STATS.count}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Held over</dt>
+              <dd>{COHORT_STATS.heldOver}</dd>
+            </div>
+          </dl>
+
+          <DataFigure
+            id="lb-strip"
+            title="Every site on the grade scale"
+            note={
+              <>
+                Each dot is one site at its composite score, on the bands the engine grades by: F under 60, then a grade every ten
+                points. Sites a point or two apart stack. The ringed dot is designesy.org, scored by its own engine; an outlined dot
+                is a score held over from an earlier run.
+              </>
+            }
+            source={`Weekly run of ${SCORES_DATE}. Engine ${ENGINE_VERSION}, contract v${LEADERBOARD_VERSION}.`}
+            tableRef={{ id: 'ranking', label: 'the ranking below' }}
+          >
+            <CohortStrip
+              sites={COHORT.map((s) => ({
+                slug: s.slug,
+                name: s.name,
+                score: s.score,
+                grade: s.grade,
+                rank: s.rank,
+                self: s.self,
+                held: s.unreachable,
+              }))}
+              median={COHORT_STATS.median}
+              label={`Composite scores of ${COHORT_STATS.count} sites on a scale from 40 to 100. ${GRADE_LINE}. Median ${fmt(
+                COHORT_STATS.median,
+              )}. Highest ${TOP.name} at ${fmt(TOP.score)}, lowest ${LOW.name} at ${fmt(LOW.score)}.`}
+              idle={
                 <>
-                  <strong>One A-grade site</strong> in a cohort of {scoredTotal}. The
-                  contract is demanding — most sites land in D or F because they
-                  don&rsquo;t ship the primitives (token systems, reduced-motion
-                  blocks, font-synthesis rules) at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
-                  See the <Link href="/methodology">methodology page</Link> for
-                  what each check measures and why.
+                  <b>{GRADE_LINE}</b>
+                  <span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>
                 </>
-              ) : aCount === 0 ? (
-                <>
-                  <strong>No A-grade sites</strong> in a cohort of {scoredTotal}. The
-                  contract is demanding — see the <Link href="/methodology">methodology</Link> for
-                  what each check measures.
-                </>
-              ) : (
-                <>
-                  <strong>{aCount} A-grade sites</strong> in a cohort of {scoredTotal}. See
-                  the <Link href="/methodology">methodology page</Link> for what
-                  each check measures and why.
-                </>
-              )}
-            </p>
-          </div>
+              }
+            />
+          </DataFigure>
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Ranking</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Ranked by total score. The top site is the only A-grade site in the
-            cohort. Select any row to re-score it live at{' '}
-            <Link href="/score">/score</Link>.
-          </p>
-          <div className="lb-table-scroll">
-            <table className="lb-table">
-              <caption className="lb-caption">
-                Design verification leaderboard — {LEADERBOARD_SCORED_COUNT} of{' '}
-                {SEED.length} sites scored. Sorted by total score descending.
+        <section className="eg-section" id="ranking" aria-labelledby="lb-rank-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="lb-rank-h">
+                Ranking
+              </h2>
+              <p className="eg-section-sub">
+                by composite score · a site&apos;s name opens its evaluation
+              </p>
+            </div>
+          </div>
+
+          <div className="dx-table-box">
+            <table className="dx-table dx-rank">
+              <caption className="sr-only">
+                {COHORT_STATS.count} sites ranked by composite score, with grade, change since the previous weekly run, score by
+                category, and check counts.
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" className="lb-th-rank">#</th>
-                  <th scope="col" className="lb-th-name">Site</th>
-                  <th scope="col" className="lb-th-grade">Grade</th>
-                  <th scope="col" className="lb-th-score">Score</th>
-                  <th scope="col" className="lb-th-breakdown">Checks</th>
-                  <th scope="col" className="lb-th-action"><span className="sr-only">Actions</span></th>
+                  <th scope="col" data-num>
+                    #
+                  </th>
+                  <th scope="col">Site</th>
+                  <th scope="col" data-num>
+                    Score
+                  </th>
+                  <th scope="col" data-opt>
+                    By category
+                  </th>
+                  <th scope="col" data-num data-opt="wide">
+                    Pass · warn · fail · skip
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {ranked.map((site) => (
-                  <SiteRow key={site.url} site={site} />
+                {COHORT.map((s) => (
+                  <Row key={s.url} s={s} />
                 ))}
               </tbody>
             </table>
           </div>
+
+          <p className="dx-src">
+            By category: one column per category, heaviest first ({CATEGORY_LIST}), filled to its score and tinted by grade
+            band; dashed where the engine scored nothing. Category scores come from the batch run of {BATCH_RUN_DATE}; composite
+            scores and ranks from {SCORES_DATE}. A signed figure beside a score is its change since the previous run.
+          </p>
+
+          <details className="dx-data">
+            <summary>Category scores, every site</summary>
+            <div className="dx-table-box">
+              <DataTable
+                caption={`Score by category for each site, batch run of ${BATCH_RUN_DATE}.`}
+                head={['Site', ...BATCH_CATEGORIES.map((k) => CATEGORY_LABELS[k])]}
+                numeric={BATCH_CATEGORIES.map((_, i) => i + 1)}
+                rows={COHORT.map((s) => [
+                  s.name,
+                  ...BATCH_CATEGORIES.map((k) => {
+                    const c = s.categories?.[k];
+                    return c && c.score !== null ? fmt(c.score) : <NotMeasured />;
+                  }),
+                ])}
+              />
+            </div>
+          </details>
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">How to read this</h2>
-          <div className="definition">
-            <p className="definition-label">What the engine measures</p>
-            <p>
-              42 deterministic checks across 14 weighted categories — token
-              architecture, motion hygiene, accessibility primitives,
-              typography discipline, reduced-motion handling, AI disclosure,
-              forced-colors readiness, UX copywriting, Unicode security. Plus
-              12 anti-slop rules (up to -20pts) and 7 originality signals (up
-              to +8pts) so taste is part of the number. Not an LLM impression. Not a roast. The
-              same engine scores designesy.org itself, in public, at{' '}
-              <code>/score?url=designesy.org</code>.
-            </p>
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The engine measures what is <em>shipped</em>, not what is
-            documented — and it reads the delivered markup, not the rendered
-            page. It does not execute JavaScript, so a site that builds its
-            content in the browser is judged on the shell that arrives over the
-            wire; markup a script injects after load is invisible to every
-            check. A design-system site can publish a rich token taxonomy in
-            storybook and still score low if the marketing surface
-            doesn&rsquo;t expose those tokens at <code style={{ color: 'var(--ink)' }}>{':root'}</code>.
-            That gap — between documented, delivered, and rendered — is what
-            the leaderboard surfaces. For the full scoring methodology — every
-            check, its category weight, the scoring math, and the accessibility
-            floor — see the <Link href="/methodology">methodology page</Link>.
+        <section className="eg-section" aria-labelledby="lb-submit-h">
+          <h2 className="eg-h2" id="lb-submit-h">
+            Submit a site
+          </h2>
+          <p className="dx-lead">
+            Any public URL is scored on the spot by the same {ENGINE_CHECK_COUNT}-check engine. Submissions are reviewed for the
+            seed at the next weekly run. No paywall, and no pay-to-remove.
+          </p>
+          <SubmitForm />
+        </section>
+
+        <section className="eg-section" aria-labelledby="lb-read-h">
+          <h2 className="eg-h2" id="lb-read-h">
+            How to read it
+          </h2>
+          <dl className="dx-defs">
+            <div>
+              <dt>The score</dt>
+              <dd>
+                The composite the engine reports at <Link href="/score">/score</Link>: {ENGINE_SCORED_CHECK_COUNT} checks it can
+                run from the delivered page, weighted by category, less anti-slop deductions and plus originality credit. The{' '}
+                <Link href="/methodology">methodology</Link> shows every weight.
+              </dd>
+            </div>
+            <div>
+              <dt>What it reads</dt>
+              <dd>
+                The markup and CSS a site ships over the wire. It runs no JavaScript, so a site that builds its content in the
+                browser is judged on the shell that arrives first.
+              </dd>
+            </div>
+            <div>
+              <dt>Held over</dt>
+              <dd>
+                When the engine cannot read a site on the weekly run, the site keeps its previous score, marked with the date it
+                was measured. It is never re-graded from a failed fetch.
+              </dd>
+            </div>
+            <div>
+              <dt>Self-scored</dt>
+              <dd>
+                designesy.org is scored by its own engine, a conflict of interest stated here and in the data. Run it yourself at{' '}
+                <Link href="/score?url=designesy.org">/score?url=designesy.org</Link>.
+              </dd>
+            </div>
+          </dl>
+          <p className="dx-src">
+            Leaderboard v{LEADERBOARD_VERSION} · re-scored Mondays 10:00 UTC · JSON at{' '}
+            <Link href="/api/leaderboard">/api/leaderboard</Link> · submissions by POST to /api/leaderboard/submit
           </p>
         </section>
-
-        <div className="status-note">
-          Leaderboard v0.4.0 · curated seed (30 sites) · last scored{' '}
-          {LEADERBOARD_LAST_SCORED} · open submission is live — use the form
-          above. Scores are deterministic and re-run weekly via a GitHub Action
-          (Mondays 10:00 UTC). The JSON endpoint lives at{' '}
-          <Link href="/api/leaderboard">/api/leaderboard</Link>. Submit via the
-          form above or POST to{' '}
-          <Link href="/api/leaderboard/submit">/api/leaderboard/submit</Link>.
-        </div>
       </main>
-
       <Footer />
     </>
   );

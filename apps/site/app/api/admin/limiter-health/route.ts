@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
   if (!urlSet || !tokenSet) {
     report.verdict =
-      'LIMITER INACTIVE — env vars missing in this runtime, so the middleware ' +
+      'LIMITER INACTIVE: env vars missing in this runtime, so the middleware ' +
       'skips rate limiting entirely. This is the silent-skip failure.';
     return Response.json(report);
   }
@@ -77,14 +77,14 @@ export async function GET(request: Request) {
     report.remaining = remaining;
     report.reset_at = new Date(reset).toISOString();
     report.verdict = success
-      ? 'LIMITER ACTIVE — Upstash reachable and the sliding window responds.'
+      ? 'LIMITER ACTIVE: Upstash reachable and the sliding window responds.'
       : 'LIMITER ACTIVE but this caller is already rate limited.';
   } catch (err) {
     report.upstash_reachable = false;
     report.latency_ms = Date.now() - started;
     report.error = err instanceof Error ? err.message : String(err);
     report.verdict =
-      'LIMITER INACTIVE — Upstash is unreachable, so every request fails OPEN ' +
+      'LIMITER INACTIVE: Upstash is unreachable, so every request fails OPEN ' +
       'and is served without rate limiting. The middleware logs this too.';
   }
 

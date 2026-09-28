@@ -57,12 +57,12 @@ const readinessNotes = (readinessEngine?.notes ?? []).filter((n) => n.status !==
 export const metadata: Metadata = pageMeta({
   title: 'Docs',
   description:
-    'Designesy orientation — mission, nine operating principles, architecture layers, public voice, and paths to live engines.',
+    'Designesy orientation: mission, nine operating principles, architecture layers, public voice, and paths to live engines.',
   path: '/docs',
   ogDescription:
-    'Mission, principles, architecture, and public voice — with paths to live contract, labs, and review.',
+    'Mission, principles, architecture, and public voice, with paths to live contract, labs, and review.',
   twitterDescription:
-    'Orientation for a live design intelligence system — designesy.org/docs',
+    'Orientation for a live design intelligence system · designesy.org/docs',
 });
 
 const LAYERS = [
@@ -106,13 +106,13 @@ const LAYERS = [
     num: '07',
     name: 'Graph',
     desc: 'living knowledge tree with provenance',
-    state: 'Internal — not published as a public browser',
+    state: 'Internal; not published as a public browser',
   },
   {
     num: '08',
     name: 'Logs',
     desc: 'institutional memory, file-based',
-    state: 'Internal — not a public feed',
+    state: 'Internal; not a public feed',
   },
 ];
 
@@ -206,9 +206,9 @@ const PRINCIPLES = [
   { num: '04', title: 'Affordance should be felt', desc: 'The form should suggest the action. People should not need a lecture to discover primary use, especially for repeated or urgent tasks.' },
   { num: '05', title: 'Durability includes time and change', desc: 'Durability includes maintainability, adaptability, learnability, repairability, localization, and the ability to remain useful as conditions shift.' },
   { num: '06', title: 'Inclusion is structural', desc: 'Inclusion starts at the decision layer. Ask who can use the artifact, who has to work harder, who is excluded, and who pays the cost of ambiguity.' },
-  { num: '07', title: 'Systems enable freedom', desc: 'Strong systems give parts shared logic so people and agents can recombine them confidently. Coherence should create room for expression, not lock every surface into sameness.' },
+  { num: '07', title: 'Systems enable freedom', desc: 'Strong systems give parts shared logic so people and agents can recombine them confidently. Coherence should create room for expression instead of locking every surface into sameness.' },
   { num: '08', title: 'Delight must be earned', desc: 'Joy, beauty, play, surprise, and personality are legitimate design goals when they deepen trust, clarity, identity, learning, or emotional connection.' },
-  { num: '09', title: 'Responsibility is a design material', desc: 'Equity, environment, economy, human development, and social consequence are not externalities. They are design materials.' },
+  { num: '09', title: 'Responsibility is a design material', desc: 'Equity, environment, economy, human development, and social consequence are design materials.' },
 ];
 
 export default function DocsPage() {
@@ -228,7 +228,7 @@ export default function DocsPage() {
           <p className="surface-note">
             It turns sources into principles, principles into contracts,
             contracts into tools, and tools into better designed work. This is
-            the public orientation layer — selected doctrine, language, and
+            the public orientation layer: selected doctrine, language, and
             context for anyone who wants to understand what Designesy is and how
             it operates.
           </p>
@@ -248,22 +248,22 @@ export default function DocsPage() {
           </p>
           <div className="docs-card-grid" role="list">
             {START_HERE.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -280,7 +280,7 @@ export default function DocsPage() {
           </div>
           <div className="text-cell">
             <p className="surface-note">
-              Designesy is an organization first, not merely a company, brand,
+              Designesy is an organization first, broader than any company, brand,
               SaaS product, template shop, prompt library, or content site. It
               should be able to contain practical products, public resources,
               agent kits, labs, contracts, research systems, review systems, and
@@ -301,7 +301,7 @@ export default function DocsPage() {
             <p className="surface-note">
               Functional is the baseline. Considered is the bar. Public work on
               this site is expected to cite a contract token or name an open
-              tension — silence is not quality.
+              tension; silence is not quality.
             </p>
           </div>
         </section>
@@ -357,7 +357,7 @@ export default function DocsPage() {
                     <span className="layer-num">{layer.num}</span>
                     <div className="layer-body">
                       <strong className="layer-name">{layer.name}</strong>
-                      <span className="layer-desc"> — {layer.desc}</span>
+                      <span className="layer-desc">{layer.desc}</span>
                       <span className="layer-state">{layer.state}</span>
                     </div>
                   </Toggle>
@@ -388,7 +388,7 @@ export default function DocsPage() {
                   'Contracts that agents and teams can use',
                   'Artifacts that can be inspected, copied, tested, remixed',
                   'Creative infrastructure for people building better worlds',
-                  'A declarative interface — finished, restrained, factual',
+                  'A declarative interface: finished, restrained, factual',
                 ])} />
             </div>
             <div>
@@ -423,17 +423,17 @@ export default function DocsPage() {
           </div>
           <div className="text-cell">
             <p className="surface-note">
-              A visitor should feel they are looking at a finished interface —
+              A visitor should feel they are looking at a finished interface:
               restrained, declarative, complete. Process narration belongs in
-              machine exports, not public prose.
+              machine exports.
             </p>
           </div>
         </section>
 
         <div className="status-note">
           Designesy is a live operating model. Graph and logs remain internal by
-          design. What is public here — principles, architecture, voice,
-          contracts, labs, kits, and review — is the real system.
+          design. What is public here (principles, architecture, voice,
+          contracts, labs, kits, and review) is the real system.
         </div>
 
         <section id="drift-score-acknowledged" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
@@ -456,8 +456,8 @@ export default function DocsPage() {
                   The composite grade is{' '}
                   <strong>
                     {compositeGrade} ({selfReport.composite}/100)
-                  </strong>{' '}
-                  — a weighted synthesis of the design-score engine (
+                  </strong>
+                  , a weighted synthesis of the design-score engine (
                   {scoreEngine.score}/100, {scoreEngine.grade}), the drift engine
                   ({driftEngine.score}/100, {driftEngine.grade}), and
                   AI-readiness ({readinessEngine.score}/100,{' '}
@@ -475,8 +475,8 @@ export default function DocsPage() {
                   The {driftEngine.pass} PASSes are the substance:{' '}
                   {selfReport.tokenCount ?? 'the'} custom properties registered
                   at :root resolve end to end, spacing clusters on a small set of
-                  values, and z-index stays within 0–200. The drift engine grew
-                  up alongside the site — where it counts aggressively, this
+                  values, and z-index stays within 0 to 200. The drift engine grew
+                  up alongside the site; where it counts aggressively, this
                   section says so rather than smoothing it over.
                 </p>
                 {readinessNotes.length > 0 && (
@@ -490,7 +490,7 @@ export default function DocsPage() {
             ) : (
               <p>
                 This section reads its figures from a generated file. The file
-                is absent, so no numbers are asserted here — run the live
+                is absent, so no numbers are asserted here; run the live
                 composite report below for current values.
               </p>
             )}

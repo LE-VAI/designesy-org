@@ -1,288 +1,223 @@
+// /specs: the Design Review Findings schema, documented from the schema itself
+// (lib/review-findings-schema, the object /specs/review-findings.json serves),
+// so the field tables here cannot drift from what the route publishes.
+
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../instrument.css';
+import '../engine.css';
+import '../data.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
-import { CheckGrid } from '../lib/check-grid';
-import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
+import { EngineHead, EngineNext } from '../lib/engine/engine-page';
+import { display } from '../lib/engine/types';
+import { REVIEW_FINDINGS_SCHEMA as SCHEMA } from '../lib/review-findings-schema';
+import { DataTable } from '../lib/data/figure';
 
 export const metadata: Metadata = pageMeta({
   title: 'Specs',
   description:
-    'Designesy Specs — the canonical format for design verification findings. One JSON schema that any verification tool can populate. Agents consuming findings from multiple verifiers need a common schema.',
+    'Designesy Specs: the canonical format for design verification findings. One JSON schema that any verification tool can populate. Agents consuming findings from multiple verifiers need a common schema.',
   path: '/specs',
   ogDescription:
     'The canonical review-findings schema. Designesy, Google design.md, Lighthouse, and jakubkrehel/skills all map into it.',
   twitterDescription:
-    'Design verification findings schema — designesy.org/specs',
+    'Design verification findings schema · designesy.org/specs',
 });
 
-const SCHEMA_FIELDS = [
-  { field: 'schemaVersion', type: 'string', desc: 'Schema version (currently "1.0").' },
-  { field: 'generatedAt', type: 'date-time', desc: 'ISO 8601 timestamp.' },
-  { field: 'tool', type: 'object', desc: 'Tool name, version, user agent.' },
-  { field: 'subject', type: 'object', desc: 'The artifact under review (url, file, token-spec).' },
-  { field: 'config', type: 'object', desc: 'Tool configuration (ruleset, thresholds, categories).' },
-  { field: 'coverage', type: 'array', desc: 'Scope and coverage table (jakubkrehel pattern).' },
-  { field: 'categories', type: 'array', desc: 'Category scores (designesy categoryScores, Lighthouse categories).' },
-  { field: 'findings', type: 'array', desc: 'Individual check findings — the core payload.' },
-  { field: 'consideredButRejected', type: 'array', desc: 'Findings considered but rejected (jakubkrehel).' },
-  { field: 'verification', type: 'array', desc: 'Verification steps taken (jakubkrehel).' },
-  { field: 'summary', type: 'object', desc: 'Composite score, grade, counts by status and severity.' },
-  { field: 'verdict', type: 'string', desc: 'Overall verdict: pass, fail, block, needs-changes, approve, not-scored.' },
-  { field: 'runtimeError', type: 'object', desc: 'Fatal error if the tool could not complete.' },
-  { field: 'runWarnings', type: 'array', desc: 'Non-fatal warnings during the run.' },
-  { field: 'raw', type: 'object', desc: 'Native tool output preserved verbatim for lossless round-trip.' },
+type Prop = { type?: string | string[]; description?: string; enum?: readonly string[]; const?: string };
+
+const typeOf = (p: Prop) => (p.const ? `"${p.const}"` : Array.isArray(p.type) ? p.type.join(' | ') : p.type ?? 'any');
+const descOf = (p: Prop) =>
+  `${display(p.description ?? '')}${p.enum ? `${p.description ? ' ' : ''}One of: ${p.enum.join(', ')}.` : ''}`.trim() || 'No description';
+
+const TOP = Object.entries(SCHEMA.properties as Record<string, Prop>);
+const REQUIRED = new Set<string>(SCHEMA.required as string[]);
+const FINDING = Object.entries((SCHEMA.$defs.finding as { properties: Record<string, Prop> }).properties);
+const FINDING_REQUIRED = new Set<string>(((SCHEMA.$defs.finding as { required?: string[] }).required ?? []) as string[]);
+
+const FORMATS = [
+  { format: 'designesy', type: 'application/json', desc: 'The native shape: score, grade, checks and categoryScores. The default.' },
+  { format: 'canonical', type: 'application/json', desc: 'This schema in full, every field. The source of truth the others project from.' },
+  { format: 'review', type: 'text/markdown', desc: 'A report in the better-interface style: scope, a findings table, the verdict.' },
+  { format: 'google', type: 'application/json', desc: 'The @google/design.md shape: findings, summary and designSystem.' },
 ];
 
-const FINDING_FIELDS = [
-  { field: 'id', type: 'string', desc: 'Check identifier (v01-v37, audit id, rule name).' },
-  { field: 'item', type: 'string', desc: 'Human-readable check name.' },
-  { field: 'category', type: 'string', desc: 'Check category (cadence, accessibility, motion, etc.).' },
-  { field: 'severity', type: 'string', desc: 'Normalized severity (pass/fail/warn/skip/error/warning/info/high/medium/low).' },
-  { field: 'severityRaw', type: 'string', desc: 'Native severity token verbatim.' },
-  { field: 'message', type: 'string', desc: 'Finding detail / explanation.' },
-  { field: 'remediation', type: 'string', desc: 'How to fix this finding.' },
-  { field: 'path', type: 'string', desc: 'Dotted token path (Google design.md).' },
-  { field: 'location', type: 'string', desc: 'Source location (jakubkrehel: "src/Dialog.tsx:42").' },
-  { field: 'domain', type: 'string', desc: 'Review domain (jakubkrehel: accessibility, layout, etc.).' },
-  { field: 'before', type: 'string', desc: 'Current implementation (jakubkrehel).' },
-  { field: 'after', type: 'string', desc: 'Actionable replacement (jakubkrehel).' },
-  { field: 'why', type: 'string', desc: 'Violated principle + user impact (jakubkrehel).' },
-  { field: 'score', type: 'number|null', desc: 'Numeric score 0-1 (Lighthouse).' },
-  { field: 'numericValue', type: 'number', desc: 'Raw metric value (Lighthouse: ms, bytes).' },
-  { field: 'weight', type: 'number', desc: 'Check weight in the category.' },
+const SEVERITY = [
+  ['designesy', 'PASS', 'pass'],
+  ['designesy', 'FAIL', 'error'],
+  ['designesy', 'WARN', 'warning'],
+  ['designesy', 'SKIP', 'skip'],
+  ['Google design.md', 'error', 'error'],
+  ['Google design.md', 'warning', 'warning'],
+  ['Google design.md', 'info', 'info'],
+  ['jakubkrehel', 'HIGH', 'high'],
+  ['jakubkrehel', 'MEDIUM', 'medium'],
+  ['jakubkrehel', 'LOW', 'low'],
+  ['Lighthouse', 'score = 0, binary', 'fail'],
+  ['Lighthouse', 'score = 1, binary', 'pass'],
+  ['Lighthouse', 'informative', 'informative'],
+  ['Lighthouse', 'notApplicable', 'notApplicable'],
 ];
 
-const EMISSION_FORMATS = [
-  {
-    format: 'designesy',
-    desc: 'The native designesy shape — the current response with score, grade, checks, categoryScores.',
-    contentType: 'application/json',
-    example: '{ "ok": true, "score": 93, "grade": "A", "checks": [...] }',
-  },
-  {
-    format: 'canonical',
-    desc: 'The full review-findings.json schema — the superset with all fields. The source of truth.',
-    contentType: 'application/json',
-    example: '{ "schemaVersion": "1.0", "tool": { "name": "designesy" }, "findings": [...] }',
-  },
-  {
-    format: 'review',
-    desc: 'jakubkrehel better-interface-compatible markdown report — Scope, Findings table, Verdict.',
-    contentType: 'text/markdown',
-    example: '## Scope and Coverage\n| Domain | Evidence | Result |\n...\n## Verdict\n**Approve**',
-  },
-  {
-    format: 'google',
-    desc: 'Google @google/design.md-compatible shape — { findings, summary, designSystem }.',
-    contentType: 'application/json',
-    example: '{ "findings": [...], "summary": { "errors": 0, "warnings": 1 }, "designSystem": null }',
-  },
+const WHY = [
+  { t: 'One shape to aggregate', d: 'Agents reading findings from several verifiers need one schema to combine, compare and act on them.' },
+  { t: 'The union of the tools', d: 'Lighthouse, axe, Google design.md and designesy each emit their own JSON; this schema holds all of it.' },
+  { t: 'Nothing lost', d: 'The raw field keeps each tool’s native output, for a lossless round trip where the canonical shape drops detail.' },
+  { t: 'Routed by source', d: 'The tool field lets a consumer route: designesy for contract conformance, Lighthouse for performance, axe for accessibility.' },
+  { t: 'One verdict for CI', d: 'The verdict field gives a gate one answer: pass, fail, block or needs-changes.' },
+  { t: 'One severity vocabulary', d: 'Severity is normalised across tools, so an agent can triage everything with one scale.' },
 ];
 
-const SEVERITY_MAP = [
-  { tool: 'designesy', native: 'PASS', canonical: 'pass' },
-  { tool: 'designesy', native: 'FAIL', canonical: 'error' },
-  { tool: 'designesy', native: 'WARN', canonical: 'warning' },
-  { tool: 'designesy', native: 'SKIP', canonical: 'skip' },
-  { tool: 'Google design.md', native: 'error', canonical: 'error' },
-  { tool: 'Google design.md', native: 'warning', canonical: 'warning' },
-  { tool: 'Google design.md', native: 'info', canonical: 'info' },
-  { tool: 'jakubkrehel', native: 'HIGH', canonical: 'high' },
-  { tool: 'jakubkrehel', native: 'MEDIUM', canonical: 'medium' },
-  { tool: 'jakubkrehel', native: 'LOW', canonical: 'low' },
-  { tool: 'Lighthouse', native: 'score=0 binary', canonical: 'fail' },
-  { tool: 'Lighthouse', native: 'score=1 binary', canonical: 'pass' },
-  { tool: 'Lighthouse', native: 'informative', canonical: 'informative' },
-  { tool: 'Lighthouse', native: 'notApplicable', canonical: 'notApplicable' },
-];
-
-const WHY_STANDARD_MATTERS = [
-  'Agents consuming findings from multiple verifiers need a common schema to aggregate, compare, and act',
-  'Lighthouse, axe, Google design.md, and designesy all emit different JSON shapes — this schema is the union',
-  'The `raw` field preserves native output for lossless round-trip when the canonical shape loses fidelity',
-  'The `tool` field lets consumers route by source (designesy for contract conformance, Lighthouse for perf, axe for a11y)',
-  'The `verdict` field gives CI/CD gates a single boolean: pass/fail/block/needs-changes',
-  'The `severity` normalization lets agents triage across tools using one vocabulary',
-];
+const CURL = `curl -X POST https://www.designesy.org/api/score \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"https://www.designesy.org/","format":"canonical"}'`;
 
 export default function SpecsPage() {
   return (
     <>
       <Topbar scrolled />
-
-      <main id="main-content" data-pagefind-body className="surface-page">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Verification schema</p>
-          <h1 className="surface-title" data-scramble>Specs</h1>
-          <p className="surface-lede">
-            The canonical format for design verification findings. One JSON
-            schema that any verification tool can populate.
-          </p>
-          <p className="surface-note">
-            Agents consuming findings from multiple verifiers need a common
-            schema to aggregate, compare, and act. This is that schema.
-          </p>
-          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
-            <Link
-              className="button primary"
-              href="/specs/review-findings.json"
-              data-cuelume-press
-            >
+      <main id="main-content" data-pagefind-body className="eg dx">
+        <EngineHead
+          route="/specs"
+          name="Specs"
+          thesis="One JSON format for design-verification findings, which any tool can fill in. Designesy, Google design.md, Lighthouse and jakubkrehel/skills all map into it."
+          facts={[`schema v${String((SCHEMA.properties as Record<string, Prop>).schemaVersion.const)}`, `${TOP.length} top-level fields`, `${FINDING.length} finding fields`]}
+          contract={{ href: '/specs/review-findings.json', label: 'the JSON Schema' }}
+        >
+          <div className="dx-actions">
+            <Link className="button primary" href="/specs/review-findings.json" data-cuelume-press>
               JSON Schema
             </Link>
-            <Link
-              className="button ghost"
-              href="/methodology"
-              data-cuelume-press
-            >
+            <Link className="button ghost" href="/methodology" data-cuelume-press>
               Methodology
             </Link>
           </div>
           <AgentActions mdPath="/specs.md" label="the specs page" />
+        </EngineHead>
+
+        <section className="eg-section" aria-labelledby="sp-why-h">
+          <h2 className="eg-h2" id="sp-why-h">
+            Why one format
+          </h2>
+          <dl className="dx-defs">
+            {WHY.map((w) => (
+              <div key={w.t}>
+                <dt>{w.t}</dt>
+                <dd>{w.d}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
-        {/* ── Why a standard matters ────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Why a standard matters</h2>
-          <CheckGrid items={checkItemsFromStrings(WHY_STANDARD_MATTERS)} />
-        </section>
-
-        {/* ── Emission formats ──────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Emission formats</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            POST to <code style={{ color: 'var(--ink)' }}>/api/score</code> with
-            a <code style={{ color: 'var(--ink)' }}>&ldquo;format&rdquo;</code>{' '}
-            field to select the output shape. The canonical JSON is the source
-            of truth; the others are lossy projections.
+        <section className="eg-section" aria-labelledby="sp-formats-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="sp-formats-h">
+                Emission formats
+              </h2>
+              <p className="eg-section-sub">POST /api/score with a format field</p>
+            </div>
+          </div>
+          <p className="dx-lead">
+            The canonical JSON is the source of truth; the other formats are projections of it that drop some detail.
           </p>
-          <div className="token-table" role="table" aria-label="Emission formats">
-            <div className="token-table-head" role="row">
-              <span role="columnheader">Format</span>
-              <span role="columnheader">Content-Type</span>
-              <span role="columnheader">Description</span>
-            </div>
-            {EMISSION_FORMATS.map((f) => (
-              <div className="token-table-row" role="row" key={f.format}>
-                <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{f.format}</code>
-                <code role="cell">{f.contentType}</code>
-                <span role="cell">{f.desc}</span>
-              </div>
-            ))}
+          <div className="dx-table-box">
+            <DataTable
+              caption="The four emission formats of /api/score."
+              head={['Format', 'Content type', 'What it is']}
+              opt={[1]}
+              rows={FORMATS.map((f) => [<code key="f">{f.format}</code>, <code key="t">{f.type}</code>, f.desc])}
+            />
           </div>
         </section>
 
-        {/* ── Top-level fields ──────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Top-level fields</h2>
-          <div className="token-table" role="table" aria-label="Top-level fields">
-            <div className="token-table-head" role="row">
-              <span role="columnheader">Field</span>
-              <span role="columnheader">Type</span>
-              <span role="columnheader">Description</span>
+        <section className="eg-section" aria-labelledby="sp-top-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="sp-top-h">
+                Top-level fields
+              </h2>
+              <p className="eg-section-sub">
+                {TOP.length} fields · {REQUIRED.size} required · read from the schema itself
+              </p>
             </div>
-            {SCHEMA_FIELDS.map((f) => (
-              <div className="token-table-row" role="row" key={f.field}>
-                <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{f.field}</code>
-                <code role="cell">{f.type}</code>
-                <span role="cell">{f.desc}</span>
-              </div>
-            ))}
+          </div>
+          <div className="dx-table-box">
+            <DataTable
+              caption="Top-level fields of the Design Review Findings schema."
+              head={['Field', 'Type', 'Required', 'What it holds']}
+              opt={[2]}
+              rows={TOP.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, REQUIRED.has(k) ? 'yes' : '', descOf(p)])}
+            />
           </div>
         </section>
 
-        {/* ── Finding fields ───────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Finding object fields</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each entry in the <code style={{ color: 'var(--ink)' }}>findings</code>{' '}
-            array is a finding object. Each tool populates the subset of fields
-            it has — fields a tool does not produce are omitted.
+        <section className="eg-section" aria-labelledby="sp-finding-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="sp-finding-h">
+                The finding object
+              </h2>
+              <p className="eg-section-sub">
+                {FINDING.length} fields{FINDING_REQUIRED.size ? ` · ${FINDING_REQUIRED.size} required` : ''} · each tool fills the ones it has
+              </p>
+            </div>
+          </div>
+          <p className="dx-lead">
+            Each entry in <code>findings</code> is one of these. A field a tool does not produce is left out, never set to null.
           </p>
-          <div className="token-table" role="table" aria-label="Finding fields">
-            <div className="token-table-head" role="row">
-              <span role="columnheader">Field</span>
-              <span role="columnheader">Type</span>
-              <span role="columnheader">Description</span>
-            </div>
-            {FINDING_FIELDS.map((f) => (
-              <div className="token-table-row" role="row" key={f.field}>
-                <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{f.field}</code>
-                <code role="cell">{f.type}</code>
-                <span role="cell">{f.desc}</span>
-              </div>
-            ))}
+          <div className="dx-table-box">
+            <DataTable
+              caption="Fields of a finding object."
+              head={['Field', 'Type', 'What it holds']}
+              rows={FINDING.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, descOf(p)])}
+            />
           </div>
         </section>
 
-        {/* ── Severity normalization ─────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Severity normalization</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each tool uses its own severity vocabulary. The canonical schema
-            normalizes them while preserving the native token in{' '}
-            <code style={{ color: 'var(--ink)' }}>severityRaw</code>.
+        <section className="eg-section" aria-labelledby="sp-sev-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="sp-sev-h">
+                Severity, normalised
+              </h2>
+              <p className="eg-section-sub">the native token is kept in severityRaw</p>
+            </div>
+          </div>
+          <div className="dx-table-box">
+            <DataTable
+              caption="Each tool's native severity and its canonical form."
+              head={['Tool', 'Native', 'Canonical']}
+              rows={SEVERITY.map(([t, n, c]) => [t, <code key="n">{n}</code>, <code key="c">{c}</code>])}
+            />
+          </div>
+        </section>
+
+        <section className="eg-section" aria-labelledby="sp-use-h">
+          <h2 className="eg-h2" id="sp-use-h">
+            Usage
+          </h2>
+          <p className="dx-lead">
+            Send <code>url</code> and, optionally, <code>format</code>. The default is <code>designesy</code>; use{' '}
+            <code>canonical</code> for the full schema, <code>review</code> for markdown, <code>google</code> for the design.md
+            shape.
           </p>
-          <div className="token-table" role="table" aria-label="Severity normalization">
-            <div className="token-table-head" role="row">
-              <span role="columnheader">Tool</span>
-              <span role="columnheader">Native</span>
-              <span role="columnheader">Canonical</span>
-            </div>
-            {SEVERITY_MAP.map((s, i) => (
-              <div className="token-table-row" role="row" key={i}>
-                <code role="cell">{s.tool}</code>
-                <code role="cell">{s.native}</code>
-                <code role="cell" style={{ fontWeight: 700, color: 'var(--ink)' }}>{s.canonical}</code>
-              </div>
-            ))}
+          <div className="dx-formula-box">
+            <pre className="dx-formula">{CURL}</pre>
           </div>
         </section>
 
-        {/* ── Usage ────────────────────────────────────────────────────────── */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Usage</h2>
-          <div className="definition">
-            <p className="definition-label">POST /api/score</p>
-            <p>
-              Send a JSON body with <code style={{ color: 'var(--ink)' }}>url</code>{' '}
-              and optional <code style={{ color: 'var(--ink)' }}>format</code>.
-              The default format is <code style={{ color: 'var(--ink)' }}>designesy</code>{' '}
-              (the native shape). Use{' '}
-              <code style={{ color: 'var(--ink)' }}>canonical</code> for the full
-              schema, <code style={{ color: 'var(--ink)' }}>review</code> for
-              markdown, or <code style={{ color: 'var(--ink)' }}>google</code>{' '}
-              for the design.md-compatible shape.
-            </p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Example request</p>
-            <p>
-              <code style={{ color: 'var(--ink)', display: 'block', whiteSpace: 'pre-wrap', padding: '0.75rem', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--line)' }}>
-{`curl -X POST https://www.designesy.org/api/score \\
-  -H "Content-Type: application/json" \\
-  -d '{"url":"https://www.designesy.org/","format":"canonical"}'`}
-              </code>
-            </p>
-          </div>
-        </section>
-
-        <div className="status-note">
-          Designesy Design Review Findings Schema v1.0 — the canonical format
-          for design verification findings. JSON Schema:{' '}
-          <Link href="/specs/review-findings.json">/specs/review-findings.json</Link>
-          {' · '}
-          Methodology:{' '}
-          <Link href="/methodology">/methodology</Link>
-          {' · '}
-          Benchmarks:{' '}
-          <Link href="/benchmarks">/benchmarks</Link>
-        </div>
+        <EngineNext
+          items={[
+            { title: 'Score a site', desc: 'Run the engine on any URL and read its findings in any of the four formats.', route: '/score' },
+            { title: 'The methodology', desc: 'How each finding is decided, and how the score is made from them.', route: '/methodology' },
+            { title: 'Benchmarks', desc: 'designesy beside hallmark and slop-eval, and the wider field.', route: '/benchmarks' },
+          ]}
+        />
       </main>
-
       <Footer />
     </>
   );

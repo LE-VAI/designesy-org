@@ -13,7 +13,7 @@ export const acousticTokens = {
   engine_repo: 'https://github.com/Danilaa1/cuelume',
   engine_npm: 'https://www.npmjs.com/package/cuelume',
   description:
-    'Designesy acoustic token system — the sound parallel to the visual token system. No sound appears on a Designesy surface without a token name and a rationale here.',
+    'Designesy acoustic token system: the sound parallel to the visual token system. No sound appears on a Designesy surface without a token name and a rationale here.',
   standards_context: {
     w3c_dtgc_2025_10:
       'The W3C Design Tokens Format Module 2025.10 does not define acoustic/audio token types. Designesy acoustic tokens are net-new relative to the canonical standard.',
@@ -107,7 +107,7 @@ export const acousticTokens = {
       token: '--cue:warning',
       cuelume_cue: 'warning',
       character: 'Pitch-bent triangle tone (440→466Hz)',
-      interaction_role: 'Heads up, not blocking',
+      interaction_role: 'Heads up without blocking',
       where_used: 'Score form soft errors (invalid URL, unknown format)',
     },
     {
@@ -143,20 +143,20 @@ export const acousticTokens = {
       cuelume_cue: 'check-pass',
       character: 'Brief 880Hz sine blip, 40ms',
       interaction_role: 'One verification check passed',
-      where_used: 'Score engine count-up animation — fires per check as pass count increments',
+      where_used: 'Score engine count-up animation: fires per check as pass count increments',
     },
     {
       token: '--cue:check-fail',
       cuelume_cue: 'check-fail',
       character: 'Soft 220→110Hz triangle thud, 60ms',
       interaction_role: 'One verification check failed',
-      where_used: 'Score engine count-up animation — fires per check as fail count increments',
+      where_used: 'Score engine count-up animation: fires per check as fail count increments',
     },
     {
       token: '--cue:grade-reveal',
       cuelume_cue: 'grade-reveal',
       character: 'Grade-mapped arpeggio: A+ ascending 4-note + harmonics with large-room reverb; A ascending 4-note with small-room reverb; B ascending pair; C two-note rising 440→554; D descending pair; F single low note',
-      interaction_role: 'Score grade reveal — the hero acoustic moment',
+      interaction_role: 'Score grade reveal: the hero acoustic moment',
       where_used: 'Score page grade animation completion, report page grade display',
     },
   ],
@@ -172,7 +172,7 @@ export const acousticTokens = {
     },
   ],
   mapping_rules: [
-    'Brand marks earn sparkle. Hero wordmark, topbar logo, and footer mark are brand contact — not generic nav ticks.',
+    'Brand marks earn sparkle. Hero wordmark, topbar logo, and footer mark are brand contact, distinct from generic nav ticks.',
     'One primary cue family per role. Nav stays tick. Brand stays sparkle. Dense lists stay whisper. Do not randomize per page without updating this document.',
     'Hover sounds are fine-pointer only upstream. On coarse/touch pointers, Designesy binder maps the same hover cue to a single tap.',
     'Press/release on touch. Designesy binder plays the same cues on touch/pen pointerdown/pointerup.',
@@ -186,7 +186,7 @@ export const acousticTokens = {
     reduced_motion_sound_off:
       'prefers-reduced-motion: reduce is treated as an acoustic-reduction proxy. The user can still enable sound manually via the toggle.',
     no_focus_sounds:
-      'Sounds fire on pointer and click events, not on focus. Screen reader users navigate by focus and are not bombarded with hover cues.',
+      'Sounds fire on pointer and click events, never on focus. Screen reader users navigate by focus and hear no hover cues.',
     toggle_keyboard_accessible:
       'The sound toggle button uses aria-pressed and plays via the preference hook on click (includes keyboard activation).',
     silent_fallback:

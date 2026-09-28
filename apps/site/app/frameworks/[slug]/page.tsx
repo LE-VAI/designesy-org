@@ -1,79 +1,47 @@
-// /frameworks/[slug] — dedicated evaluation page for each scored site.
-//
-// Pattern from Artificial Analysis: "Click any model name → dedicated page
-// with detailed metrics and direct comparisons." Each scored site gets its
-// own evaluation article with:
-//   - Score + grade header with dial
-//   - Per-category breakdown bars (from batch-data.ts)
-//   - Check pass/fail/warn/skip summary
-//   - Comparison to cohort mean + category mean
-//   - Delta since last week (improvement/decline)
-//   - Auto-generated evaluation narrative
-//   - CTA to re-score live
-//
-// Pre-rendered at build time via generateStaticParams for all scored sites.
+// /frameworks/[slug]: one scored site read against the cohort. Its place among
+// every site on the grade scale, each category against the cohort's mean in
+// that category, what changed, and its peers. Every sentence is computed from
+// the seed and the batch (lib/data/cohort); pre-rendered for every site.
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import '../../instrument.css';
+import '../../engine.css';
+import '../../data.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
-import { CountUp } from '../../lib/count-up';
 import { PageShareButton } from '../../lib/page-share';
-import { ENGINE_CHECK_COUNT } from '../../hero-stats';
-import { ScoreDial, gradeColor } from '../../lib/score-dial';
-import { RadarChart } from '../../lib/radar-chart';
-import { SEED, type Grade, type CategoryBreakdown } from '../../leaderboard/seed';
-import { BATCH_CATEGORY_SCORES } from '../../leaderboard/batch-data';
-import { CONTRACT_VERSION } from '../../lib/design-system-contract';
-
-export const revalidate = 3600;
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function slugify(url: string): string {
-  return url
-    .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '')
-    .replace(/\/$/, '')
-    .replace(/[./]/g, '-')
-    .replace(/[^a-z0-9-]/gi, '')
-    .toLowerCase();
-}
-
-function deslugify(slug: string): string {
-  // Find the site whose slugified URL matches
-  const site = SEED.find((s) => slugify(s.url) === slug);
-  return site?.url || '';
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  cadence: 'Cadence',
-  accessibility: 'Accessibility',
-  semantic: 'Semantic',
-  copywriting: 'Copywriting',
-  motion: 'Motion',
-  tokens: 'Tokens',
-  takt: 'Takt',
-  security: 'Security',
-  poise: 'Poise',
-  identity: 'Identity',
-  interaction: 'Interaction',
-  performance: 'Performance',
-  spec: 'Spec',
-  responsive: 'Responsive',
-};
-
-// ── Static params (pre-render all scored sites) ─────────────────────────────
+import { CATEGORY_WEIGHTS, ENGINE_VERSION } from '../../lib/check-definitions';
+import { SEED, type Grade } from '../../leaderboard/seed';
+import { EngineHead, EngineNext } from '../../lib/engine/engine-page';
+import { display } from '../../lib/engine/types';
+import {
+  COHORT,
+  COHORT_STATS,
+  BATCH_CATEGORIES,
+  BATCH_RUN_DATE,
+  SCORES_DATE,
+  CATEGORY_LABELS,
+  bySlug,
+  slugify,
+  categoryStats,
+  inCategory,
+  fmt,
+  round1,
+  scoreTone,
+} from '../../lib/data/cohort';
+import { DataFigure, DataTable, NotMeasured } from '../../lib/data/figure';
+import { CohortStrip } from '../../lib/data/strip';
+import { BarList } from '../../lib/data/bars';
+import { SiteTable } from '../../lib/data/site-table';
 
 export function generateStaticParams() {
   return SEED.filter((s) => s.score !== null).map((s) => ({
     slug: slugify(s.url),
   }));
 }
-
-// ── Metadata ────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
@@ -95,460 +63,252 @@ export async function generateMetadata({
     path: `/frameworks/${slug}`,
     ogTitle: `${site.name} · ${grade} · ${score}/100 · Designesy`,
     ogDescription: description,
-    twitterDescription: `${site.name} scored ${score}/${grade} on the Designesy Compliance Index — designesy.org/frameworks/${slug}`,
+    twitterDescription: `${site.name} scored ${score}/${grade} on the Designesy Compliance Index · designesy.org/frameworks/${slug}`,
   });
 }
 
-// ── Cohort stats (computed once) ─────────────────────────────────────────────
+export const revalidate = 3600;
 
-const SCORED_SITES = SEED.filter((s) => s.score !== null);
-const SCORE_VALUES = SCORED_SITES.map((s) => s.score as number);
-const COHORT_MEAN = SCORE_VALUES.reduce((a, b) => a + b, 0) / SCORE_VALUES.length;
-const COHORT_MEDIAN = [...SCORE_VALUES].sort((a, b) => a - b)[Math.floor(SCORE_VALUES.length / 2)];
+const TIER_LABEL: Record<number, string> = {
+  1: 'a frontier reference',
+  2: 'a competitor',
+  3: 'a design-system exemplar',
+  4: 'an inspiration source',
+  5: 'a high-traffic surface',
+};
 
-function categoryMean(category: string): number | null {
-  const scores = SCORED_SITES
-    .map((s) => BATCH_CATEGORY_SCORES[s.url]?.[category]?.score)
-    .filter((s): s is number => s !== null && s !== undefined);
-  if (scores.length === 0) return null;
-  return scores.reduce((a, b) => a + b, 0) / scores.length;
+const label = (k: string) => CATEGORY_LABELS[k] ?? k;
+
+/** "a", "a and b", "a, b and c". */
+function list(items: string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
+const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${fmt(Math.abs(n))}`;
 
-// ── Narrative generation ────────────────────────────────────────────────────
-
-function generateNarrative(site: typeof SEED[number]): string {
-  const score = site.score as number;
-  const grade = site.grade as Grade;
-  const name = site.name;
-  const catScores = BATCH_CATEGORY_SCORES[site.url] || {};
-  const scoredCats = Object.entries(catScores).filter(([, v]) => v.score !== null);
-  const bestCat = scoredCats.sort((a, b) => (b[1].score as number) - (a[1].score as number))[0];
-  const worstCat = scoredCats.sort((a, b) => (a[1].score as number) - (b[1].score as number))[0];
-  const delta = site.prevScore !== null ? score - site.prevScore : null;
-
-  const parts: string[] = [];
-
-  // Opening
-  parts.push(
-    `${name} scores ${score}/${grade} on the Designesy Compliance Index — ` +
-    `${site.pass} of ${ENGINE_CHECK_COUNT} checks passed, ${site.fail} failed, ${site.warn} warned, ${site.skip} skipped. ` +
-    `The cohort mean is ${COHORT_MEAN.toFixed(1)}/D across ${SCORED_SITES.length} scored sites. ` +
-    (score > COHORT_MEAN
-      ? `${name} sits ${((score - COHORT_MEAN) / COHORT_MEAN * 100).toFixed(0)}% above the cohort mean.`
-      : score < COHORT_MEAN
-      ? `${name} sits ${((COHORT_MEAN - score) / COHORT_MEAN * 100).toFixed(0)}% below the cohort mean.`
-      : `${name} is at the cohort mean.`)
-  );
-
-  // Best/worst category
-  if (bestCat && worstCat && bestCat[0] !== worstCat[0]) {
-    parts.push(
-      `Strongest category: ${CATEGORY_LABELS[bestCat[0]] || bestCat[0]} at ${(bestCat[1].score as number).toFixed(1)}%. ` +
-      `Weakest scored category: ${CATEGORY_LABELS[worstCat[0]] || worstCat[0]} at ${(worstCat[1].score as number).toFixed(1)}%. ` +
-      `The gap between best and worst is the finding — most systems are strong in one dimension and absent in another.`
-    );
-  }
-
-  // Delta
-  if (delta !== null && delta !== 0) {
-    parts.push(
-      delta > 0
-        ? `Since last week's score, ${name} improved by ${delta.toFixed(1)} points — moving from ${site.prevScore} to ${score}.`
-        : `Since last week's score, ${name} dropped by ${Math.abs(delta).toFixed(1)} points — moving from ${site.prevScore} to ${score}.`
-    );
-  }
-
-  // Token detection
-  if (site.tokens !== null && site.tokens > 0) {
-    parts.push(
-      site.tokens > 100
-        ? `The engine detected ${site.tokens} custom properties at :root — a rich token layer. The question is whether those tokens are structured (primitive → semantic → component) or flat.`
-        : site.tokens > 10
-        ? `The engine detected ${site.tokens} custom properties at :root — a modest token layer.`
-        : `The engine detected only ${site.tokens} custom properties at :root — tokens are minimal or absent.`
-    );
-  }
-
-  // Grade context
-  if (grade === 'A') {
-    parts.push(`${name} is the only A-grade site in the cohort. This is the bar — every check the engine can statically verify, ${name} passes.`);
-  } else if (grade === 'F') {
-    parts.push(`${grade}-grade means ${name} scores below 60 — the contract's pass threshold. The failing checks are not subjective: they are missing CSS primitives that the contract requires at :root.`);
-  }
-
-  // Closing
-  parts.push(
-    `This evaluation is deterministic — no LLM, no human judgment, no survey. The same ${ENGINE_CHECK_COUNT}-check engine that scored ${name} scores every site on the leaderboard. Re-score ${site.url.replace(/^https?:\/\//, '')} live to see if anything has changed since ${'2026-08-03'}.`
-  );
-
-  return parts.join('\n\n');
-}
-
-// ── Category bar component ──────────────────────────────────────────────────
-
-function CategoryBar({
-  label,
-  breakdown,
-  cohortAvg,
-}: {
-  label: string;
-  breakdown: CategoryBreakdown;
-  cohortAvg: number | null;
-}) {
-  const score = breakdown.score;
-  const isScored = score !== null;
-  const barWidth = isScored ? score : 0;
-  const fillClass = !isScored
-    ? 'cat-bar-fill--unscored'
-    : score >= 75
-    ? 'cat-bar-fill--scored-high'
-    : score >= 50
-    ? 'cat-bar-fill--scored-mid'
-    : 'cat-bar-fill--scored-low';
-
-  return (
-    <div className="cat-bar">
-      <div className="cat-bar-header">
-        <span className="cat-bar-label">{label}</span>
-        <span className={`cat-bar-score${isScored ? '' : ' cat-bar-score--unscored'}`}>
-          {isScored ? `${score.toFixed(1)}%` : 'unscored'}
-          {isScored && cohortAvg !== null && (
-            <span className="cat-bar-cohort">
-              (cohort: {cohortAvg.toFixed(1)}%)
-            </span>
-          )}
-        </span>
-      </div>
-      <div className="cat-bar-track">
-        <div className={`cat-bar-fill ${fillClass}`} style={{ width: `${barWidth}%` }} />
-      </div>
-      <div className="cat-bar-meta">
-        {breakdown.pass} pass · {breakdown.fail} fail · {breakdown.warn} warn · {breakdown.skip} skip
-        {breakdown.weight > 0 && ` · ${breakdown.weight}% weight`}
-      </div>
-    </div>
-  );
-}
-
-// ── Main page ───────────────────────────────────────────────────────────────
-
-export default async function FrameworkEvaluationPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function FrameworkEvaluationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const site = SEED.find((s) => slugify(s.url) === slug);
+  const site = bySlug(slug);
+  if (!site) notFound();
 
-  if (!site || site.score === null) {
-    notFound();
-  }
+  const n = COHORT_STATS.count;
+  const vsMedian = round1(site.score - COHORT_STATS.median);
+  const delta = site.unreachable || site.prevScore === null ? null : round1(site.score - site.prevScore);
 
-  const score = site.score as number;
-  const grade = site.grade as Grade;
-  const catScores = BATCH_CATEGORY_SCORES[site.url] || {};
-  const delta = site.prevScore !== null ? score - site.prevScore : null;
+  const rows = BATCH_CATEGORIES.map((k) => ({ key: k, c: site.categories?.[k] ?? null, mean: categoryStats(k).mean }));
+  const scored = rows
+    .filter((r) => r.c && r.c.score !== null)
+    .map((r) => ({ key: r.key, score: r.c!.score as number, mean: r.mean }));
+  const hi = scored.length ? Math.max(...scored.map((r) => r.score)) : 0;
+  const lo = scored.length ? Math.min(...scored.map((r) => r.score)) : 0;
+  // Ties are named together: three categories at 100 are all the strongest.
+  const best = scored.filter((r) => r.score === hi).map((r) => label(r.key).toLowerCase());
+  const worst = scored.filter((r) => r.score === lo).map((r) => label(r.key).toLowerCase());
+  const above = scored.filter((r) => r.mean !== null && r.score > r.mean).length;
+  const ran = site.pass + site.warn + site.fail + site.skip;
 
-  // Category peers (same category)
-  const categoryPeers = SCORED_SITES
-    .filter((s) => s.category === site.category && s.url !== site.url)
-    .sort((a, b) => (b.score as number) - (a.score as number))
-    .slice(0, 5);
-
-  const categoryRank = SCORED_SITES
-    .filter((s) => s.category === site.category)
-    .sort((a, b) => (b.score as number) - (a.score as number))
-    .findIndex((s) => s.url === site.url) + 1;
-
-  const categoryTotal = SCORED_SITES.filter((s) => s.category === site.category).length;
-
-  const narrative = generateNarrative(site);
-  const narrativeParagraphs = narrative.split('\n\n');
+  const peers = inCategory(site.category);
+  const place = peers.findIndex((s) => s.slug === site.slug) + 1;
 
   return (
     <>
       <Topbar scrolled />
-      <main id="main-content" data-pagefind-body className="surface-page" data-pagefind-meta="priority:high">
-        {/* Header with dial + score */}
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>
-            {site.category} · Evaluation
-          </p>
-          <h1 className="surface-title" data-scramble>{site.name}</h1>
-          <p className="surface-lede">
-            <a
-              href={site.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--signal)', textDecoration: 'none' }}
-            >
-              {site.url.replace(/^https?:\/\//, '')}
+      <main id="main-content" data-pagefind-body className="eg dx">
+        <EngineHead
+          route={`/frameworks/${slug}`}
+          name={site.name}
+          thesis={`${site.name} scores ${fmt(site.score)}, grade ${site.grade}: rank ${site.rank} of ${n} on the leaderboard, ${fmt(
+            Math.abs(vsMedian),
+          )} points ${vsMedian >= 0 ? 'above' : 'below'} the cohort median of ${fmt(COHORT_STATS.median)}.`}
+          facts={[site.host, site.category, `scored ${site.scoredAt ?? SCORES_DATE}`]}
+          contract={{ href: '/leaderboard', label: 'the leaderboard' }}
+        >
+          <div className="dx-actions">
+            <Link className="button primary" href={`/score?url=${encodeURIComponent(site.host)}`} data-cuelume-press>
+              Score it again
+            </Link>
+            <a className="button ghost" href={site.url} target="_blank" rel="noopener noreferrer">
+              Visit {site.host}
             </a>
-          </p>
-          <div className="hero-actions" style={{ marginTop: '1.5rem' }}>
             <PageShareButton
-              text={`${site.name} · Grade ${site.grade} · ${site.score}/100 on the Designesy ${ENGINE_CHECK_COUNT}-check design contract — designesy.org/frameworks/${slug}`}
-              label={`Share ${site.name} evaluation`}
+              text={`${site.name} scores ${fmt(site.score)} (${site.grade}) on the Designesy leaderboard, rank ${site.rank} of ${n}.`}
+              label="Share this evaluation"
             />
           </div>
-        </section>
+        </EngineHead>
 
-        {/* Score summary */}
-        <section className="doctrine-section fade-up fade-up-delay-1">
-          <div style={{
-            display: 'flex',
-            gap: '2rem',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            padding: '1.5rem',
-            background: 'var(--surface)',
-            borderRadius: 'var(--radius, 12px)',
-            border: '1px solid var(--line)',
-          }}>
-            <ScoreDial score={score} grade={grade} colorMode="grade" />
-
-            <div style={{ flex: '1 1 300px' }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
-                Compliance Index score
-              </p>
-              <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--ink)', margin: '0 0 0.5rem' }}>
-                {score}/100 · {grade}
-              </p>
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                <span><strong style={{ color: 'var(--ink)' }}>{site.pass}</strong> pass</span>
-                <span><strong style={{ color: 'var(--error)' }}>{site.fail}</strong> fail</span>
-                <span><strong style={{ color: 'var(--warn)' }}>{site.warn}</strong> warn</span>
-                <span><strong style={{ color: 'var(--muted-dim)' }}>{site.skip}</strong> skip</span>
-                {site.tokens !== null && (
-                  <span><strong style={{ color: 'var(--ink)' }}>{site.tokens}</strong> tokens</span>
-                )}
-              </div>
-              {delta !== null && (
-                <p style={{ fontSize: '0.8rem', margin: '0.75rem 0 0', color: delta > 0 ? 'var(--ok)' : delta < 0 ? 'var(--error)' : 'var(--muted)' }}>
-                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '='} {delta !== 0 ? `${Math.abs(delta).toFixed(1)} pts` : 'flat'} since last week
-                  {delta !== 0 && ` (${site.prevScore} → ${score})`}
-                </p>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <Link
-                href={`/score?url=${site.url.replace(/^https?:\/\//, '')}`}
-                className="button primary"
-                style={{ fontSize: '0.85rem' }}
-              >
-                Re-score live →
-              </Link>
-              <Link
-                href="/leaderboard"
-                className="button ghost"
-                style={{ fontSize: '0.85rem' }}
-              >
-                View leaderboard
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Per-category breakdown */}
-        <section className="doctrine-section fade-up fade-up-delay-2">
-          <h2 className="doctrine-heading">Per-category breakdown</h2>
-          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each category is scored independently. The cohort average shows how
-            this site compares to the {SCORED_SITES.length}-site cohort in each dimension.
-          </p>
-          {Object.entries(catScores).length > 0 ? (
+        <section className="eg-section" aria-labelledby="fw-scale-h">
+          <div className="eg-section-head">
             <div>
-              <RadarChart
-                data={Object.entries(catScores)
-                  .sort((a, b) => b[1].weight - a[1].weight)
-                  .map(([cat, breakdown]) => ({
-                    label: CATEGORY_LABELS[cat] || cat,
-                    score: breakdown.score,
-                    cohortAvg: categoryMean(cat),
-                  }))}
+              <h2 className="eg-h2" id="fw-scale-h">
+                {`Among the ${n}`}
+              </h2>
+              <p className="eg-section-sub">composite score, weekly run of {SCORES_DATE}</p>
+            </div>
+          </div>
+          <DataFigure
+            id="fw-strip"
+            title={`${site.name} on the grade scale`}
+            note={`Every scored site at its composite score; ${site.name} is the larger dot, read out above. Sites a point or two apart stack.`}
+            source={`Weekly run of ${SCORES_DATE}. Engine ${ENGINE_VERSION}.`}
+            tableLabel="Every site's score"
+            table={
+              <DataTable
+                caption={`Composite score of every site, weekly run of ${SCORES_DATE}.`}
+                head={['Site', 'Rank', 'Grade', 'Score']}
+                numeric={[1, 3]}
+                rows={COHORT.map((s) => [s.slug === slug ? `${s.name} (this page)` : s.name, s.rank, s.grade, fmt(s.score)])}
               />
-              {Object.entries(catScores)
-                .sort((a, b) => b[1].weight - a[1].weight)
-                .map(([cat, breakdown]) => (
-                  <CategoryBar
-                    key={cat}
-                    label={CATEGORY_LABELS[cat] || cat}
-                    breakdown={breakdown}
-                    cohortAvg={categoryMean(cat)}
-                  />
-                ))}
+            }
+          >
+            <CohortStrip
+              sites={COHORT.map((s) => ({
+                slug: s.slug,
+                name: s.name,
+                score: s.score,
+                grade: s.grade,
+                rank: s.rank,
+                self: s.self,
+                held: s.unreachable,
+              }))}
+              median={COHORT_STATS.median}
+              focus={slug}
+              label={`${site.name} at ${fmt(site.score)}, grade ${site.grade}, rank ${site.rank} among ${n} sites whose scores run from ${fmt(
+                COHORT_STATS.min,
+              )} to ${fmt(COHORT_STATS.max)}, median ${fmt(COHORT_STATS.median)}.`}
+            />
+          </DataFigure>
+        </section>
+
+        <section className="eg-section" aria-labelledby="fw-cats-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="fw-cats-h">
+                By category
+              </h2>
+              <p className="eg-section-sub">batch run of {BATCH_RUN_DATE}</p>
             </div>
+          </div>
+          {scored.length > 1 && hi !== lo ? (
+            <p className="dx-lead">
+              Strongest in {list(best)} at <b>{fmt(hi)}</b>, weakest in {list(worst)} at <b>{fmt(lo)}</b>. Above the
+              cohort&apos;s mean in {above} of {scored.length} categories the batch could score.
+            </p>
+          ) : scored.length ? (
+            <p className="dx-lead">
+              Every category the batch could score reads <b>{fmt(hi)}</b>. Above the cohort&apos;s mean in {above} of{' '}
+              {scored.length}.
+            </p>
           ) : (
-            <p className="surface-note">
-              No per-category breakdown available — this site was not included
-              in the last batch run. Run a live score to see the full breakdown.
-            </p>
+            <p className="dx-lead">The batch run scored no category for this site.</p>
           )}
+          <DataFigure
+            id="fw-cats"
+            title={`${site.name} by category, against the cohort`}
+            note="Each bar is the site's score in one category, heaviest category first; the tick is the cohort's mean there. A dashed track is a category the engine could not score for this site."
+            source={`Batch run of ${BATCH_RUN_DATE}. Weights are relative and sum to ${Object.values(CATEGORY_WEIGHTS).reduce(
+              (a, b) => a + b,
+              0,
+            )} across all ${Object.keys(CATEGORY_WEIGHTS).length} categories.`}
+            table={
+              <DataTable
+                caption={`${site.name}'s category scores against the cohort mean, batch run of ${BATCH_RUN_DATE}.`}
+                head={['Category', 'Weight', 'Score', 'Cohort mean', 'Pass', 'Warn', 'Fail', 'Skip']}
+                numeric={[1, 2, 3, 4, 5, 6, 7]}
+                opt={[1, 4, 5, 6, 7]}
+                rows={rows.map((r) => [
+                  label(r.key),
+                  CATEGORY_WEIGHTS[r.key],
+                  r.c && r.c.score !== null ? fmt(r.c.score) : <NotMeasured />,
+                  r.mean === null ? <NotMeasured /> : fmt(r.mean),
+                  r.c?.pass ?? 0,
+                  r.c?.warn ?? 0,
+                  r.c?.fail ?? 0,
+                  r.c?.skip ?? 0,
+                ])}
+              />
+            }
+          >
+            <BarList
+              label={`${site.name} by category, with the cohort mean for comparison: ${scored
+                .map((r) => `${label(r.key)} ${fmt(r.score)} against ${r.mean === null ? 'no mean' : fmt(r.mean)}`)
+                .join(', ')}.`}
+              markName="cohort mean"
+              bars={rows.map((r) => ({
+                key: r.key,
+                label: label(r.key),
+                meta: `weight ${CATEGORY_WEIGHTS[r.key]}`,
+                value: r.c && r.c.score !== null ? r.c.score : null,
+                mark: r.mean,
+                tone: r.c && r.c.score !== null ? scoreTone(r.c.score) : undefined,
+              }))}
+            />
+          </DataFigure>
         </section>
 
-        {/* Evaluation narrative */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Evaluation</h2>
-          <div style={{ maxWidth: '65ch' }}>
-            {narrativeParagraphs.map((para, i) => (
-              <p
-                key={i}
-                style={{
-                  fontSize: '0.9rem',
-                  lineHeight: 1.7,
-                  color: 'var(--ink)',
-                  marginBottom: '1rem',
-                }}
-              >
-                {para}
-              </p>
-            ))}
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Scored 2026-08-03 against contract {CONTRACT_VERSION} ({ENGINE_CHECK_COUNT} checks, 14 weighted
-            categories). Re-scored weekly via GitHub Action.
-          </p>
+        <section className="eg-section" aria-labelledby="fw-read-h">
+          <h2 className="eg-h2" id="fw-read-h">
+            Reading
+          </h2>
+          <dl className="dx-defs">
+            <div>
+              <dt>This week</dt>
+              <dd>
+                {site.unreachable
+                  ? `The engine could not read ${site.host} on the last weekly run, so this is the score measured on ${site.scoredAt}, held over.`
+                  : delta === null
+                    ? 'No previous weekly score to compare with.'
+                    : delta === 0
+                      ? `Unchanged since the previous weekly run, at ${fmt(site.score)}.`
+                      : `${signed(delta)} since the previous weekly run, from ${fmt(site.prevScore as number)} to ${fmt(site.score)}.`}
+              </dd>
+            </div>
+            <div>
+              <dt>Checks</dt>
+              <dd>
+                Of the {ran} checks the engine ran, {site.pass} passed, {site.warn} warned, {site.fail} failed and {site.skip}{' '}
+                were skipped as not applicable.
+              </dd>
+            </div>
+            <div>
+              <dt>Tokens</dt>
+              <dd>
+                {site.tokens === null
+                  ? 'The engine recorded no token count for this site.'
+                  : `${site.tokens} custom properties declared on :root, the layer the tokens category reads.`}
+              </dd>
+            </div>
+            <div>
+              <dt>Why it is here</dt>
+              <dd>
+                Seeded as {TIER_LABEL[site.tier] ?? `a tier ${site.tier} site`}: {display(site.seededBecause)}
+                {/[.!?]$/.test(display(site.seededBecause)) ? '' : '.'}
+                {site.self ? ' Scored by its own engine; the conflict of interest is stated in the data.' : ''}
+              </dd>
+            </div>
+          </dl>
         </section>
 
-        {/* Comparison: category peers */}
-        {categoryPeers.length > 0 && (
-          <section className="doctrine-section fade-up">
-            <h2 className="doctrine-heading">
-              Compared to {site.category} peers
-            </h2>
-            <p className="surface-note" style={{ marginBottom: '1rem' }}>
-              {site.name} ranks #{categoryRank} of {categoryTotal} in the {site.category} category.
-            </p>
-            <div className="row-stack" role="list">
-              {categoryPeers.map((peer, i) => (
-                <Link
-                  key={peer.url}
-                  href={`/frameworks/${slugify(peer.url)}`}
-                  className="row"
-                  role="listitem"
-                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                >
-                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="row-body">
-                    <span className="row-title">
-                      {peer.name}
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '4px',
-                          background: gradeColor(peer.grade as string) || 'var(--muted)',
-                          color: 'var(--paper)',
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          marginLeft: '0.5rem',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {peer.grade}
-                      </span>
-                    </span>
-                    <span className="row-meta">
-                      {peer.url.replace(/^https?:\/\//, '')} · {peer.score}/100
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Cohort context */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Cohort context</h2>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{
-              padding: '0.75rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: '8px',
-            }}>
-              <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                This site
-              </p>
-              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
-                {score}/100
-              </p>
-            </div>
-            <div style={{
-              padding: '0.75rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: '8px',
-            }}>
-              <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                Cohort mean
-              </p>
-              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--muted)', margin: 0 }}>
-                {COHORT_MEAN.toFixed(1)}/100
-              </p>
-            </div>
-            <div style={{
-              padding: '0.75rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: '8px',
-            }}>
-              <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                Cohort median
-              </p>
-              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--muted)', margin: 0 }}>
-                {COHORT_MEDIAN.toFixed(1)}/100
-              </p>
-            </div>
-            <div style={{
-              padding: '0.75rem 1.25rem',
-              background: 'var(--surface)',
-              border: '1px solid var(--line)',
-              borderRadius: '8px',
-            }}>
-              <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-                Delta from mean
-              </p>
-              <p style={{
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                color: score > COHORT_MEAN ? 'var(--ok)' : score < COHORT_MEAN ? 'var(--error)' : 'var(--muted)',
-                margin: 0,
-              }}>
-                {score > COHORT_MEAN ? '+' : ''}{(score - COHORT_MEAN).toFixed(1)}
+        <section className="eg-section" aria-labelledby="fw-peers-h">
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="fw-peers-h">
+                Peers in {site.category}
+              </h2>
+              <p className="eg-section-sub">
+                {place} of {peers.length} in the group · rank is among all {n}
               </p>
             </div>
           </div>
+          <SiteTable sites={peers} current={slug} caption={`${site.category}: ${peers.length} scored sites, by cohort rank.`} />
         </section>
 
-        {/* Why this site is scored */}
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Why this site is scored</h2>
-          <p className="surface-note" style={{ maxWidth: '65ch' }}>
-            {site.seededBecause}
-          </p>
-        </section>
-
-        {/* Navigation footer */}
-        <section className="doctrine-section fade-up">
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Link href="/frameworks" className="button ghost" style={{ fontSize: '0.85rem' }}>
-              ← All evaluations
-            </Link>
-            <Link
-              href={`/score?url=${site.url.replace(/^https?:\/\//, '')}`}
-              className="button primary"
-              style={{ fontSize: '0.85rem' }}
-            >
-              Re-score {site.name} live →
-            </Link>
-          </div>
-        </section>
+        <EngineNext
+          items={[
+            { title: 'Score it again', desc: `Run the ${site.host} audit live: the same checks, on the page as it is now.`, route: `/score?url=${encodeURIComponent(site.host)}` },
+            { title: 'The leaderboard', desc: `All ${n} sites, ranked, with each one's category profile.`, route: '/leaderboard' },
+            { title: 'How a score is made', desc: 'Every check, its weight, the grade bands and what the engine cannot see.', route: '/methodology' },
+          ]}
+        />
       </main>
       <Footer />
     </>

@@ -56,8 +56,20 @@
   position: relative;
   z-index: 1;
   display: grid;
+  /* One column that never grows past the hero: an implicit auto column took
+     the width of the widest unbreakable thing in a score's results, and on a
+     phone the whole hero (headline, lede, bar) ran 330px off the screen once
+     a score landed. */
+  grid-template-columns: minmax(0, 1fr);
   justify-items: start;
   max-width: 58rem;
+}
+
+/* The score form sizes to its content like the rest of the hero column, but
+   never past the column: its results hold rows that scroll on their own. */
+.home-hero-copy > .score-hero-input {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .home .home-kicker {
@@ -131,7 +143,8 @@
   color: var(--muted);
 }
 
-/* --- Command bar: the score form as one glass line ---------------------- */
+/* --- Command bar: the shared control surface (lib/engine/command-bar.css),
+   placed in the hero column. ---------------------------------------------- */
 
 .home-hero .score-hero-input {
   width: 100%;
@@ -142,73 +155,6 @@
 .home-hero .score-hero-input .score-form {
   max-width: none;
   margin: 0;
-}
-
-.home-hero .score-hero-input .score-input-card {
-  padding: 6px;
-  border: 0;
-  border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  transition: box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.home-hero .score-hero-input .score-input-card:focus-within {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--signal-light) 70%, transparent),
-    0 0 0 5px color-mix(in srgb, var(--signal-light) 16%, transparent),
-    inset 0 1px 0 var(--lv-glass-edge),
-    var(--lv-glass-shadow);
-}
-
-.home-hero .score-hero-input .score-input-col {
-  flex-direction: row;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.home-hero .score-hero-input .score-input-flex-box {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.home-hero .score-hero-input .score-url-input-inner,
-.home-hero .score-hero-input .score-url-input-inner:focus {
-  height: 3.25rem;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: 1.02rem;
-}
-
-.home-hero .score-hero-input .score-submit {
-  width: auto;
-  flex: 0 0 auto;
-  min-height: 3.25rem;
-  padding-inline: 1.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.home-hero .score-hero-input .score-scope-toggle {
-  margin: 0;
-  padding: 0 0.3rem;
-  border-top: 0;
-}
-
-.home-hero .score-hero-input .score-form-foot {
-  margin-top: 0.2rem;
-  padding-right: 0.6rem;
-}
-
-@media (max-width: 560px) {
-  .home-hero .score-hero-input .score-input-col {
-    flex-direction: column;
-  }
-  .home-hero .score-hero-input .score-submit {
-    width: 100%;
-  }
 }
 
 /* ==========================================================================
@@ -782,9 +728,11 @@
   text-decoration: none;
 }
 
-.hero-cohort-link:hover .hero-cohort-name {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+@media (hover: hover) {
+  .hero-cohort-link:hover .hero-cohort-name {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
 }
 
 .hero-cohort-score,
@@ -836,7 +784,9 @@
   --hm-gap: 3px;
   --hm-h: 12px;
   --hm-step: calc(var(--hm-cw) + var(--hm-gap));
-  --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Crect width='9' height='12' rx='2.25'/%3E%3C/svg%3E");
+  /* viewBox + preserveAspectRatio none: the cell scales with its step, so a
+     meter narrower than its twenty cells draws them narrower (see .hm-meter). */
+  --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' preserveAspectRatio='none' width='12' height='12'%3E%3Crect width='9' height='12' rx='2.25'/%3E%3C/svg%3E");
   display: grid;
   gap: 0.7rem;
   margin: 0;
@@ -869,11 +819,18 @@
   width: calc(20 * var(--hm-step) - var(--hm-gap));
   max-width: 100%;
   height: var(--hm-h);
+  /* A phone's card leaves the meter less room than twenty cells take, and the
+     cells used to keep their size and run on over the score beside them
+     (every width below about 420px). The meter is a size container instead,
+     and inside it a step is its width over twenty, never more than the
+     design's step: full size where there is room, finer where there is not. */
+  container-type: inline-size;
 }
 
 /* The idle cells, and the lit run, share one mask: a rounded cell every step. */
 .hm-meter::before,
 .hm-lit {
+  --hm-step: min(var(--hm-cw) + var(--hm-gap), (100cqw + var(--hm-gap)) / 20);
   -webkit-mask: var(--hm-mask) left top / var(--hm-step) var(--hm-h) repeat-x;
   mask: var(--hm-mask) left top / var(--hm-step) var(--hm-h) repeat-x;
 }
@@ -936,7 +893,6 @@
   .hm {
     --hm-cw: 8px;
     --hm-step: calc(var(--hm-cw) + var(--hm-gap));
-    --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='12'%3E%3Crect width='8' height='12' rx='2'/%3E%3C/svg%3E");
   }
   .hm-row {
     grid-template-columns: 4.8rem minmax(0, 1fr) 1.8rem;
@@ -966,11 +922,18 @@
 }
 
 .field-card.is-featured .field-card-icon,
-.field-card:hover .field-card-icon,
 .field-card:focus-visible .field-card-icon {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
   box-shadow: inset 0 1px 0 var(--lv-shine-soft), 0 6px 16px -8px var(--lv-pass-glow);
+}
+
+@media (hover: hover) {
+  .field-card:hover .field-card-icon {
+    color: var(--paper-on-signal);
+    background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+    box-shadow: inset 0 1px 0 var(--lv-shine-soft), 0 6px 16px -8px var(--lv-pass-glow);
+  }
 }
 
 /* --- The static headline wraps like text ---------------------------------
@@ -985,10 +948,6 @@
 }
 
 @media (max-width: 560px) {
-  /* A real gutter on phones (the shell drops to ~2px here). */
-  main.site-shell.home {
-    padding-inline: var(--space-16);
-  }
   .home .hero-display {
     font-size: clamp(1.85rem, 1.1rem + 3.4vw, 2.6rem);
     line-height: 1.08;
@@ -998,5 +957,14 @@
   }
   .home .home-kicker {
     font-size: 0.72rem;
+  }
+}
+
+/* Narrow phones: the kicker keeps to one line (at line-height 1 in a round
+   capsule, two lines looked pinched). The clause that goes, "rescored
+   weekly", is also the console's caption just below. */
+@media (max-width: 480px) {
+  .home-kicker-more {
+    display: none;
   }
 }

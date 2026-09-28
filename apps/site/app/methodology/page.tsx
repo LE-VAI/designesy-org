@@ -1,93 +1,72 @@
-// /methodology — Designesy scoring methodology page.
-// The credibility prerequisite: every credible 2026 leaderboard (DesignSystems.one,
-// sealambda shadcn index, MCP Toplist) publishes methodology + score distribution.
-// Without it, cross-listings send traffic to a leaderboard that looks arbitrary.
+// /methodology: how the engine turns checks into a score, and how that method
+// is tested. A reference page, so it reads as one: an index beside the text,
+// the depth (every check, every validation study) behind disclosures, and
+// motion only where it carries meaning (the pipeline's rule drawing in order,
+// weights growing to their size). The formula is plain text from the first
+// paint.
 //
-// This page documents: the 42 checks, their categories and weights, the scoring
-// math (weighted PASS/WARN/FAIL with MANUAL and N/A exclusion), grade bands, the a11y floor,
-// and what the engine measures vs. what it cannot measure (MANUAL and N/A reasons).
-//
-// The CHECKS array below is the human-facing description of the same checks in
-// apps/site/app/api/score/route.ts. The score engine is the source of truth;
-// this page is documentation of it. The REMEDIATION text is pulled from the
-// same route.ts REMEDIATION table. If a check is added to the engine, add it
-// here too — the page header shows a count that must match.
+// Sources: the check registry and weights (lib/check-definitions, which the
+// engine route mirrors), the cohort (lib/data/cohort), and the four validation
+// reports in scripts/, each shown with the date it was generated. The CHECKS
+// prose below documents the registry's checks and is held to it: a check
+// added, removed or moved to another category without the prose following
+// stops the build.
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
+import '../instrument.css';
+import '../engine.css';
+import '../data.css';
 import { Topbar } from '../lib/topbar';
 import { ReadAlong } from '../lib/read-along';
 import { Footer } from '../lib/footer';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
-import { SEED } from '../leaderboard/seed';
-import { CountUp } from '../lib/count-up';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
-import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../lib/check-definitions';
+import {
+  ENGINE_CHECK_COUNT,
+  ENGINE_SCORED_CHECK_COUNT,
+  ENGINE_MANUAL_CHECK_COUNT,
+  ENGINE_VERSION,
+  CATEGORY_WEIGHTS,
+  CHECKS as REGISTRY,
+} from '../lib/check-definitions';
+import { EngineHead } from '../lib/engine/engine-page';
+import { GradeScale } from '../lib/engine/instrument';
+import { display } from '../lib/engine/types';
+import {
+  COHORT,
+  COHORT_STATS,
+  GRADE_COUNTS,
+  GRADES,
+  SCORES_DATE,
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  WEIGHT_TOTAL,
+  fmt,
+  hostOf,
+} from '../lib/data/cohort';
+import { DataFigure, DataTable } from '../lib/data/figure';
+import { CohortStrip } from '../lib/data/strip';
+import { BarList, RangeList } from '../lib/data/bars';
+import { OnThisPage } from '../lib/data/on-this-page';
+import SENSITIVITY from '../../scripts/sensitivity-report.json';
+import RANK_BOUNDS from '../../scripts/rank-bounds-report.json';
+import SCORE_DIFF from '../../scripts/score-diff-report.json';
+import BLIND from '../../scripts/blind-comparison-report.json';
 
 export const metadata: Metadata = pageMeta({
   title: 'Methodology',
   description:
-    `How the Designesy ${ENGINE_CHECK_COUNT}-check engine scores a URL — the full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.`,
+    `How the Designesy ${ENGINE_CHECK_COUNT}-check engine scores a URL. The full methodology: checks, categories, weights, scoring math, grade bands, and the accessibility floor. Deterministic, no LLM.`,
   path: '/methodology',
   ogDescription:
-    `The ${ENGINE_CHECK_COUNT}-check Designesy scoring methodology — weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.`,
+    `The ${ENGINE_CHECK_COUNT}-check Designesy scoring methodology: weights, math, grade bands, and the a11y floor. Fully transparent, deterministic, no LLM.`,
   twitterDescription:
-    `Designesy scoring methodology — ${ENGINE_CHECK_COUNT} checks, 14 categories, deterministic · designesy.org/methodology`,
+    `Designesy scoring methodology: ${ENGINE_CHECK_COUNT} checks, 14 categories, deterministic · designesy.org/methodology`,
 });
-
-// ── Category weights (mirror apps/site/app/api/score/route.ts CATEGORY_WEIGHTS) ──
-const CATEGORY_WEIGHTS: Record<string, number> = {
-  cadence: 18,
-  accessibility: 15,
-  semantic: 12,
-  copywriting: 8,
-  motion: 10,
-  tokens: 9,
-  takt: 8,
-  security: 5,
-  poise: 7,
-  identity: 6,
-  interaction: 6,
-  performance: 6,
-  spec: 4,
-  responsive: 3,
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  cadence: 'Cadence',
-  accessibility: 'Accessibility',
-  semantic: 'Semantic',
-  copywriting: 'Copywriting',
-  motion: 'Motion',
-  tokens: 'Tokens',
-  takt: 'Takt',
-  security: 'Security',
-  poise: 'Poise',
-  identity: 'Identity',
-  interaction: 'Interaction',
-  performance: 'Performance',
-  spec: 'Spec',
-  responsive: 'Responsive',
-};
-
-const CATEGORY_DESCRIPTIONS: Record<string, string> = {
-  cadence: 'Typography rendering discipline — font smoothing, rem scales, line-height, text-wrap, tabular nums, selection styling, font-synthesis, underline-position, skip-ink. The contract section with the most checks (12), weighted highest at 18%.',
-  accessibility: 'WCAG 2.2 AA primitives — contrast, touch targets, heading hierarchy, input font floor, button-text contrast, forced-colors readiness. Carries the a11y floor: if this category scores below 60%, the overall grade is capped at C.',
-  semantic: 'Semantic design vocabulary — does the color system speak in roles (meaning) rather than hues (wavelength)? v42 measures the role-named vs hue-named token share; v43 checks status-state coverage (ok/warn/error/info). Grounded in the contract\'s own role-named palette (--ink, --paper, --surface, --signal, --ok/--warn/--error) and in role-based naming best practice (zeroheight naming guide, Material 3). Wired 2026-08-30 — previously a reserved weight with zero checks. 12% weight, 2 scored checks (v42, v43).',
-  copywriting: 'UX copy discipline — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS. 4 heuristic checks grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG 2.4.4. New in ' + CONTRACT_VERSION + '. 8% weight.',
-  motion: 'Motion hygiene — no transition:all, will-change restricted to transform/opacity, prefers-reduced-motion block, duration tokens present. 4 checks, 10% weight.',
-  tokens: 'Token architecture — --paper foundation present, token layer depth (primitive → semantic → component). 2 scored checks, 9% weight.',
-  takt: 'Interaction feel — press scales above the 0.95 floor (0.96 cells, 0.985 cards, 0.995 surfaces). Named after the German word for precise, musical timing.',
-  security: 'Unicode Security — UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks. Designesy is the only design verification engine that checks this surface. 5% weight, 1 scored check.',
-  poise: 'Interaction poise — hover lifts, press-settle, keyboard-path documentation, sound-toggle aria-pressed. Static half verified from CSS; interaction half requires a browser (MANUAL).',
-  identity: 'Document identity — semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness (EU AI Act Art 50). 6% weight, 2 scored checks (v07, v34).',
-  interaction: 'Focus visibility — :focus-visible rings declared. 1 scored check, 6% weight.',
-  performance: 'Core Web Vitals — LCP, INP, CLS. Requires a CDP/Playwright trace (MANUAL in the static engine). 6% weight, 0 scored checks in the current engine.',
-  spec: `DESIGN.md spec-layer validation — integrates Google\'s @google/design.md CLI linter as the spec layer beneath designesy\'s own ${ENGINE_CHECK_COUNT}-check contract verification. 4% weight, 1 check (N/A if /DESIGN.md is not served).`,
-  responsive: 'Viewport overflow — horizontal overflow at 375/720/860/1080px+. Requires a browser viewport trace (MANUAL in the static engine). 3% weight, 0 scored checks.',
-};
 
 // ── Check definitions (mirror apps/site/app/api/score/route.ts) ──
 interface CheckDef {
@@ -105,21 +84,21 @@ const CHECKS: CheckDef[] = [
     id: 'v01',
     item: 'Token values match live site :root foundation',
     category: 'tokens',
-    how: 'Parses :root custom properties from the fetched CSS. Looks for --paper specifically — the contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation. PASS if --paper resolves to a value.',
+    how: 'Parses :root custom properties from the fetched CSS. Looks for --paper specifically: the contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation. PASS if --paper resolves to a value.',
   },
   {
     id: 'v29',
     item: 'Token architecture: primitive → semantic → component layers',
     category: 'tokens',
-    how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) signals a mature token system. PASS if at least 2 layers are detected.',
+    how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) indicates a mature token system. PASS if at least 2 layers are detected.',
   },
 
   // ── Semantic (12%) ──
   {
     id: 'v42',
-    item: 'Semantic color vocabulary: role-named tokens, not hue-named',
+    item: 'Semantic color vocabulary: role-named tokens rather than hue-named',
     category: 'semantic',
-    how: 'Classifies every color-valued token in :root by name: role words (ink, paper, surface, muted, danger, success, accent, border…) vs hue words (blue, slate, amber…) and numeric scale suffixes (-500). Brand coinages matching neither list are excluded from the share. PASS if ≥60% role-named with ≥3 distinct roles; WARN otherwise (WARN-only — style craft, not user harm). SKIP if fewer than 4 color tokens. Mirrors the contract\'s own role-named palette.',
+    how: 'Classifies every color-valued token in :root by name: role words (ink, paper, surface, muted, danger, success, accent, border…) vs hue words (blue, slate, amber…) and numeric scale suffixes (-500). Brand coinages matching neither list are excluded from the share. PASS if ≥60% role-named with ≥3 distinct roles; WARN otherwise (WARN-only, because it is style craft with no user harm). SKIP if fewer than 4 color tokens. Mirrors the contract\'s own role-named palette.',
   },
   {
     id: 'v43',
@@ -134,7 +113,7 @@ const CHECKS: CheckDef[] = [
     item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+',
     category: 'responsive',
     how: 'Requires rendering the page at four viewport widths and measuring scrollWidth > clientWidth. The static engine cannot do this.',
-    manualReason: 'Requires a browser viewport trace — the engine fetches CSS, not a rendered DOM.',
+    manualReason: 'Requires a browser viewport trace: the engine fetches CSS, and overflow only exists in a rendered layout.',
   },
 
   // ── Interaction (6%) ──
@@ -142,7 +121,7 @@ const CHECKS: CheckDef[] = [
     id: 'v03',
     item: 'Primary interactive elements show focus-visible rings',
     category: 'interaction',
-    how: 'Regex-searches the CSS for :focus-visible declarations. PASS if any :focus-visible rule is found. This is the keyboard-navigation visibility primitive — without it, Tab users cannot see where they are.',
+    how: 'Regex-searches the CSS for :focus-visible declarations. PASS if any :focus-visible rule is found. This is the keyboard-navigation visibility primitive: without it, Tab users cannot see where they are.',
   },
 
   // ── Poise (7%) ──
@@ -151,7 +130,7 @@ const CHECKS: CheckDef[] = [
     item: 'Sound toggle flips aria-pressed and applies the audio preference',
     category: 'poise',
     how: 'Requires clicking a sound toggle and verifying aria-pressed flips and a [data-audio] attribute is applied. The static engine cannot interact with the DOM.',
-    manualReason: 'Requires live DOM interaction — the engine does not execute JavaScript or click elements.',
+    manualReason: 'Requires live DOM interaction; the engine does not execute JavaScript or click elements.',
   },
   {
     id: 'v08',
@@ -171,13 +150,13 @@ const CHECKS: CheckDef[] = [
     id: 'v05',
     item: 'prefers-reduced-motion disables entrance and wordmark breath',
     category: 'motion',
-    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive — without it, motion-sensitive users cannot use the site.',
+    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive: without it, motion-sensitive users cannot use the site.',
   },
   {
     id: 'v11',
     item: 'No transition:all in the live stylesheet',
     category: 'motion',
-    how: 'Regex-searches for transition: all (case-insensitive). FAIL if found. transition: all causes layout-thrash and surprises — the contract requires named properties only.',
+    how: 'Regex-searches for transition: all (case-insensitive). FAIL if found. transition: all causes layout-thrash and surprises; the contract requires named properties only.',
   },
   {
     id: 'v12',
@@ -227,7 +206,7 @@ const CHECKS: CheckDef[] = [
     id: 'v35',
     item: 'Forced-colors readiness: @media (forced-colors: active) block present',
     category: 'accessibility',
-    how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible.',
+    how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page; without this media query, critical UI becomes illegible.',
   },
 
   // ── Identity (6%) — engine returns these as category: 'identity' ──
@@ -253,9 +232,9 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v13',
-    item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
+    item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)',
     category: 'takt',
-    how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (glitch, not a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum — lower reads as a glitch.',
+    how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (a glitch rather than a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum; lower reads as a glitch.',
   },
 
   // ── Cadence (18%) — highest weight, most checks ──
@@ -275,7 +254,7 @@ const CHECKS: CheckDef[] = [
     id: 'v16',
     item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed',
     category: 'cadence',
-    how: 'Counts rem-based vs px-based font-size declarations. PASS if the majority are rem and root is 16px. The 16px root is the Cadence floor — iOS Safari auto-zooms inputs below 16px.',
+    how: 'Counts rem-based vs px-based font-size declarations. PASS if the majority are rem and root is 16px. The 16px root is the Cadence floor: iOS Safari auto-zooms inputs below 16px.',
   },
   {
     id: 'v17',
@@ -287,7 +266,7 @@ const CHECKS: CheckDef[] = [
     id: 'v18',
     item: 'text-wrap: balance + pretty both present in live CSS',
     category: 'cadence',
-    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement — unsupported browsers ignore them.',
+    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement: unsupported browsers ignore them.',
   },
   {
     id: 'v19',
@@ -297,27 +276,27 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v20',
-    item: '::selection styled with var(--signal) — not browser default',
+    item: '::selection styled with var(--signal) instead of the browser default',
     category: 'cadence',
-    how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token, not the browser default. The selection color is a small but loud brand surface.',
+    how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token instead of the browser default. The selection color is a small but loud brand surface.',
   },
   {
     id: 'v26',
     item: 'Font family count ≤3 (body + heading + mono)',
     category: 'cadence',
-    how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4-5. FAIL if 6+. More than 3 families signals inconsistency and hurts performance.',
+    how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4 or 5. FAIL if 6+. More than 3 families suggests inconsistency and hurts performance.',
   },
   {
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose — paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45-75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it — which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed, not applied silently.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose: paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45 to 75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it, which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed rather than applied silently.',
   },
   {
     id: 'x01',
     item: 'font-synthesis: none set (Cadence resolved tension)',
     category: 'cadence',
-    how: 'Searches for font-synthesis: none. PASS if declared. WARN if font-synthesis is declared but not set to none, or if no rule is found. Prevents the browser from synthesizing bold/italic faces when the real weights are not loaded — a common cause of blurry headlines on Windows.',
+    how: 'Searches for font-synthesis: none. PASS if declared. WARN if font-synthesis is declared but not set to none, or if no rule is found. Prevents the browser from synthesizing bold/italic faces when the real weights are not loaded, a common cause of blurry headlines on Windows.',
   },
   {
     id: 'x02',
@@ -329,7 +308,7 @@ const CHECKS: CheckDef[] = [
     id: 'x03',
     item: 'text-decoration-skip-ink: auto set',
     category: 'cadence',
-    how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
+    how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y), a small typographic refinement that shows attention to craft.',
   },
 
   // ── Security (5%) — v0.4.0 ──
@@ -337,7 +316,7 @@ const CHECKS: CheckDef[] = [
     id: 'v36',
     item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers',
     category: 'security',
-    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk — e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
   },
 
   // ── Spec (4%) — v0.4.0 ──
@@ -345,16 +324,16 @@ const CHECKS: CheckDef[] = [
     id: 'v37',
     item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
     category: 'spec',
-    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served — this is expected, as no public convention requires it yet.',
-    skipReason: 'N/A if /DESIGN.md is not served at the target origin — no public convention requires it yet.',
+    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
+    skipReason: 'N/A if /DESIGN.md is not served at the target origin; no public convention requires it yet.',
   },
 
   // ── Copywriting (8%) — v0.4.0 ──
   {
     id: 'v38',
-    item: 'Button text is a verb phrase or recognized command — not a bare noun',
+    item: 'Button text is a verb phrase or recognized command (not a bare noun)',
     category: 'copywriting',
-    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic — review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
+    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic: review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
   },
   {
     id: 'v39',
@@ -364,7 +343,7 @@ const CHECKS: CheckDef[] = [
   },
   {
     id: 'v40',
-    item: 'Link text is descriptive — not bare "click here", "learn more", "here"',
+    item: 'Link text is descriptive (not bare "click here", "learn more", "here")',
     category: 'copywriting',
     how: 'Parses anchor elements and checks link text against a blocklist of non-descriptive patterns (click here, here, learn more, read more, more, link, this, that, continue, see more, view details). WARN if matched. N/A if no anchors. WCAG 2.4.4 Link Purpose: link text should describe the destination.',
   },
@@ -381,1104 +360,854 @@ const CHECKS: CheckDef[] = [
     item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1',
     category: 'performance',
     how: 'Requires a CDP/Playwright trace to measure LCP, INP, and CLS against the Google thresholds. The static engine cannot do this.',
-    manualReason: 'Requires a CDP trace — the engine fetches HTML/CSS, not a rendered page with timing data.',
+    manualReason: 'Requires a CDP trace: the engine fetches HTML and CSS, and vitals need a rendered page with timing data.',
   },
 ];
 
-// ── Grade bands (mirror computeGrade in route.ts) ──
-const GRADE_BANDS = [
-  { grade: 'A', min: 90, color: 'var(--signal-light)', description: 'Reference-tier craft. The site ships the contract primitives at :root and passes the majority of checks across all categories.' },
-  { grade: 'B', min: 80, color: 'var(--activation)', description: 'Strong. A few checks are missing or WARN, but the foundation is solid.' },
-  { grade: 'C', min: 70, color: 'var(--line-strong)', description: 'Acceptable. Notable gaps in cadence, motion, or accessibility. The a11y floor caps here if accessibility < 60%.' },
-  { grade: 'D', min: 60, color: 'var(--line)', description: 'Below standard. Significant gaps across multiple categories. Most sites land here — the contract is demanding.' },
-  { grade: 'F', min: 0, color: 'var(--line-faint)', description: 'Needs work. The site does not ship the contract primitives. Common for sites with no :root token system, no reduced-motion block, no font-synthesis rule.' },
+// The prose above must document exactly the registry's checks, each in its
+// registry category. Drift stops the build here, before it reaches a reader.
+{
+  const drift = [
+    ...REGISTRY.filter((r) => !CHECKS.some((c) => c.id === r.id && c.category === r.category)).map((r) => `${r.id} (${r.category}) lacks prose`),
+    ...CHECKS.filter((c) => !REGISTRY.some((r) => r.id === c.id)).map((c) => `${c.id} is not in the registry`),
+  ];
+  if (drift.length) throw new Error(`methodology: check prose has drifted from lib/check-definitions: ${drift.join('; ')}`);
+}
+
+const itemOf = (id: string) => REGISTRY.find((r) => r.id === id)?.item ?? id;
+const label = (k: string) => CATEGORY_LABELS[k] ?? k;
+const share = (w: number) => `${((w / WEIGHT_TOTAL) * 100).toFixed(1)}%`;
+
+const MANUAL_CHECKS = ENGINE_MANUAL_CHECK_COUNT;
+const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
+const scoredIn = (k: string) => REGISTRY.filter((r) => r.category === k && r.type === 'auto').length;
+const checksIn = (k: string) => CHECKS.filter((c) => c.category === k);
+
+const CATEGORY_NOTES: Record<string, string> = {
+  cadence:
+    'Typography rendering discipline: font smoothing, rem scales, line-height, text-wrap, tabular figures, selection styling, font synthesis, underline position and skip-ink.',
+  accessibility:
+    'WCAG 2.2 AA primitives: contrast, touch targets, heading hierarchy, the input font floor, button text contrast and forced-colors readiness. It carries the accessibility floor.',
+  semantic:
+    'Whether the color system speaks in roles (ink, surface, danger) or in hues (blue-500), and covers the status states. Wired on 2026-08-30, so batch runs before that date score it empty.',
+  copywriting:
+    'UX copy discipline: verb-led buttons, no trailing periods, descriptive link text, no all-caps. Heuristics grounded in NN/g, Microsoft Fluent, IBM Carbon and WCAG 2.4.4.',
+  motion: 'Motion hygiene: no transition: all, will-change kept to transform and opacity, a reduced-motion block, and duration tokens.',
+  tokens: 'Token architecture: the --paper foundation, and whether tokens are layered from primitive to semantic to component.',
+  takt: 'Interaction feel: press scales above the 0.95 floor (0.96 for cells, 0.985 for cards, 0.995 for surfaces). Named for the German word for precise, musical timing.',
+  security: 'Unicode security: UTS #39 confusable detection in token names and CSS identifiers, against Cyrillic and Greek homoglyphs shadowing Latin names.',
+  poise:
+    'Interaction poise: hover lifts, press-settle, keyboard-path documentation and the sound toggle. The static half is read from CSS; the interaction half needs a browser.',
+  identity: 'Document identity: semantic landmarks (h1, title, meta description, main, header, nav) and AI-disclosure readiness (EU AI Act, Article 50).',
+  interaction: 'Focus visibility: :focus-visible rings declared.',
+  performance: 'Core Web Vitals (LCP, INP, CLS). They need a CDP or Playwright trace, so the static engine marks them manual; the weight is held in reserve.',
+  spec: 'The DESIGN.md spec layer: Google’s @google/design.md linter, run when a site serves /DESIGN.md and not applicable otherwise.',
+  responsive: 'Horizontal overflow at 375, 720, 860 and 1080 px and up. It needs a browser viewport, so the static engine marks it manual; the weight is held in reserve.',
+};
+
+const BAND_NOTES: Record<string, string> = {
+  A: 'Ships the contract’s primitives and passes nearly every check the engine can run.',
+  B: 'A solid foundation, with a few checks missing or warned.',
+  C: 'Clear gaps in cadence, motion or accessibility. The accessibility floor caps a site here.',
+  D: 'Gaps across several categories.',
+  F: 'Missing the primitives the contract reads: token systems, reduced-motion blocks, font-synthesis rules.',
+};
+const BAND_RANGE: Record<string, string> = { A: '90 and up', B: '80 to 89.9', C: '70 to 79.9', D: '60 to 69.9', F: 'under 60' };
+
+// The scoring formula, line by line: a comment line starts with '#'.
+const FORMULA: string[] = [
+  '# Per-check weight: the category weight, split across its scored checks',
+  'checkWeight = CATEGORY_WEIGHTS[category] / count(scored checks in category)',
+  '',
+  '# Status scoring',
+  'PASS    → 1.0 × checkWeight',
+  'WARN    → 0.5 × checkWeight',
+  'FAIL    → 0',
+  'MANUAL  → excluded (not counted in the total)',
+  'N/A     → excluded (not counted in the total)',
+  '',
+  '# Step 1: weighted compliance',
+  'weightedScore = round( Σ(weightedPoints) / Σ(weightedTotal) × 1000 ) / 10',
+  '',
+  '# Step 2: anti-slop deduction, 12 rules, up to 20 points',
+  'slopTotal = min( Σ(per-rule deductions), 20 )',
+  'score = max( 0, weightedScore − slopTotal )',
+  '',
+  '# Step 3: originality lift, up to 8 points (halved when slop ≥ 12)',
+  'originalityPoints = min( rawOriginality, 8 )',
+  'score = min( 100, score + originalityPoints )',
+  '',
+  '# Step 4: accessibility floor',
+  'if (a11yPct < 60) score = min( score, 70 )',
+  '',
+  '# Step 5: hard-fail ceilings',
+  'if (v06 FAIL) score = min( score, 65 )              # contrast',
+  'if (v22 | v02 | v16 FAIL) score = min( score, 70 )  # CTA contrast, overflow, rem',
+  'if (v24 | v25 FAIL) score = min( score, 75 )        # touch targets, headings',
+  '',
+  '# Per-category sub-score: step 1, scoped to one category',
+  'categoryScore = round( Σ(catPoints) / Σ(catWeight) × 1000 ) / 10',
 ];
 
-// Group checks by category for display — keep ALL declared categories
-// so the category table documents the full weight table transparently.
-const CATEGORIES = Object.keys(CATEGORY_WEIGHTS);
-const CHECKS_BY_CATEGORY = CATEGORIES.map((cat) => ({
-  category: cat,
-  weight: CATEGORY_WEIGHTS[cat],
-  checks: CHECKS.filter((c) => c.category === cat),
-}));
+const STEPS = [
+  { title: 'Weigh the checks', text: 'Each scored check carries its category’s weight, split across that category’s scored checks. Pass counts 1, warn 0.5, fail 0.' },
+  { title: 'Subtract slop', text: 'Twelve anti-slop rules take up to 20 points off for recognisable template patterns.' },
+  { title: 'Add originality', text: 'Seven kinds of craft add up to 8 points, halved when the slop is heavy.' },
+  { title: 'Apply the floor', text: 'Accessibility under 60 caps the score at 70, a C.' },
+  { title: 'Apply the ceilings', text: 'Six severe failures cap the score at 65, 70 or 75.' },
+];
 
-const TOTAL_WEIGHT = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
-// Derived from the registry, not from this page's local arithmetic.
-//
-// The local form was CHECKS.filter(c => !c.skipReason && !c.manualReason) = 38,
-// which EXCLUDES v37 (the DESIGN.md spec check) because this page marks it
-// skipReason as "N/A if /DESIGN.md is not served". That is the worst case, and
-// it is the correct answer for a site without a DESIGN.md — but it is not the
-// answer for designesy.org, which SERVES one: /DESIGN.md returns 200 and the
-// engine scores v37 PASS. So the page printed "38 Scored" while the engine
-// reported scored=39 on the same site, in three separate places.
-//
-// The engine's own count is the honest headline because it reflects what the
-// registry contains; the v37 conditional is already disclosed on v37's own row,
-// where a reader can see the skip condition stated. Removing the contradiction
-// matters more here than which end of the range the headline picks.
-const SCORED_CHECKS = ENGINE_SCORED_CHECK_COUNT;
-const MANUAL_CHECKS = CHECKS.filter((c) => c.manualReason).length;
-const SKIP_CHECKS = CHECKS.filter((c) => c.skipReason).length;
+// Validation reports (scripts/*.json), with their own dates.
+const day = (iso: string) => iso.slice(0, 10);
+type Knob = { label: string; gradeChanges: number; rankPositionsMoved: number; maxScoreDelta: number };
+const KNOBS = Object.entries(SENSITIVITY.leaderboard as Record<string, Knob>).map(([key, k]) => ({ key, ...k }));
+const MOVING = KNOBS.filter((k) => k.gradeChanges > 0).sort((a, b) => b.gradeChanges - a.gradeChanges || b.rankPositionsMoved - a.rankPositionsMoved);
+const STILL = KNOBS.length - MOVING.length;
+const knob = (key: string) => KNOBS.find((k) => k.key === key);
+const UNIFORM = KNOBS.filter((k) => /^w[+-]/.test(k.key));
+const OAT = KNOBS.filter((k) => k.key.startsWith('oat-'));
+const OAT_MAX_FLIPS = Math.max(...OAT.map((k) => k.gradeChanges));
+const OAT_MAX_DELTA = Math.max(...OAT.map((k) => k.maxScoreDelta));
 
-// ── Score distribution from the leaderboard SEED ──
-const SCORED_SITES = SEED.filter((s) => s.score !== null && s.score !== undefined);
-const GRADE_COUNTS: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
-for (const s of SCORED_SITES) {
-  if (s.grade && s.grade in GRADE_COUNTS) GRADE_COUNTS[s.grade]++;
-}
-const SCORED_TOTAL = SCORED_SITES.length;
-const MAX_GRADE_COUNT = Math.max(1, ...Object.values(GRADE_COUNTS));
-const SCORE_VALUES = SCORED_SITES.map((s) => s.score as number);
-const MEAN_SCORE = SCORE_VALUES.length > 0 ? Math.round((SCORE_VALUES.reduce((a, b) => a + b, 0) / SCORE_VALUES.length) * 10) / 10 : 0;
-const MIN_SCORE = SCORE_VALUES.length > 0 ? Math.min(...SCORE_VALUES) : 0;
-const MAX_SCORE = SCORE_VALUES.length > 0 ? Math.max(...SCORE_VALUES) : 0;
+type RankRow = { url: string; baselineRank: number; bestRank: number; worstRank: number; bandWidth: number };
+const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineRank - b.baselineRank);
+const WIDEST = [...RANKS].sort((a, b) => b.bandWidth - a.bandWidth)[0];
 
-// Per-grade histogram bar config (colors mirror the leaderboard histogram)
-const HIST_BARS = GRADE_BANDS.map((band) => {
-  const bgMap: Record<string, string> = {
-    A: 'var(--signal-dim)',
-    B: 'rgba(254, 204, 52, 0.14)',
-    C: 'var(--surface-hover)',
-    D: 'var(--surface-soft)',
-    F: 'transparent',
-  };
-  return {
-    grade: band.grade,
-    min: band.min,
-    color: band.color,
-    bg: bgMap[band.grade] || 'var(--surface-soft)',
-    count: GRADE_COUNTS[band.grade] || 0,
-  };
-});
+type DiffRow = { url: string; v030: { score: number; grade: string }; v040: { score: number; grade: string }; delta: number };
+// A site the engine could not read on a run is an error row in that report:
+// named under the table, never scored (scripts/live-score.mjs).
+const DIFF_ALL = SCORE_DIFF.rows as unknown as (DiffRow | { url: string; error: string })[];
+const DIFF_ROWS = DIFF_ALL.filter((r): r is DiffRow => !('error' in r));
+const DIFF_UNREAD = DIFF_ALL.filter((r) => 'error' in r);
+/** " Left out, the engine could not read them on that run: a, b." or "". */
+const unread = (list: readonly { url: string }[] | undefined) =>
+  list && list.length ? ` Left out, the engine could not read them on that run: ${list.map((x) => hostOf(x.url)).join(', ')}.` : '';
+const ORDER = 'FDCBA';
+const DIFF_UP = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) > ORDER.indexOf(r.v030.grade)).length;
+const DIFF_DOWN = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) < ORDER.indexOf(r.v030.grade)).length;
+const DIFF_MAX_UP = [...DIFF_ROWS].sort((a, b) => b.delta - a.delta)[0];
+const DIFF_MAX_DOWN = [...DIFF_ROWS].sort((a, b) => a.delta - b.delta)[0];
+
+const K = BLIND.kappa;
+const AXE = (BLIND.method.match(/axe-core [\d.]+/) ?? ['axe-core'])[0];
+
+// The rule tables, as data: what the engine route implements for slop,
+// originality and the hard-fail ceilings.
+const SLOP_RULES = [
+  { id: 'S1', name: 'Overused fonts', pattern: <>Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif or Geist in <code>font-family</code></>, sev: 5, trigger: <>1+ match in any <code>font-family</code></> },
+  { id: 'S2', name: 'Full-page gradient', pattern: <>A multi-color <code>linear-gradient</code> on body or html, or a fixed or <code>inset: 0</code> overlay (1px hairlines excluded)</>, sev: 5, trigger: <>A gradient with <code>position: fixed</code>, <code>inset: 0</code> or <code>100vw</code>/<code>100vh</code> in the same block</> },
+  { id: 'S3', name: 'Purple or violet gradient', pattern: <><code>linear-gradient</code> with any of #615fff, #8e51ff, #4f39f6, #7f22fe, #a855f7, #9333ea, #7c3aed, #6d28d9, #5b21b6, #4c1d95</>, sev: 4, trigger: <>1+ match in a <code>background</code> with a gradient</> },
+  { id: 'S4', name: 'Gradient text', pattern: <><code>background-clip: text</code> over a gradient spanning two or more hue families (45° buckets; <code>var()</code> stops and neutrals ignored)</>, sev: 4, trigger: <>2+ distinct non-neutral hue families in the stops</> },
+  { id: 'S5', name: 'Default palette hexes', pattern: <>3+ of #0f172a, #1e293b, #334155, #615fff, #8e51ff, #4f39f6, #7f22fe, #6366f1, #8b5cf6, #a78bfa, #0d6efd, #007bff</>, sev: 5, trigger: <>3+ hex matches in CSS</> },
+  { id: 'S6', name: 'Repeated card grid', pattern: <>3+ classes matching <code>.(card|panel|tile|feature|item|box|cell|block)</code> on a repeating grid</>, sev: 5, trigger: <>3+ card-like classes and <code>grid-template-columns: repeat(auto-fit|auto-fill|N)</code></> },
+  { id: 'S7', name: 'Emoji as icons', pattern: <>Emoji (U+1F300 to 1FAFF, 2600 to 27BF, 1F1E6 to 1F1FF) inside <code>&lt;button&gt;</code> or a CTA link</>, sev: 4, trigger: <>2+ emoji in buttons or CTAs</> },
+  { id: 'S8', name: 'AI-pill badges', pattern: <>“AI-powered”, “Generate”, “Chat with AI”, “Powered by AI”, “Built with AI”, “AI-driven”</>, sev: 3, trigger: <>1+ match in the HTML text</> },
+  { id: 'S9', name: 'Lorem ipsum', pattern: <>“lorem ipsum”, “dolor sit amet”, “consectetur adipiscing”, “sed do eiusmod”, “tempor incididunt”</>, sev: 5, trigger: <>1+ match in the HTML text</> },
+  { id: 'S10', name: 'Single font family', pattern: <>One non-generic <code>font-family</code> on the whole page (serif, sans-serif, monospace and system-ui excluded)</>, sev: 4, trigger: <>Exactly one family name</> },
+  { id: 'S11', name: 'Marketing buzzwords', pattern: <>2+ of the rule&apos;s word list (streamline, empower, world-class, enterprise-grade, next-generation, disrupt and similar)</>, sev: 3, trigger: <>2+ in the body text, tags stripped</> },
+  { id: 'S12', name: 'Placeholder images', pattern: <>URLs from via.placeholder, placehold.co, placeholder.com, dummyimage, picsum.photos, loremflickr or unsplash.com/random</>, sev: 4, trigger: <>1+ match in the HTML</> },
+];
+
+const ORIGINALITY = [
+  { id: 'O1', name: 'Bespoke easing', detection: <>Distinct <code>cubic-bezier()</code> curves outside the preset set (ease and its variants, Material, Tailwind v4, Bootstrap). A <code>linear()</code> spring with a body of 20+ characters counts as overshoot.</>, points: '1 for 1 to 2 curves · 3 for 3+ · +2 with overshoot · at most 5' },
+  { id: 'O2', name: 'Modern layout', detection: <>How many of <code>clamp()</code>, <code>container-type</code> or <code>@container</code>, and <code>subgrid</code> are present</>, points: '1 for one · 2 for two or more' },
+  { id: 'O3', name: 'Typographic detail', detection: <><code>font-feature-settings</code>, <code>font-variant-numeric</code>, <code>hanging-punctuation</code>, <code>text-underline-offset</code>, <code>font-optical-sizing</code></>, points: '1 for one · 2 for two or more' },
+  { id: 'O4', name: 'Tiered reduced motion', detection: <>A <code>prefers-reduced-motion</code> query that is targeted, where a blanket <code>{'* { animation: none }'}</code> earns nothing</>, points: '1, when targeted' },
+  { id: 'O5', name: 'Motion choreography', detection: <>Scroll-driven animation (<code>animation-timeline</code>, <code>view-timeline</code>, <code>animation-range</code>), view transitions, or named <code>@keyframes</code></>, points: '1 for 3+ named keyframes · 2 for scroll-driven or view transitions' },
+  { id: 'O6', name: 'Bespoke iconography', detection: <>Inline <code>&lt;svg viewBox&gt;</code> or <code>&lt;symbol&gt;</code> elements, placed by hand rather than from an icon font</>, points: '1 for 3+ inline SVGs or 2+ symbols' },
+  { id: 'O7', name: 'Semantic tokens', detection: <>Role-named custom properties such as <code>--surface</code>, <code>--ink</code>, <code>--paper</code>, over hue names like <code>--color-blue-500</code>. The shadcn fingerprint (6+ of its default names) scores zero.</>, points: '2 for 4+ · 4 for 8+ · +2 layering · +2 theming · at most 6' },
+];
+
+const CEILINGS = [
+  { id: 'v06', name: 'Contrast readable', cap: 65, why: 'Text many readers cannot read: a failure of basic legibility.' },
+  { id: 'v22', name: 'CTA contrast', cap: 70, why: 'The primary call to action is hard to read.' },
+  { id: 'v02', name: 'Horizontal overflow', cap: 70, why: 'Content is cut off or scrolls sideways on small viewports.' },
+  { id: 'v16', name: 'Rem scale', cap: 70, why: 'A root font size under 16px sets off iOS Safari’s auto-zoom.' },
+  { id: 'v24', name: 'Touch targets', cap: 75, why: 'Controls under 44px are hard to use on touch screens.' },
+  { id: 'v25', name: 'Heading hierarchy', cap: 75, why: 'More than one h1, or skipped levels: the outline is broken.' },
+];
+
+const TOC = [
+  { id: 'scoring-math', label: 'How a score is made' },
+  { id: 'category-weights', label: 'Category weights' },
+  { id: 'grade-bands', label: 'Grade bands' },
+  { id: 'score-distribution', label: 'The cohort today' },
+  { id: 'a11y-floor', label: 'Accessibility floor' },
+  { id: 'anti-slop', label: 'Anti-slop deduction' },
+  { id: 'originality-lift', label: 'Originality lift' },
+  { id: 'hard-fail-ceilings', label: 'Hard-fail ceilings' },
+  { id: 'what-engine-measures', label: 'What it measures' },
+  { id: 'what-engine-skips', label: 'What it skips' },
+  { id: 'validation', label: 'How the method is tested' },
+  { id: 'checks', label: 'Every check' },
+  { id: 'exports', label: 'Data exports' },
+];
 
 export default function MethodologyPage() {
   return (
     <>
       <ReadingProgress />
       <Topbar scrolled />
-
-      <main id="main-content" data-pagefind-body className="surface-page methodology-page" data-pagefind-meta="priority:high">
-        <style>{`
-          .methodology-page .methodology-section { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
-
-          /* SPACING TIERS — hierarchy without new markup.
-             All 31 sections used one value (64px), which is measurably
-             consistent and editorially monotonous: nothing signals where the
-             argument turns. Ranked by measured text volume, the sections split
-             cleanly into three bands, and CSS keyed on the existing ids gives
-             each band its own room. No markup touched, no new classes.
-
-             SCOPED TO .methodology-page DELIBERATELY. 'doctrine-section' is used
-             411 times across 65 files sitewide; tiers applied to it would have
-             restyled the entire site to solve a problem on one page. */
-          .methodology-page .methodology-section#scoring-math,
-          .methodology-page .methodology-section#anti-slop,
-          .methodology-page .methodology-section#originality-lift {
-            /* Major: 3.5-4.4KB of prose each, the parts the page exists to explain. */
-            padding-block: clamp(3.5rem, 7vw, 5.5rem);
-          }
-          .methodology-page .methodology-section#what-engine-skips,
-          .methodology-page .methodology-section#sensitivity,
-          .methodology-page .methodology-section#score-diff,
-          .methodology-page .methodology-section#rank-bounds {
-            /* Compact: under 1.4KB each, supporting detail rather than headline. */
-            padding-block: clamp(2rem, 3.5vw, 2.75rem);
-          }
-          .methodology-page .methodology-prose { max-width: 66ch; }
-          .methodology-page .methodology-prose p { color: var(--muted); font-size: 1rem; line-height: 1.6; margin: 0 0 1rem; }
-          .methodology-page .methodology-prose strong { color: var(--ink); font-weight: 600; }
-          .methodology-page .methodology-prose code { font-family: var(--mono, ui-monospace, monospace); font-size: 0.88rem; background: var(--surface); padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid var(--line-faint); color: var(--ink); }
-          .methodology-page .methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.875rem; margin: 1.5rem 0; }
-          .methodology-page .methodology-stat { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--inner-light); min-width: 0; }
-          .methodology-page .methodology-stat-num { display: block; font-family: var(--mono, ui-monospace, monospace); font-size: 1.6rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-          .methodology-page .methodology-stat-label { display: block; margin-top: 0.4rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted-dim); }
-          .methodology-page .weight-table-wrap { overflow-x: auto; margin: 1.25rem 0; -webkit-overflow-scrolling: touch; }
-          .methodology-page .weight-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; min-width: 420px; }
-          .methodology-page .weight-table th { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted-dim); font-weight: 600; text-align: left; padding: 0.5rem 0.625rem; border-bottom: 1px solid var(--line); }
-      .methodology-page .weight-table th.wt-num { text-align: right; }
-          .methodology-page .weight-table td { padding: 0.625rem; border-bottom: 1px solid var(--line-faint); font-size: 0.88rem; color: var(--muted); vertical-align: top; }
-          .methodology-page .weight-table td.wt-num { font-family: var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
-          .methodology-page .weight-table td.wt-name { color: var(--ink); font-weight: 600; }
-          .methodology-page .weight-bar { display: inline-block; height: 0.5rem; border-radius: 2px; background: var(--signal-dim); vertical-align: middle; margin-right: 0.5rem; min-width: 2px; }
-          .methodology-page .grade-bands { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.25rem 0; }
-          .methodology-page .grade-band { display: grid; grid-template-columns: 2.5rem 4rem 1fr; gap: 0.75rem; align-items: start; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-          .methodology-page .grade-band-letter { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 1.1rem; text-align: center; padding: 0.25rem 0; border-radius: var(--radius-sm); border: 1px solid var(--line); }
-          .methodology-page .grade-band-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; padding-top: 0.35rem; }
-          .methodology-page .grade-band-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
-          .methodology-page .score-distribution { max-width: var(--maxw, 1080px); margin: 0 auto; padding: clamp(2.5rem, 5vw, 4rem) 1.5rem; }
-          .methodology-page .score-dist-histogram { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.625rem; align-items: end; min-height: 140px; margin: 1.5rem 0; }
-          .methodology-page .score-dist-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
-          .methodology-page .score-dist-bar-count { font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
-          .methodology-page .score-dist-bar-wrap { width: 100%; height: 100px; display: flex; align-items: flex-end; justify-content: center; }
-          .methodology-page .score-dist-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; border: 1px solid var(--line-faint); border-bottom: none; transform-origin: bottom center; animation: scoreDistBarGrow var(--duration, 0.8s) var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
-          @keyframes scoreDistBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-          @media (prefers-reduced-motion: reduce) { .methodology-page .score-dist-bar { animation: none; transform: none; } }
-          .methodology-page .score-dist-label { width: 100%; text-align: center; padding-top: 0.4rem; border-top: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
-          .methodology-page .score-dist-grade { font-family: var(--mono, ui-monospace, monospace); font-weight: 700; font-size: 0.9rem; }
-          .methodology-page .score-dist-range { font-family: var(--mono, ui-monospace, monospace); font-size: 0.68rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; }
-          .methodology-page .score-dist-headline { font-size: 0.92rem; color: var(--muted); line-height: 1.6; margin: 1rem 0 0; max-width: 66ch; }
-          .methodology-page .score-dist-headline strong { color: var(--ink); font-weight: 600; }
-          .methodology-page .check-group { margin: 2.5rem 0; }
-          .methodology-page .check-group-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
-          .methodology-page .check-group-name { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
-          .methodology-page .check-group-weight { font-family: var(--mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--muted-dim); font-variant-numeric: tabular-nums; }
-          .methodology-page .check-group-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; margin-bottom: 1rem; }
-          .methodology-page .check-row { padding: 0.875rem 0; border-bottom: 1px solid var(--line-faint); }
-          .methodology-page .check-row:last-child { border-bottom: none; }
-          .methodology-page .check-row-head { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
-          .methodology-page .check-id { font-family: var(--mono, ui-monospace, monospace); font-size: 0.72rem; font-weight: 600; color: var(--signal-light); background: var(--signal-dim); padding: 0.1rem 0.4rem; border-radius: 3px; letter-spacing: 0.02em; }
-          .methodology-page .check-item { font-size: 0.92rem; color: var(--ink); font-weight: 500; line-height: 1.4; }
-          /* max-width is load-bearing, not cosmetic. Without it this line ran
-             the full 1032px container — 130 characters at 13.12px, 73% over the
-             ~75-character readable maximum, across 42 blocks on this page. The
-             rest of the site caps prose at 66ch for exactly this reason. */
-          .methodology-page .check-how { font-size: 0.82rem; color: var(--muted); line-height: 1.55; margin: 0 0 0 0; max-width: 66ch; }
-          .methodology-page .check-skip { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.5rem; font-size: 0.7rem; font-family: var(--mono, ui-monospace, monospace); color: var(--muted-dim); background: var(--surface-soft); border: 1px solid var(--line-faint); border-radius: 3px; letter-spacing: 0.02em; }
-          .methodology-page .methodology-formula { padding: 1rem 1.25rem; background: var(--surface); background-image: var(--surface-card-gradient); border: 1px solid var(--line); border-radius: var(--radius); margin: 1.25rem 0; font-family: var(--mono, ui-monospace, monospace); font-size: 0.82rem; line-height: 1.7; color: var(--ink); overflow-x: auto; box-shadow: var(--inner-light); }
-          .methodology-page .methodology-formula .formula-comment { color: var(--muted-dim); }
-          .methodology-page .methodology-callout { padding: 1rem 1.25rem; background: var(--signal-dim); border: 1px solid var(--signal-light); border-radius: var(--radius); margin: 1.25rem 0; font-size: 0.88rem; color: var(--ink); line-height: 1.55; max-width: 66ch; }
-          .methodology-page .methodology-callout strong { font-weight: 700; }
-          .methodology-page .methodology-toc { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); margin: 1.5rem 0; font-size: 0.85rem; }
-          .methodology-page .methodology-toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line-faint); }
-          .methodology-page .methodology-toc a:hover { color: var(--ink); border-bottom-color: var(--line-strong); }
-          .methodology-page .methodology-toc ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.3rem 1rem; }
-          @media (max-width: 560px) {
-            .methodology-page .grade-band { grid-template-columns: 2rem 3.5rem 1fr; gap: 0.5rem; }
-            .methodology-page .methodology-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
-            .methodology-page .score-dist-bar-wrap { height: 70px; }
-            .methodology-page .score-dist-range { display: none; }
-          }
-          @media (max-width: 380px) {
-            .methodology-page .methodology-grid { grid-template-columns: 1fr; }
-          }
-          }
-        `}</style>
-
-        <section className="surface-header fade-up methodology-section">
-          <p className="surface-eyebrow" data-scramble>Verification transparency</p>
-          <h1 className="surface-title" data-scramble>Methodology</h1>
-          <p className="surface-lede">
-            The full scoring methodology behind the Designesy {ENGINE_CHECK_COUNT}-check engine.
-            Deterministic, no LLM, no human judgment. Every check is a regex,
-            token-resolution, or spec-linter test against the live fetched CSS
-            and HTML. This page documents exactly what the engine measures, how
-            the score is computed, and what it cannot measure.
-          </p>
-          <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
+      <main id="main-content" data-pagefind-body className="eg dx" data-pagefind-meta="priority:high">
+        <EngineHead
+          route="/methodology"
+          name="Methodology"
+          thesis={`How the ${ENGINE_CHECK_COUNT}-check engine turns a URL into a score, and how that method is tested. Deterministic: no language model and no human judgment, only regex, token-resolution and spec tests against the HTML and CSS a site serves.`}
+          facts={[`${ENGINE_CHECK_COUNT} checks`, `${Object.keys(CATEGORY_WEIGHTS).length} categories`, `engine ${ENGINE_VERSION}`, `contract ${CONTRACT_VERSION}`]}
+          contract={{ href: '/contracts/design-system.json', label: 'contract JSON' }}
+        >
+          <div className="dx-actions">
             <Link className="button primary" href="/score" data-cuelume-press>
               Score a site
             </Link>
-            <Link className="button ghost" href="/leaderboard" data-cuelume-press style={{ marginLeft: '0.5rem' }}>
-              View leaderboard
+            <Link className="button ghost" href="/leaderboard" data-cuelume-press>
+              View the leaderboard
             </Link>
           </div>
           <AgentActions mdPath="/methodology.md" label="the methodology page" />
-        </section>
+        </EngineHead>
 
-        <section className="doctrine-section fade-up methodology-section">
-          <h2 className="doctrine-heading">At a glance</h2>
-          <div className="methodology-grid">
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={CHECKS.length} /></span>
-              <span className="methodology-stat-label">Total checks</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={SCORED_CHECKS} /></span>
-              <span className="methodology-stat-label">Scored (PASS/WARN/FAIL)</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={MANUAL_CHECKS} /></span>
-              <span className="methodology-stat-label">Manual (needs browser)</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={SKIP_CHECKS} /></span>
-              <span className="methodology-stat-label">N/A (not applicable)</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={CATEGORIES.length} /></span>
-              <span className="methodology-stat-label">Categories</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num">{SCORED_CHECKS}</span>
-              <span className="methodology-stat-label">Auto-scored checks</span>
-            </div>
+        <dl className="dx-stats">
+          <div>
+            <dt>Checks</dt>
+            <dd>{ENGINE_CHECK_COUNT}</dd>
           </div>
+          <div>
+            <dt>Scored</dt>
+            <dd>{ENGINE_SCORED_CHECK_COUNT}</dd>
+          </div>
+          <div>
+            <dt>Manual</dt>
+            <dd>{MANUAL_CHECKS}</dd>
+          </div>
+          <div>
+            <dt>Conditional</dt>
+            <dd>{SKIP_CHECKS}</dd>
+          </div>
+          <div>
+            <dt>Categories</dt>
+            <dd>{Object.keys(CATEGORY_WEIGHTS).length}</dd>
+          </div>
+        </dl>
 
-          <div className="methodology-toc">
-            <strong style={{ color: 'var(--ink)', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Contents</strong>
-            <ul style={{ marginTop: '0.6rem' }}>
-              <li><a href="#scoring-math">Scoring math</a></li>
-              <li><a href="#category-weights">Category weights</a></li>
-              <li><a href="#grade-bands">Grade bands</a></li>
-              <li><a href="#score-distribution">Score distribution</a></li>
-              <li><a href="#a11y-floor">Accessibility floor</a></li>
-              <li><a href="#anti-slop">Anti-slop deduction</a></li>
-              <li><a href="#originality-lift">Originality lift</a></li>
-              <li><a href="#hard-fail-ceilings">Hard-fail ceilings</a></li>
-              <li><a href="#what-engine-measures">What the engine measures</a></li>
-              <li><a href="#what-engine-skips">What the engine skips</a></li>
-              {CHECKS_BY_CATEGORY.map((g) => (
-                <li key={g.category}><a href={`#${g.category}`}>{CATEGORY_LABELS[g.category]} ({g.weight}%)</a></li>
-              ))}
-            </ul>
-          </div>
-        </section>
+        <div className="dx-page">
+          <div className="dx-with-toc">
+            <OnThisPage items={TOC} />
+            <div className="dx-flow">
+              <section className="dx-sec" id="scoring-math" aria-labelledby="m-math-h">
+                <h2 className="eg-h2" id="m-math-h">
+                  How a score is made
+                </h2>
+                <ReadAlong lang="en">
+                  <div className="dx-prose">
+                    <p>
+                      The engine fetches the page&apos;s HTML and every stylesheet it links, parses the <code>:root</code> custom
+                      properties, and runs <strong>{ENGINE_CHECK_COUNT} deterministic checks</strong> across{' '}
+                      <strong>{Object.keys(CATEGORY_WEIGHTS).length} weighted categories</strong>. Each check returns{' '}
+                      <code>PASS</code>, <code>WARN</code>, <code>FAIL</code>, <code>MANUAL</code> or <code>N/A</code>. The score is a
+                      weighted average, then adjusted by an anti-slop deduction, an originality lift and two caps.
+                    </p>
+                    <p>
+                      <strong>It reads the delivered response.</strong> The engine reads the HTML the server sends and the
+                      stylesheets it links. It runs no JavaScript and waits for no hydration, so on a site that renders in the
+                      browser every check reads the markup that arrives over the wire: a heading injected by script is absent to it,
+                      and a token set at runtime is not in the CSS it fetched.
+                    </p>
+                    <p>
+                      That is a deliberate trade. The score stays deterministic, reproducible and cheap, free of headless
+                      rendering&apos;s timing flakiness: the same input yields the same output, which is what makes a score comparable
+                      week to week. It also bounds the claim: a low score on a client-rendered site describes its delivered HTML.
+                      Every result carries a <code>receipt</code> with <code>retrieved_at</code>, <code>engine_version</code> and a{' '}
+                      <code>digest</code> of the verdicts, so anyone can re-run the URL and confirm the answer.
+                    </p>
+                    <p>
+                      <strong>MANUAL</strong> and <strong>N/A</strong> checks are left out of both numerator and denominator, as
+                      Lighthouse does with manual audits, so no site is penalised for what the static engine cannot run or what does
+                      not apply. The {MANUAL_CHECKS} manual checks need a browser viewport, a performance trace or live interaction;
+                      the {SKIP_CHECKS === 1 ? 'conditional check applies' : `${SKIP_CHECKS} conditional checks apply`} only when a
+                      site serves what it reads.
+                    </p>
+                  </div>
+                </ReadAlong>
 
-        <section className="doctrine-section fade-up methodology-section" id="scoring-math">
-          <h2 className="doctrine-heading">Scoring math</h2>
-          {/* Bimodal reading on the opening prose block. Scoped to one block
-              deliberately: the site's first read-along surface should be small
-              enough to judge, not a page-wide change. The component renders as
-              plain HTML before its module loads, so the prose reads normally
-              with JS disabled, and nothing autoplays — the reader starts
-              speech themselves (WCAG 1.4.2, and required for iOS). */}
-          <ReadAlong lang="en">
-            <div className="methodology-prose">
-            <p>
-              The engine fetches the target URL&rsquo;s HTML and all linked CSS,
-              parses <code>:root</code> custom properties, and runs{' '}
-              <strong><CountUp value={CHECKS.length} /> deterministic checks</strong> across{' '}
-              <strong><CountUp value={CATEGORIES.length} /> weighted categories</strong>.
-              Each check returns <code>PASS</code>, <code>WARN</code>,{' '}
-              <code>FAIL</code>, <code>MANUAL</code>, or <code>N/A</code>. The score is a weighted
-              average — not a simple count — then adjusted by three further
-              layers: anti-slop deduction, originality lift, and hard-fail
-              ceilings.
-            </p>
-            <p>
-              <strong>What is measured: the delivered response, not the rendered page.</strong>{' '}
-              The engine reads the HTML the server sends and the stylesheets it links.
-              It does not execute JavaScript and does not wait for client hydration.
-              On a site that renders in the browser, every check therefore reads{' '}
-              <em>the markup that arrives over the wire</em> rather than what a visitor
-              ends up seeing — a heading injected by JavaScript is absent to this engine,
-              and a token set at runtime is not in the CSS it fetched.
-            </p>
-            <p>
-              That is a deliberate trade. It keeps the score deterministic,
-              reproducible, cheap, and free of the timing-dependent flakiness of
-              headless rendering: the same input always yields the same output, which is
-              what makes a score comparable week to week. It also bounds the claim — a low
-              score on a client-rendered site describes its delivered HTML, not how the
-              finished page looks. Every result carries a{' '}
-              <code>receipt</code> with <code>retrieved_at</code>, <code>engine_version</code>,
-              and a <code>digest</code> of the check verdicts, so a third party can re-run
-              the same URL and confirm they get the same answer.
-            </p>
-            <p>
-              <strong>MANUAL</strong> and <strong>N/A</strong> checks are excluded from both numerator and
-              denominator (Lighthouse precedent: manual/N/A audits excluded).
-              This means a site is not penalized for checks the static engine
-              cannot run or that do not apply. The <CountUp value={MANUAL_CHECKS} /> MANUAL checks require a browser
-              viewport trace, CDP performance trace, or live DOM interaction.
-              The <CountUp value={SKIP_CHECKS} /> N/A checks do not apply when the site lacks the
-              elements the check targets (no <code>/DESIGN.md</code>, no buttons,
-              no anchors, no tokens).
-            </p>
-            </div>
-          </ReadAlong>
-          <div className="methodology-formula">
-            <span className="formula-comment"># Per-check weight = category weight / checks in that category</span><br />
-            checkWeight = CATEGORY_WEIGHTS[category] / count(scored checks in category)<br /><br />
-            <span className="formula-comment"># Status scoring</span><br />
-            PASS  &rarr; 1.0 &times; checkWeight<br />
-            WARN  &rarr; 0.5 &times; checkWeight<br />
-            FAIL  &rarr; 0<br />
-            MANUAL  &rarr; excluded (weight &times; 0, not counted in total)<br />
-            N/A  &rarr; excluded (weight &times; 0, not counted in total)<br /><br />
-            <span className="formula-comment"># Step 1 — Weighted compliance score</span><br />
-            weightedScore = round( &sum;(weightedPoints) / &sum;(weightedTotal) &times; 1000 ) / 10<br /><br />
-            <span className="formula-comment"># Step 2 — Anti-slop deduction (12 S-rules, up to -20pts)</span><br />
-            score = max(0, weightedScore - slopTotal)<br />
-            slopTotal = min(&sum;(per-rule deductions), 20)<br /><br />
-            <span className="formula-comment"># Step 3 — Originality lift (7 O-signals, up to +8pts)</span><br />
-            score = min(100, score + originalityPoints)<br />
-            originalityPoints = min(rawOriginality, 8) &nbsp;<span className="formula-comment"># halved if slop &ge; 12</span><br /><br />
-            <span className="formula-comment"># Step 4 — Accessibility floor (a11y &lt; 60% &rarr; cap at 70)</span><br />
-            if (a11yPct &lt; 60) score = min(score, 70)<br /><br />
-            <span className="formula-comment"># Step 5 — Hard-fail ceilings (6 checks cap at 65/70/75)</span><br />
-            if (v06 FAIL) score = min(score, 65) &nbsp;<span className="formula-comment"># contrast</span><br />
-            if (v22/v02/v16 FAIL) score = min(score, 70) &nbsp;<span className="formula-comment"># CTA contrast, overflow, rem</span><br />
-            if (v24/v25 FAIL) score = min(score, 75) &nbsp;<span className="formula-comment"># touch targets, headings</span><br /><br />
-            <span className="formula-comment"># Per-category sub-score (same math, scoped to one category)</span><br />
-            categoryScore = round( &sum;(catPoints) / &sum;(catWeight) &times; 1000 ) / 10
-          </div>
-          <div className="text-cell" style={{ marginTop: '1rem' }}>
-            <p className="surface-note" style={{ maxWidth: '66ch' }}>
-              The <code>round(&hellip; &times; 1000) / 10</code> pattern produces a
-              one-decimal-place score (e.g. 95.2, not 95.2347). The full pipeline
-              is five steps: weighted compliance &rarr; anti-slop deduction &rarr;
-              originality lift &rarr; accessibility floor &rarr; hard-fail ceilings.
-              Steps 2-3 are score modifiers (slop/originality); steps 4-5 are
-              protective caps. The per-category sub-scores use only step 1 and are
-              shown as the constellation breakdown on the leaderboard and score pages.
-            </p>
-          </div>
-        </section>
+                <div className="eg-method dx-pipeline">
+                  <h3 className="dx-h3">The pipeline, in order</h3>
+                  <div className="eg-steps-box" style={{ '--steps': STEPS.length } as CSSProperties}>
+                    <i className="eg-rule" aria-hidden="true" />
+                    <ol className="eg-steps">
+                      {STEPS.map((s) => (
+                        <li className="eg-step" key={s.title}>
+                          <h4 className="eg-step-title">{s.title}</h4>
+                          <p>{s.text}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
 
-        <section className="doctrine-section fade-up methodology-section" id="category-weights">
-          <h2 className="doctrine-heading">Category weights</h2>
-          <div className="methodology-prose">
-            <p>
-              Weights follow the contract&rsquo;s section emphasis — the contract
-              <em>is</em> the scoring basis. Cadence (typography) carries the
-              highest weight at 18% because it has the most checks (12) and
-              typography discipline is the loudest craft signal. Accessibility
-              carries 15% and the a11y floor. Semantic/identity, motion, and
-              tokens follow. Performance and responsive are lowest-weighted
-              because their checks are MANUAL in the static engine.
-            </p>
-            <p style={{ fontSize: '0.82rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.75rem' }}>
-              <sup>*</sup> Weights are <strong>relative</strong> and sum to 117, not
-              100. The scoring formula normalizes them: each check&rsquo;s
-              contribution is <code>{'categoryWeight / scoredChecksInCategory'}</code>,
-              and the final score is <code>{'Σ(weightedPoints) / Σ(weightedTotal) × 100'}</code>.
-              This means a category&rsquo;s effective influence is{' '}
-              <code>{'weight / 117'}</code> of the total. Raw weight numbers (18, 15,
-              12&hellip;) are kept un-normalized so they stay readable as integers and
-              can grow as new checks are added without recalibrating every existing
-              weight. Two categories — performance (6), responsive
-              (3) — currently have zero scored checks (browser-only MANUALs); their
-              weight is held in reserve
-              and does not affect any site&rsquo;s score.
-            </p>
-          </div>
-          <div className="weight-table-wrap">
-          <table className="weight-table">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th className="wt-num">Weight</th>
-                <th>Checks</th>
-                <th>Scored</th>
-              </tr>
-            </thead>
-            <tbody>
-              {CHECKS_BY_CATEGORY.map((g) => (
-                <tr key={g.category}>
-                  <td className="wt-name">
-                    <span className="weight-bar" style={{ width: `${g.weight * 3}px` }} />
-                    {CATEGORY_LABELS[g.category]}
-                  </td>
-                  <td className="wt-num"><CountUp value={g.weight} />%</td>
-                  <td style={{ color: 'var(--muted-dim)' }}><CountUp value={g.checks.length} /></td>
-                  <td className="wt-num" style={{ color: g.checks.filter(c => !c.skipReason && !c.manualReason).length > 0 ? 'var(--ink)' : 'var(--muted-dim)' }}>
-                    <CountUp value={g.checks.filter(c => !c.skipReason && !c.manualReason).length} />
-                  </td>
-                </tr>
-              ))}
-              <tr style={{ borderTop: '1px solid var(--line)' }}>
-                <td className="wt-name">Total</td>
-                <td className="wt-num" style={{ color: 'var(--muted-dim)' }}>117<sup>*</sup></td>
-                <td style={{ color: 'var(--muted-dim)' }}><CountUp value={CHECKS.length} /></td>
-                <td className="wt-num"><CountUp value={SCORED_CHECKS} /></td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-        </section>
+                <figure className="dx-formula-fig">
+                  <figcaption className="dx-h3">The formula</figcaption>
+                  <div className="dx-formula-box">
+                    <pre className="dx-formula">
+                      {FORMULA.map((line, i) =>
+                        line.startsWith('#') ? (
+                          <span className="dx-f-c" key={i}>
+                            {line}
+                            {'\n'}
+                          </span>
+                        ) : line.includes('  # ') ? (
+                          <span className="dx-f-l" key={i}>
+                            {line.slice(0, line.indexOf('  # '))}
+                            <span className="dx-f-c">{line.slice(line.indexOf('  # '))}</span>
+                            {'\n'}
+                          </span>
+                        ) : (
+                          <span className="dx-f-l" key={i}>
+                            {line}
+                            {'\n'}
+                          </span>
+                        ),
+                      )}
+                    </pre>
+                  </div>
+                  <p className="dx-src">
+                    round(… × 1000) / 10 keeps one decimal place: 95.2, never 95.2347. The per-category sub-scores use step 1
+                    only; they are the category profiles on the leaderboard.
+                  </p>
+                </figure>
+              </section>
 
-        <section className="doctrine-section fade-up methodology-section" id="grade-bands">
-          <h2 className="doctrine-heading">Grade bands</h2>
-          <div className="methodology-prose">
-            <p>
-              The letter grade is a simple threshold on the numeric score. The
-              bands are deliberately demanding — a site must score 90+ to earn
-              an A. Most sites land in D or F because the contract requires
-              primitives (token systems, reduced-motion blocks, font-synthesis
-              rules) that most sites do not ship.
-            </p>
-          </div>
-          <div className="grade-bands">
-            {GRADE_BANDS.map((band) => (
-              <div key={band.grade} className="grade-band">
-                <span className="grade-band-letter" style={{ color: band.color, borderColor: band.color }}>{band.grade}</span>
-                <span className="grade-band-range">&ge; {band.min}</span>
-                <span className="grade-band-desc">{band.description}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+              <section className="dx-sec" id="category-weights" aria-labelledby="m-weights-h">
+                <h2 className="eg-h2" id="m-weights-h">
+                  Category weights
+                </h2>
+                <p className="dx-lead">
+                  Weights follow the contract&apos;s own emphasis. They are relative and sum to <b>{WEIGHT_TOTAL}</b>; the formula
+                  normalises them, so a category&apos;s real share of the score is its weight over {WEIGHT_TOTAL}, and only over the
+                  categories a site can be scored in. Performance and responsive have no scored checks in the static engine, so
+                  their weight is held in reserve.
+                </p>
+                <DataFigure
+                  id="m-weights"
+                  title="The weight each category carries"
+                  note={`Heaviest first. Bars are to scale; the figure under each name is its share of the ${WEIGHT_TOTAL} total.`}
+                  source="Weights from lib/check-definitions, which mirrors the engine route."
+                  table={
+                    <DataTable
+                      caption={`Category weights, their share of ${WEIGHT_TOTAL}, and check counts.`}
+                      head={['Category', 'Weight', 'Share', 'Checks', 'Scored']}
+                      numeric={[1, 2, 3, 4]}
+                      opt={[3]}
+                      rows={[
+                        ...CATEGORY_ORDER.map((k) => [label(k), CATEGORY_WEIGHTS[k], share(CATEGORY_WEIGHTS[k]), checksIn(k).length, scoredIn(k)]),
+                        ['Total', WEIGHT_TOTAL, '100%', ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT],
+                      ]}
+                    />
+                  }
+                >
+                  <BarList
+                    max={Math.max(...Object.values(CATEGORY_WEIGHTS))}
+                    label={`Category weights, heaviest first: ${CATEGORY_ORDER.map((k) => `${label(k)} ${CATEGORY_WEIGHTS[k]}`).join(', ')}; ${WEIGHT_TOTAL} in all.`}
+                    bars={CATEGORY_ORDER.map((k) => ({
+                      key: k,
+                      label: label(k),
+                      meta: `${share(CATEGORY_WEIGHTS[k])} · ${scoredIn(k)} scored`,
+                      value: CATEGORY_WEIGHTS[k],
+                      display: String(CATEGORY_WEIGHTS[k]),
+                      tone: 'plain' as const,
+                    }))}
+                  />
+                </DataFigure>
+              </section>
 
-        <section className="doctrine-section fade-up methodology-section" id="score-distribution">
-          <h2 className="doctrine-heading">Score distribution</h2>
-          <div className="methodology-prose">
-            <p>
-              The histogram below shows the grade distribution across all{' '}
-              <strong><CountUp value={SCORED_TOTAL} /> sites</strong> on the{' '}
-              <Link href="/leaderboard" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>leaderboard</Link>.
-              The contract is deliberately demanding — most sites land in D or F because
-              they do not ship the contract primitives (token systems, reduced-motion
-              blocks, font-synthesis rules) that the engine checks for at <code>:root</code>.
-            </p>
-          </div>
-          <div className="score-dist-histogram">
-            {HIST_BARS.map((bar) => (
-              <div key={bar.grade} className="score-dist-col">
-                <span className="score-dist-bar-count"><CountUp value={bar.count} /></span>
-                <div className="score-dist-bar-wrap">
-                  <div
-                    className="score-dist-bar"
-                    style={{
-                      height: `${(bar.count / MAX_GRADE_COUNT) * 100}%`,
-                      background: bar.bg,
-                      borderColor: bar.color,
-                    }}
+              <section className="dx-sec" id="grade-bands" aria-labelledby="m-bands-h">
+                <h2 className="eg-h2" id="m-bands-h">
+                  Grade bands
+                </h2>
+                <p className="dx-lead">
+                  The letter is a threshold on the number: F under 60, then a grade every ten points. An A needs 90.
+                </p>
+                <div className="dx-scale" aria-hidden="true">
+                  <GradeScale />
+                </div>
+                <dl className="dx-bands">
+                  {[...GRADES].map((g) => (
+                    <div key={g}>
+                      <dt>
+                        <span className="dx-grade" data-tone={g === 'A' || g === 'B' ? 'pass' : g === 'F' ? 'fail' : 'warn'}>
+                          {g}
+                        </span>
+                        <span className="dx-band-range">{BAND_RANGE[g]}</span>
+                      </dt>
+                      <dd>
+                        {BAND_NOTES[g]}{' '}
+                        <span className="dx-band-n">
+                          {GRADE_COUNTS[g]} of {COHORT_STATS.count} sites today.
+                        </span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="dx-sec" id="score-distribution" aria-labelledby="m-dist-h">
+                <h2 className="eg-h2" id="m-dist-h">
+                  The cohort today
+                </h2>
+                <DataFigure
+                  id="m-dist"
+                  title={`All ${COHORT_STATS.count} leaderboard sites on the grade scale`}
+                  note={`Median ${fmt(COHORT_STATS.median)}, mean ${fmt(COHORT_STATS.mean)}, from ${fmt(COHORT_STATS.min)} to ${fmt(COHORT_STATS.max)}. ${GRADE_COUNTS.D + GRADE_COUNTS.F} of ${COHORT_STATS.count} land in D or F.`}
+                  source={`Weekly run of ${SCORES_DATE}.`}
+                  tableLabel="Every site's score"
+                  table={
+                    <DataTable
+                      caption={`Composite score of every leaderboard site, weekly run of ${SCORES_DATE}.`}
+                      head={['Site', 'Rank', 'Grade', 'Score']}
+                      numeric={[1, 3]}
+                      rows={COHORT.map((s) => [s.name, s.rank, s.grade, fmt(s.score)])}
+                    />
+                  }
+                >
+                  <CohortStrip
+                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable }))}
+                    median={COHORT_STATS.median}
+                    label={`Composite scores of ${COHORT_STATS.count} sites from 40 to 100: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}; median ${fmt(COHORT_STATS.median)}.`}
+                    idle={<span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>}
+                  />
+                </DataFigure>
+              </section>
+
+              <section className="dx-sec" id="a11y-floor" aria-labelledby="m-floor-h">
+                <h2 className="eg-h2" id="m-floor-h">
+                  Accessibility floor
+                </h2>
+                <p className="dx-callout">
+                  If the accessibility category scores under 60, the score is capped at 70, a C, however high the weighted score.
+                  Perfect tokens and no accessibility cannot make an A.
+                </p>
+                <div className="dx-prose">
+                  <p>
+                    The floor is a softer form of the DSAF enterprise-grade rule, which requires 75 in accessibility. Sixty is strict
+                    enough to stop the all-tokens, no-access failure and lenient enough that a site passing three of six accessibility
+                    checks is not capped. The cap binds only above 70: a score already under 70 is left as it is.
+                  </p>
+                </div>
+              </section>
+
+              <section className="dx-sec" id="anti-slop" aria-labelledby="m-slop-h">
+                <h2 className="eg-h2" id="m-slop-h">
+                  Anti-slop deduction
+                </h2>
+                <div className="dx-prose">
+                  <p>
+                    A site can meet every contract rule and still look generic. A second pass runs <strong>12 anti-slop rules</strong>{' '}
+                    (S1 to S12) against the most recognisable template patterns, and each one found takes points off the weighted
+                    score directly. The deduction is flat, so a sparser site cannot game it.
+                  </p>
+                  <p>
+                    <strong>Per rule, at most 5 points; in all, at most 20.</strong> A rule deducts{' '}
+                    <code>min(severity × min(instances, 3), 5)</code>: the fourth sighting of the same pattern adds nothing, three is
+                    enough to flag it.
+                  </p>
+                </div>
+                <div className="dx-table-box">
+                  <DataTable
+                    caption="The twelve anti-slop rules: pattern, severity and trigger."
+                    head={['Rule', 'Pattern', 'Severity', 'Trigger']}
+                    numeric={[2]}
+                    opt={[3]}
+                    rows={SLOP_RULES.map((r) => [
+                      <span key="r">
+                        <code>{r.id}</code> {r.name}
+                      </span>,
+                      r.pattern,
+                      r.sev,
+                      r.trigger,
+                    ])}
                   />
                 </div>
-                <div className="score-dist-label">
-                  <span className="score-dist-grade" style={{ color: bar.color }}>{bar.grade}</span>
-                  <span className="score-dist-range">&ge; {bar.min}</span>
+              </section>
+
+              <section className="dx-sec" id="originality-lift" aria-labelledby="m-orig-h">
+                <h2 className="eg-h2" id="m-orig-h">
+                  Originality lift
+                </h2>
+                <div className="dx-prose">
+                  <p>
+                    The counterweight to slop: <strong>seven kinds of craft</strong> (O1 to O7), each detectable from CSS and HTML
+                    alone, add points. A compliant but generic site earns none; a bespoke one is credited. The lift is capped at{' '}
+                    <strong>8 points</strong>, so it nudges the score rather than steering it, and the score is clamped to 100.
+                  </p>
+                  <p>
+                    <strong>The slop gate.</strong> With heavy slop (12 points or more), the lift is halved: craft on a heavily
+                    templated site is usually the framework&apos;s, and the lift is meant for the author&apos;s.
+                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-          <p className="score-dist-headline">
-            Of <CountUp value={SCORED_TOTAL} /> sites scored,{' '}
-            <strong><CountUp value={GRADE_COUNTS.A} /> earned an A</strong>,{' '}
-            <CountUp value={GRADE_COUNTS.B} /> earned a B, <CountUp value={GRADE_COUNTS.C} /> earned a C,{' '}
-            <CountUp value={GRADE_COUNTS.D} /> earned a D, and <CountUp value={GRADE_COUNTS.F} /> earned an F.
-            The mean score is <strong><CountUp value={MEAN_SCORE} />%</strong> with a range of{' '}
-            <CountUp value={MIN_SCORE} />%&ndash;<CountUp value={MAX_SCORE} />%. The median site lands in D — the
-            contract requires primitives that most sites do not ship.
-          </p>
-          <div className="methodology-grid" style={{ marginTop: '1.5rem' }}>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={MEAN_SCORE} />%</span>
-              <span className="methodology-stat-label">Mean score</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={MIN_SCORE} />&ndash;<CountUp value={MAX_SCORE} /></span>
-              <span className="methodology-stat-label">Score range</span>
-            </div>
-            <div className="methodology-stat">
-              <span className="methodology-stat-num"><CountUp value={SCORED_TOTAL} /></span>
-              <span className="methodology-stat-label">Sites scored</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="a11y-floor">
-          <h2 className="doctrine-heading">Accessibility floor</h2>
-          <div className="methodology-callout">
-            <strong>The a11y floor:</strong> if the accessibility category scores
-            below 60%, the overall grade is capped at C (70) — no matter how high
-            the weighted score is. This prevents &ldquo;perfect tokens, zero a11y
-            = A&rdquo; dishonesty. A site with beautiful typography and no contrast
-            or touch targets cannot earn above C.
-          </div>
-          <div className="methodology-prose">
-            <p>
-              The floor is a softer version of the DSAF enterprise-grade precedent
-              (DSAF enforces A8 Accessibility &ge;75%). Designesy applies 60% as
-              the floor — strict enough to prevent the &ldquo;all tokens, no
-              a11y&rdquo; failure mode, lenient enough that a site with 3 of 6
-              accessibility checks passing is not auto-capped. The cap only
-              triggers if the weighted score <em>is above 70</em> — if the score
-              is already below 70, the floor does not change it.
-            </p>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="anti-slop">
-          <h2 className="doctrine-heading">Anti-slop deduction</h2>
-          <div className="methodology-prose">
-            <p>
-              The compliance checks above verify that a site ships the contract
-              primitives. But a site can meet every contract rule and still be
-              generic — the &ldquo;compliant but slop&rdquo; failure. The engine
-              runs a second pass: <strong>12 anti-slop rules (S1&ndash;S12)</strong>{' '}
-              that detect the most recognizable AI-template design patterns.
-              Each detected pattern subtracts points directly from the weighted
-              score — not from the check scores. This makes taste part of the
-              number, not just a human judgment.
-            </p>
-            <p>
-              <strong>Per-rule cap: 5 points.</strong> Total slop deduction
-              capped at <strong>20 points</strong>. The deduction is flat (not
-              percentage-scaled) so it cannot be gamed by making the site more
-              minimal. Provenance: Impeccable, solodesign, Web AI Slop, and
-              independent research &mdash; wave 1 covers the 12 highest-signal
-              patterns.
-            </p>
-          </div>
-          <p>
-            <strong>Detection formula:</strong> each rule has a{' '}
-            <code>severity</code> (base points) and an{' '}
-            <code>instances</code> count (how many times the pattern was found).
-            The per-rule deduction is{' '}
-            <code>min(severity &times; min(instances, 3), 5)</code>. The{' '}
-            <code>min(instances, 3)</code> cap means the 4th+ occurrence of the
-            same pattern in the same rule does not add further deduction &mdash;
-            three is enough to flag it. Total deduction is capped at 20.
-          </p>
-          <div className="weight-table-wrap">
-          <table className="weight-table">
-            <thead>
-              <tr>
-                <th>Rule</th>
-                <th>Pattern</th>
-                <th className="wt-num">Sev</th>
-                <th>Trigger</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="wt-name"><code>S1</code> Overused fonts</td>
-                <td style={{ color: 'var(--muted)' }}>Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, Geist in <code>font-family</code></td>
-                <td className="wt-num">5</td>
-                <td style={{ color: 'var(--muted)' }}>1+ match in any <code>font-family</code> declaration</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S2</code> Full-page gradient</td>
-                <td style={{ color: 'var(--muted)' }}>Multi-color <code>linear-gradient</code> on body/html, or fixed/inset:0 overlay (excluding 1px hairlines)</td>
-                <td className="wt-num">5</td>
-                <td style={{ color: 'var(--muted)' }}>Gradient + <code>position:fixed</code> or <code>inset:0</code> or <code>100vw/100vh</code> in same block</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S3</code> Purple/violet gradient</td>
-                <td style={{ color: 'var(--muted)' }}><code>linear-gradient</code> containing any of: #615fff, #8e51ff, #4f39f6, #7f22fe, #a855f7, #9333ea, #7c3aed, #6d28d9, #5b21b6, #4c1d95</td>
-                <td className="wt-num">4</td>
-                <td style={{ color: 'var(--muted)' }}>1+ match in <code>background</code> containing <code>linear-gradient</code></td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S4</code> Gradient text</td>
-                <td style={{ color: 'var(--muted)' }}><code>background-clip: text</code> with gradient spanning 2+ distinct hue families (45&deg; buckets, ignoring <code>var()</code> stops and neutrals)</td>
-                <td className="wt-num">4</td>
-                <td style={{ color: 'var(--muted)' }}>2+ distinct non-neutral hue families in gradient stops</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S5</code> Default palette hexes</td>
-                <td style={{ color: 'var(--muted)' }}>3+ of: #0f172a, #1e293b, #334155, #615fff, #8e51ff, #4f39f6, #7f22fe, #6366f1, #8b5cf6, #a78bfa, #0d6efd, #007bff</td>
-                <td className="wt-num">5</td>
-                <td style={{ color: 'var(--muted)' }}>3+ hex matches in CSS</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S6</code> Repeated card grid</td>
-                <td style={{ color: 'var(--muted)' }}>3+ classes matching <code>.(card|panel|tile|feature|item|box|cell|block)</code> AND repeating grid layout</td>
-                <td className="wt-num">5</td>
-                <td style={{ color: 'var(--muted)' }}>3+ card-like classes + <code>grid-template-columns: repeat(auto-fit|auto-fill|N)</code></td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S7</code> Emoji as icons</td>
-                <td style={{ color: 'var(--muted)' }}>Emoji (Unicode ranges 1F300&ndash;1FAFF, 2600&ndash;27BF, 1F1E6&ndash;1F1FF) inside <code>&lt;button&gt;</code> or <code>&lt;a class=&quot;btn|cta|primary|action&quot;&gt;</code></td>
-                <td className="wt-num">4</td>
-                <td style={{ color: 'var(--muted)' }}>2+ emoji in button/CTA elements</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S8</code> AI-pill badges</td>
-                <td style={{ color: 'var(--muted)' }}>&ldquo;AI-powered&rdquo;, &ldquo;Generate&rdquo;, &ldquo;Chat with AI&rdquo;, &ldquo;Powered by AI&rdquo;, &ldquo;Built with AI&rdquo;, &ldquo;AI-driven&rdquo;</td>
-                <td className="wt-num">3</td>
-                <td style={{ color: 'var(--muted)' }}>1+ match in HTML text</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S9</code> Lorem ipsum</td>
-                <td style={{ color: 'var(--muted)' }}>&ldquo;lorem ipsum&rdquo;, &ldquo;dolor sit amet&rdquo;, &ldquo;consectetur adipiscing&rdquo;, &ldquo;sed do eiusmod&rdquo;, &ldquo;tempor incididunt&rdquo;</td>
-                <td className="wt-num">5</td>
-                <td style={{ color: 'var(--muted)' }}>1+ match in HTML text</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S10</code> Single font family</td>
-                <td style={{ color: 'var(--muted)' }}>Only 1 unique non-generic <code>font-family</code> across entire page (excluding serif/sans-serif/monospace/system-ui)</td>
-                <td className="wt-num">4</td>
-                <td style={{ color: 'var(--muted)' }}>Exactly 1 unique family name</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S11</code> Marketing buzzwords</td>
-                <td style={{ color: 'var(--muted)' }}>2+ of: streamline, empower, supercharge, world-class, enterprise-grade, next-generation, unlock, leverage, seamless, cutting-edge, revolutionize, game-chang, disrupt, synerg</td>
-                <td className="wt-num">3</td>
-                <td style={{ color: 'var(--muted)' }}>2+ buzzwords in body text (tags stripped)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>S12</code> Placeholder images</td>
-                <td style={{ color: 'var(--muted)' }}>URLs from via.placeholder, placehold.co, placeholder.com, dummyimage, picsum.photos, loremflickr, unsplash.com/random|featured</td>
-                <td className="wt-num">4</td>
-                <td style={{ color: 'var(--muted)' }}>1+ match in HTML</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="originality-lift">
-          <h2 className="doctrine-heading">Originality lift</h2>
-          <div className="methodology-prose">
-            <p>
-              Symmetric to the slop deduction: <strong>7 originality signals
-              (O1&ndash;O7)</strong> add points for positive craft detectable
-              from CSS/HTML text alone. A compliant-but-generic site earns no
-              lift; a bespoke site is rewarded. Cap: <strong>+8 points</strong>{' '}
-              so originality nudges rather than dominates the weighted compliance
-              base. Score is clamped to 100.
-            </p>
-            <p>
-              <strong>Slop gate:</strong> if a site has heavy slop (&ge;12
-              deduction points), the originality lift is halved. Heavily-sloppy
-              sites that also show originality signals are usually
-              heavily-customized templates &mdash; the &ldquo;originality&rdquo;
-              is framework-driven, not authorial.
-            </p>
-          </div>
-          <p>
-            Each signal awards points based on <em>depth</em> &mdash; the number
-            of qualifying features detected in CSS/HTML. A site with one custom
-            easing curve earns 1 point; a site with three or more plus spring
-            physics earns 5. The formulas are deterministic and published below.
-          </p>
-          <div className="weight-table-wrap">
-          <table className="weight-table">
-            <thead>
-              <tr>
-                <th>Signal</th>
-                <th>Detection</th>
-                <th className="wt-num">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="wt-name"><code>O1</code> Bespoke easing</td>
-                <td style={{ color: 'var(--muted)' }}>Distinct <code>cubic-bezier()</code> curves not in the preset set (ease, ease-in/out/in-out, Material, Tailwind v4, Bootstrap back-ease). <code>linear()</code> springs with &ge;20-char body count as overshoot.</td>
-                <td className="wt-num">1 (1&ndash;2 curves) &middot; 3 (3+ curves) &middot; +2 if overshoot (y&lt;0 or y&gt;1) &middot; max 5</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O2</code> Modern layout</td>
-                <td style={{ color: 'var(--muted)' }}><code>clamp()</code>, <code>container-type</code>/<code>@container</code>, <code>subgrid</code> &mdash; count of these three primitives present</td>
-                <td className="wt-num">1 (1 primitive) &middot; 2 (2+ primitives)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O3</code> Typographic detail</td>
-                <td style={{ color: 'var(--muted)' }}><code>font-feature-settings</code>, <code>font-variant-numeric</code>, <code>hanging-punctuation</code>, <code>text-underline-offset</code>, <code>font-optical-sizing</code> in CSS</td>
-                <td className="wt-num">1 (1 property) &middot; 2 (2+ properties)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O4</code> Tiered reduced-motion</td>
-                <td style={{ color: 'var(--muted)' }}><code>@media (prefers-reduced-motion)</code> present AND NOT a blanket <code>{'`* { animation: none }`'}</code> kill-switch</td>
-                <td className="wt-num">1 (targeted, not blanket)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O5</code> Motion choreography</td>
-                <td style={{ color: 'var(--muted)' }}>Scroll-driven animations (<code>animation-timeline</code>, <code>view-timeline</code>, <code>animation-range</code>), view transitions (<code>::view-transition</code>), or named <code>@keyframes</code></td>
-                <td className="wt-num">1 (3+ named keyframes) &middot; 2 (scroll-driven or view-transition)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O6</code> Bespoke iconography</td>
-                <td style={{ color: 'var(--muted)' }}>Inline <code>&lt;svg viewBox&gt;</code> or <code>&lt;symbol&gt;</code> elements (hand-placed SVG, not icon-font/CDN)</td>
-                <td className="wt-num">1 (3+ inline SVGs or 2+ symbols)</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>O7</code> Semantic tokens</td>
-                <td style={{ color: 'var(--muted)' }}>Semantic custom properties (<code>--surface</code>, <code>--ink</code>, <code>--signal</code>, etc., not <code>--color-blue-500</code>). Shadcn fingerprint (&ge;6 of <code>--background/--foreground/--card/--popover/--ring/--secondary/--muted/--accent/--destructive/--border/--input</code>) zeroed out.</td>
-                <td className="wt-num">2 (4+ semantic tokens) &middot; 4 (8+) &middot; +2 layering (primitive&rarr;semantic) &middot; +2 theming (light-dark/data-theme with 4+ tokens) &middot; max 6</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-          <p style={{ marginTop: '0.5rem', color: 'var(--muted)' }}>
-            Total originality is capped at <strong>+8 points</strong>. When slop
-            is heavy (&ge;12 deduction points), the lift is halved (framework-
-            driven originality is not authorial originality).
-          </p>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="hard-fail-ceilings">
-          <h2 className="doctrine-heading">Hard-fail ceilings</h2>
-          <div className="methodology-prose">
-            <p>
-              Certain check failures are severe enough to cap the score
-              regardless of other strengths &mdash; a site that FAILs on contrast
-              or horizontal overflow cannot be A-grade no matter how good its
-              tokens are. These are design-integrity failures, not style
-              preferences. Caps are applied <em>after</em> the a11y floor (the
-              floor wins over ceilings).
-            </p>
-          </div>
-          <div className="weight-table-wrap">
-          <table className="weight-table">
-            <thead>
-              <tr>
-                <th>Check</th>
-                <th className="wt-num">Cap</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="wt-name"><code>v06</code> Contrast readable</td>
-                <td className="wt-num">65</td>
-                <td style={{ color: 'var(--muted)' }}>Text is unreadable for many users &mdash; fundamental legibility failure</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>v22</code> CTA contrast</td>
-                <td className="wt-num">70</td>
-                <td style={{ color: 'var(--muted)' }}>Primary CTA text is hard to read &mdash; the most important interaction</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>v02</code> Horizontal overflow</td>
-                <td className="wt-num">70</td>
-                <td style={{ color: 'var(--muted)' }}>Content is cut off or scrolls sideways on smaller viewports</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>v16</code> Rem scale</td>
-                <td className="wt-num">70</td>
-                <td style={{ color: 'var(--muted)' }}>Root font-size below 16px triggers iOS Safari auto-zoom</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>v24</code> Touch targets</td>
-                <td className="wt-num">75</td>
-                <td style={{ color: 'var(--muted)' }}>Interactive elements below 44px &mdash; inaccessible on touch devices</td>
-              </tr>
-              <tr>
-                <td className="wt-name"><code>v25</code> Heading hierarchy</td>
-                <td className="wt-num">75</td>
-                <td style={{ color: 'var(--muted)' }}>Multiple h1 or skipped levels &mdash; document outline is broken</td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="what-engine-measures">
-          <h2 className="doctrine-heading">What the engine measures</h2>
-          <div className="methodology-prose">
-            <p>
-              The engine fetches the target URL, extracts all CSS (inline{' '}
-              <code>&lt;style&gt;</code> blocks + linked{' '}
-              <code>&lt;link rel=&quot;stylesheet&quot;&gt;</code> files), parses{' '}
-              <code>:root</code> custom properties, and runs each check as a regex,
-              token-resolution, or spec-linter test. It does <strong>not</strong> render the
-              page, execute JavaScript, or interact with the DOM. This means:
-            </p>
-            <p>
-              <strong>It measures what is shipped, not what is documented.</strong>{' '}
-              A design-system site can publish a rich token taxonomy in Storybook
-              and still score low if the marketing surface doesn&rsquo;t expose
-              those tokens at <code>:root</code>. That gap — between documented
-              and shipped — is exactly what the leaderboard surfaces.
-            </p>
-            <p>
-              <strong>It is deterministic.</strong> No LLM, no human judgment, no
-              roast. The same URL always produces the same score (within the
-              24-hour cache window). If a site changes its CSS, the score changes
-              on the next run.
-            </p>
-            <p>
-              <strong>Conformance &ne; quality.</strong> A high score means the
-              site ships the contract primitives the engine can detect. It does{' '}
-              <em>not</em> mean the design is good. A site can pass every check
-              and still be mediocre; a site can fail many and still be excellent.
-              The score is a <strong>calibration signal</strong>, not a verdict
-              — the same way a Lighthouse 100 doesn&rsquo;t mean a page is
-              fast, it means Lighthouse can&rsquo;t find anything more to
-              measure (Goodhart&rsquo;s Law). The anti-slop and originality layers
-              exist to push against this limit, but they cannot eliminate it.
-              The dimension profile (per-category scores) is more informative
-              than the letter grade: if modest weight changes reshuffle the
-              leaderboard, the profile matters more than the rank.
-            </p>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up methodology-section" id="what-engine-skips">
-          <h2 className="doctrine-heading">What the engine skips</h2>
-          <div className="methodology-prose">
-            <p>
-              {MANUAL_CHECKS + SKIP_CHECKS} checks are marked{' '}
-              <code>MANUAL</code> or <code>N/A</code> — both excluded from the
-              score. They split into two categories:
-            </p>
-            <p>
-              <strong>MANUAL ({MANUAL_CHECKS} checks)</strong> require a
-              capability the static engine does not have — a rendered browser
-              DOM, a CDP performance trace, or live click interaction. Running
-              the full audit (Playwright/CDP) resolves them.
-            </p>
-            <p>
-              <strong>N/A ({SKIP_CHECKS} checks)</strong> are
-              convention-dependent: the check does not apply when the site
-              lacks the elements it targets (no <code>/DESIGN.md</code> served,
-              no buttons, no anchors, no design tokens).
-            </p>
-          </div>
-          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', maxWidth: '66ch' }}>
-            {CHECKS.filter((c) => c.manualReason).map((c) => (
-              <li key={c.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--line-faint)' }}>
-                <span className="check-id">{c.id}</span>
-                <span style={{ fontSize: '0.7rem', fontFamily: 'var(--mono, ui-monospace, monospace)', color: 'var(--signal-light)', marginLeft: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>MANUAL</span>
-                <span style={{ fontSize: '0.88rem', color: 'var(--ink)', marginLeft: '0.5rem' }}>{c.item}</span>
-                <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '0.3rem', lineHeight: 1.5 }}>
-                  {c.manualReason}
+                <div className="dx-table-box">
+                  <DataTable
+                    caption="The seven originality credits: what is detected and the points it earns."
+                    head={['Credit', 'Detection', 'Points']}
+                    rows={ORIGINALITY.map((o) => [
+                      <span key="o">
+                        <code>{o.id}</code> {o.name}
+                      </span>,
+                      o.detection,
+                      o.points,
+                    ])}
+                  />
                 </div>
-              </li>
-            ))}
-            {CHECKS.filter((c) => c.skipReason).map((c) => (
-              <li key={c.id} style={{ padding: '0.625rem 0', borderBottom: '1px solid var(--line-faint)' }}>
-                <span className="check-id">{c.id}</span>
-                <span style={{ fontSize: '0.7rem', fontFamily: 'var(--mono, ui-monospace, monospace)', color: 'var(--muted-dim)', marginLeft: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>N/A</span>
-                <span style={{ fontSize: '0.88rem', color: 'var(--ink)', marginLeft: '0.5rem' }}>{c.item}</span>
-                <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '0.3rem', lineHeight: 1.5 }}>
-                  {c.skipReason}
+              </section>
+
+              <section className="dx-sec" id="hard-fail-ceilings" aria-labelledby="m-ceil-h">
+                <h2 className="eg-h2" id="m-ceil-h">
+                  Hard-fail ceilings
+                </h2>
+                <p className="dx-lead">
+                  Some failures cap the score whatever else is strong: a site that fails on contrast or overflows its viewport cannot
+                  be an A. These are failures of integrity, and they apply after the accessibility floor.
+                </p>
+                <div className="dx-table-box">
+                  <DataTable
+                    caption="The six hard-fail ceilings: the failing check, the cap, and why."
+                    head={['Check', 'Cap', 'Why']}
+                    numeric={[1]}
+                    rows={CEILINGS.map((c) => [
+                      <span key="c">
+                        <code>{c.id}</code> {c.name}
+                      </span>,
+                      c.cap,
+                      c.why,
+                    ])}
+                  />
                 </div>
-              </li>
-            ))}
-          </ul>
-          <div className="text-cell">
-            <p className="surface-note" style={{ maxWidth: '66ch' }}>
-              MANUAL and N/A checks are excluded from both numerator and
-              denominator — a site is not penalized for them. The MANUAL checks
-              may be resolved in future versions of the engine via a
-              Playwright/CDP trace integration; the N/A checks resolve
-              automatically when the site ships the elements they target.
-            </p>
-          </div>
-        </section>
+              </section>
 
-        <section className="doctrine-section fade-up methodology-section" id="sensitivity">
-          <h2 className="doctrine-heading">Sensitivity analysis</h2>
-          <div className="methodology-prose">
-            <p>
-              A composite score is only as honest as its sensitivity. We run a
-              perturbation analysis on every leaderboard site: the real check
-              statuses are pulled from the live engine, then the composite is
-              recomputed under 25 knob changes (weight-table scaling, WARN
-              credit, slop deduction, originality lift, grade bands, a11y
-              floor, hard-fail ceilings, and per-category one-at-a-time
-              &times;1.5). The recompute mirrors the engine math exactly —
-              zero drift on all 30 baselines. Full report:{' '}
-              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/sensitivity-report.md">
-                sensitivity-report.md
-              </a>{' '}
-              (regenerated on demand via{' '}
-              <code>node scripts/sensitivity-analysis.mjs</code>).
-            </p>
-            <p>
-              <strong>Uniform weight changes have zero effect.</strong>{' '}
-              Scaling every category weight by &plusmn;10% or &plusmn;20%
-              moves no score by more than 0.1 points and reshuffles no rank —
-              the ratio math (&Sigma;points/&Sigma;total) cancels uniform
-              scaling. The weight table is not a lever.
-            </p>
-            <p>
-              <strong>The WARN credit is the most sensitive knob.</strong>{' '}
-              Moving WARN from 0.5 to 0.75 flips 21 of 30 grades; to 0.25
-              flips 14. The slop deduction (+5) flips 10 grades and moves 26
-              rank positions; the originality lift (+5) flips 6 grades and
-              moves 20. These three layers — WARN credit, slop, originality —
-              carry the real sensitivity, and they are the layers we document
-              as judgment calls.
-            </p>
-            <p>
-              <strong>Category weights are stable.</strong> One-at-a-time
-              &times;1.5 on any single category moves at most 4 grades
-              (accessibility) and at most 2.5 points (tokens). The a11y floor
-              and hard-fail ceilings flip zero grades — they bind consistently
-              across the cohort.
-            </p>
-            <p>
-              <strong>What this means for reading a score.</strong> The letter
-              grade is stable under weight-table changes, so the rank is not
-              an artifact of the weight table. The dimension profile remains
-              the more informative signal — if a site&rsquo;s WARN-heavy
-              categories are where its score lives, that is visible in the
-              per-category breakdown, not hidden in the composite.
-            </p>
-          </div>
-        </section>
+              <section className="dx-sec" id="what-engine-measures" aria-labelledby="m-meas-h">
+                <h2 className="eg-h2" id="m-meas-h">
+                  What it measures
+                </h2>
+                <dl className="dx-defs">
+                  <div>
+                    <dt>What a site ships</dt>
+                    <dd>
+                      Inline style blocks and linked stylesheets, the <code>:root</code> custom properties, and the served HTML. A
+                      design system can document a rich token taxonomy in Storybook and still score low if its public surface
+                      exposes none of it at <code>:root</code>; that gap is what the leaderboard shows.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Deterministically</dt>
+                    <dd>
+                      The same URL gives the same score within the 24-hour cache window. When a site changes its CSS, the score
+                      changes on the next run.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Conformance, which is narrower than quality</dt>
+                    <dd>
+                      A high score means the site ships the primitives the engine can detect. A site can pass every check and still be
+                      ordinary, or fail many and still be excellent. Read the category profile before the letter: it says where a
+                      score comes from.
+                    </dd>
+                  </div>
+                </dl>
+              </section>
 
-        <section className="doctrine-section fade-up methodology-section" id="score-diff">
-          <h2 className="doctrine-heading">Score diff across contract versions</h2>
-          <div className="methodology-prose">
-            <p>
-              A methodology release must never be a surprise regression. Every
-              contract version bump produces an explicit score diff: the same
-              check statuses are recomputed under the previous version&rsquo;s
-              methodology profile (reconstructed from the changelog), and the
-              delta is reported per site with the new checks each site faced.
-              Full report:{' '}
-              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/score-diff-report.md">
-                score-diff-report.md
-              </a>{' '}
-              (regenerate via{' '}
-              <code>node scripts/score-diff.mjs --all</code>).
-            </p>
-            <p>
-              <strong>The v0.3.0 &rarr; v0.4.0 release was not neutral.</strong>{' '}
-              Across 30 leaderboard sites: mean &Delta; &minus;0.68, 12 grade
-              flips (7 up, 5 down), max up +7.2 (m3.material.io), max down
-              &minus;13.2 (pentagram.com). The {CONTRACT_VERSION} additions — the
-              DESIGN.md spec layer (v37), copywriting checks (v38&ndash;v41),
-              the a11y floor, anti-slop deduction, and originality lift —
-              moved 12 of 30 grades, and this diff makes every move explicit
-              and attributable to the methodology change, not to the sites.
-            </p>
-            <p>
-              <strong>For CI.</strong> The contract version is pinned in every
-              score response (<code>contractVersion</code>). When a new
-              version ships, run the score-diff before adopting it — if a
-              site&rsquo;s grade changes, the diff says why.
-            </p>
-          </div>
-        </section>
+              <section className="dx-sec" id="what-engine-skips" aria-labelledby="m-skip-h">
+                <h2 className="eg-h2" id="m-skip-h">
+                  What it skips
+                </h2>
+                <p className="dx-lead">
+                  {MANUAL_CHECKS + SKIP_CHECKS} checks sit outside the score. {MANUAL_CHECKS} need a capability the static engine
+                  lacks (a rendered browser, a performance trace, live interaction) and are resolved by the full audit;{' '}
+                  {SKIP_CHECKS === 1 ? 'one applies' : `${SKIP_CHECKS} apply`} only when a site serves what it reads.
+                </p>
+                <ul className="dx-checks">
+                  {CHECKS.filter((c) => c.manualReason || c.skipReason).map((c) => (
+                    <li key={c.id}>
+                      <span className="dx-check-head">
+                        <code>{c.id}</code>
+                        <span className="dx-tag">{c.manualReason ? 'manual' : 'conditional'}</span>
+                        <span className="dx-check-item">{itemOf(c.id)}</span>
+                      </span>
+                      <span className="dx-check-how">{display(c.manualReason ?? c.skipReason ?? '')}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
 
-        <section className="doctrine-section fade-up methodology-section" id="blind-comparison">
-          <h2 className="doctrine-heading">Blind comparison against an independent assessor</h2>
-          <div className="methodology-prose">
-            <p>
-              Every leaderboard site is scored by two independent raters that
-              never see each other&rsquo;s results: the Designesy engine
-              (accessibility category &ge; 60 = pass) and axe-core 4.13.0,
-              the industry-standard WCAG engine, injected into a real browser
-              via CDP. Full matrix + kappa:{' '}
-              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/blind-comparison-report.md">
-                blind-comparison-report.md
-              </a>
-              . A human-panel packet (anonymized, blank rating form) is also
-              shipped for independent reviewers.
-            </p>
-            <p>
-              <strong>The result is honest divergence, not agreement.</strong>{' '}
-              &kappa; = &minus;0.085 across 30 sites (both pass 8, both fail 5,
-              engine-only pass 12, axe-only pass 5). The two instruments
-              measure different layers: the contract checks what is{' '}
-              <em>declared</em> in shipped CSS (tokens, focus-visible,
-              reduced-motion), axe checks what <em>renders</em> (computed
-              contrast, ARIA structure, button names, image alts). Designesy
-              itself scores a11y 100 yet axe finds a color-contrast violation
-              — the engine measures the primitives the site declares, axe
-              measures the pixels the browser draws. Neither subsumes the
-              other.
-            </p>
-            <p>
-              <strong>What this means.</strong> A single a11y number from one
-              instrument is insufficient — which is why the leaderboard
-              dimension profile reports both the contract score and the
-              category fingerprint, and why the full audit path
-              (<code>/api/score/audit</code>) runs a real browser. The blind
-              comparison makes the boundary explicit instead of pretending
-              one instrument is complete.
-            </p>
-          </div>
-        </section>
+              <section className="dx-sec" id="validation" aria-labelledby="m-val-h">
+                <h2 className="eg-h2" id="m-val-h">
+                  How the method is tested
+                </h2>
+                <p className="dx-lead">
+                  Four studies test the method against itself and against an outside instrument. Each figure below is read from the
+                  study&apos;s own report file, dated, and each report regenerates with one command.
+                </p>
 
-        <section className="doctrine-section fade-up methodology-section" id="rank-bounds">
-          <h2 className="doctrine-heading">Rank-optimal weighting bounds</h2>
-          <div className="methodology-prose">
-            <p>
-              The canonical test after sensitivity analysis is rank-optimal
-              weighting: the OECD Better Life Index analysis (Springer Social
-              Indicators Research) showed 19 of 36 countries can be ranked #1
-              by adversarial weights. We apply the same test to our own
-              leaderboard before anyone else does — every site&rsquo;s score
-              is recomputed under 29 weight scenarios (published weights,
-              uniform, and each category favored &times;2 or disfavored
-              &times;0.5), and the rank band is published. Full report:{' '}
-              <a href="https://github.com/LE-VAI/designesy-org/blob/main/apps/site/scripts/rank-bounds-report.md">
-                rank-bounds-report.md
-              </a>{' '}
-              (regenerate via{' '}
-              <code>node scripts/rank-bounds.mjs</code>).
-            </p>
-            <p>
-              <strong>The top of the leaderboard is stable.</strong> The top
-              five — designesy.org, apple.com, primer.style, zeroheight.com,
-              vercel.com — stay in the top five under <em>every</em> weight
-              scenario. Zero fragile sites. The #1 spot is absolute (100
-              under every scenario). The widest rank band in the cohort is 9
-              positions (designesy.ai.studio, 7&ndash;16); most sites band
-              within 1&ndash;6 positions.
-            </p>
-            <p>
-              <strong>What this means.</strong> The leaderboard rank is not
-              an artifact of the weight table. A critic cannot reshuffle the
-              ranking by choosing favorable weights — the published bounds
-              make that claim checkable in one command.
-            </p>
-          </div>
-        </section>
-
-        {CHECKS_BY_CATEGORY.map((group) => (
-          <section
-            key={group.category}
-            className="doctrine-section fade-up methodology-section"
-            id={group.category}
-          >
-            <div className="check-group-header">
-              <h2 className="check-group-name">{CATEGORY_LABELS[group.category]}</h2>
-              <span className="check-group-weight">
-                {group.weight}% weight · {group.checks.length} check{group.checks.length !== 1 ? 's' : ''} ·{' '}
-                {group.checks.filter((c) => !c.skipReason && !c.manualReason).length} scored
-              </span>
-            </div>
-            <p className="check-group-desc">{CATEGORY_DESCRIPTIONS[group.category]}</p>
-            <div className="check-group">
-              {group.checks.length === 0 && (
-                <div className="check-row">
-                  <div className="check-row-head">
-                    <span className="check-item" style={{ color: 'var(--muted-dim)' }}>
-                      No checks assigned to this category in the current engine.
+                <details className="dx-study" id="sensitivity">
+                  <summary>
+                    <span className="dx-study-title">Sensitivity</span>
+                    <span className="dx-study-line">
+                      {KNOBS.length} perturbations; the WARN credit moves the most grades ({knob('warn-0.75')?.gradeChanges} of{' '}
+                      {SENSITIVITY.sites})
                     </span>
+                  </summary>
+                  <div className="dx-study-body">
+                    <div className="dx-prose">
+                      <p>
+                        Every leaderboard site&apos;s real check statuses are recomputed under {KNOBS.length} changes to the method:
+                        weight scaling, the WARN credit, the slop and originality layers, the bands, the floor and ceilings, and each
+                        category favoured one at a time.
+                      </p>
+                      <p>
+                        <strong>Uniform weight changes do nothing.</strong> Scaling every weight by 10 or 20 per cent in either
+                        direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} and no rank:
+                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> the WARN credit,
+                        then slop and originality. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
+                        and {fmt(OAT_MAX_DELTA)} points.
+                      </p>
+                    </div>
+                    <DataFigure
+                      id="m-sens"
+                      title="Grades that change under each perturbation"
+                      note={`The ${MOVING.length} perturbations that change any grade, most first; the other ${STILL} change none.`}
+                      source={`sensitivity-report.json, generated ${day(SENSITIVITY.generatedAt)} for contract ${SENSITIVITY.contractVersion}.${unread(SENSITIVITY.excluded)} Regenerate: node scripts/sensitivity-analysis.mjs.`}
+                      table={
+                        <DataTable
+                          caption={`All ${KNOBS.length} perturbations: grades changed, rank positions moved, largest score change.`}
+                          head={['Perturbation', 'Grades changed', 'Rank moves', 'Largest change']}
+                          numeric={[1, 2, 3]}
+                          opt={[3]}
+                          rows={KNOBS.map((k) => [k.label, k.gradeChanges, k.rankPositionsMoved, fmt(k.maxScoreDelta)])}
+                        />
+                      }
+                    >
+                      <BarList
+                        max={SENSITIVITY.sites}
+                        label={`Grades changed per perturbation, of ${SENSITIVITY.sites} sites: ${MOVING.map((k) => `${k.label} ${k.gradeChanges}`).join(', ')}.`}
+                        bars={MOVING.map((k) => ({
+                          key: k.key,
+                          label: k.label,
+                          meta: `${k.rankPositionsMoved} rank moves`,
+                          value: k.gradeChanges,
+                          display: `${k.gradeChanges} of ${SENSITIVITY.sites}`,
+                          tone: 'plain' as const,
+                        }))}
+                      />
+                    </DataFigure>
                   </div>
-                </div>
-              )}
-              {group.checks.map((check) => (
-                <div key={check.id} className="check-row">
-                  <div className="check-row-head">
-                    <span className="check-id">{check.id}</span>
-                    <span className="check-item">{check.item}</span>
+                </details>
+
+                <details className="dx-study" id="score-diff">
+                  <summary>
+                    <span className="dx-study-title">Version diff</span>
+                    <span className="dx-study-line">
+                      v0.3.0 to v0.4.0: {SCORE_DIFF.summary.gradeFlips} of {SCORE_DIFF.summary.sites} grades moved, mean change{' '}
+                      {fmt(SCORE_DIFF.summary.meanDelta)}
+                    </span>
+                  </summary>
+                  <div className="dx-study-body">
+                    <div className="dx-prose">
+                      <p>
+                        A method release should never be a silent regression. Each contract version is diffed: the same check
+                        statuses scored under the previous version&apos;s profile, rebuilt from the changelog, and the change
+                        reported per site. From v0.3.0 to v0.4.0, {SCORE_DIFF.summary.gradeFlips} grades moved ({DIFF_UP} up,{' '}
+                        {DIFF_DOWN} down); the largest rise was {hostOf(DIFF_MAX_UP.url)} at +{fmt(DIFF_MAX_UP.delta)}, the largest
+                        fall {hostOf(DIFF_MAX_DOWN.url)} at {fmt(DIFF_MAX_DOWN.delta)}.
+                      </p>
+                      <p>
+                        Every score response pins its <code>contractVersion</code>. Before adopting a new version in CI, run the diff:
+                        if a grade moves, it says why.
+                      </p>
+                    </div>
+                    <div className="dx-table-box">
+                      <DataTable
+                        caption={`Score under v0.3.0 and v0.4.0 for each site, generated ${day(SCORE_DIFF.generatedAt)}.`}
+                        head={['Site', 'v0.3.0', 'v0.4.0', 'Change']}
+                        numeric={[1, 2, 3]}
+                        rows={DIFF_ROWS.map((r) => [
+                          hostOf(r.url),
+                          `${fmt(r.v030.score)} ${r.v030.grade}`,
+                          `${fmt(r.v040.score)} ${r.v040.grade}`,
+                          `${r.delta > 0 ? '+' : r.delta < 0 ? '−' : ''}${fmt(Math.abs(r.delta))}`,
+                        ])}
+                      />
+                    </div>
+                    <p className="dx-src">
+                      score-diff-report.json, generated {day(SCORE_DIFF.generatedAt)}.{unread(DIFF_UNREAD)} Regenerate: node scripts/score-diff.mjs --all.
+                    </p>
                   </div>
-                  <p className="check-how">{check.how}</p>
-                  {check.manualReason && (
-                    <span className="check-skip">MANUAL — {check.manualReason}</span>
-                  )}
-                  {check.skipReason && (
-                    <span className="check-skip">N/A — {check.skipReason}</span>
-                  )}
-                </div>
-              ))}
+                </details>
+
+                <details className="dx-study" id="blind-comparison">
+                  <summary>
+                    <span className="dx-study-title">Blind comparison</span>
+                    <span className="dx-study-line">
+                      against {AXE}: κ = {K.kappa.toFixed(3)}, {K.label}
+                    </span>
+                  </summary>
+                  <div className="dx-study-body">
+                    <div className="dx-prose">
+                      <p>
+                        Each site is rated by two instruments that never see each other&apos;s results: the engine (accessibility
+                        category at {BLIND.a11yPassThreshold} or more passes) and {AXE}, the WCAG engine, run in a real browser (no
+                        serious or critical violation passes). Across {K.n} sites, κ = {K.kappa.toFixed(3)} (95% interval{' '}
+                        {K.kappaCI95[0].toFixed(2)} to {K.kappaCI95[1].toFixed(2)}): {K.label}.
+                      </p>
+                      <p>
+                        The two measure different layers. The engine reads what shipped CSS declares (tokens, focus-visible, reduced
+                        motion); axe reads what renders (computed contrast, ARIA, button names, alt text). Neither contains the other,
+                        which is why the full audit at <code>/api/score/audit</code> runs a real browser.
+                      </p>
+                    </div>
+                    <div className="dx-table-box">
+                      <DataTable
+                        caption={`Engine verdict against ${AXE} verdict, ${K.n} sites.`}
+                        head={['', `${AXE} passes`, `${AXE} fails`]}
+                        numeric={[1, 2]}
+                        rows={[
+                          ['Engine passes', K.bothPass, K.aPassBFail],
+                          ['Engine fails', K.aFailBPass, K.bothFail],
+                        ]}
+                      />
+                    </div>
+                    <p className="dx-src">
+                      blind-comparison-report.json, generated {day(BLIND.generatedAt)}.
+                      {BLIND.excluded.length
+                        ? ` Left out, with no verdict from one of the two raters: ${BLIND.excluded.map((x) => hostOf(x.url)).join(', ')}.`
+                        : ''}
+                    </p>
+                  </div>
+                </details>
+
+                <details className="dx-study" id="rank-bounds">
+                  <summary>
+                    <span className="dx-study-title">Rank bounds</span>
+                    <span className="dx-study-line">
+                      {RANK_BOUNDS.scenarios} weight scenarios; the widest band is {WIDEST.bandWidth} places
+                    </span>
+                  </summary>
+                  <div className="dx-study-body">
+                    <div className="dx-prose">
+                      <p>
+                        After sensitivity comes the adversarial test: can a chosen weighting put a site on top? (An analysis of the
+                        OECD Better Life Index found 19 of 36 countries could be ranked first.) Every site is recomputed under{' '}
+                        {RANK_BOUNDS.scenarios} weightings (the published one, uniform, and each category doubled or halved) and its
+                        best and worst rank reported.
+                      </p>
+                      <p>
+                        On {day(RANK_BOUNDS.generatedAt)},{' '}
+                        {RANK_BOUNDS.top5Fragile.length === 0
+                          ? 'the top five held under every scenario'
+                          : `${RANK_BOUNDS.top5Fragile.length} of the top five could be pushed out by some weighting`}. The widest band
+                        was {hostOf(WIDEST.url)}, ranks {WIDEST.bestRank} to {WIDEST.worstRank}. Ranks here are that run&apos;s, which
+                        can differ from today&apos;s leaderboard.
+                      </p>
+                    </div>
+                    <DataFigure
+                      id="m-ranks"
+                      title="Each site's rank band across the weight scenarios"
+                      note="The segment runs from the best rank to the worst any scenario gave; the dot is the published rank. Rank 1 is at the left."
+                      source={`rank-bounds-report.json, generated ${day(RANK_BOUNDS.generatedAt)}.${unread(RANK_BOUNDS.excluded)} Regenerate: node scripts/rank-bounds.mjs.`}
+                      table={
+                        <DataTable
+                          caption={`Best, published and worst rank per site across ${RANK_BOUNDS.scenarios} weight scenarios.`}
+                          head={['Site', 'Best', 'Published', 'Worst', 'Band']}
+                          numeric={[1, 2, 3, 4]}
+                          opt={[4]}
+                          rows={RANKS.map((r) => [hostOf(r.url), r.bestRank, r.baselineRank, r.worstRank, r.bandWidth])}
+                        />
+                      }
+                    >
+                      <RangeList
+                        min={1}
+                        max={RANK_BOUNDS.sites}
+                        label={`Rank bands across ${RANK_BOUNDS.scenarios} weight scenarios for ${RANK_BOUNDS.sites} sites; the widest is ${hostOf(WIDEST.url)} from ${WIDEST.bestRank} to ${WIDEST.worstRank}.`}
+                        ranges={RANKS.map((r) => ({
+                          key: r.url,
+                          label: hostOf(r.url),
+                          lo: r.bestRank,
+                          hi: r.worstRank,
+                          at: r.baselineRank,
+                          display: r.bestRank === r.worstRank ? `${r.bestRank}` : `${r.bestRank} to ${r.worstRank}`,
+                        }))}
+                      />
+                    </DataFigure>
+                  </div>
+                </details>
+              </section>
+
+              <section className="dx-sec" id="checks" aria-labelledby="m-checks-h">
+                <h2 className="eg-h2" id="m-checks-h">
+                  Every check
+                </h2>
+                <p className="dx-lead">
+                  All {ENGINE_CHECK_COUNT}, by category, heaviest first. Open a category to read how each of its checks is decided.
+                </p>
+                {CATEGORY_ORDER.map((k) => (
+                  <details className="dx-group" id={k} key={k}>
+                    <summary>
+                      <span className="dx-group-name">{label(k)}</span>
+                      <span className="dx-group-meta">
+                        weight {CATEGORY_WEIGHTS[k]} · {checksIn(k).length} {checksIn(k).length === 1 ? 'check' : 'checks'} ·{' '}
+                        {scoredIn(k)} scored
+                      </span>
+                    </summary>
+                    <div className="dx-group-body">
+                      <p className="dx-group-note">{CATEGORY_NOTES[k]}</p>
+                      {checksIn(k).length === 0 ? (
+                        <p className="dx-group-note">No checks in this category in the current engine.</p>
+                      ) : (
+                        <ul className="dx-checks">
+                          {checksIn(k).map((c) => (
+                            <li key={c.id}>
+                              <span className="dx-check-head">
+                                <code>{c.id}</code>
+                                {c.manualReason && <span className="dx-tag">manual</span>}
+                                {c.skipReason && <span className="dx-tag">conditional</span>}
+                                <span className="dx-check-item">{itemOf(c.id)}</span>
+                              </span>
+                              <span className="dx-check-how">{display(c.how)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </details>
+                ))}
+              </section>
+
+              <section className="dx-sec" id="exports" aria-labelledby="m-exp-h">
+                <h2 className="eg-h2" id="m-exp-h">
+                  Data exports
+                </h2>
+                <dl className="dx-defs">
+                  <div>
+                    <dt>
+                      <Link href="/api/leaderboard">/api/leaderboard</Link>
+                    </dt>
+                    <dd>JSON with each site&apos;s category scores. CORS-enabled.</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <Link href="/api/leaderboard.csv">/api/leaderboard.csv</Link>
+                    </dt>
+                    <dd>RFC 4180 CSV with a header row, for spreadsheets.</dd>
+                  </div>
+                </dl>
+                <p className="dx-src">
+                  Contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · {ENGINE_CHECK_COUNT} checks in{' '}
+                  {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · 6 hard-fail
+                  ceilings · engine at <Link href="/api/score">/api/score</Link> · contract at{' '}
+                  <Link href="/contracts/design-system.json">/contracts/design-system.json</Link>
+                </p>
+              </section>
             </div>
-          </section>
-        ))}
-
-        <section className="doctrine-section fade-up methodology-section">
-          <h2 className="doctrine-heading">Data exports</h2>
-          <div className="methodology-prose">
-            <p>
-              The leaderboard data is available in two machine-readable formats
-              for agents and researchers:
-            </p>
-            <p>
-              <Link href="/api/leaderboard" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>
-                <code style={{ background: 'var(--surface)', padding: '0.1rem 0.35rem', borderRadius: '3px', border: '1px solid var(--line-faint)' }}>/api/leaderboard</code>
-              </Link>
-              {' '}&mdash; JSON with full per-site categoryScores. CORS-enabled.<br />
-              <Link href="/api/leaderboard.csv" style={{ color: 'var(--signal-light)', borderBottom: '1px solid var(--signal-dim)' }}>
-                <code style={{ background: 'var(--surface)', padding: '0.1rem 0.35rem', borderRadius: '3px', border: '1px solid var(--line-faint)' }}>/api/leaderboard.csv</code>
-              </Link>
-              {' '}&mdash; RFC 4180 CSV with a header row. Spreadsheet-friendly.
-            </p>
-          </div>
-        </section>
-
-        {/* The inline maxWidth is the 1080px page container, which is right for the
-            section but wrong for running text: measured 136 characters per line,
-            the widest prose block on the site. Every other route's .status-note
-            already sits at 66ch because it inherits the global class; this one
-            opted out with an inline style. The container stays 1080px for
-            centring; the note itself is capped. */}
-        <div className="status-note methodology-section" style={{ maxWidth: 'var(--maxw, 1080px)', margin: '0 auto', padding: '0 1.5rem 2rem' }}>
-          <div style={{ maxWidth: '66ch' }}>
-          Contract v0.4.0 · Methodology v2 · {CHECKS.length} checks · {CATEGORIES.length} categories ·{' '}
-          12 slop rules (S1&ndash;S12, up to -20pts) · 7 originality signals
-          (O1&ndash;O7, up to +8pts) · 6 hard-fail ceilings · deterministic, no
-          LLM · engine source at{' '}
-          <Link href="/api/score" style={{ color: 'var(--muted)' }}>/api/score</Link> ·{' '}
-            contract at{' '}
-            <Link href="/contracts/design-system.json" style={{ color: 'var(--muted)' }}>/contracts/design-system.json</Link>
           </div>
         </div>
       </main>
-
       <Footer />
     </>
   );

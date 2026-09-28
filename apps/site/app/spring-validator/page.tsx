@@ -25,12 +25,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Spring Physics Validator',
   description:
-    'Validate spring-based motion against an accessibility contract. Input stiffness, damping, and mass — get the damping ratio, overshoot percentage, settle time, and a reduced-motion recommendation. No one else validates spring physics against reduced-motion requirements.',
+    'Validate spring-based motion against an accessibility contract. Input stiffness, damping, and mass to get the damping ratio, overshoot percentage, settle time, and a reduced-motion recommendation. No one else validates spring physics against reduced-motion requirements.',
   path: '/spring-validator',
   ogTitle: 'Spring Physics Validator · Designesy',
   ogDescription:
     'Simulate spring motion, compute overshoot, and get a reduced-motion accessibility recommendation. The first spring-physics validation tool.',
-  twitterDescription: 'Spring physics validator — designesy.org/spring-validator',
+  twitterDescription: 'Spring physics validator · designesy.org/spring-validator',
 });
 
 export default function SpringValidatorPage() {
@@ -42,7 +42,7 @@ export default function SpringValidatorPage() {
           <p className="surface-eyebrow" data-scramble>Motion frontier</p>
           <h1 className="surface-title" data-scramble>Spring Physics Validator</h1>
           <p className="surface-lede">
-            Spring-based motion is the frontier — M3 Expressive, iOS, Framer
+            Spring-based motion is the frontier: M3 Expressive, iOS, Framer
             Motion, React Spring. But no one validates whether a spring&apos;s
             physics produce overshoot that violates reduced-motion requirements.
             Until now.
@@ -65,8 +65,8 @@ export default function SpringValidatorPage() {
             Material Design 3 Expressive introduced spring-based motion backed
             by 46 research studies. But M3 has <em>no published reduced-motion
             token</em> for springs. The spec describes spring physics (damping,
-            response) but does not address what happens when a user has
-            <code style={{ fontSize: '0.85rem' }}> prefers-reduced-motion: reduce</code>
+            response) but does not address what happens when a user has{' '}
+            <code style={{ fontSize: '0.85rem' }}>prefers-reduced-motion: reduce</code>{' '}
             set and a spring with a low damping ratio produces visible overshoot.
           </p>
           <p className="surface-note" style={{ marginBottom: '1rem', maxWidth: '70ch' }}>
@@ -74,7 +74,7 @@ export default function SpringValidatorPage() {
             already ships spring tokens (<code style={{ fontSize: '0.85rem' }}>damping: 1.0,
             response: 0.4</code> for default, <code style={{ fontSize: '0.85rem' }}>damping: 0.8,
             response: 0.3</code> for momentum). This tool lets anyone verify
-            whether their spring parameters are safe for vestibular sensitivity —
+            whether their spring parameters are safe for vestibular sensitivity,
             or whether they need an explicit reduced-motion fallback.
           </p>
           <p className="surface-note" style={{ maxWidth: '70ch' }}>
@@ -82,7 +82,7 @@ export default function SpringValidatorPage() {
             behavior. ζ &gt; 1 is overdamped (no overshoot, slow). ζ = 1 is
             critically damped (no overshoot, fastest settle). 0 &lt; ζ &lt; 1 is
             underdamped (overshoots, oscillates). The lower the damping ratio,
-            the more visible the overshoot — and the more likely it triggers
+            the more visible the overshoot, and the more likely it triggers
             vestibular discomfort in sensitive users.
           </p>
         </section>

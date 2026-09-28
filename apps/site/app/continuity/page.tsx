@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../instrument.css';
 import './continuity.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
@@ -11,13 +12,13 @@ import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 export const metadata: Metadata = pageMeta({
   title: 'Continuity',
   description:
-    'Designesy Continuity — design judgment that stays current. Score, contract, verify, and keep the receipt. Early access waitlist. Open core stays free.',
+    'Designesy Continuity: design judgment that stays current. Score, contract, verify, and keep the receipt. Early access waitlist. Open core stays free.',
   path: '/continuity',
   ogTitle: 'Continuity · Designesy',
   ogDescription:
-    'Design judgment that stays current. Early access for Continuity — scheduled scans, drift alerts, and score history on work you ship with agents.',
+    'Design judgment that stays current. Early access for Continuity: scheduled scans, drift alerts, and score history on work you ship with agents.',
   twitterDescription:
-    'Design judgment that stays current — early access waitlist. designesy.org/continuity',
+    'Design judgment that stays current: early access waitlist. designesy.org/continuity',
 });
 
 const CARDS = [
@@ -34,7 +35,7 @@ const CARDS = [
   {
     tag: 'For',
     title: 'Builders who ship with agents',
-    body: 'Solo operators, product designers, and small studios who need a portable standard — not another token GUI.',
+    body: 'Solo operators, product designers, and small studios who need a portable standard instead of another token GUI.',
   },
   {
     tag: 'Not',
@@ -76,11 +77,11 @@ export default function ContinuityPage() {
           </h1>
           <p className="surface-lede">
             Continuity keeps score, contract, and verification on the work you
-            ship — so taste does not reset every sprint or every agent run.
+            ship, so taste does not reset every sprint or every agent run.
           </p>
           <p className="surface-note">
             Open core stays free: {ENGINE_CHECK_COUNT}-check scoring, drift radar, AI readiness,
-            DTCG validation. Continuity is the layer that remembers — scheduled
+            DTCG validation. Continuity is the layer that remembers: scheduled
             scans, drift alerts, and score history at $29/site/month.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -107,7 +108,7 @@ export default function ContinuityPage() {
           <h2 className="doctrine-heading">Offer ladder</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             No live prices on this page. Founding access opens after early
-            conversations — open tools stay free either way.
+            conversations. Open tools stay free either way.
           </p>
           <div className="continuity-ladder" role="list">
             {LADDER.map((row) => (
@@ -128,8 +129,8 @@ export default function ContinuityPage() {
               Join the Continuity waitlist
             </h2>
             <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-              No charge. No spam cadence. We write when founding access opens —
-              and only about Continuity.
+              No charge, no spam. We write when founding access opens, and only
+              about Continuity.
             </p>
             <ContinuityWaitlistForm />
           </div>
@@ -138,49 +139,52 @@ export default function ContinuityPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Already live free</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/open"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open index</span>
-                <span className="row-meta">Portable design intelligence catalog</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Kit One · Design Review</span>
-                <span className="row-meta">Eight-dimension inspection method</span>
-              </span>
-            </Link>
-            <a
-              href="https://designesy.ai.studio/"
-              className="row"
-              role="listitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Score a site</span>
-                <span className="row-meta">
-                  Director + portable score export on designesy.ai.studio
+            <div role="listitem">
+              <Link
+                href="/open"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open index</span>
+                  <span className="row-meta">Portable design intelligence catalog</span>
                 </span>
-              </span>
-            </a>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Kit One · Design Review</span>
+                  <span className="row-meta">Eight-dimension inspection method</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <a
+                href="https://designesy.ai.studio/"
+                className="row"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Score a site</span>
+                  <span className="row-meta">
+                    Director + portable score export on designesy.ai.studio
+                  </span>
+                </span>
+              </a>
+            </div>
           </div>
         </section>
       </main>

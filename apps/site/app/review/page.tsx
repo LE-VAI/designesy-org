@@ -11,11 +11,11 @@ import { AgentActions } from '../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Review',
   description:
-    'Designesy Review — quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
+    'Designesy Review: quality gate for interfaces, systems, and agent output. Eight dimensions and public field checks.',
   path: '/review',
   ogDescription:
-    'Review leads with consequences, not personal taste. Eight dimensions and live field checks.',
-  twitterDescription: 'Quality gate for public artifacts — designesy.org/review',
+    'Review leads with consequences instead of personal taste. Eight dimensions and live field checks.',
+  twitterDescription: 'Quality gate for public artifacts · designesy.org/review',
 });
 
 const DIMENSIONS = [
@@ -49,7 +49,7 @@ export default function ReviewPage() {
           <p className="surface-eyebrow" data-scramble>Quality gate</p>
           <h1 className="surface-title" data-scramble>Review</h1>
           <p className="surface-lede">
-            Review leads with consequences, not personal taste.
+            Review leads with consequences and evidence.
           </p>
           <p className="surface-note">
             Designesy Review is the quality-control layer for interfaces,
@@ -95,7 +95,7 @@ export default function ReviewPage() {
           <p className="surface-note">
             Functional is the baseline. Considered is the bar. An artifact is
             ready when every dimension above has been checked, tradeoffs have
-            been named, and the remaining tensions are documented — not hidden.
+            been named, and the remaining tensions are documented in the open.
           </p>
         </section>
 
@@ -117,8 +117,8 @@ export default function ReviewPage() {
                 Kit One output format on the live lab.
               </p>
               <p className="lab-card-desc">
-                Eight dimensions, holds, tensions, corrections, and keyboard-path
-                proof — rules adopted into contract v0.1.1.
+                Eight dimensions, holds, tensions, corrections, and
+                keyboard-path proof, with rules adopted into contract v0.1.1.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
             </Link>
@@ -137,7 +137,7 @@ export default function ReviewPage() {
                 Kit One output format on the interface-feel lab.
               </p>
               <p className="lab-card-desc">
-                Radii, press scale, outlines, hit areas, stagger — five takt
+                Radii, press scale, outlines, hit areas, and stagger: five takt
                 rules adopted into contract v0.1.2.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -158,7 +158,7 @@ export default function ReviewPage() {
               </p>
               <p className="lab-card-desc">
                 Font smoothing, scale, leading, tracking, measure, text-wrap,
-                tabular numbers, selection — 10 cadence rules adopted into
+                tabular numbers, and selection: 10 cadence rules adopted into
                 contract v0.1.3.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -178,7 +178,7 @@ export default function ReviewPage() {
                 Kit One output format on the interaction sound lab.
               </p>
               <p className="lab-card-desc">
-                Nineteen cues, nineteen roles, Cuelume v0.2.2 — nine acoustic
+                Nineteen cues, nineteen roles, Cuelume v0.2.2: nine acoustic
                 mapping rules adopted into contract v0.3.0.
               </p>
               <span className="lab-card-arrow">Open field check →</span>
@@ -198,7 +198,7 @@ export default function ReviewPage() {
                 Public review against design system contract {CONTRACT_VERSION}.
               </p>
               <p className="lab-card-desc">
-                Holds, tensions, and standing rules for the live site — including
+                Holds, tensions, and standing rules for the live site, including
                 Poise, Takt, Cadence, and Acoustics.
               </p>
               <span className="lab-card-arrow">Open review →</span>
@@ -218,7 +218,7 @@ export default function ReviewPage() {
                 Site-wide skip link, tab order, and focus-visible proof.
               </p>
               <p className="lab-card-desc">
-                Shared chrome packet for every public route — complements the
+                Shared chrome packet for every public route, complementing the
                 Lab One keyboard path.
               </p>
               <span className="lab-card-arrow">Open keyboard path →</span>
@@ -247,7 +247,7 @@ export default function ReviewPage() {
               Portable package of these dimensions for agents and teams.
             </p>
             <p className="lab-card-desc">
-              Prompt, output format, verification, and anti-patterns — ready to
+              Prompt, output format, verification, and anti-patterns, ready to
               hand off as a shareable path.
             </p>
             <span className="lab-card-arrow">Open kit →</span>
@@ -257,94 +257,100 @@ export default function ReviewPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review against</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/contracts/design-system"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/poise"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">
-                  Restrained interaction · adopted in v0.1.1
+            <div role="listitem">
+              <Link
+                href="/contracts/design-system"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
+                  <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/takt"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Lab Two · Takt</span>
-                <span className="row-meta">
-                  Interface feel · adopted in v0.1.2
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/poise"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">
+                    Restrained interaction · adopted in v0.1.1
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Lab Three · Cadence</span>
-                <span className="row-meta">
-                  Text rhythm · adopted in v0.1.3
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/takt"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Two · Takt</span>
+                  <span className="row-meta">
+                    Interface feel · adopted in v0.1.2
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">
-                  Interaction sound · adopted in v0.3.0
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/cadence"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Three · Cadence</span>
+                  <span className="row-meta">
+                    Text rhythm · adopted in v0.1.3
+                  </span>
                 </span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="whisper"
-              data-cuelume-press
-            >
-              <span className="row-index">06</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">
-                  Runnable package of these dimensions
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">
+                    Interaction sound · adopted in v0.3.0
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="whisper"
+                data-cuelume-press
+              >
+                <span className="row-index">06</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">
+                    Runnable package of these dimensions
+                  </span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -352,7 +358,7 @@ export default function ReviewPage() {
           Review language and quality discipline for public artifacts. Published
           reviews live under /review. Field checks for Poise, Takt, Cadence,
           Acoustics, the public surface, and keyboard paths judge against the
-          live contract — not taste.
+          live contract.
         </div>
       </main>
 

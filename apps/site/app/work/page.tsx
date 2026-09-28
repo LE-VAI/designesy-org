@@ -7,14 +7,14 @@ import { CASE_STUDIES, type CaseStudy } from '../lib/case-studies';
 import { AgentActions } from '../lib/agent-actions';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Work — case studies',
+  title: 'Work: case studies',
   description:
     'Shipped artifacts and before/after scores reviewed against the design system contract. Outcome evidence: the Sources to Artifacts chain applied to real work, including the publisher scoring itself.',
   path: '/work',
   ogTitle: 'Work · Designesy',
   ogDescription:
-    'Case studies — shipped artifacts and before/after scores reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
-  twitterDescription: 'Case studies — designesy.org/work',
+    'Case studies: shipped artifacts and before/after scores reviewed against the design system contract. Sources into principles, principles into contracts, contracts into tools, tools into better designed work.',
+  twitterDescription: 'Case studies · designesy.org/work',
 });
 
 function scoreLine(cs: CaseStudy): string {
@@ -41,8 +41,8 @@ export default function WorkPage() {
             contract.
           </p>
           <p className="surface-note">
-            The pipeline promises to turn tools into better designed work. These are
-            the artifacts — real tools, real publication, real engagement,
+            The pipeline promises to turn tools into better designed work. These
+            are the artifacts: real tools, real publication, real engagement,
             reviewed with Use Kit One. The review format is the same
             eight-dimension method used on Labs and the public surface itself.
             Before/after scores are real values from the live /api/score
@@ -61,24 +61,24 @@ export default function WorkPage() {
           </p>
           <div className="row-stack" role="list">
             {CASE_STUDIES.map((cs, i) => (
-              <Link
-                key={cs.slug}
-                href={`/work/${cs.slug}`}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{cs.title}</span>
-                  <span className="row-meta">
-                    {cs.lede} · {cs.status} · {scoreLine(cs)}
+              <div role="listitem" key={cs.slug}>
+                <Link
+                  href={`/work/${cs.slug}`}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
+                  <span className="row-body">
+                    <span className="row-title">{cs.title}</span>
+                    <span className="row-meta">
+                      {cs.lede} · {cs.status} · {scoreLine(cs)}
+                    </span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -90,11 +90,11 @@ export default function WorkPage() {
             <p>
               Sources become principles. Principles become contracts. Contracts
               become tools. Tools become better designed work. These case
-              studies are the evidence for that last step — shipped artifacts,
+              studies are the evidence for that last step: shipped artifacts,
               reviewed against the contract, with engagement metrics and
               documented outcomes. The before/after pattern is newer: it
-              scores a real URL, fixes the gaps, and scores again — on the
-              same engine, with the same thresholds, as every other site.
+              scores a real URL, fixes the gaps, and scores again on the same
+              engine, with the same thresholds, as every other site.
             </p>
           </div>
         </section>

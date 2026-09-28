@@ -27,8 +27,8 @@ type DriftResponse = {
 };
 
 const SCOPES: { value: Scope; label: string; hint: string }[] = [
-  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to its own contract; any other site is scored fairly.' },
-  { value: 'universal', label: 'Universal', hint: 'A site with no custom properties at all is skipped on d01 instead of failed.' },
+  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to its own contract; every other site gets the Universal reading.' },
+  { value: 'universal', label: 'Universal', hint: 'A site that declares no custom properties is skipped on the token check (d01) instead of failed.' },
   { value: 'contract', label: 'Contract', hint: 'All 12 checks count an absence against the site: the strictest reading.' },
 ];
 
@@ -55,12 +55,8 @@ export function DriftForm({ initialUrl, registry }: { initialUrl: string; regist
         busy={phase === 'running'}
         go="Scan for drift"
         goBusy="Scanning"
-        foot={
-          <>
-            <Segmented<Scope> label="scope" value={scope} onChange={setScope} options={SCOPES} disabled={phase === 'running'} />
-            <p className="eg-bar-foot-note">{SCOPES.find((s) => s.value === scope)?.hint}</p>
-          </>
-        }
+        choices={<Segmented<Scope> label="Scope" value={scope} onChange={setScope} options={SCOPES} disabled={phase === 'running'} />}
+        note="Reads the page, every stylesheet it links, and its inline styles. No login."
       />
       <Instrument
         name="Drift radar"

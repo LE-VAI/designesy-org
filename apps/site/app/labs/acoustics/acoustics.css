@@ -28,8 +28,10 @@
   transition: background 0.18s var(--ease), transform 160ms var(--ease-out);
 }
 
-.cue-cell:hover {
-  background: var(--surface-hover);
+@media (hover: hover) {
+  .cue-cell:hover {
+    background: var(--surface-hover);
+  }
 }
 
 .cue-cell:focus-visible {
@@ -83,4 +85,3 @@
     transition: background 0.15s;
   }
 }
-

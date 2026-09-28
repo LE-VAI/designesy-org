@@ -15,53 +15,53 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 export const metadata: Metadata = pageMeta({
   title: 'Cadence',
   description:
-    'Lab Three — text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence and verified against designesy.org.',
+    'Lab Three covers text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence and verified against designesy.org.',
   path: '/labs/cadence',
-  ogTitle: 'Cadence · Lab Three — Designesy',
+  ogTitle: 'Cadence · Lab Three · Designesy',
   ogDescription:
-    'The rhythm of text on a page. Font declaration, scale, leading, tracking, measure, wrapping, tabular numbers, and selection styling — portable rules with exact values.',
+    'The rhythm of text on a page. Font declaration, scale, leading, tracking, measure, wrapping, tabular numbers, and selection styling: portable rules with exact values.',
   twitterDescription:
-    'Text rhythm as portable rules — scale, leading, tracking, measure, wrapping, numbers. designesy.org/labs/cadence',
+    'Text rhythm as portable rules: scale, leading, tracking, measure, wrapping, numbers. designesy.org/labs/cadence',
 });
 
 /**
  * Lab anatomy coverage — confirms every required lab section is present.
  */
 const ANATOMY_DONE = [
-  'Live artifact — this page is the demo',
-  'Thesis — what cadence means here',
-  'Principle — five rules with exact values',
-  'Portable contract — rules agents can cite',
-  'Implementation notes — builder prompt',
-  'Review checklist — what to inspect',
-  'Provenance — external sources ingested',
-  'Anti-patterns — what cadence is not',
-  'Remix notes — how to adapt',
+  'Live artifact: this page is the demo',
+  'Thesis: what cadence means here',
+  'Principle: five rules with exact values',
+  'Portable contract: rules agents can cite',
+  'Implementation notes: builder prompt',
+  'Review checklist: what to inspect',
+  'Provenance: external sources ingested',
+  'Anti-patterns: what cadence is not',
+  'Remix notes: how to adapt',
   'Lab anatomy coverage',
-  'Verification — evidence on designesy.org',
-  'Field check — reviewed with Kit One',
+  'Verification: evidence on designesy.org',
+  'Field check: reviewed with Kit One',
 ];
 
 const PRINCIPLES = [
   {
     num: '01',
     title: 'Font declaration on root',
-    body: 'Set font-smoothing on the root element: -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale. Set font-synthesis: none to prevent the browser from synthesizing fake weights. Name a system stack with Inter as the first named face — no decorative display fonts for public UI.',
+    body: 'Set font-smoothing on the root element: -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale. Set font-synthesis: none to prevent the browser from synthesizing fake weights. Name a system stack with Inter as the first named face, and keep decorative display fonts out of public UI.',
   },
   {
     num: '02',
     title: 'Scale, measure, and leading',
-    body: 'Every size is a rem multiple of the 16px root — never px for text. Line-height by role: 1.05–1.1 for headings, 1.5–1.6 for body, 1 for display. Cap the measure: 520–580px for body text, 1080px for the layout shell. Text wider than 75 characters loses the reader.',
+    body: 'Every size is a rem multiple of the 16px root; text never uses px. Line-height by role: 1.05 to 1.1 for headings, 1.5 to 1.6 for body, 1 for display. Cap the measure: 520 to 580px for body text, 1080px for the layout shell. Text wider than 75 characters loses the reader.',
   },
   {
     num: '03',
     title: 'Tracking by size',
-    body: 'Letter-spacing is negative for large text (-0.02em to -0.04em) and positive for small caps and labels (0.03em–0.18em). Body text at 16px gets zero tracking. The pattern is mechanical: bigger type tightens, smaller type loosens.',
+    body: 'Letter-spacing is negative for large text (-0.02em to -0.04em) and positive for small caps and labels (0.03em to 0.18em). Body text at 16px gets zero tracking. The pattern is mechanical: bigger type tightens, smaller type loosens.',
   },
   {
     num: '04',
     title: 'Wrap, numbers, and selection',
-    body: 'text-wrap: balance on headings, text-wrap: pretty on body — the browser handles line breaking without JavaScript. Tabular numbers (font-variant-numeric: tabular-nums) for all data, stats, and numerical tables. Style ::selection with a token color — never default browser blue.',
+    body: 'text-wrap: balance on headings, text-wrap: pretty on body. The browser handles line breaking without JavaScript. Tabular numbers (font-variant-numeric: tabular-nums) for all data, stats, and numerical tables. Style ::selection with a token color, never default browser blue.',
   },
   {
     num: '05',
@@ -71,46 +71,46 @@ const PRINCIPLES = [
 ];
 
 const CONTRACT_RULES = [
-  { title: 'Font smoothing on root', meta: 'antialiased + grayscale on :root — no subpixel rendering noise' },
-  { title: 'Rem-based scale', meta: 'Every text size is a rem multiple of the 16px root — never px' },
-  { title: 'Line-height by role', meta: 'Headings 1.05–1.1, body 1.5–1.6, display 1 — never a single global line-height' },
-  { title: 'Tracking by size', meta: 'Negative for headings (-0.02 to -0.04em), positive for labels (0.03–0.18em), zero for body' },
-  { title: 'Cap the measure', meta: 'Body text 520–580px max, layout shell 1080px — text wider than 75ch loses readers' },
+  { title: 'Font smoothing on root', meta: 'antialiased + grayscale on :root, with no subpixel rendering noise' },
+  { title: 'Rem-based scale', meta: 'Every text size is a rem multiple of the 16px root, never px' },
+  { title: 'Line-height by role', meta: 'Headings 1.05 to 1.1, body 1.5 to 1.6, display 1; never a single global line-height' },
+  { title: 'Tracking by size', meta: 'Negative for headings (-0.02 to -0.04em), positive for labels (0.03 to 0.18em), zero for body' },
+  { title: 'Cap the measure', meta: 'Body text 520 to 580px max, layout shell 1080px. Text wider than 75ch loses readers' },
   { title: 'Wrap deliberately', meta: 'text-wrap: balance on headings, text-wrap: pretty on body' },
   { title: 'Tabular numbers', meta: 'font-variant-numeric: tabular-nums for data, stats, and numerical tables' },
   { title: 'Selection and user-select', meta: '::selection styled with a token color, user-select: none on UI chrome' },
-  { title: '16px input floor', meta: 'Inputs never below 16px on mobile — avoids iOS auto-zoom' },
-  { title: 'No decorative display fonts', meta: 'System stack is the contract — no invented display faces for public UI' },
+  { title: '16px input floor', meta: 'Inputs never below 16px on mobile, which avoids iOS auto-zoom' },
+  { title: 'No decorative display fonts', meta: 'System stack is the contract: no invented display faces for public UI' },
 ];
 
 const REVIEW_CHECKS = [
   'Font-smoothing is set on :root (antialiased + grayscale)',
-  'Every text size uses rem — no px font sizes',
+  'Every text size uses rem; no px font sizes',
   'Line-height differs by role: headings ~1.08, body ~1.55, display 1',
   'Letter-spacing is negative on headings, positive on labels, zero on body',
-  'Body text is capped at 520–580px or 75ch maximum',
+  'Body text is capped at 520 to 580px or 75ch maximum',
   'text-wrap: balance on headings, text-wrap: pretty on body',
   'Tabular numbers on every numerical table, stat, or data column',
-  '::selection is styled with a token color — not browser default blue',
-  'user-select: none on UI chrome (buttons, labels, meta) — text is selectable',
+  '::selection is styled with a token color instead of browser default blue',
+  'user-select: none on UI chrome (buttons, labels, meta), while text stays selectable',
   'Inputs are at least 16px on mobile to prevent iOS auto-zoom',
 ];
 
 const PROVENANCE = [
-  'Jakub Krehel (@jakubkrehel) — /better-typography skill, 18 typography principles, MIT',
-  'Font smoothing on root — Krehel /better-typography principle 15',
-  'Line-height by role — Krehel /better-typography principle 5',
-  'Letter-spacing by size — Krehel /better-typography principle 6',
-  'Cap the measure — Krehel /better-typography principle 7',
-  'text-wrap: balance + pretty — Krehel /better-typography principle 8',
-  'Tabular numbers — Krehel /better-typography principle 9',
-  '::selection styling — Krehel /better-typography principle 17',
-  'user-select: none on UI — Krehel /better-typography principle 18',
+  'Jakub Krehel (@jakubkrehel): /better-typography skill, 18 typography principles, MIT',
+  'Font smoothing on root · Krehel /better-typography principle 15',
+  'Line-height by role · Krehel /better-typography principle 5',
+  'Letter-spacing by size · Krehel /better-typography principle 6',
+  'Cap the measure · Krehel /better-typography principle 7',
+  'text-wrap: balance + pretty · Krehel /better-typography principle 8',
+  'Tabular numbers · Krehel /better-typography principle 9',
+  '::selection styling · Krehel /better-typography principle 17',
+  'user-select: none on UI · Krehel /better-typography principle 18',
   'Cross-referenced against Designesy design system contract v0.1.2; adopted into v0.1.3',
 ];
 
 const ANTI = [
-  'Pixel-based font sizes — breaks user zoom and accessibility',
+  'Pixel-based font sizes, which break user zoom and accessibility',
   'Single global line-height for all text',
   'Positive letter-spacing on headings or negative on labels',
   'Full-width body text with no max-width cap',
@@ -125,23 +125,23 @@ const ANTI = [
 const BUILDER_PROMPT = `You are working with Designesy Lab Three: Cadence.
 
 Authority: designesy.org is the canonical public source for Designesy
-open design intelligence. Cadence is Lab Three — text rhythm as portable
+open design intelligence. Cadence is Lab Three: text rhythm as portable
 rules with exact values.
 
 Permission: read-only by default. Inspect, review, and report.
 Do not edit files, deploy changes, or claim write authority
 the operator did not grant.
 
-Goal: Review the target interface for cadence — the rhythm and
-readability of text on the page. Check every rule below and report
+Goal: Review the target interface for cadence (the rhythm and
+readability of text on the page). Check every rule below and report
 which pass, which fail, and which are not applicable.
 
-Rules (exact values, not preferences):
+Rules (each with an exact value):
   1. Font smoothing: antialiased + grayscale on :root
   2. Rem-based scale: every text size is a rem multiple of 16px root
-  3. Line-height by role: headings 1.05–1.1, body 1.5–1.6, display 1
+  3. Line-height by role: headings 1.05 to 1.1, body 1.5 to 1.6, display 1
   4. Tracking by size: negative headings, positive labels, zero body
-  5. Cap the measure: body 520–580px, shell 1080px, never >75ch
+  5. Cap the measure: body 520 to 580px, shell 1080px, never >75ch
   6. Wrap deliberately: balance on headings, pretty on body
   7. Tabular numbers: tabular-nums on all data, stats, and tables
   8. Selection: ::selection styled with a token color
@@ -150,8 +150,8 @@ Rules (exact values, not preferences):
 
 Open tensions (not yet fully verified on designesy.org):
   - Block-axis logical properties not yet migrated (margin-block-start/end)
-  - border-inline-start not yet used — decorative borders still physical
-  - inset-inline not yet used — absolute positioning still left/right
+  - border-inline-start not yet used; decorative borders still physical
+  - inset-inline not yet used; absolute positioning still left/right
 
 Resolved tensions (v0.1.3 CSS fixes applied):
   - font-synthesis: none now set on :root
@@ -188,7 +188,7 @@ export default function CadenceLabPage() {
           </p>
           <h1 className="surface-title" data-scramble>Cadence</h1>
           <p className="surface-lede">
-            Text rhythm — the flow of words across a surface. Font
+            Text rhythm: the flow of words across a surface. Font
             declaration, scale, leading, tracking, measure, wrapping,
             numbers, and selection.
           </p>
@@ -231,7 +231,7 @@ export default function CadenceLabPage() {
               body and 1.08 on headings, negative tracking on titles and
               positive tracking on the eyebrow labels above them, text-wrap:
               balance on headings, text-wrap: pretty on body, tabular-nums on
-              every number on this page, and ::selection styled with signal
+              every number on this page, and ::selection styled with the accent
               blue. Select any text on this page to see it.
             </p>
           </div>
@@ -275,7 +275,7 @@ export default function CadenceLabPage() {
               </div>
             </DemoCell>
 
-            <DemoCell label="Line-height by role" note="Headings 1.05–1.1 · body 1.5–1.6">
+            <DemoCell label="Line-height by role" note="Headings 1.05 to 1.1 · body 1.5 to 1.6">
               <div className="demo-leading">
                 <div className="demo-leading-block">
                   <span className="demo-leading-tag">1.08 · heading</span>
@@ -319,11 +319,11 @@ export default function CadenceLabPage() {
           <div className="definition">
             <p className="definition-label">What cadence means here</p>
             <p>
-              Cadence is the rhythm of text on a page — the accumulated result
+              Cadence is the rhythm of text on a page: the accumulated result
               of font choice, scale, leading, tracking, measure, and wrapping
-              working together. It is not legibility (that is a floor, not a
-              goal). It is the sense that text was composed: that someone
-              chose every size, spacing, and line break with intent. Cadence
+              working together. Legibility is the floor. Cadence is the sense that
+              text was composed, that someone chose every size, spacing, and line
+              break with intent. Cadence
               is what separates a page that reads from one that merely
               contains words.
             </p>
@@ -349,7 +349,7 @@ export default function CadenceLabPage() {
           <h2 className="doctrine-heading">Portable contract</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Rules agents can cite when proposing or reviewing typographic
-            changes. Each rule has an exact value, not a preference.
+            changes. Each rule has an exact value.
           </p>
           <div className="row-stack" role="list">
             {CONTRACT_RULES.map((rule, i) => (
@@ -388,13 +388,13 @@ export default function CadenceLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Remix notes</h2>
           <p className="surface-note">
-            These rules are system-agnostic — express them in Tailwind, plain
+            These rules are system-agnostic: express them in Tailwind, plain
             CSS, CSS-in-JS, or any other styling system. The values are exact;
             the syntax is yours to adapt. When a rule conflicts with an existing
             design system, name the tension explicitly rather than silently
             overriding it. If your project self-hosts web fonts, add
-            font-display: swap and preload the woff2 — the system stack is the
-            fallback, not the default forever.
+            font-display: swap and preload the woff2; the system stack then serves as the
+            fallback.
           </p>
         </section>
 
@@ -407,21 +407,21 @@ export default function CadenceLabPage() {
           <h2 className="doctrine-heading">Verification</h2>
           <CheckGrid
             items={[
-              { title: 'Font smoothing — antialiased + grayscale on :root', status: 'pass' },
-              { title: 'Rem-based scale — all sizes in rem, root at 16px', status: 'pass' },
-              { title: 'Line-height — headings 1.08, body 1.55, hero 1', status: 'pass' },
-              { title: 'Letter-spacing — negative headings (-0.02 to -0.04em), positive labels (0.03–0.18em)', status: 'pass' },
-              { title: 'Measure — --maxw 1080px shell, surface-note 520–580px body', status: 'pass' },
-              { title: 'text-wrap: balance + pretty — both present', status: 'pass' },
-              { title: 'tabular-nums — 8 instances across the live CSS', status: 'pass' },
-              { title: '::selection — styled with var(--signal), not browser default', status: 'pass' },
-              { title: 'user-select: none — present on UI chrome', status: 'pass' },
-              { title: 'font-synthesis: none — set on :root', status: 'pass' },
-              { title: 'text-underline-position: from-font — set on :root', status: 'pass' },
-              { title: 'text-decoration-skip-ink: auto — set on :root', status: 'pass' },
-              { title: 'Logical inline properties — margin-inline and padding-inline applied', status: 'pass' },
-              { title: 'Block-axis logical properties — not yet migrated (open tension)', status: 'fail' },
-              { title: 'border-inline-start — decorative borders still physical (open tension)', status: 'fail' },
+              { title: 'Font smoothing: antialiased + grayscale on :root', status: 'pass' },
+              { title: 'Rem-based scale: all sizes in rem, root at 16px', status: 'pass' },
+              { title: 'Line-height: headings 1.08, body 1.55, hero 1', status: 'pass' },
+              { title: 'Letter-spacing: negative headings (-0.02 to -0.04em), positive labels (0.03 to 0.18em)', status: 'pass' },
+              { title: 'Measure: --maxw 1080px shell, surface-note 520 to 580px body', status: 'pass' },
+              { title: 'text-wrap: balance + pretty, both present', status: 'pass' },
+              { title: 'tabular-nums: 8 instances across the live CSS', status: 'pass' },
+              { title: '::selection styled with var(--signal) instead of the browser default', status: 'pass' },
+              { title: 'user-select: none, present on UI chrome', status: 'pass' },
+              { title: 'font-synthesis: none, set on :root', status: 'pass' },
+              { title: 'text-underline-position: from-font, set on :root', status: 'pass' },
+              { title: 'text-decoration-skip-ink: auto, set on :root', status: 'pass' },
+              { title: 'Logical inline properties: margin-inline and padding-inline applied', status: 'pass' },
+              { title: 'Block-axis logical properties: not yet migrated (open tension)', status: 'fail' },
+              { title: 'border-inline-start unused; decorative borders still physical (open tension)', status: 'fail' },
               {
                 title: 'Field check with Kit One · Design Review',
                 status: 'pass',
@@ -456,71 +456,76 @@ export default function CadenceLabPage() {
             </span>
           </Link>
           <div className="row-stack" role="list" style={{ marginTop: '1.5rem' }}>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/poise"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Lab One · Poise</span>
-                <span className="row-meta">Restrained interaction — motion, sound, reduced motion</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/takt"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Lab Two · Takt</span>
-                <span className="row-meta">Interface feel — radii, press scale, hit areas, stagger</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/contracts/design-system"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Design system contract</span>
-                <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/kits/design-review"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Eight dimensions, portable agent prompt</span>
-              </span>
-            </Link>
-            <Link
-              className="row"
-              role="listitem"
-              href="/labs/acoustics"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">05</span>
-              <span className="row-body">
-                <span className="row-title">Lab Four · Acoustics</span>
-                <span className="row-meta">Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/poise"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Lab One · Poise</span>
+                  <span className="row-meta">Restrained interaction: motion, sound, reduced motion</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/takt"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Two · Takt</span>
+                  <span className="row-meta">Interface feel: radii, press scale, hit areas, stagger</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/contracts/design-system"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Design system contract</span>
+                  <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/kits/design-review"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">Eight dimensions, portable agent prompt</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                className="row"
+                href="/labs/acoustics"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">05</span>
+                <span className="row-body">
+                  <span className="row-title">Lab Four · Acoustics</span>
+                  <span className="row-meta">Interaction sound: nineteen cues, nineteen roles, Cuelume v0.2.2</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 

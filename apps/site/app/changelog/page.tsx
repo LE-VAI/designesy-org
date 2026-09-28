@@ -21,12 +21,12 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Contract Changelog',
   description:
-    'Every contract change, organized by design dimension. Track what was added, modified, and removed across versions — Tokens, Motion, Cadence, Accessibility, Takt, Poise, Acoustics, Copywriting, Identity, Security.',
+    'Every contract change, organized by design dimension. Track what was added, modified, and removed across versions: Tokens, Motion, Cadence, Accessibility, Takt, Poise, Acoustics, Copywriting, Identity, Security.',
   path: '/changelog',
   ogTitle: 'Contract Changelog · Designesy',
   ogDescription:
-    'Design contract changes by dimension. Every version bump, every new check, every rule adoption — filterable by design dimension.',
-  twitterDescription: 'Contract changelog — designesy.org/changelog',
+    'Design contract changes by dimension. Every version bump, every new check, every rule adoption, filterable by design dimension.',
+  twitterDescription: 'Contract changelog · designesy.org/changelog',
 });
 
 // ── Dimensions ──────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Two scored checks for token presence: --paper foundation variable at :root, and token layer depth (primitive → semantic → component).',
     checks: ['v01', 'v02'],
     rationale:
-      'Token architecture is the substrate — without a root surface variable and layered tokens, every other dimension is ad-hoc. 9% weight.',
+      'Token architecture is the substrate: without a root surface variable and layered tokens, every other dimension is ad-hoc. 9% weight.',
     source: 'Designesy design system contract v0.1.0',
   },
   {
@@ -130,7 +130,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Six checks: contrast ratios, touch targets (44px), heading hierarchy, input font floor (16px), button-text contrast, forced-colors readiness.',
     checks: ['v11', 'v12', 'v13', 'v14', 'v15', 'v16'],
     rationale:
-      'Accessibility carries the a11y floor: if this category scores below 60%, the overall grade is capped at C. 15% weight — the highest single category.',
+      'Accessibility carries the a11y floor: if this category scores below 60%, the overall grade is capped at C. 15% weight, the highest single category.',
     source: 'WCAG 2.2 AA, APCA contrast model',
   },
   {
@@ -143,7 +143,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Two checks: semantic HTML landmarks (h1, title, meta description, main/header/nav) and AI-disclosure readiness per EU AI Act Art 50.',
     checks: ['v07', 'v34'],
     rationale:
-      'Document identity is the machine-readable surface — without landmarks and meta, the page is opaque to both screen readers and AI agents.',
+      'Document identity is the machine-readable surface: without landmarks and meta, the page is opaque to both screen readers and AI agents.',
     source: 'EU AI Act Article 50, HTML landmark spec',
   },
   {
@@ -168,7 +168,7 @@ const CHANGELOG: ChangelogEntry[] = [
     description:
       'The scoring engine itself: CSS extraction, :root custom property parsing, 40 checks across 14 weighted categories, A-F grade bands.',
     rationale:
-      'The engine is the moat — deterministic, open, and reproducible. No LLM, no human judgment, no survey. The same engine scores every site identically.',
+      'The engine is the moat: deterministic, open, and reproducible. No LLM, no human judgment, no survey. The same engine scores every site identically.',
     source: 'Designesy engine v1.0',
   },
 
@@ -183,8 +183,8 @@ const CHANGELOG: ChangelogEntry[] = [
       'Lab One interaction rules promoted to contract: hover lifts with @media (hover: hover) guards, press settle scales, keyboard-path documentation, sound-toggle aria-pressed.',
     checks: ['v09', 'v10'],
     rationale:
-      'Poise is interaction poise — the difference between a site that feels considered and one that feels janky. Hover guards prevent touch-device flash; press scales provide tactile feedback.',
-    source: 'Lab One — Poise interaction experiments',
+      'Poise is interaction poise: the difference between a site that feels considered and one that feels janky. Hover guards prevent touch-device flash; press scales provide tactile feedback.',
+    source: 'Lab One · Poise interaction experiments',
   },
 
   // ── v0.1.2 — Takt adopted ──
@@ -198,8 +198,8 @@ const CHANGELOG: ChangelogEntry[] = [
       'Lab Two interface-feel rules promoted to contract: stagger enter animation-delays, soften exit transforms with ease-out, concentric border-radius sets. Named after the German word for precise, musical timing.',
     checks: ['v19', 'v20'],
     rationale:
-      'Takt is the musicality of interaction — the timing and scaling that makes a press feel intentional. Press scales above the 0.95 floor: 0.96 cells, 0.985 cards, 0.995 surfaces.',
-    source: 'Lab Two — Takt interface-feel experiments',
+      'Takt is the musicality of interaction: the timing and scaling that makes a press feel intentional. Press scales above the 0.95 floor: 0.96 cells, 0.985 cards, 0.995 surfaces.',
+    source: 'Lab Two · Takt interface-feel experiments',
   },
 
   // ── v0.1.3 — Cadence adopted ──
@@ -210,11 +210,11 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'adopted',
     title: 'Cadence typography rules adopted',
     description:
-      'Lab Three typography rules promoted to contract: font-smoothing, rem-based sizes, line-height, text-wrap (balance/pretty), tabular-nums, selection styling, font-synthesis, underline-position, skip-ink. 12 checks — the largest category.',
+      'Lab Three typography rules promoted to contract: font-smoothing, rem-based sizes, line-height, text-wrap (balance/pretty), tabular-nums, selection styling, font-synthesis, underline-position, skip-ink. 12 checks, the largest category.',
     checks: ['v14', 'v15', 'v16', 'v17', 'v18', 'v19', 'v20', 'v26', 'v28', 'x01', 'x02', 'x03'],
     rationale:
-      'Cadence is typography rendering discipline — the difference between type that looks crisp and type that looks fuzzy. 18% weight — the highest-weighted category. Most sites fail here because font-synthesis and text-wrap are rarely declared.',
-    source: 'Lab Three — Cadence typography experiments, NY Times editorial reference',
+      'Cadence is typography rendering discipline: the difference between type that looks crisp and type that looks fuzzy. 18% weight, the highest-weighted category. Most sites fail here because font-synthesis and text-wrap are rarely declared.',
+    source: 'Lab Three · Cadence typography experiments, NY Times editorial reference',
   },
 
   // ── v0.3.0 — Acoustics adopted ──
@@ -227,8 +227,8 @@ const CHANGELOG: ChangelogEntry[] = [
     description:
       'Lab Four acoustic mapping rules promoted to contract: interaction sound synthesis via Web Audio API, acoustic tokens for press/hover/settle sounds, sound-toggle aria-pressed, reduced-motion tiering for acoustic events.',
     rationale:
-      'Acoustics is the frontier — most design systems have no acoustic layer at all. The contract defines acoustic tokens the same way it defines motion tokens: named, typed, and tiered for reduced-motion.',
-    source: 'Lab Four — Acoustic mapping, Cuelume v0.2.2 engine',
+      'Acoustics is the frontier: most design systems have no acoustic layer at all. The contract defines acoustic tokens the same way it defines motion tokens: named, typed, and tiered for reduced-motion.',
+    source: 'Lab Four · Acoustic mapping, Cuelume v0.2.2 engine',
   },
 
   // ── v0.4.0 — Copywriting adopted + engine upgrades ──
@@ -242,7 +242,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Four heuristic checks: button verb phrases (no "Click Here"), no trailing periods on interactive elements, descriptive link text (WCAG 2.4.4), no ALL CAPS in body copy. Grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG.',
     checks: ['v36', 'v37', 'v38', 'v39'],
     rationale:
-      'Copy is design — "Click Here" is an accessibility failure and a usability smell. 8% weight. New in v0.4.0.',
+      'Copy is design: "Click Here" is an accessibility failure and a usability smell. 8% weight. New in v0.4.0.',
     source: 'NN/g, Microsoft Fluent, IBM Carbon, WCAG 2.4.4',
   },
   {
@@ -254,7 +254,7 @@ const CHANGELOG: ChangelogEntry[] = [
     description:
       'Engine expanded from 36 to 40 checks. Copywriting category added (4 checks). Accessibility floor enforced: if accessibility scores below 60%, overall grade capped at C. Twelve anti-slop rules now subtract up to 20 points. Seven originality signals add up to 8 points.',
     rationale:
-      'The engine must evolve with the contract. Each version bump adds precision — the anti-slop rules catch generic AI-generated patterns that pass individual checks but fail as a composition.',
+      'The engine must evolve with the contract. Each version bump adds precision: the anti-slop rules catch generic AI-generated patterns that pass individual checks but fail as a composition.',
     source: 'Designesy engine v1.0, contract v0.4.0',
   },
   {
@@ -267,7 +267,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own 42-check contract verification.',
     checks: ['v37'],
     rationale:
-      'DESIGN.md is the AI-agent-facing spec file. Without it, AI coding tools build around your system, not from it. The check validates its presence and structure.',
+      'DESIGN.md is the AI-agent-facing spec file. With it, AI coding tools build from your system instead of around it. The check validates its presence and structure.',
     source: 'Google @google/design.md CLI linter',
   },
 
@@ -296,14 +296,33 @@ const CHANGELOG: ChangelogEntry[] = [
       'The semantic category carried a reserved weight (12) with zero checks since v0.3.0. Two deterministic checks now score it: v42 measures the role-named vs hue-named share of :root color tokens; v43 checks status-state coverage (ok/warn/error/info). Engine grows 40 → 42 checks.',
     checks: ['v42', 'v43'],
     rationale:
-      'The contract\'s own palette is fully role-named (--ink, --paper, --surface, --signal, --ok/--warn/--error) — color named by meaning, not wavelength. Role-based naming is the documented best practice (zeroheight naming guide, Material 3), but nothing scored it. Both checks are WARN-only (style craft, not user harm) and self-SKIP when a site has no color tokens.',
+      'The contract\'s own palette is fully role-named (--ink, --paper, --surface, --signal, --ok/--warn/--error): color named by meaning rather than wavelength. Role-based naming is the documented best practice (zeroheight naming guide, Material 3), but nothing scored it. Both checks are WARN-only (style craft with no user harm) and self-SKIP when a site has no color tokens.',
     source: 'Designesy contract colors section, zeroheight naming guide 2026, Material 3 design tokens',
+  },
+
+  // ── v0.4.1: editorial revision ──
+  {
+    version: 'v0.4.1',
+    date: '2026-09-28',
+    dimension: 'all',
+    change: 'modified',
+    title: 'Editorial revision: the contract text follows the public-copy rules',
+    description:
+      'The contract modules and the /contracts pages were revised together. A colon or parentheses replaces the em dash, the positive claim replaces rhetorical negation pivots, and number ranges read "to". No rule, value, token or check changed. The sibling contracts took the same pass and keep their versions.',
+    rationale:
+      'The contract asks product copy to state its claim plainly and to write ranges a screen reader can read: an unspaced en dash is skipped, so a range written with one is heard as two bare numbers. A patch version marks text that changed while every rule stayed the same.',
+    source: 'Designesy public-copy rules, GOV.UK style guide, plainlanguage.gov, NVDA symbol handling',
   },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
 
 const SORTED_CHANGELOG = [...CHANGELOG].sort((a, b) => b.date.localeCompare(a.date));
+
+// Index of each dimension's newest entry: the one its link above jumps to.
+const FIRST_OF_DIMENSION = new Set(
+  SORTED_CHANGELOG.map((e, i) => SORTED_CHANGELOG.findIndex((f) => f.dimension === e.dimension) === i ? i : -1).filter((i) => i >= 0),
+);
 
 // ── Change badges ───────────────────────────────────────────────────────────
 
@@ -337,13 +356,14 @@ export default function ChangelogPage() {
           <h1 className="surface-title" data-scramble>Contract Changelog</h1>
           <p className="surface-lede">
             Every contract change, organized by design dimension. Track what
-            was added, modified, adopted, and deprecated across versions —
-            from the initial {CHANGELOG.filter((e) => e.version === 'v0.1.0').length}-check
+            was added, modified, adopted, and deprecated across versions, from
+            the initial {CHANGELOG.filter((e) => e.version === 'v0.1.0').length}-check
             contract through the current {CONTRACT_VERSION} 42-check engine.
           </p>
           <p className="surface-note">
             Pattern from Artificial Analysis: changelog organized by modality
-            (dimension), not by version. Each entry shows the version, date,
+            (dimension) instead of by version. Each entry shows the version,
+            date,
             what changed, which checks were affected, and the rationale.
           </p>
           <AgentActions mdPath="/changelog.md" label="the changelog" />
@@ -391,7 +411,9 @@ export default function ChangelogPage() {
                 key={`${entry.version}-${entry.dimension}-${i}`}
                 className="row"
                 role="listitem"
-                id={`dim-${entry.dimension}`}
+                // The dimension links above jump to a dimension's first entry;
+                // an id on every entry repeated it (ids must be unique).
+                id={FIRST_OF_DIMENSION.has(i) ? `dim-${entry.dimension}` : undefined}
                 style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
               >
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
@@ -489,13 +511,14 @@ export default function ChangelogPage() {
           <h2 className="doctrine-heading">Version summary</h2>
           <div className="row-stack" role="list">
             {[
-              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract — tokens, motion, accessibility, identity, security. Deterministic engine.' },
+              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract: tokens, motion, accessibility, identity, security. Deterministic engine.' },
               { version: 'v0.1.1', date: '2026-06-28', checks: 24, summary: 'Poise interaction rules adopted from Lab One.' },
               { version: 'v0.1.2', date: '2026-07-05', checks: 26, summary: 'Takt interface-feel rules adopted from Lab Two.' },
-              { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks — largest category at 18% weight.' },
+              { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
               { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
               { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
-              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored. Current version.' },
+              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored.' },
+              { version: 'v0.4.1', date: '2026-09-28', checks: 42, summary: 'Editorial revision: the contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
             ].map((v, i) => (
               <div
                 key={v.version}

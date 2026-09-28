@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { tokensContract } from '../../lib/tokens-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
@@ -10,12 +11,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Tokens contract',
   description:
-    'Designesy tokens contract v0.1.0 — W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria. Live export passes 10/10 checks.',
+    'Designesy tokens contract v0.1.0: W3C DTCG 2025.10 token-format conformance. Color-space rules, custom types, validation criteria. Live export passes 10/10 checks.',
   path: '/contracts/tokens',
   ogTitle: 'Tokens contract · v0.1.0',
   ogDescription:
     'Token-format conformance for W3C DTCG 2025.10. OKLCH mandatory, custom types via $extensions. Machine export available.',
-  twitterDescription: 'Designesy tokens contract — designesy.org/contracts/tokens',
+  twitterDescription: 'Designesy tokens contract · designesy.org/contracts/tokens',
 });
 
 export default function TokensContractPage() {
@@ -80,7 +81,7 @@ export default function TokensContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification — <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
@@ -109,7 +110,7 @@ export default function TokensContractPage() {
         </section>
 
         <div className="status-note">
-          Sibling contract to the design system v0.4.0. Machine export at{' '}
+          Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>. The
           live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) passes
           all 10 conformance checks (verified 2026-08-09).

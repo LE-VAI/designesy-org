@@ -12,12 +12,12 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics field check',
   description:
-    'Public Design Review of Lab Four · Acoustics — Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
+    'Public Design Review of Lab Four · Acoustics in the Kit One output format: eight dimensions, holds, tensions, corrections, and verification.',
   path: '/review/acoustics',
   ogTitle: 'Acoustics · field check',
   ogDescription:
-    'Lab Four reviewed with Use Kit One · Design Review. Pass with notes — acoustic rules adopted in contract v0.3.0.',
-  twitterDescription: 'Design Review of Lab Four — designesy.org/review/acoustics',
+    'Lab Four reviewed with Use Kit One · Design Review. Pass with notes: acoustic rules adopted in contract v0.3.0.',
+  twitterDescription: 'Design Review of Lab Four · designesy.org/review/acoustics',
 });
 
 const DIMENSIONS = [
@@ -25,7 +25,7 @@ const DIMENSIONS = [
     num: '01',
     title: 'Purpose',
     observation:
-      'Acoustics states a single job: make interaction sound a token system, not decoration. The live artifact (cue grid), thesis, three principles, nine mapping rules, builder prompt, review checklist, provenance, and anti-patterns all serve that job.',
+      'Acoustics states a single job: make interaction sound a token system. The live artifact (cue grid), thesis, three principles, nine mapping rules, builder prompt, review checklist, provenance, and anti-patterns all serve that job.',
     judgment:
       'Purpose is clear and earns the form. The lab is an inspectable set of sound tokens with named roles, verified on the live cue grid.',
     action: 'Keep. Do not add ambient audio demos that dilute the interaction-only thesis.',
@@ -34,7 +34,7 @@ const DIMENSIONS = [
     num: '02',
     title: 'Clarity',
     observation:
-      'Primary path is immediate: Lab Four eyebrow, title Acoustics, lede, then the live cue grid with SoundToggle. Every token is expressed with a name, a Cuelume cue, a character, and a role — not a vague preference.',
+      'Primary path is immediate: Lab Four eyebrow, title Acoustics, lede, then the live cue grid with SoundToggle. Every token is expressed with a name, a Cuelume cue, a character, and a role.',
     judgment:
       'Primary value proposition is discoverable. The cue grid demonstrates the thesis by doing it. Each token pairs a human name with a machine cue identifier.',
     action: 'Keep. Preserve the cue grid as the first thing the reader encounters after the lede.',
@@ -43,19 +43,19 @@ const DIMENSIONS = [
     num: '03',
     title: 'Context',
     observation:
-      'Built for the public designesy.org surface — dark foundation, shared topbar, Cuelume engine wired via data-cuelume-* attributes. The cue grid assumes desktop and mobile browsers with Web Audio support. Silent fallback handles browsers that block audio.',
+      'Built for the public designesy.org surface: dark foundation, shared topbar, Cuelume engine wired via data-cuelume-* attributes. The cue grid assumes desktop and mobile browsers with Web Audio support. Silent fallback handles browsers that block audio.',
     judgment:
       'Context fits a public lab. The cue grid is the demo; the silent fallback is the accessibility safety net. No ambient audio means no context where sound would be intrusive.',
-    action: 'Keep. Document that silent fallback is tested, not assumed.',
+    action: 'Keep. Document the test that proves the silent fallback.',
   },
   {
     num: '04',
     title: 'Inclusion',
     observation:
-      'Sound is opt-in via a single toggle; preference stored in localStorage under designesy:sound. Reduced motion defaults sound off. No focus-event sounds — screen reader users navigate without acoustic bombardment. Toggle is keyboard-accessible with aria-pressed. Silent fallback when Web Audio is blocked. Volume is not adjustable — mute is the only control.',
+      'Sound is opt-in via a single toggle; preference stored in localStorage under designesy:sound. Reduced motion defaults sound off. No focus-event sounds, so screen reader users navigate without acoustic bombardment. Toggle is keyboard-accessible with aria-pressed. Silent fallback when Web Audio is blocked. Volume is fixed; mute is the only control.',
     judgment:
-      'Structural inclusion is strong. The accessibility section documents five protections: reduced-motion proxy, no focus sounds, keyboard toggle, silent fallback, and fixed gain. Every protection is a design decision, not a fallback.',
-    action: 'Keep all five accessibility protections. Do not add volume sliders — mute is the contract.',
+      'Structural inclusion is strong. The accessibility section documents five protections: reduced-motion proxy, no focus sounds, keyboard toggle, silent fallback, and fixed gain. Every protection is a deliberate design decision.',
+    action: 'Keep all five accessibility protections. Do not add volume sliders; mute is the contract.',
   },
   {
     num: '05',
@@ -70,37 +70,37 @@ const DIMENSIONS = [
     num: '06',
     title: 'Durability',
     observation:
-      'Full lab anatomy is present: thesis, live artifact, principle, portable contract, token reference, accessibility, implementation notes, review checklist, provenance, anti-patterns, remix notes, and verification. Builder prompt is remixable. Rules are engine-agnostic in principle — the token model survives a Cuelume upgrade.',
+      'Full lab anatomy is present: thesis, live artifact, principle, portable contract, token reference, accessibility, implementation notes, review checklist, provenance, anti-patterns, remix notes, and verification. Builder prompt is remixable. Rules are engine-agnostic in principle: the token model survives a Cuelume upgrade.',
     judgment:
-      'Durable as a lab package and as contract material. Risk is engine coupling — if Cuelume v0.2.2 breaks or is abandoned, the token model survives but the cue synthesis needs a replacement engine.',
+      'Durable as a lab package and as contract material. Risk is engine coupling: if Cuelume v0.2.2 breaks or is abandoned, the token model survives but the cue synthesis needs a replacement engine.',
     action: 'When the Cuelume engine upgrades or changes, update the cue grid and verify all nineteen tokens still fire correctly.',
   },
   {
     num: '07',
     title: 'Delight',
     observation:
-      'The cue grid is quiet by default — you enable sound, then hover. The sounds are subtle: tick for nav, sparkle for brand, chime for invitation, press for action. No sound is louder than the action it confirms. The toggle itself is a small, intentional gesture.',
+      'The cue grid is quiet by default: you enable sound, then hover. The sounds are subtle: tick for nav, sparkle for brand, chime for invitation, press for action. No sound is louder than the action it confirms. The toggle itself is a small, intentional gesture.',
     judgment:
-      'Delight is earned through restraint, not spectacle. The absence of sound is the default experience; the presence of sound is the earned one. This is the thesis made audible.',
+      'Delight is earned through restraint. The absence of sound is the default experience; the presence of sound is the earned one. This is the thesis made audible.',
     action: 'Keep restraint. Reject proposals for ambient beds, loading sounds, or mood audio.',
   },
   {
     num: '08',
     title: 'Responsibility',
     observation:
-      'No dark pattern in acoustics. Sound is opt-in, not opt-out. Reduced motion is a respected proxy. The toggle stores preference locally — no server tracking of sound usage. Silent fallback means blocked Web Audio degrades invisibly. Anti-patterns list eight explicit prohibitions.',
+      'No dark pattern in acoustics. Sound is opt-in. Reduced motion is a respected proxy. The toggle stores preference locally, with no server tracking of sound usage. Silent fallback means blocked Web Audio degrades invisibly. Anti-patterns list eight explicit prohibitions.',
     judgment:
-      'Status is explicit: live experiment whose rules are contract material. The eight anti-patterns are a standing guardrail. No open tensions remain — the system is complete as designed.',
+      'Status is explicit: live experiment whose rules are contract material. The eight anti-patterns are a standing guardrail. No open tensions remain; the system is complete as designed.',
     action: 'Keep status language accurate. Future cue additions require a token entry before markup wiring.',
   },
 ];
 
 const HOLDS = [
-  'Thesis is sharp: sound is a token, not a decoration',
+  'Thesis is sharp: sound is a token rather than a decoration',
   'Live artifact (cue grid) demonstrates every token with SoundToggle control',
-  'Ten tokens, ten roles, one documented engine — no unmapped sounds',
+  'Ten tokens, ten roles, one documented engine; no unmapped sounds',
   'Full lab anatomy shipped (thesis through verification)',
-  'Public name is human and premium — Acoustics',
+  'Public name is human and premium: Acoustics',
   'Nine mapping rules adopted into design system contract v0.3.0',
   'Five accessibility protections documented and verified',
   'Eight anti-patterns explicitly prohibited',
@@ -109,22 +109,22 @@ const HOLDS = [
 const TENSIONS = [
   {
     title: 'No field check existed until now',
-    meta: 'Acoustics was the only lab without a Kit One field check page — this page closes that gap',
+    meta: 'Acoustics was the only lab without a Kit One field check page; this page closes that gap',
   },
   {
     title: 'Cuelume engine coupling',
-    meta: 'Token model is portable; cue synthesis depends on Cuelume v0.2.2 — engine upgrade or abandonment requires re-verification of all nineteen cues',
+    meta: 'Token model is portable; cue synthesis depends on Cuelume v0.2.2. An engine upgrade or abandonment requires re-verification of all nineteen cues',
   },
 ];
 
 const CORRECTIONS = [
   {
-    title: 'Create this field check page — APPLIED',
+    title: 'Create this field check page · APPLIED',
     meta: 'Lab Four now has the same Kit One field check as Labs One, Two, and Three (fixed 2026-08-01)',
   },
   {
     title: 'Add Acoustics to labs.ts machine export',
-    meta: 'Acoustics entry in lib/labs.ts with 9 contract rules, engine, and field_check URL — JSON export at /labs/acoustics.json (fixed 2026-08-01)',
+    meta: 'Acoustics entry in lib/labs.ts with 9 contract rules, engine, and field_check URL; JSON export at /labs/acoustics.json (fixed 2026-08-01)',
   },
   {
     title: 'Add Acoustics card to review hub',
@@ -132,7 +132,7 @@ const CORRECTIONS = [
   },
   {
     title: 'Version future acoustic changes',
-    meta: 'New cues or mapping rules require a contract bump after ' + CONTRACT_VERSION + ' — not silent edits',
+    meta: 'New cues or mapping rules require a contract bump after ' + CONTRACT_VERSION + ', never silent edits',
   },
   {
     title: 'Keep machine export and live cue grid aligned',
@@ -143,11 +143,11 @@ const CORRECTIONS = [
 const VERIFICATION = [
   'Live route inspected: /labs/acoustics structure, cue grid, SoundToggle, status language',
   'Cuelume data-cuelume-* attributes confirmed on every interactive element in the cue grid',
-  'Sound defaults off under prefers-reduced-motion — toggle still works when enabled',
-  'No focus-event sounds — keyboard navigation through cue grid is silent',
+  'Sound defaults off under prefers-reduced-motion; the toggle still works when enabled',
+  'No focus-event sounds: keyboard navigation through the cue grid is silent',
   'Silent fallback when Web Audio is blocked (no errors, no visual change)',
-  'Compared to design system contract v0.3.0 acoustic section — nine mapping rules match',
-  'Compared to Use Kit One · Design Review output format — eight dimensions, holds, tensions, corrections',
+  'Compared to design system contract v0.3.0 acoustic section: nine mapping rules match',
+  'Compared to Use Kit One · Design Review output format: eight dimensions, holds, tensions, corrections',
   'Checked anti-patterns: no ambient audio, no loading sounds, no focus sounds, no randomization',
   'Checked naming: Acoustics remains human product language; Cuelume is attributed',
 ];
@@ -171,7 +171,7 @@ const SOURCES = [
   {
     href: '/acoustic-tokens',
     title: 'Acoustic token reference',
-    meta: 'Nineteen cues, nineteen roles — the sound parallel to the visual token system',
+    meta: 'Nineteen cues, nineteen roles: the sound parallel to the visual token system',
   },
   {
     href: '/review/poise',
@@ -204,8 +204,8 @@ export default function AcousticsFieldCheckPage() {
             Lab Four reviewed with Use Kit One · Design Review.
           </p>
           <p className="surface-note">
-            This packet applies the public Design Review kit to a live
-            experiment — not the whole site. Outcome leads with consequences:
+            This packet applies the public Design Review kit to a single live
+            experiment. Outcome leads with consequences:
             what holds, what stays open, and what to do next.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -232,8 +232,8 @@ export default function AcousticsFieldCheckPage() {
               anti-patterns are explicitly prohibited. Two tensions remain:
               this field check page did not exist until now (resolved by this
               page), and Cuelume engine coupling is a durability risk. Acoustic
-              rules are adopted — remaining work is engine maintenance and
-              synchronization, not re-arguing adoption.
+              rules are adopted; remaining work is engine maintenance and
+              synchronization.
             </p>
           </div>
         </section>
@@ -253,7 +253,7 @@ export default function AcousticsFieldCheckPage() {
               <span className="row-body">
                 <span className="row-title">Purpose claim</span>
                 <span className="row-meta">
-                  Make interaction sound a token system, not decoration
+                  Make interaction sound a token system
                 </span>
               </span>
             </ToggleRow>
@@ -279,7 +279,7 @@ export default function AcousticsFieldCheckPage() {
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Dimension findings</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            Each dimension: observation, judgment, action — Kit One format.
+            Each dimension in Kit One format: observation, judgment, action.
           </p>
           <div className="principle-list">
             {DIMENSIONS.map((d) => (
@@ -333,22 +333,22 @@ export default function AcousticsFieldCheckPage() {
           <h2 className="doctrine-heading">Sources used</h2>
           <div className="row-stack" role="list">
             {SOURCES.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="row"
-                role="listitem"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </Link>
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -356,65 +356,69 @@ export default function AcousticsFieldCheckPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <Link
-              href="/labs/acoustics"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">01</span>
-              <span className="row-body">
-                <span className="row-title">Open Lab Four · Acoustics</span>
-                <span className="row-meta">Live artifact</span>
-              </span>
-            </Link>
-            <Link
-              href="/acoustic-tokens"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">02</span>
-              <span className="row-body">
-                <span className="row-title">Acoustic token reference</span>
-                <span className="row-meta">Nineteen cues, nineteen roles</span>
-              </span>
-            </Link>
-            <Link
-              href="/review/cadence"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">03</span>
-              <span className="row-body">
-                <span className="row-title">Field check · Cadence</span>
-                <span className="row-meta">Prior field check pattern (Lab Three)</span>
-              </span>
-            </Link>
-            <Link
-              href="/kits/design-review"
-              className="row"
-              role="listitem"
-              data-cuelume-hover="bloom"
-              data-cuelume-press
-            >
-              <span className="row-index">04</span>
-              <span className="row-body">
-                <span className="row-title">Use Kit One · Design Review</span>
-                <span className="row-meta">Run the same method on your work</span>
-              </span>
-            </Link>
+            <div role="listitem">
+              <Link
+                href="/labs/acoustics"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">01</span>
+                <span className="row-body">
+                  <span className="row-title">Open Lab Four · Acoustics</span>
+                  <span className="row-meta">Live artifact</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/acoustic-tokens"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">02</span>
+                <span className="row-body">
+                  <span className="row-title">Acoustic token reference</span>
+                  <span className="row-meta">Nineteen cues, nineteen roles</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/review/cadence"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">03</span>
+                <span className="row-body">
+                  <span className="row-title">Field check · Cadence</span>
+                  <span className="row-meta">Prior field check pattern (Lab Three)</span>
+                </span>
+              </Link>
+            </div>
+            <div role="listitem">
+              <Link
+                href="/kits/design-review"
+                className="row"
+                data-cuelume-hover="bloom"
+                data-cuelume-press
+              >
+                <span className="row-index">04</span>
+                <span className="row-body">
+                  <span className="row-title">Use Kit One · Design Review</span>
+                  <span className="row-meta">Run the same method on your work</span>
+                </span>
+              </Link>
+            </div>
           </div>
         </section>
 
         <div className="status-note">
           Field check of Lab Four · Acoustics using Use Kit One · Design Review.
-          Outcome: pass with notes. Institutional quality discipline — not a
-          client report. Acoustic rules are adopted into contract v0.3.0;
+          Outcome: pass with notes. Institutional quality discipline. It is not
+          a client report. Acoustic rules are adopted into contract v0.3.0;
           remaining notes are engine coupling awareness and synchronization.
         </div>
       </main>
