@@ -42,7 +42,7 @@ export default function SpringValidatorPage() {
           <p className="surface-eyebrow" data-scramble>Motion frontier</p>
           <h1 className="surface-title" data-scramble>Spring Physics Validator</h1>
           <p className="surface-lede">
-            Spring-based motion is the frontier — M3 Expressive, iOS, Framer
+            Spring-based motion is the frontier: M3 Expressive, iOS, Framer
             Motion, React Spring. But no one validates whether a spring&apos;s
             physics produce overshoot that violates reduced-motion requirements.
             Until now.
@@ -74,7 +74,7 @@ export default function SpringValidatorPage() {
             already ships spring tokens (<code style={{ fontSize: '0.85rem' }}>damping: 1.0,
             response: 0.4</code> for default, <code style={{ fontSize: '0.85rem' }}>damping: 0.8,
             response: 0.3</code> for momentum). This tool lets anyone verify
-            whether their spring parameters are safe for vestibular sensitivity —
+            whether their spring parameters are safe for vestibular sensitivity,
             or whether they need an explicit reduced-motion fallback.
           </p>
           <p className="surface-note" style={{ maxWidth: '70ch' }}>
@@ -82,7 +82,7 @@ export default function SpringValidatorPage() {
             behavior. ζ &gt; 1 is overdamped (no overshoot, slow). ζ = 1 is
             critically damped (no overshoot, fastest settle). 0 &lt; ζ &lt; 1 is
             underdamped (overshoots, oscillates). The lower the damping ratio,
-            the more visible the overshoot — and the more likely it triggers
+            the more visible the overshoot, and the more likely it triggers
             vestibular discomfort in sensitive users.
           </p>
         </section>

@@ -73,14 +73,14 @@ export function TargetLanding({
               <>
                 <strong>{platform}</strong> currently scores{' '}
                 <strong>{exampleScore}</strong> on the contract. Score your own{' '}
-                {platform} site below — the engine runs the same {ENGINE_CHECK_COUNT} checks
+                {platform} site below: the engine runs the same {ENGINE_CHECK_COUNT} checks
                 against your URL.
               </>
             ) : (
               <>
-                Score your <strong>{platform}</strong> site below — the engine
-                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it does against
-                any other.
+                Score your <strong>{platform}</strong> site below: the engine
+                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it
+                does against any other.
               </>
             )}
           </p>

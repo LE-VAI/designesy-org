@@ -84,21 +84,21 @@ const CHECKS: CheckDef[] = [
     id: 'v01',
     item: 'Token values match live site :root foundation',
     category: 'tokens',
-    how: 'Parses :root custom properties from the fetched CSS. Looks for --paper specifically — the contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation. PASS if --paper resolves to a value.',
+    how: 'Parses :root custom properties from the fetched CSS. Looks for --paper specifically: the contract names --paper, --ink, --muted, --surface, --surface-raised, --line, --signal, --signal-light, --signal-dim as the required foundation. PASS if --paper resolves to a value.',
   },
   {
     id: 'v29',
     item: 'Token architecture: primitive → semantic → component layers',
     category: 'tokens',
-    how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) signals a mature token system. PASS if at least 2 layers are detected.',
+    how: 'Counts how many tokens are referenced via var() (aliasing) vs. raw values. A 2-tier or 3-tier aliasing structure (primitive → semantic → component) indicates a mature token system. PASS if at least 2 layers are detected.',
   },
 
   // ── Semantic (12%) ──
   {
     id: 'v42',
-    item: 'Semantic color vocabulary: role-named tokens, not hue-named',
+    item: 'Semantic color vocabulary: role-named tokens rather than hue-named',
     category: 'semantic',
-    how: 'Classifies every color-valued token in :root by name: role words (ink, paper, surface, muted, danger, success, accent, border…) vs hue words (blue, slate, amber…) and numeric scale suffixes (-500). Brand coinages matching neither list are excluded from the share. PASS if ≥60% role-named with ≥3 distinct roles; WARN otherwise (WARN-only — style craft, not user harm). SKIP if fewer than 4 color tokens. Mirrors the contract\'s own role-named palette.',
+    how: 'Classifies every color-valued token in :root by name: role words (ink, paper, surface, muted, danger, success, accent, border…) vs hue words (blue, slate, amber…) and numeric scale suffixes (-500). Brand coinages matching neither list are excluded from the share. PASS if ≥60% role-named with ≥3 distinct roles; WARN otherwise (WARN-only, because it is style craft with no user harm). SKIP if fewer than 4 color tokens. Mirrors the contract\'s own role-named palette.',
   },
   {
     id: 'v43',
@@ -121,7 +121,7 @@ const CHECKS: CheckDef[] = [
     id: 'v03',
     item: 'Primary interactive elements show focus-visible rings',
     category: 'interaction',
-    how: 'Regex-searches the CSS for :focus-visible declarations. PASS if any :focus-visible rule is found. This is the keyboard-navigation visibility primitive — without it, Tab users cannot see where they are.',
+    how: 'Regex-searches the CSS for :focus-visible declarations. PASS if any :focus-visible rule is found. This is the keyboard-navigation visibility primitive: without it, Tab users cannot see where they are.',
   },
 
   // ── Poise (7%) ──
@@ -130,7 +130,7 @@ const CHECKS: CheckDef[] = [
     item: 'Sound toggle flips aria-pressed and applies the audio preference',
     category: 'poise',
     how: 'Requires clicking a sound toggle and verifying aria-pressed flips and a [data-audio] attribute is applied. The static engine cannot interact with the DOM.',
-    manualReason: 'Requires live DOM interaction — the engine does not execute JavaScript or click elements.',
+    manualReason: 'Requires live DOM interaction; the engine does not execute JavaScript or click elements.',
   },
   {
     id: 'v08',
@@ -150,13 +150,13 @@ const CHECKS: CheckDef[] = [
     id: 'v05',
     item: 'prefers-reduced-motion disables entrance and wordmark breath',
     category: 'motion',
-    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive — without it, motion-sensitive users cannot use the site.',
+    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive: without it, motion-sensitive users cannot use the site.',
   },
   {
     id: 'v11',
     item: 'No transition:all in the live stylesheet',
     category: 'motion',
-    how: 'Regex-searches for transition: all (case-insensitive). FAIL if found. transition: all causes layout-thrash and surprises — the contract requires named properties only.',
+    how: 'Regex-searches for transition: all (case-insensitive). FAIL if found. transition: all causes layout-thrash and surprises; the contract requires named properties only.',
   },
   {
     id: 'v12',
@@ -206,7 +206,7 @@ const CHECKS: CheckDef[] = [
     id: 'v35',
     item: 'Forced-colors readiness: @media (forced-colors: active) block present',
     category: 'accessibility',
-    how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page — without this media query, critical UI becomes illegible.',
+    how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page; without this media query, critical UI becomes illegible.',
   },
 
   // ── Identity (6%) — engine returns these as category: 'identity' ──
@@ -234,7 +234,7 @@ const CHECKS: CheckDef[] = [
     id: 'v13',
     item: 'Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor',
     category: 'takt',
-    how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (glitch, not a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum — lower reads as a glitch.',
+    how: 'Extracts every transform: scale() value in :active contexts. FAIL if any scale is 0 (a glitch rather than a press) or below 0.95. PASS if real press scales are found above 0.95. The 0.95 floor is the contract minimum; lower reads as a glitch.',
   },
 
   // ── Cadence (18%) — highest weight, most checks ──
@@ -254,7 +254,7 @@ const CHECKS: CheckDef[] = [
     id: 'v16',
     item: 'Rem-based scale: all text sizes in rem, root at 16px confirmed',
     category: 'cadence',
-    how: 'Counts rem-based vs px-based font-size declarations. PASS if the majority are rem and root is 16px. The 16px root is the Cadence floor — iOS Safari auto-zooms inputs below 16px.',
+    how: 'Counts rem-based vs px-based font-size declarations. PASS if the majority are rem and root is 16px. The 16px root is the Cadence floor: iOS Safari auto-zooms inputs below 16px.',
   },
   {
     id: 'v17',
@@ -266,7 +266,7 @@ const CHECKS: CheckDef[] = [
     id: 'v18',
     item: 'text-wrap: balance + pretty both present in live CSS',
     category: 'cadence',
-    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement — unsupported browsers ignore them.',
+    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement: unsupported browsers ignore them.',
   },
   {
     id: 'v19',
@@ -278,25 +278,25 @@ const CHECKS: CheckDef[] = [
     id: 'v20',
     item: '::selection styled with var(--signal) — not browser default',
     category: 'cadence',
-    how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token, not the browser default. The selection color is a small but loud brand surface.',
+    how: 'Searches for ::selection rules using var(--signal). PASS if the selection color is the signal token instead of the browser default. The selection color is a small but loud brand surface.',
   },
   {
     id: 'v26',
     item: 'Font family count ≤3 (body + heading + mono)',
     category: 'cadence',
-    how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4-5. FAIL if 6+. More than 3 families signals inconsistency and hurts performance.',
+    how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4 or 5. FAIL if 6+. More than 3 families suggests inconsistency and hurts performance.',
   },
   {
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose — paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45-75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it — which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed, not applied silently.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose: paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45 to 75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it, which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed rather than applied silently.',
   },
   {
     id: 'x01',
     item: 'font-synthesis: none set (Cadence resolved tension)',
     category: 'cadence',
-    how: 'Searches for font-synthesis: none. PASS if declared. WARN if font-synthesis is declared but not set to none, or if no rule is found. Prevents the browser from synthesizing bold/italic faces when the real weights are not loaded — a common cause of blurry headlines on Windows.',
+    how: 'Searches for font-synthesis: none. PASS if declared. WARN if font-synthesis is declared but not set to none, or if no rule is found. Prevents the browser from synthesizing bold/italic faces when the real weights are not loaded, a common cause of blurry headlines on Windows.',
   },
   {
     id: 'x02',
@@ -308,7 +308,7 @@ const CHECKS: CheckDef[] = [
     id: 'x03',
     item: 'text-decoration-skip-ink: auto set',
     category: 'cadence',
-    how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y) — a small typographic refinement that signals attention to craft.',
+    how: 'Searches for text-decoration-skip-ink: auto or none. PASS if declared. Makes underlines skip the rounded parts of letters (g, j, p, q, y), a small typographic refinement that shows attention to craft.',
   },
 
   // ── Security (5%) — v0.4.0 ──
@@ -316,7 +316,7 @@ const CHECKS: CheckDef[] = [
     id: 'v36',
     item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers',
     category: 'security',
-    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk — e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
   },
 
   // ── Spec (4%) — v0.4.0 ──
@@ -324,8 +324,8 @@ const CHECKS: CheckDef[] = [
     id: 'v37',
     item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
     category: 'spec',
-    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served — this is expected, as no public convention requires it yet.',
-    skipReason: 'N/A if /DESIGN.md is not served at the target origin — no public convention requires it yet.',
+    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
+    skipReason: 'N/A if /DESIGN.md is not served at the target origin; no public convention requires it yet.',
   },
 
   // ── Copywriting (8%) — v0.4.0 ──
@@ -333,7 +333,7 @@ const CHECKS: CheckDef[] = [
     id: 'v38',
     item: 'Button text is a verb phrase or recognized command — not a bare noun',
     category: 'copywriting',
-    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic — review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
+    how: 'Parses button elements and checks if text starts with a verb or recognized command (Save, Cancel, Delete, Edit, Share, Close, Back, Next). WARN if buttons don\'t lead with a verb. N/A if no buttons found. Heuristic: review flagged buttons manually. Grounded in NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected."',
   },
   {
     id: 'v39',
@@ -1126,7 +1126,7 @@ export default function MethodologyPage() {
                           lo: r.bestRank,
                           hi: r.worstRank,
                           at: r.baselineRank,
-                          display: r.bestRank === r.worstRank ? `${r.bestRank}` : `${r.bestRank}–${r.worstRank}`,
+                          display: r.bestRank === r.worstRank ? `${r.bestRank}` : `${r.bestRank} to ${r.worstRank}`,
                         }))}
                       />
                     </DataFigure>

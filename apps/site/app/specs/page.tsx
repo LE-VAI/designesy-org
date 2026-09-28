@@ -31,7 +31,7 @@ type Prop = { type?: string | string[]; description?: string; enum?: readonly st
 
 const typeOf = (p: Prop) => (p.const ? `"${p.const}"` : Array.isArray(p.type) ? p.type.join(' | ') : p.type ?? 'any');
 const descOf = (p: Prop) =>
-  `${display(p.description ?? '')}${p.enum ? `${p.description ? ' ' : ''}One of: ${p.enum.join(', ')}.` : ''}`.trim() || '–';
+  `${display(p.description ?? '')}${p.enum ? `${p.description ? ' ' : ''}One of: ${p.enum.join(', ')}.` : ''}`.trim() || 'No description';
 
 const TOP = Object.entries(SCHEMA.properties as Record<string, Prop>);
 const REQUIRED = new Set<string>(SCHEMA.required as string[]);

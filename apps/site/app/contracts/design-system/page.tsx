@@ -72,12 +72,12 @@ export default function DesignSystemContractPage() {
           </p>
           <h1 className="surface-title" data-scramble>{c.name}</h1>
           <p className="surface-lede">
-            A reference format for AI-readable design contracts — version {c.version}.
+            A reference format for AI-readable design contracts, version {c.version}.
           </p>
           <p className="surface-note">
             design.md (Google Labs, 26k+ stars) is the input layer: tokens and
             prose an agent reads to generate UI. This contract is input{' '}
-            <em>plus</em> verification — {ENGINE_CHECK_COUNT} automated checks that prove the
+            <em>plus</em> verification: {ENGINE_CHECK_COUNT} automated checks that prove the
             generated output actually passes. Acoustic cues, takt interface-feel,
             copywriting principles, anti-generic tells, and provenance tracking
             have no design.md equivalent.
@@ -113,20 +113,20 @@ export default function DesignSystemContractPage() {
             <p>
               A Designesy contract answers exact value, role, application,
               behavior, avoidance, and verification. It is public artifact
-              discipline — not legal advice or a client service agreement.
+              discipline. It is not legal advice or a client service agreement.
             </p>
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Beyond design.md — the verification layer
+            Beyond design.md: the verification layer
           </h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
             Google Labs&rsquo; design.md (alpha, Apache-2.0, 26k+ stars) is a strong
             input format: YAML tokens + markdown prose that an agent reads to
             generate UI. Designesy extends that model with layers design.md does
-            not carry. They are complementary — design.md is the brief, this
+            not carry. They are complementary: design.md is the brief; this
             contract is the brief and the proof.
           </p>
           <div className="token-table" role="table" aria-label="Designesy contract vs design.md">
@@ -152,23 +152,23 @@ export default function DesignSystemContractPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Anti-generic detection</code>
-              <span role="cell">—</span>
+              <span role="cell">Not covered</span>
               <span role="cell">12 anti-generic tells (AI sameness)</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Acoustic cues</code>
-              <span role="cell">—</span>
+              <span role="cell">Not covered</span>
               <span role="cell">10 named cue tokens + mapping rules</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Interface-feel (takt)</code>
-              <span role="cell">—</span>
+              <span role="cell">Not covered</span>
               <span role="cell">Press scale, hit area, stagger rhythm</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Copywriting</code>
-              <span role="cell">—</span>
-              <span role="cell">16 UX copy principles, 4 as checks (v38–v41)</span>
+              <span role="cell">Not covered</span>
+              <span role="cell">16 UX copy principles, 4 as checks (v38 to v41)</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Motion</code>
@@ -177,13 +177,13 @@ export default function DesignSystemContractPage() {
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Provenance</code>
-              <span role="cell">—</span>
+              <span role="cell">Not covered</span>
               <span role="cell">Source labs, adopted_in versions, external ingests</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Live proof</code>
-              <span role="cell">—</span>
-              <span role="cell">designesy.org/score — any URL, live grade</span>
+              <span role="cell">Not covered</span>
+              <span role="cell">designesy.org/score: any URL, live grade</span>
             </div>
             <div className="token-table-row" role="row">
               <code role="cell">Agent skill</code>
@@ -197,8 +197,8 @@ export default function DesignSystemContractPage() {
             agent can read a token file and still ship hardcoded hex, broken
             contrast, or the AI-default look. The {ENGINE_CHECK_COUNT}-check engine closes that
             gap. With 42% of committed React now AI-generated (Belitsoft, State
-            of React Development 2026), the score is the compliance layer — not whether the
-            agent read the rules, but whether the shipped design passes them.
+            of React Development 2026), the score is the compliance layer: it
+            checks the shipped design against the rules the agent was given.
           </p>
         </section>
 
@@ -274,7 +274,7 @@ export default function DesignSystemContractPage() {
                 <span className="row-index">03</span>
                 <span className="row-body">
                   <span className="row-title">Agent skill</span>
-                  <span className="row-meta">/contracts/skill — SKILL.md format for AI coding agents</span>
+                  <span className="row-meta">/contracts/skill: SKILL.md format for AI coding agents</span>
                 </span>
               </Link>
             </div>
@@ -449,7 +449,7 @@ export default function DesignSystemContractPage() {
                 <span className="row-body">
                   <span className="row-title">Live verification</span>
                   <span className="row-meta">
-                    Score any URL against this contract — {ENGINE_CHECK_COUNT} checks, one grade
+                    Score any URL against this contract: {ENGINE_CHECK_COUNT} checks, one grade
                   </span>
                 </span>
               </Link>
@@ -468,14 +468,14 @@ export default function DesignSystemContractPage() {
               press settle, sound preference ownership, reduced motion, hover
               media discipline, and human public naming. Motion philosophy
               cross-referenced against Kowalski /emil-design-eng (Linear,
-              ex-Vercel) — frequency gate and unseen-details-compound
-              principle. Spring physics and interruptibility cross-referenced
+              ex-Vercel): frequency gate and unseen-details-compound principle.
+              Spring physics and interruptibility cross-referenced
               against Kowalski /apple-design (Apple WWDC). Anti-over-animation
               Gate (Frequency, Purpose, Speed, Function) cross-referenced
               against Kowalski /find-animation-opportunities. Animation
-              authoring — 7-step build sequence and Never Ship table —
+              authoring (7-step build sequence and Never Ship table)
               cross-referenced against Kowalski /animate. Silence was not
-              adoption — that version was the explicit order.
+              adoption; that version was the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.interaction.rules)} />
@@ -493,8 +493,8 @@ export default function DesignSystemContractPage() {
               hit area floor, stagger rhythm, no transition:all, and spare
               will-change. Rules compiled from external design intelligence
               (Amicro, Krehel /better-ui, /better-accessibility for hit area
-              floors) and verified on live CSS. Silence was not adoption —
-              this version is the explicit order.
+              floors) and verified on live CSS. Silence was not adoption; this
+              version is the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.takt.rules)} />
@@ -515,8 +515,8 @@ export default function DesignSystemContractPage() {
               (Krehel /better-typography, /better-layout for reading order and
               measure) and verified on live CSS. Three open tensions
               documented: font-synthesis, logical properties, and
-              underline-from-font. Silence was not adoption — this version is
-              the explicit order.
+              underline-from-font. Silence was not adoption; this version is the
+              explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.cadence.rules)} />
@@ -535,7 +535,7 @@ export default function DesignSystemContractPage() {
               fine-pointer hover discipline, no focus sounds, no ambient
               audio, silent fallback when Web Audio is blocked, and
               reduced-motion as an acoustic-reduction proxy. Engine: {c.acoustic.engine}.
-              Silence was not adoption — this version is the explicit order.
+              Silence was not adoption; this version is the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.acoustic.mapping_rules)} />
@@ -549,7 +549,7 @@ export default function DesignSystemContractPage() {
             </p>
             <p>
               UX copy principles from NN/g, Polaris, IBM Carbon, Microsoft
-              Fluent, Apple HIG, and Atlassian. Gap signal from{' '}
+              Fluent, Apple HIG, and Atlassian. Gap source:{' '}
               <a
                 href="https://detail.design"
                 style={{ color: 'var(--signal-light)' }}
@@ -558,7 +558,7 @@ export default function DesignSystemContractPage() {
               </a>{' '}
               Copywriting discipline. 16 principles across button text, error
               messages, empty states, link text, general microcopy, and voice &
-              tone. 4 codifiable principles are verification checks (v38–v41);
+              tone. 4 codifiable principles are verification checks (v38 to v41);
               12 are governance. Verb-first buttons, descriptive links, and
               one capitalization policy cross-referenced against Krehel
               /better-writing. Empty states, placeholder-as-example, and
@@ -570,9 +570,10 @@ export default function DesignSystemContractPage() {
         </section>
 
         <div className="status-note">
-          Design system contract v{c.version} — a reference format for
-          AI-readable design contracts. Input plus verification: 42 automated
-          checks, not just tokens and prose. Live styles remain authoritative
+          Design system contract v{c.version}: a reference format for
+          AI-readable design contracts. Input plus
+          verification: {ENGINE_CHECK_COUNT} automated checks on top of tokens
+          and prose. Live styles remain authoritative
           when they and this contract disagree. Human and machine surfaces stay
           synchronized.
         </div>

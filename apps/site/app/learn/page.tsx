@@ -21,21 +21,21 @@ const ARTICLES = [
     slug: 'what-is-design-verification',
     title: 'What is design verification?',
     lede:
-      'The automated evaluation of a live site against a published design system contract — distinct from linting, regression, and heuristic review.',
+      'The automated evaluation of a live site against a published design system contract, distinct from linting, regression, and heuristic review.',
     meta: 'Category definition · 6 min',
   },
   {
     slug: 'design-verification-vs-linting-vs-visual-regression',
     title: 'Design verification vs design linting vs visual regression',
     lede:
-      'Three adjacent practices, three different questions. Token drift, baseline diffing, and contract conformance — and where each one fails alone.',
+      'Three adjacent practices, three different questions. Token drift, baseline diffing, and contract conformance: where each one fails alone.',
     meta: 'Comparison · 5 min',
   },
   {
     slug: 'why-we-built-a-public-design-score',
     title: 'Why we built a public design score',
     lede:
-      'A score is a contract you can run. Making it public forces honesty — the same checks that score your site score ours, with the same thresholds.',
+      'A score is a contract you can run. Making it public forces honesty: the same checks that score your site score ours, with the same thresholds.',
     meta: 'Position · 4 min',
   },
 ];
@@ -96,9 +96,9 @@ export default function LearnPage() {
           <div className="definition">
             <p className="definition-label">Editorial scope</p>
             <p>
-              A small, slow, reference library — not a blog. Articles are
-              added when the category needs a new anchor, not on a content
-              cadence. Each one cites the contract, the verification kit, or
+              A small, slow, reference library. Articles are added when the
+              category needs a new anchor. Each one cites the contract, the
+              verification kit, or
               the public score as its primary source.
             </p>
           </div>
@@ -106,8 +106,8 @@ export default function LearnPage() {
 
         <div className="status-note">
           The /learn collection is intentionally narrow. The live engines
-          live at /score, /contracts, /labs, /kits, and /review — these
-          articles are the language layer around them.
+          live at /score, /contracts, /labs, /kits, and /review; these articles
+          are the language layer around them.
         </div>
       </main>
 

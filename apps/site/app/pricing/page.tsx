@@ -82,13 +82,12 @@ export default function PricingPage() {
             Open core stays free.
           </h1>
           <p className="surface-lede">
-            Score any site against the contract — free, forever. Continuity adds
+            Score any site against the contract for free, forever. Continuity adds
             scheduled scans, drift alerts, and score history at $29 per site per
             month. Enterprise for CI gates and on-prem.
           </p>
           <p className="surface-note">
-            No credit card to start. The free tier is the whole score engine,
-            not a teaser.
+            No credit card to start. The free tier is the whole score engine.
           </p>
           <AgentActions mdPath="/pricing.md" label="the pricing page" />
         </section>
@@ -96,8 +95,8 @@ export default function PricingPage() {
         <section className="doctrine-section fade-up fade-up-delay-1">
           <div className="pricing-desk">
             <p className="pricing-desk-lede">
-              The free tier is not a trial. It is the whole verification engine
-              — {ENGINE_CHECK_COUNT} checks, one grade, real-time. Continuity adds scheduled
+              The free tier is the whole verification engine: {ENGINE_CHECK_COUNT} checks, one
+              grade, real-time. Continuity adds scheduled
               monitoring and drift alerts for teams shipping with agents.
               Enterprise adds CI gates and on-prem for organizations at scale.
             </p>
@@ -197,7 +196,7 @@ export default function PricingPage() {
               </strong>{' '}
               Every score is computed by the same deterministic {ENGINE_CHECK_COUNT}-check engine
               against the same published contract. Enterprise customers pay for
-              private scoring, custom contracts, and CI integration — never for
+              private scoring, custom contracts, and CI integration, never for
               public leaderboard placement. If a scored site is also an
               enterprise customer, their public score is computed identically to
               any non-customer&rsquo;s score.
@@ -238,7 +237,7 @@ export default function PricingPage() {
                 and a private contract instance?
               </summary>
               <p className="pricing-faq-a">
-                Continuity lets you host your own contract — your rules, your
+                Continuity lets you host your own contract: your rules, your
                 scoring thresholds, on infrastructure Designesy runs. Enterprise
                 gives you a private contract instance on your own
                 infrastructure (on-prem or VPC) with SSO and audit trail.
@@ -259,7 +258,7 @@ export default function PricingPage() {
                 Can I use the free tier commercially?
               </summary>
               <p className="pricing-faq-a">
-                Yes. Score any site, embed the badge, export the receipt —
+                Yes. Score any site, embed the badge, and export the receipt,
                 commercially or otherwise. The open contract and machine feed
                 are published for any agent or tool to consume.
               </p>
@@ -271,8 +270,7 @@ export default function PricingPage() {
               <p className="pricing-faq-a">
                 Your 5 local scores stay in your browser. Continuity picks up
                 server-side history from the moment it activates. Local and
-                server-side history are separate stores — one does not
-                overwrite the other.
+                server-side history are separate stores; neither overwrites the other.
               </p>
             </details>
           </div>
@@ -332,69 +330,69 @@ export default function PricingPage() {
               </tr>
               <tr>
                 <td>Scheduled scans</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td>Daily or weekly</td>
                 <td>Custom schedule</td>
               </tr>
               <tr>
                 <td>Email drift alerts</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>Baseline snapshots</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>Multi-site dashboard</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td>5 sites included</td>
                 <td>Unlimited</td>
               </tr>
               <tr>
                 <td>Private contract host</td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>API access + CI/CD gates</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>Custom contract scoring</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>SSO/SAML + audit trail</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>On-prem scoring engine</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
               <tr>
                 <td>SLA + dedicated CSM</td>
-                <td><span className="pricing-compare-dash">—</span></td>
-                <td><span className="pricing-compare-dash">—</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                 <td><span className="pricing-compare-check">✓</span></td>
               </tr>
             </tbody>
           </table>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
             Open features are live today. Continuity features are in early
-            access. Enterprise features are available by conversation —{' '}
+            access. Enterprise features are available by conversation:{' '}
             <a href="mailto:hello@designesy.org" className="text-link">
               contact us
             </a>

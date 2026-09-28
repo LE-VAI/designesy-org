@@ -32,12 +32,12 @@ const LAB_ANATOMY = [
 ];
 
 const LAB_BOUNDARIES = [
-  'Controlled experiments, not editorial posts',
-  'Inspectable artifacts, not showcases',
-  'Principle tests, not visual studies',
-  'Contracted observations, not loose case notes',
-  'Working demos, not decorative samples',
-  'A workbench for design principles, not a software pitch',
+  'Controlled experiments with a stated thesis',
+  'Inspectable artifacts you can check',
+  'Tests of a design principle',
+  'Observations tied to the contract',
+  'Working demos on the live site',
+  'A workbench for design principles',
 ];
 
 export default function LabsPage() {
@@ -55,7 +55,7 @@ export default function LabsPage() {
           <p className="surface-note">
             A Lab is a controlled design experiment where a principle becomes
             visible, testable, remixable, and reviewable. Labs are the public
-            practical layer of Designesy — a workbench where a thesis becomes a
+            practical layer of Designesy: a workbench where a thesis becomes a
             live artifact, review checklist, portable contract, and
             implementation-ready prompt.
           </p>
@@ -80,7 +80,7 @@ export default function LabsPage() {
             </p>
             <p className="lab-card-desc">
               Restrained interaction: wordmark, press, sound preference, and
-              reduced motion — made inspectable against the design system
+              reduced motion, made inspectable against the design system
               contract.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
@@ -99,9 +99,9 @@ export default function LabsPage() {
               How an interface feels under your hands.
             </p>
             <p className="lab-card-desc">
-              Concentric radii, press scale, image outlines, hit areas, stagger
-              rhythm — portable rules with exact values, compiled from external
-              design intelligence and verified on designesy.org.
+              Concentric radii, press scale, image outlines, hit areas, and
+              stagger rhythm as portable rules with exact values, compiled from
+              external design intelligence and verified on designesy.org.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
@@ -120,7 +120,7 @@ export default function LabsPage() {
             </p>
             <p className="lab-card-desc">
               Font smoothing, rem-based scale, line-height by role, tracking by
-              size, measure, text-wrap, tabular numbers, and selection —
+              size, measure, text-wrap, tabular numbers, and selection as
               portable rules with exact values, compiled from external
               typography intelligence and verified on designesy.org.
             </p>
@@ -141,8 +141,8 @@ export default function LabsPage() {
             </p>
             <p className="lab-card-desc">
               Nineteen cues, nineteen interaction roles, one documented engine.
-              The sound parallel to the visual token system — no sound without
-              a token name and rationale. Cuelume v0.2.2, adopted in contract
+              The sound parallel to the visual token system: every sound carries a
+              token name and rationale. Cuelume v0.2.2, adopted in contract
               v0.3.0.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
@@ -164,7 +164,7 @@ export default function LabsPage() {
                 <span className="row-body">
                   <span className="row-title">Design system contract</span>
                   <span className="row-meta">
-                    Where lab behavior is measured — Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
+                    Where lab behavior is measured: Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
                   </span>
                 </span>
               </Link>
@@ -228,7 +228,7 @@ export default function LabsPage() {
                 <span className="row-body">
                   <span className="row-title">Acoustic token reference</span>
                   <span className="row-meta">
-                    Nineteen cues, nineteen roles — the sound parallel to the visual token system
+                    Nineteen cues, nineteen roles: the sound parallel to the visual token system
                   </span>
                 </span>
               </Link>
@@ -294,7 +294,7 @@ export default function LabsPage() {
                 <span className="row-body">
                   <span className="row-title">Try the Studio</span>
                   <span className="row-meta">
-                    The contract, conversational — type, motion, spacing, or score any site
+                    The contract, conversational: type, motion, spacing, or score any site
                   </span>
                 </span>
               </a>
@@ -310,7 +310,7 @@ export default function LabsPage() {
                 <span className="row-body">
                   <span className="row-title">Continuity waitlist</span>
                   <span className="row-meta">
-                    Design judgment that stays current — early access, no charge to join
+                    Design judgment that stays current: early access, free to join
                   </span>
                 </span>
               </Link>

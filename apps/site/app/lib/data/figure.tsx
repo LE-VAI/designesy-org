@@ -53,6 +53,17 @@ export function DataFigure({
   );
 }
 
+/** A value the run did not produce. The dash is for the eye; a screen reader
+    hears the words, because a lone dash is silent in NVDA and "n dash" in JAWS. */
+export function NotMeasured() {
+  return (
+    <>
+      <span aria-hidden="true">–</span>
+      <span className="sr-only">Not measured</span>
+    </>
+  );
+}
+
 /** A plain table in the data pages' type: numbers right-aligned in tabular
     figures, the first column a row header. */
 export function DataTable({

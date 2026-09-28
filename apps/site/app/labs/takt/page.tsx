@@ -28,25 +28,25 @@ export const metadata: Metadata = pageMeta({
  * Lab anatomy coverage — confirms every required lab section is present.
  */
 const ANATOMY_DONE = [
-  'Live artifact — takt grid demo',
-  'Thesis — what takt means here',
-  'Principle — five rules with exact values',
-  'Portable contract — rules agents can cite',
-  'Implementation notes — builder prompt',
-  'Review checklist — what to inspect',
-  'Provenance — external sources ingested',
-  'Anti-patterns — what takt is not',
-  'Remix notes — how to adapt',
+  'Live artifact: takt grid demo',
+  'Thesis: what takt means here',
+  'Principle: five rules with exact values',
+  'Portable contract: rules agents can cite',
+  'Implementation notes: builder prompt',
+  'Review checklist: what to inspect',
+  'Provenance: external sources ingested',
+  'Anti-patterns: what takt is not',
+  'Remix notes: how to adapt',
   'Lab anatomy coverage',
-  'Verification — evidence on designesy.org',
-  'Field check — reviewed with Kit One',
+  'Verification: evidence on designesy.org',
+  'Field check: reviewed with Kit One',
 ];
 
 const PRINCIPLES = [
   {
     num: '01',
     title: 'Concentric border radius',
-    body: 'Outer radius = inner radius + padding. Mismatched nested radii are the most common "feels off" cause. If a card has 6px radius and 4px padding, the image inside needs 2px — not 6px, not 0.',
+    body: 'Outer radius = inner radius + padding. Mismatched nested radii are the most common "feels off" cause. If a card has 6px radius and 4px padding, the image inside needs exactly 2px.',
   },
   {
     num: '02',
@@ -55,8 +55,8 @@ const PRINCIPLES = [
   },
   {
     num: '03',
-    title: 'Image outlines, not borders',
-    body: '1px outline at 0.1 opacity — pure black in light mode, pure white in dark mode. Never tinted neutrals (slate, zinc) which read as dirt against a clean surface.',
+    title: 'Image outlines instead of borders',
+    body: '1px outline at 0.1 opacity: pure black in light mode, pure white in dark mode. Never tinted neutrals (slate, zinc) which read as dirt against a clean surface.',
   },
   {
     num: '04',
@@ -66,18 +66,18 @@ const PRINCIPLES = [
   {
     num: '05',
     title: 'Stagger enter, soften exit',
-    body: 'Break content into semantic chunks with ~100ms stagger delay. Exits are softer than enters — small fixed translateY, not full-height collapse. Skip animation entirely on page load.',
+    body: 'Break content into semantic chunks with ~100ms stagger delay. Exits are softer than enters: a small fixed translateY in place of a full-height collapse. Skip animation entirely on page load.',
   },
 ];
 
 const CONTRACT_RULES = [
-  { title: 'Concentric radii', meta: 'outerRadius = innerRadius + padding — every nested surface' },
+  { title: 'Concentric radii', meta: 'outerRadius = innerRadius + padding on every nested surface' },
   { title: 'Press scale', meta: 'scale(0.96) on active, never below 0.95, static escape hatch' },
   { title: 'Image outlines', meta: '1px at 0.1 opacity, pure black/white, never tinted neutrals' },
   { title: 'Hit area floor', meta: '44×44px touch, 40×40px desktop, pseudo-element extension' },
   { title: 'Stagger enters', meta: '~100ms delay per semantic chunk, skip on page load' },
   { title: 'Soften exits', meta: 'Small fixed translateY, softer than enter, no full collapse' },
-  { title: 'No transition: all', meta: 'Specify exact properties — transform, opacity, filter only' },
+  { title: 'No transition: all', meta: 'Specify exact properties: transform, opacity, filter only' },
   { title: 'Spare will-change', meta: 'Only transform/opacity/filter, only when stutter is observed' },
 ];
 
@@ -86,37 +86,37 @@ const REVIEW_CHECKS = [
   'Every interactive element scales to 0.96 on press (or provides a static escape)',
   'Image surfaces use outline not border, pure black/white at 0.1 opacity',
   'Every touch target is at least 44×44px (desktop 40×40px)',
-  'Enter animations stagger by semantic chunk (~100ms), not as a single block',
-  'Exit animations are softer than enters — small translateY, not full collapse',
-  'No transition: all anywhere — every transition names its properties',
+  'Enter animations stagger by semantic chunk (~100ms) instead of arriving as one block',
+  'Exit animations are softer than enters: a small translateY instead of a full collapse',
+  'No transition: all anywhere; every transition names its properties',
   'will-change is absent unless a first-frame stutter was observed and fixed',
   'No two elements\u2019 hit areas overlap',
   'Animation is skipped on initial page load (initial={false} or equivalent)',
 ];
 
 const PROVENANCE = [
-  'Kiyotaka (@SubhanHQ) — Amicro micro-transitions library, open source',
-  'Jakub Krehel (@jakubkrehel) — /better-ui skill, 13 interface polish principles, MIT',
-  'Emil Kowalski (@emilkowalski) — /emil-design-eng skill, motion craft and press scale 0.97, MIT',
-  'Emil Kowalski (@emilkowalski) — /apple-design skill, Apple WWDC spring physics and interruptibility, MIT',
-  'Emil Kowalski (@emilkowalski) — /find-animation-opportunities, anti-over-animation Gate (Frequency, Purpose, Speed, Function), MIT',
-  'Emil Kowalski (@emilkowalski) — /animate skill, 7-step build sequence and Never Ship table (13 auto-blocks), MIT',
-  'Concentric radius rule — Krehel better-ui principle 1',
-  'Press scale 0.96 — Krehel better-ui principle 9; 0.97 — Kowalski emil-design-eng',
-  'Image outline rule — Krehel better-ui principle 8',
-  'Hit area 44×44 — Krehel better-ui principle 13',
-  'Stagger ~100ms — Krehel better-ui principle 5',
-  'No transition: all — Krehel better-ui principle 11',
-  'Spare will-change — Krehel better-ui principle 12',
-  'Frequency gate — Kowalski emil-design-eng (no motion on keyboard-initiated or high-frequency actions)',
-  'Spring physics — Kowalski apple-design (damping 1.0, response 0.3–0.4; matches contract springs)',
-  'Never Ship table — Kowalski animate (13 auto-blocks including scale(0), ease-in on UI, keyframes on toasts, Motion x/y/scale shorthands)',
+  'Kiyotaka (@SubhanHQ): Amicro micro-transitions library, open source',
+  'Jakub Krehel (@jakubkrehel): /better-ui skill, 13 interface polish principles, MIT',
+  'Emil Kowalski (@emilkowalski): /emil-design-eng skill, motion craft and press scale 0.97, MIT',
+  'Emil Kowalski (@emilkowalski): /apple-design skill, Apple WWDC spring physics and interruptibility, MIT',
+  'Emil Kowalski (@emilkowalski): /find-animation-opportunities, anti-over-animation Gate (Frequency, Purpose, Speed, Function), MIT',
+  'Emil Kowalski (@emilkowalski): /animate skill, 7-step build sequence and Never Ship table (13 auto-blocks), MIT',
+  'Concentric radius rule · Krehel better-ui principle 1',
+  'Press scale 0.96 · Krehel better-ui principle 9; 0.97 · Kowalski emil-design-eng',
+  'Image outline rule · Krehel better-ui principle 8',
+  'Hit area 44×44 · Krehel better-ui principle 13',
+  'Stagger ~100ms · Krehel better-ui principle 5',
+  'No transition: all · Krehel better-ui principle 11',
+  'Spare will-change · Krehel better-ui principle 12',
+  'Frequency gate · Kowalski emil-design-eng (no motion on keyboard-initiated or high-frequency actions)',
+  'Spring physics · Kowalski apple-design (damping 1.0, response 0.3 to 0.4; matches contract springs)',
+  'Never Ship table · Kowalski animate (13 auto-blocks including scale(0), ease-in on UI, keyframes on toasts, Motion x/y/scale shorthands)',
   'Cross-referenced against Designesy design system contract v0.1.1; adopted into v0.1.2',
 ];
 
 const ANTI = [
   'Same border radius on parent and child',
-  'Scale below 0.95 on press — feels broken',
+  'Scale below 0.95 on press, which feels broken',
   'Tinted neutral borders on images (slate, zinc, gray)',
   'Touch targets smaller than 44×44px without pseudo-element extension',
   'All content animates as a single block on enter',
@@ -146,25 +146,25 @@ const ANATOMY = [
 const BUILDER_PROMPT = `You are working with Designesy Lab Two: Takt.
 
 Authority: designesy.org is the canonical public source for Designesy
-open design intelligence. Takt is Lab Two — interface feel as portable
+open design intelligence. Takt is Lab Two: interface feel as portable
 rules with exact values.
 
 Permission: read-only by default. Inspect, review, and report.
 Do not edit files, deploy changes, or claim write authority
 the operator did not grant.
 
-Goal: Review the target interface for takt — the physical feel
-of surfaces under your hands. Check every rule below and report
+Goal: Review the target interface for takt (the physical feel
+of surfaces under your hands). Check every rule below and report
 which pass, which fail, and which are not applicable.
 
-Rules (exact values, not preferences):
+Rules (each with an exact value):
   1. Concentric radii: outerRadius = innerRadius + padding on every nested pair
   2. Press scale: scale(0.96) on active, never below 0.95, static escape hatch
   3. Image outlines: 1px at 0.1 opacity, pure black/white, never tinted neutrals
   4. Hit area floor: 44×44px touch, 40×40px desktop, pseudo-element extension
   5. Stagger enters: ~100ms per semantic chunk, skip on page load
   6. Soften exits: small fixed translateY, softer than enter, no full collapse
-  7. No transition: all — every transition names its properties
+  7. No transition: all; every transition names its properties
   8. Spare will-change: only transform/opacity/filter, only when stutter observed
 
 Output format:
@@ -198,7 +198,7 @@ export default function TaktLabPage() {
           </p>
           <h1 className="surface-title" data-scramble>Takt</h1>
           <p className="surface-lede">
-            Interface feel — the physical sense of surfaces under your hands.
+            Interface feel: the physical sense of surfaces under your hands.
             Radius nesting, press feedback, image outlines, hit areas, stagger
             rhythm.
           </p>
@@ -232,13 +232,13 @@ export default function TaktLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Live artifact</h2>
           <div className="definition">
-            <p className="definition-label">Takt grid — see it on this page</p>
+            <p className="definition-label">Takt grid: see it on this page</p>
             <p>
               Every interactive surface on designesy.org carries these rules:
               check-grid cells scale on press, rows have concentric left
               borders, card hover lifts with a shadow (not a border), and
               staggered fade-up sections enter ~100ms apart. Scroll this page
-              and watch the section rhythm — that is takt.
+              and watch the section rhythm: that is takt.
             </p>
           </div>
 
@@ -296,8 +296,8 @@ export default function TaktLabPage() {
           <div className="definition">
             <p className="definition-label">What takt means here</p>
             <p>
-              Takt is the beat — the rhythm an interface keeps when you touch it.
-              It is not motion design (that is Poise). It is the physical feel:
+              Takt is the beat: the rhythm an interface keeps when you touch it.
+              Where Poise covers motion design, takt covers the physical feel of
               radius nesting that looks right, press feedback that feels alive,
               hit areas that never miss, and enter animations that breathe in
               sequence. Takt is what separates a surface that feels assembled
@@ -325,7 +325,7 @@ export default function TaktLabPage() {
           <h2 className="doctrine-heading">Portable contract</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Rules agents can cite when proposing or reviewing interface changes.
-            Each rule has an exact value, not a preference.
+            Each rule has an exact value.
           </p>
           <div className="row-stack" role="list">
             {CONTRACT_RULES.map((rule, i) => (
@@ -364,7 +364,7 @@ export default function TaktLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Remix notes</h2>
           <p className="surface-note">
-            These rules are system-agnostic — express them in Tailwind, plain
+            These rules are system-agnostic: express them in Tailwind, plain
             CSS, CSS-in-JS, or any other styling system. The values are exact;
             the syntax is yours to adapt. When a rule conflicts with an existing
             design system, name the tension explicitly rather than silently
@@ -381,11 +381,11 @@ export default function TaktLabPage() {
           <h2 className="doctrine-heading">Verification</h2>
           <CheckGrid
             items={[
-              { title: 'Concentric radii — card padding 4px + image radius 2px = card 6px', status: 'pass' },
+              { title: 'Concentric radii: card padding 4px + image radius 2px = card 6px', status: 'pass' },
               { title: 'Press scale 0.96 on check-grid cells', status: 'pass' },
-              { title: 'Press scale 0.985 on pillar cards (softer — longer surface)', status: 'pass' },
-              { title: 'Hit area — all nav links ≥ 40×40px', status: 'pass' },
-              { title: 'Stagger — fade-up sections enter ~100ms apart', status: 'pass' },
+              { title: 'Press scale 0.985 on pillar cards (softer, for a longer surface)', status: 'pass' },
+              { title: 'Hit area: all nav links ≥ 40×40px', status: 'pass' },
+              { title: 'Stagger: fade-up sections enter ~100ms apart', status: 'pass' },
               { title: 'No transition: all in globals.css', status: 'pass' },
               { title: 'will-change only on check-pop and back-button animations', status: 'pass' },
               {
@@ -432,7 +432,7 @@ export default function TaktLabPage() {
                 <span className="row-index">01</span>
                 <span className="row-body">
                   <span className="row-title">Lab One · Poise</span>
-                  <span className="row-meta">Restrained interaction — motion, sound, reduced motion</span>
+                  <span className="row-meta">Restrained interaction: motion, sound, reduced motion</span>
                 </span>
               </Link>
             </div>
@@ -474,7 +474,7 @@ export default function TaktLabPage() {
                 <span className="row-index">04</span>
                 <span className="row-body">
                   <span className="row-title">Field check · Poise</span>
-                  <span className="row-meta">Lab One reviewed — pass with notes</span>
+                  <span className="row-meta">Lab One reviewed: pass with notes</span>
                 </span>
               </Link>
             </div>
@@ -488,7 +488,7 @@ export default function TaktLabPage() {
                 <span className="row-index">05</span>
                 <span className="row-body">
                   <span className="row-title">Lab Three · Cadence</span>
-                  <span className="row-meta">Text rhythm — scale, leading, tracking, measure</span>
+                  <span className="row-meta">Text rhythm: scale, leading, tracking, measure</span>
                 </span>
               </Link>
             </div>
@@ -502,7 +502,7 @@ export default function TaktLabPage() {
                 <span className="row-index">06</span>
                 <span className="row-body">
                   <span className="row-title">Lab Four · Acoustics</span>
-                  <span className="row-meta">Interaction sound — nineteen cues, nineteen roles, Cuelume v0.2.2</span>
+                  <span className="row-meta">Interaction sound: nineteen cues, nineteen roles, Cuelume v0.2.2</span>
                 </span>
               </Link>
             </div>

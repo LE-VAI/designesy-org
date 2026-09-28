@@ -214,7 +214,7 @@ const QUESTIONS: Question[] = [
     prompt: 'How are heading hierarchy and landmarks structured?',
     answers: [
       { stage: 1, label: 'No consistent heading order; divs for layout sections' },
-      { stage: 2, label: 'h1–h3 used, but order skips levels on some pages' },
+      { stage: 2, label: 'h1 to h3 used, but order skips levels on some pages' },
       { stage: 3, label: 'Single h1, no skipped levels, main/header/nav landmarks on all pages' },
       { stage: 4, label: 'Landmarks + heading audit in CI + skip-to-content link + ARIA labels verified' },
     ],

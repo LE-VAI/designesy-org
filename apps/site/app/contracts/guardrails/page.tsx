@@ -47,11 +47,11 @@ export default function GuardrailsContractPage() {
             <p>{c.source_authority.contract_shift}</p>
           </div>
           <div className="definition">
-            <p className="definition-label">Types, not suggestions</p>
+            <p className="definition-label">Tokens as types</p>
             <p>{c.source_authority.types_not_suggestions}</p>
           </div>
           <div className="definition">
-            <p className="definition-label">Adoption signal</p>
+            <p className="definition-label">Adoption data</p>
             <p>{c.source_authority.adoption_signal}</p>
           </div>
         </section>
@@ -77,7 +77,7 @@ export default function GuardrailsContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -117,7 +117,7 @@ export default function GuardrailsContractPage() {
         </section>
 
         <div className="status-note">
-          The guardrails emitter is the product layer — it turns a design
+          The guardrails emitter is the product layer: it turns a design
           system into the file AI agents read and the lint that enforces it.
           <Link href={c.machine_url}>Machine export</Link>.
         </div>

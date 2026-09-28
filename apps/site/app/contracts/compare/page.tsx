@@ -86,7 +86,7 @@ export default function CompareContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -132,7 +132,7 @@ export default function CompareContractPage() {
         </section>
 
         <div className="status-note">
-          The compare contract is the diff engine — it answers &ldquo;what
+          The compare contract is the diff engine: it answers &ldquo;what
           actually changed between two design systems&rdquo; deterministically from
           live production URLs. <Link href={c.machine_url}>Machine export</Link>.
         </div>

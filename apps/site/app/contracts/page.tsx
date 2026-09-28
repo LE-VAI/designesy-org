@@ -309,8 +309,8 @@ export default function ContractsPage() {
             <p className="surface-note">
               Designesy Contracts are portable design agreements that let people
               and agents carry design judgment across tools, sessions, codebases,
-              and artifacts. They make design judgment inspectable — not reliant
-              on slogans or vibes.
+              and artifacts. They make design judgment inspectable, with
+              evidence in place of slogans or vibes.
             </p>
           </div>
           <div className="hero-actions" style={{ marginTop: '1.75rem' }}>
@@ -362,7 +362,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Tokens · v0.1.0</span>
                   <span className="row-meta">
-                    W3C DTCG 2025.10 format conformance — color spaces, custom types, validation
+                    W3C DTCG 2025.10 format conformance: color spaces, custom types, validation
                   </span>
                 </span>
               </Link>
@@ -378,7 +378,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Accessibility · v0.1.0</span>
                   <span className="row-meta">
-                    WCAG 2.2 AA via axe-core 4.13.0 — 11 verification checks
+                    11 verification checks: WCAG 2.2 AA via axe-core 4.13.0
                   </span>
                 </span>
               </Link>
@@ -394,7 +394,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Motion · v0.1.0</span>
                   <span className="row-meta">
-                    Lottie spec v1.0.1 + Ten Non-Negotiable Motion Standards — 10 verification checks
+                    10 verification checks: Lottie spec v1.0.1 and the Ten Non-Negotiable Motion Standards
                   </span>
                 </span>
               </Link>
@@ -474,7 +474,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Copywriting adopted</span>
                   <span className="row-meta">
-                    UX copy principles adopted in {CONTRACT_VERSION} — NN/g, Polaris, Carbon, Fluent, HIG
+                    UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, Carbon, Fluent, and HIG
                   </span>
                 </span>
               </Link>
@@ -490,7 +490,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Agent skill export</span>
                   <span className="row-meta">
-                    SKILL.md format for AI coding agents — same source as JSON
+                    SKILL.md format for AI coding agents, built from the same source as the JSON
                   </span>
                 </span>
               </Link>
@@ -522,7 +522,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Drift · v0.1.0</span>
                   <span className="row-meta">
-                    AI-generated UI drift detection — 12 checks for token fabrication, value variance, off-contract patterns
+                    AI-generated UI drift detection: 12 checks for token fabrication, value variance, and off-contract patterns
                   </span>
                 </span>
               </Link>
@@ -538,7 +538,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">AI Readiness · v0.1.0</span>
                   <span className="row-meta">
-                    The 6th maturity axis — 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, DESIGN.md
+                    The 6th maturity axis: 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, and DESIGN.md
                   </span>
                 </span>
               </Link>
@@ -554,7 +554,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Guardrails · v0.1.0</span>
                   <span className="row-meta">
-                    The product layer — emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
+                    The product layer: emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
                   </span>
                 </span>
               </Link>
@@ -570,7 +570,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Monitor · v0.1.0</span>
                   <span className="row-meta">
-                    The continuous-governance layer — re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
+                    The continuous-governance layer: re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
                   </span>
                 </span>
               </Link>
@@ -586,7 +586,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Compare · v0.1.0</span>
                   <span className="row-meta">
-                    The diff engine — fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions: added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta
+                    The diff engine: fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions (added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta)
                   </span>
                 </span>
               </Link>
@@ -602,7 +602,7 @@ export default function ContractsPage() {
                 <span className="row-body">
                   <span className="row-title">Report · v0.1.0</span>
                   <span className="row-meta">
-                    The synthesis capstone — fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
+                    The synthesis capstone: fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
                   </span>
                 </span>
               </Link>
@@ -633,7 +633,7 @@ export default function ContractsPage() {
           <h2 className="doctrine-heading">Contract contents</h2>
           <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
             <p className="surface-note">
-              A Designesy Contract should include all of the following —
+              A Designesy Contract should include all of the following:
               structured values for machines, rationale for humans, and
               verification criteria for both.
             </p>
@@ -651,8 +651,8 @@ export default function ContractsPage() {
               <code style={{ color: 'var(--ink)' }}>rounded</code>,{' '}
               <code style={{ color: 'var(--ink)' }}>spacing</code>,{' '}
               <code style={{ color: 'var(--ink)' }}>components</code>. Use local
-              extensions for doctrine, review, provenance, agent instructions, and
-              verification — but do not hide the standard contract from tools.
+              extensions for doctrine, review, provenance, agent instructions,
+              and verification, and keep the standard contract visible to tools.
             </p>
           </div>
           <h3
@@ -677,8 +677,7 @@ export default function ContractsPage() {
               Public design contract for designesy.org. Derived from the live
               site token foundation, with Lab One · Poise, Lab Two · Takt, Lab
               Three · Cadence, and Lab Four · Acoustics rules adopted. Provisional, doctrine-referenced, and
-              meant to be verified against the running site — not a frozen brand
-              bible.
+              meant to be verified against the running site and revised as the site changes.
             </p>
           </div>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
@@ -710,7 +709,7 @@ export default function ContractsPage() {
               },
               {
                 title: 'Doctrine lineage',
-                meta: 'Designesy design doctrine — operational values only on the public surface',
+                meta: 'Designesy design doctrine, with only operational values on the public surface',
               },
               {
                 title: 'Motion references',
@@ -718,11 +717,11 @@ export default function ContractsPage() {
               },
               {
                 title: 'Interaction audio',
-                meta: 'Cuelume v0.2.2 — preference owned by Designesy',
+                meta: 'Cuelume v0.2.2, with the sound preference owned by Designesy',
               },
               {
                 title: 'Contract status',
-                meta: 'Public ' + CONTRACT_VERSION + ' — Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
+                meta: 'Public ' + CONTRACT_VERSION + ', with Poise, Takt, Cadence, Acoustics, and Copywriting rules adopted',
               },
             ]} />
         </section>
@@ -753,7 +752,7 @@ export default function ContractsPage() {
           <DemoGrid>
             <DemoCell
               label="Color roles"
-              note={<>Each chip renders the exact token value. Dark roles on dark surfaces — contrast is the product.</>}
+              note={<>Each chip renders the exact token value. Dark roles on dark surfaces: contrast is the product.</>}
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
@@ -789,7 +788,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Surface depth"
-              note={<>Near-black surfaces, not gray. Depth from opacity layers, not heavy shadows.</>}
+              note={<>Surfaces are near-black. Depth comes from opacity layers first, shadows second.</>}
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
@@ -825,7 +824,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Radius scale"
-              note={<>6px default · 4px compact — no pill inflation.</>}
+              note={<>6px default · 4px compact. No pill inflation.</>}
             >
               <div className="demo-radius-pair">
                 <div className="demo-radius-card">
@@ -984,7 +983,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Easing curves"
-              note={<>Four timing functions. Watch the dot travel — same distance, different feel.</>}
+              note={<>Four timing functions. Watch the dot travel: same distance, different feel.</>}
             >
               <div className="demo-easing">
                 <div className="demo-easing-row" data-ease="default">
@@ -1097,7 +1096,7 @@ export default function ContractsPage() {
           <h2 className="doctrine-heading">09e · Copywriting ({CONTRACT_VERSION})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             UX copy principles adopted in {CONTRACT_VERSION} from NN/g, Polaris, IBM
-            Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap signal:{' '}
+            Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
             <a
               href="https://detail.design"
               style={{ color: 'var(--signal-light)' }}
@@ -1105,7 +1104,7 @@ export default function ContractsPage() {
               detail.design
             </a>{' '}
             Copywriting discipline. 4 principles are codified as verification
-            checks (v38–v41); 12 are governance.
+            checks (v38 to v41); 12 are governance.
           </p>
           <p className="surface-note" style={{ marginBottom: '0.5rem' }}>
             <strong style={{ color: 'var(--ink)' }}>Principles</strong>
@@ -1146,8 +1145,9 @@ export default function ContractsPage() {
         </section>
 
         <div className="status-note">
-          Designesy design system contract {CONTRACT_VERSION} — public artifact discipline,
-          not legal advice or a client service agreement. Values are taken from
+          Designesy design system contract {CONTRACT_VERSION}: public artifact
+          discipline. It is not legal advice or a client service agreement.
+          Values are taken from
           the live site tokens. Poise, Takt, Cadence, Acoustics, and Copywriting rules are
           adopted. Contract home:{' '}
           <Link href="/contracts/design-system">/contracts/design-system</Link>

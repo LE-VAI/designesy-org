@@ -33,7 +33,7 @@ export default function GraphPage() {
           </p>
           <p className="surface-note">
             {graph.description} The Graph prevents design knowledge from
-            becoming anonymous taste — every shipped artifact should trace
+            becoming anonymous taste: every shipped artifact should trace
             backwards through this chain to a source.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -47,7 +47,7 @@ export default function GraphPage() {
           <h2 className="doctrine-heading" data-scramble>The chain</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Ten stages from source to shipped work. Each stage has public
-            examples — real evidence, not abstract theory.
+            examples drawn from real evidence.
           </p>
           <div className="chain-rail" data-reveal-group>
             {graph.chain.map((stage, i) => {
@@ -94,9 +94,9 @@ export default function GraphPage() {
             <p className="definition-label">Public read-only surface</p>
             <p>
               The Graph is the internal knowledge tree of Designesy. This
-              public surface shows the chain with real examples — but
-              without internal paths, control-plane naming, or private
-              doctrine. It is the provenance layer: a visitor can trace how
+              public surface shows the chain with real examples, leaving out
+              internal paths, control-plane naming,
+              and private doctrine. It is the provenance layer: a visitor can trace how
               a source became a principle, a principle became a contract,
               a contract became a token, a token became a verification, and
               a verification became shipped work.
@@ -107,9 +107,9 @@ export default function GraphPage() {
         <section className="doctrine-section fade-up" id="boundaries">
           <h2 className="doctrine-heading" data-scramble>Boundaries</h2>
           <ul className="checkmark-list">
-            <li>A knowledge graph of design concepts — curated, versioned, and read-only.</li>
-            <li>Examples are selected, not live-streamed from production.</li>
-            <li>Companion to the contract and review surfaces, not a substitute.</li>
+            <li>A knowledge graph of design concepts: curated, versioned, and read-only.</li>
+            <li>Examples are hand-selected rather than live-streamed from production.</li>
+            <li>Companion to the contract and review surfaces.</li>
             <li>Internal paths and control-plane naming stay private.</li>
           </ul>
         </section>
@@ -154,7 +154,7 @@ export default function GraphPage() {
               >
                 <span className="row-index">03</span>
                 <span className="row-body">
-                  <span className="row-title">Work — case studies</span>
+                  <span className="row-title">Work · case studies</span>
                   <span className="row-meta">Shipped work</span>
                 </span>
               </Link>

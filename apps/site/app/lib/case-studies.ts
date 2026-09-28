@@ -43,14 +43,14 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: 'tile',
     title: 'Tile',
-    lede: 'Interactive series composer — one story, many tiles, shared spine.',
+    lede: 'Interactive series composer: one story, many tiles, shared spine.',
     status: 'Shipped · live',
     badge: 'Pass with notes',
     artifact: 'le-vai.github.io/tile',
     date: '2026-07-13',
     metrics: '617 views · 3 likes · 1 reply',
     summary:
-      'A self-contained tool that lets you compose a series of visual tiles from one spine. Published on X with a one-word root post and screen recording. The only post in 24 hours to break out of the noise floor — by a wide margin.',
+      'A self-contained tool that lets you compose a series of visual tiles from one spine. Published on X with a one-word root post and screen recording. The only post in 24 hours to break out of the noise floor, by a wide margin.',
     beforeScore: null,
     gradeBefore: null,
     afterScore: null,
@@ -59,7 +59,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: 'compile',
     title: 'Compile',
-    lede: 'Principle compiler — turns plain language into verifiable design contracts.',
+    lede: 'Principle compiler: turns plain language into verifiable design contracts.',
     status: 'Built · pending hosting',
     badge: 'Ready for review',
     artifact: 'Local build · pending deploy',
@@ -75,7 +75,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: 'continuity',
     title: 'Continuity',
-    lede: 'Founder narrative article — published as a single X post.',
+    lede: 'Founder narrative article, published as a single X post.',
     status: 'Shipped · live',
     badge: 'Needs revision',
     artifact: 'le-vai.github.io/continuity',
@@ -98,7 +98,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     date: '2026-07-25',
     metrics: 'D 67.4 → A 96.3 · +28.9 in one session',
     summary:
-      'Designesy scored its own public surface and got a D. The same engine that grades every other site graded the publisher. The gaps were real: missing focus-visible, no reduced-motion tiering, raw hex values, magic numbers in spacing. The fixes were real too — and the score is now A, verified on the same terms as everyone else.',
+      'Designesy scored its own public surface and got a D. The same engine that grades every other site graded the publisher. The gaps were real: missing focus-visible, no reduced-motion tiering, raw hex values, magic numbers in spacing. The fixes were real too, and the score is now A, verified on the same terms as everyone else.',
     beforeScore: 67.4,
     gradeBefore: 'D',
     afterScore: 96.3,
@@ -122,20 +122,20 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     slug: 'lovable-dev',
     title: 'lovable.dev · A on arrival',
-    lede: 'Snapshot (2026-07-25): an AI-built site that scored A on the contract — without knowing it existed.',
+    lede: 'Snapshot (2026-07-25): an AI-built site that scored A on the contract without knowing it existed.',
     status: 'Verified · public',
     badge: 'A · 93.2',
     artifact: 'lovable.dev',
     date: '2026-07-25',
     metrics: 'A 93.2 · 19 pass / 0 fail / 3 warn / 4 skip',
     summary:
-      'lovable.dev is the case the AI-site-build narrative did not expect: a site built by an AI app platform that scores A on the Designesy contract without ever citing it. The remaining 3 WARNs are token-strictness issues (will-change, rem confirmation, tabular-nums). The 4 SKIPs are browser-only checks. This is the upper bound of what an AI-built site can score today — and the proof that the contract is reachable.',
+      'lovable.dev is the case the AI-site-build narrative did not expect: a site built by an AI app platform that scores A on the Designesy contract without ever citing it. The remaining 3 WARNs are token-strictness issues (will-change, rem confirmation, tabular-nums). The 4 SKIPs are browser-only checks. This is the upper bound of what an AI-built site can score today, and the proof that the contract is reachable.',
     beforeScore: 93.2,
     gradeBefore: 'A',
     afterScore: null,
     gradeAfter: null,
     beforeCounts: { pass: 19, fail: 0, warn: 3, skip: 4 },
-    fix: 'No fix applied yet. The 3 WARNs (v12 will-change, v16 rem, v19 tabular-nums) are token-strictness gaps that an after-fix could resolve — projected score would land at A+.',
+    fix: 'No fix applied yet. The 3 WARNs (v12 will-change, v16 rem, v19 tabular-nums) are token-strictness gaps that an after-fix could resolve; the projected score would land at A+.',
     deltaChecks: [
       { id: 'v12', item: 'will-change restricted to transform and opacity only', before: 'WARN', after: 'pending' },
       { id: 'v16', item: 'Rem-based scale: all text sizes in rem, root at 16px', before: 'WARN', after: 'pending' },

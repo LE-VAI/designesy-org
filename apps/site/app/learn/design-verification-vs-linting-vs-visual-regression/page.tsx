@@ -24,7 +24,7 @@ const PRACTICES = [
     num: '01',
     name: 'Design linting',
     question: 'Does the source use the tokens?',
-    input: 'Source files — CSS, TS, JSX',
+    input: 'Source files: CSS, TS, JSX',
     output: 'Warnings, fixes, inline suggestions',
     scope: 'Token misuse, magic numbers, raw hex',
     fails: 'It cannot see what shipped. A linter that passes in CI does not protect the visitor who receives a different CSS bundle than the one linted.',
@@ -33,7 +33,7 @@ const PRACTICES = [
     num: '02',
     name: 'Visual regression',
     question: 'Did the pixels change?',
-    input: 'Screenshots — before and after',
+    input: 'Screenshots, before and after',
     output: 'Pixel diffs, masked regions, flake flags',
     scope: 'Layout drift, unexpected reflow, removed elements',
     fails: 'It needs a baseline to diff against. New work has no baseline, and a pixel-perfect diff can mask a contract violation that happens to look the same.',
@@ -42,9 +42,9 @@ const PRACTICES = [
     num: '03',
     name: 'Design verification',
     question: 'Does the live site keep the contract?',
-    input: 'A live URL — fetched the way a visitor fetches it',
+    input: 'A live URL, fetched the way a visitor fetches it',
     output: 'A letter grade and per-check findings',
-    scope: 'Tokens, rules, behavior, and verification — all four contract layers',
+    scope: 'Tokens, rules, behavior, and verification: all four contract layers',
     fails: 'It cannot inspect what it cannot fetch. Pages behind auth, paywalls, or bot challenges are scored on what the verifier can receive.',
   },
 ];
@@ -106,8 +106,8 @@ export default function ComparisonPage() {
               Linting catches token drift at authoring time. Regression
               catches pixel drift at shipping time. Verification catches
               contract drift at visitor time. Each one fails where the
-              others succeed, which is why mature teams run all three — and
-              why verification is the only one that can score a site you do
+              others succeed, which is why mature teams run all three, and why
+              verification is the only one that can score a site you do
               not control.
             </p>
           </div>

@@ -39,7 +39,7 @@ const VARIANTS = [
   {
     id: 'compact',
     label: 'Compact',
-    desc: 'Mark only — for footers, sidebars, tight spaces.',
+    desc: 'Mark only, for footers, sidebars, and tight spaces.',
     bg: '#ffffff',
     file: 'badge-compact.svg',
     w: 28,
@@ -88,7 +88,7 @@ export default function BadgePage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/${v.file}`}
-                    alt={`Verified by Designesy — ${v.label} variant`}
+                    alt={`Verified by Designesy (${v.label} variant)`}
                     width={v.w}
                     height={v.h}
                     style={{ display: 'block' }}
@@ -135,7 +135,7 @@ export default function BadgePage() {
             <ol className="badge-steps">
               <li>
                 <strong>Score your site</strong> at{' '}
-                <Link href="/score" className="text-link">/score</Link> —
+                <Link href="/score" className="text-link">/score</Link>:
                 {ENGINE_CHECK_COUNT} automated checks against the design contract, real-time, no login.
               </li>
               <li>
@@ -147,7 +147,7 @@ export default function BadgePage() {
               </li>
               <li>
                 <strong>The score is the proof.</strong> The badge claims verification;
-                the live score proves it. If your site drifts, the score updates — the badge
+                the live score proves it. If your site drifts, the score updates and the badge
                 stays honest.
               </li>
             </ol>
@@ -182,7 +182,7 @@ export default function BadgePage() {
             </div>
             <p className="definition-note">
               The score is the percentage of checks that pass (warnings count as half).
-              {ENGINE_CHECK_COUNT} checks total — see the{' '}
+              {ENGINE_CHECK_COUNT} checks total. See the{' '}
               <Link href="/contracts/design-system" className="text-link">
                 contract
               </Link>{' '}

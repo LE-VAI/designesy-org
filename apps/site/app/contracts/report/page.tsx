@@ -89,7 +89,7 @@ export default function ReportContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verification</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
-            <CountUp value={c.verification.checks.length} /> synthesis checks — {c.verification.scoring}
+            <CountUp value={c.verification.checks.length} /> synthesis checks. {c.verification.scoring.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '')}
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
@@ -163,7 +163,7 @@ export default function ReportContractPage() {
         </section>
 
         <div className="status-note">
-          The report contract is the synthesis capstone — it answers &ldquo;how
+          The report contract is the synthesis capstone: it answers &ldquo;how
           good is this design, is AI breaking it, and can agents use it&rdquo; in
           one composite grade. <Link href={c.machine_url}>Machine export</Link>.
         </div>
