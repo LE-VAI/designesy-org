@@ -1,7 +1,7 @@
 # Designesy
 
 [![PyPI](https://img.shields.io/pypi/v/designesy-mcp?label=pypi&color=blue)](https://pypi.org/project/designesy-mcp/)
-[![npm](https://img.shields.io/npm/v/designesy-score?label=npm&color=blue)](https://www.npmjs.com/package/designesy-score)
+[![npm](https://img.shields.io/npm/v/@designesy/score?label=npm&color=blue)](https://www.npmjs.com/package/@designesy/score)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.LE--VAI%2Fdesignesy--org-purple)](https://registry.modelcontextprotocol.io/v0.1/servers?search=designesy)
 [![Smithery](https://img.shields.io/badge/Smithery-le--vai%2Fdesignesy-blue)](https://smithery.ai/servers/le-vai/designesy)
 [![Glama](https://glama.ai/mcp/servers/LE-VAI/designesy-org/badges/card.svg)](https://glama.ai/mcp/servers/LE-VAI/designesy-org)
@@ -20,7 +20,7 @@
 **Score any URL in 5 seconds — no install:**
 
 ```bash
-npx designesy-score@latest https://your-site.com
+npx @designesy/score@latest https://your-site.com
 ```
 
 **Add to Claude Desktop, Cursor, or any MCP client:**
@@ -46,7 +46,7 @@ pip install designesy-mcp && designesy-mcp
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 42-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx designesy-score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 42-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
 **Designesy Contract Check** is a GitHub Action that scores any URL against a **42-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
 
