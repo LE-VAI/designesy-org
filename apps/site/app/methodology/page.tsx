@@ -1073,7 +1073,12 @@ export default function MethodologyPage() {
                         ]}
                       />
                     </div>
-                    <p className="dx-src">blind-comparison-report.json, generated {day(BLIND.generatedAt)}.</p>
+                    <p className="dx-src">
+                      blind-comparison-report.json, generated {day(BLIND.generatedAt)}.
+                      {BLIND.excluded.length
+                        ? ` Left out, with no verdict from one of the two raters: ${BLIND.excluded.map((x) => hostOf(x.url)).join(', ')}.`
+                        : ''}
+                    </p>
                   </div>
                 </details>
 

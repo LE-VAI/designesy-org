@@ -1,39 +1,9 @@
 {
-  "instructions": "BLIND A11Y PANEL \u2014 15 sites, one question each.\nFor every site below: visit the URL and judge ONLY accessibility: keyboard operability (can you tab through everything and see focus?), contrast (can you read text on its background?), focus visibility, and meaningful labels (buttons/links say what they do). Answer PASS (usable by a keyboard + screen reader user) or FAIL (any blocker).\nIMPORTANT: do NOT open designesy.org/score or any Designesy page to check the engine result \u2014 this must stay blind.\nHOW TO RETURN: edit the JSON \u2014 replace each null in humanVerdict with \"PASS\" or \"FAIL\" \u2014 then paste your edited JSON as a comment reply on the dev.to post. That is all. ~45 minutes total.",
+  "instructions": "Rate each site: does it PASS or FAIL an accessibility review? Judge only what you observe — keyboard operability, contrast, focus visibility, labels. Do NOT open designesy.org/score. Fill humanVerdict: \"PASS\"|\"FAIL\", then run node scripts/blind-comparison.mjs --panel.",
   "sites": [
     {
       "id": "SITE-119",
-      "url": "https://geist.dev",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-91",
-      "url": "https://x.com",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-147",
-      "url": "https://pentagram.com",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-189",
-      "url": "https://cssdesignawards.com",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-119",
       "url": "https://apple.com",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-147",
-      "url": "https://wikipedia.org",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-140",
-      "url": "https://plex.ibm.com",
       "humanVerdict": null
     },
     {
@@ -47,8 +17,43 @@
       "humanVerdict": null
     },
     {
-      "id": "SITE-175",
-      "url": "https://www.designesy.org",
+      "id": "SITE-126",
+      "url": "https://stripe.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-154",
+      "url": "https://m3.material.io",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-126",
+      "url": "https://github.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-203",
+      "url": "https://stitch.withgoogle.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-147",
+      "url": "https://pentagram.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-105",
+      "url": "https://fwa.org",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-140",
+      "url": "https://plex.ibm.com",
+      "humanVerdict": null
+    },
+    {
+      "id": "SITE-147",
+      "url": "https://roastbyai.com",
       "humanVerdict": null
     },
     {
@@ -57,23 +62,18 @@
       "humanVerdict": null
     },
     {
-      "id": "SITE-154",
-      "url": "https://mozaika.design",
+      "id": "SITE-119",
+      "url": "https://notion.so",
       "humanVerdict": null
     },
     {
-      "id": "SITE-126",
-      "url": "https://stripe.com",
+      "id": "SITE-189",
+      "url": "https://designesy.ai.studio",
       "humanVerdict": null
     },
     {
       "id": "SITE-210",
       "url": "https://carbondesignsystem.com",
-      "humanVerdict": null
-    },
-    {
-      "id": "SITE-126",
-      "url": "https://vercel.com",
       "humanVerdict": null
     }
   ]
