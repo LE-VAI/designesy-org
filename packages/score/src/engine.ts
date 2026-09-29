@@ -2259,8 +2259,16 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
   }
 
   // S7. Emoji as UI icons
+  //
+  // Was `[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]`, which sweeps
+  // in the whole Miscellaneous Symbols and Dingbats block. That block is mostly
+  // TEXT-DEFAULT glyphs — ✓ (U+2713), ✕ (U+2715), ❚ (U+275A) are typographic
+  // marks, not emoji. Match the Unicode property instead of a hand-drawn range:
+  // \p{Emoji_Presentation} for default-emoji code points, plus \p{Emoji}+VS16 for
+  // text-default ones promoted with U+FE0F. This also catches ⭐ (U+2B50), which
+  // the old range missed while it was busy flagging checkmarks.
   {
-    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/giu);
+    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}(?:[\p{Emoji_Presentation}]|[\p{Emoji}]\uFE0F)/giu);
     if (emojiInButtons && emojiInButtons.length >= 2) slopFindings.push({ id: 'S7', label: 'Emoji as UI icons', severity: 4, instances: emojiInButtons.length, evidence: [`${emojiInButtons.length} emoji in button/CTA elements`] });
   }
 
