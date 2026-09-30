@@ -179,6 +179,47 @@ export function unitsOf(text, name) {
   return out;
 }
 
+/**
+ * The PUBLIC API surface of the package engine, as a sorted export list.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM unitsOf()
+ *   `canonical()` drops the `export` keyword by design (see DROP): a route and a
+ *   package legitimately differ on it, so counting it would report false drift
+ *   on every shared helper. The consequence is that an accidental export change
+ *   is INVISIBLE to the body comparison -- verified directly: a function and the
+ *   same function prefixed with `export` canonicalise to the same string. So the
+ *   engine bodies cannot drift, but the package's public surface quietly can.
+ *
+ *   That matters more for a published package than for the site: `packages/score`
+ *   ships an engine.d.ts that consumers compile against, while route.ts is not a
+ *   library at all. This is a read-only report of what the package actually
+ *   promises, so a release can state its API delta instead of assuming one.
+ *
+ * Returns { fn: [...], const: [...], type: [...] } of exported names.
+ */
+export function exportedSurface(text, name = 'engine.ts') {
+  const src = parse(text, name);
+  const out = { fn: [], const: [], type: [] };
+  for (const st of src.statements) {
+    const hasExport = (node) =>
+      (ts.getModifiers(node) || []).some((m) => m.kind === K.ExportKeyword);
+    if (ts.isFunctionDeclaration(st) && st.name && hasExport(st)) {
+      out.fn.push(st.name.text);
+    } else if (ts.isVariableStatement(st) && hasExport(st)) {
+      for (const d of st.declarationList.declarations) {
+        if (ts.isIdentifier(d.name)) out.const.push(d.name.text);
+      }
+    } else if (
+      (ts.isInterfaceDeclaration(st) || ts.isTypeAliasDeclaration(st)) &&
+      st.name && hasExport(st)
+    ) {
+      out.type.push(st.name.text);
+    }
+  }
+  for (const k of Object.keys(out)) out[k].sort();
+  return out;
+}
+
 export function hash(s) {
   return createHash('sha256').update(s).digest('hex').slice(0, 16);
 }
