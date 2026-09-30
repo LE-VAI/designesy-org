@@ -44,7 +44,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.12.1"
+SERVER_VERSION = "1.12.2"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
