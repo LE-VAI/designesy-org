@@ -1,35 +1,17 @@
 {
   "$comment": "Known divergences between the two 42-check engines, pinned to the canonical hash of BOTH sides. kind=intentional: the copies differ by design (transport, output envelope). kind=debt: a fix landed in route.ts and was never ported; porting it and deleting the entry is the goal. See scripts/source-drift.mjs.",
   "divergent": {
-    "const:REMEDIATION": {
-      "route": "4f2b69101798de34",
-      "engine": "fe168f08c4304e13",
-      "kind": "debt",
-      "why": "Fix-it copy for v24, v34-v41 and S1-S7 was revised in route.ts only. Verdicts are unaffected; the CLI prints older remediation text than the site."
-    },
-    "fn:checkButtonTextVerb": {
-      "route": "fd90609ed7f3ef38",
-      "engine": "df54bb7e335e47b0",
-      "kind": "debt",
-      "why": "v38: route.ts strips aria-hidden children, falls back to aria-label for 1-2 character labels, and exempts selection controls (isSelectionControl). engine.ts has none of these, so the CLI can FAIL icon buttons the site passes."
-    },
     "fn:checkDesignMdSpec": {
       "route": "7c035099a4cd8f4f",
-      "engine": "91adae4aa792dd59",
-      "kind": "debt",
-      "why": "v37: transport differs by design (route.ts safeFetch, engine.ts httpsFetch plus SSRF guard), but the branch results also differ. route.ts SKIPs a served file with no frontmatter while engine.ts WARNs. Network-dependent, so the offline parity fixture cannot see it."
-    },
-    "fn:checkFontFamilyCount": {
-      "route": "f8e25981edac2365",
-      "engine": "540ba6213c528f60",
-      "kind": "debt",
-      "why": "v26: verdict-equivalent. route.ts writes the unresolved-token skip as if/else, engine.ts as a guard clause, and engine.ts defaults tokens to {}. Porting either shape to the other closes this entry."
+      "engine": "968dddb4c9859880",
+      "kind": "intentional",
+      "why": "Transport, with the verdict logic now ALIGNED (measured 2026-09-30). route.ts fetches via safeFetch (throws on failure -> its own SKIP) and engine.ts via httpsFetch with an SSRF guard (returns an outcome object, so the equivalent SKIP happens at the length check). Every verdict branch now carries the same status: SKIP not-served, WARN no-frontmatter, WARN linter-unavailable, FAIL lint errors, WARN lint warnings, PASS linted clean, WARN lint threw. The linter-unavailable branch was PASS in engine.ts, which asserted validation that never ran; ported route.ts's WARN. Only the fetch wiring differs, so this stays baselined as transport rather than debt."
     },
     "fn:emitCanonical": {
       "route": "a9126cc3e8e35702",
-      "engine": "0daf07173a3c4d2b",
-      "kind": "debt",
-      "why": "The canonical output format differs. route.ts emits schemaVersion, generatedAt, tool, subject, per-category counts and severity-mapped findings; engine.ts emits a reduced shape under the same format name, so `--format canonical` from the CLI does not match the API."
+      "engine": "9069a170c1e778fd",
+      "kind": "intentional",
+      "why": "Output envelope, measured 2026-09-30. The payload is IDENTICAL: every top-level key route.ts emits except `receipt` and `generatedAt` is present in engine.ts with the same value expression, verified by normalized comparison. route.ts additionally attaches buildReceipt(...) and takes a retrievedAt Date for generatedAt; the standalone package has no receipt concept and stamps new Date(). Same split as emitDesignesy."
     },
     "fn:emitDesignesy": {
       "route": "008bc94b3bbc8107",
@@ -37,59 +19,11 @@
       "kind": "intentional",
       "why": "Output envelope. route.ts attaches a receipt (buildReceipt) for the HTTP API and strips the internal retrievedAt; the package returns the result as-is."
     },
-    "fn:emitGoogle": {
-      "route": "8ee72fc16b713240",
-      "engine": "6fd16ae3316947e3",
-      "kind": "debt",
-      "why": "engine.ts adds score and grade to summary; route.ts does not. Same format name, different fields across the CLI and the API."
-    },
-    "fn:emitReview": {
-      "route": "ce1ad2fb7d4ffdd7",
-      "engine": "3cd40518a80634bb",
-      "kind": "debt",
-      "why": "route.ts uses deriveVerdict(), which returns not-scored when every check SKIPs or is MANUAL; engine.ts inlines fail/needs-changes/pass, so an all-SKIP result reads as pass in the CLI's review."
-    },
     "fn:fetchPageResilient": {
       "route": "3bc9d1cbf4207175",
       "engine": "d49b1ab5a784915b",
       "kind": "intentional",
       "why": "Transport. route.ts uses fetch via fetchCssSingleDetailed and reports a typed failure reason; engine.ts uses node:https with an SSRF guard (isValidUrl, safeLookup)."
-    },
-    "fn:inferTokensFromCss": {
-      "route": "791b867c4bcd5eed",
-      "engine": "05c5968cb566b383",
-      "kind": "debt",
-      "why": "Alias fallback loop. route.ts stops at the first alias that exists, even if it resolves to an empty string; engine.ts keeps trying aliases until one yields a truthy value. They differ only when an alias resolves to empty."
-    },
-    "slop:S11": {
-      "route": "dfbd1151c2ff8963",
-      "engine": "25baeeb2ac2f4e7f",
-      "kind": "debt",
-      "why": "route.ts suppresses S11 on pages that document the slop rules (isDocumentingSlopRules); engine.ts does not."
-    },
-    "slop:S12": {
-      "route": "b1adf349ba8d55fb",
-      "engine": "efbd6620223d40d7",
-      "kind": "debt",
-      "why": "route.ts suppresses S12 on pages that document the slop rules (isDocumentingSlopRules); engine.ts does not."
-    },
-    "slop:S2": {
-      "route": "2f639ec9f6a2c4aa",
-      "engine": "b9299c1bf8243304",
-      "kind": "debt",
-      "why": "route.ts widened the grid-pattern exemption to color-mix(), var() and hex stops in both orders; engine.ts only exempts transparent/rgba before 1px. The CLI flags hairline-grid backgrounds that the site does not."
-    },
-    "slop:S8": {
-      "route": "22b955bed99dacc3",
-      "engine": "6ef8754e8b4a5de2",
-      "kind": "debt",
-      "why": "route.ts suppresses S8 on pages that document the slop rules (isDocumentingSlopRules); engine.ts does not."
-    },
-    "slop:S9": {
-      "route": "c54efc2a58efcc87",
-      "engine": "d33cd64a82a497f1",
-      "kind": "debt",
-      "why": "route.ts suppresses S9 on pages that document the slop rules (isDocumentingSlopRules); engine.ts does not."
     }
   },
   "routeOnly": [
@@ -103,13 +37,10 @@
     "const:runtime",
     "const:scoreUrl",
     "fn:POST",
-    "fn:deriveVerdict",
     "fn:fetchCssSingle",
     "fn:fetchCssSingleDetailed",
-    "fn:isSelectionControl",
     "fn:rateLimited",
-    "fn:scoreUrlUncached",
-    "fn:statusToSeverity"
+    "fn:scoreUrlUncached"
   ],
   "engineOnly": [
     "const:CONTRACT_VERSION",
