@@ -2744,8 +2744,24 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   }
 
   // S7. Emoji as UI icons — emoji in button/CTA positions
+  //
+  // The character class here was `[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}...]`,
+  // which sweeps in the whole Miscellaneous Symbols and Dingbats block. That
+  // block is overwhelmingly TEXT-DEFAULT glyphs: ✓ (U+2713), ✕ (U+2715) and
+  // ❚ (U+275A) are typographic marks a designer reaches for deliberately, not
+  // emoji. This site's own adoption badges and controls use exactly those three,
+  // so the check fired on its own considered craft and took the severity-4
+  // deduction for it.
+  //
+  // The right predicate is the Unicode property, not a hand-drawn range:
+  //   \p{Emoji_Presentation} — code points that render as emoji BY DEFAULT
+  //   \p{Emoji} + U+FE0F     — text-default code points PROMOTED to emoji
+  // The second alternative keeps ✨ (U+2728) and ☀️ firing while leaving a bare
+  // ✓ silent. It also GAINS ⭐ (U+2B50) and ✳ (U+2733), which the old range
+  // missed despite both being genuine Emoji_Presentation characters — the old
+  // class was wrong in both directions, not merely too broad.
   {
-    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/giu);
+    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}(?:[\p{Emoji_Presentation}]|[\p{Emoji}]\uFE0F)/giu);
     if (emojiInButtons && emojiInButtons.length >= 2) {
       slopFindings.push({
         id: 'S7',
