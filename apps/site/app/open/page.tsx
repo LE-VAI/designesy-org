@@ -18,6 +18,22 @@ import {
 } from '../lib/json-ld';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
+/**
+ * A path as one unbreakable span per "/"-segment. On a phone the path column
+ * is ~175px, and "/contracts/design-system.json" was split mid-word
+ * ("…system.js" / "on") by break-all. These links are inline-flex (the 44px
+ * target in .row-meta a) with flex-wrap, so each nowrap segment moves to the
+ * next line whole. The text content, and so the link name and copy, is
+ * unchanged.
+ */
+function breakablePath(path: string) {
+  return path.split(/(?=\/)/).map((part, i) => (
+    <span key={i} className="open-path-seg">
+      {part}
+    </span>
+  ));
+}
+
 export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
   description:
@@ -145,7 +161,7 @@ export default function OpenPage() {
                   <span className="row-meta">{pkg.lede}</span>
                   <span className="row-meta open-package-paths">
                     <Link href={pkg.path} data-cuelume-hover="tick">
-                      {pkg.path}
+                      {breakablePath(pkg.path)}
                     </Link>
                     {pkg.machine_path ? (
                       <>
@@ -153,7 +169,7 @@ export default function OpenPage() {
                           ·
                         </span>
                         <Link href={pkg.machine_path} data-cuelume-hover="chime">
-                          {pkg.machine_path}
+                          {breakablePath(pkg.machine_path)}
                         </Link>
                       </>
                     ) : (
