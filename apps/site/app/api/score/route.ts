@@ -823,7 +823,7 @@ function checkReducedMotion(css: string): CheckResult {
   return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
 }
 
-function checkNoAtlasNaming(html: string): CheckResult {
+function checkSemanticHtmlFoundation(html: string): CheckResult {
   // v07 — REPLACED. The old check grepped for an internal control-plane word
   // in the target site's HTML — a designesy self-audit that was meaningless
   // for any external site (they all passed for the wrong reason). v07 is now a general
@@ -2422,7 +2422,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', status: 'MANUAL', detail: 'requires live DOM interaction: run the full audit to resolve' },
     checkReducedMotion(css),
     checkContrastReadable(tokens),
-    checkNoAtlasNaming(html),
+    checkSemanticHtmlFoundation(html),
     checkPoiseInteractionRules(css),
     checkPoiseKeyboardPath(css, html),
     checkTaktFeelRules(css),
