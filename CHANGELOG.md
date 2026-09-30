@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **`designesy-score` 1.0.5 (npm CLI): the v07 label no longer names an internal
+  project.** 1.0.4 was built from a branch that never merged and printed a
+  control-plane name in the v07 `item` on every run. 1.0.5 is built from `main`,
+  where v07 reads `Semantic HTML foundation: single h1, title, meta description,
+  landmark`, and the check function is renamed to `checkSemanticHtmlFoundation`
+  in both engine copies so the shipped `engine.js` carries no trace of it. The
+  CLI banner now reads its version from `package.json` (it said v1.0.0 through
+  1.0.4) and counts 42 checks, not 40. The package stays deprecated in favour of
+  `@designesy/score`.
+
 - **Standalone `@designesy/score` engine re-synced to the site engine** (v0.3.0).
   37 of 40 check functions had drifted from the canonical `apps/site` engine —
   5 wrong category assignments (v03 accessibility→interaction, v05

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// designesy-score v1.0.0 — CLI for the Designesy 40-check design-contract engine.
+// designesy-score — CLI for the Designesy 42-check design-contract engine.
+// Superseded by @designesy/score; kept working for existing installs.
 //
 // v1.0.0 BREAKING CHANGE: the engine now runs LOCALLY — no server required.
-// Fetches the target URL, extracts CSS + :root tokens, runs all 40 checks
+// Fetches the target URL, extracts CSS + :root tokens, runs all 42 checks
 // in-process, and prints a formatted report. Zero dependencies (Node built-ins only).
 //
 // The --api flag and $SCORE_API env var remain as a REMOTE FALLBACK for anyone
@@ -30,6 +31,11 @@
 
 import { scoreUrl, normalizeInputUrl, isValidUrl, emitDesignesy, emitCanonical, emitGoogle, emitReview } from '../packages/score/dist/engine.js';
 import https from 'node:https';
+import { readFileSync } from 'node:fs';
+
+// Read from package.json so the banner cannot drift from the published version
+// again (it said v1.0.0 through 1.0.4).
+const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 
 const GRADE_RANK = { A: 5, B: 4, C: 3, D: 2, F: 1 };
 
@@ -127,10 +133,11 @@ function parseArgs(argv) {
 
 function printUsage() {
   console.log(`
-designesy-score v1.0.0 — 40-check design-contract scoring engine.
+designesy-score v${VERSION} — 42-check design-contract scoring engine.
+Superseded by @designesy/score: npx @designesy/score@latest <url>
 
 Runs LOCALLY — no server required. Fetches the URL, extracts CSS + tokens,
-and runs all 40 checks in one process. Zero dependencies.
+and runs all 42 checks in one process. Zero dependencies.
 
 Usage:
   designesy-score <url> [options]
@@ -463,7 +470,7 @@ async function main() {
   if (args.scope === 'contract' || args.scope === 'universal') scope = args.scope;
 
   if (!args.quiet) {
-    console.log(`${DIM}Scoring ${normalized} locally (40-check engine, scope=${scope || 'auto'})…${RESET}`);
+    console.log(`${DIM}Scoring ${normalized} locally (42-check engine, scope=${scope || 'auto'})…${RESET}`);
   }
 
   let result;
