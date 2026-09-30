@@ -566,9 +566,15 @@ function inferTokensFromCss(
   for (const [canonical, aliases] of Object.entries(TOKEN_ALIASES)) {
     if (!result[canonical]) {
       for (const alias of aliases) {
+        // Do not stop at an alias that merely EXISTS. resolveVar trims, so an
+        // alias holding only whitespace (or a var() chain that resolves to one)
+        // yields the empty string — truthy at the test, useless as a value.
+        // Stopping there discarded the token even when a later alias in the
+        // same list had a real one. Keep trying until the RESOLVED value is
+        // non-empty.
+        if (result[canonical]) break;
         if (result[alias]) {
           result[canonical] = resolveVar(result[alias], result);
-          break;
         }
       }
     }
@@ -3349,7 +3355,10 @@ function emitCanonical(url: string, result: ScoreResult, retrievedAt: Date) {
 function emitGoogle(result: ScoreResult) {
   return {
     findings: result.checks.map((c) => ({
-      severity: c.status === 'FAIL' ? 'error' : c.status === 'WARN' ? 'warning' : c.status === 'PASS' ? 'info' : 'info',
+      // PASS and SKIP and MANUAL all map to 'info': this format's vocabulary has
+      // no separate value for them, and the earlier `PASS ? 'info' : 'info'`
+      // only obscured that.
+      severity: c.status === 'FAIL' ? 'error' : c.status === 'WARN' ? 'warning' : 'info',
       path: c.category,
       message: c.detail,
     })),
@@ -3357,6 +3366,11 @@ function emitGoogle(result: ScoreResult) {
       errors: result.fail,
       warnings: result.warn,
       infos: result.pass,
+      // Additive, so a consumer of the previous shape is unaffected. The CLI
+      // already emitted these two, which made `--format google` from the CLI
+      // carry fields the API's same-named format did not.
+      score: result.score,
+      grade: result.grade,
     },
     designSystem: null,
   };
@@ -3410,6 +3424,7 @@ function emitReview(url: string, result: ScoreResult): string {
   const verdict = deriveVerdict(result);
   if (verdict === 'fail') lines.push('**Block**: at least one HIGH finding (FAIL) remains.');
   else if (verdict === 'needs-changes') lines.push('**Needs changes**: only MEDIUM findings (WARN) remain.');
+  else if (verdict === 'not-scored') lines.push('**Not scored**: every check SKIPped or needs manual review — no verdict was reached.');
   else lines.push('**Approve**: no actionable findings remain.');
   lines.push('');
   lines.push(`**Score: ${result.score}% (Grade ${result.grade})** (${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.manual} MANUAL / ${result.skip} N/A / ${result.total} total)`);

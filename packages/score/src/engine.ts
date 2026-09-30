@@ -502,7 +502,7 @@ const REMEDIATION: Record<string, string> = {
   x01: 'Add font-synthesis: none to your :root or body rule. This prevents the browser from synthesizing bold/italic faces when the real weights aren\'t loaded: a common cause of blurry headlines on Windows.',
   x02: 'Add text-underline-position: from-font to links and underlined text. This uses the font designer\'s built-in underline position rather than the browser default, which is usually too low and clips descenders.',
   x03: 'Add text-decoration-skip-ink: auto to links. This makes underlines skip the rounded parts of letters (g, j, p, q, y), a small typographic refinement that shows attention to craft.',
-  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA; 2.5.8 Minimum AA is 24px, and this check enforces the stricter bar). For small icon buttons, add padding or min-height to reach the 44px floor.',
+  v24: 'Ensure all interactive elements (buttons, links, inputs) have a min-height and min-width of at least 44px (WCAG 2.5.5 Target Size Enhanced, AAA, which matches the 44px convention in Apple HIG; WCAG 2.5.8 Minimum AA is 24px, and this check enforces the stricter 44px). For small icon buttons, add padding or min-height to reach the 44px floor. The static check detects CSS min-height ≥44px on button/a/input selectors; full verification needs a browser.',
   v25: 'Use exactly one <h1> per page as the main heading, and don\'t skip heading levels (no h1→h3 jumps). Screen readers and SEO both rely on a logical heading outline. Audit your heading order with a browser extension or Lighthouse.',
   v26: 'Limit font-family declarations to 3 or fewer (1 body family, 1 heading family, 1 mono for code). More than 3 families signals inconsistency and hurts performance. Consolidate by removing unused families or using weight variations of a single family.',
   v27: 'Set input font-size to at least 16px (1rem) to prevent iOS Safari auto-zoom on focus. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks the mobile UX. Use font-size: 1rem or larger on all input, textarea, and select elements.',
@@ -510,26 +510,26 @@ const REMEDIATION: Record<string, string> = {
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
   v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage: when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
-  v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options: add visible "AI Assistant" text in the chatbot UI header, add aria-label="AI assistant" to the chatbot container, add <meta name="generator" content="AI-powered"> to the page head, or add a persistent AI-disclosure badge.',
-  v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Test with Windows High Contrast Mode.',
-  v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters. Audit all custom property names and class names for non-ASCII characters.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI validates the file format. Install: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md.',
-  v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File".',
-  v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period."',
-  v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here".',
-  v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels and acronyms should be uppercase.',
-  S1: 'Replace overused AI-signal fonts with a distinctive choice from your brand system. Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, and Geist are the fonts AI defaults to when it has no design brief.',
-  S2: 'Remove or reduce full-page gradient backgrounds. The 60%+ viewport gradient is the most recognizable AI slop pattern. Use a solid or subtle textured background instead.',
-  S3: 'Remove purple/violet gradient overlays (#615fff, #8e51ff, #4f39f6, #7f22fe family). This is the "VibeCode Purple" tell: the most hardcoded gradient in AI-generated UIs.',
+  v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
+  v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
+  v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 42-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
+  v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
+  v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
+  v41: 'Convert ALL CAPS UI text to sentence case. IBM Carbon: "All caps has been shown to be slower to read." Only eyebrow labels (per typography contract: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em) and acronyms should be uppercase. Use CSS text-transform: uppercase on eyebrow elements if needed, but keep the HTML text in sentence case for screen readers.',
+  S1: 'Replace overused AI-signal fonts with a distinctive choice from your brand system. Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Space Grotesk, Instrument Serif, and Geist are the fonts AI defaults to when it has no design brief. A custom or less common font signals intentionality.',
+  S2: 'Remove or reduce full-page gradient backgrounds. The 60%+ viewport gradient is the most recognizable AI slop pattern. Use a solid or subtle textured background instead. If a gradient serves a purpose (e.g., a data visualization), scope it to a small area.',
+  S3: 'Remove purple/violet gradient overlays (#615fff, #8e51ff, #4f39f6, #7f22fe family). This is the "VibeCode Purple" tell: the most hardcoded gradient in AI-generated UIs. Replace with your brand signal color or a neutral surface.',
   S4: 'Remove gradient text (background-clip: text + color: transparent). Gradient text is decorative, harms readability, and kills scannability. Use solid text colors that pass WCAG contrast.',
-  S5: 'Replace default Tailwind/Bootstrap hex values with brand-specific colors. Default indigo-500 (#6366f1), violet-500 (#8b5cf6), slate-900 (#0f172a) signal no design system.',
-  S6: 'Vary your card layouts. Repeated identical cards in a rigid grid are the universal AI feature-card template. Mix sizes, use asymmetric layouts, vary content density.',
-  S7: 'Replace emoji icons with SVG or icon-library icons. Emoji render differently across operating systems, do not inherit CSS color, do not adapt to dark mode, and do not scale cleanly.',
-  S8: 'Remove "AI-powered", "Generate", "Chat with AI", "Powered by AI" pill badges from your hero or marketing copy. The user already knows what your product does.',
+  S5: 'Replace default Tailwind/Bootstrap hex values with brand-specific colors. Default indigo-500 (#6366f1), violet-500 (#8b5cf6), slate-900 (#0f172a), Bootstrap primary (#0d6efd) signal no design system. Extend your token set with brand-specific values.',
+  S6: 'Vary your card layouts. Repeated identical cards in a rigid grid are the universal AI feature-card template. Mix sizes, use asymmetric layouts, vary content density, or use a different component for your features section.',
+  S7: 'Replace emoji icons with SVG or icon-library icons. Emoji render differently across operating systems, do not inherit CSS color, do not adapt to dark mode, and do not scale cleanly. Use Lucide, Heroicons, or custom SVGs.',
+  S8: 'Remove "AI-powered", "Generate", "Chat with AI", "Powered by AI" pill badges from your hero or marketing copy. The user already knows what your product does. These badges signal that the copy was AI-generated.',
   S9: 'Remove all Lorem ipsum placeholder text. It signals the page is unfinished or was generated without real content. Replace with actual copy.',
   S10: 'Use at least 2 font families: one for display/headings, one for body text (and optionally a mono for code). A single font family for everything signals no typographic hierarchy.',
-  S11: 'Replace marketing buzzwords (streamline, empower, supercharge, world-class, enterprise-grade, unlock, leverage, seamless, cutting-edge, revolutionize) with specific, concrete copy.',
-  S12: 'Replace placeholder/stock image URLs (via.placeholder.com, placehold.co, picsum.photos, unsplash.com/random) with real assets.',
+  S11: 'Replace marketing buzzwords (streamline, empower, supercharge, world-class, enterprise-grade, unlock, leverage, seamless, cutting-edge, revolutionize) with specific, concrete copy. Instead of "Streamline your workflow", say what actually changes: "Deploy in 3 minutes instead of 3 hours."',
+  S12: 'Replace placeholder/stock image URLs (via.placeholder.com, placehold.co,picsum.photos, unsplash.com/random) with real assets, optimized images, or well-composed CSS gradients.',
 };
 
 // ── Check implementations ──────────────────────────────────────────────────
@@ -979,10 +979,7 @@ function resolveFamilyToken(
 }
 
 
-function checkFontFamilyCount(
-  css: string,
-  tokens: Record<string, string> = {},
-): CheckResult {
+function checkFontFamilyCount(css: string, tokens: Record<string, string>): CheckResult {
   const families = new Set<string>();
   const re = /font-family\s*:\s*([^;}]+)/gi;
   let m;
@@ -992,18 +989,27 @@ function checkFontFamilyCount(
     // Skip generic keywords that shouldn't count as "a family choice."
     const generic = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace', 'system-ui', '-apple-system', 'blinkmacsystemfont', 'segoe ui', 'roboto', 'helvetica', 'arial'];
     if (generic.includes(stack)) continue;
-    // A var() alias REFERENCES a family token; it is not another family. Counting
-    // the spelling rather than the face inflated this check from 3 to 9 on the
-    // site and failed a page that uses exactly three typefaces.
+    // A var() alias is a REFERENCE to a family token, not another family. The
+    // site declares three stacks (--sans/--display/--mono); every component that
+    // writes `font-family: var(--mono)` is choosing the SAME family, but counted
+    // as a distinct name it inflated this check from 3 to 9 on the site and
+    // failed a page that genuinely uses three faces. Resolve the alias through
+    // the custom-property table so the count reflects faces, not spellings.
     if (stack.startsWith('var(')) {
       const ref = stack.match(/var\(\s*--([\w-]+)/);
       const resolved = ref ? resolveFamilyToken(tokens, ref[1]) : null;
-      if (!resolved) continue; // unresolvable alias — cannot attribute a family
-      stack = resolved;
-      if (generic.includes(stack)) continue;
+      if (resolved) {
+        stack = resolved;
+        if (generic.includes(stack)) continue;
+      } else {
+        continue; // unresolvable alias — cannot attribute it to a family
+      }
     }
-    // next/font emits a synthetic metric-matched fallback face per family
-    // ("Geist Fallback"). Same family, not an extra typeface choice.
+    // next/font generates a synthetic metric-matched fallback face per family
+    // ("Geist Fallback", "Fraunces Fallback") and applies it via font-family in
+    // the adjusted @font-face. Those are not additional typeface choices — they
+    // are the same family's fallback metrics — so they must not count as
+    // palette drift.
     if (/\sfallback$/.test(stack)) continue;
     families.add(stack);
   }
@@ -1569,6 +1575,28 @@ function isVerbLike(word: string): boolean {
 }
 
 
+/**
+ * Is this element opening tag a SELECTION control rather than a command button?
+ *
+ * v38's rule — button text leads with the verb it performs — is derived from
+ * NN/g's command guidance and is correct for actions. It does not apply to the
+ * options of a single-select group, whose labels name the choice, not an
+ * action. Without this distinction the check penalises correct copywriting and
+ * would flag every site using the <button aria-pressed> radio pattern.
+ *
+ * Detection is from explicit state/semantics, never from prose:
+ *   - aria-pressed / aria-checked   → toggle or radio semantics
+ *   - role="radio"|"option"|"menuitemradio"|"tab"  → an option in a set
+ *   - name="<field>" with a value   → a form control
+ */
+function isSelectionControl(openTag: string): boolean {
+  if (/aria-pressed\s*=/i.test(openTag)) return true;
+  if (/aria-checked\s*=/i.test(openTag)) return true;
+  if (/role\s*=\s*["']?(?:radio|option|menuitemradio|tab)["']?/i.test(openTag)) return true;
+  if (/\sname\s*=\s*["'][^"']+["']/i.test(openTag) && /\svalue\s*=/i.test(openTag)) return true;
+  return false;
+}
+
 function checkButtonTextVerb(html: string): CheckResult {
   const ITEM = 'Button text is a verb phrase or recognized command (not a bare noun)';
   const CATEGORY = 'copywriting';
@@ -1576,6 +1604,32 @@ function checkButtonTextVerb(html: string): CheckResult {
   // Extract <button> and [role="button"] text content
   const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
   const roleButtonRe = /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi;
+
+  // Remove aria-hidden subtrees before extracting text.
+  //
+  // Content marked aria-hidden is by definition not part of the accessible name,
+  // and stripping tags with an empty replacement FUSES whatever flanked it. On
+  // /maturity an ordinal badge (<span aria-hidden>1</span>) sat directly before
+  // the option label, so tag-stripping produced the single token
+  // "1No — backgrounds are raw hex/rgb values" — a string nobody wrote, which
+  // then failed a check about label phrasing.
+  //
+  // Same class as the tag→space defect fixed in the markdown converter earlier
+  // in this lane: a transform silently invents text, and the invented text is
+  // then judged.
+  const stripAriaHidden = (inner: string): string => {
+    let out = inner;
+    for (let i = 0; i < 4; i++) {
+      // Repeat to handle an aria-hidden wrapper containing another.
+      const next = out.replace(
+        /<([a-z][a-z0-9-]*)\b[^>]*\baria-hidden\s*=\s*["']?true["']?[^>]*>[\s\S]*?<\/\1>/gi,
+        '',
+      );
+      if (next === out) break;
+      out = next;
+    }
+    return out;
+  };
 
   // Strip leading icon characters (Unicode symbols, emoji, geometric shapes,
   // arrows, dingbats) that precede the actual verb in button labels like
@@ -1590,7 +1644,9 @@ function checkButtonTextVerb(html: string): CheckResult {
   // U+00D7 (×, multiplication sign) is also used as a close glyph (e.g. "×").
   const ICON_PREFIX_RE = /^[\u00D7\u2100-\u27BF\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\u2A00-\u2BFF\u2190-\u21FF\u00A0\s]+/;
 
-  const buttonTexts: string[] = [];
+  // Carry the opening tag alongside the label so the violation loop can tell a
+  // command button from a selection control (see isSelectionControl).
+  const buttonTexts: { text: string; tag: string }[] = [];
   let m;
   // Strip keyboard shortcut hints that are fused to or appended after the
   // button label — e.g. "Find⌘K", "Search ⌘+K", "Save Ctrl+S". These are
@@ -1598,9 +1654,9 @@ function checkButtonTextVerb(html: string): CheckResult {
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
   const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
   // The `+` is optional and the key may be fused directly to the modifier
-  // ("CtrlK"), because the site's badge is platform-aware and renders "Ctrl"
-  // with no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived
-  // and v38 read the shortcut as part of the verb.
+  // ("CtrlK"), because the badge is now platform-aware and renders "Ctrl" with
+  // no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived and
+  // v38 read the shortcut as part of the verb.
   //
   // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
   // with no space between). A space separates a real word: "Alt text" is a
@@ -1608,7 +1664,7 @@ function checkButtonTextVerb(html: string): CheckResult {
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   while ((m = buttonRe.exec(html)) !== null) {
-    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
@@ -1618,17 +1674,35 @@ function checkButtonTextVerb(html: string): CheckResult {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push(text);
+    // A one- or two-character visible label is an initial/symbol, not a label a
+    // reader can act on ("T" for Token Discipline). When the control carries an
+    // aria-label, that IS its accessible name and is what should be judged.
+    // Without this, v38 reported six single-letter "buttons" as non-verb labels
+    // on /maturity — an accurate observation of the wrong string.
+    if (text && text.length <= 2) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
+    if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = m[1].replace(/<[^>]*>/g, '').trim();
+    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push(text);
+    // A one- or two-character visible label is an initial/symbol, not a label a
+    // reader can act on ("T" for Token Discipline). When the control carries an
+    // aria-label, that IS its accessible name and is what should be judged.
+    // Without this, v38 reported six single-letter "buttons" as non-verb labels
+    // on /maturity — an accurate observation of the wrong string.
+    if (text && text.length <= 2) {
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      if (aria) text = aria[1].trim();
+    }
+    if (text) buttonTexts.push({ text, tag: m[0] });
   }
 
   if (buttonTexts.length === 0) {
@@ -1636,11 +1710,31 @@ function checkButtonTextVerb(html: string): CheckResult {
   }
 
   const violations: string[] = [];
-  for (const text of buttonTexts) {
+  for (const { text, tag } of buttonTexts) {
     // Skip text that's clearly not a button label — if it's longer than ~40 chars
     // it's likely a regex false positive from nested content (e.g. a div
     // containing a whole section being matched as role="button")
     if (text.length > 40) continue;
+    // A selection control is not a command.
+    //
+    // v38 asks whether button TEXT leads with the action it performs. That is
+    // right for commands ("Save changes", "Delete file") and wrong for the
+    // options of a single-select group, where the label names the CHOICE rather
+    // than an action: "Structured token system", "Yes, a single --bg variable".
+    // NN/g's verb rule is about commands.
+    //
+    // Found on /maturity: 9 of 29 "buttons" were 1-4 scale options in the
+    // maturity questionnaire, each correctly answering a prompt. The check was
+    // penalising correct copywriting — and would do the same to any site whose
+    // radio group is built from <button aria-pressed> rather than
+    // <input type="radio">, which is a common accessible pattern.
+    //
+    // Detected from explicit selection-state attributes rather than by guessing
+    // at prose; the ordinal branch covers scale options that carry no ARIA
+    // state, and the yes/no branch covers closed-form answers.
+    if (isSelectionControl(tag)) continue;
+    if (/^(yes|no|none|not sure|unsure)\b/i.test(text)) continue;
+    if (/^\d+\s+\S/.test(text)) continue;
     const words = text.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) continue;
     const firstWord = words[0].toLowerCase();
@@ -1951,18 +2045,35 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   const r = await httpsFetch(designMdUrl, { Accept: 'text/markdown, text/plain, */*' }, 5000);
   if (!r.ok || r.text.length < 50) return { id: 'v37', item: ITEM, category: CATEGORY, status: 'SKIP', detail: `/DESIGN.md not publicly served (HTTP ${r.status}). No public convention exists yet, so this is expected.` };
   if (!r.text.includes('---')) return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md served but no YAML frontmatter found` };
-  // Try Google's linter if available (optional dependency — SKIP if not installed)
+  // Try Google's linter if available (optional dependency).
+  let lintDesignMd: (markdown: string) => { findings: Array<{ severity: string; path?: string; message?: string }>; summary: { errors: number; warnings: number; infos: number } };
   try {
     // @ts-ignore — optional dependency, may not be installed
     const mod = await import('@google/design.md/linter');
-    const report = mod.lint(r.text);
+    lintDesignMd = mod.lint;
+  } catch (e) {
+    // WARN, not PASS. The file was fetched but NOTHING validated it: reporting
+    // PASS here asserted "served with valid frontmatter" on the strength of the
+    // frontmatter check alone — which the branch above already ran, and which
+    // would have WARNed rather than reached here. Implying validation that never
+    // happened is the same false-PASS class as the all-SKIP review verdict.
+    const msg = e instanceof Error ? e.message : 'unknown error';
+    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime.` };
+  }
+  try {
+    const report = lintDesignMd(r.text);
     const errors = report.summary?.errors || 0;
     const warnings = report.summary?.warnings || 0;
     if (errors > 0) return { id: 'v37', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `/DESIGN.md linted: ${errors} error(s), ${warnings} warning(s)` };
     if (warnings > 0) return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md linted: ${warnings} warning(s)` };
-    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'PASS', detail: `/DESIGN.md linted clean` };
-  } catch {
-    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'PASS', detail: `/DESIGN.md served with valid frontmatter (linter not installed; install @google/design.md for full lint)` };
+    const infos = report.summary?.infos || 0;
+    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'PASS', detail: `/DESIGN.md linted clean: ${infos} info(s), 0 errors, 0 warnings.` };
+  } catch (e) {
+    // Distinct from the branch above: the linter LOADED and then threw, so the
+    // file's format is unsupported rather than the runtime being incomplete.
+    // Both WARN, but the messages point at different fixes.
+    const msg = e instanceof Error ? e.message : 'unknown error';
+    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md fetched but lint failed: ${msg}. The file may use a format version the linter doesn't support yet.` };
   }
 }
 
@@ -2148,6 +2259,25 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
   // ── Anti-slop deductions ──────────────────────────────────────────────────
   const slopFindings: SlopFinding[] = [];
 
+  // A page that DOCUMENTS the slop rules cannot be accused of committing them.
+  //
+  // Without this, publishing the rule registry costs the score: the page names
+  // every anti-pattern it forbids, and the slop checks fire on its own
+  // documentation. A page cannot both name an anti-pattern and be accused of
+  // using it.
+  //
+  // The test is structural, not keyword-based — adding more excluded words
+  // would only move the false positives. A page is treated as documenting the
+  // rules when it carries the rule-registry structure the engine's own
+  // methodology surface uses: rule IDs (S1..S12) appearing alongside their
+  // labels as table content. Detected by counting distinct rule IDs present in
+  // the HTML; a page that merely USES lorem ipsum does not enumerate the rules.
+  const docRuleIds = new Set(
+    (html.match(/\bS(?:1[0-2]|[1-9])\b(?=[\s\S]{0,120}?(?:lorem ipsum|Marketing buzzword|Placeholder imag|Overused font|gradient background|pill badge|Single font))/gi) || [])
+      .map((s) => s.toUpperCase()),
+  );
+  const isDocumentingSlopRules = docRuleIds.size >= 4;
+
   // S1. Overused font families
   {
     const overusedFonts = new Set(['inter', 'roboto', 'open sans', 'montserrat', 'poppins', 'lato', 'space grotesk', 'instrument serif', 'geist']);
@@ -2165,7 +2295,22 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
 
   // S2. Full-page gradient background
   {
-    const isGridPattern = (text: string) => /(?:transparent|rgba\([^)]+\))\s+1px(?:\s*,)/.test(text);
+    // A repeating hairline pattern is a GRID, not a decorative gradient wash.
+    //
+    // The previous pattern required the colour to precede the stop —
+    // `(transparent|rgba(...))\s+1px` — which only matches
+    // `linear-gradient(transparent 1px, ...)`. The form actually used on
+    // designesy.org is the reverse: `linear-gradient(color-mix(...) 1px,
+    // transparent 1px)`, so the filter never fired and a graph-paper grid
+    // overlay was reported as "Full-page gradient background" at severity 5 —
+    // the maximum — deducting the full 20-point slop budget on a page whose
+    // background is a 1px grid on near-black.
+    //
+    // Match a 1px stop in EITHER order, which is what "hairline" means
+    // regardless of how the colour and the stop are written.
+    const isGridPattern = (text: string) =>
+      /(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8})\s+1px(?:\s*,)/.test(text)
+      || /\s+1px\s*,\s*(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\))/.test(text);
     const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi) || [];
     const overlayGrad: string[] = [];
     const gradBlockRe = /\{[^{}]{0,500}?linear-gradient\s*\(\s*[^)]*,\s*[^)]{4,}\)[^{}]{0,500}?\}/gi;
@@ -2276,14 +2421,14 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
   {
     const pillPattern = /(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)/gi;
     const matches = html.match(pillPattern) || [];
-    if (matches.length > 0) slopFindings.push({ id: 'S8', label: 'AI-pill badge text', severity: 3, instances: matches.length, evidence: [...new Set(matches.map(m => m.trim()))].slice(0, 3) });
+    if (matches.length > 0 && !isDocumentingSlopRules) slopFindings.push({ id: 'S8', label: 'AI-pill badge text', severity: 3, instances: matches.length, evidence: [...new Set(matches.map(m => m.trim()))].slice(0, 3) });
   }
 
   // S9. Lorem ipsum
   {
     const loremPattern = /lorem ipsum|dolor sit amet|consectetur adipiscing|sed do eiusmod|tempor incididunt/gi;
     const matches = html.match(loremPattern) || [];
-    if (matches.length > 0) slopFindings.push({ id: 'S9', label: 'Lorem ipsum placeholder text', severity: 5, instances: matches.length, evidence: ['Lorem ipsum detected in page content'] });
+    if (matches.length > 0 && !isDocumentingSlopRules) slopFindings.push({ id: 'S9', label: 'Lorem ipsum placeholder text', severity: 5, instances: matches.length, evidence: ['Lorem ipsum detected in page content'] });
   }
 
   // S10. Single font family
@@ -2303,14 +2448,14 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     const bodyText = html.replace(/<[^>]+>/g, ' ').toLowerCase();
     const found: string[] = [];
     for (const word of buzzwords) { if (bodyText.includes(word)) found.push(word); }
-    if (found.length >= 2) slopFindings.push({ id: 'S11', label: 'Marketing buzzword copy', severity: 3, instances: found.length, evidence: found.slice(0, 5) });
+    if (found.length >= 2 && !isDocumentingSlopRules) slopFindings.push({ id: 'S11', label: 'Marketing buzzword copy', severity: 3, instances: found.length, evidence: found.slice(0, 5) });
   }
 
   // S12. Placeholder/stock images
   {
     const placeholderPatterns = /via\.placeholder|placehold\.co|placeholder\.com|dummyimage|picsum\.photos|loremflickr|unsplash\.com\/(?:random|featured)/gi;
     const matches = html.match(placeholderPatterns) || [];
-    if (matches.length > 0) slopFindings.push({ id: 'S12', label: 'Placeholder/stock image URLs', severity: 4, instances: matches.length, evidence: [...new Set(matches)].slice(0, 3) });
+    if (matches.length > 0 && !isDocumentingSlopRules) slopFindings.push({ id: 'S12', label: 'Placeholder/stock image URLs', severity: 4, instances: matches.length, evidence: [...new Set(matches)].slice(0, 3) });
   }
 
   const SLOP_PER_CHECK_CAP = 5;
@@ -2514,6 +2659,40 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
  */
 export const CONTRACT_VERSION = 'v0.4.1';
 
+/**
+ * The one verdict rule, shared by every emission format.
+ *
+ * `not-scored` is a real outcome, not a rounding artefact: when every check
+ * SKIPped or needed manual review, the engine reached no verdict at all. Without
+ * this branch an all-SKIP result fell through to `pass` and the review output
+ * printed "Approve" for a page nothing had actually evaluated — the most
+ * misleading line the CLI can emit.
+ */
+export function deriveVerdict(result: ScoreResult): string {
+  if (result.fail > 0) return 'fail';
+  if (result.warn > 0) return 'needs-changes';
+  if (result.pass === 0 && (result.skip + result.manual) === result.total) return 'not-scored';
+  return 'pass';
+}
+
+/**
+ * Map a check status to the canonical schema's severity vocabulary.
+ *
+ * The `default` matters: an unrecognised status must fall through to a
+ * lower-cased copy of itself rather than being silently coerced into one of the
+ * known severities, which would misreport an unknown status as a real one.
+ */
+export function statusToSeverity(status: string): string {
+  switch (status) {
+    case 'PASS': return 'pass';
+    case 'FAIL': return 'error';
+    case 'WARN': return 'warning';
+    case 'SKIP': return 'skip';
+    case 'MANUAL': return 'manual';
+    default: return status.toLowerCase();
+  }
+}
+
 export function emitDesignesy(result: ScoreResult): Record<string, unknown> {
   return { ok: true, contractVersion: CONTRACT_VERSION, ...result };
 }
@@ -2524,7 +2703,7 @@ export function emitCanonical(url: string, result: ScoreResult): Record<string, 
     tool: { name: 'designesy', version: CONTRACT_VERSION },
     subject: { type: 'url', requested: url, scope: result.scope },
     categories: Object.entries(result.categoryScores).map(([id, cs]) => ({ id, score: cs.score, weight: cs.weight, counts: { pass: cs.pass, fail: cs.fail, warn: cs.warn, skip: cs.skip, manual: cs.manual } })),
-    findings: result.checks.map((c) => ({ id: c.id, item: c.item, category: c.category, status: c.status, severity: c.status === 'FAIL' ? 'error' : c.status === 'WARN' ? 'warning' : c.status === 'PASS' ? 'pass' : c.status === 'SKIP' ? 'skip' : 'manual', severityRaw: c.status, message: c.detail, detail: c.detail, remediation: c.remediation })),
+    findings: result.checks.map((c) => ({ id: c.id, item: c.item, category: c.category, status: c.status, severity: statusToSeverity(c.status), severityRaw: c.status, message: c.detail, detail: c.detail, remediation: c.remediation })),
     summary: {
       score: result.score, grade: result.grade,
       countsByStatus: { pass: result.pass, fail: result.fail, warn: result.warn, skip: result.skip, manual: result.manual },
@@ -2532,7 +2711,7 @@ export function emitCanonical(url: string, result: ScoreResult): Record<string, 
       scored: result.scored, total: result.total, a11yFloorApplied: result.a11yFloorApplied,
       categoryScores: Object.fromEntries(Object.entries(result.categoryScores).map(([id, cs]) => [id, cs.score])),
     },
-    verdict: result.fail > 0 ? 'fail' : result.warn > 0 ? 'needs-changes' : (result.pass === 0 && (result.skip + result.manual) === result.total) ? 'not-scored' : 'pass',
+    verdict: deriveVerdict(result),
   };
 }
 
@@ -2581,9 +2760,14 @@ export function emitReview(url: string, result: ScoreResult): string {
   if (num === 0) lines.push('| | | | | No actionable findings | | |');
   lines.push('');
   lines.push('## Verdict\n');
-  const verdict = result.fail > 0 ? 'fail' : result.warn > 0 ? 'needs-changes' : 'pass';
+  // An all-SKIP or all-MANUAL result is NOT a pass — nothing was actually
+  // scored. Without this branch a page the engine could not evaluate read as
+  // "Approve" in the review output, which is the most misleading verdict the
+  // CLI can print.
+  const verdict = deriveVerdict(result);
   if (verdict === 'fail') lines.push('**Block**: at least one HIGH finding (FAIL) remains.');
   else if (verdict === 'needs-changes') lines.push('**Needs changes**: only MEDIUM findings (WARN) remain.');
+  else if (verdict === 'not-scored') lines.push('**Not scored**: every check SKIPped or needs manual review — no verdict was reached.');
   else lines.push('**Approve**: no actionable findings remain.');
   lines.push('');
   lines.push(`**Score: ${result.score}% (Grade ${result.grade})** (${result.pass} PASS / ${result.fail} FAIL / ${result.warn} WARN / ${result.manual} MANUAL / ${result.skip} N/A / ${result.total} total)`);
