@@ -57,9 +57,10 @@ export function Footer() {
   const machineTrackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // The rails hold still on touch screens and under reduced motion
-    // (globals.css), so there is nothing to drag there.
-    if (window.matchMedia('(hover: none), (prefers-reduced-motion: reduce)').matches) return;
+    // The rails hold still under reduced motion (globals.css), so there is
+    // nothing to drag there. Touch screens keep the marquee: a finger landing
+    // freezes it in place, and a swipe stops it for the visit (scroll-pause).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const cleanups: (() => void)[] = [];
     if (surfaceClipRef.current && surfaceTrackRef.current) {
       cleanups.push(initScrollPause(surfaceClipRef.current, surfaceTrackRef.current, 'horizontal'));
@@ -75,7 +76,10 @@ export function Footer() {
       <div className="site-shell footer-inner">
         <div className="footer-meta">
           <span className="wordmark" data-cuelume-hover="sparkle">
-            designesy<span className="dot">.</span>
+            {/* The wrapper keeps the dot on the word: .wordmark is a flex row
+                with a gap sized for the topbar's mark, and a bare text node
+                plus .dot became two flex items with that gap between them. */}
+            <span className="wordmark-type">designesy<span className="dot">.</span></span>
           </span>
           <span>
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
