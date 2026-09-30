@@ -3088,12 +3088,16 @@ a.surface-card:active {
   }
 }
 
-/* Touch screens, and anyone who asked for reduced motion: the rails hold
-   still. A phone has no hover to pause them, and a link that moves under the
-   finger is a missed or wrong tap (WCAG 2.2.2, NN/g, Baymard: carousels and
-   tickers should not move on their own on mobile). Each rail becomes its
-   links, wrapped, once each: the loop's second copy is aria-hidden and goes. */
-@media (hover: none), (prefers-reduced-motion: reduce) {
+/* Reduced motion: the rails hold still. Each rail becomes its links, wrapped,
+   once each: the loop's second copy is aria-hidden and goes.
+
+   Touch screens keep the marquee (an operator decision, 2026-09-30: the
+   wrapped rails turned the phone footer into a ~1000px wall of pills). The
+   two risks that froze it on 2026-09-28 are handled in scroll-pause.tsx: a
+   finger landing freezes the rail in place, so a tap resolves on the pill the
+   user saw, and a swipe stops the rail for the rest of the visit, which is
+   the pause mechanism WCAG 2.2.2 asks for when there is no hover. */
+@media (prefers-reduced-motion: reduce) {
   .footer-dock-clip {
     overflow: visible;
     -webkit-mask-image: none;

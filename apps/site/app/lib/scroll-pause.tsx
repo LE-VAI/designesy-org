@@ -72,6 +72,11 @@ export function initScrollPause(
   let lastVelocity = 0;
   let flingRaf: number | null = null;
   let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Set once a TOUCH drag ends: the user took hold of the rail, so it stays
+   *  where they left it for the rest of the visit. On a phone there is no
+   *  hover to pause a marquee; a swipe is the pause (WCAG 2.2.2). Mouse users
+   *  keep hover-to-pause and resume on mouseleave, unchanged. */
+  let heldByUser = false;
 
   const isHorizontal = direction === 'horizontal';
   const scrollProp: 'scrollLeft' | 'scrollTop' = isHorizontal
@@ -193,6 +198,7 @@ export function initScrollPause(
 
   /** Delayed resume — gives the user a moment to re-enter the area. */
   function scheduleResume() {
+    if (heldByUser) return;
     if (resumeTimer) clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       if (!pointerActive && !isDragging) resumeAnimation();
@@ -329,12 +335,12 @@ export function initScrollPause(
       startFling(lastVelocity);
 
       // Stay in manual scroll mode — don't resume immediately.
-      // The user might want to drag again. Resume on mouseleave or after delay.
+      // On touch the swipe is the user's pause: the rail stays put for the
+      // visit (heldByUser). On mouse, wait for mouseleave to resume.
       if (e.pointerType === 'touch') {
-        // On touch, schedule a resume after a short delay
-        scheduleResume();
+        heldByUser = true;
+        cancelResume();
       }
-      // On mouse, wait for mouseleave to resume
     } else {
       // It was a tap. The animation is frozen in place; the browser will now
       // dispatch a click against the layout the user saw. On touch, schedule
