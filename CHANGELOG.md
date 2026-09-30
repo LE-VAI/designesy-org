@@ -6,6 +6,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **`@designesy/score` 0.5.0 — the standalone engine is converged with the site
+  engine; no known debt remains.** The two hand-maintained copies of the 42-check
+  engine had 13 unported fixes, so the CLI and the site could score the same page
+  differently. All 13 are ported (#169) and the drift baseline is down from 15
+  divergences to 4 — all genuine transport splits (`route.ts` attaches a receipt
+  and takes a `Date`; the package fetches via an SSRF-guarded `httpsFetch`).
+  Behaviour that changes for CLI users:
+
+  - **v38** — `aria-hidden` subtrees are stripped before text extraction (tag
+    removal used to FUSE neighbouring text into strings nobody wrote), a 1–2
+    character label falls back to its `aria-label`, and selection controls
+    (`aria-pressed`, `role="radio"`, `<button name= value=>`) are no longer read
+    as non-verb commands. Icon-only buttons and radio groups stop failing.
+  - **v37** — returning `PASS` when the `@google/design.md` linter was not
+    installed **asserted validation that never ran**. It now returns `WARN`, and
+    distinguishes "linter missing" from "linter threw", which need different fixes.
+  - **v26, S2, S8, S9, S11, S12** — font-family and slop checks now match the
+    site: the grid-pattern exemption accepts `color-mix()`/`var()`/hex stops in
+    either order (a hairline-grid background was flagged at severity 5), and the
+    slop checks are suppressed on a page that *documents* the rules, which
+    previously cost points for publishing one's own rule registry.
+  - **Alias resolution** — an alias resolving to an empty string no longer stops
+    the search, so a later alias with a real value is still used.
+  - **`emitReview`** — an all-`SKIP` result printed **"Approve"** for a page
+    nothing had evaluated. It now reads "Not scored".
+
+  **Public API (additive):** `deriveVerdict` and `statusToSeverity` are exported.
+  The verdict rule is now shared by every emission format so they cannot disagree
+  about the same result. Nothing was removed.
+
+  **Guard added:** the source-drift gate also pins the package's exported
+  surface. Its body comparison drops the `export` keyword by design (a route and
+  a package legitimately differ on it), which made an accidental API change
+  invisible — verified directly, then covered by a test with its own control.
+
 ### Fixed
 
 - **`designesy-score` 1.0.5 (npm CLI): the v07 label no longer names an internal

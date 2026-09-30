@@ -17,7 +17,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   ROUTE,
   ENGINE,
@@ -26,6 +26,7 @@ import {
   loadUnits,
   loadBaseline,
   findings,
+  exportedSurface,
 } from '../scripts/source-drift.mjs';
 
 const canon = (src) => unitsOf(src).get('fn:f');
@@ -142,5 +143,67 @@ describe('source drift — route.ts vs engine.ts', () => {
     const f = findings({ route: units.route, engine }, baseline);
     assert.ok(f.some((l) => l.startsWith(`${matching} differs`)), `a one-sided edit to ${matching} was not reported`);
     assert.ok(f.some((l) => l.startsWith(`${known} changed in engine.ts only`)), `a one-sided edit to baselined ${known} was not reported`);
+  });
+});
+
+// The published package's .d.ts is a promise to consumers, and the body
+// comparison above cannot see it: `canonical()` drops the `export` keyword by
+// design (a route and a package legitimately differ on it), so a function and
+// the same function prefixed with `export` compare as identical. The first test
+// below proves that blind spot is real rather than assumed, so this suite is not
+// guarding an imaginary failure.
+describe('source drift — the package public API surface', () => {
+  const surface = () => exportedSurface(readFileSync(ENGINE, 'utf8'));
+
+  it('control: an export change is invisible to the body comparison', () => {
+    const bare = unitsOf('function f(x) { return x + 1; }', 'a.ts').get('fn:f');
+    const exported = unitsOf('export function f(x) { return x + 1; }', 'b.ts').get('fn:f');
+    assert.equal(
+      bare,
+      exported,
+      'these now differ, so `export` IS visible to the body comparison and the rest of this suite is redundant',
+    );
+  });
+
+  it('parses a non-empty surface and includes the documented entry point', () => {
+    const s = surface();
+    assert.ok(s.fn.length > 0, 'no exported functions parsed — the parser is broken, not the package');
+    assert.ok(s.fn.includes('scoreUrl'), 'scoreUrl is the documented entry point and must stay exported');
+    for (const [kind, names] of Object.entries(s)) {
+      assert.deepEqual(names, [...names].sort(), `${kind} exports must be sorted so a diff is readable`);
+    }
+  });
+
+  it('the surface matches the pinned expectation', () => {
+    // Pinned deliberately. A published package's exports are a promise, so an
+    // addition or removal is a release decision that should appear in the diff —
+    // not something to discover from an npm consumer. Update this list in the
+    // same commit as an intentional surface change.
+    const EXPECTED = {
+      fn: [
+        'deriveVerdict', 'emitCanonical', 'emitDesignesy', 'emitGoogle', 'emitReview',
+        'isValidUrl', 'normalizeInputUrl', 'scoreFromParts', 'scoreUrl', 'statusToSeverity',
+      ],
+      const: ['CONTRACT_VERSION'],
+      type: ['CheckResult', 'PageOutcome', 'ScorePartsInput', 'ScoreResult', 'ScoreScope'],
+    };
+    const actual = surface();
+    const added = {};
+    const removed = {};
+    for (const kind of Object.keys(EXPECTED)) {
+      const now = actual[kind] || [];
+      added[kind] = now.filter((n) => !EXPECTED[kind].includes(n));
+      removed[kind] = EXPECTED[kind].filter((n) => !now.includes(n));
+    }
+    const report = Object.keys(EXPECTED)
+      .filter((k) => added[k].length || removed[k].length)
+      .map((k) => `  ${k}: +[${added[k].join(', ')}] -[${removed[k].join(', ')}]`)
+      .join('\n');
+    assert.equal(
+      report,
+      '',
+      `the package's public surface changed:\n${report}\n`
+        + 'If intentional, update EXPECTED in the same commit and note it in the release notes.',
+    );
   });
 });
