@@ -952,7 +952,10 @@ p {
    (saturation boost looks neon on light backgrounds, per topbar convention). */
 @media (max-width: 720px) {
   [data-theme="light"] .nav-drawer {
-    background: color-mix(in srgb, var(--paper) 80%, transparent);
+    /* 94%, as in the base drawer rule: this selector outranks it, so the 80%
+       that was here kept the light drawer translucent after the fix, and the
+       blue primary button still blurred through behind a menu row. */
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-color: rgba(0, 0, 0, 0.10);
@@ -4937,7 +4940,15 @@ button.check-cell {
   text-decoration: underline;
   text-decoration-color: var(--line);
   text-underline-offset: 0.15em;
-  word-break: break-all;
+  /* Paths break before a "/", never inside a word. These links are
+     inline-flex (the 44px target in .row-meta a); each "/"-segment is a
+     nowrap span (open/page.tsx), so wrap moves a whole segment to the next
+     line. break-all split at any letter ("design-system.js" / "on"). */
+  flex-wrap: wrap;
+}
+
+.open-path-seg {
+  white-space: nowrap;
 }
 
 @media (hover: hover) {
