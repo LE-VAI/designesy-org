@@ -254,6 +254,40 @@ export async function middleware(request: NextRequest) {
         return res;
       }
 
+      // MCP endpoint gets CORS. Without it, browser-based MCP clients (the MCP
+      // Inspector, web-hosted clients) cannot call the server at all: the
+      // preflight returns 204 with no Access-Control-Allow-Origin, so the browser
+      // blocks the request before it is ever sent. Non-browser clients — Claude
+      // Desktop, Cursor, VS Code, every stdio client — were never affected, which
+      // is why this gap survived unnoticed while the endpoint looked healthy.
+      //
+      // `*` is correct here rather than a client allowlist: this is a public,
+      // read-only, unauthenticated MCP server, and any client that can reach it
+      // over the network could already POST to it directly. The header changes
+      // which clients *can* use it, not what they can do. It is scoped to
+      // /api/mcp and is not applied to the scoring API, whose responses are
+      // site-specific. The tools' own SSRF guard (connection-level IP-pinned
+      // fetch) is what protects the fetch surface, not the origin policy.
+      //
+      // `Access-Control-Expose-Headers` matters for MCP HTTP: the transport
+      // reads Mcp-Session-Id to correlate a stream, and a browser client cannot
+      // read it unless it is exposed.
+      if (pathname === '/api/mcp') {
+        const res = NextResponse.next();
+        res.headers.set('RateLimit-Limiter', limiterState);
+        res.headers.set('Access-Control-Allow-Origin', '*');
+        res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.headers.set(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID',
+        );
+        res.headers.set('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+        // The session id is part of the correlation contract; a cached response
+        // carrying a stale one would be worse than no cache.
+        res.headers.set('Cache-Control', 'no-store, max-age=0');
+        return res;
+      }
+
       return NextResponse.next();
     }
   }
