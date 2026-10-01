@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Turn a design thesis into a remixable, reviewable experiment that compiles into contract material. Scaffolds the full Designesy Lab anatomy — the missing layer between experiment and contract.",
   "license": "MIT",
-  "author": "Designesy",
+  "author": "Designesy <hello@designesy.org>",
   "homepage": "https://www.designesy.org/labs",
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "anti-slop"
   ],
   "files": [
+    "LICENSE",
     "bin",
     "src",
     "README.md"
@@ -42,7 +43,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "node bin/lab-builder.mjs --help"
+    "build": "node bin/lab-builder.mjs --help",
+    "test": "node --test test/test.js"
   },
   "private": false
 }
