@@ -1792,8 +1792,15 @@ def _llms_full_txt_impl() -> dict[str, Any]:
 TOOLS = [
     {
         "name": "designesy_catalog",
+        # The package count is deliberately NOT restated here. This description
+        # said "23 published Designesy packages" while the catalog had reached 24,
+        # so the description and the payload disagreed about the same fact. The
+        # tool returns `package_count` derived from the catalog at call time, and
+        # this Python package cannot import the TypeScript catalog to interpolate
+        # it at build time. Rather than freeze a second copy of a number that
+        # changes, the count lives only in the response.
         "description": (
-            "List the 23 published Designesy packages with versions, URLs, "
+            "List the published Designesy packages with versions, URLs, "
             "and statuses. Use this to discover what Designesy publishes "
             "before fetching a specific contract. When NOT to use: if you "
             "already know which package you need, skip this and call "

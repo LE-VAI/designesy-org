@@ -25,6 +25,7 @@
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
@@ -72,7 +73,12 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_catalog',
       {
-        description: 'List the 23 published Designesy packages with versions, URLs, and statuses. Use this to discover what Designesy publishes before fetching a specific contract. When NOT to use: if you already know which package you need, skip this and call designesy_contract directly. Read-only: no side effects. Returns JSON: { package_count, packages[{id, kind, title, version, status, human_url, machine_url}], standing_rules[], machine_exports[] }. No parameters: accepts empty input.',
+        // The count is DERIVED from the catalog this tool serves, never restated.
+        // It read a hardcoded "23 published packages" and went stale when the
+        // catalog reached 24, so the description and the payload disagreed about
+        // the same fact. Same class as the catalog's version fields: a number
+        // written twice, with nothing comparing the two.
+        description: `List the ${openIndex.packages.length} published Designesy packages with versions, URLs, and statuses. Use this to discover what Designesy publishes before fetching a specific contract. When NOT to use: if you already know which package you need, skip this and call designesy_contract directly. Read-only: no side effects. Returns JSON: { package_count, packages[{id, kind, title, version, status, human_url, machine_url}], standing_rules[], machine_exports[] }. No parameters: accepts empty input.`,
       },
       async () => {
         const data = await cachedFetch(`${BASE_URL}/open.json`, true) as Record<string, unknown>;

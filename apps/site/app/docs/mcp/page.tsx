@@ -6,6 +6,7 @@ import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { openIndex } from '../../lib/open-index';
 
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
@@ -24,7 +25,7 @@ const TOOLS = [
   {
     name: 'designesy_catalog',
     kind: 'Read-only',
-    desc: 'The full package catalog: 23 published packages (contracts, kits, labs, reviews, tools) with versions, URLs, statuses, standing rules, and machine exports.',
+    desc: `The full package catalog: ${openIndex.packages.length} published packages (contracts, kits, labs, reviews, tools) with versions, URLs, statuses, standing rules, and machine exports.`,
     args: 'none',
     source: '/open.json',
   },

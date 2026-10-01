@@ -1,4 +1,5 @@
 import { CONTRACT_VERSION } from './design-system-contract';
+import { openIndex } from './open-index';
 /**
  * Designesy Graph — public read-only provenance chain.
  * The Graph shows how sources become shipped work through the Designesy pipeline.
@@ -101,7 +102,12 @@ export const graph = {
       stage: 'Shipped Work',
       description: 'Real artifacts produced using the contract.',
       public_examples: [
-        'designesy.org (live, ' + CONTRACT_VERSION + ', 23 packages, 10 machine exports)',
+        // Counts DERIVED from the catalog, not restated. This line read a
+        // hardcoded "23 packages, 10 machine exports" and went stale the moment
+        // a package was added. Same defect class as the version fields a number
+        // written twice for one fact, with nothing comparing them.
+        'designesy.org (live, ' + CONTRACT_VERSION + ', ' + openIndex.packages.length +
+          ' packages, ' + openIndex.machine_exports.length + ' machine exports)',
         'Tile: interactive series composer (617 views on X)',
         'Compile: principle compiler (built, pending hosting)',
         'Continuity: founder narrative (shipped, underperformed, failure documented)',
