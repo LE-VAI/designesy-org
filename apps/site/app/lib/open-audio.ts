@@ -7,7 +7,7 @@ export interface OpenAudioEntry {
 }
 
 export const OPEN_AUDIO: Record<string, OpenAudioEntry> = {
-  "designesy.design-system": { src: "/audio/open/designesy.design-system.opus", duration: 13.87 },
+  "designesy.design-system": { src: "/audio/open/designesy.design-system.opus", duration: 13.8 },
   "design-review": { src: "/audio/open/design-review.opus", duration: 11.02 },
   "poise": { src: "/audio/open/poise.opus", duration: 14.08 },
   "takt": { src: "/audio/open/takt.opus", duration: 17.0 },
@@ -21,7 +21,7 @@ export const OPEN_AUDIO: Record<string, OpenAudioEntry> = {
   "review.keyboard": { src: "/audio/open/review.keyboard.opus", duration: 11.75 },
   "open.handoff": { src: "/audio/open/open.handoff.opus", duration: 11.06 },
   "review.designesy-org": { src: "/audio/open/review.designesy-org.opus", duration: 9.96 },
-  "acoustic-tokens": { src: "/audio/open/acoustic-tokens.opus", duration: 15.89 },
+  "acoustic-tokens": { src: "/audio/open/acoustic-tokens.opus", duration: 16.03 },
   "designesy.tokens": { src: "/audio/open/designesy.tokens.opus", duration: 17.56 },
   "designesy.a11y": { src: "/audio/open/designesy.a11y.opus", duration: 17.4 },
   "designesy.motion": { src: "/audio/open/designesy.motion.opus", duration: 19.2 },

@@ -98,6 +98,10 @@ jobs:
         if: always()
         run: node scripts/check-contract-drift.js
 
+      - name: Catalog version binding
+        if: always()
+        run: node scripts/check-catalog-version-binding.js
+
       - name: Pagefind index
         if: always()
         run: node scripts/postbuild-pagefind.js

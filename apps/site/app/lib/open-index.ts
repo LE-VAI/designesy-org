@@ -1,4 +1,33 @@
-import { CONTRACT_VERSION } from './design-system-contract';
+import { designSystemContract, CONTRACT_VERSION } from './design-system-contract';
+import { acousticTokens } from './acoustic-tokens';
+import { tokensContract } from './tokens-contract';
+import { a11yContract } from './a11y-contract';
+import { motionContract } from './motion-contract';
+import { componentsContract } from './components-contract';
+import { designReviewKit } from './kits/design-review';
+import { labs } from './labs';
+
+/**
+ * Every package below that has a machine export READS ITS VERSION from the
+ * module that export serves. None of them restates it.
+ *
+ * Why this is load-bearing: this catalog is the document /llms.txt tells an
+ * agent to ingest first, and whose `version` fields it tells the agent to treat
+ * as "authority boundaries: do not invent unversioned rules". A version here
+ * that disagrees with the export it points at is therefore the worst place in
+ * the repo for a stale literal: the agent is instructed to trust exactly the
+ * field that is wrong.
+ *
+ * That had already happened twice by 2026-09-30. The design-system entry read
+ * 0.4.0 while the contract source and its export served 0.4.1, and the
+ * acoustic-tokens entry read 0.1.1 while its module served 0.2.0 -- both
+ * machine-readable, both live, both wrong. Two sibling fields in this same file
+ * (the changelog lede and the contract meta) already interpolated the imported
+ * constant correctly, which is why the drift sat in the one field nobody had
+ * bound. Reading the value from its source makes the class impossible rather
+ * than fixing two instances of it.
+ */
+
 /**
  * Open design intelligence — human + machine catalog of portable Designesy cargo.
  * Single source for /open, /open.json, /llms.txt, and agent discovery.
@@ -10,14 +39,18 @@ import { CONTRACT_VERSION } from './design-system-contract';
 
 export const openIndex = {
   id: 'designesy.open',
-  version: '0.1.6',
+  version: '0.1.7',
   status: 'public' as const,
   name: 'Open design intelligence',
   lede: 'Designesy publishes portable design judgment: contracts, kits, labs, and field checks people and agents can fetch, run, and remix.',
   path: '/open',
   public_url: 'https://www.designesy.org/open',
   machine_url: 'https://www.designesy.org/open.json',
-  updated: '2026-08-30',
+  // 0.1.7 / 2026-09-30 — the version fields stopped being restated (see the
+  // binding note above the packages array) and the catalog date caught up to
+  // its own content. The previous pair was 0.1.6 / 2026-08-30, which had
+  // already gone false on 2026-09-28 when the contract moved to 0.4.1.
+  updated: '2026-09-30',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
     'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
@@ -132,7 +165,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Design system',
-      version: '0.4.0',
+      version: designSystemContract.version,
       status: 'public',
       lede: 'Portable design judgment for designesy.org: tokens, motion, components, and adopted Poise + Takt + Cadence + Acoustics rules.',
       human_url: 'https://www.designesy.org/contracts/design-system',
@@ -147,7 +180,7 @@ export const openIndex = {
       kind: 'kit' as const,
       number: 'One',
       title: 'Design Review',
-      version: '0.1',
+      version: designReviewKit.version,
       status: 'live',
       lede: 'Turn taste into inspection. Eight dimensions, portable agent prompt, output format, and verification.',
       human_url: 'https://www.designesy.org/kits/design-review',
@@ -160,7 +193,7 @@ export const openIndex = {
       kind: 'lab' as const,
       number: 'One',
       title: 'Poise',
-      version: '0.1',
+      version: labs.poise.version,
       status: 'live',
       lede: 'Restrained interaction: wordmark breath, press settle, sound preference, reduced motion. Rules adopted into contract v0.1.1.',
       human_url: 'https://www.designesy.org/labs/poise',
@@ -173,7 +206,7 @@ export const openIndex = {
       kind: 'lab' as const,
       number: 'Two',
       title: 'Takt',
-      version: '0.1',
+      version: labs.takt.version,
       status: 'live',
       lede: 'Interface feel: concentric radii, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and adopted into contract v0.1.2.',
       human_url: 'https://www.designesy.org/labs/takt',
@@ -186,7 +219,7 @@ export const openIndex = {
       kind: 'lab' as const,
       number: 'Three',
       title: 'Cadence',
-      version: '0.1',
+      version: labs.cadence.version,
       status: 'live',
       lede: 'Text rhythm: font smoothing, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap, tabular numbers, selection. Rules compiled from external typography intelligence and adopted into contract v0.1.3.',
       human_url: 'https://www.designesy.org/labs/cadence',
@@ -199,7 +232,7 @@ export const openIndex = {
       kind: 'lab' as const,
       number: 'Four',
       title: 'Acoustics',
-      version: '0.1',
+      version: labs.acoustics.version,
       status: 'live',
       lede: 'Interaction sound: nineteen cues, nineteen roles, Cuelume v0.2.2 engine. Acoustic token system adopted into contract v0.3.0.',
       human_url: 'https://www.designesy.org/labs/acoustics',
@@ -316,7 +349,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Acoustic tokens',
-      version: '0.1.1',
+      version: acousticTokens.version,
       status: 'public',
       lede: 'Acoustic token system: the sound parallel to the visual token system. Net-new relative to W3C DTCG. Engine: Cuelume v0.2.2.',
       human_url: 'https://www.designesy.org/acoustic-tokens',
@@ -329,7 +362,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Tokens',
-      version: '0.1.0',
+      version: tokensContract.version,
       status: 'provisional',
       lede: 'W3C DTCG 2025.10 token-format conformance: color-space rules, custom types (spring, sound), 10 verification checks. Sibling to the design system contract.',
       human_url: 'https://www.designesy.org/contracts/tokens',
@@ -342,7 +375,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Accessibility',
-      version: '0.1.0',
+      version: a11yContract.version,
       status: 'provisional',
       lede: 'axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with brand customization and provenance chain. 11 verification checks.',
       human_url: 'https://www.designesy.org/contracts/a11y',
@@ -355,7 +388,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Motion',
-      version: '0.1.0',
+      version: motionContract.version,
       status: 'provisional',
       lede: 'Lottie spec v1.0.1 JSON Schema + Designesy §16 Ten Non-Negotiable Motion Standards. Reduced-motion via markers/slots. 10 verification checks. Sibling to the design system contract.',
       human_url: 'https://www.designesy.org/contracts/motion',
@@ -368,7 +401,7 @@ export const openIndex = {
       kind: 'contract' as const,
       number: null,
       title: 'Components',
-      version: '0.1.0',
+      version: componentsContract.version,
       status: 'live',
       lede: 'Machine-readable component contract: every component the system defines, the states it may enter, the tokens each state binds, and the accessibility obligation it carries. Derived from the design system contract, so the two cannot disagree about which components exist.',
       human_url: 'https://www.designesy.org/contracts/components',
