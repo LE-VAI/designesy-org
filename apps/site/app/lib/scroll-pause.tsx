@@ -131,7 +131,13 @@ export function initScrollPause(
       }
     }
 
-    // Remove transform so native scroll takes over
+    // Detach the animation, then remove the transform so native scroll takes
+    // over. A CSS animation, even a paused one, outranks inline style: setting
+    // transform alone left the keyframe offset applied ON TOP of the scroll
+    // position below (measured 2026-10-01: computed matrix still -811px after
+    // the handoff), so a dragged or keyboard-focused rail was shifted twice and
+    // a focused pill could sit entirely outside the clip.
+    track.style.animationName = 'none';
     track.style.transform = 'none';
 
     // Make the clip scrollable
@@ -168,6 +174,7 @@ export function initScrollPause(
     //   delay = -(offset / loopDistance) * duration
     const durationMs = parseFloat(getComputedStyle(track).animationDuration) * 1000;
     track.style.animationDelay = `${-((offset / loopDistance()) * durationMs)}ms`;
+    track.style.animationName = '';
     track.style.transform = '';
     track.style.animationPlayState = 'running';
   }
@@ -415,6 +422,38 @@ export function initScrollPause(
     // (wheel events fire while the mouse is still inside the clip)
   }
 
+  // ── Keyboard focus (WCAG 2.4.11 Focus Not Obscured) ───────────────────
+
+  /**
+   * CSS pauses the track on :focus-within, but a paused TRANSFORM leaves the
+   * focused pill wherever the loop happened to stop — often outside the clip,
+   * so a keyboard user's focus was entirely hidden (a11y contract a09, measured
+   * on /guardrails, /monitor, /drift and others on 2026-10-01). Keyboard focus
+   * hands off to native scroll, where scrollIntoView works, and brings the pill
+   * into view.
+   *
+   * Keyboard only. A mouse or touch press also focuses a link, and mutating
+   * layout between press and click is exactly the iOS tap-lottery described at
+   * the top of this file, so pointer-driven focus is left to the pointer path.
+   */
+  function onFocusIn(e: FocusEvent) {
+    const target = e.target as HTMLElement | null;
+    if (!target || target === clip || pointerActive) return;
+    if (!target.matches(':focus-visible')) return;
+    cancelResume();
+    if (!isPaused) freezeInPlace();
+    handoffToScroll();
+    target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /** Tabbing out of the rail resumes it, unless a pointer still holds it. */
+  function onFocusOut(e: FocusEvent) {
+    const next = e.relatedTarget as Node | null;
+    if (next && clip.contains(next)) return;
+    if (pointerActive || isDragging || heldByUser || clip.matches(':hover')) return;
+    scheduleResume();
+  }
+
   // ── Attach events ──────────────────────────────────────────────────────
 
   // Pointer events (not passive — we need preventDefault in pointermove)
@@ -431,6 +470,9 @@ export function initScrollPause(
   // Wheel to pause animation and allow native scroll
   clip.addEventListener('wheel', onWheel, { passive: true });
 
+  clip.addEventListener('focusin', onFocusIn);
+  clip.addEventListener('focusout', onFocusOut);
+
   return () => {
     clip.removeEventListener('pointerdown', onPointerDown);
     clip.removeEventListener('pointermove', onPointerMove);
@@ -440,6 +482,8 @@ export function initScrollPause(
     clip.removeEventListener('mouseenter', onMouseEnter);
     clip.removeEventListener('mouseleave', onMouseLeave);
     clip.removeEventListener('wheel', onWheel);
+    clip.removeEventListener('focusin', onFocusIn);
+    clip.removeEventListener('focusout', onFocusOut);
     if (resumeTimer) clearTimeout(resumeTimer);
     stopFling();
   };

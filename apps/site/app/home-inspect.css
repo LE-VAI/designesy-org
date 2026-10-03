@@ -11,6 +11,7 @@
 
 .inspect {
   --ix-head: var(--lv-head);
+  --ix-head-ink: var(--lv-head-ink);
   --ix-warn: var(--warn);
   --ix-fail: var(--error);
   display: grid;
@@ -59,21 +60,45 @@
   align-content: center;
   gap: 0.65rem;
   min-height: 56vh;
-  opacity: 0.36;
-  transition: opacity 450ms var(--ease-out);
 }
 
-.inspect[data-step="1"] [data-inspect-step="1"],
-.inspect[data-step="2"] [data-inspect-step="2"],
-.inspect[data-step="3"] [data-inspect-step="3"],
-.inspect[data-step="4"] [data-inspect-step="4"] {
-  opacity: 1;
+/* Unlit steps dim by COLOUR, never opacity. They are the same narrative the
+   reader is scrolling through, so they must stay readable: at opacity 0.36
+   every colour here fell to 1.5-3.0:1 (axe 4.13.0, 2026-10-02). Unlit, the
+   title takes --muted (7.98:1 dark, 7.11:1 light) and the text and numeral
+   --muted-dim (5.07:1 dark, 4.74:1 light); the lit step gets its full
+   colours back below. */
+.inspect-step-n,
+.inspect-step-title,
+.inspect-step-text {
+  transition: color 450ms var(--ease-out);
+}
+
+.inspect[data-step="1"] [data-inspect-step="1"] .inspect-step-n,
+.inspect[data-step="2"] [data-inspect-step="2"] .inspect-step-n,
+.inspect[data-step="3"] [data-inspect-step="3"] .inspect-step-n,
+.inspect[data-step="4"] [data-inspect-step="4"] .inspect-step-n {
+  color: var(--lv-ink-accent);
+}
+
+.inspect[data-step="1"] [data-inspect-step="1"] .inspect-step-title,
+.inspect[data-step="2"] [data-inspect-step="2"] .inspect-step-title,
+.inspect[data-step="3"] [data-inspect-step="3"] .inspect-step-title,
+.inspect[data-step="4"] [data-inspect-step="4"] .inspect-step-title {
+  color: var(--ink);
+}
+
+.inspect[data-step="1"] [data-inspect-step="1"] .inspect-step-text,
+.inspect[data-step="2"] [data-inspect-step="2"] .inspect-step-text,
+.inspect[data-step="3"] [data-inspect-step="3"] .inspect-step-text,
+.inspect[data-step="4"] [data-inspect-step="4"] .inspect-step-text {
+  color: var(--muted);
 }
 
 .inspect-step-n {
   font: 500 0.74rem/1 var(--mono);
   letter-spacing: 0.06em;
-  color: var(--lv-ink-accent);
+  color: var(--muted-dim);
 }
 
 .inspect-step-title {
@@ -84,7 +109,7 @@
   line-height: 1.12;
   letter-spacing: -0.015em;
   text-wrap: balance;
-  color: var(--ink);
+  color: var(--muted);
 }
 
 .inspect-step-text {
@@ -92,7 +117,7 @@
   max-width: 30rem;
   font-size: 1.02rem;
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--muted-dim);
   text-wrap: pretty;
 }
 
@@ -434,7 +459,7 @@
   left: -0.5em;
   bottom: calc(100% + 0.7em);
   background: var(--ix-head);
-  color: var(--paper-on-signal);
+  color: var(--ix-head-ink);
 }
 
 .mp-nav .ix-tag {

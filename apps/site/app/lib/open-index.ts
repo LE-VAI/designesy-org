@@ -498,7 +498,7 @@ export const openIndex = {
       title: 'Accessibility contract',
       path: '/contracts/a11y.json',
       url: 'https://www.designesy.org/contracts/a11y.json',
-      meta: 'v0.1.0 axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules: brand customization, provenance chain, 11 checks',
+      meta: 'v0.1.1 axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules: brand customization, provenance chain, 11 checks',
     },
     {
       title: 'Motion contract',

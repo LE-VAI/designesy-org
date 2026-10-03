@@ -11,6 +11,6 @@ export default function OpenGraphImage() {
     lede: 'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks.',
     path: 'designesy.org/contracts/a11y',
     kind: 'contract',
-    badge: 'v0.1.0',
+    badge: 'v0.1.1',
   });
 }

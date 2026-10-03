@@ -174,7 +174,7 @@ export default function PricingPage() {
                 fontSize: '0.7rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.14em',
-                color: 'var(--signal-light)',
+                color: 'var(--signal-text)',
                 fontWeight: 700,
                 margin: '0 0 0.75rem',
                 fontFamily: 'var(--mono, ui-monospace, monospace)',

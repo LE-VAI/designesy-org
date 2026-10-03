@@ -125,7 +125,10 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
         outcomes={outcomes}
         fileMeta={meta}
         selected={phase === 'done' ? file : undefined}
-        controls="eg-viewer"
+        // aria-controls must name an element that exists: the viewer only renders
+        // once a bundle is back, so pointing at it earlier was an invalid IDREF
+        // (axe aria-valid-attr-value, critical, on every g-cell).
+        controls={phase === 'done' && result?.bundle ? 'eg-viewer' : undefined}
         verdict={
           result && phase === 'done'
             ? {

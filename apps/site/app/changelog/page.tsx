@@ -63,19 +63,19 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
 };
 
 const DIMENSION_COLORS: Record<Dimension, string> = {
-  all: 'var(--signal)',
-  tokens: 'var(--signal)',
-  motion: 'var(--signal)',
-  cadence: 'var(--signal)',
+  all: 'var(--signal-text)',
+  tokens: 'var(--signal-text)',
+  motion: 'var(--signal-text)',
+  cadence: 'var(--signal-text)',
   accessibility: 'var(--ok)',
-  takt: 'var(--signal)',
-  poise: 'var(--signal)',
-  acoustics: 'var(--signal)',
-  copywriting: 'var(--signal)',
-  identity: 'var(--signal)',
+  takt: 'var(--signal-text)',
+  poise: 'var(--signal-text)',
+  acoustics: 'var(--signal-text)',
+  copywriting: 'var(--signal-text)',
+  identity: 'var(--signal-text)',
   security: 'var(--error)',
-  semantic: 'var(--signal)',
-  verification: 'var(--signal)',
+  semantic: 'var(--signal-text)',
+  verification: 'var(--signal-text)',
 };
 
 // ── Changelog entries ───────────────────────────────────────────────────────
@@ -328,9 +328,9 @@ const FIRST_OF_DIMENSION = new Set(
 
 const CHANGE_COLORS: Record<string, string> = {
   added: 'var(--ok)',
-  modified: 'var(--signal)',
+  modified: 'var(--signal-text)',
   removed: 'var(--error)',
-  adopted: 'var(--signal)',
+  adopted: 'var(--signal-text)',
   deprecated: 'var(--warn)',
 };
 
@@ -471,7 +471,7 @@ export default function ChangelogPage() {
                             alignItems: 'center',
                             fontSize: '0.7rem',
                             fontWeight: 600,
-                            color: 'var(--signal)',
+                            color: 'var(--signal-text)',
                             background: 'var(--surface)',
                             border: '1px solid var(--line)',
                             borderRadius: '4px',

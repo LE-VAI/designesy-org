@@ -40,6 +40,13 @@
   --signal: #0133cb;
   --signal-light: #3358e8;
   --signal-access: #5d7bff;
+  /* Signal used AS TEXT. --signal (#0133cb) is a fill: on the dark paper
+     ladder it measures 2.0-2.3:1, so every eyebrow, number and link that
+     borrowed it as a text color failed WCAG 1.4.3 (axe 4.13.0, 2026-10-01:
+     .principle-num on ~20 pages, 57 nodes on /changelog). Dark text lifts to
+     the accessible tint: 5.71 / 5.41 / 5.11 / 4.93:1 on paper / surface /
+     raised / lifted. Light mode keeps #0133cb exactly (8.69:1 on paper). */
+  --signal-text: var(--signal-access);
   --signal-dim: rgba(1, 51, 203, 0.14);
   /* Additive — text placed ON a --signal fill must contrast with #0133cb,
      not with --paper (#0a0a0c). White on signal is 8.59:1 (AAA). */
@@ -341,6 +348,7 @@ read-along {
   --signal: #0133cb;
   --signal-light: #3358e8;
   --signal-access: #2a4cd8;
+  --signal-text: var(--signal);
   --signal-dim: rgba(1, 51, 203, 0.08);
   --paper-on-signal: #ffffff;
   --activation: #d4a017;
@@ -1066,7 +1074,7 @@ p {
      without shouting. Icon shifts to signal-light, border lifts to signal-dim,
      background picks up a soft signal glow. Same register as siblings (32/44px),
      just activated. */
-  color: var(--signal-light);
+  color: var(--signal-text);
   border-color: var(--signal-dim);
   background: color-mix(in srgb, var(--signal-light) 8%, transparent);
 }
@@ -1111,7 +1119,7 @@ html[data-motion="paused"] *::after {
     cursor: pointer;
   }
   .motion-toggle-row[aria-pressed="true"] {
-    color: var(--signal-light);
+    color: var(--signal-text);
     border-color: var(--signal-dim);
     background: color-mix(in srgb, var(--signal-light) 8%, transparent);
   }
@@ -1242,7 +1250,7 @@ html[data-motion="paused"] *::after {
 
 .cmdk-input-icon {
   flex-shrink: 0;
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 .cmdk-input {
@@ -1419,7 +1427,7 @@ html[data-motion="paused"] *::after {
 }
 
 .cmdk-item.is-active .cmdk-item-icon {
-  color: var(--signal-light);
+  color: var(--signal-text);
   background: color-mix(in srgb, var(--signal-light) 12%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal-light) 32%, transparent);
 }
@@ -1576,7 +1584,7 @@ html[data-motion="paused"] *::after {
     padding: 0 var(--space-4);
     border: 0;
     background: none;
-    color: var(--signal-light);
+    color: var(--signal-text);
     font: inherit;
     font-size: 0.95rem;
     font-weight: 500;
@@ -2013,7 +2021,7 @@ html[data-motion="paused"] *::after {
 }
 
 .pipeline-step.is-end .pipeline-num {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2389,7 +2397,7 @@ a.surface-card:active {
 }
 @media (hover: hover) {
   .row:hover .row-index {
-    color: var(--signal-light);
+    color: var(--signal-text);
   }
 }
 
@@ -2676,7 +2684,7 @@ a.surface-card:active {
 }
 @keyframes dot-brighten {
   0% { color: var(--signal-access); }
-  50% { color: var(--signal-light); text-shadow: 0 0 6px var(--signal-dim); }
+  50% { color: var(--signal-text); text-shadow: 0 0 6px var(--signal-dim); }
   100% { color: var(--signal-access); }
 }
 
@@ -3237,7 +3245,7 @@ a.surface-card:active {
 .principle-num {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--signal);
+  color: var(--signal-text);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
 }
@@ -3270,7 +3278,7 @@ a.surface-card:active {
 
 @media (hover: hover) {
   .text-link:hover {
-    color: var(--signal-light);
+    color: var(--signal-text);
     border-bottom-color: var(--signal-light);
   }
 }
@@ -3388,7 +3396,7 @@ a.surface-card:active {
   left: 0;
   top: 0;
   width: 1.25rem;
-  color: var(--signal);
+  color: var(--signal-text);
   font-weight: 600;
   line-height: 1.5;
 }
@@ -3728,7 +3736,7 @@ a.surface-card:active {
     border-color: var(--line-strong);
   }
   .state-marquee-pill--live:hover {
-    color: var(--signal-light);
+    color: var(--signal-text);
     background: color-mix(in srgb, var(--signal) 22%, transparent);
   }
   .state-marquee-pill--adopted:hover {
@@ -3752,7 +3760,7 @@ a.surface-card:active {
 
 /* Live — bold signal pills with pulse dot */
 .state-marquee-pill--live {
-  color: var(--signal-light);
+  color: var(--signal-text);
   background: var(--signal-dim);
   border: 1px solid color-mix(in srgb, var(--signal) 18%, transparent);
 }
@@ -3778,7 +3786,7 @@ a.surface-card:active {
 }
 .state-marquee-pill--adopted::before {
   content: "✓";
-  color: var(--signal);
+  color: var(--signal-text);
   font-weight: 700;
   font-size: 0.72rem;
   flex-shrink: 0;
@@ -3792,7 +3800,7 @@ a.surface-card:active {
 }
 .state-marquee-pill--info::before {
   content: "·";
-  color: var(--signal);
+  color: var(--signal-text);
   font-weight: 700;
   font-size: 0.9rem;
   line-height: 0;
@@ -3812,8 +3820,18 @@ a.surface-card:active {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Stopped, not slowed. A 120s crawl is still continuous motion, and the
+     a11y contract's a10 asks reduce to DISABLE animation. The track becomes
+     a plain scrollable list: the aria-hidden duplicate that only existed to
+     make the loop seamless is dropped, so nothing reads twice. */
   .state-marquee-track {
-    animation-duration: 120s;
+    animation: none;
+  }
+  .state-marquee {
+    overflow-y: auto;
+  }
+  .state-marquee-group[aria-hidden="true"] {
+    display: none;
   }
   .state-marquee-pill--live::before {
     animation: none;
@@ -4008,7 +4026,7 @@ button.layer-item {
   justify-content: center;
   width: 1rem;
   height: 1rem;
-  color: var(--signal);
+  color: var(--signal-text);
   animation: check-pop 280ms var(--ease-out) both;
   will-change: transform, opacity;
 }
@@ -4035,7 +4053,7 @@ button.layer-item {
 }
 .row.is-copied .row-copy-badge {
   opacity: 1;
-  color: var(--signal);
+  color: var(--signal-text);
 }
 
 /* Touch has no hover to reveal it: the badge rests visible, so a tap is
@@ -4097,7 +4115,7 @@ button.row {
 
 .definition.is-copied .definition-copy-badge {
   opacity: 1;
-  color: var(--signal);
+  color: var(--signal-text);
 }
 
 /* Touch has no hover to reveal it, so a phone never learned a definition
@@ -4237,7 +4255,7 @@ button.check-cell {
 
 @media (hover: hover) {
   a.check-cell:hover .check-cell-arrow {
-    color: var(--signal);
+    color: var(--signal-text);
     transform: translateX(3px);
   }
 }
@@ -4248,7 +4266,7 @@ button.check-cell {
   justify-content: center;
   width: 1.05rem;
   height: 1.05rem;
-  color: var(--signal);
+  color: var(--signal-text);
   animation: check-pop 280ms var(--ease-out) both;
   will-change: transform, opacity;
 }
@@ -4323,7 +4341,7 @@ button.check-cell {
   font-weight: 700;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
-  color: var(--signal);
+  color: var(--signal-text);
   line-height: 1.5;
   padding-top: var(--space-fine-12);
   user-select: none;
@@ -4390,7 +4408,7 @@ button.check-cell {
 }
 
 .check-cell-status.is-hold {
-  color: var(--signal);
+  color: var(--signal-text);
   border-color: color-mix(in srgb, var(--signal) 28%, var(--line));
 }
 
@@ -5165,7 +5183,7 @@ button.check-cell {
 }
 
 .demo-cell-note code {
-  color: var(--signal-light);
+  color: var(--signal-text);
   font-size: 0.74rem;
 }
 
@@ -5700,7 +5718,23 @@ a.field-card:active {
 }
 
 .field-card-status.is-live {
-  color: var(--signal-light);
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  color: var(--signal-text);
+}
+
+/* The heartbeat lives on a dot, never on the word. signalPulse fades to 0.55
+   opacity, and on the word "Live" that took 5.41:1 down to #384892 on #0a0a0c,
+   under 4.5:1 at the dim end of every beat (axe 4.13.0, 2026-10-02). Same
+   shape as the status marquee's live pill: solid text, pulsing dot. */
+.field-card-status.is-live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-text);
+  flex-shrink: 0;
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
@@ -5722,19 +5756,19 @@ a.field-card:active {
 .field-card--contract:hover .field-card-arrow,
 .field-card--lab:hover .field-card-arrow,
 .field-card--kit:hover .field-card-arrow {
-    color: var(--signal-light);
+    color: var(--signal-text);
   }
 }
 
 /* Kind badges — same family, different weight */
 .status-badge--open {
-  color: var(--signal-light);
+  color: var(--signal-text);
   border-color: var(--signal-dim);
   background: var(--signal-dim);
 }
 
 .status-badge--contract {
-  color: var(--signal-light);
+  color: var(--signal-text);
   border-color: var(--signal-dim);
   background: var(--signal-dim);
 }
@@ -5746,7 +5780,7 @@ a.field-card:active {
 }
 
 .status-badge--kit {
-  color: var(--signal-light);
+  color: var(--signal-text);
   border-color: color-mix(in srgb, var(--signal-light) 45%, transparent);
   background: transparent;
 }
@@ -5952,7 +5986,7 @@ a.field-card:active {
 .copy-prompt-btn.is-copied {
   opacity: 1;
   border-color: color-mix(in srgb, var(--signal) 40%, var(--line));
-  color: var(--signal);
+  color: var(--signal-text);
   background: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
 }
 /* Touch: no hover to reveal the button, so it is always there, and it gets a
@@ -6009,7 +6043,7 @@ a.field-card:active {
   }
 
   /* Ambient pulses: slow to 4x duration, keep the heartbeat */
-  .field-card-status.is-live,
+  .field-card-status.is-live::before,
   .pipeline-step.is-end .pipeline-node-core,
   .wordmark-hero .dot,
   .mark-glyph--open .mark-glyph-core,
@@ -6469,12 +6503,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   transform: translateY(0);
 }
 .effect-fill:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 /* --- Glow text --- */
 .effect-glow-text:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
   text-shadow: 0 0 12px var(--signal-dim);
 }
 .effect-glow-text:hover .effect-desc {
@@ -6533,7 +6567,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   transform: rotateY(180deg);
 }
 .effect-flip-back .effect-desc {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 /* --- Orbit (signal dot circles the cell) --- */
@@ -6629,7 +6663,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   opacity: 1;
 }
 .effect-scrim:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 /* --- Breath (slow opacity pulse like wordmark) --- */
@@ -6658,7 +6692,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   transform: translateX(100%);
 }
 .effect-sweep:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 
@@ -6698,7 +6732,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   opacity: 1;
 }
 .effect-spotlight:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 /* --- Slide (label slides right, desc slides in from left) --- */
@@ -6712,7 +6746,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 .effect-slide:hover .effect-label {
   transform: translateX(8px);
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 .effect-slide:hover .effect-desc {
   transform: translateX(0);
@@ -6750,7 +6784,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   width: 100%;
 }
 .effect-border-trace:hover .effect-label {
-  color: var(--signal-light);
+  color: var(--signal-text);
 }
 
 
@@ -6853,83 +6887,65 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* ===========================================================================
-   MASTER REDUCED-MOTION OVERRIDE (final word)
+   MASTER REDUCED-MOTION OVERRIDE (final word): TIERED
    ---------------------------------------------------------------------------
-   The contract says: "collapse non-essential motion" = reduce intensity,
-   not zero. The per-component @media blocks above were written as kill
-   switches (animation: none). This override restores ambient and demo
-   animations with slowed durations so the site stays alive under
-   prefers-reduced-motion: reduce.
+   Operator decision 2026-10-01. Under prefers-reduced-motion: reduce:
+     * anything that MOVES stops: translate, scale, rotate, position. Travel
+       across the screen is the vestibular trigger reduce exists for;
+     * fades (opacity-only) may keep running, and short transitions (<= 200 ms)
+       stay;
+     * a demo whose content IS the motion becomes play-on-request
+       (contracts/easing-demo.tsx) instead of disappearing.
+   The a11y contract's check a10 is measured the same way.
 
-   This block is last in the file so it wins the cascade over all earlier
-   per-component blocks. It uses !important to override the !important
-   blocks above.
-
-   What stays killed (correctly): text shimmer, seam entrance, back-button
-   slide-in, director-dock slide-in, lab effect demos (shake/flip/pulse/lift).
-   What is restored (slowed): easing dots, stagger bars, marquee scroll,
-   dock scroll, ambient pulses, health radar, poise bar, row/check anims.
+   This replaces the earlier version of this block, which restored slowed
+   MOVEMENT (10s sliding easing dots, a 2s scale "pop", a 120s marquee crawl):
+   slower travel is still travel. Last in the file so it wins the cascade;
+   !important to beat the !important blocks above.
    =========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-  /* Contracts page: easing curve demo dots — slow to 10s, keep sliding */
-  .demo-easing-dot {
-    animation: demo-easing-slide 10s var(--ease) infinite !important;
-  }
-  .demo-easing-row[data-ease="out"] .demo-easing-dot {
-    animation-timing-function: var(--ease-out) !important;
-  }
-  .demo-easing-row[data-ease="in-out"] .demo-easing-dot {
-    animation-timing-function: var(--ease-in-out) !important;
-  }
-  .demo-easing-row[data-ease="drawer"] .demo-easing-dot {
-    animation-timing-function: var(--ease-drawer) !important;
-  }
-
-  /* Contracts page: stagger bar demo — slow to 2s, keep staggered entrance */
+  /* Contracts page: stagger bars arrive as a fade, without the slide. */
   .demo-stagger.is-revealed .demo-stagger-bar {
-    animation: demo-stagger-in 2s var(--ease-out) forwards !important;
-    opacity: 0.8 !important;
+    animation: demo-stagger-fade 200ms var(--ease-out) forwards !important;
     transform: none !important;
   }
 
-  /* Health radar score — slow rotation */
-  .health-radar-score {
-    animation-duration: 20s !important;
-  }
-
-  /* Poise reduced-motion indicator bar — keep the subtle pulse, slowed */
+  /* Fades: opacity-only breaths keep running, slowed. */
   .poise-reduced-bar--on {
     animation-duration: 8s !important;
     opacity: 0.35 !important;
   }
-
-  /* Row check animation — slowed */
-  .row-check {
-    animation-duration: 2s !important;
-  }
-
-  /* Check cell check — slowed */
-  .check-cell-check {
-    animation-duration: 2s !important;
-  }
-
-  /* State marquee live pill pulse — slow to 4s */
   .state-marquee-pill--live::before {
     animation-duration: 4s !important;
   }
-
-  /* Topbar wordmark dot — keep the breath, slowed */
   .wordmark .dot {
     animation-duration: 12s !important;
   }
 
-  /* Pipeline shake on tap — keep but make it very subtle */
+  /* Check marks: check-pop scales from 0.3, which is movement. Under reduce
+     they fade in, inside the 200 ms budget. */
+  .row-check,
+  .check-cell-check {
+    animation: check-fade 200ms var(--ease-out) both !important;
+  }
+
+  /* Tap feedback shake: kept as feedback, inside the 200 ms budget. */
   .pipeline-step.is-shaking,
   .principle.is-shaking {
-    animation-duration: 0.3s !important;
+    animation-duration: 0.2s !important;
   }
 } /* close @media (prefers-reduced-motion: reduce) */
+
+@keyframes demo-stagger-fade {
+  from { opacity: 0; }
+  to { opacity: 0.8; }
+}
+
+@keyframes check-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 
 .score-hero-section .score-form {
@@ -7041,7 +7057,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--signal);
+  color: var(--signal-text);
   margin-bottom: var(--space-fine-35);
 }
 
@@ -7536,9 +7552,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   .audit-progress-step { animation: none; opacity: 1; }
   .audit-progress-dot { animation: none; opacity: 0.7; }
   .audit-progress-bar-fill { animation: none; width: 100%; background: var(--signal-dim); }
-  /* Sliding indicators: snap instantly, no slide animation */
-  .score-filter-segmented::before { transition: none; }
-  .bundle-tabs::before { transition: none; }
+  /* Sliding indicators: see the reduce block after .bundle-tabs::before. */
 }
 
 .score-tokens-badge {
@@ -7784,7 +7798,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 @media (hover: hover) {
   .score-url-link:hover {
-    color: var(--signal);
+    color: var(--signal-text);
     border-bottom-color: var(--signal);
   }
 }
@@ -7812,7 +7826,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-originality-notice {
-  color: var(--signal);
+  color: var(--signal-text);
   font-weight: 500;
 }
 
@@ -8072,6 +8086,17 @@ a.lab-card:focus-visible .lab-card-arrow {
               width var(--duration, 0.3s) var(--ease-out, ease-out);
   pointer-events: none;
   z-index: 1;
+}
+
+/* Sliding indicators snap under reduce. This block must come AFTER both base
+   rules: it used to sit ~500 lines above them, where the later same-specificity
+   `transition` won and both pills kept sliding 600ms under reduce (contract a10,
+   measured on /score/lovable during hydration, 2026-10-01). */
+@media (prefers-reduced-motion: reduce) {
+  .score-filter-segmented::before,
+  .bundle-tabs::before {
+    transition: none;
+  }
 }
 
 /* Copy button — pushed to the right, styled as an outlined button */
@@ -10107,7 +10132,7 @@ select {
   border-radius: var(--radius-sm);
   font-size: 0.6875rem;
   font-family: var(--mono);
-  color: var(--signal-light);
+  color: var(--signal-text);
   background: color-mix(in oklch, var(--signal) 8%, transparent);
   border: 1px solid color-mix(in oklch, var(--signal) 20%, transparent);
   white-space: nowrap;
@@ -10759,7 +10784,7 @@ select {
 }
 
 [data-word] .is-scrambling {
-  color: var(--signal-light);
+  color: var(--signal-text);
   opacity: 0.85;
   /* Scrambling chars keep their own solid blue tint and must NOT inherit the
      parent's background-clip:text gradient — a half-scrambled glyph under a

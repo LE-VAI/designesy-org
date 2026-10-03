@@ -769,7 +769,10 @@
 
 .dx-rank-site a {
   display: inline-block;
-  padding-block: var(--space-2);
+  /* At least a 24px target (WCAG 2.5.8): the 1.3 line box is 19.5px, and a
+     2px step made 23.5px, half a pixel short (axe target-size on /leaderboard,
+     2026-10-01). The padding now derives from the target, not a spacing step. */
+  padding-block: max(var(--space-2), calc((1.5rem - 1.3em) / 2));
   font: 600 0.9375rem/1.3 var(--sans);
   color: var(--ink);
   text-decoration: none;

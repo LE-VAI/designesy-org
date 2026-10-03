@@ -552,7 +552,7 @@ export default function DesignSystemContractPage() {
               Fluent, Apple HIG, and Atlassian. Gap source:{' '}
               <a
                 href="https://detail.design"
-                style={{ color: 'var(--signal-light)' }}
+                style={{ color: 'var(--signal-text)' }}
               >
                 detail.design
               </a>{' '}

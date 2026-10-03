@@ -67,7 +67,7 @@ export default function TestPage() {
             pointerEvents: 'none',
           }}
         >
-          designesy<span style={{ color: 'var(--signal)' }}>.</span>
+          designesy<span style={{ color: 'var(--signal-text)' }}>.</span>
         </h1>
       </div>
 
