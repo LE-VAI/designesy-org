@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../../instrument.css';
+import '../work.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
-import { CountUp } from '../../lib/count-up';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { CaseTitle, ScoreDelta, StateMove } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org: D to A case study',
@@ -21,6 +23,8 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'designesy.org D to A case study · designesy.org/work/designesy-org',
 });
 
+const BEFORE_SCORE = 67.4;
+const AFTER_SCORE = 96.3;
 const BEFORE_COUNTS = { pass: 12, fail: 9, warn: 2, skip: 3 };
 const AFTER_COUNTS = { pass: 23, fail: 0, warn: 0, skip: 3 };
 
@@ -59,7 +63,7 @@ export default function DesignesyOrgCaseStudy() {
             <span aria-hidden="true"> · </span>
             Before/after case study
           </p>
-          <h1 className="surface-title">designesy.org · D to A</h1>
+          <CaseTitle name="designesy.org" tail="D to A" />
           <p className="surface-lede">
             The publisher scores itself, fixes the gaps, and publishes the
             grade.
@@ -101,30 +105,28 @@ export default function DesignesyOrgCaseStudy() {
 
         <section className="doctrine-section fade-up" id="score-delta">
           <h2 className="doctrine-heading">Score delta</h2>
-          <div className="doctrine-cols">
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                Before · D · 67.4
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                <CountUp value={BEFORE_COUNTS.pass} /> pass · <CountUp value={BEFORE_COUNTS.fail} /> fail · <CountUp value={BEFORE_COUNTS.warn} /> warn · <CountUp value={BEFORE_COUNTS.skip} /> skip
-              </p>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                After · A · 96.3
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                <CountUp value={AFTER_COUNTS.pass} /> pass · <CountUp value={AFTER_COUNTS.fail} /> fail · <CountUp value={AFTER_COUNTS.warn} /> warn · <CountUp value={AFTER_COUNTS.skip} /> skip
-              </p>
-            </div>
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            <strong>+<CountUp value={AFTER_COUNTS.pass - BEFORE_COUNTS.pass} /></strong> pass ·{' '}
-            <strong>-<CountUp value={BEFORE_COUNTS.fail - AFTER_COUNTS.fail} /></strong> fail ·{' '}
-            <strong>-<CountUp value={BEFORE_COUNTS.warn - AFTER_COUNTS.warn} /></strong> warn ·{' '}
-            skip unchanged (browser-only checks, honestly labeled).
-          </p>
+          <ScoreDelta
+            label="Score delta for designesy.org: before and after, scored by /api/score on 2026-07-25"
+            host="designesy.org"
+            date="2026-07-25"
+            runs={[
+              { label: 'Before', note: `D · ${BEFORE_SCORE}`, counts: BEFORE_COUNTS },
+              { label: 'After', note: `A · ${AFTER_SCORE}`, counts: AFTER_COUNTS },
+            ]}
+            before={BEFORE_SCORE}
+            after={AFTER_SCORE}
+            note={
+              <>
+                <span className="sr-only">
+                  Grade D, {BEFORE_SCORE}, to grade A, {AFTER_SCORE}:{' '}
+                </span>
+                <b>+{(AFTER_SCORE - BEFORE_SCORE).toFixed(1)}</b> points in one session.{' '}
+                +{AFTER_COUNTS.pass - BEFORE_COUNTS.pass} pass, -{BEFORE_COUNTS.fail - AFTER_COUNTS.fail} fail,
+                -{BEFORE_COUNTS.warn - AFTER_COUNTS.warn} warn; the {AFTER_COUNTS.skip} skips are
+                unchanged (browser-only checks, honestly labeled).
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="checks-moved">
@@ -139,12 +141,8 @@ export default function DesignesyOrgCaseStudy() {
               <div className="principle" key={d.id}>
                 <span className="principle-num">{d.id}</span>
                 <div className="principle-body">
-                  <h3 style={{ fontSize: '0.95rem' }}>{d.item}</h3>
-                  <p style={{ marginTop: '0.25rem' }}>
-                    <strong style={{ color: 'var(--muted)' }}>{d.before}</strong>
-                    {' → '}
-                    <strong style={{ color: 'var(--signal-text)' }}>{d.after}</strong>
-                  </p>
+                  <h3 className="cs-check-title">{d.item}</h3>
+                  <StateMove before={d.before} after={d.after} />
                 </div>
               </div>
             ))}

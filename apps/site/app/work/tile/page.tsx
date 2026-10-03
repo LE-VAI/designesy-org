@@ -8,6 +8,9 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import '../../instrument.css';
+import '../work.css';
+import { ViewsReadout } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tile: case study',
@@ -186,15 +189,26 @@ export default function TileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="engagement">
           <h2 className="doctrine-heading">Engagement</h2>
-          <div className="definition">
-            <p className="definition-label">X post · 2026-07-13</p>
-            <p>
-              Root post: <strong>617 views, 3 likes, 1 reply</strong>. Try-it
-              reply: 61 views, 1 like. The root post outperformed every other
-              post type (quote-post, brand repost, founder narrative, text
-              build note) in the same period.
-            </p>
-          </div>
+          <ViewsReadout
+            label="Engagement for Tile on X, 2026-07-13: views in the first 24 hours against the 20 to 60 view noise floor"
+            date="2026-07-13"
+            lamp="live"
+            posts={[
+              { label: 'Root post', views: 617 },
+              { label: 'Try-it reply', views: 61 },
+            ]}
+            floor={[20, 60]}
+            max={700}
+            readout={{ label: 'Root post', views: 617, sub: '3 likes · 1 reply' }}
+            note="The only post in 24 hours to break out of the 20 to 60 view noise floor."
+            caption={
+              <>
+                The root post outperformed every other post type in the same
+                period (quote-post, brand repost, founder narrative, text build
+                note). The try-it reply drew 61 views and 1 like.
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
@@ -243,7 +257,7 @@ export default function TileCaseStudyPage() {
               <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
-                  <h3>{d.title}</h3>
+                  <h3 className="cs-card-title">{d.title}</h3>
                   <p>
                     <strong style={{ color: 'var(--muted)' }}>Observation.</strong>{' '}
                     {d.observation}

@@ -7,6 +7,8 @@ import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { designReviewKit as kit } from '../lib/kits/design-review';
+import './kits.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Kits',
@@ -66,23 +68,58 @@ export default function KitsPage() {
           <h2 className="doctrine-heading">Live kits</h2>
           <Link
             href="/kits/design-review"
-            className="lab-card"
+            className="lab-card kit-card"
             data-cuelume-hover="tick"
             data-cuelume-press
           >
-            <div className="lab-card-top">
-              <span className="status-badge status-badge--kit">Kit One</span>
-              <span className="lab-card-status">Live</span>
+            <div className="kit-card-panes">
+              <div className="kit-card-face">
+                <div className="lab-card-top">
+                  <span className="status-badge status-badge--kit">Kit One</span>
+                </div>
+                <h3 className="lab-card-title">{kit.title}</h3>
+                <p className="lab-card-lede">
+                  Turn taste into inspection.
+                </p>
+                <p className="lab-card-desc">
+                  Eight dimensions, a portable agent prompt, output format, and
+                  verification for interfaces, systems, and agent output.
+                </p>
+                <span className="lab-card-arrow">Open kit →</span>
+              </div>
+              {/* The kit's facts, read from the package itself (the same
+                  record /kits/design-review.json serves), so the card cannot
+                  drift from the kit. */}
+              <dl className="kit-card-side">
+                <div>
+                  <dt>Status</dt>
+                  <dd>
+                    <i className="kit-card-led" aria-hidden="true" />
+                    Live
+                  </dd>
+                </div>
+                <div>
+                  <dt>Version</dt>
+                  <dd>v{kit.version}</dd>
+                </div>
+                <div>
+                  <dt>Dimensions</dt>
+                  <dd>{kit.dimensions.length}</dd>
+                </div>
+                <div>
+                  <dt>Anatomy</dt>
+                  <dd>{kit.anatomy.length} parts</dd>
+                </div>
+                <div>
+                  <dt>Permission</dt>
+                  <dd>{kit.permission.split(' · ')[0]}</dd>
+                </div>
+                <div>
+                  <dt>Machine export</dt>
+                  <dd>design-review.json</dd>
+                </div>
+              </dl>
             </div>
-            <h3 className="lab-card-title">Design Review</h3>
-            <p className="lab-card-lede">
-              Turn taste into inspection.
-            </p>
-            <p className="lab-card-desc">
-              Eight dimensions, a portable agent prompt, output format, and
-              verification for interfaces, systems, and agent output.
-            </p>
-            <span className="lab-card-arrow">Open kit →</span>
           </Link>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             One live kit is intentional. Machine export lives at{' '}

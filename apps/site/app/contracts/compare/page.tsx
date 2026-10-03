@@ -72,7 +72,7 @@ export default function CompareContractPage() {
           <h2 className="doctrine-heading">Diff dimensions</h2>
           <div className="row-stack" role="list">
             {c.conformance.diff_dimensions.map((dim, i) => (
-              <div key={dim.dimension} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={dim.dimension} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{dim.dimension.replace(/-/g, ' ')}</span>
@@ -90,7 +90,7 @@ export default function CompareContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

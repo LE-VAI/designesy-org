@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { useDockPacing } from './director-dock';
 
 /**
- * Floating back button: a labelled glass pill at the bottom-left, paired with
- * the Studio pill at the bottom-right (director-dock.tsx).
+ * Floating back button, paired with the Studio pill at the bottom-right
+ * (director-dock.tsx), and shaped by the same room beside the shell: a
+ * labelled glass pill where the gutter holds one, an icon-only 44px circle
+ * that names itself on hover or focus where it holds only that, tucked away
+ * until the end of the page where it holds neither (globals.css, "Gutter
+ * parking"; useDockPacing). Phones drop it: their browsers already have one.
  * Appears when there is navigation history; uses history.back() to return the
  * visitor exactly where they were. Not on the homepage, where "back" leads
  * off the site.
@@ -17,6 +22,9 @@ export function BackButton() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const shown = visible && pathname !== '/';
+  useDockPacing(ref, shown);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -31,16 +39,18 @@ export function BackButton() {
     setTimeout(() => window.history.back(), 120);
   }, []);
 
-  if (!visible || pathname === '/') return null;
+  if (!shown) return null;
 
+  // No title attribute: the visible label or the hover tag already names it,
+  // and a native tooltip on top of the tag said "Back" twice.
   return (
     <button
+      ref={ref}
       className={`back-button${leaving ? ' is-leaving' : ''}`}
       type="button"
       onClick={goBack}
       data-cuelume-press="tick"
       aria-label="Go back"
-      title="Back"
     >
       <svg
         viewBox="0 0 16 16"
@@ -51,6 +61,7 @@ export function BackButton() {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        aria-hidden="true"
       >
         <path d="M10 4L6 8l4 4" />
       </svg>

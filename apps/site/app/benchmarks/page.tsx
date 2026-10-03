@@ -105,6 +105,13 @@ const FIELD = [
   { name: 'Atlassian ADS MCP', approach: 'A design-system MCP server (v0.21.1)', note: 'Benchmarked against design.md: fewer tokens, lower variance' },
 ];
 
+// One column law for every table on the page, in shell columns (of 12): the
+// label takes 2 and the next column 4, so the hallmark and slop-eval columns
+// (3 and 3) fall on the same lines in each comparison, and a descriptive
+// table's last column starts on the hallmark line.
+const COMPARE = [2, 4, 3, 3];
+const DESCRIBE = [2, 4, 6];
+
 const SOURCES = [
   { what: 'designesy score', where: `the weekly leaderboard run of ${SCORES_DATE}, engine ${ENGINE_VERSION}` },
   { what: 'hallmark, 57 gates', where: 'github.com/Nutlope/hallmark, skills/hallmark/references/slop-test.md' },
@@ -142,6 +149,8 @@ export default function BenchmarksPage() {
             <DataTable
               caption="designesy, hallmark and slop-eval compared, attribute by attribute."
               head={['', 'designesy', 'hallmark', 'slop-eval']}
+              cols={COMPARE}
+              stack="rows"
               rows={TOOLS.map((t) => [t.attr, t.d, t.h, t.s])}
             />
           </div>
@@ -165,6 +174,8 @@ export default function BenchmarksPage() {
             <DataTable
               caption="designesy checks with an equivalent in hallmark or slop-eval."
               head={['Check', 'What it asks', 'hallmark', 'slop-eval']}
+              cols={COMPARE}
+              stack="rows"
               rows={SHARED.map((r) => [<code key="c">{r.d}</code>, r.what, r.h, r.s])}
             />
           </div>
@@ -200,7 +211,7 @@ export default function BenchmarksPage() {
               <p className="eg-section-sub">the gaps: how a design looks, which the contract leaves to them</p>
             </div>
           </div>
-          <ul className="dx-checks">
+          <ul className="dx-checks dx-checks-split">
             {THEIRS_ONLY.map((c) => (
               <li key={c.what}>
                 <span className="dx-check-item">{c.what}</span>
@@ -223,6 +234,8 @@ export default function BenchmarksPage() {
             <DataTable
               caption="Each tool on designesy.org."
               head={['Tool', 'Result', 'What it found']}
+              cols={DESCRIBE}
+              stack="rows"
               rows={[
                 [
                   'designesy',
@@ -260,6 +273,8 @@ export default function BenchmarksPage() {
             <DataTable
               caption={`Newer design-verification tools, as of ${RESEARCHED}.`}
               head={['Tool', 'Approach', 'What sets it apart']}
+              cols={DESCRIBE}
+              stack="rows"
               rows={FIELD.map((f) => [f.name, f.approach, f.note])}
             />
           </div>

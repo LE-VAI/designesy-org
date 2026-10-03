@@ -123,16 +123,38 @@ export default function ContinuityPage() {
           </div>
         </section>
 
+        {/* The waitlist card has a face and a side pane (continuity.css): the
+            fields end on the 7-line like the hero form, and what happens after
+            you join sits behind the divider. */}
         <section className="doctrine-section fade-up" aria-labelledby="waitlist-title">
           <div className="continuity-panel">
-            <h2 className="doctrine-heading" id="waitlist-title">
-              Join the Continuity waitlist
-            </h2>
-            <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-              No charge, no spam. We write when founding access opens, and only
-              about Continuity.
-            </p>
-            <ContinuityWaitlistForm />
+            <div className="continuity-panel-face">
+              <h2 className="doctrine-heading" id="waitlist-title">
+                Join the Continuity waitlist
+              </h2>
+              <ContinuityWaitlistForm />
+            </div>
+            <aside className="continuity-panel-side" aria-labelledby="waitlist-next">
+              <p className="continuity-panel-side-title" id="waitlist-next">
+                What happens next
+              </p>
+              <ol className="continuity-next">
+                <li>
+                  <strong>You join.</strong> No charge and no spam.
+                </li>
+                <li>
+                  <strong>Early conversations.</strong> We talk with builders
+                  to shape the monitoring features before billing starts.
+                </li>
+                <li>
+                  <strong>Founding access.</strong> We write when it opens, and
+                  only about Continuity.
+                </li>
+              </ol>
+              <p className="continuity-panel-side-note">
+                Open tools stay free either way.
+              </p>
+            </aside>
           </div>
         </section>
 

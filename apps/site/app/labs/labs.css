@@ -1,0 +1,270 @@
+/* /labs route-only styles, imported by labs/page.tsx.
+
+   The hero gets a standing object. Its copy column ended near x 714 at
+   1440 and the right 590px stood empty; the page was the same eyebrow,
+   title, lede and buttons as every lab page, with nothing from the operating
+   system's vocabulary in it. Now the header keeps the first seven columns
+   and a lab index rack (an instrument: rows with a status LED, the contract
+   version each lab compiled into, and its field-check outcome) stands on the
+   far side of the 7-line, top and bottom on the header's content box. */
+
+/* A 12-column region, the query container for its own span switch (64rem,
+   the documented literal; custom properties are invalid in a query). The
+   header's own width rule (globals.css .surface-header) resolves against its
+   seven-column area, which is under 64rem, so it takes that area whole. */
+.labs-hero {
+  container: labs-hero / inline-size;
+  display: grid;
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+}
+
+.labs-hero > * {
+  grid-column: full-start / full-end;
+  min-width: 0;
+}
+
+.labs-hero > .labs-rack {
+  margin-bottom: var(--space-32);
+}
+
+/* Beside the header, the rack's margins are the header's own block
+   padding, so it starts on the eyebrow's top and ends on the content's foot
+   (edge contract (c): a panel aligns to the content, never to a heading's
+   line box). */
+@container labs-hero (width >= 64rem) {
+  .labs-hero > .surface-header {
+    grid-column: full-start / split;
+  }
+
+  .labs-hero > .labs-rack {
+    grid-column: split / full-end;
+    grid-row: 1;
+    align-self: stretch;
+    margin-block: clamp(var(--space-64), 9vw, var(--space-112)) clamp(var(--space-40), 5vw, var(--space-56));
+  }
+}
+
+/* The rack: material tier 2, the page's one floor. --muted-dim measures
+   4.38:1 on the gradient's lifted top, so the dim tier rides --muted. */
+.labs-rack {
+  --muted-dim: var(--muted);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  background: var(--mat-instrument) var(--surface-raised);
+  box-shadow: var(--elev-2);
+}
+
+.labs-rack::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The floor, capped as under the console (.vc-window::after). */
+.labs-rack::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: max(-7%, -1.75rem);
+  z-index: -1;
+  height: min(18%, 4.5rem);
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.labs-rack-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  min-height: 2.9rem;
+  padding: 0 var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.labs-rack-title {
+  font: 600 0.78rem/1 var(--sans);
+  color: var(--ink);
+}
+
+.labs-rack-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 0.72rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Lit: live. Still: a published lab is a resolved state, not a loop. */
+.labs-rack-led {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-access);
+}
+
+/* Equal rows that share out the rack's height, on hairlines. The list clips
+   so the last row's contact wash stays inside the rounded foot. */
+.labs-rack-list {
+  display: grid;
+  flex: 1 1 auto;
+  grid-auto-rows: 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+
+.labs-rack-list > li {
+  display: flex;
+  min-width: 0;
+}
+
+.labs-rack-list > li + li {
+  border-top: 1px solid var(--line-faint);
+}
+
+.labs-rack-row {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "num name check"
+    ". meta meta";
+  align-content: center;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-8);
+  min-width: 0;
+  padding: var(--space-12) var(--space-16);
+  color: inherit;
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+/* Contact: a pre-rendered wash under the row's text; only its opacity
+   moves. */
+.labs-rack-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--surface-soft);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .labs-rack-row:hover::before {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
+  }
+}
+
+.labs-rack-row:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.labs-rack-row:focus-visible::before {
+  opacity: 1;
+}
+
+.labs-rack-row:active {
+  transform: scale(0.99);
+}
+
+.labs-rack-num {
+  grid-area: num;
+  font: 500 0.72rem/1.3 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-dim);
+}
+
+.labs-rack-name {
+  grid-area: name;
+  font: 600 0.95rem/1.3 var(--sans);
+  color: var(--ink);
+}
+
+.labs-rack-check {
+  display: inline-flex;
+  grid-area: check;
+  align-items: center;
+  gap: var(--space-6);
+  font: 500 0.7rem/1.3 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.labs-rack-meta {
+  grid-area: meta;
+  font: 500 0.72rem/1.4 var(--mono);
+  color: var(--muted-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labs-rack-row:active {
+    transform: none;
+  }
+
+  .labs-rack-row::before,
+  .labs-rack-row:hover::before {
+    transition-duration: var(--duration-quick);
+  }
+}
+
+html[data-motion="paused"] .labs-rack-row:active {
+  transform: none;
+}
+
+html[data-motion="paused"] .labs-rack-row::before {
+  transition-duration: var(--duration-quick);
+}
+
+@media (prefers-contrast: more) {
+  .labs-rack::before {
+    background: var(--line-strong);
+  }
+
+  .labs-rack-bar,
+  .labs-rack-list > li + li {
+    border-color: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .labs-rack {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .labs-rack::before,
+  .labs-rack::after {
+    display: none;
+  }
+
+  .labs-rack-led {
+    background: CanvasText;
+  }
+}

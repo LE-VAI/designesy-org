@@ -8,11 +8,36 @@ function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
+// A result chip reads its state first: FAIL and WARN take their state hue and
+// an LED, HOLD the signal; PASS (and any other label) stays neutral, so the
+// exceptions are what the eye finds in a row of results.
 function statusClass(status?: string) {
   if (!status) return '';
   const key = status.trim().toLowerCase();
   if (key === 'hold' || key === 'holds') return ' is-hold';
+  if (key === 'fail' || key === 'failed') return ' is-fail';
+  if (key === 'warn' || key === 'warning') return ' is-warn';
   return '';
+}
+
+/**
+ * Columns the grid takes at full width (its own width >= 64rem), chosen from
+ * the item count so every row closes: 3 for 3, 6 and 9; 5 for 5, 10 and 15;
+ * 4 for 4, 8 and 16; a dense grid opens to 6 for 6, 11 and 12 and to 7 for 14
+ * (7 only from 80rem; below that 14 dense cells sit 4-up).
+ * Any other count takes 4 and its last cell closes the row (globals.css,
+ * "Count-aware columns"). auto-fit only drops empty tracks when there are
+ * fewer items than columns, so 5, 6, 7, 9, 10 or 11 items used to end on 1-3
+ * blank tiles painted as panel.
+ */
+function wideCols(count: number, dense: boolean, stack: boolean) {
+  if (stack || count <= 1) return 1;
+  if (count === 2) return 2;
+  if (dense && count === 14) return 7;
+  if (dense && (count % 6 === 0 || count === 11)) return 6;
+  if (count % 5 === 0) return 5;
+  if (count % 3 === 0 && count % 4 !== 0) return 3;
+  return 4;
 }
 
 /**
@@ -58,6 +83,8 @@ export function CheckGrid({
       className={`check-grid${mods ? ` ${mods}` : ''}`}
       role="list"
       aria-labelledby={labelledBy}
+      data-count={items.length}
+      data-cols={wideCols(items.length, dense, stack)}
     >
       {items.map((item, i) => {
         const index = pad(start + i);

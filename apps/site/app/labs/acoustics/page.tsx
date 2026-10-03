@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './acoustics.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
-import { SoundToggle } from '../../lib/sound-toggle';
+import { SoundSwitch } from '../../lib/preference-switch';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
@@ -122,15 +122,25 @@ export default function AcousticsLabPage() {
             happen: no ambient bed, no focus sounds, no randomization.
           </p>
 
-          <div className="poise-actions" style={{ marginBottom: '1.5rem' }}>
-            <SoundToggle />
-            <span className="surface-note" style={{ marginLeft: '0.75rem' }}>
+          <div className="cue-pref">
+            <SoundSwitch />
+            <p className="cue-pref-note">
               Preference stored under <code>designesy:sound</code>. Defaults off
               under reduced motion.
-            </span>
+            </p>
           </div>
 
           <div className="cue-grid">
+            <div className="cue-rack-bar">
+              <p className="cue-rack-title">
+                Cues <span className="cue-rack-count">· {acousticTokens.tokens.length}</span>
+              </p>
+              <p className="cue-rack-state">
+                <i className="cue-led" aria-hidden="true" />
+                <span className="cue-rack-on">Sound on</span>
+                <span className="cue-rack-off">Sound off</span>
+              </p>
+            </div>
             {acousticTokens.tokens.map((token, i) => (
               <div
                 key={token.token}
@@ -149,6 +159,12 @@ export default function AcousticsLabPage() {
                 <span className="cue-cell-role">{token.interaction_role}</span>
               </div>
             ))}
+            <div className="cue-key">
+              <span className="cue-cell-num">Key</span>
+              <code className="cue-cell-token">--cue:token</code>
+              <span className="cue-cell-cue">Cuelume cue</span>
+              <span className="cue-cell-role">Interaction role</span>
+            </div>
           </div>
         </section>
 
@@ -354,7 +370,7 @@ export default function AcousticsLabPage() {
             items={[
               {
                 title:
-                  'Cue grid renders on /labs/acoustics with SoundToggle control',
+                  'Cue grid renders on /labs/acoustics with the Sound switch',
               },
               {
                 title:

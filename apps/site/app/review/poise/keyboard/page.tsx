@@ -31,7 +31,7 @@ const SCOPE = [
   },
   {
     title: 'Sound preference',
-    meta: 'button.sound-toggle · aria-pressed · aria-label',
+    meta: 'button.pref-switch[data-sound-toggle] · aria-pressed · named by its visible label',
   },
   {
     title: 'Lab crumb · Labs',

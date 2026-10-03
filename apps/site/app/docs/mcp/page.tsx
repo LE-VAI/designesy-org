@@ -7,6 +7,7 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { openIndex } from '../../lib/open-index';
+import '../docs.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
@@ -254,15 +255,19 @@ export default function McpDocsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          {/* Left-aligned like every other card: the copy starts 20px in, on
+              the card's own edge, and the link sits under it at the same
+              edge (centred, the copy started 274px further in than the
+              definitions above it). */}
           <div
             className="surface-card"
             style={{
-              padding: '1.25rem 1.5rem',
+              padding: 'var(--space-20)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '1rem',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              gap: 'var(--space-8)',
             }}
           >
             <div>
@@ -296,18 +301,14 @@ export default function McpDocsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Conformance</h2>
-          <div
-            style={{
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-            }}
-          >
+          {/* A 12-column row (docs.css): three 4-column cards whose label,
+              value and note share rows (the cards' subgrid), so the three
+              values sit on one baseline. */}
+          <div className="g12 mcp-conformance">
             <div
               className="surface-card"
               style={{
                 padding: '1rem 1.25rem',
-                flex: '1 1 240px',
               }}
             >
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
@@ -331,7 +332,6 @@ export default function McpDocsPage() {
               className="surface-card"
               style={{
                 padding: '1rem 1.25rem',
-                flex: '1 1 240px',
               }}
             >
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
@@ -355,7 +355,6 @@ export default function McpDocsPage() {
               className="surface-card"
               style={{
                 padding: '1rem 1.25rem',
-                flex: '1 1 240px',
               }}
             >
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
@@ -448,7 +447,7 @@ export default function McpDocsPage() {
             Streamable HTTP natively: just point them at the endpoint. For
             stdio-only clients, use the mcp-remote bridge.
           </p>
-          <div className="doctrine-cols" style={{ flexDirection: 'column', gap: '2rem' }}>
+          <div className="g12 config-cols">
             {CLIENT_CONFIGS.map((cfg) => (
               <div key={cfg.client}>
                 <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.5rem' }}>

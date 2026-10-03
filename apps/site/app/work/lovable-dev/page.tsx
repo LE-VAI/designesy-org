@@ -5,9 +5,11 @@ import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
-import { CountUp } from '../../lib/count-up';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import '../../instrument.css';
+import '../work.css';
+import { CaseTitle, ScoreDelta, StateChip } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev: A on arrival case study',
@@ -21,7 +23,11 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'lovable.dev A on arrival case study · designesy.org/work/lovable-dev',
 });
 
+const SCORE = 93.2;
 const COUNTS = { pass: 19, fail: 0, warn: 3, skip: 4 };
+// The projection the page states in words: the 3 WARNs resolved, nothing
+// else moved. Drawn as a ghost run; no score is invented for it.
+const PROJECTED = { pass: COUNTS.pass + COUNTS.warn, fail: 0, warn: 0, skip: COUNTS.skip };
 
 const REMAINING = [
   { id: 'v12', item: 'will-change restricted to transform and opacity only', status: 'WARN', note: 'A non-transform/opacity will-change declaration exists somewhere in the CSS. One-line fix: scope it to transform/opacity only.' },
@@ -58,7 +64,7 @@ export default function LovableCaseStudy() {
             <span aria-hidden="true"> · </span>
             Before/after case study
           </p>
-          <h1 className="surface-title">lovable.dev · A on arrival</h1>
+          <CaseTitle name="lovable.dev" tail="A on arrival" />
           <p className="surface-lede">
             Snapshot (2026-07-25): an AI-built site that scored A on the
             contract without knowing it existed.
@@ -99,25 +105,24 @@ export default function LovableCaseStudy() {
 
         <section className="doctrine-section fade-up" id="score">
           <h2 className="doctrine-heading">Score breakdown</h2>
-          <div className="doctrine-cols">
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                A · 93.2 · before only
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                <CountUp value={COUNTS.pass} /> pass · <CountUp value={COUNTS.fail} /> fail · <CountUp value={COUNTS.warn} /> warn · <CountUp value={COUNTS.skip} /> skip
-              </p>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                Projected · A+
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                Resolving the 3 WARNs (v12, v16, v19) would land lovable.dev
-                at A+ with token tightening alone.
-              </p>
-            </div>
-          </div>
+          <ScoreDelta
+            label="Score breakdown for lovable.dev: the 2026-07-25 snapshot from /api/score, and the projection if its warnings resolve"
+            host="lovable.dev"
+            date="2026-07-25"
+            runs={[
+              { label: 'Snapshot', note: `A · ${SCORE}`, counts: COUNTS },
+              { label: 'Projected', note: 'A+ · unscored', counts: PROJECTED, projected: true },
+            ]}
+            before={SCORE}
+            projected="A+"
+            note={
+              <>
+                <span className="sr-only">Grade A, {SCORE}, before only. </span>
+                Resolving the {COUNTS.warn} WARNs (v12, v16, v19) would land
+                lovable.dev at A+ with token tightening alone.
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="remaining-warns">
@@ -127,7 +132,10 @@ export default function LovableCaseStudy() {
               <div className="principle" key={r.id}>
                 <span className="principle-num">{r.id}</span>
                 <div className="principle-body">
-                  <h3 style={{ fontSize: '0.95rem' }}>{r.item}</h3>
+                  <h3 className="cs-check-title">{r.item}</h3>
+                  <p className="cs-move">
+                    <StateChip status={r.status} />
+                  </p>
                   <p>{r.note}</p>
                 </div>
               </div>
@@ -147,7 +155,10 @@ export default function LovableCaseStudy() {
               <div className="principle" key={s.id}>
                 <span className="principle-num">{s.id}</span>
                 <div className="principle-body">
-                  <h3 style={{ fontSize: '0.95rem' }}>{s.item}</h3>
+                  <h3 className="cs-check-title">{s.item}</h3>
+                  <p className="cs-move">
+                    <StateChip status="SKIP" />
+                  </p>
                   <p>{s.note}</p>
                 </div>
               </div>

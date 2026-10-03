@@ -72,6 +72,8 @@ export function DataTable({
   rows,
   numeric = [],
   opt = [],
+  cols,
+  stack,
 }: {
   caption: string;
   head: ReactNode[];
@@ -80,14 +82,30 @@ export function DataTable({
   numeric?: number[];
   /** Column indexes that step out when the table's box is narrow. */
   opt?: number[];
+  /** Each column's width in shell columns (of 12); 0 or a missing entry
+      takes what is left. Tables of one page family share these, so their
+      columns sit at the same x (data.css, "Declared columns"). */
+  cols?: number[];
+  /** How the rows read when the box is narrow (data.css, "Stacked rows"):
+      "fields" puts the name and its first cells on one line over the last
+      cell; "rows" makes each row a block of labelled cells. */
+  stack?: 'fields' | 'rows';
 }) {
+  // A cell's column label for the stacked layout: the head's text, if any.
+  const labelOf = (j: number) => (stack === 'rows' && typeof head[j] === 'string' && head[j] ? (head[j] as string) : undefined);
   return (
-    <table className="dx-table">
+    <table className="dx-table" data-stack={stack}>
       <caption className="sr-only">{caption}</caption>
       <thead>
         <tr>
           {head.map((h, i) => (
-            <th key={i} scope="col" data-num={numeric.includes(i) || undefined} data-opt={opt.includes(i) || undefined}>
+            <th
+              key={i}
+              scope="col"
+              data-num={numeric.includes(i) || undefined}
+              data-opt={opt.includes(i) || undefined}
+              data-span={cols?.[i] || undefined}
+            >
               {h}
             </th>
           ))}
@@ -102,7 +120,12 @@ export function DataTable({
                   {c}
                 </th>
               ) : (
-                <td key={j} data-num={numeric.includes(j) || undefined} data-opt={opt.includes(j) || undefined}>
+                <td
+                  key={j}
+                  data-num={numeric.includes(j) || undefined}
+                  data-opt={opt.includes(j) || undefined}
+                  data-label={labelOf(j)}
+                >
                   {c}
                 </td>
               ),

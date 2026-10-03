@@ -86,18 +86,14 @@ export function DriftForm({ initialUrl, registry }: { initialUrl: string; regist
         }
         scoring="pass 1 · warn 0.5 · fail 0 · skipped checks leave the count"
         restNote="Scan a URL and its grade lands on this scale. Point at any cell to read what it checks."
+        groupNotes={{
+          resolve: <><b>Token fabrication</b>, d02 d11 d12: names that look like tokens and resolve to nothing.</>,
+          cluster: <><b>Drift within a session</b>, d03 to d10: one role, several raw values, in the same build.</>,
+        }}
         restCard={
           <div className="eg-ref">
-            <span className="eg-label">What drift looks like</span>
+            <span className="eg-label">What one scan cannot see</span>
             <dl>
-              <div>
-                <dt>Token fabrication <span className="eg-ref-where">d02 d11 d12</span></dt>
-                <dd>Names that look like tokens and resolve to nothing.</dd>
-              </div>
-              <div>
-                <dt>Drift within a session <span className="eg-ref-where">d03 to d10</span></dt>
-                <dd>One role, several raw values, in the same build.</dd>
-              </div>
               <div>
                 <dt>Amnesia between sessions <span className="eg-ref-where">monitor</span></dt>
                 <dd>Values worked out again from scratch, landing somewhere else.</dd>
@@ -107,7 +103,7 @@ export function DriftForm({ initialUrl, registry }: { initialUrl: string; regist
                 <dd>Token values changed with no version bump.</dd>
               </div>
             </dl>
-            <p className="eg-ref-note">One scan shows the first two. The other two need history, which Monitor keeps.</p>
+            <p className="eg-ref-note">A scan catches the two failure modes named under the cells. These two need history, which Monitor keeps.</p>
           </div>
         }
         onOpen={(id) => findings.current?.open(id)}

@@ -57,11 +57,14 @@ type SubEngineResult = {
   total?: number;
   checks?: CheckResult[];
   error?: string;
+  unreachable?: boolean;
+  unreachableDetail?: string;
 };
 
 type ReportResponse = {
   ok: boolean;
   url?: string;
+  unreachable?: boolean;
   compositeScore?: number;
   compositeGrade?: string;
   score?: SubEngineResult;
@@ -212,6 +215,20 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
       status: 'FAIL',
       detail: readinessResult?.error || 'Readiness engine did not return a valid result',
     });
+  }
+
+  // A page the score engine could not fetch is not graded (its own
+  // contract: "a site that cannot be fetched cannot be graded"). Drift and
+  // readiness may still answer from robots.txt or a 403 body, and re-weighting
+  // those into a composite turned "could not read" into an F.
+  if (scoreResult?.unreachable === true) {
+    return {
+      ok: false,
+      url: targetUrl,
+      unreachable: true,
+      error: scoreResult.unreachableDetail || `Could not read ${targetUrl}, so no grade is reported.`,
+      synthesis,
+    };
   }
 
   // Compute composite score

@@ -34,7 +34,7 @@ const DIMENSIONS = [
     num: '02',
     title: 'Clarity',
     observation:
-      'Primary path is immediate: Lab Four eyebrow, title Acoustics, lede, then the live cue grid with SoundToggle. Every token is expressed with a name, a Cuelume cue, a character, and a role.',
+      'Primary path is immediate: Lab Four eyebrow, title Acoustics, lede, then the live cue grid with the Sound switch. Every token is expressed with a name, a Cuelume cue, a character, and a role.',
     judgment:
       'Primary value proposition is discoverable. The cue grid demonstrates the thesis by doing it. Each token pairs a human name with a machine cue identifier.',
     action: 'Keep. Preserve the cue grid as the first thing the reader encounters after the lede.',
@@ -97,7 +97,7 @@ const DIMENSIONS = [
 
 const HOLDS = [
   'Thesis is sharp: sound is a token rather than a decoration',
-  'Live artifact (cue grid) demonstrates every token with SoundToggle control',
+  'Live artifact (cue grid) demonstrates every token with the Sound switch',
   'Ten tokens, ten roles, one documented engine; no unmapped sounds',
   'Full lab anatomy shipped (thesis through verification)',
   'Public name is human and premium: Acoustics',
@@ -141,7 +141,7 @@ const CORRECTIONS = [
 ];
 
 const VERIFICATION = [
-  'Live route inspected: /labs/acoustics structure, cue grid, SoundToggle, status language',
+  'Live route inspected: /labs/acoustics structure, cue grid, the Sound switch, status language',
   'Cuelume data-cuelume-* attributes confirmed on every interactive element in the cue grid',
   'Sound defaults off under prefers-reduced-motion; the toggle still works when enabled',
   'No focus-event sounds: keyboard navigation through the cue grid is silent',

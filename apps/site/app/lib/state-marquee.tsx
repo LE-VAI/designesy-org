@@ -62,7 +62,18 @@ export function StateMarquee() {
         aria-label={paused ? 'Resume system status' : 'Pause system status'}
         onClick={() => setPaused((p) => !p)}
       >
-        {paused ? '▶' : '❚❚'}
+        {/* Drawn, not typed: a 9px text glyph rendered at whatever weight the
+            font gave it. The label carries the name; the icon is decoration. */}
+        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+          {paused ? (
+            <path d="M3.5 1.75v8.5L10.25 6z" />
+          ) : (
+            <>
+              <rect x="2.5" y="2" width="2.5" height="8" rx="0.5" />
+              <rect x="7" y="2" width="2.5" height="8" rx="0.5" />
+            </>
+          )}
+        </svg>
       </button>
       <div className="state-marquee-track" ref={trackRef}>
         {[0, 1].map((copy) => (

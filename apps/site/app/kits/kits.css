@@ -1,0 +1,107 @@
+/* /kits route-only styles, imported by kits/page.tsx.
+
+   The live kit card: a face and a side pane split on the 7-line (design
+   spec 2.2 rule 4). It used to be one 1180px reading card whose copy ended
+   near x 555 with a lone Live tag at the far right, about 700px of air on
+   the page's one standing object. Now the face holds the kit and its way
+   in; the side pane holds the kit's facts as key/value rows, read from the
+   package record. The card keeps its reading material, rim and contact
+   (globals.css, .lab-card); only its inner layout is set here. */
+
+/* The card is the query container: the panes switch on its own width. It
+   carries no padding (the panes do) and no border (the rim is a layer), so
+   --track-split resolves against exactly the card's width and the divider
+   lands where a full-start / split item above it ends. */
+.lab-card.kit-card {
+  container: kit-card / inline-size;
+  display: block;
+  padding: 0;
+}
+
+.kit-card-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.kit-card-face {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: var(--space-24);
+}
+
+.kit-card-side {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-12) var(--space-24);
+  border-top: 1px solid var(--line-faint);
+}
+
+@container kit-card (width >= 64rem) {
+  .kit-card-panes {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .kit-card-side {
+    padding-block: var(--space-16);
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+/* The way in sits on the face's foot, level with the side pane's last row. */
+.kit-card-face > .lab-card-arrow {
+  margin-top: auto;
+  padding-top: var(--space-12);
+}
+
+/* Key/value rows on hairlines: the key in the quiet caps tier (4.79:1 on
+   the reading surface), the value in mono ink, on one baseline. */
+.kit-card-side > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding-block: var(--space-10);
+}
+
+.kit-card-side > div + div {
+  border-top: 1px solid var(--line-faint);
+}
+
+.kit-card-side dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.kit-card-side dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  font: 500 0.8rem/1.35 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: end;
+}
+
+/* Live: a lit LED, still (a live kit is a resolved state, not a loop). */
+.kit-card-led {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-access);
+}
+
+@media (forced-colors: active) {
+  .kit-card-led {
+    background: CanvasText;
+  }
+}

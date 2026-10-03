@@ -567,7 +567,7 @@ export default function MethodologyPage() {
           <AgentActions mdPath="/methodology.md" label="the methodology page" />
         </EngineHead>
 
-        <dl className="dx-stats">
+        <dl className="dx-stats dx-stats-rail">
           <div>
             <dt>Checks</dt>
             <dd>{ENGINE_CHECK_COUNT}</dd>
@@ -782,10 +782,12 @@ export default function MethodologyPage() {
                 <h2 className="eg-h2" id="m-floor-h">
                   Accessibility floor
                 </h2>
-                <p className="dx-callout">
-                  If the accessibility category scores under 60, the score is capped at 70, a C, however high the weighted score.
-                  Perfect tokens and no accessibility cannot make an A.
-                </p>
+                <div className="dx-callout">
+                  <p>
+                    If the accessibility category scores under 60, the score is capped at 70, a C, however high the weighted score.
+                    Perfect tokens and no accessibility cannot make an A.
+                  </p>
+                </div>
                 <div className="dx-prose">
                   <p>
                     The floor is a softer form of the DSAF enterprise-grade rule, which requires 75 in accessibility. Sixty is strict
@@ -816,7 +818,7 @@ export default function MethodologyPage() {
                     caption="The twelve anti-slop rules: pattern, severity and trigger."
                     head={['Rule', 'Pattern', 'Severity', 'Trigger']}
                     numeric={[2]}
-                    opt={[3]}
+                    stack="rows"
                     rows={SLOP_RULES.map((r) => [
                       <span key="r">
                         <code>{r.id}</code> {r.name}

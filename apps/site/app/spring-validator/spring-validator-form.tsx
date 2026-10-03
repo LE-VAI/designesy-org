@@ -9,8 +9,9 @@
 //
 // All computation is client-side.
 
-import { useState, useMemo, useCallback, useRef, useEffect, type CSSProperties } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, useId, type CSSProperties } from 'react';
 import Link from 'next/link';
+import './spring-validator.css';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -220,10 +221,35 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
 
 // ── Component ───────────────────────────────────────────────────────────────
 
+// The verdict as the instrument's title-bar state: a word, what it means,
+// and the LED's hue (spring-validator.css reads data-verdict).
+const VERDICT: Record<SpringResult['verdict'], { word: string; detail: string }> = {
+  safe: { word: 'Safe', detail: 'no reduced-motion concern' },
+  caution: { word: 'Caution', detail: 'minor overshoot' },
+  violation: { word: 'Violation', detail: 'overshoot requires suppression' },
+};
+
+// A settle time is infinite when damping is zero; say so instead of
+// rendering "Infinityms".
+function fmtMs(ms: number): string {
+  return Number.isFinite(ms) ? `${ms.toFixed(0)}ms` : 'never';
+}
+
+/**
+ * One instrument (design spec 2.2 rule 4, 3.1): the curve and the controls
+ * that drive it read as one device split on the 7-line. From 64rem the face
+ * (7 columns) holds the chart and the side pane holds the parameters and the
+ * readouts; the verdict is the title bar's state. Below 64rem the panes
+ * stack, and the parameters and readouts sit on the shared 12-column module
+ * (sliders span 4, tiles span 2), so every slider edge lands on a tile edge.
+ * Layout lives in spring-validator.css; nothing here sets geometry inline,
+ * so the edge probes read real classes.
+ */
 export function SpringValidator() {
   const [params, setParams] = useState<SpringParams>({ stiffness: 200, damping: 28, mass: 1 });
   const [selectedPreset, setSelectedPreset] = useState<string>('M3 Default');
   const [showReducedMotion, setShowReducedMotion] = useState(true);
+  const uid = useId();
 
   const result = useMemo(() => computeSpring(params), [params]);
 
@@ -241,34 +267,24 @@ export function SpringValidator() {
     setSelectedPreset('Custom');
   }, []);
 
-  // Verdict colors
-  const verdictColor = result.verdict === 'safe' ? 'var(--ok)' : result.verdict === 'caution' ? 'var(--warn)' : 'var(--error)';
-  const verdictBg = result.verdict === 'safe' ? 'var(--ok)' : result.verdict === 'caution' ? 'var(--warn)' : 'var(--error)';
+  const verdict = VERDICT[result.verdict];
+  const reducedMs = Math.min(result.settleTime, 150);
 
   return (
-    <div className="spring-validator">
-      {/* Presets */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.5rem' }}>
+    <div className="spring-validator sv">
+      {/* Presets: the command row over the instrument's face */}
+      <div className="sv-presets" role="group" aria-labelledby={`${uid}-presets`}>
+        <p className="sv-eyebrow" id={`${uid}-presets`}>
           Preset springs
         </p>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="sv-preset-row">
           {PRESETS.map((preset) => (
             <button
               key={preset.name}
               type="button"
               className="sv-preset"
+              aria-pressed={selectedPreset === preset.name}
               onClick={() => handlePreset(preset)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                background: selectedPreset === preset.name ? 'var(--signal)' : 'var(--surface)',
-                color: selectedPreset === preset.name ? 'var(--paper-on-signal)' : 'var(--muted)',
-                border: `1px solid ${selectedPreset === preset.name ? 'var(--signal)' : 'var(--line)'}`,
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                fontWeight: 500,
-              }}
               title={preset.source}
             >
               {preset.name}
@@ -277,218 +293,182 @@ export function SpringValidator() {
         </div>
       </div>
 
-      {/* Parameter sliders */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <ParamSlider
-          label="Stiffness (k)"
-          unit="N/m"
-          value={params.stiffness}
-          min={10}
-          max={1000}
-          step={10}
-          onChange={(v) => handleParamChange('stiffness', v)}
-        />
-        <ParamSlider
-          label="Damping (c)"
-          unit="N·s/m"
-          value={params.damping}
-          min={0}
-          max={100}
-          step={0.5}
-          onChange={(v) => handleParamChange('damping', v)}
-        />
-        <ParamSlider
-          label="Mass (m)"
-          unit="kg"
-          value={params.mass}
-          min={0.1}
-          max={10}
-          step={0.1}
-          onChange={(v) => handleParamChange('mass', v)}
-        />
-      </div>
-
-      {/* Verdict banner */}
-      <div style={{
-        padding: '1.25rem 1.5rem',
-        background: 'var(--surface)',
-        border: `1px solid ${verdictBg}`,
-        borderLeft: `4px solid ${verdictBg}`,
-        borderRadius: '8px',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '1rem',
-        flexWrap: 'wrap',
-      }}>
-        <div style={{ flex: '1 1 200px' }}>
-          <p style={{
-            fontSize: '0.7rem',
-            color: 'var(--muted-dim)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            margin: '0 0 0.25rem',
-          }}>
-            Accessibility verdict
+      <section className="sv-inst" aria-labelledby={`${uid}-title`} data-verdict={result.verdict}>
+        <div className="sv-bar">
+          <div className="sv-bar-face">
+            <span className="sv-mark" aria-hidden="true">
+              <i />
+            </span>
+            <h2 className="sv-title" id={`${uid}-title`}>
+              Spring response
+            </h2>
+            <span className="sv-bar-pill">{selectedPreset}</span>
+          </div>
+          <p className="sv-bar-state">
+            <i className="sv-led" aria-hidden="true" />
+            <span aria-live="polite" aria-atomic="true">
+              <span className="sr-only">Accessibility verdict: </span>
+              <span className="sv-verdict">{verdict.word}</span>
+              <span className="sv-verdict-detail"> · {verdict.detail}</span>
+            </span>
           </p>
-          <p style={{
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            color: verdictColor,
-            margin: 0,
-            textTransform: 'capitalize',
-          }}>
-            {result.verdict === 'safe' && '✓ Safe: no reduced-motion concern'}
-            {result.verdict === 'caution' && '⚠ Caution: minor overshoot'}
-            {result.verdict === 'violation' && '✗ Violation: overshoot requires suppression'}
-          </p>
-          {result.reducedMotionRequired && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.5rem 0 0', maxWidth: '60ch' }}>
-              This spring produces {result.overshoot.toFixed(1)}% overshoot. An
-              explicit <code style={{ fontSize: '0.75rem' }}>@media (prefers-reduced-motion: reduce)</code> rule
-              must suppress or replace this animation. Recommendation: replace
-              with a linear or ease-out transition at {Math.min(result.settleTime, 150).toFixed(0)}ms.
-            </p>
-          )}
-          {!result.reducedMotionRequired && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.5rem 0 0', maxWidth: '60ch' }}>
-              Damping ratio ζ = {result.dampingRatio.toFixed(3)} produces no
-              perceptible overshoot. This spring is safe for vestibular
-              sensitivity without explicit reduced-motion suppression.
-            </p>
-          )}
         </div>
-      </div>
 
-      {/* Metrics grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-        gap: '0.75rem',
-        marginBottom: '2rem',
-      }}>
-        <Metric label="Damping ratio (ζ)" value={result.dampingRatio.toFixed(3)} hint={result.classification} />
-        <Metric label="Overshoot" value={`${result.overshoot.toFixed(1)}%`} hint={result.overshoot > 0 ? 'visible' : 'none'} />
-        <Metric label="Settle time (2%)" value={`${result.settleTime.toFixed(0)}ms`} hint="to equilibrium" />
-        <Metric label="Rise time" value={`${result.riseTime.toFixed(0)}ms`} hint="to equilibrium" />
-        <Metric label="Natural freq" value={`${(result.naturalFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.naturalFreq.toFixed(1)} rad/s`} />
-        {result.dampedFreq > 0 && (
-          <Metric label="Damped freq" value={`${(result.dampedFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.dampedFreq.toFixed(1)} rad/s`} />
-        )}
-      </div>
-
-      {/* Spring response chart */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-          <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-            Spring response: displacement over time
-          </p>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer', minHeight: '44px' }}>
-            <input
-              type="checkbox"
-              checked={showReducedMotion}
-              onChange={(e) => setShowReducedMotion(e.target.checked)}
-              style={{ cursor: 'pointer' }}
+        <div className="sv-body">
+          <div className="sv-face">
+            <div className="sv-face-head">
+              <p className="sv-eyebrow">Displacement over time</p>
+              <label className="sv-check">
+                <input
+                  type="checkbox"
+                  checked={showReducedMotion}
+                  onChange={(e) => setShowReducedMotion(e.target.checked)}
+                />
+                Show reduced-motion fallback
+              </label>
+            </div>
+            <SpringChart
+              data={simData}
+              durationMs={simDuration}
+              overshoot={result.overshoot}
+              showReducedMotion={showReducedMotion}
+              reducedDuration={reducedMs}
+              verdict={result.verdict}
             />
-            Show reduced-motion fallback
-          </label>
+            <p className="sv-note">
+              {result.reducedMotionRequired ? (
+                <>
+                  This spring produces {result.overshoot.toFixed(1)}% overshoot. An
+                  explicit <code>@media (prefers-reduced-motion: reduce)</code> rule
+                  must suppress or replace this animation. Recommendation: replace
+                  with a linear or ease-out transition at {reducedMs.toFixed(0)}ms.
+                </>
+              ) : (
+                <>
+                  Damping ratio ζ = {result.dampingRatio.toFixed(3)} produces no
+                  perceptible overshoot. This spring is safe for vestibular
+                  sensitivity without explicit reduced-motion suppression.
+                </>
+              )}
+            </p>
+          </div>
+
+          <div className="sv-side">
+            <p className="sv-eyebrow">Parameters</p>
+            <div className="sv-params">
+              <ParamSlider
+                label="Stiffness (k)"
+                unit="N/m"
+                value={params.stiffness}
+                min={10}
+                max={1000}
+                step={10}
+                onChange={(v) => handleParamChange('stiffness', v)}
+              />
+              <ParamSlider
+                label="Damping (c)"
+                unit="N·s/m"
+                value={params.damping}
+                min={0}
+                max={100}
+                step={0.5}
+                onChange={(v) => handleParamChange('damping', v)}
+              />
+              <ParamSlider
+                label="Mass (m)"
+                unit="kg"
+                value={params.mass}
+                min={0.1}
+                max={10}
+                step={0.1}
+                onChange={(v) => handleParamChange('mass', v)}
+              />
+            </div>
+
+            <p className="sv-eyebrow">Readouts</p>
+            {/* Six tiles always, so the module closes: an overdamped spring
+                has no damped frequency, and its tile says so. */}
+            <dl className="sv-metrics">
+              <Metric label="Damping ratio (ζ)" value={result.dampingRatio.toFixed(3)} hint={result.classification} />
+              <Metric label="Overshoot" value={`${result.overshoot.toFixed(1)}%`} hint={result.overshoot > 0 ? 'visible' : 'none'} />
+              <Metric label="Settle time (2%)" value={fmtMs(result.settleTime)} hint="to equilibrium" />
+              <Metric label="Rise time" value={fmtMs(result.riseTime)} hint="to equilibrium" />
+              <Metric label="Natural freq" value={`${(result.naturalFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.naturalFreq.toFixed(1)} rad/s`} />
+              {result.dampedFreq > 0 ? (
+                <Metric label="Damped freq" value={`${(result.dampedFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.dampedFreq.toFixed(1)} rad/s`} />
+              ) : (
+                <Metric label="Damped freq" value="none" hint="no oscillation" />
+              )}
+            </dl>
+          </div>
         </div>
-        <SpringChart
-          data={simData}
-          durationMs={simDuration}
-          overshoot={result.overshoot}
-          showReducedMotion={showReducedMotion}
-          reducedDuration={Math.min(result.settleTime, 150)}
-          verdict={result.verdict}
-        />
-      </div>
+      </section>
 
       {/* Accessibility checklist */}
-      <div style={{
-        padding: '1.25rem 1.5rem',
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: '8px',
-        marginBottom: '1.5rem',
-      }}>
-        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', margin: '0 0 0.75rem' }}>
+      <section className="sv-checklist" aria-labelledby={`${uid}-checks`}>
+        <h2 className="sv-checklist-title" id={`${uid}-checks`}>
           Reduced-motion compliance checklist
-        </p>
-        <ChecklistItem
-          checked={result.reducedMotionRequired === false}
-          label="Spring does not produce perceptible overshoot (>2%)"
-          detail="If overshoot > 2%, the spring is visible to vestibular-sensitive users"
-        />
-        <ChecklistItem
-          checked={result.classification !== 'underdamped' || result.reducedMotionRequired}
-          label="Underdamped springs have explicit @media (prefers-reduced-motion: reduce) rule"
-          detail="Underdamped springs MUST be suppressed or replaced under reduced-motion"
-        />
-        <ChecklistItem
-          checked={result.settleTime <= 300}
-          label="Settle time ≤ 300ms (UI animation bound)"
-          detail="UI animation should stay at or below 300ms unless justified"
-        />
-        <ChecklistItem
-          checked={result.overshoot <= 10}
-          label="Overshoot ≤ 10% (not a vestibular trigger)"
-          detail="Overshoot > 10% is clearly visible and likely triggers discomfort"
-        />
-        <ChecklistItem
-          checked={true}
-          label="Spring uses transform/opacity only (no layout animation)"
-          detail="Never animate width, height, margin, or padding; use transform and opacity"
-        />
-      </div>
+        </h2>
+        <ul className="sv-checks">
+          <ChecklistItem
+            checked={result.reducedMotionRequired === false}
+            label="Spring does not produce perceptible overshoot (>2%)"
+            detail="If overshoot > 2%, the spring is visible to vestibular-sensitive users"
+          />
+          <ChecklistItem
+            checked={result.classification !== 'underdamped' || result.reducedMotionRequired}
+            label="Underdamped springs have explicit @media (prefers-reduced-motion: reduce) rule"
+            detail="Underdamped springs MUST be suppressed or replaced under reduced-motion"
+          />
+          <ChecklistItem
+            checked={result.settleTime <= 300}
+            label="Settle time ≤ 300ms (UI animation bound)"
+            detail="UI animation should stay at or below 300ms unless justified"
+          />
+          <ChecklistItem
+            checked={result.overshoot <= 10}
+            label="Overshoot ≤ 10% (not a vestibular trigger)"
+            detail="Overshoot > 10% is clearly visible and likely triggers discomfort"
+          />
+          <ChecklistItem
+            checked={true}
+            label="Spring uses transform/opacity only (no layout animation)"
+            detail="Never animate width, height, margin, or padding; use transform and opacity"
+          />
+        </ul>
+      </section>
 
-      {/* CSS output */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.5rem' }}>
+      {/* CSS output: a window whose title bar names it (figcaption). The code
+          soft-wraps inside the window instead of scrolling past its edge, so
+          the rim stays whole and nothing is cut mid-token on a phone. */}
+      <figure className="sv-snippet">
+        <figcaption className="sv-snippet-bar">
           CSS snippet with reduced-motion fallback
-        </p>
-        <pre style={{
-          padding: '1.25rem',
-          background: 'var(--surface)',
-          border: '1px solid var(--line)',
-          borderRadius: '8px',
-          color: 'var(--ink)',
-          fontFamily: 'var(--mono, ui-monospace, "SF Mono", Menlo, monospace)',
-          fontSize: '0.8rem',
-          lineHeight: 1.6,
-          overflow: 'auto',
-          margin: 0,
-        }}>
+        </figcaption>
+        <pre className="sv-snippet-code">
 {`.spring-${result.classification} {
   /* Damping ratio: ζ = ${result.dampingRatio.toFixed(3)} · Overshoot: ${result.overshoot.toFixed(1)}% */
-  transition: transform ${result.settleTime.toFixed(0)}ms cubic-bezier(0.2, 0, 0, 1);
+  transition: transform ${fmtMs(result.settleTime)} cubic-bezier(0.2, 0, 0, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .spring-${result.classification} {
-    /* Suppress overshoot: linear or ease-out at ${Math.min(result.settleTime, 150).toFixed(0)}ms */
-    transition: transform ${Math.min(result.settleTime, 150).toFixed(0)}ms ease-out;
+    /* Suppress overshoot: linear or ease-out at ${reducedMs.toFixed(0)}ms */
+    transition: transform ${reducedMs.toFixed(0)}ms ease-out;
   }
 }`}
         </pre>
-      </div>
+      </figure>
 
       {/* CTA */}
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <Link
-          href="/contracts/motion"
-          className="button primary"
-          style={{ fontSize: '0.85rem' }}
-        >
+      <div className="sv-cta">
+        <Link href="/contracts/motion" className="button primary">
           View Designesy motion contract →
         </Link>
-        <Link
-          href="/score"
-          className="button ghost"
-          style={{ fontSize: '0.85rem' }}
-        >
+        <Link href="/score" className="button ghost">
           Score your site →
         </Link>
-        <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: 'auto' }}>
+        <span className="sv-cta-note">
           All computation is client-side; no data is sent to any server.
         </span>
       </div>
@@ -515,15 +495,17 @@ function ParamSlider({
   step: number;
   onChange: (v: number) => void;
 }) {
+  const id = useId();
   return (
-    <div>
-      <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 500 }}>{label}</span>
-        <span style={{ fontSize: '0.85rem', color: 'var(--ink)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {value.toFixed(1)} <span style={{ color: 'var(--muted-dim)', fontSize: '0.7rem' }}>{unit}</span>
+    <div className="sv-param">
+      <label className="sv-param-head" htmlFor={id}>
+        <span className="sv-param-label">{label}</span>
+        <span className="sv-param-value">
+          {value.toFixed(1)} <span className="sv-param-unit">{unit}</span>
         </span>
       </label>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}
@@ -547,23 +529,10 @@ function ParamSlider({
 
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div style={{
-      padding: '0.75rem 1rem',
-      background: 'var(--surface)',
-      border: '1px solid var(--line)',
-      borderRadius: '8px',
-    }}>
-      <p style={{ fontSize: '0.65rem', color: 'var(--muted-dim)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 0.25rem' }}>
-        {label}
-      </p>
-      <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>
-        {value}
-      </p>
-      {hint && (
-        <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.15rem 0 0' }}>
-          {hint}
-        </p>
-      )}
+    <div className="sv-metric">
+      <dt className="sv-metric-label">{label}</dt>
+      <dd className="sv-metric-value">{value}</dd>
+      {hint && <dd className="sv-metric-hint">{hint}</dd>}
     </div>
   );
 }
@@ -572,37 +541,77 @@ function Metric({ label, value, hint }: { label: string; value: string; hint?: s
 
 function ChecklistItem({ checked, label, detail }: { checked: boolean; label: string; detail: string }) {
   return (
-    <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.6rem', alignItems: 'flex-start' }}>
-      <span style={{
-        flexShrink: 0,
-        width: '1.2rem',
-        height: '1.2rem',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '0.7rem',
-        fontWeight: 700,
-        borderRadius: '3px',
-        border: `1px solid ${checked ? 'var(--ok)' : 'var(--warn)'}`,
-        color: checked ? 'var(--ok)' : 'var(--warn)',
-        background: 'var(--paper)',
-        marginTop: '0.1rem',
-      }}>
+    <li className="sv-check-item" data-ok={checked ? '' : undefined}>
+      <span className="sv-check-mark" aria-hidden="true">
         {checked ? '✓' : '!'}
       </span>
       <div>
-        <p style={{ fontSize: '0.8rem', color: 'var(--ink)', margin: 0, fontWeight: 500 }}>
+        <p className="sv-check-label">
+          <span className="sr-only">{checked ? 'Met: ' : 'Not met: '}</span>
           {label}
         </p>
-        <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.15rem 0 0' }}>
-          {detail}
-        </p>
+        <p className="sv-check-detail">{detail}</p>
       </div>
-    </div>
+    </li>
   );
 }
 
 // ── SpringChart subcomponent ────────────────────────────────────────────────
+
+// Chart type is set on the 11px mono UI step: the viewBox is the measured
+// width of the chart's box, so one user unit is one CSS pixel at every
+// width. With a fixed 800-unit viewBox the labels rendered at 4.3px on a
+// phone and 14.75px at 1440, sized by the container instead of the scale.
+const CHART_FONT = 11;
+// Geist Mono advances about 0.6em per glyph; the label fit test uses it.
+const CHAR_W = CHART_FONT * 0.62;
+
+type Pt = [number, number];
+type Box = { x0: number; y0: number; x1: number; y1: number };
+
+// The first candidate whose box clears every obstacle point (each point is
+// inflated by the clearance), the plot frame, and the boxes already placed.
+function placeLabel(
+  candidates: { x: number; y: number; anchor: 'start' | 'end' }[],
+  text: string,
+  obstacles: Pt[],
+  taken: Box[],
+  frame: Box,
+  clearance: number,
+): { x: number; y: number; anchor: 'start' | 'end'; box: Box } {
+  const w = text.length * CHAR_W;
+  const boxOf = (c: { x: number; y: number; anchor: 'start' | 'end' }): Box => {
+    const x0 = c.anchor === 'start' ? c.x : c.x - w;
+    return { x0, y0: c.y - CHART_FONT * 0.8, x1: x0 + w, y1: c.y + CHART_FONT * 0.25 };
+  };
+  const clear = (b: Box) =>
+    b.x0 >= frame.x0 && b.x1 <= frame.x1 && b.y0 >= frame.y0 && b.y1 <= frame.y1 &&
+    obstacles.every(([px, py]) =>
+      px < b.x0 - clearance || px > b.x1 + clearance || py < b.y0 - clearance || py > b.y1 + clearance) &&
+    taken.every((t) => b.x1 < t.x0 || b.x0 > t.x1 || b.y1 < t.y0 || b.y0 > t.y1);
+  for (const c of candidates) {
+    const box = boxOf(c);
+    if (clear(box)) return { ...c, box };
+  }
+  const last = candidates[candidates.length - 1];
+  return { ...last, box: boxOf(last) };
+}
+
+// Dense points along a polyline (vertices plus midpoints), so a label box
+// tested against points cannot slip between two of them.
+function densify(pts: Pt[]): Pt[] {
+  const out: Pt[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    out.push(pts[i]);
+    if (i + 1 < pts.length) {
+      const [ax, ay] = pts[i];
+      const [bx, by] = pts[i + 1];
+      const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 2));
+      for (let s = 1; s < steps; s++) out.push([ax + ((bx - ax) * s) / steps, ay + ((by - ay) * s) / steps]);
+    }
+  }
+  return out;
+}
 
 function SpringChart({
   data,
@@ -619,9 +628,31 @@ function SpringChart({
   reducedDuration: number;
   verdict: 'safe' | 'caution' | 'violation';
 }) {
-  const width = 800;
-  const height = 240;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  // The box's measured size; 640 x 244 is the first paint before
+  // measurement. The CSS sizes the box (a 0.38 aspect floor, and in the
+  // split instrument it grows to the side pane's height), and the svg fills
+  // it absolutely, so the svg never feeds back into the box it measures.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 640, h: 244 });
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const read = () => {
+      const r = el.getBoundingClientRect();
+      const w = Math.round(r.width);
+      const h = Math.round(r.height);
+      if (w > 0 && h > 0) setSize((s) => (s.w === w && s.h === h ? s : { w, h }));
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const width = size.w;
+  const height = size.h;
+  const padding = { top: 16, right: 28, bottom: 28, left: 36 };
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
@@ -633,141 +664,147 @@ function SpringChart({
   const yScale = (x: number) => padding.top + chartH - ((x - yMin) / (yMax - yMin)) * chartH;
 
   // Build path
-  const linePath = data.map((d, i) =>
-    `${i === 0 ? 'M' : 'L'} ${xScale(d.t).toFixed(2)} ${yScale(d.x).toFixed(2)}`
-  ).join(' ');
+  const linePts: Pt[] = data.map((d) => [xScale(d.t), yScale(d.x)]);
+  const linePath = linePts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
 
   // Equilibrium line (y = 1)
   const eqY = yScale(1);
 
   // Reduced-motion line (ease-out curve from 0 to 1, capped at reducedDuration)
-  let reducedPath = '';
+  const reducedPts: Pt[] = [];
   if (showReducedMotion && reducedDuration < durationMs) {
-    const reducedData: { t: number; x: number }[] = [];
     const reducedSamples = 50;
     for (let i = 0; i <= reducedSamples; i++) {
       const t = (i / reducedSamples) * reducedDuration;
       const progress = t / reducedDuration;
       // Ease-out: 1 - (1-p)³
       const x = 1 - Math.pow(1 - progress, 3);
-      reducedData.push({ t, x });
+      reducedPts.push([xScale(t), yScale(x)]);
     }
-    reducedPath = reducedData.map((d, i) =>
-      `${i === 0 ? 'M' : 'L'} ${xScale(d.t).toFixed(2)} ${yScale(d.x).toFixed(2)}`
-    ).join(' ');
+  }
+  const reducedPath = reducedPts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+
+  // Labels are placed against the curves, then drawn after them on a halo
+  // of the face's own material, so no curve can run through a word (the
+  // response used to overdraw "reduced-motion" into "educed-motion").
+  // Labels may use the top padding (a peak sits near the top by design).
+  const frame: Box = { x0: padding.left + 2, y0: 2, x1: width - padding.right - 2, y1: height - padding.bottom - 2 };
+  const responseObstacles = densify(linePts);
+  const taken: Box[] = [];
+
+  const peak = data.reduce((max, d) => (d.x > max.x ? d : max), data[0]);
+  let overshootLabel: { x: number; y: number; anchor: 'start' | 'end'; text: string } | null = null;
+  if (overshoot > 2) {
+    const text = `${overshoot.toFixed(1)}% overshoot`;
+    const px = xScale(peak.t);
+    const py = yScale(peak.x);
+    const placed = placeLabel(
+      [
+        { x: px + 8, y: py - 8, anchor: 'start' },
+        { x: px - 8, y: py - 8, anchor: 'end' },
+        { x: px + 8, y: py + 18, anchor: 'start' },
+        { x: width - padding.right - 4, y: yScale(yMax) + 12, anchor: 'end' },
+        { x: width - padding.right - 4, y: yScale(0.6), anchor: 'end' },
+      ],
+      text,
+      responseObstacles,
+      taken,
+      frame,
+      3,
+    );
+    taken.push(placed.box);
+    overshootLabel = { x: placed.x, y: placed.y, anchor: placed.anchor, text };
   }
 
-  const verdictColor = verdict === 'safe' ? 'var(--ok)' : verdict === 'caution' ? 'var(--warn)' : 'var(--error)';
+  let reducedLabel: { x: number; y: number; anchor: 'start' | 'end' } | null = null;
+  if (reducedPts.length) {
+    const [ex, ey] = reducedPts[reducedPts.length - 1];
+    const placed = placeLabel(
+      [
+        { x: ex + 8, y: ey - 8, anchor: 'start' },
+        { x: ex + 8, y: ey + 18, anchor: 'start' },
+        { x: ex - 6, y: ey - 8, anchor: 'end' },
+        { x: padding.left + 8, y: yScale(yMax) + 12, anchor: 'start' },
+        { x: width - padding.right - 4, y: yScale(0.2), anchor: 'end' },
+        { x: width - padding.right - 4, y: yScale(yMax) + 12, anchor: 'end' },
+      ],
+      'reduced-motion',
+      [...responseObstacles, ...densify(reducedPts)],
+      taken,
+      frame,
+      3,
+    );
+    taken.push(placed.box);
+    reducedLabel = { x: placed.x, y: placed.y, anchor: placed.anchor };
+  }
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      style={{ width: '100%', height: 'auto', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--line)' }}
-      role="img"
-      aria-label={`Spring response chart showing ${overshoot.toFixed(1)}% overshoot over ${durationMs.toFixed(0)}ms`}
-    >
-      {/* Grid lines */}
-      {[0, 0.5, 1, 1.5].map((y) => (
-        <line
-          key={y}
-          x1={padding.left}
-          x2={width - padding.right}
-          y1={yScale(y)}
-          y2={yScale(y)}
-          stroke="var(--line)"
-          strokeWidth={1}
-          strokeDasharray={y === 1 ? '0' : '4 4'}
-        />
-      ))}
-
-      {/* Y-axis labels */}
-      {[0, 0.5, 1, 1.5].map((y) => (
-        <text
-          key={y}
-          x={padding.left - 8}
-          y={yScale(y) + 4}
-          fill="var(--muted-dim)"
-          fontSize={10}
-          textAnchor="end"
-          fontFamily="ui-monospace, monospace"
-        >
-          {y.toFixed(1)}
-        </text>
-      ))}
-
-      {/* Equilibrium label */}
-      <text
-        x={width - padding.right + 5}
-        y={eqY + 4}
-        fill="var(--muted-dim)"
-        fontSize={9}
-        fontFamily="ui-monospace, monospace"
+    <div className="sv-chart" ref={boxRef}>
+      <svg
+        className="sv-chart-svg"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`Spring response chart showing ${overshoot.toFixed(1)}% overshoot over ${durationMs.toFixed(0)}ms`}
       >
-        eq
-      </text>
-
-      {/* X-axis labels */}
-      {[0, durationMs / 2, durationMs].map((t) => (
-        <text
-          key={t}
-          x={xScale(t)}
-          y={height - padding.bottom + 16}
-          fill="var(--muted-dim)"
-          fontSize={10}
-          textAnchor="middle"
-          fontFamily="ui-monospace, monospace"
-        >
-          {t.toFixed(0)}ms
-        </text>
-      ))}
-
-      {/* Reduced-motion fallback line */}
-      {showReducedMotion && reducedPath && (
-        <>
-          <path
-            d={reducedPath}
-            fill="none"
-            stroke="var(--muted-dim)"
-            strokeWidth={2}
-            strokeDasharray="4 3"
-            opacity={0.6}
+        {/* Grid lines */}
+        {[0, 0.5, 1, 1.5].map((y) => (
+          <line
+            key={y}
+            className={y === 1 ? 'sv-chart-eq' : 'sv-chart-grid'}
+            x1={padding.left}
+            x2={width - padding.right}
+            y1={yScale(y)}
+            y2={yScale(y)}
           />
+        ))}
+
+        {/* Reduced-motion fallback line */}
+        {reducedPath && <path className="sv-chart-reduced" d={reducedPath} />}
+
+        {/* Spring response line */}
+        <path className="sv-chart-response" d={linePath} data-verdict={verdict} />
+
+        {/* Labels, after the curves */}
+        {[0, 0.5, 1, 1.5].map((y) => (
+          <text key={y} className="sv-chart-label" x={padding.left - 8} y={yScale(y) + 4} textAnchor="end">
+            {y.toFixed(1)}
+          </text>
+        ))}
+
+        <text className="sv-chart-label" x={width - padding.right + 6} y={eqY + 4}>
+          eq
+        </text>
+
+        {[0, durationMs / 2, durationMs].map((t, i) => (
           <text
-            x={xScale(reducedDuration / 2)}
-            y={yScale(0.15)}
-            fill="var(--muted-dim)"
-            fontSize={9}
-            textAnchor="middle"
-            fontFamily="ui-monospace, monospace"
+            key={t}
+            className="sv-chart-label"
+            x={xScale(t)}
+            y={height - padding.bottom + 18}
+            textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}
           >
+            {t.toFixed(0)}ms
+          </text>
+        ))}
+
+        {reducedLabel && (
+          <text className="sv-chart-label sv-chart-label--reduced" x={reducedLabel.x} y={reducedLabel.y} textAnchor={reducedLabel.anchor}>
             reduced-motion
           </text>
-        </>
-      )}
+        )}
 
-      {/* Spring response line */}
-      <path
-        d={linePath}
-        fill="none"
-        stroke={verdictColor}
-        strokeWidth={2.5}
-        className="spring-response-line"
-      />
-
-      {/* Overshoot annotation */}
-      {overshoot > 2 && (
-        <text
-          x={xScale(data.reduce((max, d) => d.x > max.x ? d : max).t)}
-          y={yScale(data.reduce((max, d) => d.x > max.x ? d : max).x) - 8}
-          fill={verdictColor}
-          fontSize={10}
-          textAnchor="middle"
-          fontWeight={600}
-          fontFamily="ui-monospace, monospace"
-        >
-          {overshoot.toFixed(1)}% overshoot
-        </text>
-      )}
-    </svg>
+        {overshootLabel && (
+          <text
+            className="sv-chart-label sv-chart-label--overshoot"
+            x={overshootLabel.x}
+            y={overshootLabel.y}
+            textAnchor={overshootLabel.anchor}
+            data-verdict={verdict}
+          >
+            {overshootLabel.text}
+          </text>
+        )}
+      </svg>
+    </div>
   );
 }

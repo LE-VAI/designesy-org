@@ -60,7 +60,7 @@ export default function DriftContractPage() {
           <h2 className="doctrine-heading">The four drift modes</h2>
           <div className="row-stack" role="list">
             {c.conformance.four_drift_modes.map((mode, i) => (
-              <div key={mode.mode} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={mode.mode} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{mode.mode.replace(/_/g, ' ')}</span>
@@ -86,7 +86,7 @@ export default function DriftContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

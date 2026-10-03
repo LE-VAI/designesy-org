@@ -5,6 +5,8 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { CASE_STUDIES, type CaseStudy } from '../lib/case-studies';
 import { AgentActions } from '../lib/agent-actions';
+import '../instrument.css';
+import './work.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Work: case studies',
@@ -17,12 +19,30 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'Case studies · designesy.org/work',
 });
 
-function scoreLine(cs: CaseStudy): string {
+/* The side pane of each index row (work.css, "Work index"): a lamp for the
+   study's state, its status, a grade chip and a mono readout. Everything is
+   read from the case-study record; nothing here is a new number. */
+
+/** The lamp states the status beside it: verified by the engine, live, or
+    built and not yet hosted. The review verdict is the chip's to state. */
+function lampFor(cs: CaseStudy): 'pass' | 'live' | 'pending' {
+  if (cs.status === 'Verified · public') return 'pass';
+  if (cs.status === 'Shipped · live') return 'live';
+  return 'pending';
+}
+
+/** The chip's tone: a scored A or a passing review reads pass; a revision, warn. */
+function toneFor(cs: CaseStudy): 'pass' | 'warn' | 'neutral' {
+  if (cs.badge === 'Needs revision') return 'warn';
+  if (cs.gradeBefore != null || /^pass/i.test(cs.badge)) return 'pass';
+  return 'neutral';
+}
+
+/** The readout: the score move where one was measured, else the study's metric. */
+function readoutFor(cs: CaseStudy): string {
   if (cs.beforeScore != null && cs.afterScore != null) {
-    return `${cs.gradeBefore} ${cs.beforeScore} → ${cs.gradeAfter} ${cs.afterScore}`;
-  }
-  if (cs.beforeScore != null) {
-    return `${cs.gradeBefore} ${cs.beforeScore}`;
+    const delta = (cs.afterScore - cs.beforeScore).toFixed(1);
+    return `${cs.gradeBefore} ${cs.beforeScore} → ${cs.gradeAfter} ${cs.afterScore} · +${delta}`;
   }
   return cs.metrics;
 }
@@ -59,12 +79,16 @@ export default function WorkPage() {
             studies add a score-delta table showing which checks moved and
             why. Outcomes include what did not work.
           </p>
-          <div className="row-stack" role="list">
+          {/* The side pane's text spans carry "work-row-meta" in their class:
+              the markdown twin (scripts/generate-markdown.js) reads each
+              row's row-title and row-meta spans, so the status, grade and
+              readout stay in /work.md now that they left the meta line. */}
+          <div className="row-stack work-index" role="list">
             {CASE_STUDIES.map((cs, i) => (
               <div role="listitem" key={cs.slug}>
                 <Link
                   href={`/work/${cs.slug}`}
-                  className="row"
+                  className="row work-row"
                   data-cuelume-hover="bloom"
                   data-cuelume-press
                 >
@@ -73,9 +97,15 @@ export default function WorkPage() {
                   </span>
                   <span className="row-body">
                     <span className="row-title">{cs.title}</span>
-                    <span className="row-meta">
-                      {cs.lede} · {cs.status} · {scoreLine(cs)}
+                    <span className="row-meta">{cs.lede}</span>
+                  </span>
+                  <span className="work-row-side">
+                    <span className="cs-led" data-lamp={lampFor(cs)} aria-hidden="true" />
+                    <span className="work-row-meta work-row-status">{cs.status}</span>
+                    <span className="work-row-meta work-row-grade" data-tone={toneFor(cs)}>
+                      {cs.badge}
                     </span>
+                    <span className="work-row-meta work-row-readout">{readoutFor(cs)}</span>
                   </span>
                 </Link>
               </div>

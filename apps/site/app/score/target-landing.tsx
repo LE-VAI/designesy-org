@@ -4,6 +4,11 @@ import { Footer } from '../lib/footer';
 import { ScoreForm } from './score-form';
 import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
+
+// The copy payload of THE OUTPUT card: its sentence, without the side key.
+const OUTPUT_TEXT =
+  "A letter grade, a per-check breakdown (pass, fail, warn, skip), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. No backend. No data kept. The score is the artifact.";
 
 /**
  * Shared shell for target-specific score landing pages
@@ -111,14 +116,37 @@ export function TargetLanding({
 
         <section className="doctrine-section fade-up fade-up-delay-2">
           <h2 className="doctrine-heading">What you get</h2>
-          <div className="definition">
-            <p className="definition-label">The output</p>
-            <p>
-              A letter grade, a per-check breakdown (pass, fail, warn, skip),
-              the tokens extracted from your site&rsquo;s <code>:root</code>,
-              and a copyable receipt citing the contract version. No login.
-              No backend. No data kept. The score is the artifact.
-            </p>
+          {/* Face and side pane (globals.css .score-output): the paragraph in
+              the 7-column face, under the result column above, and its key in
+              the side pane. data-copy keeps the copy payload to the sentence. */}
+          <div className="definition score-output" data-copy={OUTPUT_TEXT} data-copy-label="output summary">
+            <div className="score-output-face">
+              <p className="definition-label">The output</p>
+              <p>
+                A letter grade, a per-check breakdown (pass, fail, warn, skip),
+                the tokens extracted from your site&rsquo;s <code>:root</code>,
+                and a copyable receipt citing the contract version. No login.
+                No backend. No data kept. The score is the artifact.
+              </p>
+            </div>
+            <dl className="score-output-side">
+              <div>
+                <dt>Grade</dt>
+                <dd>A to F, with the percentage</dd>
+              </div>
+              <div>
+                <dt>Checks</dt>
+                <dd>{ENGINE_CHECK_COUNT}, each pass, fail, warn or skip</dd>
+              </div>
+              <div>
+                <dt>Receipt</dt>
+                <dd>Cites contract {CONTRACT_VERSION}</dd>
+              </div>
+              <div>
+                <dt>Data kept</dt>
+                <dd>None</dd>
+              </div>
+            </dl>
           </div>
           <p className="surface-note">
             The contract the engine runs against is public at{' '}

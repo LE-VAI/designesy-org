@@ -21,6 +21,10 @@
 .home {
   --vc-loop: 12s;
   --vc-delay: 0s;
+  /* The console face's inner inset: where CATEGORY, the rows and the side
+     pane's content start. Declared on the page, not the window, so the cohort
+     strip under the console sets its text on the same x (144.1 at 1440). */
+  --vc-face-x: 1.35rem;
 }
 
 .vc-window {
@@ -28,6 +32,15 @@
   --vc-log-rows: 5;
   --vc-lh: 1.45rem;
   --vc-dlh: 1.25em;
+  /* The verdict's hue and the light it casts when it lands (material §3.3:
+     component-scoped, never :root). A self-score that does not reconcile
+     resolves to the neutral "ran" ink below. */
+  --vc-hue: var(--lv-pass-glow);
+  --glow-verdict: 0 18px 44px -24px var(--vc-hue);
+}
+
+.vc[data-reconciled="no"] .vc-window {
+  --vc-hue: color-mix(in srgb, var(--ink) 30%, transparent);
 }
 
 .vc-cell { --vc-fa: none; }
@@ -45,34 +58,52 @@
    Hero
    ========================================================================== */
 
+/* The hero is a 12-column region (.g12 in page.tsx): the claim, the command
+   and the instrument hang on the same seam. The command ends on the 7-line,
+   exactly where the console's side pane begins, so control and instrument
+   read as one device split once (spec §2.2). */
+/* The bottom padding is the page's one rhythm unit (--home-rhythm, home.css),
+   so the hero hands off to the first chapter exactly as every chapter hands
+   off to the next. At 80px it ran 16px over the others' 64. */
 .home .home-hero {
   min-height: 0;
-  display: block;
+  display: grid;
   overflow: visible;
-  padding-block: clamp(2.5rem, 4.6vw, 4rem) clamp(3rem, 6vw, 5rem);
+  padding-block: clamp(2.5rem, 4.6vw, 4rem) var(--home-rhythm);
 }
 
 .home-hero-copy {
   position: relative;
   z-index: 1;
+  grid-column: full-start / full-end;
   display: grid;
-  /* One column that never grows past the hero: an implicit auto column took
-     the width of the widest unbreakable thing in a score's results, and on a
-     phone the whole hero (headline, lede, bar) ran 330px off the screen once
-     a score landed. */
-  grid-template-columns: minmax(0, 1fr);
+  /* The copy column shares the hero's twelve tracks, line names included, so
+     the form can end on `split`. Every track is minmax(0, 1fr): nothing in a
+     score's results can widen it (an implicit auto column once took the width
+     of the widest unbreakable result and ran the phone hero 330px off screen).
+     No width cap here: measures live on the text itself (edge rule d). */
+  grid-template-columns: subgrid;
   justify-items: start;
-  /* Grows in step with the headline's cap (home.css): the same 3-line break
-     at every width, 58rem up to a 1440px viewport, then +0.4287px per pixel
-     (0.034 x 928/73.6) to 77.6rem. The form and lede keep their own caps. */
-  max-width: clamp(58rem, 58rem + (100vw - 1440px) * 0.4287, 77.6rem);
 }
 
-/* The score form sizes to its content like the rest of the hero column, but
-   never past the column: its results hold rows that scroll on their own. */
-.home-hero-copy > .score-hero-input {
+.home-hero-copy > * {
+  grid-column: full-start / full-end;
   min-width: 0;
-  max-width: 100%;
+}
+
+/* The form fills its span; its results hold rows that scroll on their own. */
+.home-hero-copy > .score-hero-input {
+  justify-self: stretch;
+}
+
+/* From 64rem of hero width the command spans seven columns: its right edge is
+   the console's divider (121 to 802.67 at 1440; 492.5 to 1395.83 at 2560).
+   The literal repeats the .g12 switch: custom properties are invalid in
+   query conditions. */
+@container g12 (width >= 64rem) {
+  .home-hero-copy > .score-hero-input {
+    grid-column: full-start / split;
+  }
 }
 
 .home .home-kicker {
@@ -105,7 +136,13 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 20%, transparent);
 }
 
+/* The claim's measure, on the claim (it used to cap the whole copy column,
+   form included). It grows in step with the headline's size (home.css): 58rem
+   up to a 1440px viewport, then +0.4287px per pixel (0.034 x 928/73.6) to
+   77.6rem, so the measure stays 12.61em wide at every size and the claim
+   breaks to the same three lines at 1440, 1920 and 2560. */
 .home .home-hero .hero-title {
+  max-width: clamp(58rem, 58rem + (100vw - 1440px) * 0.4287, 77.6rem);
   margin-bottom: 1.4rem;
 }
 
@@ -116,12 +153,15 @@
 
 /* The claim's underline: drawn when the console's verdict lands, withdrawn
    with it. Same duration and delay as the console clock (VC_TIMING), so the
-   two never drift; the hero pauses as one unit off screen. */
+   two never drift; the hero pauses as one unit off screen. It runs under the
+   descenders: at -0.02em the bar crossed the "p" (descender 0.23em below the
+   baseline, the bar 0.15-0.2em) and left a blob at the word's left end. At
+   -0.17em its top clears the descender by 2px at 390, 5px at 1440. */
 .hero-proof-line {
   position: absolute;
   left: 0.02em;
   right: 0.02em;
-  bottom: -0.02em;
+  bottom: -0.17em;
   height: max(3px, 0.05em);
   border-radius: 999px;
   overflow: hidden;
@@ -147,17 +187,29 @@
 }
 
 /* --- Command bar: the shared control surface (lib/engine/command-bar.css),
-   placed in the hero column. ---------------------------------------------- */
+   placed in the hero column. ----------------------------------------------
+   The slot decides the width: the five stacked caps this form used to carry
+   (score-form 680px and 720px in globals.css, 40rem in home.css, 44rem here,
+   46rem on the slab) are all lifted for the hero, so the slab, the results
+   and Recent Scores share the span set above. */
 
 .home-hero .score-hero-input {
   width: 100%;
-  max-width: 44rem;
+  max-width: none;
   margin: 0;
 }
 
-.home-hero .score-hero-input .score-form {
+.home-hero .score-hero-input .score-form,
+.home-hero .score-hero-input .eg-bar {
   max-width: none;
   margin: 0;
+}
+
+/* Docked: the slab, Recent Scores and the console stack on the grid gutter,
+   so the command reads as the lid of the instrument under it, not as a form
+   that happens to sit above it. */
+.home-hero .score-history-panel {
+  margin-top: var(--grid-gutter);
 }
 
 /* ==========================================================================
@@ -165,31 +217,84 @@
    from one schedule; this sheet only binds them and draws the rest state.
    ========================================================================== */
 
+/* The console docks under the command on the grid gutter (see
+   .score-history-panel above). Its stacking context (z-index 1) holds the
+   floor and the verdict light below the window. */
 .home .vc {
   position: relative;
   z-index: 1;
-  margin: clamp(2.25rem, 4vw, 3.25rem) 0 0;
+  margin: var(--grid-gutter) 0 0;
 }
 
+/* An opaque, top-lit instrument (material tier 2). It sits over static paper,
+   so it carries no blur and no alpha: depth comes from the surface's own
+   lightness, the rim, one straight-down shadow and the floor beneath it.
+   No horizontal padding and no border, so --track-split resolves against the
+   full window and the side pane's border lands on the 7-line.
+   Not a stacking context and not clipped (no isolation, no overflow): the
+   floor (::after) and the verdict light (.vc-glow) sit at z-index -1 in the
+   figure's context, under the window rather than over its face. Nothing
+   inside reaches the rounded corners (the children paint no backgrounds), and
+   every moving part clips itself (.vc-log, .vc-num, .vc-row-count). */
 .vc-window {
   --vc-cw: 2.25rem;
   --vc-ch: 0.95rem;
   --vc-gap: 0.32rem;
   position: relative;
   border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  overflow: hidden;
-  isolation: isolate;
+  background: var(--mat-instrument);
+  box-shadow: var(--elev-2);
 }
 
-/* A hairline of light along the top edge: the one specular note. */
+/* The rim: a 1px top-lit edge on a masked layer, plus the hairline of light
+   along the top edge (12% in from each corner), the one specular note. Both
+   ride the same ring, so the sheen sits on the rim's brightest row. */
 .vc-window::before {
   content: "";
   position: absolute;
-  inset: 0 12% auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--lv-sheen), transparent);
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 12%, var(--lv-sheen), transparent 88%) top / 100% 1px no-repeat,
+    var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The floor: light pooling under the page's one standing object. It never
+   moves; one per viewport (material law 2). The spec's proportions (bottom
+   -7%, height 18% of the window) hold at desktop and are capped there: a
+   floor's spread depends on the object's distance from the floor, not on its
+   height, and a phone's console runs about twice as tall, which pushed the
+   pool down under the caption. */
+.vc-window::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: max(-7%, -1.75rem);
+  z-index: -1;
+  height: min(18%, 4.5rem);
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* The verdict light: a pre-rendered layer whose opacity follows the console
+   clock (vc-glow, lib/verify-console). It lands with the verdict and the
+   claim's underline, holds with them, and leaves with the stage. Coloured
+   light is a state, so this is the one moving part whose static style is
+   NOT the hold state: at rest (reduced motion, paused) there is no glow. */
+.vc-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: var(--glow-verdict);
+  opacity: 0;
+  animation-name: vc-glow;
   pointer-events: none;
 }
 
@@ -201,6 +306,7 @@
 .vc-row-strip,
 .vc-running,
 .vc-verdict,
+.vc-glow,
 .vc-tally,
 .vc-meter i {
   animation-duration: var(--vc-loop);
@@ -290,7 +396,7 @@
 }
 
 .vc-grid {
-  padding: 1.15rem 1.35rem 1.35rem;
+  padding: 1.15rem var(--vc-face-x) 1.35rem;
   border-right: 1px solid var(--line-faint);
   min-width: 0;
 }
@@ -417,7 +523,7 @@
   display: grid;
   grid-template-rows: auto auto 1fr;
   gap: 1rem;
-  padding: 1.15rem 1.35rem 1.2rem;
+  padding: 1.15rem var(--vc-face-x) 1.2rem;
   min-width: 0;
 }
 
@@ -557,11 +663,24 @@
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
 }
 
+/* The log reads in full at every width without touching the clock: row
+   height is fixed in rem (--vc-lh, the unit the schedule scrolls by), and only
+   the type scales. The log is a size container and its lines set their type
+   to the room they have, capped at the design's 0.72rem; the line's columns
+   are in em, so the whole row scales together. Budget, in em of the line's
+   own size, measured in Chrome with Geist Mono (0.66em advance, -0.005em
+   tracking): the longest label ("Status colors for ok, warn, error, info", 39
+   characters) is 25.66em, the id column 3.33em, two gaps 1.67em, a "Pass"
+   status 2.49em: 33.15em, so /34 leaves 2.5% slack ("Person" rows carry 35
+   characters at most and need less). Full size needs a 392px log: the side
+   pane gives 455px at 1440; at 1024 it gives 341px and the type steps to
+   10px instead of cutting 19px off a label. */
 .vc-log {
   position: relative;
   align-self: end;
   height: calc(var(--vc-log-rows) * var(--vc-lh));
   overflow: hidden;
+  container-type: inline-size;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--ink) 42%);
   mask-image: linear-gradient(180deg, transparent 0, var(--ink) 42%);
   animation-name: vc-gate;
@@ -578,11 +697,12 @@
 
 .vc-log-line {
   display: grid;
-  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  /* 2.4rem and 0.6rem at the full 0.72rem size, as before. */
+  grid-template-columns: 3.3333em minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8333em;
   height: var(--vc-lh);
-  font: 400 0.72rem/1 var(--mono);
+  font: 400 clamp(0.6rem, 100cqi / 34, 0.72rem)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -598,7 +718,7 @@
 
 .vc-log-status {
   font-weight: 500;
-  font-size: 0.66rem;
+  font-size: 0.9167em; /* 0.66rem at full size; scales with its line */
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -617,13 +737,18 @@
   color: var(--lv-ink-accent);
 }
 
+/* The caption stands clear of the floor and the verdict light: at 0.9rem the
+   pool sat under its first line and took the light theme's --muted-dim meta
+   to 4.2:1. At 24px the light has faded before the text starts. No inline
+   padding: its text starts and ends on the window's edges (a 4px inset read
+   as a near miss under the console, 126.5 against 122.5 at 1440). */
 .vc-caption {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.4rem 1.5rem;
-  margin-top: 0.9rem;
-  padding-inline: 0.25rem;
+  margin-top: var(--space-24);
+  padding-inline: 0;
   font: 400 0.8rem/1.45 var(--sans);
   color: var(--muted);
 }
@@ -634,13 +759,86 @@
   color: var(--muted-dim);
 }
 
-/* --- Rest state: reduced motion shows the verdict, still ---------------- */
+/* --- The 7-line through the console --------------------------------------
+   From 64rem of hero width the console splits on the hero's own seam: the
+   face takes seven columns (681.67px at 1440, 903.33px at 2560) and the side
+   pane's border is the divider, on the same x as the command's right edge.
+   The title bar follows the panes, so the line runs from the top of the bar
+   to the foot of the window: app and host over the face, the contract's state
+   over the side, starting on the side pane's padding edge. Below 64rem the
+   console keeps its own split and the 900/640 rules below. */
+@container g12 (width >= 64rem) {
+  .vc-bar {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+    gap: 0;
+    padding-inline: 0;
+  }
+  /* App and host share the face's cell, one at each end. */
+  .vc-bar-app {
+    grid-area: 1 / 1;
+    justify-self: start;
+    margin-inline-start: 1rem;
+  }
+  .vc-bar-url {
+    grid-area: 1 / 1;
+    justify-self: end;
+    margin-inline-end: 1rem;
+  }
+  .vc-bar-contract {
+    grid-area: 1 / 2;
+    justify-self: stretch;
+    align-self: stretch;
+    padding-inline: var(--vc-face-x);
+    border-left: 1px solid var(--line-faint);
+  }
+  .vc-body {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+  .vc-grid {
+    border-right: 0;
+  }
+  .vc-side {
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+/* --- Rest state: reduced motion shows the verdict, still ----------------
+   Tier 1: everything that moves stops, and the verdict light is removed, not
+   frozen. Paused (the site's motion toggle) freezes each frame in place, so
+   the light goes too: a frozen glow would be coloured light with no state. */
 @media (prefers-reduced-motion: reduce) {
   .vc *,
   .vc *::before,
   .vc *::after,
   .hero-proof-line i {
     animation: none !important;
+  }
+  .vc-glow {
+    display: none;
+  }
+}
+
+html[data-motion="paused"] .vc-glow {
+  display: none;
+}
+
+/* --- Material floors ----------------------------------------------------- */
+@media (prefers-contrast: more) {
+  .vc-window::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  /* The ring was light, and forced colours drop shadows: draw the edge in
+     system ink (an outline, so the window keeps zero border for its split). */
+  .vc-window {
+    outline: 1px solid CanvasText;
+  }
+  .vc-window::before,
+  .vc-window::after,
+  .vc-glow {
+    display: none;
   }
 }
 
@@ -661,9 +859,36 @@
   .vc-state { grid-column: 1; grid-row: 1; }
   .vc-tally { grid-column: 1; grid-row: 2; }
   .vc-log { grid-column: 2; grid-row: 1 / span 2; }
+  /* The log's room shrinks to a half pane (287px at 641) and then a phone's
+     full pane (329px at 390), so the id column closes to the ids' own three
+     characters and the gaps to half an em: 1.99 + 1 + 2.49 + 25.66 =
+     31.14em, /32. Full labels at 10.3px on a 390 phone. */
+  .vc-log-line {
+    grid-template-columns: 3ch minmax(0, 1fr) auto;
+    gap: 0.5em;
+    font-size: clamp(0.6rem, 100cqi / 32, 0.72rem);
+  }
+}
+
+/* Where even that would fall under the 0.6rem floor (a log under 19.2rem:
+   the half pane from 641 to about 680, phones under about 367), the id goes
+   and the label and its status keep the line: 0.5 + 2.49 + 25.66 = 28.65em,
+   /29.5. Below a 283px log (a 320 phone) the floor binds and the longest
+   labels ellipsize. */
+@container (width < 19.2rem) {
+  .vc-log-id {
+    display: none;
+  }
+  .vc-log-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+    font-size: clamp(0.6rem, 100cqi / 29.5, 0.72rem);
+  }
 }
 
 @media (max-width: 640px) {
+  .home {
+    --vc-face-x: 0.9rem;
+  }
   .vc-window {
     --vc-cw: 1.1rem;
     --vc-ch: 0.62rem;
@@ -676,7 +901,7 @@
   }
   .vc-bar-contract { display: none; }
   .vc-bar-url { justify-self: end; }
-  .vc-grid { padding: 1rem 0.9rem 1.1rem; }
+  .vc-grid { padding: 1rem var(--vc-face-x) 1.1rem; }
   .vc-row {
     grid-template-columns: 5.6rem minmax(0, 1fr) 1rem;
     gap: 0.5rem;
@@ -684,27 +909,65 @@
   .vc-row-label { font-size: 0.66rem; }
   .vc-side {
     grid-template-columns: minmax(0, 1fr);
-    padding: 1rem 0.9rem 1.1rem;
+    padding: 1rem var(--vc-face-x) 1.1rem;
   }
   .vc-state, .vc-tally, .vc-log { grid-column: 1; grid-row: auto; }
   .vc-grade { font-size: 2.8rem; }
 }
 
-/* --- Cohort strip: the week's other results, one quiet line ------------- */
+/* --- Cohort strip: the week's other results, one quiet line -------------
+   A tier-1 reading surface (read, not commanded): opaque --mat-reading, the
+   top-lit rim on a masked layer and --elev-1, at the reading radius. It was a
+   transparent box with a 6% inset ring, a wireframe under a solid instrument.
+   Its text starts on the console face's inset (--vc-face-x), so the label
+   lands on CATEGORY's x. */
 
 .hero-cohort {
   position: relative;
   z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1.5rem;
+  /* 1.25rem between the three parts, 1rem between results: with the inset
+     on the face's 1.35rem, the strip still holds one line at 1440. */
+  gap: 0.75rem 1.25rem;
   margin-top: 1.5rem;
-  padding: 0.9rem 1.1rem;
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line-faint);
+  padding: 0.9rem var(--vc-face-x);
+  border-radius: var(--radius-md);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
   font: 400 0.8rem/1.3 var(--sans);
   color: var(--muted);
+}
+
+.hero-cohort::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+@media (prefers-contrast: more) {
+  .hero-cohort::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .hero-cohort {
+    border: 1px solid CanvasText;
+  }
+  .hero-cohort::before {
+    display: none;
+  }
 }
 
 .hero-cohort-label b {
@@ -716,7 +979,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 1.25rem;
+  gap: 0.4rem 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -771,6 +1034,9 @@
 .hero-cohort-grade.is-f { color: var(--grade-f); }
 
 .hero-cohort-more {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem; /* WCAG 2.5.8: a standalone link, not one inside a sentence */
   margin-left: auto;
   font-size: 0.8rem;
 }
@@ -792,6 +1058,12 @@
   --hm-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' preserveAspectRatio='none' width='12' height='12'%3E%3Crect width='9' height='12' rx='2.25'/%3E%3C/svg%3E");
   display: grid;
   gap: 0.7rem;
+  /* In the health panel's flex column (home.css) the rack takes the height
+     left under the head, and spare height goes between the meters, never
+     below the last one: the rack spans the panel, which spans the cells'
+     row. With no spare height both lines do nothing. */
+  flex: 1 1 auto;
+  align-content: space-between;
   margin: 0;
   padding: 0;
   list-style: none;

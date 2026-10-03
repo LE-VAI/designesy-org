@@ -530,53 +530,37 @@ button.pillar::before {
 }
 
 /*
-  Desktop enhancement — System state + System signals side-by-side.
-  Migrated from globals.css: home.css loads AFTER globals.css, so the
+  Desktop enhancement — System state + System status side by side, a split
+  window. Migrated from globals.css: home.css loads AFTER globals.css, so the
   desktop-default `flex-direction: column` above would override this
   min-width block if it stayed in globals.css (cascade-order bug).
 
-  Uses CSS Grid (not flexbox) for height matching: the marquee's track
-  content (24 pills) is taller than the row-stack (12 rows). With flexbox
-  align-items:stretch, the marquee would inflate the container height,
-  stretching the row-stack with empty space below. Grid solves this:
-  min-height:0 on the marquee lets the row-stack define the row height,
-  and the default align-items:stretch stretches the marquee to match —
-  no hardcoded pixel height. The marquee keeps its floating quality
-  (surface bg, radius, mask gradient). The graceful seam is a 1px
-  --line-faint left border, visually whispering the link between the
-  two panels without a hard divider.
+  The register (12 rows) defines the panel's height; the status pane is
+  shorter, so it travels: it is sticky one gutter under the header capsule
+  (4.25rem, the capsule's bottom edge) and stops on the panel's content
+  bottom. Stretched to the row instead, it left about 530px of empty pane
+  beside the register's lower half at 1440. Because the pane no longer spans
+  the row, the panel draws the divider (::after on .home-state-panel, below),
+  top to bottom like the console's. Columns: the console's own narrow split
+  (1.5fr | 1fr) until the panel's g12 query switches it to the 7-line.
 */
 @media (min-width: 860px) {
   .state-layout {
+    --state-split: 60%;
     display: grid;
-    grid-template-columns: min(100%, 640px) 1fr;
-    gap: var(--space-12);
-    align-items: stretch;
+    grid-template-columns: var(--state-split) minmax(0, 1fr);
+    gap: 0;
+    align-items: start;
   }
 
   .row-stack {
     width: auto;
     max-width: none;
-    /* Match the marquee track's top/bottom padding so the first row aligns
-       vertically with the first visible pill, and the last row bottom
-       aligns with the last visible pill — both columns start and end
-       their content at the same Y, eliminating the awkward gap. */
-    padding-top: var(--space-36);
-    padding-bottom: var(--space-16);
-    /* Stretch the last row to fill any remaining vertical space so the
-       bottom edges align — both columns end at the same Y. */
-    display: flex;
-    flex-direction: column;
-  }
-
-  .row-stack > .row:last-child {
-    flex: 1 1 auto;
   }
 
   .state-marquee {
     display: block;
     min-height: 0;
-    border-left: 1px solid var(--line-faint);
   }
 }
 
@@ -663,15 +647,6 @@ button.pillar {
 @media (max-width: 859px) {
   /* On narrow viewports the construction field would crowd the input — step back. */
   
-}
-
-.hero-content {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  max-width: var(--maxw-shell);
-  margin-inline: auto;
-  padding-inline: clamp(1rem, 3vw, 2rem);
 }
 
 .hero-display {
@@ -1030,49 +1005,65 @@ button.pillar {
   color: var(--muted);
 }
 
-.home .score-hero-input {
-  max-width: 40rem;
-  margin-inline: 0;
+/* The score form takes its width from the hero grid (home-lvl.css): it spans
+   to the 7-line from 64rem of hero width, full below. No cap here. */
+
+/* --- Section rhythm: one unit ---------------------------------------------
+   Every chapter is spaced by one value, --home-rhythm: each section's top and
+   bottom padding, and the hero's bottom padding (home-lvl.css), so the hero's
+   handoff is the same as every other. The chapter rule (.site-shell
+   .section::before, globals.css) sits three quarters of a unit above the next
+   eyebrow: content, two units, the rule, 0.75 units, the eyebrow (128 / 48 at
+   1440, 80 / 32 at 390), 177px from one chapter's last surface to the next
+   chapter's eyebrow at 1440. Every head carries an eyebrow, so that distance
+   is measured to the same element everywhere. The statement carries its
+   weight in its type scale, not in extra air.
+   On this page the rule runs crisp from content edge to content edge: the
+   shared edges of every surface below it, not a hairline fading into the
+   gutter. */
+.home {
+  --home-rhythm: clamp(var(--space-40), 5vw, var(--space-64));
+  --home-rule-gap: clamp(var(--space-32), 3.75vw, var(--space-48));
 }
 
-/* The instrument column: the ring leads, the cohort follows at lower rank. */
-
-/* --- The contract ring ---------------------------------------------------- */
-
-/* The page's one use of --activation: the needle that sweeps once on load and
-   then rests at twelve o'clock, where the registry starts. */
-
-/* --- Section rhythm: each section is sized for its role ------------------- */
 .home .section {
-  padding-block: clamp(var(--space-56), 7vw, var(--space-88));
+  padding-block: var(--home-rhythm);
 }
 
-.home .home-statement {
-  padding-block: clamp(var(--space-72), 10vw, var(--space-144));
+/* A border, not a fill: same 1px box, and forced colours redraw it. */
+.home .section::before {
+  height: 0;
+  margin-bottom: var(--home-rule-gap);
+  border-top: 1px solid var(--line);
+  background: none;
 }
 
-.home .home-index {
-  padding-block: clamp(var(--space-48), 6vw, var(--space-72));
-}
-
-/* Demonstration: the heading and lede split across the measure. */
+/* Demonstration: the head mirrors the body below it. The head is a .g12
+   region: below 64rem of its own width both span full and stack; from 64rem
+   the title takes full-start / mirror, the steps column under it, and wraps to
+   two lines (it ends by 604.8 at 1440), and the lede takes mirror / full-end,
+   so it starts on the inspection stage's left edge (620.8 at 1440). With the
+   title on one line to the 7-line, a display period sat 25px from body copy
+   and the lede shared no edge with anything. The two sit on one last
+   baseline: the lede's final line reads off the title's. */
 .home-split-head {
-  display: grid;
-  gap: var(--space-12);
+  row-gap: var(--space-12);
+  align-items: end;
   margin-bottom: var(--space-32);
 }
 
-@media (min-width: 1024px) {
-  .home-split-head {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    gap: var(--space-48);
-    align-items: end;
-  }
-  .home-split-head .home-title {
+/* The children set the alignment: the head is the container they query, and
+   a container cannot query itself. */
+@container g12 (width >= 64rem) {
+  .home-split-head > .home-title {
+    grid-column: full-start / mirror;
+    align-self: last baseline;
     margin-bottom: 0;
   }
-  .home-split-head .surface-lede {
-    margin-bottom: var(--space-4);
+  .home-split-head > .surface-lede {
+    grid-column: mirror / full-end;
+    align-self: last baseline;
+    margin-bottom: 0;
   }
 }
 
@@ -1099,35 +1090,136 @@ button.pillar {
   color: var(--signal-access);
 }
 
+/* The pillars' source line, set as the console's caption is: the grid's own
+   left edge, caption type, one gutter under the cards. Pillar 02 carried its
+   citation inline and ran eight lines against the others' four and five. */
+.home .home-pillar-note {
+  margin: var(--grid-gutter) 0 0;
+  font: 400 0.8rem/1.45 var(--sans);
+  color: var(--muted);
+}
+
+.home .home-pillars sup,
+.home .home-pillar-note sup {
+  font-size: 0.7em;
+  line-height: 0;
+  color: var(--ink);
+}
+
 @media (hover: hover) {
   .home .home-pillars .pillar:hover .pillar-number {
     color: var(--signal-access);
   }
 }
 
-/* The contract: principles as cells beside the health instrument. */
+/* The contract: principles as cells beside the health instrument, paired on
+   the 7-line. The grid is a .g12 region with four explicit rows. From 64rem
+   of its own width the principles column takes full-start / split across all
+   four and hands them to its children through subgrid (h2, lede, cells,
+   more-link), and the health panel takes split / full-end on row 3 alone,
+   the cells' row, and stretches. The panel's top and bottom are therefore the
+   cells' top and bottom by construction (the old align-items: start lined it
+   up with the h2's line box instead: dTop -143, dBottom -105 at 1440), and
+   its left edge is the 7-line plus one gutter (818.67 at 1440). Row-gap is 0,
+   so the empty rows 3 and 4 cost nothing while the two stack; spacing comes
+   from the children's own margins. */
 .home-principles-grid {
-  display: grid;
-  gap: var(--space-40);
-}
-
-@media (min-width: 1024px) {
-  .home-principles-grid {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    gap: clamp(var(--space-40), 5vw, var(--space-72));
-    align-items: start;
-  }
+  grid-template-rows: repeat(4, auto);
+  row-gap: 0;
 }
 
 .home .home-principle-cells {
   margin-top: var(--space-8);
 }
 
-.home .home-health {
-  border: 1px solid var(--line);
+/* Radius tiers on this page: reading 8 (pillars, launcher cards, the cohort
+   strip), instrument 12 (Contract Health), window 16 (the console, the
+   inspection window, the state panel). Two surfaces paired on a shared edge
+   take the higher tier, so the principle cells, read beside the health panel,
+   are 12 like it: at 6 they read as a second component that happened to sit
+   next to it. The Four ways cards stay as they are (spec 3.2). */
+.home .home-principle-cells {
   border-radius: var(--radius-lg);
-  background: var(--surface);
+}
+
+.home .home-pillars > .pillar,
+.home .home-launcher > .surface-card {
+  border-radius: var(--radius-md);
+}
+
+@container g12 (width < 64rem) {
+  .home .home-health {
+    margin-top: var(--space-40);
+  }
+}
+
+@container g12 (width >= 64rem) {
+  .home .home-principles-main {
+    grid-column: full-start / split;
+    grid-row: 1 / span 4;
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+  /* The 24px between lede and cells moves onto the lede, so the cells' box
+     starts exactly on row 3's top edge, as the panel's does. */
+  .home .home-principles-main > .surface-lede {
+    margin-bottom: var(--space-24);
+  }
+  .home .home-principles-main > .home-principle-cells {
+    margin-top: 0;
+  }
+  .home .home-health {
+    grid-column: split / full-end;
+    grid-row: 3;
+    align-self: stretch;
+  }
+}
+
+/* Contract Health is a tier-2 instrument: read, not commanded, and over
+   static paper, so it is opaque and top-lit (mat-instrument, rim, specular,
+   elev-2) and never blurred. A flex column, so the meter rack (.hm, flex: 1,
+   home-lvl.css) fills the panel when the cells' row is the taller one. */
+.home .home-health {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--mat-instrument);
+  box-shadow: var(--specular), var(--elev-2);
   padding: var(--space-24);
+}
+
+/* --muted-dim measures 4.38:1 on the instrument's lifted top in dark mode,
+   so the panel's small caps label and its unit step up to --muted (6.89:1). */
+.home .home-health .section-heading-badge-label,
+.home .home-health .section-heading-badge-unit {
+  color: var(--muted);
+}
+
+/* The 1px top-lit edge on a masked layer (it replaces the flat border; the
+   state panel below needs a borderless box for --track-split). */
+.home .home-health::before,
+.home .home-state-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+@media (prefers-contrast: more) {
+  .home .home-health::before,
+  .home .home-state-panel::before {
+    background: var(--line-strong);
+  }
 }
 
 .home-health-head {
@@ -1157,6 +1249,13 @@ button.pillar {
   background: color-mix(in srgb, var(--signal) 8%, var(--surface));
 }
 
+/* On the light theme's signal tint (#ebeffb) --muted-dim measures 4.26:1, so
+   the featured card's status line and arrow take --muted (6.6:1). Dark is
+   untouched: --muted-dim already clears 4.5 on its tint. */
+[data-theme="light"] .home .field-card.is-featured {
+  --muted-dim: var(--muted);
+}
+
 .home .field-card.is-featured .field-card-title {
   font-family: var(--display);
   font-weight: 700;
@@ -1166,18 +1265,160 @@ button.pillar {
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
 }
 
-/* Index: every surface, dense and launcher-like. */
+/* Index: every surface, dense and launcher-like, on the shared module. The
+   launcher is a .g12 region (the old auto-fill 14rem gave 5 x 229.6 at 1180,
+   on no line the page uses). Cards span 3 tracks from 64rem of its own width
+   (four up, 283px at 1440: the pillars' width), 4 from 48rem (three up, on
+   the 4|8 module), 6 from 36rem (two up), full below. Twelve cards fill every
+   tier's rows exactly. Rows stretch, so cards side by side share top and
+   bottom. The track list is restated here because .surface-list (home.css,
+   globals.css) sets its own columns at the same specificity as .g12. */
 .home .home-launcher {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
-  gap: var(--space-8);
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--space-16);
+  align-items: stretch;
 }
 
-/* System state: the site's own status panel. */
+@container g12 (width >= 36rem) {
+  .home .home-launcher > .surface-card {
+    grid-column: span 6;
+  }
+}
+
+@container g12 (width >= 48rem) {
+  .home .home-launcher > .surface-card {
+    grid-column: span 4;
+  }
+}
+
+@container g12 (width >= 64rem) {
+  .home .home-launcher > .surface-card {
+    grid-column: span 3;
+  }
+}
+
+/* System state: the site's own status panel, a tier-1 reading surface (read,
+   not commanded): mat-reading, the top-lit rim above instead of a flat
+   border, elev-1. It is a split window with a title-barred pane, so it takes
+   the window radius, as the console does. The section is the panel's g12
+   container: the panel is its only surface, so it needs the query, not the
+   tracks. */
+.home .home-state {
+  container: g12 / inline-size;
+}
+
 .home .home-state-panel {
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  padding: clamp(var(--space-16), 2.5vw, var(--space-28));
+  --state-pad: clamp(var(--space-16), 2.5vw, var(--space-28));
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+  padding: var(--state-pad);
+}
+
+/* The window radius steps down on phones with the console's (home-lvl.css). */
+@media (max-width: 640px) {
+  .home .home-state-panel {
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* Split window, from 860px (where the status pane exists). One inset,
+   --state-pad (28px at 1440), everywhere: the panel's top and bottom, the
+   register's left, and the pane's left and right, so the register's content
+   starts 28px in and the pane's ends 28px in (150.5 and 1274.5 at 1440). The
+   panel carries no inline padding and no border, so --state-split resolves
+   against the full panel box; the panes take the inset instead. The divider
+   is the panel's own ::after on the split line, full height. */
+@media (min-width: 860px) {
+  .home .home-state-panel {
+    padding-inline: 0;
+  }
+  /* A border, not a background, so forced colours redraw it in system ink. */
+  .home .home-state-panel::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: var(--state-split);
+    border-left: 1px solid var(--line-faint);
+    pointer-events: none;
+  }
+  .home .home-state-panel > .row-stack {
+    max-width: none;
+    padding: 0 var(--state-pad);
+  }
+  /* The status pane starts on the register's first row, holds one gutter
+     under the header capsule (68px) while the register scrolls past, and
+     lands on the panel's content bottom as the panel leaves: at rest, in
+     print and on a screen tall enough to show the whole panel, it stays top
+     aligned, title bar beside row 01. (Docked to the bottom instead, it sat
+     at the panel's foot with the void above it whenever the whole panel was
+     in view, as at 2560.) Its header is a title bar, the console's .vc-bar
+     register: UI type at 600, a hairline under it, no caps. The pane holds
+     still, so nothing in it is masked. */
+  .home .home-state-panel > .state-marquee {
+    position: sticky;
+    top: calc(4.25rem + var(--grid-gutter));
+    align-self: start;
+    overflow: visible;
+    margin: 0;
+    padding-inline: var(--state-pad);
+    border: 0;
+    border-radius: 0;
+    background: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .home .home-state-panel .state-marquee-header {
+    position: static;
+    display: flex;
+    align-items: center;
+    min-height: 2.9rem;
+    margin: 0 0 var(--space-16);
+    padding: 0;
+    border-bottom: 1px solid var(--line-faint);
+    background: none;
+    font: 600 0.8125rem/1 var(--sans);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink);
+  }
+  /* One still set of statuses. Every status here is resolved, and motion on
+     this site means unresolved, so the list does not scroll (the marquee's own
+     brief, globals.css); it is held still here as well because the sticky pane
+     is only right with one set: the loop's aria-hidden second copy doubled the
+     pane to 1330px and pushed the panel 225px past the register. With nothing
+     moving, the loop's pause control and grab cursor have nothing to act on. */
+  .home .home-state-panel .state-marquee-track {
+    margin-top: 0;
+    padding-inline: 0;
+    animation: none;
+  }
+  .home .home-state-panel .state-marquee-group[aria-hidden="true"],
+  .home .home-state-panel .state-marquee-toggle {
+    display: none;
+  }
+  /* No loop, so no seam gap after the last pill: it ends on the pane's foot,
+     which lands on the register's last row. */
+  .home .home-state-panel .state-marquee-group {
+    padding-bottom: 0;
+  }
+  .home .home-state-panel > .state-marquee {
+    cursor: auto;
+    touch-action: auto;
+  }
+}
+
+/* From 64rem of the section's width the split is the 7-line: --track-split,
+   seven columns and six gutters of the panel's own box (681.67, so x 804.17
+   at 1440), the console's divider above it. */
+@container g12 (width >= 64rem) {
+  .home .home-state-panel {
+    --state-split: var(--track-split);
+  }
 }
 
 /* Visible at rest: nothing on the homepage waits for scroll to exist.
@@ -1199,6 +1440,8 @@ button.pillar {
   
   .home .home-health,
   .home .home-state-panel { border: 1px solid CanvasText; }
+  .home .home-health::before,
+  .home .home-state-panel::before { display: none; }
 }
 
 /* --- Revision pass 1 ------------------------------------------------------ */
@@ -1254,12 +1497,9 @@ button.pillar {
   font-variant-numeric: tabular-nums;
 }
 
-/* Revision pass 2: close the dead bands where a section's bottom padding met
-   the next section's top padding (~200px of empty ground before each rule).
-   The statement section keeps its deliberate breathing room. */
-.home .home-hero {
-  padding-bottom: clamp(var(--space-40), 5vw, var(--space-64));
-}
+/* Revision pass 2 (closing the dead bands before each rule) is now the one
+   rhythm unit above: the hero's bottom padding is --home-rhythm, set where
+   the hero's padding lives (home-lvl.css). */
 
 /* Revision pass 3: font-swap stability. next/font sizes the fallback face to
    Fraunces' default optical size; at 'opsz' 96 the display glyphs run ~11%

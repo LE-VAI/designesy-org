@@ -63,7 +63,7 @@ export default function GuardrailsContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.conformance.output_bundle.map((item, i) => (
-              <div key={item.component} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={item.component} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{item.component}</span>
@@ -81,7 +81,7 @@ export default function GuardrailsContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

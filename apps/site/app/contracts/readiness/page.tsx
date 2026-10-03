@@ -56,7 +56,7 @@ export default function ReadinessContractPage() {
           <h2 className="doctrine-heading">The six maturity axes</h2>
           <div className="row-stack" role="list">
             {c.conformance.six_maturity_axes.map((axis, i) => (
-              <div key={axis.axis} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={axis.axis} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{axis.axis}{axis.axis === 'AI Readiness' && ' (new)'}</span>
@@ -83,7 +83,7 @@ export default function ReadinessContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

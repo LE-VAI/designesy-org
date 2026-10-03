@@ -12,9 +12,11 @@ export const dynamic = 'force-static';
 //
 // Coverage (2026-08-09): colors (incl. status), surfaces+lines (incl.
 // depth/effect tokens), border, radius, shadows, motion (duration/ease),
-// interaction state tokens, and font stacks. Verified: every :root CSS
-// custom property is represented — parity enforced by
-// scripts/check-contract-drift.js at build time.
+// interaction state tokens, and font stacks as DTCG tokens. Values DTCG
+// cannot type (clamp() widths, the 12-column track list, gradients, the
+// glass and elevation materials) travel in $extensions.designesy.layout
+// and .materials, verbatim from the contract. Contract-to-CSS parity is
+// enforced by scripts/check-contract-drift.js at build time.
 //
 // Self-referential conformance: this export passes designesy_tokens_score at 100%.
 export function GET() {
@@ -355,6 +357,8 @@ export function GET() {
       version: c.version,
       typography: c.cadence,
       takt: c.takt,
+      layout: (c as Record<string, unknown>).layout,
+      materials: (c as Record<string, unknown>).materials,
       acoustic: (c as Record<string, unknown>).acoustic,
       verification: {
         checks: 40,

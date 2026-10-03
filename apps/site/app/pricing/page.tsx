@@ -157,6 +157,7 @@ export default function PricingPage() {
 
         <section className="doctrine-section fade-up fade-up-delay-2">
           <div
+            className="pricing-firewall"
             style={{
               padding: '1.5rem 1.75rem',
               background: 'var(--surface)',
@@ -165,7 +166,6 @@ export default function PricingPage() {
               borderLeft: '3px solid var(--signal)',
               borderRadius: '6px',
               margin: '0 0 2rem',
-              maxWidth: '66ch',
               boxShadow: 'var(--inner-light)',
             }}
           >
@@ -205,6 +205,7 @@ export default function PricingPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
+          <h2 className="doctrine-heading">Questions</h2>
           <div className="pricing-faq">
             <details className="pricing-faq-item">
               <summary className="pricing-faq-q">

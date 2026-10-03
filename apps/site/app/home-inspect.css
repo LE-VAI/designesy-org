@@ -1,23 +1,121 @@
 /* ==========================================================================
    Inspection: "Every check, run against the page", told by scroll
-   (lib/inspect-sequence). The scroll position picks the step; nothing here
-   advances on a timer except the step-one read sweep, which loops exactly.
+   (lib/inspect-sequence). The scroll position picks the step. Reading and
+   measuring follow the finger where the browser has scroll-driven
+   animations; verdicts land as transitions on data-step. Nothing advances on
+   a timer except the step-one read sweep and the working LED, which loop
+   exactly on divisions of the 12s master period.
    Loaded after home-lvl.css (it uses the --lv-* instrument palette).
+
+   ONE OWNER PER PROPERTY PER ELEMENT. A running fill-both scroll animation
+   beats a data-step declaration on the same property, so a shared property
+   would silently freeze a state.
+     .ix-scene                     transform           scrub (lean, --s1); loop
+     .mp                           translate, rotate   event (flatten, step 4)
+     plane [data-z]                translate           scrub (lift, --s1); loop
+     plane [data-z]                transform           event (sink, steps 3-4)
+     .ix-foot                      translate, opacity  scrub, in lockstep
+     .ix-sheet                     opacity             event (goes with the sink)
+     .ix-sheet::before, ::after    opacity             scrub (arrive with the lift)
+     .ix-box                       opacity             data-step (dim)
+     .ix-box::before               opacity             scrub (outline lights)
+     .ix-tag, .ix-chip             opacity, transform  data-step
+     .ix-chip                      scale               event (snap)
+     ruler and target lines        transform           scrub, else event
+     ruler and target holders      opacity             data-step
+     digit strips                  transform           scrub in steps(), else event
+     .ix-reticle                   transform           scrub, else event
+     .ix-find, .ix-pin, .ix-flag,
+     .ix-verdict, tally segments   transform, opacity  events
+     centring translate (tags,
+     flags, pins)                  translate           static
+     .inspect-canvas               opacity             the play loop's crossfade
+     .ix-log                       opacity             data-step (stands down at 4)
+
+   GATES (attributes written by the component, read here)
+     data-ix-armed   JS is running. Pre-arm the page is flat and identical to
+                     the no-JS markup; the log, LED and counter appear here.
+     data-ix-scrub   the scroll-driven layer (supported, motion allowed, no
+                     play loop running)
+     data-ix-3d      the exploded scene (scrub, or the play loop)
+     data-ix-calm    reduced motion or the site's motion toggle (tiers below)
+     data-ix-auto    the play-on-request loop owns the section
+     data-ix-active  within a viewport of the screen: loops run, will-change
    ========================================================================== */
 
 .home .home-inspect .home-split-head {
   margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
+/* The section is a .g12 region (globals.css): twelve tracks on the grid
+   gutter, and the g12 container the layout below queries. */
 .inspect {
   --ix-head: var(--lv-head);
   --ix-head-ink: var(--lv-head-ink);
   --ix-warn: var(--warn);
   --ix-fail: var(--error);
-  display: grid;
-  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-  gap: clamp(2rem, 5vw, 4.5rem);
+  /* Depth: the gap between planes, the lean, the recession, the lens. At
+     14px and 16deg a 1400px lens gave 1-3% parallax and the sheets read as
+     one keystoned screenshot (judged at 1440, 2026-10-03); 26px and 20deg
+     separate them. The narrow stage halves them (see the narrow block). */
+  --ix-g: 26px;
+  --ix-tilt: 20deg;
+  --ix-recede: 96px;
+  --ix-persp: 1400px;
+  --ix-persp-origin: 64% 12%;
+  /* A verdict lands with weight: a critically damped spring, ~4% overshoot. */
+  --ease-land: linear(0, 0.36 9%, 0.74 20%, 0.96 32%, 1.035 44%, 1.02 56%, 1 70%, 1);
+  /* When the verdict HUD rises (later once there is a flatten to ride). */
+  --ix-hud-in: 160ms;
+  /* The page under test has its own palette and radii. They are a
+     specimen's, not system tokens, so they live on the section, not :root. */
+  --mp-paper: #0f1114;
+  --mp-ink: #eef0f3;
+  --mp-muted: #7d838c;
+  --mp-accent: #2dd4bf;
+  --mp-on-accent: #032621;
+  --mp-line: rgba(255, 255, 255, 0.08);
+  --mp-card: rgba(255, 255, 255, 0.03);
+  --mp-r-xs: 0.32em;
+  --mp-r-sm: 0.45em;
+  --mp-r-md: 0.6em;
+  --mp-r-lg: 0.8em;
+  /* Flag chips: a fill and an ink per status, and the lift. The demo's own
+     flags must pass the threshold it teaches (4.5:1 at 10px): dark, the fail
+     flag takes dark ink on the full signal red (7.0:1; white on the old 92%
+     mix was 3.24:1). Light values below. scripts/visual-floor.js measures
+     both pairs in both themes. */
+  --ix-shade: #000;
+  --ix-warn-bg: color-mix(in srgb, var(--ix-warn) 88%, var(--ix-shade));
+  --ix-warn-ink: #1d1400;
+  --ix-fail-bg: var(--ix-fail);
+  --ix-fail-ink: #200606;
+  --ix-flag-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+  /* The trace a lifted layer leaves on the paper. On dark a shadow is
+     invisible, so the footprint is light: a dashed outline over a faint
+     glow of the inspector's colour. Light, a soft cast. */
+  --ix-foot-fill: color-mix(in srgb, var(--ix-head) 16%, transparent);
+  --ix-foot-o: 0.35;
   align-items: start;
+  row-gap: 0;
+}
+
+[data-theme="light"] .inspect {
+  --mp-paper: #ffffff;
+  --mp-ink: #121418;
+  --mp-muted: #8b919a;
+  --mp-accent: #0d9488;
+  --mp-on-accent: #ffffff;
+  --mp-line: rgba(10, 20, 40, 0.09);
+  --mp-card: rgba(10, 20, 40, 0.025);
+  /* Amber lightened so the dark ink reads (8.1:1; the old #b07d04 mix was
+     4.01:1). The fail flag keeps white on the deepened red (5.5:1). */
+  --ix-warn-bg: rgb(214 165 40);
+  --ix-fail-bg: color-mix(in srgb, var(--ix-fail) 92%, var(--ix-shade));
+  --ix-fail-ink: var(--paper-on-signal);
+  --ix-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
+  --ix-foot-fill: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent);
+  --ix-foot-o: 0.55;
 }
 
 /* --- The steps: text, always readable; the active one is lit ------------ */
@@ -121,29 +219,74 @@
   text-wrap: pretty;
 }
 
-/* --- The stage: a glass window, sticky while the steps scroll ----------- */
+/* --- The stage: an opaque instrument window, sticky while the steps scroll */
 
 .inspect-stage {
   position: sticky;
-  top: max(6rem, calc(50vh - 17rem));
+  /* Centred on the reading line: half the armed window plus its caption. */
+  top: max(6rem, calc(50vh - 20rem));
 }
 
+/* Wide: the body runs 5 then 7 under a head that runs 7 then 5, a chiasmus.
+   The stage takes mirror / full-end, the same seven columns as the console
+   face above it. 57rem keeps the narrow switch where it was (~959px). The
+   literal is repeated because a custom property cannot sit in a query. */
+@container g12 (width >= 57rem) {
+  .inspect > .inspect-steps {
+    grid-column: full-start / mirror;
+    grid-row: 2;
+    padding-inline-end: var(--space-32);
+  }
+  /* Row 1 holds only the play button (zero height when it is hidden), so
+     its top edge is the window's. */
+  .inspect > .ix-play {
+    grid-column: full-start / mirror;
+    grid-row: 1;
+  }
+  .inspect > .inspect-stage {
+    --ix-mode: wide;
+    grid-column: mirror / full-end;
+    grid-row: 1 / span 2;
+  }
+}
+
+/* Read, not commanded, and it sits over static paper: an opaque, top-lit
+   instrument. Its depth comes from light (rim, specular, elevation), never
+   from blur, so the old backdrop-filter is gone. */
 .inspect-window {
   position: relative;
   margin: 0;
   border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  background: var(--mat-instrument);
+  box-shadow: var(--specular), var(--elev-2);
   overflow: hidden;
   isolation: isolate;
 }
 
+/* The 1px top-lit edge, on a masked layer over everything inside. */
+.inspect-window::before,
+.ix-verdict::before,
+.ix-log::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The title bar. The URL column may shrink, so nothing in the bar can push
+   past the window's edge and be clipped (measured clipping at 1024,
+   2026-10-03). */
 .inspect-chrome {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem;
   height: 2.6rem;
@@ -167,19 +310,29 @@
 
 .inspect-url {
   justify-self: center;
+  max-width: 100%;
   padding: 0.34rem 0.8rem;
+  overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .inspect-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inspect-status-word {
   position: relative;
   display: inline-grid;
   justify-items: end;
 }
 
-.inspect-status > span {
+.inspect-status-word > span {
   grid-area: 1 / 1;
   transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
 }
@@ -188,6 +341,29 @@
 .inspect-status-done { color: var(--lv-ink-accent); opacity: 0; transform: translateY(4px); }
 .inspect[data-step="4"] .inspect-status-run { opacity: 0; transform: translateY(-4px); }
 .inspect[data-step="4"] .inspect-status-done { opacity: 1; transform: none; }
+
+/* Working: an LED before the status word, and the checks run so far. Both
+   exist only once the demo is armed; before that the bar reads as it did. */
+.ix-led,
+.ix-count {
+  display: none;
+}
+
+.inspect[data-ix-armed] .ix-led {
+  display: block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lv-ink-accent);
+}
+
+.inspect[data-ix-armed] .ix-count {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 
 .inspect-rail {
   position: absolute;
@@ -211,59 +387,127 @@
 .inspect[data-step="3"] .inspect-rail i { transform: scaleX(0.75); }
 .inspect[data-step="4"] .inspect-rail i { transform: scaleX(1); }
 
+/* Its text starts on the window's edge, not 4px inside it. */
 .inspect-caption {
-  margin: 0.8rem 0.25rem 0;
+  margin: 0.8rem 0 0;
   font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted-dim);
 }
 
-/* --- The page under test: its own small palette, theme-following ------- */
-
-/* The demo page's own palette and radii, as token definitions. */
-:root {
-  --mp-paper: #0f1114;
-  --mp-ink: #eef0f3;
-  --mp-muted: #7d838c;
-  --mp-accent: #2dd4bf;
-  --mp-on-accent: #032621;
-  --mp-line: rgba(255, 255, 255, 0.08);
-  --mp-card: rgba(255, 255, 255, 0.03);
-  --mp-r-xs: 0.32em;
-  --mp-r-sm: 0.45em;
-  --mp-r-md: 0.6em;
-  --mp-r-lg: 0.8em;
-  /* Flag chips: the shade that deepens a status fill, the ink on amber, the lift. */
-  --ix-shade: #000;
-  --ix-warn-ink: #1d1400;
-  --ix-flag-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+/* Play on request (reduced motion only): a real button, outside the
+   role="img" figure, at the start of the narrative. Its left edge is the
+   step text's. */
+.ix-play {
+  display: none;
+  justify-self: start;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  margin-inline-start: 1.6rem;
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
-[data-theme="light"] {
-  --mp-paper: #ffffff;
-  --mp-ink: #121418;
-  --mp-muted: #8b919a;
-  --mp-accent: #0d9488;
-  --mp-on-accent: #ffffff;
-  --mp-line: rgba(10, 20, 40, 0.09);
-  --mp-card: rgba(10, 20, 40, 0.025);
-  --ix-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
+.ix-play[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--lv-ink-accent) 60%, transparent);
 }
 
+.ix-play-ico {
+  flex: none;
+  width: 0.6rem;
+  height: 0.7rem;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* Pressed: the triangle becomes two bars (pause). */
+.ix-play[aria-pressed="true"] .ix-play-ico {
+  box-sizing: border-box;
+  border-inline: 0.2rem solid currentColor;
+  background: none;
+  clip-path: none;
+}
+
+/* --- The page under test ------------------------------------------------ */
+
+/* The canvas is the inspector's well: a static dot grid, seen only when the
+   page leans back off it. Flat, the page's own paper covers it exactly. */
+/* --mp-fs is resolved where it is used, inside this container, so cqi is
+   the canvas's own width. --ix-fit (written by the component, narrow only)
+   shrinks the specimen on a short tablet window so the stage can still pin. */
+/* Past a 682px canvas (wider than at 1440) the ceiling rises with the
+   canvas at the ratio it has at 1440 (15px on 681px, 2.2cqi), to 22px:
+   capped at 15px the specimen shrank to 11px of a 903px window at 2560
+   (judged 2026-10-03). Below 682px nothing changes. */
 .inspect-canvas {
+  --mp-fs: calc(clamp(8.5px, 2.45cqi, min(22px, max(15px, 2.2cqi))) * var(--ix-fit, 1));
   position: relative;
   container-type: inline-size;
-  background: var(--mp-paper);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--ink) 6%, transparent) 0.75px, transparent 1.25px) 0 0 / 16px 16px,
+    linear-gradient(var(--lv-well), var(--lv-well)),
+    var(--paper);
+  transition: opacity 150ms linear;
 }
 
+/* Docking geometry for the log and the HUD, on the canvas's children (the
+   phone query below can only restyle descendants of the canvas). The log's
+   inline insets are the outlines' edges (the page's content edge less the
+   0.5 outset every .ix-box takes), so log and outlines share two lines; it
+   docks inside the page's foot: cards, 1.1em, log, 1.1em, edge. */
+.ix-scene,
+.ix-verdict,
+.ix-log {
+  --ix-dock-x: calc(1.6 * var(--mp-fs));
+  --ix-dock-b: calc(1.1 * var(--mp-fs));
+  --ix-dock-g: calc(1.1 * var(--mp-fs));
+  --ix-log-rows: 4;
+  --ix-log-fs: 0.68rem;
+  --ix-log-lh: 1rem;
+  --ix-log-pad: var(--space-8);
+  --ix-log-h: 0px;
+}
 
+.inspect[data-ix-armed] .ix-scene,
+.inspect[data-ix-armed] .ix-verdict,
+.inspect[data-ix-armed] .ix-log {
+  --ix-log-h: calc(var(--ix-log-rows) * var(--ix-log-lh) + 2 * var(--ix-log-pad));
+}
 
 .mp {
   position: relative;
   padding: 1.5em 2.1em 2.2em;
+  background: var(--mp-paper);
   font-family: var(--sans);
-  font-size: clamp(8.5px, 2.45cqi, 15px);
+  font-size: var(--mp-fs);
   color: var(--mp-ink);
+}
+
+/* Armed, the page's foot grows by the log's reserved height. It is the same
+   at every step, so the pinned stage never changes height mid-scroll. */
+.inspect[data-ix-armed] .mp {
+  padding-bottom: calc(var(--ix-log-h) + var(--ix-dock-b) + var(--ix-dock-g));
+}
+
+/* The page runs on below the window, as a web page does. Flat, the window
+   clips it. Leaned, the paper's foot recedes toward the lens, and without
+   this its bottom edge rose into the strip under the log and showed as a
+   seam (judged at 1440, 2026-10-03); now that strip is always paper. */
+.mp::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: calc(5 * var(--mp-fs));
+  background: var(--mp-paper);
+  pointer-events: none;
 }
 
 .mp-nav {
@@ -394,14 +638,20 @@
 }
 
 /* --- Inspection layers ---------------------------------------------------
-   Each layer belongs to steps: read (1), measure (2), find (3, 4), verdict (4).
-   Transitions stagger by element (--i), so a step lands as a sweep, not a
-   blink. */
+   Each layer belongs to steps: read (1), measure (2), find (3, 4), verdict
+   (4). Entries carry their own timing and stagger (by element, --i) on the
+   lit state; the base state is the EXIT, quicker and unstaggered, so a layer
+   leaving its step lifts off rather than replaying its arrival backwards. */
 
 .ix {
   --i: 0;
   position: relative;
 }
+
+/* Planes: each lifts by its own multiple of the plane gap. */
+.mp [data-z="1"] { --z: calc(1 * var(--ix-g)); }
+.mp [data-z="2"] { --z: calc(2 * var(--ix-g)); }
+.mp [data-z="3"] { --z: calc(3 * var(--ix-g)); }
 
 .ix-box,
 .ix-tag,
@@ -409,19 +659,36 @@
 .ix-ruler,
 .ix-target,
 .ix-find,
+.ix-pin,
 .ix-flag,
-.ix-verdict {
+.ix-verdict,
+.ix-reticle {
   position: absolute;
   pointer-events: none;
   opacity: 0;
   transition:
-    opacity 380ms var(--ease-out) calc(var(--i, 0) * 70ms),
-    transform 480ms var(--ease-out) calc(var(--i, 0) * 70ms);
+    opacity 140ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    scale 200ms var(--ease-out);
 }
 
+/* The box dims through every step, as before: one timing both ways. Its
+   outset is in the page's root size, not the element's: in em the headline's
+   outline jutted 10-12px past the others (judged at 1440, 2026-10-03), on a
+   demo about measuring. Now every outline starts on one line. */
 .ix-box {
-  inset: -0.4em -0.5em;
+  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
   border-radius: var(--mp-r-sm);
+  transition: opacity 380ms var(--ease-out) calc(var(--i, 0) * 70ms);
+}
+
+/* The outline itself, on a layer the scroll can light without touching the
+   box's own (dimming) opacity. */
+.ix-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ix-head) 80%, transparent);
   background: color-mix(in srgb, var(--ix-head) 7%, transparent);
 }
@@ -430,6 +697,67 @@
 .inspect[data-step="2"] .ix-box { opacity: 0.4; }
 .inspect[data-step="3"] .ix-box,
 .inspect[data-step="4"] .ix-box { opacity: 0.12; }
+
+/* The footprint a lifted layer leaves on the paper: a dashed trace of where
+   it sat (luminous on dark, a soft cast on light). Only the exploded scene
+   shows it. */
+.ix-foot {
+  position: absolute;
+  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
+  border-radius: var(--mp-r-sm);
+  border: 1px dashed var(--ix-head);
+  background: var(--ix-foot-fill);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The sheet a plane is printed on, so a lifted layer reads as a layer: the
+   page's paper, a 1px top-lit edge and a cast shadow, 1px behind the plane's
+   own content. Pre-rendered; nothing on it animates but opacity. Two owners
+   (see the table): the sheet's opacity is the event (it goes when its plane
+   sinks), its layers' opacity is the scrub (they come with the lift). */
+.ix-sheet {
+  position: absolute;
+  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
+  border-radius: var(--mp-r-sm);
+  transform: translateZ(-1px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ix-sheet::before,
+.ix-sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.ix-sheet::before {
+  background: var(--mp-paper);
+  box-shadow: var(--elev-2);
+}
+
+.ix-sheet::after {
+  padding: 1px;
+  background: var(--rim-hot);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+.inspect[data-ix-3d] .ix-sheet {
+  opacity: 1;
+  transition: opacity 240ms var(--ease-out);
+}
+
+/* A plane that sinks takes its sheet with it: resolved means flat. */
+.inspect[data-ix-3d][data-step="3"] .mp [data-verdict="pass"] > .ix-sheet,
+.inspect[data-ix-3d][data-step="4"] .mp [data-z] > .ix-sheet {
+  opacity: 0;
+  transition: opacity 320ms var(--ease-out) calc(var(--i) * 40ms);
+}
 
 .ix-tag,
 .ix-chip,
@@ -474,6 +802,14 @@
   bottom: auto;
 }
 
+/* Armed, the log docks under the cards, so their tag takes the lane on the
+   row's top border instead (the phone lane, below). */
+.inspect[data-ix-armed] .mp-cards .ix-tag {
+  top: -0.95em;
+  left: auto;
+  right: 0.6em;
+}
+
 /* Each tag sits where the page has room for it, the way an inspector does. */
 .mp-h1 .ix-tag {
   left: auto;
@@ -495,15 +831,23 @@
   translate: 0 -50%;
 }
 
-.inspect[data-step="1"] .ix-tag { opacity: 1; transform: none; }
+.inspect[data-step="1"] .ix-tag {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 380ms var(--ease-out) calc(var(--i, 0) * 70ms),
+    transform 480ms var(--ease-out) calc(var(--i, 0) * 70ms);
+}
 
-/* Step two: measurements. */
+/* Step two: measurements. A ratio is computed, not accumulated, so the chip
+   snaps; lengths are drawn, so the ruler and the bracket grow. */
 .ix-chip {
   right: -0.4em;
   bottom: calc(100% + 0.75em);
   background: var(--mp-paper);
   color: var(--muted);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ix-head) 55%, transparent);
+  scale: 0.96;
 }
 
 .ix-chip b {
@@ -520,18 +864,25 @@
   transform: rotate(-45deg) translate(0.05em, -0.1em);
 }
 
+/* The ruler: a holder (opacity, by step), the line that scales, and a label
+   that does not (a scaled parent would squash its text). */
 .ix-ruler {
   left: 0;
   right: 0;
   bottom: -0.45em;
   height: 1px;
+}
+
+.ix-ruler-line {
+  position: absolute;
+  inset: 0;
   background: var(--ix-head);
   transform-origin: left center;
   transform: scaleX(0.2);
 }
 
-.ix-ruler::before,
-.ix-ruler::after {
+.ix-ruler-line::before,
+.ix-ruler-line::after {
   content: "";
   position: absolute;
   top: -3px;
@@ -540,15 +891,19 @@
   background: var(--ix-head);
 }
 
-.ix-ruler::before { left: 0; }
-.ix-ruler::after { right: 0; }
+.ix-ruler-line::before { left: 0; }
+.ix-ruler-line::after { right: 0; }
 
-.ix-ruler span {
+/* The read-out's number is a digit strip on a 1.25em row; the padding gives
+   back the difference, so the chip is the same 1.6em it always was. */
+.ix-ruler-label {
   position: absolute;
   left: calc(100% + 0.6em);
   top: 50%;
   translate: 0 -50%;
-  padding: 0.3em 0.5em;
+  display: flex;
+  align-items: center;
+  padding: 0.175em 0.5em;
   border-radius: var(--mp-r-xs);
   background: var(--ix-head);
   color: var(--paper-on-signal);
@@ -564,16 +919,23 @@
   bottom: 0;
   left: calc(100% + 0.5em);
   width: 0.5em;
+}
+
+.ix-target-line {
+  position: absolute;
+  inset: 0;
   border-block: 1px solid var(--ix-head);
   border-right: 1px solid var(--ix-head);
   transform: translateX(-4px);
 }
 
-.ix-target span {
+.ix-target-label {
   position: absolute;
   left: calc(100% + 0.45em);
   top: 50%;
   translate: 0 -50%;
+  display: flex;
+  align-items: center;
   font-family: var(--mono);
   font-weight: 500;
   font-size: max(10px, 0.8em);
@@ -582,13 +944,80 @@
   white-space: nowrap;
 }
 
-.inspect[data-step="2"] .ix-measure { opacity: 1; transform: none; }
+/* The probe: a crosshair that travels along the headline's outline, from
+   its top-left corner to its top-right, and parks there under the contrast
+   read-out. Parked at the centre it sat on the glyphs it was measuring
+   (judged at 390 and 1440, 2026-10-03). The box is the outline's top edge,
+   zero tall, so translate(100%, 0) is exactly the far corner. */
+.ix-reticle {
+  left: calc(-0.5 * var(--mp-fs));
+  top: calc(-0.4 * var(--mp-fs));
+  width: calc(100% + var(--mp-fs));
+  height: 0;
+}
 
-/* Steps three and four: findings. */
+.ix-reticle i {
+  position: absolute;
+  left: -0.22em;
+  top: -0.22em;
+  width: 0.44em;
+  height: 0.44em;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px var(--ix-head);
+}
+
+.ix-reticle i::before,
+.ix-reticle i::after {
+  content: "";
+  position: absolute;
+  background: var(--ix-head);
+}
+
+.ix-reticle i::before { left: 50%; top: -0.3em; bottom: -0.3em; width: 1px; margin-left: -0.5px; }
+.ix-reticle i::after { top: 50%; left: -0.3em; right: -0.3em; height: 1px; margin-top: -0.5px; }
+
+.inspect[data-step="2"] .ix-measure {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 380ms var(--ease-out),
+    transform 480ms var(--ease-out),
+    scale 320ms var(--ease-land);
+}
+
+.inspect[data-step="2"] .ix-chip {
+  scale: 1;
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 320ms var(--ease-land),
+    scale 320ms var(--ease-land);
+}
+
+/* Without the scroll-driven layer the lines land as one event. */
+.ix-ruler-line,
+.ix-target-line,
+.ix-reticle {
+  transition: transform 200ms var(--ease-out), opacity 140ms var(--ease-out);
+}
+
+.inspect[data-step="2"] .ix-ruler-line,
+.inspect[data-step="2"] .ix-target-line {
+  transform: none;
+  transition: transform 380ms var(--ease-out);
+}
+
+.inspect[data-step="2"] .ix-reticle {
+  opacity: 1;
+  transform: translate(100%, 0);
+  transition: opacity 150ms var(--ease-out), transform 380ms var(--ease-out);
+}
+
+/* Steps three and four: findings. Rings land, then their numbered pins pop,
+   then the flags slide out to name the check. v06 first, v03 60ms later. */
 .ix-find {
-  inset: -0.45em -0.55em;
+  inset: calc(-0.45 * var(--mp-fs)) calc(-0.55 * var(--mp-fs));
   border-radius: var(--mp-r-sm);
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 .ix-find.is-warn {
@@ -601,18 +1030,41 @@
   background: color-mix(in srgb, var(--ix-fail) 8%, transparent);
 }
 
+/* A pin rides its ring's top-left corner, just outside it, clear of the
+   text it marks. Ink on the page's own paper, so its numeral reads at the
+   page's full contrast in both themes; the ring colour carries the status. */
+.ix-pin {
+  left: 0;
+  top: 0;
+  translate: -70% -70%;
+  display: grid;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background: var(--mp-paper);
+  color: var(--mp-ink);
+  font: 700 max(10px, 0.6em) / 1 var(--mono);
+  transform: scale(0.6);
+}
+
+.ix-pin.is-warn { box-shadow: 0 0 0 1.5px var(--ix-warn), var(--ix-flag-shadow); }
+.ix-pin.is-fail { box-shadow: 0 0 0 1.5px var(--ix-fail), var(--ix-flag-shadow); }
+
 .ix-flag {
   color: var(--paper-on-signal);
   box-shadow: var(--ix-flag-shadow);
+  transform: translateX(-8px);
 }
 
 .ix-flag b {
   font-weight: 700;
 }
 
+/* No opacity on the status word: at 0.85 it fell to 4.35:1 on the light
+   fail flag. Spacing and case set it apart. */
 .ix-flag em {
   font-style: normal;
-  opacity: 0.85;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -621,7 +1073,7 @@
   left: calc(100% + 1em);
   top: 50%;
   translate: 0 -50%;
-  background: color-mix(in srgb, var(--ix-warn) 88%, var(--ix-shade));
+  background: var(--ix-warn-bg);
   color: var(--ix-warn-ink);
 }
 
@@ -629,38 +1081,94 @@
   left: calc(100% + 1em);
   top: 50%;
   translate: 0 -50%;
-  background: color-mix(in srgb, var(--ix-fail) 92%, var(--ix-shade));
+  background: var(--ix-fail-bg);
+  color: var(--ix-fail-ink);
 }
 
 .inspect[data-step="3"] .ix-find,
+.inspect[data-step="4"] .ix-find {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 150ms var(--ease-out) calc(120ms + (var(--i) - 2) * 60ms),
+    transform 320ms var(--ease-land) calc(120ms + (var(--i) - 2) * 60ms);
+}
+
+.inspect[data-step="3"] .ix-pin,
+.inspect[data-step="4"] .ix-pin {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 150ms var(--ease-out) calc(320ms + (var(--i) - 2) * 60ms),
+    transform 260ms var(--ease-land) calc(320ms + (var(--i) - 2) * 60ms);
+}
+
 .inspect[data-step="3"] .ix-flag,
-.inspect[data-step="4"] .ix-find,
 .inspect[data-step="4"] .ix-flag {
   opacity: 1;
   transform: none;
+  transition:
+    opacity 150ms var(--ease-out) calc(200ms + (var(--i) - 2) * 60ms),
+    transform 320ms var(--ease-land) calc(200ms + (var(--i) - 2) * 60ms);
 }
 
-/* Step four: the verdict card rises over the page. */
+/* Step four: the verdict HUD rises in the log's place, on exactly the log's
+   footprint, and the log stands down under it. Docked over the card row it
+   covered two of the three cards it had graded and repeated the log's last
+   line in the same frame (judged at 1440, 2026-10-03); here the graded page
+   stays in view and the grade is said once. It is glass because it floats
+   over a page in motion, and it sits outside the 3D context. */
 .ix-verdict {
-  right: 1.1rem;
-  bottom: 1.1rem;
+  --vc-hue: var(--lv-pass-a);
+  /* Inset, so the light stays inside the HUD's own footprint. */
+  --glow-verdict: inset 0 -14px 28px -18px var(--vc-hue);
+  inset-inline: var(--ix-dock-x);
+  bottom: var(--ix-dock-b);
   z-index: 3;
+  box-sizing: border-box;
+  height: var(--ix-log-h);
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.9rem 1.1rem 0.9rem 1rem;
+  /* The log's own text inset, so the grade starts where its lines did. */
+  padding: 0 var(--space-16) 0 var(--space-12);
   border-radius: var(--radius-lg);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
+  background: var(--glass-regular);
+  -webkit-backdrop-filter: var(--glass-filter-regular);
+  backdrop-filter: var(--glass-filter-regular);
+  box-shadow: var(--elev-3);
   transform: translateY(14px) scale(0.98);
+}
+
+/* The verdict's light: pre-rendered, its opacity lands with the result
+   (150ms in, 1.2s hold, 600ms decay), then nothing coloured remains. */
+.ix-verdict::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: var(--glow-verdict);
+  opacity: 0;
 }
 
 .inspect[data-step="4"] .ix-verdict {
   opacity: 1;
   transform: none;
-  transition-delay: 160ms;
+  transition:
+    opacity 150ms var(--ease-out) var(--ix-hud-in),
+    transform 420ms var(--ease-land) var(--ix-hud-in);
+}
+
+.inspect[data-step="4"] .ix-verdict::after {
+  animation: ix-verdict-glow 1950ms linear calc(var(--ix-hud-in) + 150ms) both;
+}
+
+@keyframes ix-verdict-glow {
+  0% { opacity: 0; }
+  7.69% { opacity: 1; }
+  69.23% { opacity: 1; animation-timing-function: var(--ease-out); }
+  100% { opacity: 0; }
 }
 
 .ix-verdict-grade {
@@ -673,6 +1181,8 @@
 
 .ix-verdict-body {
   display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
   gap: 0.3rem;
 }
 
@@ -693,7 +1203,218 @@
   color: var(--muted);
 }
 
-/* Step one: the read sweep, an exact loop (it fades out before it wraps). */
+/* The tally as segments, at the counts' own ratio (4px minimum), in the
+   console's status gradients. They fill from the left once the HUD is up:
+   pass, warn, fail, 60ms apart. */
+.ix-verdict-bar,
+.ix-log-bar {
+  display: flex;
+  gap: 2px;
+  height: 0.35rem;
+}
+
+.ix-verdict-bar i,
+.ix-log-bar i {
+  flex: var(--n) 1 0;
+  min-width: 4px;
+  border-radius: 1px;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 140ms var(--ease-out);
+}
+
+.ix-verdict-bar .is-pass,
+.ix-log-bar .is-pass { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); }
+.ix-verdict-bar .is-warn,
+.ix-log-bar .is-warn { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
+.ix-verdict-bar .is-fail,
+.ix-log-bar .is-fail { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+
+.inspect[data-step="4"] .ix-verdict-bar i,
+.inspect[data-step="4"] .ix-log-bar i {
+  transform: none;
+  transition: transform 320ms var(--ease-land) calc(var(--ix-hud-in) + 120ms + var(--k) * 60ms);
+}
+
+/* --- The log: the inspector's status pane ------------------------------
+   Glass, because the page's foot (and the read sweep) passes under it while
+   the scene moves; outside the 3D context, like the HUD. Facts only. Every
+   colour on it is --ink or --muted (5.2:1 worst case on regular glass). */
+.ix-log {
+  display: none;
+  position: absolute;
+  inset-inline: var(--ix-dock-x);
+  bottom: var(--ix-dock-b);
+  z-index: 2;
+  box-sizing: border-box;
+  height: var(--ix-log-h);
+  padding: var(--ix-log-pad) var(--space-12);
+  grid-template-rows: repeat(var(--ix-log-rows), var(--ix-log-lh));
+  border-radius: var(--radius-md);
+  background: var(--glass-regular);
+  -webkit-backdrop-filter: var(--glass-filter-regular);
+  backdrop-filter: var(--glass-filter-regular);
+  box-shadow: var(--elev-3);
+  font: 500 var(--ix-log-fs) / var(--ix-log-lh) var(--mono);
+  color: var(--muted);
+  transition: opacity 150ms var(--ease-out);
+}
+
+.inspect[data-ix-armed] .ix-log {
+  display: grid;
+}
+
+/* At step four the HUD takes this footprint and the log stands down, as the
+   HUD lands, so the grade is never said twice. The phone keeps the log: it
+   carries the grade there (below). */
+.inspect[data-step="4"] .ix-log {
+  opacity: 0;
+  transition-delay: var(--ix-hud-in);
+}
+
+.ix-log-line {
+  display: grid;
+  grid-template-columns: 9ch minmax(0, 1fr);
+  column-gap: var(--space-8);
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+  transition: opacity 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+
+/* One cell per part, so a pending row's placeholder and its result share
+   the row and crossfade. */
+.ix-log-k,
+.ix-log-grade {
+  grid-area: 1 / 1;
+}
+
+.ix-log-v {
+  grid-area: 1 / 2;
+}
+
+.ix-log-k {
+  font-weight: 600;
+}
+
+.ix-log-v {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Wide: every row is reserved from the start, and a row not yet reached
+   reads as queued ("measure —") instead of an empty box (judged at 1440,
+   2026-10-03: one line and three blank rows read as dead space). */
+.ix-log-wait {
+  grid-area: 1 / 1 / 2 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  /* Dimmed by weight, not colour: --muted-dim measured 4.55:1 on this glass
+     over bare paper and less while the read sweep passes under it. */
+  font-weight: 400;
+}
+
+/* The queued marker is a status glyph, so CSS draws it: written into the
+   markup it counted as a copy em dash on / (check-voice baseline 0). */
+.ix-log-dash::before {
+  content: "\2014";
+}
+
+.inspect[data-step="1"] .ix-log-line:not([data-n="1"]),
+.inspect[data-step="2"] .ix-log-line:is([data-n="3"], [data-n="4"]),
+.inspect[data-step="3"] .ix-log-line[data-n="4"] {
+  --ix-pending: 1;
+}
+
+.ix-log-line > * {
+  opacity: calc(1 - var(--ix-pending, 0));
+  transition: opacity 150ms var(--ease-out);
+}
+
+.ix-log-line > .ix-log-wait {
+  opacity: var(--ix-pending, 0);
+}
+
+.ix-log-v em {
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ix-log-rows,
+.ix-log-grade {
+  display: none;
+}
+
+.ix-log-pin {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  background: var(--mp-paper);
+  color: var(--mp-ink);
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+.ix-log-pin.is-warn { box-shadow: 0 0 0 1.5px var(--ix-warn); }
+.ix-log-pin.is-fail { box-shadow: 0 0 0 1.5px var(--ix-fail); }
+
+/* Wide: results accumulate, one row per step; the current one is in ink. */
+.inspect[data-step="1"] .ix-log-line[data-n="1"],
+.inspect[data-step="2"] .ix-log-line[data-n="2"],
+.inspect[data-step="3"] .ix-log-line[data-n="3"],
+.inspect[data-step="4"] .ix-log-line[data-n="4"] {
+  color: var(--ink);
+}
+
+/* --- Digit strips (lib/digit-strip) ------------------------------------
+   One 1.25em row showing; the strip of every value moves in steps(). The
+   rest row is --ds-at (default: the last), so markup and reduced motion read
+   the final value; a scroll timeline or a step change moves it. */
+.digit-strip {
+  display: inline-block;
+  height: var(--ds-lh);
+  overflow: hidden;
+  line-height: var(--ds-lh);
+  font-variant-numeric: tabular-nums;
+  vertical-align: bottom;
+}
+
+.digit-strip-seg {
+  display: block;
+}
+
+.digit-strip-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transform: translateY(calc(var(--ds-at) * -1 * var(--ds-lh)));
+}
+
+.digit-strip-rows > span {
+  display: block;
+  height: var(--ds-lh);
+}
+
+/* The checks-run counter: a third per step, each third its own segment.
+   Without the scroll layer it rolls to the step's total in 380ms. */
+.ix-count .digit-strip-seg {
+  transition: transform 380ms steps(var(--ds-seg));
+}
+
+.inspect .ix-count [data-seg="1"],
+.inspect:is([data-step="2"], [data-step="3"], [data-step="4"]) .ix-count [data-seg="2"],
+.inspect:is([data-step="3"], [data-step="4"]) .ix-count [data-seg="3"] {
+  transform: translateY(calc(var(--ds-seg) * -1 * var(--ds-lh)));
+}
+
+/* --- The read sweep and the LED: the only time loops --------------------
+   Both divide the 12s master period (3s = 12/4, 1.5s = 12/8). The sweep is
+   at opacity 0 at its wrap and the LED's 0% equals its 100%, so neither seam
+   can show. Nothing loops at step four: resolved means still. */
 .ix-scan {
   position: absolute;
   inset: 0;
@@ -703,6 +1424,9 @@
   transition: opacity 300ms var(--ease-out);
 }
 
+/* The band brightens into its leading line, and the line itself is
+   feathered by the mask, so no edge is cut hard across the page (the old
+   full-strength last pixel cut across the paragraph, judged 2026-10-03). */
 .ix-scan::before {
   content: "";
   position: absolute;
@@ -710,12 +1434,15 @@
   background: linear-gradient(
     180deg,
     transparent 0%,
-    transparent 78%,
-    color-mix(in srgb, var(--ix-head) 10%, transparent) 97%,
+    transparent 70%,
+    color-mix(in srgb, var(--ix-head) 8%, transparent) 92%,
+    color-mix(in srgb, var(--ix-head) 70%, transparent) 99.4%,
     var(--ix-head) 100%
   );
+  -webkit-mask: linear-gradient(180deg, #000 calc(100% - 6px), transparent);
+  mask: linear-gradient(180deg, #000 calc(100% - 6px), transparent);
   transform: translateY(-100%);
-  animation: ix-scan 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: ix-scan 3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 @keyframes ix-scan {
@@ -728,42 +1455,581 @@
 .inspect[data-step="1"] .ix-scan { opacity: 1; }
 .inspect:not([data-step="1"]) .ix-scan::before { animation-play-state: paused; }
 
-/* Continuous scrub where the browser can: the steps' rail follows scroll. */
-@supports (animation-timeline: view()) {
+.inspect[data-ix-armed] .ix-led {
+  animation: ix-led 1.5s ease-in-out infinite;
+}
+
+@keyframes ix-led {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.inspect[data-ix-armed][data-step="4"] .ix-led {
+  animation: none;
+}
+
+/* Out of range, the loops hold still (the scroll-driven layer is never
+   paused: it has no time to keep). */
+.inspect[data-ix-armed]:not([data-ix-active]) .ix-scan::before,
+.inspect[data-ix-armed]:not([data-ix-active]) .ix-led {
+  animation-play-state: paused;
+}
+
+/* --- The exploded scene: events (both clocks) ---------------------------
+   A new 3D context rooted in .ix-scene, inside the flat window. Passing
+   layers sink at step three (the two findings stay standing); at step four
+   the findings sink and, 120ms later, the page flattens: .mp counter-rotates
+   the scene's lean about the same origin, rotateX(t) translateZ(-r) then
+   translateZ(r) rotateX(-t), which is exactly the identity. */
+.inspect[data-ix-3d] .inspect-canvas {
+  perspective: var(--ix-persp);
+  perspective-origin: var(--ix-persp-origin);
+}
+
+.inspect[data-ix-3d] .ix-scene,
+.inspect[data-ix-3d] .mp,
+.inspect[data-ix-3d] .mp-hero,
+.inspect[data-ix-3d] .mp-actions,
+.inspect[data-ix-3d] .mp [data-z] {
+  transform-style: preserve-3d;
+}
+
+.inspect[data-ix-3d] .ix-scene,
+.inspect[data-ix-3d] .mp {
+  transform-origin: 50% 100%;
+}
+
+.inspect[data-ix-3d] {
+  --ix-hud-in: 280ms;
+}
+
+/* Re-rising and re-tilting on the way back up is quicker than landing. */
+.inspect[data-ix-3d] .mp [data-z] {
+  transition:
+    transform 240ms var(--ease-out),
+    translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
+}
+
+.inspect[data-ix-3d][data-step="3"] .mp [data-verdict="pass"],
+.inspect[data-ix-3d][data-step="4"] .mp [data-z] {
+  transform: translateZ(calc(-1 * var(--z)));
+  transition:
+    transform 480ms var(--ease-land) calc(var(--i) * 40ms),
+    translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
+}
+
+.inspect[data-ix-3d][data-step="4"] .mp [data-z] {
+  transition:
+    transform 480ms var(--ease-land) calc((var(--i) - 2) * 40ms),
+    translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
+}
+
+.inspect[data-ix-3d] .mp {
+  transition: translate 320ms var(--ease-out), rotate 320ms var(--ease-out);
+}
+
+.inspect[data-ix-3d][data-step="4"] .mp {
+  translate: 0 0 var(--ix-recede);
+  rotate: x calc(-1 * var(--ix-tilt));
+  transition:
+    translate 560ms var(--ease-land) 120ms,
+    rotate 560ms var(--ease-land) 120ms;
+}
+
+.inspect[data-ix-3d][data-ix-active] .ix-scene { will-change: transform; }
+.inspect[data-ix-3d][data-ix-active] .mp { will-change: translate, rotate; }
+.inspect[data-ix-3d][data-ix-active] .mp [data-z] { will-change: translate, transform; }
+
+/* --- The scroll-driven layer --------------------------------------------
+   Each step's block is a view timeline, hoisted to the section so the stage
+   (its sibling) can read it, and inset to the observer's own band: 50% 50%
+   wide (the one-pixel midline), and on narrow the pixel line setup() writes.
+   So cover 0% of --sN is the instant step N lights, in either direction. */
+@supports (animation-timeline: view()) and (timeline-scope: --a) {
+  .inspect {
+    timeline-scope: --s1, --s2, --s3, --s4;
+  }
+
+  .inspect-step {
+    view-timeline-inset: var(--ix-band-start, 50%) var(--ix-band-end, 50%);
+  }
+
+  .inspect-step:nth-child(1) { view-timeline-name: --s1; }
+  .inspect-step:nth-child(2) { view-timeline-name: --s2; }
+  .inspect-step:nth-child(3) { view-timeline-name: --s3; }
+  .inspect-step:nth-child(4) { view-timeline-name: --s4; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* STEP 1, READ: the page leans back off the well, its layers lift one by
+       one (their footprints stay traced on the paper), outlines light as
+       each is read, and the counter rolls its first third. */
+    .inspect[data-ix-scrub] .ix-scene {
+      animation: ix-lean linear both;
+      animation-timeline: --s1;
+      animation-range: cover 0% cover 25%;
+    }
+
+    .inspect[data-ix-scrub] .mp [data-z] {
+      animation: ix-lift linear both;
+      animation-timeline: --s1;
+      animation-range: cover calc(20% + var(--i) * 5%) cover calc(70% + var(--i) * 5%);
+    }
+
+    .inspect[data-ix-scrub] .ix-foot {
+      animation: ix-foot linear both;
+      animation-timeline: --s1;
+      animation-range: cover calc(20% + var(--i) * 5%) cover calc(70% + var(--i) * 5%);
+    }
+
+    /* The sheet's paper, edge and shadow arrive over the first third of
+       its lift, so a plane is a sheet before it is far off the page. */
+    .inspect[data-ix-scrub] .ix-sheet::before,
+    .inspect[data-ix-scrub] .ix-sheet::after {
+      animation: ix-light linear both;
+      animation-timeline: --s1;
+      animation-range: cover calc(20% + var(--i) * 5%) cover calc(36% + var(--i) * 5%);
+    }
+
+    .inspect[data-ix-scrub] .ix-box::before {
+      animation: ix-light linear both;
+      animation-timeline: --s1;
+      animation-range: cover calc(20% + var(--i) * 8%) cover calc(30% + var(--i) * 8%);
+    }
+
+    .inspect[data-ix-scrub] .ix-count .digit-strip-seg {
+      animation: ix-seg linear both;
+      animation-timing-function: steps(var(--ds-seg));
+    }
+
+    .inspect[data-ix-scrub] .ix-count [data-seg="1"] {
+      animation-timeline: --s1;
+      animation-range: cover 25% cover 100%;
+    }
+
+    /* STEP 2, MEASURE: the ruler draws while its read-out counts, then the
+       bracket closes while its read-out counts; the probe travels in. */
+    .inspect[data-ix-scrub] .ix-ruler-line {
+      animation: ix-draw-x linear both;
+      animation-timeline: --s2;
+      animation-range: cover 0% cover 40%;
+    }
+
+    .inspect[data-ix-scrub] .ix-ruler .digit-strip-rows {
+      animation: ix-strip linear both;
+      animation-timeline: --s2;
+      animation-range: cover 0% cover 40%;
+      animation-timing-function: steps(var(--ds-last));
+    }
+
+    .inspect[data-ix-scrub] .ix-target-line {
+      animation: ix-draw-y linear both;
+      animation-timeline: --s2;
+      animation-range: cover 10% cover 45%;
+    }
+
+    .inspect[data-ix-scrub] .ix-target .digit-strip-rows {
+      animation: ix-strip linear both;
+      animation-timeline: --s2;
+      animation-range: cover 10% cover 45%;
+      animation-timing-function: steps(var(--ds-last));
+    }
+
+    .inspect[data-ix-scrub] .ix-reticle {
+      animation: ix-probe linear both;
+      animation-timeline: --s2;
+      animation-range: cover 20% cover 50%;
+    }
+
+    .inspect[data-ix-scrub] .ix-count [data-seg="2"] {
+      animation-timeline: --s2;
+      animation-range: cover 0% cover 60%;
+    }
+
+    /* STEP 3, FIND: the last third of the count. */
+    .inspect[data-ix-scrub] .ix-count [data-seg="3"] {
+      animation-timeline: --s3;
+      animation-range: cover 0% cover 60%;
+    }
+
+    @keyframes ix-lean {
+      from { transform: none; }
+      to { transform: rotateX(var(--ix-tilt)) translateZ(calc(-1 * var(--ix-recede))); }
+    }
+
+    @keyframes ix-lift {
+      from { translate: 0 0 0; }
+      to { translate: 0 0 var(--z); }
+    }
+
+    @keyframes ix-foot {
+      from { translate: 0 0 0; opacity: 0; }
+      to { translate: 0 0 calc(1px - var(--z)); opacity: var(--ix-foot-o); }
+    }
+
+    @keyframes ix-light {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes ix-seg {
+      from { transform: none; }
+      to { transform: translateY(calc(var(--ds-seg) * -1 * var(--ds-lh))); }
+    }
+
+    @keyframes ix-strip {
+      from { transform: none; }
+      to { transform: translateY(calc(var(--ds-last) * -1 * var(--ds-lh))); }
+    }
+
+    @keyframes ix-draw-x {
+      from { transform: scaleX(0); }
+      to { transform: none; }
+    }
+
+    @keyframes ix-draw-y {
+      from { transform: scaleY(0); }
+      to { transform: none; }
+    }
+
+    @keyframes ix-probe {
+      from { transform: none; }
+      to { transform: translate(100%, 0); }
+    }
+  }
+
+  /* The steps' rail follows the scroll too, but it moves, so it is motion. */
   .inspect-steps {
     view-timeline-name: --inspect;
   }
-  .inspect-steps::after {
-    transition: none;
-    animation: ix-rail linear both;
-    animation-timeline: --inspect;
-    animation-range: contain -30% contain 130%;
-  }
-  @keyframes ix-rail {
-    from { transform: scaleY(0.04); }
-    to { transform: scaleY(1); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-motion="paused"]) .inspect-steps::after {
+      transition: none;
+      animation: ix-rail linear both;
+      animation-timeline: --inspect;
+      animation-range: contain -30% contain 130%;
+    }
+
+    @keyframes ix-rail {
+      from { transform: scaleY(0.04); }
+      to { transform: scaleY(1); }
+    }
   }
 }
 
+/* --- The play loop's event path -----------------------------------------
+   The same events, with the scrubbed lean and lift as transitions on the
+   step (the path Firefox-class browsers take for everything else). */
+.inspect[data-ix-3d][data-ix-auto] .ix-scene {
+  transform: rotateX(var(--ix-tilt)) translateZ(calc(-1 * var(--ix-recede)));
+  transition: transform 720ms var(--ease-out);
+}
+
+.inspect[data-ix-3d][data-ix-auto] .mp [data-z] {
+  translate: 0 0 var(--z);
+}
+
+.inspect[data-ix-3d][data-ix-auto] .ix-foot {
+  translate: 0 0 calc(1px - var(--z));
+  opacity: var(--ix-foot-o);
+  transition:
+    translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms),
+    opacity 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
+}
+
+.inspect[data-ix-3d][data-ix-auto] .ix-sheet::before,
+.inspect[data-ix-3d][data-ix-auto] .ix-sheet::after {
+  opacity: 1;
+  transition: opacity 300ms var(--ease-out) calc(200ms + var(--i) * 60ms);
+}
+
+/* The reset between loops (and the start and stop): the canvas fades out,
+   the state cuts with every transition off, the canvas fades back in. */
+.inspect[data-ix-auto] .inspect-canvas {
+  transition-duration: 300ms;
+}
+
+.inspect[data-ix-fade] .inspect-canvas {
+  opacity: 0;
+}
+
+.inspect[data-ix-snap] .inspect-canvas *,
+.inspect[data-ix-snap] .inspect-canvas *::before,
+.inspect[data-ix-snap] .inspect-canvas *::after,
+.inspect[data-ix-snap] .inspect-chrome * {
+  transition: none !important;
+}
+
+/* The loop is motion the visitor asked for, for this section only: the
+   site-wide pause does not hold its sweep, LED or verdict light. */
+html[data-motion="paused"] .inspect[data-ix-auto][data-step="1"] .ix-scan::before,
+html[data-motion="paused"] .inspect[data-ix-auto] .ix-led,
+html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
+  animation-play-state: running !important;
+}
+
+/* --- Reduced motion, tiered ---------------------------------------------
+   data-ix-calm = prefers-reduced-motion OR the site's motion toggle.
+   Tier 1, removed: lean, lift, sink, flatten (data-ix-3d is never set), the
+   sweep, the LED pulse, the probe's travel, strip rolls (strips rest on the
+   step's final row), the ruler and bracket draws, the verdict light.
+   Tier 2, softened: every step change is a 150ms crossfade, no stagger, no
+   transform. Tier 3, kept: colours, step lighting, Verifying / Verified.
+   The play loop lifts all of it for this section while it runs. */
+.inspect[data-ix-calm]:not([data-ix-auto]) *,
+.inspect[data-ix-calm]:not([data-ix-auto]) *::before,
+.inspect[data-ix-calm]:not([data-ix-auto]) *::after {
+  transition-property: opacity, color !important;
+  transition-duration: 150ms !important;
+  transition-delay: 0ms !important;
+  transition-timing-function: var(--ease-out) !important;
+}
+
+.inspect[data-ix-calm]:not([data-ix-auto]) .ix-scan {
+  display: none;
+}
+
+.inspect[data-ix-calm]:not([data-ix-auto]) .ix-led,
+.inspect[data-ix-calm]:not([data-ix-auto]) .ix-verdict::after {
+  animation: none;
+}
+
+.inspect[data-ix-calm] .ix-play {
+  display: inline-flex;
+}
+
+/* Before the script arms the section (or without it), only the sweep moves. */
 @media (prefers-reduced-motion: reduce) {
-  .inspect *,
-  .inspect *::before,
-  .inspect *::after {
-    transition-duration: 0ms !important;
-    transition-delay: 0ms !important;
+  .ix-scan {
+    display: none;
   }
-  .ix-scan { display: none; }
+  .inspect[data-ix-auto] .ix-scan {
+    display: block;
+  }
 }
 
 /* --- Narrow: the stage pins to the top, the steps scroll beneath -------- */
-@container (max-width: 520px) {
-  /* No room beside the paragraph: the flag rides its top-right corner. */
-  .ix-flag.is-warn {
-    left: auto;
-    right: 0.3em;
-    top: -1.05em;
-    translate: none;
+@container g12 (width < 57rem) {
+  .inspect > .inspect-stage {
+    --ix-mode: narrow;
+    --ix-g: 13px;
+    --ix-tilt: 10deg;
+    --ix-recede: 48px;
+    --ix-persp-origin: 50% 0%;
+    order: -1;
+    top: 4.75rem;
+    z-index: 2;
+    padding-bottom: 0.75rem;
+    background: linear-gradient(180deg, var(--paper) 88%, transparent);
   }
+  .inspect-caption { display: none; }
+  /* Under the pinned stage, then the list: it scrolls away with the steps. */
+  .inspect > .ix-play {
+    order: 0;
+    margin-inline-start: 1.2rem;
+  }
+  .inspect > .inspect-steps {
+    order: 1;
+  }
+  .inspect-steps {
+    padding: 4vh 0 2vh 1.2rem;
+  }
+  .inspect-steps::before,
+  .inspect-steps::after {
+    top: 4vh;
+    bottom: 2vh;
+  }
+  .inspect-step {
+    /* Spaced by the readable region under the pinned stage (inspect-
+       sequence.tsx sets --ix-step-h = 0.6R), text at the top of its block:
+       the lit step's heading stays clear of the stage for its whole turn. */
+    min-height: var(--ix-step-h, 46vh);
+    align-content: start;
+  }
+  /* The last step needs no spacing after it: the pinned stage releases when
+     the list ends, so trailing space only kept step 4's heading parked under
+     the stage after it had been read. */
+  .inspect-step:last-child {
+    min-height: 0;
+  }
+  /* The pin ends when the LAST heading reaches the stage's bottom edge S,
+     not when the list ends. The last step has no successor to take over, so
+     its heading used to slide on under the pinned stage and the grade was
+     never on screen with it (judged at 390x844, 2026-10-03). A sticky box
+     stops at its containing block's content edge, so the section's content
+     box ends --ix-pin-end early (the list's bottom less the last heading's
+     top, written by the component) while the list runs on into the padding:
+     same height, and at release the heading sits on S, under the graded
+     stage, and they leave together. The section's padding is set outside
+     this query (below the block): .inspect is the g12 container itself, and
+     a container query never styles its own container, so here only the
+     list's margin applied and the next section rode over step four. */
+  .inspect > .inspect-steps {
+    margin-bottom: calc(-1 * var(--ix-pin-end, 0px));
+  }
+  /* Too short a screen to pin and still read, even with the specimen fitted
+     (inspect-sequence.tsx): the stage scrolls with the page, at rest in its
+     resolved state (step four, flat, nothing moves), and the four steps read
+     as a list, every one lit. */
+  .inspect[data-pin="off"] .inspect-stage {
+    position: relative;
+    top: auto;
+  }
+  .inspect[data-pin="off"] .inspect-step {
+    min-height: 0;
+    padding-block: var(--space-24);
+  }
+  .inspect[data-pin="off"] .inspect-step-n { color: var(--lv-ink-accent); }
+  .inspect[data-pin="off"] .inspect-step-title { color: var(--ink); }
+  .inspect[data-pin="off"] .inspect-step-text { color: var(--muted); }
+  .inspect[data-pin="off"] .ix-verdict::after { animation: none; }
+}
+
+/* The smallest phones (a stage under ~352px): the decorative window dots
+   give their room to the URL, so the title bar truncates nothing. */
+@container g12 (width < 22rem) {
+  .inspect-chrome {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+  .inspect-dots {
+    display: none;
+  }
+}
+
+/* Large screens (the shell's region at 1920 and up): the specimen grows
+   with the canvas (see .inspect-canvas), so the window is taller, and its
+   sticky top moves up by half that growth to keep window and caption
+   centred on the reading line. The window is about 36.5 specimen ems of
+   canvas plus the chrome; the canvas is the stage's seven columns. */
+@container g12 (width >= 85rem) {
+  .inspect > .inspect-stage {
+    --ix-cw: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
+    top: max(6rem, calc(50vh - 2.3rem - 18.25 * clamp(15px, 0.022 * var(--ix-cw), 22px)));
+  }
+}
+
+/* A stage between phone and desktop widths (521-640px of canvas) has no
+   room beside the paragraph for the full v06 flag, which ran off the
+   window's edge and was clipped (measured at 1024, 2026-10-03). It names
+   the check and the measure; the ring and the pin already show what. */
+@container (max-width: 40rem) {
+  .ix-flag-what {
+    display: none;
+  }
+}
+
+/* The two glass panes' fallbacks (material spec 3.3): opaque --mat-float
+   when transparency is reduced; system colours, an outline in place of the
+   rim, and no verdict light under forced colours. */
+@media (prefers-reduced-transparency: reduce) {
+  .ix-verdict,
+  .ix-log {
+    background: var(--mat-float);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ix-verdict,
+  .ix-log {
+    background: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .ix-verdict::after {
+    display: none;
+  }
+}
+
+/* --- Phone-width stage --------------------------------------------------
+   Floating flags and the HUD covered the very text they reported (measured
+   at 390px, 2026-10-03: the v06 flag over the paragraph's first line, the
+   verdict over the card row). Here they stand down: the pins stay on the
+   elements, and the log, on two rows reserved at every step, carries the
+   findings at step three and the grade at step four. */
+@container (max-width: 520px) {
+  .ix-flag,
+  .ix-verdict {
+    display: none;
+  }
+
+  .ix-scene,
+  .ix-verdict,
+  .ix-log {
+    --ix-log-rows: 2;
+    --ix-log-fs: 0.64rem;
+    --ix-log-lh: 0.9rem;
+    --ix-log-pad: var(--space-6);
+  }
+
+  /* One step at a time, all in the same cell. */
+  .ix-log-line {
+    grid-row: 1 / -1;
+    grid-column: 1;
+    grid-template-columns: 8ch minmax(0, 1fr);
+  }
+
+  .inspect:not([data-step="1"]) .ix-log-line[data-n="1"],
+  .inspect:not([data-step="2"]) .ix-log-line[data-n="2"],
+  .inspect:not([data-step="3"]) .ix-log-line[data-n="3"],
+  .inspect:not([data-step="4"]) .ix-log-line[data-n="4"] {
+    opacity: 0;
+  }
+
+  /* No queue here (one row shows at a time), and no HUD to hand over to:
+     the log carries the grade. */
+  .ix-log-wide,
+  .ix-log-wait {
+    display: none;
+  }
+
+  .inspect[data-step="4"] .ix-log {
+    opacity: 1;
+  }
+
+  /* The specimen's smallest type read at 6-7px here (judged at 390,
+     2026-10-03). The card descriptions give up their room, and what stays is
+     floored at 10px, so depth never costs legibility. The nav links stay:
+     the read tag counts them ("4 links"), and they fit at 10px. */
+  .mp-card > span {
+    display: none;
+  }
+
+  .mp-nav { font-size: max(10px, 0.8em); }
+  .mp-eyebrow { font-size: max(10px, 0.72em); }
+  .mp-p { font-size: max(10px, 1.02em); }
+  .mp-btn { font-size: max(10px, 0.9em); }
+  .mp-card { font-size: max(10px, 0.78em); }
+
+  .ix-log-rows {
+    display: grid;
+    align-items: center;
+    grid-auto-rows: var(--ix-log-lh);
+  }
+
+  .ix-log-line[data-n="4"] .ix-log-k {
+    display: none;
+  }
+
+  .ix-log-grade {
+    display: block;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.85rem;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .ix-log-bar {
+    align-self: center;
+  }
+
   /* Every tag gets a lane of its own, the way an inspector draws them. At a
      phone-width stage the outside placements collided (measured at 390px,
      2026-10-03): the h1 tag landed on the nav tag and the eyebrow, the
@@ -801,48 +2067,10 @@
   }
 }
 
-@media (max-width: 959px) {
-  .inspect {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
-  .inspect-stage {
-    order: -1;
-    top: 4.75rem;
-    z-index: 2;
-    padding-bottom: 0.75rem;
-    background: linear-gradient(180deg, var(--paper) 88%, transparent);
-  }
-  .inspect-caption { display: none; }
-  .inspect-steps {
-    padding: 4vh 0 2vh 1.2rem;
-  }
-  .inspect-steps::before,
-  .inspect-steps::after {
-    top: 4vh;
-    bottom: 2vh;
-  }
-  .inspect-step {
-    /* Spaced by the readable region under the pinned stage (inspect-
-       sequence.tsx sets --ix-step-h = 0.6R), text at the top of its block:
-       the lit step's heading stays clear of the stage for its whole turn. */
-    min-height: var(--ix-step-h, 46vh);
-    align-content: start;
-  }
-  /* Too short a screen to pin and still read: the stage scrolls with the
-     page and the four steps read as a list. */
-  /* The last step needs no spacing after it: the pinned stage releases when
-     the list ends, so trailing space only kept step 4's heading parked under
-     the stage after it had been read. */
-  .inspect-step:last-child {
-    min-height: 0;
-  }
-  .inspect[data-pin="off"] .inspect-stage {
-    position: relative;
-    top: auto;
-  }
-  .inspect[data-pin="off"] .inspect-step {
-    min-height: 0;
-    padding-block: var(--space-24);
-  }
+/* The pin's early end, paired with the list's negative margin in the narrow
+   query above. --ix-pin-end exists only while the narrow stage pins
+   (inspect-sequence.tsx clears it on every setup), so at every other width
+   this resolves to 0. */
+.inspect {
+  padding-bottom: var(--ix-pin-end, 0px);
 }

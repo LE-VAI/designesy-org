@@ -7,6 +7,10 @@ import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { labs } from '../lib/labs';
+import './labs.css';
+
+const LAB_INDEX = [labs.poise, labs.takt, labs.cadence, labs.acoustics];
 
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
@@ -46,21 +50,61 @@ export default function LabsPage() {
       <Topbar scrolled />
 
       <main id="main-content" data-pagefind-body className="surface-page">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Experiment lane</p>
-          <h1 className="surface-title" data-scramble>Labs</h1>
-          <p className="surface-lede">
-            Experiments that compile into contracts.
-          </p>
-          <p className="surface-note">
-            A Lab is a controlled design experiment where a principle becomes
-            visible, testable, remixable, and reviewable. Labs are the public
-            practical layer of Designesy: a workbench where a thesis becomes a
-            live artifact, review checklist, portable contract, and
-            implementation-ready prompt.
-          </p>
-          <AgentActions mdPath="/labs.md" label="the labs index" />
-        </section>
+        <div className="labs-hero">
+          <section className="surface-header fade-up">
+            <p className="surface-eyebrow" data-scramble>Experiment lane</p>
+            <h1 className="surface-title" data-scramble>Labs</h1>
+            <p className="surface-lede">
+              Experiments that compile into contracts.
+            </p>
+            <p className="surface-note">
+              A Lab is a controlled design experiment where a principle becomes
+              visible, testable, remixable, and reviewable. Labs are the public
+              practical layer of Designesy: a workbench where a thesis becomes a
+              live artifact, review checklist, portable contract, and
+              implementation-ready prompt.
+            </p>
+            <AgentActions mdPath="/labs.md" label="the labs index" />
+          </section>
+
+          {/* The lab index: the page's standing object, on the far side of the
+              7-line. Every value is read from the labs' own records (the same
+              ones /labs/<lab>.json serves). */}
+          <nav className="labs-rack fade-up fade-up-delay-1" aria-labelledby="labs-rack-title">
+            <div className="labs-rack-bar">
+              <p className="labs-rack-title" id="labs-rack-title">
+                Lab index
+              </p>
+              <p className="labs-rack-state">
+                <i className="labs-rack-led" aria-hidden="true" />
+                {LAB_INDEX.filter((lab) => lab.status === 'live').length} live
+              </p>
+            </div>
+            <ol className="labs-rack-list">
+              {LAB_INDEX.map((lab, i) => (
+                <li key={lab.id}>
+                  <Link
+                    href={`/labs/${lab.id}`}
+                    className="labs-rack-row"
+                    data-cuelume-hover="tick"
+                    data-cuelume-press="tick"
+                  >
+                    <span className="labs-rack-num">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="labs-rack-name">{lab.title}</span>
+                    <span className="labs-rack-check">
+                      <i className="labs-rack-led" aria-hidden="true" />
+                      {lab.field_check.outcome}
+                    </span>
+                    <span className="labs-rack-meta">
+                      Lab {lab.number} · contract v{lab.adopted_in_contract} ·{' '}
+                      {lab.contract_rules.length} rules
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        </div>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Live labs</h2>

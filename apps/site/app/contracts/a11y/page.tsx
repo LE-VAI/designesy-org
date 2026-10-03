@@ -72,7 +72,7 @@ export default function A11yContractPage() {
           <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

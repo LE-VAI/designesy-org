@@ -128,7 +128,8 @@ export default function SpecsPage() {
             <DataTable
               caption="The four emission formats of /api/score."
               head={['Format', 'Content type', 'What it is']}
-              opt={[1]}
+              cols={[3, 2]}
+              stack="fields"
               rows={FORMATS.map((f) => [<code key="f">{f.format}</code>, <code key="t">{f.type}</code>, f.desc])}
             />
           </div>
@@ -150,6 +151,8 @@ export default function SpecsPage() {
               caption="Top-level fields of the Design Review Findings schema."
               head={['Field', 'Type', 'Required', 'What it holds']}
               opt={[2]}
+              cols={[3, 2, 1]}
+              stack="fields"
               rows={TOP.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, REQUIRED.has(k) ? 'yes' : '', descOf(p)])}
             />
           </div>
@@ -173,6 +176,8 @@ export default function SpecsPage() {
             <DataTable
               caption="Fields of a finding object."
               head={['Field', 'Type', 'What it holds']}
+              cols={[3, 2]}
+              stack="fields"
               rows={FINDING.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, descOf(p)])}
             />
           </div>
@@ -191,15 +196,21 @@ export default function SpecsPage() {
             <DataTable
               caption="Each tool's native severity and its canonical form."
               head={['Tool', 'Native', 'Canonical']}
+              cols={[3, 2]}
               rows={SEVERITY.map(([t, n, c]) => [t, <code key="n">{n}</code>, <code key="c">{c}</code>])}
             />
           </div>
         </section>
 
         <section className="eg-section" aria-labelledby="sp-use-h">
-          <h2 className="eg-h2" id="sp-use-h">
-            Usage
-          </h2>
+          <div className="eg-section-head">
+            <div>
+              <h2 className="eg-h2" id="sp-use-h">
+                Usage
+              </h2>
+              <p className="eg-section-sub">POST /api/score · url, format</p>
+            </div>
+          </div>
           <p className="dx-lead">
             Send <code>url</code> and, optionally, <code>format</code>. The default is <code>designesy</code>; use{' '}
             <code>canonical</code> for the full schema, <code>review</code> for markdown, <code>google</code> for the design.md

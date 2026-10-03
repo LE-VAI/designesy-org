@@ -43,3 +43,46 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   /docs/mcp: the rows of cards sit on the shell's twelve tracks (.g12) with
+   the one gutter, never a flex row or a 32px gap of their own (the client
+   configurations split 574 | 32 | 574, off the 6|6 module the Conformance
+   cards above them use). Spans switch at the g12 width, 64rem.
+   -------------------------------------------------------------------------- */
+
+/* Conformance: three cards of 4 columns. Each card spans the row's four
+   tracks as a subgrid (globals, .surface-card), so label, value and note
+   share rows across the three: in a flex row each card's grid stretched its
+   own rows into its spare height, and the shortest card's value sat 8px
+   below the others'. */
+.mcp-conformance.g12 {
+  row-gap: var(--grid-gutter);
+}
+
+@container g12 (width >= 64rem) {
+  .mcp-conformance.g12 > * {
+    grid-column: span 4;
+  }
+}
+
+/* Client configurations: two to a row (6 + 6); an odd last one takes the
+   whole row, so its config is never clipped beside an empty half (the fifth
+   block ran 40px past a 572px box next to 574px of nothing). The cards'
+   subgrid rows come from .config-cols in globals. */
+.config-cols.g12 {
+  row-gap: var(--space-32);
+}
+
+@container g12 (width >= 64rem) {
+  .config-cols.g12 > * {
+    grid-column: span 6;
+  }
+  .config-cols.g12 > :last-child:nth-child(odd) {
+    grid-column: full-start / full-end;
+  }
+  /* Full row for the card, reading measure for its notes. */
+  .config-cols.g12 > :last-child:nth-child(odd) p {
+    max-inline-size: 66ch;
+  }
+}
+

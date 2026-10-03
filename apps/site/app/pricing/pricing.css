@@ -2,21 +2,24 @@
    Plain .css imported in pricing/page.tsx — Next.js code-splits
    this to the /pricing route only. */
 
+/* One row of equal columns, one per tier, on the site's grid gutter. The old
+   repeat(4, 1fr) held three tiers, so the cards stopped a full column short of
+   the desk above them (733px of a 961px desk at 1024), and the 860px step put
+   the third tier alone on a second row. Auto columns follow the tier count;
+   with three tiers and the 16px gutter each card is exactly a 4-column span of
+   the 12-column shell (382.67px at 1440), the bento's module. Under 860px
+   (the old two-up step) the tiers stack: three-up there left 224px cards. */
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-fine-85);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gutter);
 }
 
-@media (max-width: 860px) {
+@media (min-width: 860px) {
   .pricing-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  .pricing-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
   }
 }
 
@@ -61,6 +64,17 @@
   color: var(--muted);
   text-wrap: pretty;
   line-height: 1.5;
+}
+
+/* The header reads as one group and the list as the next: price to sub-line
+   about 11px (it was 4px, so the two crowded each other), sub-line to list
+   24px. */
+.pricing-card-price + .pricing-card-sub {
+  margin-top: var(--space-fine-40);
+}
+
+.pricing-card-head + .pricing-card-bullets {
+  margin-top: var(--space-8);
 }
 
 .pricing-card-bullets {
@@ -132,11 +146,60 @@
   outline-offset: 2px;
 }
 
+/* One primary per row of tiers, matching the ranking the cards declare: the
+   featured tier keeps the fill, Continuity is a secondary (raised surface and
+   a rim) and the Enterprise mailto a tertiary (text and an arrow). Three
+   identical filled buttons on one row is the stock pricing table. */
+.pricing-card:not(.pricing-card--primary) .pricing-cta-link {
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-strong), var(--specular);
+}
+
+@media (hover: hover) {
+  .pricing-card:not(.pricing-card--primary) .pricing-cta-link:hover {
+    background: var(--surface-lifted);
+  }
+}
+
+.pricing-card .pricing-cta-link[href^="mailto:"] {
+  gap: var(--space-8);
+  padding-inline: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.pricing-card .pricing-cta-link[href^="mailto:"]::after {
+  content: "→" / "";
+  color: var(--signal-text);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .pricing-card .pricing-cta-link[href^="mailto:"]:hover {
+    background: none;
+    color: var(--signal-text);
+  }
+
+  .pricing-card .pricing-cta-link[href^="mailto:"]:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card .pricing-cta-link[href^="mailto:"]::after {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .pricing-card .pricing-cta-link[href^="mailto:"]::after {
+  transition: none;
+}
+
+/* The desk is prose on the page. As a 1180px opaque card it held one 660px
+   paragraph that restates the lede and 500px of empty card: a reading
+   surface with nothing to read in most of it. */
 .pricing-desk {
-  background: var(--surface);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
-  padding: var(--space-24) var(--space-fine-135);
   display: flex;
   flex-direction: column;
   gap: var(--space-fine-55);
@@ -174,13 +237,30 @@
   }
 }
 
+/* The FAQ is one reading surface: the rows' --mat-reading fill, --elev-1, and
+   the top-lit rim on a masked layer in place of the flat line border. */
 .pricing-faq {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--elev-1);
+}
+
+.pricing-faq::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 .pricing-faq-item {
@@ -195,6 +275,10 @@
 .pricing-faq-q {
   list-style: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
   padding: var(--space-16) var(--space-fine-115);
   font-size: 0.95rem;
   font-weight: 600;
@@ -206,6 +290,46 @@
 
 .pricing-faq-q::-webkit-details-marker {
   display: none;
+}
+
+/* The disclosure glyph at the row's end: a chevron that turns from pointing
+   right to pointing down as the answer opens (transform only, 150ms). With
+   the marker hidden and nothing in its place, nothing said these rows open. */
+.pricing-faq-q::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline-end: var(--space-4);
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+.pricing-faq-item[open] .pricing-faq-q::after {
+  transform: rotate(45deg);
+}
+
+.pricing-faq-q:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-faq-q::after {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .pricing-faq-q::after {
+  transition: none;
+}
+
+@media (forced-colors: active) {
+  .pricing-faq-q::after {
+    border-color: CanvasText;
+  }
 }
 
 @media (hover: hover) {
@@ -224,15 +348,39 @@
   color: var(--muted);
   line-height: 1.6;
   text-wrap: pretty;
-  max-width: 580px;
+  /* The site's prose measure, in place of a 580px cap. */
+  max-width: 66ch;
 }
 
 @media (max-width: 720px) {
   .pricing-card-price-value {
     font-size: 1.65rem;
   }
-  .pricing-desk {
-    padding: var(--space-20) var(--space-fine-110);
+}
+
+/* At 64rem of section the table hangs on the 7-line: the Feature column ends
+   where a full-start / split item ends, and the three tiers share the 5-column
+   side equally. Auto layout sized the tiers by content, 130/238/260px, so the
+   marks formed an uneven lattice. The column width is --track-split's formula
+   on 100cqi, the section (the table spans it): a table cell treats a calc()
+   that mixes a percentage with lengths as auto, so var(--track-split) itself
+   would leave four equal columns. */
+.doctrine-section:has(> .pricing-compare) {
+  container: pricing-compare / inline-size;
+}
+
+@container pricing-compare (width >= 64rem) {
+  .pricing-compare {
+    table-layout: fixed;
+  }
+
+  .pricing-compare th:first-child {
+    width: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
+  }
+
+  /* The seam the table hangs on, drawn: features in the face, tiers behind it. */
+  .pricing-compare :is(th, td):nth-child(2) {
+    border-left: 1px solid var(--line-faint);
   }
 }
 
@@ -325,4 +473,12 @@
   .pricing-faq-a {
     padding: 0 var(--space-16) var(--space-16);
   }
+}
+
+/* Independence firewall: a bordered box that once carried the 66ch prose
+   cap as its own width, so it stopped at about 740px under the full-width
+   tier row and FAQ (stack rule (a)). The box takes the column; the cap lives
+   on its text. */
+.pricing-firewall > p {
+  max-width: 66ch;
 }

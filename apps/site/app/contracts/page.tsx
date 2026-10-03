@@ -92,7 +92,8 @@ const PRIMITIVE_SHAPE_MOTION = [
 ];
 
 const SPACING_RULES = [
-  { name: 'Shell horizontal', value: '1.5rem (1rem ≤560px)', note: '.site-shell / .surface-page' },
+  { name: 'Shell horizontal', value: 'clamp(1rem, 4vw, 1.5rem)', note: '--shell-gutter, outside the content box' },
+  { name: 'Layout grid', value: '12 columns, 1rem gutter, 7|5 split', note: '.g12; bars end on the instrument divider' },
   { name: 'Section vertical', value: '3.5rem / 3rem doctrine', note: '.section / .doctrine-section' },
   { name: 'Card padding', value: '1.25 to 1.5rem', note: 'pillars, surfaces, items' },
   { name: 'Grid gap', value: '0.75 to 1rem', note: 'pillar / surface grids' },
@@ -223,7 +224,7 @@ const OPEN_TENSIONS = [
   'Light theme is not contracted; the dark technical foundation is provisional',
   '--activation exists but has limited public surface usage',
   'Inter is named in the stack but not self-hosted; system fallback is intentional',
-  'Shadow tokens exist; elevation language is still light-touch (borders lead)',
+  'Four ways cards keep their flat line borders and no elevation; whether they take the rim, --elev-3 and a floor pool is still open',
   'Human contract page and machine export remain dual sources until a single generator owns both',
   'Keyboard-path verification packets cover Poise only; other public routes have none yet',
   'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical',

@@ -8,6 +8,9 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import '../../instrument.css';
+import '../work.css';
+import { ViewsReadout } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Continuity: case study',
@@ -175,15 +178,27 @@ export default function ContinuityCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="engagement">
           <h2 className="doctrine-heading">Engagement</h2>
-          <div className="definition">
-            <p className="definition-label">X post · 2026-07-12</p>
-            <p>
-              Continuity did not surface in the top visible posts on the
-              profile after 24 hours. Tile&apos;s product-demo format earned
-              617 views in the same period. The feed format rewards shipped,
-              visible product over narrative content.
-            </p>
-          </div>
+          {/* No view count was captured for Continuity, so none is drawn: its
+              track is an outline that says so, beside Tile's measured bar. */}
+          <ViewsReadout
+            label="Engagement for Continuity on X, 2026-07-12: not in the top visible posts after 24 hours, beside Tile in the same period"
+            date="2026-07-12"
+            lamp="warn"
+            posts={[
+              { label: 'Continuity', views: null, absent: 'Not in the top visible posts' },
+              { label: 'Tile', views: 617 },
+            ]}
+            max={700}
+            readout={{ label: 'After 24 hours', text: 'Not surfaced', sub: 'Tile, same period: 617 views' }}
+            note="The feed format rewards shipped, visible product over narrative content."
+            caption={
+              <>
+                Continuity did not surface in the top visible posts on the
+                profile after 24 hours. Tile&apos;s product-demo format earned
+                617 views in the same period.
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
@@ -232,7 +247,7 @@ export default function ContinuityCaseStudyPage() {
               <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
-                  <h3>{d.title}</h3>
+                  <h3 className="cs-card-title">{d.title}</h3>
                   <p>
                     <strong style={{ color: 'var(--muted)' }}>Observation.</strong>{' '}
                     {d.observation}

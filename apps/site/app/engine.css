@@ -16,12 +16,14 @@
   --eg-t-press: var(--duration-quick) var(--ease-out);
   --eg-t-move: var(--duration-fast) var(--ease-out);
   --eg-t-reveal: var(--duration-slow) var(--ease-out);
-  --eg-gutter: clamp(var(--space-16), 4vw, var(--space-24));
+  /* The shared shell box: the same gutter and outer width as .site-shell and
+     .surface-page, so the bench's edges are the header pill's edges. */
+  --eg-gutter: var(--shell-gutter);
   container: eg / inline-size;
   width: 100%;
-  max-width: calc(var(--maxw-shell) + 2 * var(--eg-gutter));
+  max-width: var(--shell-outer);
   margin: 0 auto;
-  padding: 0 var(--eg-gutter) clamp(var(--space-64), 9vw, 7rem);
+  padding: 0 max(var(--eg-gutter), env(safe-area-inset-right)) clamp(var(--space-64), 9vw, 7rem) max(var(--eg-gutter), env(safe-area-inset-left));
   position: relative;
   z-index: 1;
 }
@@ -124,40 +126,148 @@
 
 /* --- Bench: the input and the instrument, one container ------------------- */
 
+/* The bench is a 12-column region (design spec 2.2): every child spans full
+   until the bench itself is 64rem wide, then a single command bar ends on the
+   7-line (full-start / split) and the instrument under it splits its face
+   from its side on the same line, so control and instrument read as one
+   device split on one seam. Pair bars (/compare, /monitor) and textarea bars
+   (/m3-bridge) keep the full width: two fields or a code well need it.
+   64rem is the documented span switch; custom properties are invalid in a
+   query condition.
+
+   At 1440 (layout 1422, shell 121 to 1301, W 1180): column (1180 - 11 x 16)
+   / 12 = 83.67, so the bar ends at 121 + 7 x 83.67 + 6 x 16 = 802.67, and the
+   instrument's side pane starts at 121 + --track-split (the same 7 columns
+   and 6 gaps of its own 1180 content box) = 802.67. Equal by construction,
+   at every width the spans are on. */
 .eg-bench {
+  /* The page's dim grey, carried in so the instrument can derive its own
+     (below) without a custom property that reads itself. */
+  --eg-dim: var(--muted-dim);
   container: bench / inline-size;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-16);
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--space-16);
 }
 
 /* Grid items default to min-width: auto, so one long line of code would
    widen the whole bench past the viewport; zero lets scrollers scroll. */
 .eg-bench > * {
+  grid-column: full-start / full-end;
   min-width: 0;
 }
 
-/* --- Instrument panel ------------------------------------------------------ */
-
-.eg-inst {
-  position: relative;
-  border-radius: var(--radius-xl);
-  background: var(--lv-glass);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  overflow: hidden;
-  isolation: isolate;
+@container bench (width >= 64rem) {
+  .eg-bench > .eg-bar:not(.is-pair):not(:has(.is-area)) {
+    grid-column: full-start / split;
+  }
 }
 
-/* The one specular note along the top edge, as on the homepage console. */
+/* A pair bar's wells stand on the bench's columns too (mirror and line 11).
+   That rule reads the slab's own padding, so it lives in command-bar.css,
+   the sheet that declares it. */
+
+/* --- Instrument panel ------------------------------------------------------ */
+
+/* An opaque, top-lit instrument (material tier 2): it is read, not
+   commanded, so it carries no glass. Depth is the instrument gradient, one
+   straight-down elevation and the floor under it. Nothing inside reaches the
+   rounded corners (the children paint no backgrounds there), so it needs no
+   clip, and without one the floor and the state light (z -1, in the page's
+   context under the panel) can fall outside its box. */
+/* The dim tier is lifted a third of the way to --muted on the instrument:
+   on the gradient's lit top the page's --muted-dim measured 4.38:1 in the
+   dark theme (4.54:1 only at the foot), and about 4.1:1 inside a cell's
+   well, under the 4.5:1 floor for the ids, counts, hints and row notes the
+   face sets in it. The mix holds 4.8:1 in a well and 5.1:1 on the bare
+   face. In the light theme it darkens, so contrast only rises. A touched
+   cell or row lifts it the rest of the way (below). */
+.eg-inst {
+  --muted-dim: color-mix(in srgb, var(--eg-dim, var(--muted)) 67%, var(--muted));
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--mat-instrument);
+  box-shadow: var(--elev-2);
+}
+
+/* The rim: a 1px top-lit edge on a masked layer, plus the hairline of light
+   along the top edge (12% in from each corner), the one specular note. Both
+   ride the same ring, so the sheen sits on the rim's brightest row (the
+   homepage console's .vc-window draws the same edge). */
 .eg-inst::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 12%;
-  right: 12%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--lv-sheen), transparent);
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 12%, var(--lv-sheen), transparent 88%) top / 100% 1px no-repeat,
+    var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   pointer-events: none;
+}
+
+/* The floor: light pooling under the page's one standing object. It never
+   moves; an engine page holds one instrument, so one per viewport. */
+.eg-inst::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: -7%;
+  z-index: -1;
+  height: 18%;
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* State light (material law 3: coloured light is a state, gone at rest).
+   Two pre-rendered layers whose opacity moves; neither shadow is ever
+   transitioned. .eg-inst-glow is --glow-signal while a run is out;
+   .eg-inst-verdict is the verdict's hue, landing once when the answer does:
+   150ms in, 1.2s hold, 600ms decay to nothing. */
+.eg-inst-glow,
+.eg-inst-verdict {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.eg-inst-glow {
+  box-shadow: var(--glow-signal);
+  transition: opacity var(--mat-t-out);
+}
+
+.eg-inst[data-phase="running"] > .eg-inst-glow {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+
+.eg-inst-verdict {
+  --vc-hue: var(--lv-pass-a);
+  --glow-verdict: 0 18px 44px -24px var(--vc-hue);
+  box-shadow: var(--glow-verdict);
+}
+
+.eg-inst-verdict[data-band="warn"] { --vc-hue: var(--lv-warn-a); }
+.eg-inst-verdict[data-band="fail"] { --vc-hue: var(--lv-fail-a); }
+
+/* 1950ms = 150 in + 1200 hold + 600 decay. */
+.eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
+  animation: eg-verdict-glow 1950ms var(--ease-out) both;
+}
+
+@keyframes eg-verdict-glow {
+  0% { opacity: 0; }
+  7.69% { opacity: 1; }
+  69.23% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .eg-inst-bar {
@@ -246,6 +356,38 @@
   }
 }
 
+/* The title bar follows the panes (design spec 2.2 rule 6). From 64rem the
+   bar splits on the 7-line like the body under it: the engine's name and the
+   target pill sit over the face, the state sits over the side, and the
+   state's cell draws the side's 1px divider, so the line runs from the top of
+   the title bar to the foot of the card. Three tracks: the first two sum to
+   --track-split exactly (no gap), the third is the side's width. Zero inline
+   padding (the cells carry it), as --track-split requires. Scoped to the
+   bench's own instrument: the maturity matrix's bar sits in a 5-column panel
+   with no side pane. */
+@container bench (width >= 64rem) {
+  .eg-bench > .eg-inst > .eg-inst-bar {
+    grid-template-columns: minmax(0, 1fr) auto calc(100% - var(--track-split));
+    column-gap: 0;
+    padding-inline: 0;
+  }
+  /* The name starts on the face's content edge (the cells' left edge). */
+  .eg-bench > .eg-inst .eg-inst-app {
+    padding-inline-start: var(--space-20);
+  }
+  /* The pill ends the face, its right edge on the run key's right edge
+     (8px, the slab's --ctl-pad, in from the 7-line), directly under the key. */
+  .eg-bench > .eg-inst .eg-inst-target {
+    margin-inline: var(--space-12) var(--space-8);
+  }
+  .eg-bench > .eg-inst .eg-inst-state {
+    justify-self: stretch;
+    align-self: stretch;
+    padding-inline: var(--space-20);
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
 .eg-dot {
   width: 6px;
   height: 6px;
@@ -256,6 +398,102 @@
 .eg-inst[data-phase="running"] .eg-dot {
   background: var(--lv-ink-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv-ink-accent) 20%, transparent);
+}
+
+/* The running LED: working means moving. Opacity .35 to 1 on a 1.5s breath
+   (12s / 8, a divisor of the site's master period); a run that lands stops
+   it, and resolved means still. Reduced motion and the motion switch keep
+   the colour and drop the pulse (Motion, below). */
+@keyframes eg-led {
+  0%,
+  100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.eg-inst[data-phase="running"] .eg-dot {
+  animation: eg-led 1.5s var(--ease-in-out) infinite;
+}
+
+/* The state reads the run: "12 checks · ready", then "reading 3/12" while the
+   cursor steps through the registry, then "done in 1.2 s". Each swap fades in
+   150ms (allowed under reduced motion); the resting first paint does not. */
+.eg-inst-state > span {
+  white-space: nowrap;
+}
+
+.eg-inst:not([data-phase="idle"]) .eg-inst-state > span {
+  animation: eg-state-in var(--duration-quick) var(--ease-out) both;
+}
+
+@keyframes eg-state-in {
+  from { opacity: 0; }
+}
+
+/* The reading counter: a digit strip (lib/digit-strip) of 1..n, one row
+   showing, stepped by the same clock as the scan cursor (n x 110ms, steps(n)),
+   so "reading 3" shows while the third lamp is lit. The strip's mechanics are
+   repeated here, scoped, because the shared rules live in home-inspect.css,
+   which an engine page does not load. Both lines share the strip's 1.25em
+   line, so the digits sit on the text's baseline. */
+.eg-state-read {
+  line-height: 1.25;
+}
+
+/* The strip writes --ds-lh and --ds-at inline (lib/digit-strip); the same
+   values are declared here so the sheet never references a property it does
+   not declare (the site's own drift checks read stylesheets, d02 and d11). */
+.eg-inst-state .digit-strip {
+  --ds-lh: 1.25em;
+  --ds-at: 0;
+  display: inline-block;
+  height: var(--ds-lh);
+  overflow: hidden;
+  line-height: var(--ds-lh);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+
+.eg-inst-state .digit-strip-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transform: translateY(calc(var(--ds-at) * -1 * var(--ds-lh)));
+}
+
+.eg-inst-state .digit-strip-rows > span {
+  display: block;
+  height: var(--ds-lh);
+}
+
+.eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+  animation: eg-read calc(var(--n-all) * 110ms) steps(var(--n-all), jump-end) infinite;
+}
+
+@keyframes eg-read {
+  to { transform: translateY(calc(var(--n-all) * -1 * var(--ds-lh))); }
+}
+
+/* With motion off the count cannot step, so the calm line says what is
+   running instead; it is always the line a screen reader reads (the strip
+   is aria-hidden). */
+.eg-state-calm {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The target pill receives the host when a run starts: it rises 4px into
+   place and fades in, 150ms. The resting "waiting for a URL" never moves. */
+.eg-inst-target > [data-host] {
+  animation: eg-host-in var(--duration-quick) var(--ease-out) both;
+}
+
+@keyframes eg-host-in {
+  from { opacity: 0; transform: translateY(4px); }
 }
 
 .eg-inst[data-phase="done"] .eg-dot {
@@ -282,7 +520,22 @@
   }
 }
 
+/* From 64rem the face is exactly the 7-column track and the side's 1px
+   border-left is the divider, so it lands where the bar above ends (the
+   body has no inline padding or border, as --track-split requires). The
+   side is 498px at 1440, above its old 17rem floor. */
+@container bench (width >= 64rem) {
+  .eg-inst-body {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+}
+
+/* The face is the container its lattices answer to (face, below): every
+   group in it shares one track count, so cells in different groups stand on
+   the same columns. Its width comes from the body's track, never its content,
+   so inline-size containment costs nothing. */
 .eg-faces {
+  container: face / inline-size;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -299,11 +552,16 @@
   min-width: min(100%, 15rem);
 }
 
+/* The count wraps whole: when the label and its count do not fit one line
+   (readiness at 390: "What an agent finds" beside "9 locations · 10 checks"),
+   the count drops to its own line under the label instead of both folding
+   into two-line stacks side by side. */
 .eg-group-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-12);
+  gap: var(--space-4) var(--space-12);
   margin-bottom: var(--space-4);
 }
 
@@ -326,17 +584,70 @@
   font: 500 0.7rem/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* What a group catches, in the face under its own cells (drift), where the
+   side pane used to list it apart from the row it describes. */
+.eg-group-note {
+  margin: var(--space-10) 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+  text-wrap: pretty;
+}
+
+.eg-group-note b {
+  font-weight: 500;
+  color: var(--muted);
 }
 
 /* --- Cells: one per check -------------------------------------------------- */
 
+/* One lattice for the whole face: two tracks on a narrow face, four from
+   34rem (the face at 1024 and up, where the 140px auto-fill minimum gave
+   three tracks and orphaned the fourth cell of a group). A group that does
+   not fill its last row closes it: on two tracks an odd last cell takes the
+   row; on four, a three-check group's last cell spans two tracks (monitor's
+   watch and trend stepped 621, 621, 784), and a five-check group is one
+   five-track row (the M3 converter's 4 + 1). Counted with :has, so the count
+   comes from the registry the face draws. */
 .eg-cells {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.75rem), 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-8);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.eg-cells > li:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+@container face (width >= 34rem) {
+  .eg-cells {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .eg-cells > li:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+  .eg-cells > li:last-child:nth-child(3) {
+    grid-column: span 2;
+  }
+  .eg-cells:has(> li:nth-child(5):last-child) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* The li stretches to its row's height, but a button inside a block li keeps
+   its own content height, so a cell whose label wraps to two lines stood 6px
+   taller than its neighbours (76 beside 70 on /drift; 93 beside 77 for the
+   guardrails files). A grid li stretches the button to the row: every cell in
+   a row shares its top and its bottom. The label keeps align-self: end. */
+.eg-cells > li,
+.eg-files > li {
+  display: grid;
 }
 
 .eg-cell {
@@ -357,7 +668,9 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), box-shadow var(--eg-t-move), transform var(--eg-t-press);
+  /* The press is the cell's one motion; hover and status fills change at
+     once (only transform and opacity animate). */
+  transition: transform var(--eg-t-press);
 }
 
 .eg-cell:active {
@@ -373,6 +686,22 @@
 .eg-cell[data-inspect="true"] {
   background: var(--surface-hover);
   box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* A touched cell or row lights its fill, so its dim text (the id, a file's
+   meta and destination, a matrix row's count) rides --muted there, as the
+   site's touched cards do: on the hover fill the dim tier fell to 4.2:1. */
+.eg-cell[data-inspect="true"],
+.eg-cell[aria-pressed="true"],
+.mt-row[aria-current="step"] {
+  --muted-dim: var(--muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-cell:hover,
+  button.mt-row:hover {
+    --muted-dim: var(--muted);
+  }
 }
 
 .eg-cell[aria-pressed="true"] {
@@ -487,10 +816,28 @@
   min-width: 0;
 }
 
+/* The resting side fills the pane's height and docks its reference (the
+   .eg-ref block: hairline, label, note) on the pane's foot, so when the face
+   is the taller pane (each row's explanation now reads in the face) the
+   side's last line sits level with the face's last row, a shared bottom
+   edge, instead of the side running out under its grade scale. When the
+   side is the taller pane there is no free space and nothing moves. */
+.eg-side {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .eg-side-rest {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-16);
+}
+
+.eg-side-rest > .eg-ref {
+  margin-top: auto;
+}
+
+.eg-side > .eg-probe {
+  align-content: start;
 }
 
 .eg-side[data-probing] > .eg-side-rest {
@@ -658,7 +1005,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+  transition: transform var(--eg-t-press);
 }
 
 .eg-start:active {
@@ -717,7 +1064,7 @@
   font: 500 0.8rem/1 var(--sans);
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+  transition: transform var(--eg-t-press);
 }
 
 .eg-share-btn.is-icon {
@@ -887,7 +1234,6 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -942,6 +1288,19 @@
   font: 500 0.6875rem/1.4 var(--mono);
   color: var(--muted-dim);
   white-space: nowrap;
+}
+
+/* One-line rows (score's weights): the name, and its figure on the right. */
+.eg-ref .eg-ref-rows div {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+
+.eg-ref-rows dd {
+  font: 500 0.74rem/1.3 var(--mono);
+  color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .eg-ref-note {
@@ -1029,6 +1388,12 @@
   height: 0.42rem;
 }
 
+/* The scoring line wraps balanced, never leaving one word alone on a
+   second line (readiness at 390 orphaned "checks"). */
+.eg-legend > span {
+  text-wrap: balance;
+}
+
 /* --- Face: origin map (readiness) ------------------------------------------ */
 
 .eg-paths {
@@ -1065,7 +1430,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+  transition: transform var(--eg-t-press);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1190,7 +1555,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), transform var(--eg-t-press);
+  transition: transform var(--eg-t-press);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1220,17 +1585,42 @@
   color: var(--ink);
 }
 
+/* The spine is a fixed internal grid, not a centred run: the lamp (the
+   fixed-length leader) and the id end on one x, and every label starts on
+   one x after it, whatever its length. Centred, the ids ran over a 24px
+   spread and the labels started anywhere from 441 to 465. The two fr tracks
+   are the same fractions of the same spine in every row, and the id track
+   holds three mono characters in every row, so the edges are shared by
+   construction. */
 .eg-diff-mid {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) auto minmax(0, 3fr);
   align-items: center;
-  justify-content: center;
   gap: var(--space-8);
   min-width: 0;
   font-size: 0.84rem;
 }
 
+.eg-diff-mid > .eg-lamp {
+  justify-self: end;
+}
+
 .eg-diff-head .eg-diff-mid {
+  display: flex;
+  justify-content: center;
   font-size: 0.72rem;
+}
+
+/* A side with no answer yet holds a hairline at its inner edge, beside the
+   spine (as the M3 pipeline's empty figures): the A and B columns read as
+   slots waiting for a run, not as two thirds of the face left blank. */
+.eg-diff-row .eg-diff-a:empty::before,
+.eg-diff-row .eg-diff-b:empty::before {
+  content: "";
+  display: block;
+  width: var(--space-16);
+  height: 1px;
+  background: var(--line-strong);
 }
 
 .eg-diff-label {
@@ -1271,7 +1661,7 @@
   .eg-diff-row .eg-diff-mid {
     grid-column: 1 / -1;
     grid-row: 1;
-    justify-content: flex-start;
+    grid-template-columns: auto auto minmax(0, 1fr);
   }
   .eg-diff-a {
     justify-self: start;
@@ -1281,9 +1671,14 @@
 
 /* --- Face: the bundle (guardrails) ------------------------------------------ */
 
+/* Three files to a row from 34rem, on the face's own module: with the cells'
+   8px gap, a file spans four of the face's twelve tracks where a check cell
+   spans three, so the 3-up seams are lattice lines too (the auto-fill
+   minimum chose the count by width, and could not be named). One to a row
+   on a narrow face, where a file name needs the width. */
 .eg-files {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-8);
   width: 100%;
   margin: 0;
@@ -1291,9 +1686,30 @@
   list-style: none;
 }
 
+@container face (width >= 34rem) {
+  .eg-files {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .eg-file {
   grid-template-rows: auto 1fr auto;
   gap: var(--space-6);
+}
+
+/* Where the file goes, as the cell's last line: the destination sits with
+   the file instead of in a list beside the face. */
+.eg-file:has(.eg-file-where) {
+  grid-template-rows: auto 1fr auto auto;
+}
+
+.eg-file-where {
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line-faint);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted-dim);
+  text-wrap: pretty;
 }
 
 .eg-file .eg-cell-label {
@@ -1367,9 +1783,13 @@
   gap: var(--space-10);
 }
 
+/* One bar, not three: the shares meet on 1px seams with no gap, so the bar's
+   outer edges are the face's content edges, the same edges as the row of
+   cells under it (three free-floating segments put six unrelated edges over
+   four cells). The ends round, the seams are square. */
 .eg-weights-row {
   display: flex;
-  gap: var(--space-6);
+  gap: 0;
 }
 
 .eg-weight {
@@ -1381,12 +1801,26 @@
   gap: var(--space-8);
 }
 
+/* Each share draws its top, bottom and left hairline; the last also closes
+   the right end, so every seam is exactly 1px. */
 .eg-weight-bar {
   height: 2.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  box-shadow:
+    inset 0 1px 0 var(--lv-well-line),
+    inset 0 -1px 0 var(--lv-well-line),
+    inset 1px 0 0 var(--lv-well-line);
   overflow: hidden;
+}
+
+.eg-weight:first-child .eg-weight-bar {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.eg-weight:last-child .eg-weight-bar {
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
 }
 
 .eg-weight-bar i {
@@ -1402,10 +1836,13 @@
 .eg-weight-bar i[data-band="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
 .eg-weight-bar i[data-band="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
 
+/* Each share's caption starts on its seam, like a ruler's label; the end
+   padding keeps one caption off the next. */
 .eg-weight-text {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
+  padding-inline-end: var(--space-8);
 }
 
 .eg-weight-name {
@@ -1429,9 +1866,40 @@
   color: var(--ink);
 }
 
+/* On a narrow bench the bar stays one bar, drawn to its weights (three equal
+   stacked bars lost the 50 / 30 / 20 that is the figure's whole point), and
+   only the captions stack under it, one row each, in the shares' order. A
+   hundred-track grid: each share's bar spans its weight in tracks on row 1
+   (the weights are percentages, so they fill the row exactly) and each
+   caption takes a whole row below. The share wrapper steps aside (contents)
+   so its bar and caption are placed apart. A caption is the name and its
+   meta on one line while both fit, the meta under the name once a run
+   lengthens it; the full row is wide enough that the two-line reserve for
+   the desktop's narrow segments is not needed. */
 @container bench (width < 40rem) {
   .eg-weights-row {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(100, minmax(0, 1fr));
+    gap: var(--space-8) 0;
+  }
+  .eg-weight {
+    display: contents;
+  }
+  .eg-weight-bar {
+    grid-row: 1;
+    grid-column: span var(--w);
+  }
+  .eg-weight-text {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-12);
+    padding-inline-end: 0;
+  }
+  .eg-weight-meta {
+    min-height: 0;
   }
 }
 
@@ -1449,11 +1917,34 @@
   width: 100%;
 }
 
+/* Name, score, register: the figure sits between the name and its cells (as
+   the maturity rows do), so every register runs to the face's content edge
+   on one shared lattice instead of stopping 52px short of it for a score
+   column that is empty until a run. What the engine asks reads under its
+   register, in the face, where the side pane used to list all four. */
 .eg-engine {
   display: grid;
-  grid-template-columns: 8.5rem minmax(0, 1fr) 2.5rem;
+  grid-template-columns: 8.5rem 2.5rem minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-12);
+  gap: var(--space-6) var(--space-12);
+}
+
+.eg-engine > .eg-minicells {
+  grid-column: 3;
+}
+
+.eg-engine > .eg-engine-score {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.eg-engine-ask {
+  grid-column: 3;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+  text-wrap: pretty;
 }
 
 .eg-engine-name {
@@ -1469,13 +1960,26 @@
   color: var(--muted-dim);
 }
 
+/* One register lattice for the four engines. 42 is 3 x 14 and 6 x 7, so on
+   fourteen tracks the contract score closes as three full rows ending on the
+   face's edge, and on a narrow face seven tracks close it as six (the auto-
+   fill lattice ended 75px short at 1440 and left 10/10/10/10/2 at 390). The
+   shorter engines stand on the same tracks, so their cells line up under
+   the contract score's columns. Seven across a phone face keeps each target
+   wider than the 24px floor; fourteen would not. */
 .eg-minicells {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(1.5rem, 1.75rem));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@container face (width >= 34rem) {
+  .eg-minicells {
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+  }
 }
 
 /* An unlit cell is a dim filled pill: no outline, so a row of them reads as
@@ -1540,12 +2044,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* No score yet: a hairline where the figure will land (as the M3 pipeline's
+   empty figures), so the slot reads as waiting, not missing. */
+.eg-engine-score:empty::before {
+  content: "";
+  display: block;
+  width: 1rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
 @container bench (width < 36rem) {
   .eg-engine {
     grid-template-columns: minmax(0, 1fr) auto;
   }
-  .eg-minicells {
+  .eg-engine > .eg-minicells,
+  .eg-engine-ask {
     grid-column: 1 / -1;
+  }
+  .eg-engine > .eg-minicells {
     grid-row: 2;
   }
 }
@@ -1559,6 +2077,11 @@
 /* --- Maturity: the questions beside their stage matrix -------------------- */
 
 .mt-grid {
+  /* The question prompt's measures, shared by the prompt and the matrix
+     beside it (64rem, below), so the two cannot drift apart. */
+  --mt-prompt-size: 0.98rem;
+  --mt-prompt-lh: 1.4;
+  --mt-prompt-gap: var(--space-12);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-32);
@@ -1577,6 +2100,65 @@
   .mt-grid:not(.is-results) .mt-side {
     position: sticky;
     top: 6rem;
+  }
+}
+
+/* From 64rem the questions and the matrix sit on the bench's 7|5 seam, the
+   same line the other engines split on: questions full-start / split (the
+   command bar's width elsewhere), matrix split / full-end.
+
+   Row rule (design spec 2.2 rule 5c): a panel beside a heading-plus-content
+   column aligns to the content, never to the heading's line box. The quiz
+   becomes a subgrid of five rows (meta, heading, description, questions,
+   nav) and the matrix takes rows 4 and 5, so its top edge is the first
+   question's top edge, and at the end of its sticky travel its bottom edge
+   docks on the nav row's bottom. The questions' top margin moves onto the
+   description (a margin inside a subgrid row would sit between the row's top
+   and the first question). Results: the matrix takes the 7 columns, the
+   reading the 5, as an instrument's face and side do. */
+@container bench (width >= 64rem) {
+  .mt-grid,
+  .mt-grid.is-results {
+    grid-template-columns: var(--grid-12);
+    grid-template-rows: repeat(5, auto);
+    column-gap: var(--grid-gutter);
+    row-gap: 0;
+  }
+  .mt-quiz {
+    grid-column: full-start / split;
+    grid-row: 1 / span 5;
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+  .mt-quiz .mt-questions {
+    margin-top: 0;
+  }
+  .mt-quiz .mt-axis-desc {
+    margin-bottom: var(--space-28);
+  }
+  /* Row 4 starts on the first question's prompt, a line of type, so the
+     panel steps down by the prompt's own block (its line and its margin,
+     read from the same properties the prompt sets) and its top edge is the
+     first option card's top edge, a surface beside a surface (rule 5c; it
+     sat 34px above the card, level with the prompt's line box). Every
+     axis's first prompt is one line at this width: the longest is 51
+     characters, under the ~70 the 7-column quiz holds at 64rem. */
+  .mt-grid:not(.is-results) > .mt-side {
+    grid-column: split / full-end;
+    grid-row: 4 / span 2;
+    margin-top: calc(var(--mt-prompt-size) * var(--mt-prompt-lh) + var(--mt-prompt-gap));
+  }
+  .mt-grid.is-results {
+    grid-template-rows: none;
+  }
+  .mt-grid.is-results > .mt-side {
+    grid-column: full-start / split;
+  }
+  /* The reading's column starts on the seam; its text keeps a side pane's
+     breathing room off the panel (the grid gap alone is 16px). */
+  .mt-grid.is-results > .mt-reading {
+    grid-column: split / full-end;
+    padding-inline-start: var(--space-20);
   }
 }
 
@@ -1605,10 +2187,10 @@
 .mt-q-prompt {
   display: flex;
   gap: var(--space-12);
-  margin: 0 0 var(--space-12);
-  font-size: 0.98rem;
+  margin: 0 0 var(--mt-prompt-gap, var(--space-12));
+  font-size: var(--mt-prompt-size, 0.98rem);
   font-weight: 600;
-  line-height: 1.4;
+  line-height: var(--mt-prompt-lh, 1.4);
   color: var(--ink);
   text-wrap: pretty;
 }
@@ -1641,7 +2223,7 @@
   font: 400 0.9rem/1.4 var(--sans);
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move), box-shadow var(--eg-t-move), transform var(--eg-t-press);
+  transition: transform var(--eg-t-press);
 }
 
 .mt-opt:active {
@@ -1695,8 +2277,17 @@
   cursor: default;
 }
 
+/* One inner edge for the panel, 20px in, the instrument's own: the title
+   bar's name and state, each row's content and the legend all start and end
+   on it. The body pads 8px so a row's hover fill keeps a margin off the
+   panel, and the row's 12px makes up the rest (the name sat at 24, the state
+   at 16 and the legend at 20). */
 .mt-panel-body {
-  padding: var(--space-12) var(--space-12) var(--space-16);
+  padding: var(--space-12) var(--space-8) var(--space-16);
+}
+
+.mt-panel > .eg-inst-bar {
+  padding-inline: var(--space-20);
 }
 
 .mt-matrix {
@@ -1707,9 +2298,13 @@
   list-style: none;
 }
 
+/* Name, score, stages: the figure sits between the name and the cells (as
+   on /score's engine rows), so the stage cells end on the panel's inner
+   edge, under the state in the title bar, instead of 52px short of it for
+   a score column that is empty until an axis is answered. */
 .mt-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 2.25rem;
+  grid-template-columns: minmax(0, 1fr) 2.25rem auto;
   align-items: center;
   gap: var(--space-16);
   width: 100%;
@@ -1725,7 +2320,6 @@
 
 button.mt-row {
   cursor: pointer;
-  transition: background-color var(--eg-t-move);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1776,10 +2370,16 @@ button.mt-row {
 }
 
 .mt-row-score {
+  grid-column: 2;
+  grid-row: 1;
   justify-self: end;
   font: 500 0.86rem/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
+}
+
+.mt-row > .mt-cells {
+  grid-column: 3;
 }
 
 .mt-reading {
@@ -1897,7 +2497,6 @@ button.mt-row {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--eg-t-move);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2119,23 +2718,63 @@ button.mt-row {
   }
 }
 
+/* The formula strip is an opaque plate, not a tint: the reading material
+   (design spec 3.1: read, not commanded, so tier 1 under the tier-2
+   instrument), the masked rim and the lowest elevation step, so the page
+   grid no longer shows through it beside the solid instrument above (it was
+   a 3.5% white well with an inset ring). Reading, not the instrument's
+   gradient, also holds the dim note at 4.79:1 in the dark theme; on the
+   gradient's lit top --muted-dim measures 4.38:1.
+
+   Two rows on every engine page: the formula and its scale on the first, in
+   ink and muted; the note on the second, dimmer. As a flex row the note ran
+   on after the formula on seven pages and broke under it on two, so the same
+   plate had two shapes. The last span is the note on every page; one column
+   on a narrow method, where row one would not fit. */
 .eg-formula {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8) var(--space-24);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: var(--space-4) var(--space-24);
   margin: var(--space-32) 0 0;
   padding: var(--space-16) var(--space-20);
   border-radius: var(--radius-lg);
-  background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--line-faint);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
   font: 500 0.78rem/1.6 var(--mono);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
+.eg-formula > :last-child {
+  grid-column: 1 / -1;
+  color: var(--muted-dim);
+}
+
+@container method (width < 44rem) {
+  .eg-formula {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .eg-formula b {
   font-weight: 500;
   color: var(--ink);
+}
+
+/* The rim: the same 1px top-lit edge as the instrument, on a masked layer. */
+.eg-formula::before,
+.eg-next-list::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 /* --- Prose, where an engine page needs some ------------------------------------ */
@@ -2162,10 +2801,15 @@ button.mt-row {
 
 /* --- M3 bridge: the input bench and the conversion pipeline ----------------- */
 
+/* Four figures on the cells' own lattice (8px gap): two to a row on a narrow
+   face, and where the five checks under them run as one five-track row
+   (the cells' rule), the figures stand on the same five tracks, the last
+   ("checks pass", the figure the row below answers) spanning two, so three
+   seams run straight down into the cells. */
 .m3-pipe {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2210,20 +2854,60 @@ button.mt-row {
   overflow-wrap: anywhere;
 }
 
-@container bench (width < 40rem) {
-  .m3-pipe {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* What each family maps to, on the same tracks as the figures above it:
+   the prefix in mono as the term, the DTCG type in a line under it. */
+.m3-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12) var(--space-8);
+  margin: 0;
+}
+
+.m3-map div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.m3-map dt {
+  font: 500 0.72rem/1.35 var(--mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.m3-map dd {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted-dim);
+  text-wrap: pretty;
+}
+
+@container face (width >= 34rem) {
+  .m3-pipe,
+  .m3-map {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .m3-pipe > li:last-child,
+  .m3-map > div:last-child {
+    grid-column: span 2;
   }
 }
 
 /* --- Next: where this result leads ---------------------------------------- */
 
+/* The same plate as the formula strip: the opaque reading material, the rim
+   (drawn above the rows, so a row's hover fill never covers it) and the
+   lowest elevation step. It was a transparent box with an inset ring. */
 .eg-next-list {
+  position: relative;
   margin: var(--space-20) 0 0;
   padding: 0;
   list-style: none;
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line-faint);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
   overflow: hidden;
 }
 
@@ -2240,7 +2924,6 @@ button.mt-row {
   padding: var(--space-14) var(--space-20);
   color: var(--ink);
   text-decoration: none;
-  transition: background-color var(--eg-t-move);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2372,6 +3055,67 @@ button.mt-row {
   }
 }
 
+/* Tiered: movement and loops stop, the state still reads. The LED keeps its
+   colour without the pulse; the verdict light (a 1.2s hold) does not land;
+   the host fades in place (150ms, inside the allowance) without rising; the
+   counter cannot step, so the calm line shows instead of the strip. State
+   swaps keep their 150ms fade. */
+@media (prefers-reduced-motion: reduce) {
+  .eg-inst[data-phase="running"] .eg-dot,
+  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
+  .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+    animation: none;
+  }
+  .eg-inst-target > [data-host] {
+    animation-name: eg-host-fade;
+  }
+  .eg-inst-glow {
+    transition: opacity var(--duration-quick) var(--ease-out);
+  }
+  .eg-state-read {
+    display: none;
+  }
+  .eg-state-calm {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+  }
+}
+
+html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-dot,
+html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
+html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+  animation: none;
+}
+
+html[data-motion="paused"] .eg-inst-target > [data-host] {
+  animation-name: eg-host-fade;
+}
+
+html[data-motion="paused"] .eg-inst-glow {
+  transition: opacity var(--duration-quick) var(--ease-out);
+}
+
+html[data-motion="paused"] .eg-state-read {
+  display: none;
+}
+
+html[data-motion="paused"] .eg-state-calm {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+}
+
+@keyframes eg-host-fade {
+  from { opacity: 0; }
+}
+
 /* The site's motion switch: paused means no motion and the finished state.
    Pausing the resolve would freeze every cell on its dim first frame, and a
    paused scroll timeline would hold the method rule undrawn. */
@@ -2384,6 +3128,15 @@ html[data-motion="paused"] .eg .eg-rule {
   animation: none;
 }
 
+/* More contrast asked for: the rim is a solid strong line (design spec 3.3). */
+@media (prefers-contrast: more) {
+  .eg-inst::before,
+  .eg-formula::before,
+  .eg-next-list::before {
+    background: var(--line-strong);
+  }
+}
+
 /* --- Forced colors ------------------------------------------------------------ */
 
 @media (forced-colors: active) {
@@ -2393,9 +3146,25 @@ html[data-motion="paused"] .eg .eg-rule {
     forced-color-adjust: none;
     border: 1px solid CanvasText;
   }
-  .eg-cell,
-  .eg-inst {
+  .eg-cell {
     border: 1px solid CanvasText;
+  }
+  /* An outline, not a border: a border would take 1px off each side of the
+     content box --track-split resolves against and move the divider. */
+  .eg-inst,
+  .eg-formula,
+  .eg-next-list {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+  /* The rim, the floor and the state light are decoration. */
+  .eg-inst::before,
+  .eg-inst::after,
+  .eg-inst-glow,
+  .eg-inst-verdict,
+  .eg-formula::before,
+  .eg-next-list::before {
+    display: none;
   }
 }
 

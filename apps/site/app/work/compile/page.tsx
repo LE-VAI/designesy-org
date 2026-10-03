@@ -8,6 +8,9 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import '../../instrument.css';
+import '../work.css';
+import { BuildReadout } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Compile: case study',
@@ -228,16 +231,23 @@ export default function CompileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="engagement">
           <h2 className="doctrine-heading">Verification evidence</h2>
-          <div className="definition">
-            <p className="definition-label">Build verification · 2026-07-13</p>
-            <p>
-              Nine test principles compiled across seven design domains. All
-              passed. A security audit found a local path leak in compiled
-              contract output (embedding internal source paths), fixed to
-              reference public designesy.org URLs. Verified clean after
-              fix. The tool is ready for hosting.
-            </p>
-          </div>
+          <BuildReadout
+            label="Build verification for Compile, 2026-07-13: nine test principles compiled across seven design domains, all passed"
+            target="Local build"
+            date="2026-07-13"
+            passed={9}
+            total={9}
+            domains={['motion', 'color', 'typography', 'spacing', 'shape', 'interaction', 'acoustic']}
+            note="All passed. The tool is ready for hosting."
+            caption={
+              <>
+                Nine test principles compiled across seven design domains. A
+                security audit found a local path leak in compiled contract
+                output (embedding internal source paths), fixed to reference
+                public designesy.org URLs. Verified clean after fix.
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
@@ -286,7 +296,7 @@ export default function CompileCaseStudyPage() {
               <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
-                  <h3>{d.title}</h3>
+                  <h3 className="cs-card-title">{d.title}</h3>
                   <p>
                     <strong style={{ color: 'var(--muted)' }}>Observation.</strong>{' '}
                     {d.observation}

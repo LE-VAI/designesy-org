@@ -88,7 +88,12 @@ const HERO_ACCENT = 'provable';
  */
 const HERO_HEADLINE = `${HERO_LINE_1} ${HERO_LINE_2_PREFIX}${HERO_ACCENT}.`;
 
-const PILLARS = [
+// A pillar's source, when it has one, is a footnote under the grid (marked
+// with `note`), so the cards hold the same four or five lines: inline, the
+// citation ran card 02 to eight.
+const PILLAR_SOURCE = 'Belitsoft, State of React Development 2026';
+
+const PILLARS: { number: string; title: string; text: string; note?: string }[] = [
   {
     number: '01',
     title: 'Taste codified',
@@ -97,7 +102,8 @@ const PILLARS = [
   {
     number: '02',
     title: 'Verification as proof',
-    text: `${ENGINE_CHECK_COUNT} automated checks prove the contract is met. With 42% of committed React now AI-generated (Belitsoft, State of React Development 2026), the score measures what actually shipped: the rendered page, as a visitor meets it.`,
+    text: `${ENGINE_CHECK_COUNT} automated checks prove the contract is met. With 42% of committed React now AI-generated, the score measures what shipped: the rendered page a visitor meets.`,
+    note: '1',
   },
   {
     number: '03',
@@ -310,10 +316,13 @@ export default function HomePage() {
             The claim and the command bar sit still; the console below is the
             page's one moving mass. PlayWhenVisible pauses the hero as one unit
             off screen, so the console clock and the headline underline (same
-            timing, VC_TIMING) can never drift apart. */}
+            timing, VC_TIMING) can never drift apart. The hero is a 12-column
+            region (g12): the command bar ends on the 7-line, the same x as
+            the console's divider, so control and instrument read as one
+            device (home-lvl.css). */}
         <PlayWhenVisible
           as="section"
-          className="hero home-hero"
+          className="hero home-hero g12"
           aria-labelledby="hero-title"
           data-play="on"
         >
@@ -403,7 +412,8 @@ export default function HomePage() {
             page drawn in HTML, inspected in four steps the reader scrolls
             through: read, measure, find, grade (lib/inspect-sequence). */}
         <section className="section home-inspect" aria-labelledby="inspect-title">
-          <div className="home-split-head">
+          <p className="section-eyebrow">The engine</p>
+          <div className="home-split-head g12">
             <h2 className="section-title home-title home-title--section" id="inspect-title">
               Every check, run against the page.
             </h2>
@@ -419,6 +429,7 @@ export default function HomePage() {
             The page's largest claim after the hero, stated positively. The four
             pillars are Toggle cells (cell logic kept: press, toggle, sound). */}
         <section className="section home-statement" aria-labelledby="pillars-title">
+          <p className="section-eyebrow">Why it matters</p>
           <h2 className="section-title home-title home-title--statement" id="pillars-title" data-scramble>
             Coherence is how a site earns trust now.
           </h2>
@@ -438,10 +449,16 @@ export default function HomePage() {
               >
                 <p className="pillar-number">{pillar.number}</p>
                 <h3>{pillar.title}</h3>
-                <p>{pillar.text}</p>
+                <p>
+                  {pillar.text}
+                  {pillar.note && <sup>{pillar.note}</sup>}
+                </p>
               </Toggle>
             ))}
           </div>
+          <p className="home-pillar-note">
+            <sup>1</sup> The 42% figure: {PILLAR_SOURCE}.
+          </p>
         </section>
 
         {/* --- The contract: nine principles and the health rack ---
@@ -449,7 +466,7 @@ export default function HomePage() {
             measures the contract's own health. */}
         <section className="section home-principles" aria-labelledby="principles-title">
           <p className="section-eyebrow">The contract</p>
-          <div className="home-principles-grid">
+          <div className="home-principles-grid g12">
             <div className="home-principles-main">
               <h2 className="section-title home-title home-title--section" id="principles-title" data-scramble>
                 Nine principles. One contract.
@@ -534,10 +551,11 @@ export default function HomePage() {
             Visible at rest: no scroll-gated reveal on the homepage, so a
             crawler, a preview, print, or a full-page capture sees every card. */}
         <section className="section home-index" aria-labelledby="surfaces-title">
+          <p className="section-eyebrow">The index</p>
           <h2 className="section-title home-title home-title--compact" id="surfaces-title" data-scramble>
             Every surface is public.
           </h2>
-          <div className="surface-list home-launcher">
+          <div className="surface-list home-launcher g12">
             {SURFACES.map((surface) => (
               <Link
                 className="surface-card"

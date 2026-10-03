@@ -7,7 +7,8 @@ import { MotionToggle } from './motion-toggle';
 import { CommandPalette } from './command-palette';
 import { SensesMenu } from './senses-menu';
 import { StudioGlyph, STUDIO_HREF, STUDIO_LABEL } from './director-dock';
-import { inertOutside, lockScroll, scrollLocked } from './scroll-lock';
+import { lockScroll, scrollLocked } from './scroll-lock';
+import { pushLayer } from './overlay-stack';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -79,7 +80,6 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const pathname = usePathname() || '/';
   const [isScrolled, setIsScrolled] = useState(scrolled);
   const [deepScrolled, setDeepScrolled] = useState(false);
-  const [searchExpanded, setSearchExpanded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeRef = useRef<HTMLAnchorElement | null>(null);
@@ -104,11 +104,9 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
       setIsScrolled(y > 40 || scrolled);
       setDeepScrolled(y > 320);
-      // Search pill expansion tracks ACTUAL scroll, not the `scrolled` prop
-      // (which is forced true on every page for the glass tint). This keeps
-      // the search icon-only at the top of a page and expands it only after
-      // the user starts scrolling down.
-      setSearchExpanded(y > 40);
+      // (The search trigger no longer grows on scroll: it animated width and
+      // padding, a layout animation that said nothing about search. It is
+      // icon-only below 1024px and labelled from 1024px, always.)
 
       const doc = document.documentElement;
       const max = Math.max(doc.scrollHeight - window.innerHeight, 1);
@@ -129,32 +127,66 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
     closeDrawer(false);
   }, [pathname, closeDrawer]);
 
-  // Close drawer on Escape
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeDrawer();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen, closeDrawer]);
+  // Following a drawer link closes the menu on the click itself. Waiting for
+  // the pathname missed every link that does not change it: the page already
+  // open (Next navigates to the same URL) and the Studio, which opens in a new
+  // tab. Focus goes back to the trigger when this page stays; otherwise the
+  // next page takes it.
+  const onDrawerLink = useCallback(
+    (e: { currentTarget: HTMLAnchorElement; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => {
+      const a = e.currentTarget;
+      const stays =
+        a.target === '_blank' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || a.pathname === pathname;
+      closeDrawer(stays);
+    },
+    [closeDrawer, pathname]
+  );
 
   // The open menu is modal. The page behind holds still (lib/scroll-lock:
   // the lock sits on html, since a lock on body let a phone scroll the page
   // behind) and goes inert, so Tab and a screen reader stay inside the menu.
   // Focus starts on Close; closing hands it back to the trigger.
+  //
+  // The menu is one layer on the shared overlay stack (lib/overlay-stack),
+  // which owns its Escape, its inert and its focus return: Escape reaches it
+  // only while it is the top layer, and Ctrl+K or "/" closes it (onYield)
+  // before the palette opens, so the palette never paints under it.
+  //
+  // The menu exists only at phone widths: above 720px globals.css hides the
+  // trigger, the scrim and the drawer. A menu left open across that line (a
+  // phone rotated to landscape, a window widened) kept the page locked and
+  // inert behind a control nobody could see. So the lock and inert hold only
+  // while the query matches, and leaving it closes the menu.
   useEffect(() => {
     if (!drawerOpen || !drawerRef.current) return;
+    const phone = window.matchMedia('(max-width: 720px)'); // the drawer's own breakpoint
+    if (!phone.matches) {
+      closeDrawer(false);
+      return;
+    }
     const unlock = lockScroll();
-    const restore = inertOutside(drawerRef.current, [scrimRef.current]);
+    const layer = pushLayer({
+      modal: true,
+      element: () => drawerRef.current,
+      spare: () => [scrimRef.current],
+      onEscape: () => closeDrawer(),
+      onYield: () => closeDrawer(false),
+      // Above 720px the trigger is not drawn and cannot take focus; this
+      // page's primary link, the menu's desktop counterpart, takes it.
+      returnFocus: () => [triggerRef.current, activeRef.current],
+    });
     closeRef.current?.focus({ preventScroll: true });
+    const onWidth = (e: MediaQueryListEvent) => {
+      if (!e.matches) closeDrawer();
+    };
+    phone.addEventListener('change', onWidth);
     return () => {
-      restore();
+      phone.removeEventListener('change', onWidth);
       unlock();
-      if (returnFocus.current) triggerRef.current?.focus({ preventScroll: true });
+      layer.release({ restoreFocus: returnFocus.current });
       returnFocus.current = true;
     };
-  }, [drawerOpen]);
+  }, [drawerOpen, closeDrawer]);
 
   // Scroll the active nav link into view — only needed when the nav-links
   // container actually overflows (narrow desktop windows between 720px and
@@ -177,11 +209,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
   return (
     <>
-      <header className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}${searchExpanded ? ' search-expanded' : ''}`} id="topbar" data-pagefind-ignore>
-        {/* Glass layer — absolute child behind nav content. iOS 26 Safari
-            ignores position:absolute children for toolbar tinting, so the
-            blur lives here instead of on the sticky parent. */}
-        <div className="topbar-glass" aria-hidden="true" />
+      <header className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}`} id="topbar" data-pagefind-ignore>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
@@ -257,14 +285,15 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           </div>
         </div>
       </header>
-      {drawerOpen && (
-        <div
-          ref={scrimRef}
-          className="nav-scrim open"
-          onClick={() => closeDrawer()}
-          aria-hidden="true"
-        />
-      )}
+      {/* Always mounted, so it fades with the slide (it used to mount and
+          unmount at once: the page flashed bright before the panel had
+          left). Closed, CSS hides it and it takes no pointer. */}
+      <div
+        ref={scrimRef}
+        className={`nav-scrim${drawerOpen ? ' open' : ''}`}
+        onClick={() => closeDrawer()}
+        aria-hidden="true"
+      />
       {/* The phone menu: a modal dialog. Closed, it is inert and hidden, so a
           keyboard cannot tab into links parked off-screen. */}
       <div
@@ -299,6 +328,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                 key={route.href}
                 className={active ? 'is-active' : undefined}
                 aria-current={active ? 'page' : undefined}
+                onClick={onDrawerLink}
               >
                 {route.label}
               </Link>
@@ -321,6 +351,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
                         href={route.href}
                         className={active ? 'is-active' : undefined}
                         aria-current={active ? 'page' : undefined}
+                        onClick={onDrawerLink}
                       >
                         {route.label}
                       </Link>
@@ -339,6 +370,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={STUDIO_LABEL}
+          onClick={onDrawerLink}
         >
           <StudioGlyph />
           <span>Ask the Studio</span>

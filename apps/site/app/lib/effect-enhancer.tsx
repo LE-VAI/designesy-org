@@ -6,8 +6,9 @@ import { useEffect } from 'react';
  * Effect enhancer — applies cursor-tracking CSS variables and
  * tap-triggered effects to site-wide elements:
  *
- * - .surface-card: sets --spot-x / --spot-y on pointermove
- * - .field-card: sets --tilt-rx / --tilt-ry on pointermove
+ * - .surface-card, .field-card, .check-cell, .pillar: sets --spot-x /
+ *   --spot-y (the contact light's position) on pointermove, one write per
+ *   animation frame
  * - .hero-seam-mark: per-shape opacity dim (closest shape highlights)
  * - .principle, .pipeline-step: adds .is-shaking on pointerdown
  *
@@ -20,29 +21,54 @@ export function EffectEnhancer() {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 
-    /* --- Cursor tracking for spotlight + tilt --- */
-    const handleMove = (e: PointerEvent) => {
-      const target = e.target as HTMLElement;
+    /* --- Cursor tracking for the contact light --- */
+    // Card spotlight: the light follows the pointer across the card face.
+    // (The 3D tilt that used to ride along was removed in the 2026-09-27
+    // level-up: cards that rock under the cursor read as a template effect,
+    // and the contract's press scale already answers touch.)
+    // One delegated listener on the document, throttled to one write per
+    // frame: pointermove can fire several times a frame, and each write used
+    // to read a rect and set two properties straight away. The latest event
+    // waits for the next frame; only the card under it is written.
+    const SPOT_CARDS = '.surface-card, .field-card, .check-cell, .pillar';
+    let pendingMove: PointerEvent | null = null;
+    let spotFrame = 0;
 
-      // Card spotlight: the light follows the pointer across the card face.
-      // (The 3D tilt that used to ride along was removed in the 2026-09-27
-      // level-up: cards that rock under the cursor read as a template effect,
-      // and the contract's press scale already answers touch.)
-      const card = target.closest<HTMLElement>('.surface-card, .field-card');
-      if (card && finePointer.matches) {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
-        card.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
-      }
+    const writeSpot = () => {
+      spotFrame = 0;
+      const e = pendingMove;
+      pendingMove = null;
+      if (!e || !finePointer.matches) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const card = target.closest<HTMLElement>(SPOT_CARDS);
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+      card.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
     };
 
+    const handleMove = (e: PointerEvent) => {
+      pendingMove = e;
+      if (!spotFrame) spotFrame = requestAnimationFrame(writeSpot);
+    };
+
+    // pointerout also fires between a card's own children; the spot is only
+    // cleared when the pointer actually leaves the card (and a write still
+    // queued for it is dropped), so the light never jumps to its fallback
+    // position mid-card.
     const handleLeave = (e: PointerEvent) => {
-      const target = e.target as HTMLElement;
-      const card = target.closest<HTMLElement>('.surface-card, .field-card');
-      if (card) {
-        card.style.removeProperty('--spot-x');
-        card.style.removeProperty('--spot-y');
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const card = target.closest<HTMLElement>(SPOT_CARDS);
+      if (!card) return;
+      const next = e.relatedTarget;
+      if (next instanceof Node && card.contains(next)) return;
+      if (pendingMove && pendingMove.target instanceof Node && card.contains(pendingMove.target)) {
+        pendingMove = null;
       }
+      card.style.removeProperty('--spot-x');
+      card.style.removeProperty('--spot-y');
     };
 
     /* --- Shake on tap for non-link elements --- */
@@ -258,6 +284,7 @@ export function EffectEnhancer() {
     document.addEventListener('pointerdown', handleSeamPress, { passive: true });
 
     return () => {
+      if (spotFrame) cancelAnimationFrame(spotFrame);
       document.removeEventListener('pointermove', handleMove);
       document.removeEventListener('pointermove', handleSeamMove);
       document.removeEventListener('pointerout', handleLeave);

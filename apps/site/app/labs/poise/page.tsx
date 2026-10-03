@@ -3,8 +3,7 @@ import Link from 'next/link';
 import './poise.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
-import { HapticsToggle } from '../../lib/haptics-toggle';
-import { SoundToggle } from '../../lib/sound-toggle';
+import { HapticsSwitch, SoundSwitch } from '../../lib/preference-switch';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
@@ -156,14 +155,14 @@ export default function PoiseLabPage() {
               label="Sound preference"
               note="Designesy owns preference; audio only applies it. Defaults off under reduced motion."
             >
-              <SoundToggle />
+              <SoundSwitch readout />
             </DemoCell>
 
             <DemoCell
               label="Haptics preference"
-              note="Default on when Vibration API is present. Toggle hides on unsupported devices. Press/tap only; never hover."
+              note="Default on when the Vibration API and a touch screen are present. Elsewhere the switch stays, disabled, and says why. Press and tap only; never hover."
             >
-              <HapticsToggle />
+              <HapticsSwitch />
             </DemoCell>
 
             <DemoCell

@@ -9,7 +9,8 @@
 // Pointer or keyboard focus on a check shows that check's contract criterion
 // and result in the side column; activating it opens the matching finding.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { DigitStrip } from '../digit-strip';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
@@ -22,6 +23,8 @@ export type EngineBlock = {
   count: number;
   ids: string[];
   score?: number | null;
+  /** The question the engine asks, read under its register in the face. */
+  asks?: ReactNode;
 };
 
 type Props = {
@@ -43,6 +46,10 @@ type Props = {
   origin?: string;
   /** guardrails: a size or line count per file, once emitted. */
   fileMeta?: Record<string, string>;
+  /** guardrails: where each file goes, as the last line of its cell. */
+  fileWhere?: Record<string, string>;
+  /** tiles: what a group catches, under its cells (keyed by group id). */
+  groupNotes?: Record<string, ReactNode>;
   /** score: the four engines as blocks of cells. */
   engines?: EngineBlock[];
   onOpen?: (id: string) => void;
@@ -134,10 +141,14 @@ export function Instrument(props: Props) {
   const { name, registry, face, phase, target, outcomes = {}, verdict, error, scoring, restNote, onOpen } = props;
   const [inspect, setInspect] = useState<string | null>(null);
   const leave = useRef<number | null>(null);
+  const uid = useId();
   const { live: elapsed, took } = useElapsed(phase);
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
+  // The reading counter's rows, 1..n: the strip steps one row per check, on
+  // the scan cursor's clock (engine.css, eg-read).
+  const readRows = useMemo(() => registry.checks.map((_, i) => i + 1), [registry.checks]);
 
   const enter = (id: string) => {
     if (leave.current) window.clearTimeout(leave.current);
@@ -163,6 +174,8 @@ export function Instrument(props: Props) {
 
   const cellProps = (c: RegistryCheck) => {
     const o = outcomes[c.id];
+    // A file cell shows the file's name first, so its name says it too.
+    const named = face === 'files' && c.file ? `${c.file}, ${c.label}` : c.label;
     return {
       'data-status': phase === 'done' ? o?.status : undefined,
       'data-inspect': inspect === c.id ? 'true' : undefined,
@@ -170,7 +183,8 @@ export function Instrument(props: Props) {
       onMouseEnter: () => enter(c.id),
       onFocus: () => enter(c.id),
       onClick: () => onOpen?.(c.id),
-      'aria-label': `${c.id} ${c.label}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`,
+      'aria-label': `${c.id} ${named}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`,
+      'aria-describedby': props.fileWhere?.[c.id] ? `${uid}-where-${c.id}` : undefined,
       'aria-pressed': props.selected !== undefined && phase === 'done' ? props.selected === c.id : undefined,
       'aria-controls': props.controls,
       type: 'button' as const,
@@ -302,6 +316,7 @@ export function Instrument(props: Props) {
                 })}
               </ul>
               <span className="eg-engine-score">{phase === 'done' && typeof e.score === 'number' ? e.score : ''}</span>
+              {e.asks && <p className="eg-engine-ask">{e.asks}</p>}
             </div>
           ))}
         </div>
@@ -332,6 +347,11 @@ export function Instrument(props: Props) {
                     <span className="eg-file-meta">
                       {phase === 'done' && props.fileMeta?.[c.id] ? props.fileMeta[c.id] : c.label}
                     </span>
+                    {props.fileWhere?.[c.id] && (
+                      <span className="eg-file-where" id={`${uid}-where-${c.id}`}>
+                        {props.fileWhere[c.id]}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="eg-cell-label">{c.label}</span>
@@ -340,6 +360,7 @@ export function Instrument(props: Props) {
             </li>
           ))}
         </ul>
+        {props.groupNotes?.[g.id] && <p className="eg-group-note">{props.groupNotes[g.id]}</p>}
       </div>
         ))}
       </>
@@ -360,6 +381,10 @@ export function Instrument(props: Props) {
 
   const stateLabel =
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
+
+  // The verdict light's hue: the grade's band once a verdict lands, the fail
+  // hue when the run stops without one. No band, no light.
+  const lightBand = phase === 'done' && verdict ? bandOf(verdict.grade) : phase === 'error' ? 'fail' : undefined;
 
   // The probe (a check under the pointer or keyboard focus) is drawn OVER the
   // resting side, not instead of it; see the eg-side render below.
@@ -472,17 +497,37 @@ export function Instrument(props: Props) {
       aria-label={`${name}: ${registry.checks.length} checks`}
       style={{ '--n-all': registry.checks.length } as CSSProperties}
     >
+      {/* State light: pre-rendered layers under the panel whose opacity
+          moves (engine.css). Signal while a run is out; the verdict's hue
+          once, when the answer lands. */}
+      <i className="eg-inst-glow" aria-hidden="true" />
+      <i className="eg-inst-verdict" aria-hidden="true" data-band={lightBand} />
       <div className="eg-inst-bar">
         <span className="eg-inst-app">
           <i className="eg-mark" aria-hidden="true"><i /></i>
           {name}
         </span>
         <span className="eg-inst-target">
-          <span>{target || 'waiting for a URL'}</span>
+          {/* Keyed by the host, so a new target remounts and rises into the
+              pill (cause, the slab's submit; effect, the instrument). */}
+          <span key={target || ''} data-host={target ? '' : undefined}>
+            {target || 'waiting for a URL'}
+          </span>
         </span>
         <span className="eg-inst-state">
           <i className="eg-dot" aria-hidden="true" />
-          {registry.checks.length} checks · {stateLabel}
+          {phase === 'running' ? (
+            <>
+              <span className="eg-state-read" aria-hidden="true">
+                reading <DigitStrip values={readRows} at={0} className="eg-read-strip" />/{registry.checks.length}
+              </span>
+              <span className="eg-state-calm">reading {registry.checks.length} checks</span>
+            </>
+          ) : (
+            <span>
+              {registry.checks.length} checks · {stateLabel}
+            </span>
+          )}
         </span>
       </div>
       <div className="eg-inst-body">

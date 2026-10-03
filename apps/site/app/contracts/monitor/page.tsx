@@ -71,7 +71,7 @@ export default function MonitorContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.conformance.snapshot_structure.map((field, i) => (
-              <div key={field.field} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={field.field} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{field.field}</span>
@@ -86,7 +86,7 @@ export default function MonitorContractPage() {
           <h2 className="doctrine-heading">Cadence options</h2>
           <div className="row-stack" role="list">
             {c.conformance.cadence_options.map((opt, i) => (
-              <div key={opt.cadence} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={opt.cadence} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{opt.cadence}</span>
@@ -101,7 +101,7 @@ export default function MonitorContractPage() {
           <h2 className="doctrine-heading">Alert triggers</h2>
           <div className="row-stack" role="list">
             {c.conformance.alert_triggers.map((trigger, i) => (
-              <div key={trigger.trigger} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={trigger.trigger} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{trigger.trigger.replace(/-/g, ' ')}</span>
@@ -119,7 +119,7 @@ export default function MonitorContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+              <div key={check.id} className="row" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>

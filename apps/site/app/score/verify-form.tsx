@@ -112,6 +112,7 @@ type ScoreEngineResult = SubEngineResult & {
 type ReportResponse = {
   ok: boolean;
   url?: string;
+  unreachable?: boolean;
   compositeScore?: number;
   compositeGrade?: string;
   score?: ScoreEngineResult;
@@ -449,8 +450,10 @@ export function VerifyForm({
       guardrails = { ok: false, error: 'Guardrails engine network error' };
     }
 
-    // Both failed → error state
-    if (!report?.ok && !guardrails?.ok) {
+    // Both failed, or the page itself could not be read → error state. An
+    // unreachable page is never graded, not even from the guardrails engine
+    // alone: the notice carries the reason instead.
+    if (report?.unreachable || (!report?.ok && !guardrails?.ok)) {
       setStatus('error');
       setReportResult(report);
       setGuardrailsResult(guardrails);
@@ -666,8 +669,17 @@ export function VerifyForm({
     ...(reportResult?.readiness?.checks ?? []),
     ...(guardrailsResult?.checks ?? []),
   ]);
+  // What each engine asks, read under its own register in the face (it was a
+  // list in the side pane, apart from the rows it described).
+  const asks: Record<string, string> = {
+    score: `Does the page keep the ${CONTRACT_VERSION} contract: tokens, type, motion, color, access, identity?`,
+    drift: 'Do its tokens resolve, and do its values still cluster on a scale?',
+    readiness: 'What can an agent read about the system before it builds?',
+    guardrails: 'Can its tokens become a build contract an agent follows?',
+  };
   const liveBlocks = blocks.map((b) => ({
     ...b,
+    asks: asks[b.key],
     score:
       b.key === 'guardrails'
         ? guardrailsResult?.score
@@ -744,30 +756,17 @@ export function VerifyForm({
             <p>{reportResult?.error || guardrailsResult?.error || 'Check the URL and run it again.'}</p>
           </>
         }
-        scoring="composite = score × 0.5 + drift × 0.3 + readiness × 0.2 · guardrails reports apart"
+        scoring="four engines in parallel · guardrails reports apart"
         restNote="Run a URL and all four engines light at once. Point at any cell to read the check behind it."
         restCard={
           <div className="eg-ref">
-            <span className="eg-label">What each engine asks</span>
-            <dl>
-              <div>
-                <dt>Contract score <span className="eg-ref-where">{ENGINE_CHECK_COUNT} checks</span></dt>
-                <dd>Does the page keep the {CONTRACT_VERSION} contract: tokens, type, motion, color, access, identity?</dd>
-              </div>
-              <div>
-                <dt>Drift radar <span className="eg-ref-where">12 checks</span></dt>
-                <dd>Do its tokens resolve, and do its values still cluster on a scale?</dd>
-              </div>
-              <div>
-                <dt>AI readiness <span className="eg-ref-where">10 checks</span></dt>
-                <dd>What can an agent read about the system before it builds?</dd>
-              </div>
-              <div>
-                <dt>Guardrails <span className="eg-ref-where">6 checks</span></dt>
-                <dd>Can its tokens become a build contract an agent follows?</dd>
-              </div>
+            <span className="eg-label">What the composite weighs</span>
+            <dl className="eg-ref-rows">
+              <div><dt>Contract score</dt><dd>50%</dd></div>
+              <div><dt>Drift radar</dt><dd>30%</dd></div>
+              <div><dt>AI readiness</dt><dd>20%</dd></div>
+              <div><dt>Guardrails</dt><dd>reports on its own</dd></div>
             </dl>
-            <p className="eg-ref-note">The composite weighs the first three at 50, 30 and 20. Guardrails reports on its own.</p>
           </div>
         }
         onOpen={openCheck}

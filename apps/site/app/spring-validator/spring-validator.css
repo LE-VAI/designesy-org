@@ -1,0 +1,667 @@
+/* /spring-validator route-only styles, imported by spring-validator-form.tsx.
+   The slider internals (.sv-range) and the coarse-pointer preset height stay
+   in globals.css.
+
+   The validator is one instrument (design spec 2.2, 3.1-3.3). It used to be a
+   full-width stack in inline styles: sliders on auto-fit 200px tracks with a
+   24px gap over tiles on auto-fit 140px tracks with a 12px gap (4 and 8px
+   seam misses, phantom tracks), the verdict card and six tiles between the
+   controls and the curve they drive, and an 800-unit chart viewBox whose
+   labels scaled with the box. Now:
+   - the region is the 12-column module (--grid-12, --grid-gutter);
+   - from 64rem (the documented span switch) the presets end on the 7-line,
+     and the instrument splits on it: the chart in the face, the parameters
+     and readouts in the side pane, the verdict as the title bar's state;
+   - below that the panes stack, and the parameters and readouts share one
+     module, so slider edges land on tile edges at every width;
+   - the checklist and the snippet pair on the 7-line under the instrument. */
+
+.sv {
+  container: sv / inline-size;
+  display: grid;
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--space-24);
+}
+
+.sv > * {
+  grid-column: full-start / full-end;
+  min-width: 0;
+}
+
+@container sv (width >= 64rem) {
+  .sv > .sv-presets,
+  .sv > .sv-checklist {
+    grid-column: full-start / split;
+  }
+
+  .sv > .sv-snippet {
+    grid-column: split / full-end;
+  }
+}
+
+.sv-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+/* --- Presets: the command row over the face --- */
+
+.sv-presets {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.sv-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* No min-height here: the 44px coarse-pointer rule in globals.css sets it,
+   and a route sheet loads after that one. */
+.sv-preset {
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font: 500 0.75rem/1.2 var(--sans);
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sv-preset:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+}
+
+.sv-preset:active {
+  transform: scale(0.97);
+}
+
+.sv-preset:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.sv-preset[aria-pressed="true"] {
+  border-color: var(--signal);
+  background: var(--signal);
+  color: var(--paper-on-signal);
+}
+
+/* --- The instrument --- */
+
+/* Material tier 2: opaque, top-lit, one straight-down elevation and the
+   page's one floor. --muted-dim measures 4.38:1 on the gradient's lifted top,
+   so the dim tier rides --muted inside it. The verdict hue (--sv-hue) paints
+   the LED and the response curve; text in that hue mixes 30% ink so it holds
+   4.5:1 in both themes (light --warn alone is 3.5:1). */
+.sv-inst {
+  --muted-dim: var(--muted);
+  --sv-hue: var(--ok);
+  --sv-hue-ink: color-mix(in srgb, var(--sv-hue) 70%, var(--ink));
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--mat-instrument) var(--surface-raised);
+  box-shadow: var(--elev-2);
+}
+
+.sv-inst[data-verdict="caution"] {
+  --sv-hue: var(--warn);
+}
+
+.sv-inst[data-verdict="violation"] {
+  --sv-hue: var(--error);
+}
+
+.sv-inst::before,
+.sv-snippet::before,
+.sv-checklist::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The floor, capped as under the console (.vc-window::after). */
+.sv-inst::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: max(-7%, -1.75rem);
+  z-index: -1;
+  height: min(18%, 4.5rem);
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Title bar: it follows the panes (spec 2.2 rule 6). The name and the
+   preset pill sit over the face, the verdict over the side; the state cell
+   draws the side's divider, so the 7-line runs from the bar to the foot. */
+.sv-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.sv-bar-face,
+.sv-bar-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+  min-height: 2.9rem;
+  margin: 0;
+  padding: var(--space-8) var(--space-20);
+}
+
+.sv-bar-state {
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line-faint);
+  font: 500 0.72rem/1.35 var(--mono);
+  color: var(--muted);
+}
+
+.sv-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1.5px var(--signal-access);
+}
+
+.sv-mark i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal-access);
+}
+
+.sv-title {
+  margin: 0;
+  font: 600 0.82rem/1.2 var(--sans);
+  letter-spacing: 0;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.sv-bar-pill {
+  min-width: 0;
+  margin-inline-start: auto;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font: 500 0.74rem/1 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The verdict LED: the hue of the answer, still (a result that has landed
+   does not pulse). */
+.sv-led {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sv-hue);
+}
+
+.sv-verdict {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- Body: face and side --- */
+
+.sv-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sv-face,
+.sv-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: var(--space-16) var(--space-20) var(--space-20);
+}
+
+/* The face is a column whose chart takes the space left over, so in the
+   split instrument the curve fills the face to the side pane's foot
+   instead of leaving a dead band under the note. */
+.sv-face {
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-side {
+  border-top: 1px solid var(--line-faint);
+}
+
+/* --track-split resolves against the instrument's own content box, which
+   carries no padding or border (the rim is a layer), so the side pane and
+   the bar's state cell both start exactly where a full-start / split item
+   above them ends. */
+@container sv (width >= 64rem) {
+  .sv-bar,
+  .sv-body {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .sv-bar-state {
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+
+  .sv-side {
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+.sv-face-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-12);
+}
+
+.sv-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: var(--space-44);
+  font-size: 0.75rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sv-check input {
+  margin: 0;
+  accent-color: var(--signal-access);
+  cursor: pointer;
+}
+
+/* --- Chart: one user unit is one CSS pixel (the viewBox is the measured
+   width), so the 11px labels are 11px at 390 and at 2560. --- */
+
+/* The box: at least a 0.38 aspect of its own width (100cqw is the
+   validator's width, less the face's 40px of padding; the 64rem face is
+   narrower, and the max clamps it there), 180 to 280px. The svg fills it
+   absolutely and the component sizes the viewBox from it. */
+.sv-chart {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: clamp(180px, (100cqw - 40px) * 0.38, 280px);
+}
+
+.sv-chart-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sv-chart-grid,
+.sv-chart-eq {
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.sv-chart-grid {
+  stroke: var(--line);
+  stroke-dasharray: 4 4;
+}
+
+.sv-chart-eq {
+  stroke: var(--line-strong);
+}
+
+.sv-chart-reduced,
+.sv-chart-response {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The fallback: --muted at 70%, 3.9:1 against the face (non-text floor 3). */
+.sv-chart-reduced {
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+
+.sv-chart-response {
+  stroke: var(--sv-hue);
+  stroke-width: 2.5;
+}
+
+/* Labels sit on a halo of the face's own material (paint-order: stroke), so
+   a grid line or the fallback curve never cuts through a glyph. */
+.sv-chart-label {
+  font: 500 11px/1 var(--mono);
+  fill: var(--muted);
+  paint-order: stroke;
+  stroke: var(--surface-raised);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.sv-chart-label--overshoot {
+  font-weight: 600;
+  fill: var(--sv-hue-ink);
+}
+
+.sv-note {
+  max-width: 62ch;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.sv-note code {
+  font-size: 0.75rem;
+}
+
+/* --- Side: parameters over readouts, on one module --- */
+
+.sv-params,
+.sv-metrics {
+  display: grid;
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  margin: 0;
+}
+
+.sv-params {
+  row-gap: var(--space-4);
+}
+
+.sv-metrics {
+  row-gap: var(--grid-gutter);
+}
+
+/* In the side pane (64rem and up) and on a phone: sliders full, tiles two
+   a row. Between, three across both, so the edges coincide on every line. */
+.sv-params > * {
+  grid-column: span 12;
+  min-width: 0;
+}
+
+.sv-metrics > * {
+  grid-column: span 6;
+  min-width: 0;
+}
+
+@container sv (36rem <= width < 64rem) {
+  .sv-params > *,
+  .sv-metrics > * {
+    grid-column: span 4;
+  }
+}
+
+.sv-param {
+  display: grid;
+}
+
+.sv-param-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.sv-param-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.sv-param-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.sv-param-unit {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted-dim);
+}
+
+/* Readout wells inside the instrument. */
+.sv-metric {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-12);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.sv-metric-label {
+  font-size: 0.65rem;
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.sv-metric-value {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.sv-metric-hint {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+}
+
+/* --- Checklist: reading material (tier 1) --- */
+
+.sv-checklist {
+  position: relative;
+  padding: var(--space-20) var(--space-24);
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.sv-checklist-title {
+  margin: 0 0 var(--space-12);
+  font: 600 0.9rem/1.3 var(--sans);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.sv-checks {
+  display: grid;
+  gap: var(--space-10);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sv-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-10);
+}
+
+/* The mark: its hue mixed 30% with ink, so the glyph reads at 4.5:1 in both
+   themes, and its ring is the same colour. */
+.sv-check-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+}
+
+.sv-check-item[data-ok] .sv-check-mark {
+  color: color-mix(in srgb, var(--ok) 70%, var(--ink));
+}
+
+.sv-check-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.sv-check-detail {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+}
+
+/* --- Snippet: a code window, tier 2 at rest (elev-1: the floor belongs to
+   the instrument above). --- */
+
+.sv-snippet {
+  --muted-dim: var(--muted);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-radius: var(--radius);
+  background: var(--mat-instrument) var(--surface-raised);
+  box-shadow: var(--elev-1);
+}
+
+.sv-snippet-bar {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: var(--space-6) var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+  font: 500 0.72rem/1.35 var(--mono);
+  color: var(--muted);
+}
+
+.sv-snippet-code {
+  flex: 1;
+  margin: 0;
+  padding: var(--space-16);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 0.75rem/1.6 var(--mono);
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --- Actions --- */
+
+.sv-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12) var(--space-16);
+}
+
+.sv-cta .button {
+  font-size: 0.85rem;
+}
+
+.sv-cta-note {
+  margin-inline-start: auto;
+  font-size: 0.75rem;
+  color: var(--muted-dim);
+}
+
+/* --- Preferences --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-preset:active {
+    transform: none;
+  }
+}
+
+html[data-motion="paused"] .sv-preset:active {
+  transform: none;
+}
+
+@media (prefers-contrast: more) {
+  .sv-inst::before,
+  .sv-snippet::before,
+  .sv-checklist::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  /* An outline, not a border: a border would move the 7-line by 1px. */
+  .sv-inst,
+  .sv-snippet,
+  .sv-checklist {
+    outline: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .sv-inst::before,
+  .sv-inst::after,
+  .sv-snippet::before,
+  .sv-checklist::before {
+    display: none;
+  }
+
+  .sv-chart-response {
+    stroke: CanvasText;
+  }
+
+  .sv-chart-label {
+    fill: CanvasText;
+    stroke: Canvas;
+  }
+
+  .sv-led,
+  .sv-mark i {
+    background: CanvasText;
+  }
+}

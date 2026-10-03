@@ -10,6 +10,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './changelog.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
@@ -371,136 +372,89 @@ export default function ChangelogPage() {
 
         {/* Dimension tabs */}
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <div id="changelog-tabs" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+          {/* Dimension jump links (changelog.css): they wrap into balanced
+              rows, never one orphan tab, and each count is its own quiet
+              badge. */}
+          <div id="changelog-tabs" className="changelog-tabs">
             {dimensions.map((dim) => {
               const count = dimensionCounts[dim] || 0;
               if (count === 0 && dim !== 'all') return null;
               return (
-                <a
-                  key={dim}
-                  href={`#dim-${dim}`}
-                  style={{
-                    // 44px target. Measured 131x33px: these are the only way to
-                    // filter the changelog, and there are 12 of them.
-                    minHeight: '44px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '0.4rem 0.85rem',
-                    background: 'var(--surface)',
-                    color: 'var(--muted)',
-                    border: `1px solid var(--line)`,
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                  }}
-                  className="changelog-tab"
-                  data-dimension={dim}
-                >
-                  {DIMENSION_LABELS[dim]} <span style={{ color: 'var(--muted-dim)' }}>({count})</span>
+                <a key={dim} href={`#dim-${dim}`} className="changelog-tab" data-dimension={dim}>
+                  {DIMENSION_LABELS[dim]}{' '}
+                  <span className="changelog-tab-count">{count}</span>
                 </a>
               );
             })}
           </div>
 
-          {/* Entries */}
+          {/* Entries: each row is a log entry with a face (what changed and
+              why) and, from a 64rem list, a side pane behind the 7-line
+              holding the metadata a reader scans by: version, date,
+              dimension, the kind of change and the checks it touched. */}
           <div className="row-stack" role="list">
             {SORTED_CHANGELOG.map((entry, i) => (
               <div
                 key={`${entry.version}-${entry.dimension}-${i}`}
-                className="row"
+                className="row changelog-entry"
                 role="listitem"
                 // The dimension links above jump to a dimension's first entry;
                 // an id on every entry repeated it (ids must be unique).
                 id={FIRST_OF_DIMENSION.has(i) ? `dim-${entry.dimension}` : undefined}
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
               >
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body" style={{ width: '100%' }}>
-                  <span className="row-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <span>{entry.title}</span>
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: CHANGE_COLORS[entry.change] || 'var(--muted)',
-                        padding: '0.15rem 0.5rem',
-                        border: `1px solid ${CHANGE_COLORS[entry.change] || 'var(--line)'}`,
-                        borderRadius: '4px',
-                      }}
-                    >
-                      {entry.change}
-                    </span>
-                  </span>
-                  <span className="row-meta" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{entry.version}</span>
-                    <span>{entry.date}</span>
-                    <span style={{ color: DIMENSION_COLORS[entry.dimension] }}>
-                      {DIMENSION_LABELS[entry.dimension]}
-                    </span>
-                  </span>
+                <div className="row-body">
+                  <span className="row-title">{entry.title}</span>
+                  <p className="changelog-entry-desc">{entry.description}</p>
+                  <p className="changelog-entry-why">{entry.rationale}</p>
+                  {entry.source && (
+                    <p className="changelog-entry-source">Source: {entry.source}</p>
+                  )}
+                </div>
 
-                  {/* Description */}
-                  <p style={{ fontSize: '0.85rem', color: 'var(--ink)', margin: '0.75rem 0 0.5rem', lineHeight: 1.6, maxWidth: '70ch' }}>
-                    {entry.description}
-                  </p>
+                {/* The shared row grid puts anything after the body in the
+                    side pane on the 7-line. */}
+                <div className="changelog-entry-side">
+                  <dl className="changelog-entry-meta">
+                    <div>
+                      <dt>Version</dt>
+                      <dd className="changelog-version">{entry.version}</dd>
+                    </div>
+                    <div>
+                      <dt>Date</dt>
+                      <dd>
+                        <time dateTime={entry.date}>{entry.date}</time>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Dimension</dt>
+                      <dd style={{ color: DIMENSION_COLORS[entry.dimension] }}>
+                        {DIMENSION_LABELS[entry.dimension]}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Change</dt>
+                      <dd>
+                        <span className="changelog-change" style={{ color: CHANGE_COLORS[entry.change] || 'var(--muted)' }}>
+                          {entry.change}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
 
-                  {/* Checks */}
+                  {/* Checks. 44px target in BOTH dimensions: min-height alone
+                      left these 31-35px wide ("v42" is three characters), and
+                      WCAG 2.5.8 is about the target's area. */}
                   {entry.checks && entry.checks.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    <div className="changelog-entry-checks">
                       {entry.checks.map((check) => (
-                        <Link
-                          key={check}
-                          href={`/methodology#check-${check}`}
-                          style={{
-                            // 44px target in BOTH dimensions.
-                            //
-                            // min-height alone left these 31-35px WIDE: the label
-                            // is "v42", three characters. WCAG 2.5.8 is about the
-                            // target's area, so a 34x44 chip is still a failure --
-                            // and it is the dimension a height-only fix silently
-                            // leaves behind. minWidth plus centring grows the hit
-                            // area without changing the chip's visible label.
-                            minHeight: '44px',
-                            minWidth: '44px',
-                            justifyContent: 'center',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            color: 'var(--signal-text)',
-                            background: 'var(--surface)',
-                            border: '1px solid var(--line)',
-                            borderRadius: '4px',
-                            padding: '0.15rem 0.4rem',
-                            textDecoration: 'none',
-                          }}
-                        >
+                        <Link key={check} href={`/methodology#check-${check}`} className="changelog-check">
                           {check}
                         </Link>
                       ))}
                     </div>
                   )}
-
-                  {/* Rationale */}
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.75rem 0 0', lineHeight: 1.5, maxWidth: '70ch', fontStyle: 'italic' }}>
-                    {entry.rationale}
-                  </p>
-
-                  {/* Source */}
-                  {entry.source && (
-                    <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0', maxWidth: '70ch' }}>
-                      {/* maxWidth matches the rationale paragraph directly above.
-                          Without it this ran 108 characters — the rationale is
-                          capped at 70ch and the source line, which is a full
-                          sentence, was not. */}
-                      Source: {entry.source}
-                    </p>
-                  )}
-                </span>
+                </div>
               </div>
             ))}
           </div>

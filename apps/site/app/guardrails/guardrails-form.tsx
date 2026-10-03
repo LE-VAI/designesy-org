@@ -149,27 +149,18 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
         }
         scoring="written 1 · not written 0 · over 6 files"
         restNote="Emit from a URL and each file fills in with its size. Pick a file to read it below."
+        // Where each file goes, as the last line of its own cell (it was a
+        // list in the side pane, apart from the files it described).
+        fileWhere={{
+          g01: 'Your design repo, as the one source of values.',
+          g02: 'CI, so an off-token value fails the build.',
+          g03: 'The repo root, where coding agents look first.',
+          g04: 'Beside AGENTS.md, as context the rules point to.',
+          g05: 'Beside AGENTS.md, as context the rules point to.',
+          g06: 'The repo root, where coding agents look first.',
+        }}
         restCard={
           <div className="eg-ref">
-            <span className="eg-label">Where each file goes</span>
-            <dl>
-              <div>
-                <dt>tokens.json <span className="eg-ref-where">g01</span></dt>
-                <dd>Your design repo, as the one source of values.</dd>
-              </div>
-              <div>
-                <dt>stylelint.json <span className="eg-ref-where">g02</span></dt>
-                <dd>CI, so an off-token value fails the build.</dd>
-              </div>
-              <div>
-                <dt>AGENTS.md and DESIGN.md <span className="eg-ref-where">g03 g06</span></dt>
-                <dd>The repo root, where coding agents look first.</dd>
-              </div>
-              <div>
-                <dt>components.json and anti-patterns.json <span className="eg-ref-where">g04 g05</span></dt>
-                <dd>Beside AGENTS.md, as context the rules point to.</dd>
-              </div>
-            </dl>
             <p className="eg-ref-note">The grade counts files written. It says nothing about the design itself; the contract score does.</p>
           </div>
         }
