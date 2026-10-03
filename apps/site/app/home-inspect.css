@@ -764,6 +764,41 @@
     top: -1.05em;
     translate: none;
   }
+  /* Every tag gets a lane of its own, the way an inspector draws them. At a
+     phone-width stage the outside placements collided (measured at 390px,
+     2026-10-03): the h1 tag landed on the nav tag and the eyebrow, the
+     button tag covered the paragraph tag, and the article tag hung off the
+     window's bottom edge. Each now sits in free space on its own element: the
+     h1 tag after "trust.", the paragraph tag after its short second line,
+     the article tag straddling the card row's top border. */
+  .mp-h1 .ix-tag {
+    top: auto;
+    bottom: 0.45em;
+    right: 0.45em;
+    left: auto;
+  }
+  .mp-p .ix-tag {
+    top: auto;
+    bottom: 0.3em;
+    right: 0.3em;
+    left: auto;
+  }
+  .mp-cards .ix-tag {
+    top: -0.95em;
+    bottom: auto;
+    left: auto;
+    right: 0.6em;
+  }
+}
+
+/* Narrower still (a phone's stage, ~356px), the paragraph's second line runs
+   the full box and no lane is free: its tag would cover the text it measures.
+   An inspector that hides what it inspects is worse than one tag fewer; the
+   other four still tell step one. */
+@container (max-width: 400px) {
+  .mp-p .ix-tag {
+    display: none;
+  }
 }
 
 @media (max-width: 959px) {
@@ -780,14 +815,34 @@
   }
   .inspect-caption { display: none; }
   .inspect-steps {
-    padding: 4vh 0 10vh 1.2rem;
+    padding: 4vh 0 2vh 1.2rem;
   }
   .inspect-steps::before,
   .inspect-steps::after {
     top: 4vh;
-    bottom: 10vh;
+    bottom: 2vh;
   }
   .inspect-step {
-    min-height: 46vh;
+    /* Spaced by the readable region under the pinned stage (inspect-
+       sequence.tsx sets --ix-step-h = 0.6R), text at the top of its block:
+       the lit step's heading stays clear of the stage for its whole turn. */
+    min-height: var(--ix-step-h, 46vh);
+    align-content: start;
+  }
+  /* Too short a screen to pin and still read: the stage scrolls with the
+     page and the four steps read as a list. */
+  /* The last step needs no spacing after it: the pinned stage releases when
+     the list ends, so trailing space only kept step 4's heading parked under
+     the stage after it had been read. */
+  .inspect-step:last-child {
+    min-height: 0;
+  }
+  .inspect[data-pin="off"] .inspect-stage {
+    position: relative;
+    top: auto;
+  }
+  .inspect[data-pin="off"] .inspect-step {
+    min-height: 0;
+    padding-block: var(--space-24);
   }
 }

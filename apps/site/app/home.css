@@ -669,7 +669,7 @@ button.pillar {
   position: relative;
   z-index: 3;
   width: 100%;
-  max-width: var(--maxw-wide);
+  max-width: var(--maxw-shell);
   margin-inline: auto;
   padding-inline: clamp(1rem, 3vw, 2rem);
 }
@@ -1277,6 +1277,12 @@ button.pillar {
    1063px at 73.6px; 1125px at the old 4.9rem cap, which would clip). */
 @media (min-width: 721px) {
   .home .hero-display {
-    font-size: clamp(2.6rem, 1rem + 4.5vw, 4.6rem);
+    /* Exactly 4.6rem up to a 1440px viewport. Above it the claim grows with
+       the shell instead of shrinking into it (73.6px on a 2560 screen before):
+       +0.034px per viewport pixel, to 6.15rem (98.4px) at 2200px+. The hero
+       column (.home-hero-copy, home-lvl.css) grows by the same ratio
+       (0.034/73.6 = 0.4287/928), so every rotator line breaks exactly where it
+       breaks at 1440: three lines at 1280, 1440, 1920 and 2560, measured. */
+    font-size: clamp(2.6rem, 1rem + 4.5vw, clamp(4.6rem, 4.6rem + (100vw - 1440px) * 0.034, 6.15rem));
   }
 }

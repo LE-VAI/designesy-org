@@ -484,6 +484,11 @@ export const designSystemContract = {
       value: '1180px',
       role: 'Wider shell for hero / section chrome (additive only)',
     },
+    max_width_shell: {
+      token: '--maxw-shell',
+      value: 'clamp(var(--maxw-wide), calc(var(--maxw-wide) + (100vw - 1440px) / 2), 1560px)',
+      role: 'Shell chrome on very large viewports: exactly --maxw-wide up to a 1440px viewport, then grows at half the viewport rate to 1560px. Header, main and footer share it so their edges agree. Prose never rides it: body copy keeps --maxw and its measure caps (additive only)',
+    },
     shell_horizontal: '1.5rem (1rem at ≤560px)',
     section_vertical: '3.5rem / 3rem doctrine',
     card_padding: '1.25 to 1.5rem',
