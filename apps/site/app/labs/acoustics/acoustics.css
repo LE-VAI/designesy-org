@@ -54,7 +54,7 @@
 
 .cue-cell-token {
   font-size: 0.8rem;
-  color: var(--signal-light);
+  color: var(--signal-text);
   font-family: var(--mono);
 }
 

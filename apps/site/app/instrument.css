@@ -23,6 +23,9 @@
   --lv-fail-b: #e0454a;
   --lv-hatch: rgba(255, 255, 255, 0.2);
   --lv-head: #8aa0ff;
+  /* Ink for text ON a --lv-head fill. White on #8aa0ff is 2.46:1 (fails 1.4.3);
+     near-black is 8.5:1. Light mode's head is #0133cb, where white is 8.99:1. */
+  --lv-head-ink: #010102;
   --lv-ink-accent: var(--signal-access);
   /* The one specular highlight on lit cells: the contract's on-signal white. */
   --lv-shine: color-mix(in srgb, var(--paper-on-signal) 34%, transparent);
@@ -46,4 +49,5 @@
   --lv-fail-b: #c62828;
   --lv-hatch: rgba(10, 20, 60, 0.22);
   --lv-head: #0133cb;
+  --lv-head-ink: var(--paper-on-signal);
 }

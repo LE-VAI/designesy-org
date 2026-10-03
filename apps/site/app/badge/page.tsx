@@ -115,7 +115,9 @@ export default function BadgePage() {
             {VARIANTS.map((v) => (
               <div key={v.id} className="badge-snippet">
                 <p className="badge-snippet-label">{v.label}</p>
-                <pre className="definition definition-code">
+                {/* Named per variant: three copy buttons all called "Copy definition"
+                    were indistinguishable to a screen reader. */}
+                <pre className="definition definition-code" data-copy-label={`${v.label} embed snippet`}>
                   <code>{`<a href="https://www.designesy.org/score?url=YOURSITE.com"
    target="_blank" rel="noopener">
   <img src="https://www.designesy.org/${v.file}"

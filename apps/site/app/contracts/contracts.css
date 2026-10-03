@@ -117,10 +117,40 @@
 
 .demo-easing-row[data-ease="drawer"] .demo-easing-dot { animation-timing-function: var(--ease-drawer); }
 
+/* Play-on-request (easing-demo.tsx): hidden while the dots loop. */
+.demo-easing-play {
+  display: none;
+  align-self: flex-start;
+  min-height: 2.75rem;
+  padding: 0 var(--space-16);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.demo-easing-play[aria-disabled="true"] {
+  color: var(--muted);
+  cursor: default;
+}
+
+/* Reduce: the dots rest at the start of their tracks; travel only runs once,
+   when asked. Longhands, so the per-curve timing functions above still apply. */
 @media (prefers-reduced-motion: reduce) {
   .demo-easing-dot {
     animation: none;
-    left: 50%;
+  }
+  .demo-easing[data-playing="true"] .demo-easing-dot {
+    animation-name: demo-easing-slide;
+    animation-duration: 2.5s;
+    animation-iteration-count: 1;
+  }
+  .demo-easing-play {
+    display: inline-flex;
+    align-items: center;
   }
 }
 

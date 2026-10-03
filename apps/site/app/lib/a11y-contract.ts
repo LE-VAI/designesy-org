@@ -1,5 +1,5 @@
 /**
- * Designesy Accessibility Contract v0.1.0 — machine-readable form.
+ * Designesy Accessibility Contract v0.1.1 — machine-readable form.
  * Sibling contract governing axe-core 4.13.0 + WCAG 2.2 AA accessibility verification.
  * Source: internal contract markdown (not for public distribution).
  *
@@ -9,13 +9,13 @@
 
 export const a11yContract = {
   id: 'designesy.a11y',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Accessibility Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/a11y',
   machine_url: 'https://www.designesy.org/contracts/a11y.json',
-  updated: '2026-09-28',
+  updated: '2026-10-01',
   purpose:
     'Accessibility is structural: it shapes the first version rather than the last audit. This contract makes that principle machine-checkable.',
   source_authority: {
@@ -62,7 +62,7 @@ export const a11yContract = {
       { id: 'a07', item: 'Landmarks present (main, nav, footer)', pass: 'Present', fail: 'Missing' },
       { id: 'a08', item: 'Target Size Minimum 2.5.8 (24x24px or spacing exception)', pass: 'All pass', fail: 'Any fail' },
       { id: 'a09', item: 'Focus Not Obscured 2.4.11 (focused element not hidden)', pass: 'All pass', fail: 'Any fail' },
-      { id: 'a10', item: 'prefers-reduced-motion disables animations (core §16.8)', pass: 'Present', fail: 'Missing' },
+      { id: 'a10', item: 'prefers-reduced-motion stops movement: nothing translates, rotates, scales or pans for longer than 200 ms or in a loop. Opacity-only fades may continue. Demos whose motion is the content play on request (tiered, core §16.8; v0.1.1)', pass: 'No movement under reduce', fail: 'Movement continues under reduce' },
       { id: 'a11', item: 'No internal control-plane names leaked onto public surfaces (brand boundary)', pass: 'Clean', fail: 'Found' },
     ],
     scoring: '11 checks. PASS=1, WARN=0.5, FAIL=0, N/A=excluded. Score = (points/applicable) × 100. A≥90, B≥80, C≥70, D≥60, F<60.',

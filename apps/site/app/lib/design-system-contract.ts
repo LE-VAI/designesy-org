@@ -242,6 +242,11 @@ export const designSystemContract = {
       value: '#5d7bff',
       role: 'Accessible signal (AA contrast on dark surfaces)',
     },
+    signal_text: {
+      token: '--signal-text',
+      value: 'var(--signal-access)',
+      role: 'Signal used as text: --signal-access on dark (>= 4.93:1 on every surface), --signal on light (8.69:1 on paper). --signal itself is a fill; as dark-mode text it measured 2.0-2.3:1',
+    },
     paper_on_signal: {
       token: '--paper-on-signal',
       value: '#ffffff',

@@ -11,9 +11,9 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Accessibility contract',
   description:
-    'Designesy accessibility contract v0.1.0: axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with provenance chain.',
+    'Designesy accessibility contract v0.1.1: axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules. Machine-checkable accessibility verification with provenance chain.',
   path: '/contracts/a11y',
-  ogTitle: 'Accessibility contract · v0.1.0',
+  ogTitle: 'Accessibility contract · v0.1.1',
   ogDescription:
     'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks. Machine export available.',
   twitterDescription: 'Designesy accessibility contract · designesy.org/contracts/a11y',

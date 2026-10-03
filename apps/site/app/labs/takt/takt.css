@@ -83,7 +83,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
+  /* No opacity fade: the "wrong" example is wrong because of its tinted
+     border, which still shows; fading the whole box also faded its label to
+     #3f3f40 on #060607 (1.9:1), and a counter-example still has to be legible. */
 }
 
 .demo-img-bad span {

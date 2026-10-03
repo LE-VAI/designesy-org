@@ -1452,49 +1452,64 @@
 
 .eg-minicells {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(1.1rem, 1.35rem));
-  gap: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(1.5rem, 1.75rem));
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 /* An unlit cell is a dim filled pill: no outline, so a row of them reads as
-   a register waiting for a reading, never as empty checkboxes. */
+   a register waiting for a reading, never as empty checkboxes.
+
+   The BUTTON is a 24px square (WCAG 2.5.8 Target Size Minimum, on every
+   pointer, not only coarse ones); the pill is painted inside it by ::before
+   at the old 0.8rem height with a 2px side inset, so the register looks the
+   way it did. Before 2026-10-01 the button itself was the 21.6 x 12.8px pill
+   4px from its neighbours: axe 4.13.0 flagged all 42 on /score. */
 .eg-minicell {
   --i: 0;
+  position: relative;
   display: block;
   width: 100%;
-  height: 0.8rem;
+  height: 1.5rem;
   padding: 0;
   border: 0;
-  border-radius: 3px;
-  background: var(--lv-well-line);
+  border-radius: 4px;
+  background: none;
   cursor: pointer;
   transition: transform var(--eg-t-press);
+}
+
+.eg-minicell::before {
+  content: '';
+  position: absolute;
+  inset: calc((1.5rem - 0.8rem) / 2) 2px;
+  border-radius: 3px;
+  background: var(--lv-well-line);
 }
 
 .eg-minicell:active {
   transform: scale(0.9);
 }
 
-.eg-minicell[data-status="PASS"] {
+.eg-minicell[data-status="PASS"]::before {
   background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
   box-shadow: inset 0 1px 0 var(--lv-shine);
 }
 
-.eg-minicell[data-status="WARN"] {
+.eg-minicell[data-status="WARN"]::before {
   background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));
   box-shadow: inset 0 0 0 1px var(--lv-warn-b);
 }
 
-.eg-minicell[data-status="FAIL"] {
+.eg-minicell[data-status="FAIL"]::before {
   background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b));
   box-shadow: inset 0 0 0 1px var(--lv-fail-b);
 }
 
-.eg-minicell[data-status="SKIP"],
-.eg-minicell[data-status="MANUAL"] {
+.eg-minicell[data-status="SKIP"]::before,
+.eg-minicell[data-status="MANUAL"]::before {
   background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
 }
@@ -2282,7 +2297,7 @@ button.mt-row {
   background: var(--lv-ink-accent);
 }
 
-.eg-inst[data-phase="running"] .eg-minicell {
+.eg-inst[data-phase="running"] .eg-minicell::before {
   box-shadow: inset 0 0 0 1px var(--lv-ink-accent);
 }
 
@@ -2354,7 +2369,7 @@ html[data-motion="paused"] .eg .eg-rule {
 
 @media (forced-colors: active) {
   .eg-lamp,
-  .eg-minicell,
+  .eg-minicell::before,
   .eg-scale-zone {
     forced-color-adjust: none;
     border: 1px solid CanvasText;
@@ -2370,11 +2385,13 @@ html[data-motion="paused"] .eg .eg-rule {
    a 13px-tall pill packed 4px from its neighbours. The readiness path rows
    reach the site's own 44px. */
 @media (pointer: coarse) {
+  /* The 24px target is now the default on every pointer; touch keeps its
+     full-height pill so the target and what you see are the same shape. */
   .eg-minicells {
-    grid-template-columns: repeat(auto-fill, minmax(1.5rem, 1.75rem));
+    gap: 4px;
   }
-  .eg-minicell {
-    height: 1.5rem;
+  .eg-minicell::before {
+    inset: 0;
     border-radius: 4px;
   }
   .eg-path-row {

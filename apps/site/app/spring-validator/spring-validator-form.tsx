@@ -262,7 +262,7 @@ export function SpringValidator() {
               style={{
                 padding: '0.35rem 0.75rem',
                 background: selectedPreset === preset.name ? 'var(--signal)' : 'var(--surface)',
-                color: selectedPreset === preset.name ? 'var(--paper)' : 'var(--muted)',
+                color: selectedPreset === preset.name ? 'var(--paper-on-signal)' : 'var(--muted)',
                 border: `1px solid ${selectedPreset === preset.name ? 'var(--signal)' : 'var(--line)'}`,
                 borderRadius: '6px',
                 fontSize: '0.75rem',

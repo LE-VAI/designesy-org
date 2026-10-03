@@ -543,7 +543,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           design is good. Conformance &ne; quality. A site can pass every check and
           still be mediocre, or fail many and still be excellent. The score is a{' '}
           <em>calibration point</em> for your own judgment. See the{' '}
-          <a href="/methodology#what-engine-measures" style={{ color: 'var(--signal-light)' }}>methodology</a>{' '}
+          <a href="/methodology#what-engine-measures" style={{ color: 'var(--signal-text)' }}>methodology</a>{' '}
           for what the engine can and cannot measure.
         </p>
       </div>

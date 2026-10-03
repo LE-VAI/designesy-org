@@ -6,6 +6,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { DemoCell, DemoGrid } from '../lib/demo-cell';
+import { EasingDemo } from './easing-demo';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
@@ -987,32 +988,7 @@ export default function ContractsPage() {
               label="Easing curves"
               note={<>Four timing functions. Watch the dot travel: same distance, different feel.</>}
             >
-              <div className="demo-easing">
-                <div className="demo-easing-row" data-ease="default">
-                  <span>--ease</span>
-                  <div className="demo-easing-track">
-                    <div className="demo-easing-dot" />
-                  </div>
-                </div>
-                <div className="demo-easing-row" data-ease="out">
-                  <span>--ease-out</span>
-                  <div className="demo-easing-track">
-                    <div className="demo-easing-dot" />
-                  </div>
-                </div>
-                <div className="demo-easing-row" data-ease="in-out">
-                  <span>--ease-in-out</span>
-                  <div className="demo-easing-track">
-                    <div className="demo-easing-dot" />
-                  </div>
-                </div>
-                <div className="demo-easing-row" data-ease="drawer">
-                  <span>--ease-drawer</span>
-                  <div className="demo-easing-track">
-                    <div className="demo-easing-dot" />
-                  </div>
-                </div>
-              </div>
+              <EasingDemo />
             </DemoCell>
           </DemoGrid>
         </section>
@@ -1101,7 +1077,9 @@ export default function ContractsPage() {
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
             <a
               href="https://detail.design"
-              style={{ color: 'var(--signal-light)' }}
+              // Underlined: inside a sentence, color alone does not mark a link
+              // (WCAG 1.4.1; axe link-in-text-block).
+              style={{ color: 'var(--signal-text)', textDecoration: 'underline', textUnderlineOffset: '0.15em' }}
             >
               detail.design
             </a>{' '}

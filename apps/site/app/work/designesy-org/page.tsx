@@ -143,7 +143,7 @@ export default function DesignesyOrgCaseStudy() {
                   <p style={{ marginTop: '0.25rem' }}>
                     <strong style={{ color: 'var(--muted)' }}>{d.before}</strong>
                     {' → '}
-                    <strong style={{ color: 'var(--signal, #FECC34)' }}>{d.after}</strong>
+                    <strong style={{ color: 'var(--signal-text)' }}>{d.after}</strong>
                   </p>
                 </div>
               </div>
