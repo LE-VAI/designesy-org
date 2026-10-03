@@ -361,9 +361,9 @@ export function Instrument(props: Props) {
   const stateLabel =
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
-  let side: ReactNode;
-  if (probe) {
-    side = (
+  // The probe (a check under the pointer or keyboard focus) is drawn OVER the
+  // resting side, not instead of it; see the eg-side render below.
+  const probeNode: ReactNode = probe ? (
       <div className="eg-probe">
         <span className="eg-probe-id">
           <Lamp status={probeOutcome?.status} />
@@ -384,8 +384,10 @@ export function Instrument(props: Props) {
           )}
         </dl>
       </div>
-    );
-  } else if (phase === 'running') {
+  ) : null;
+
+  let side: ReactNode;
+  if (phase === 'running') {
     side = (
       <>
         <span className="eg-label">Checking</span>
@@ -495,7 +497,18 @@ export function Instrument(props: Props) {
         >
           {faceNode}
         </div>
-        <div className="eg-side">{side}</div>
+        {/* Both states share one grid cell, so the panel's height is the larger
+            of the two and never jumps. Swapping one for the other resized it on
+            every focus: stacked on a phone (/score at 390px) the resting side is
+            531px and a probe ~200px, so tabbing into the cells pulled the page up
+            ~300px and tabbing out pushed it back down 297px, carrying the focused
+            history button off the bottom of the screen (CLS 0.193, WCAG 2.4.11;
+            measured on production 2026-10-03). The resting side is hidden while a
+            probe shows, as it was absent before. */}
+        <div className="eg-side" data-probing={probeNode ? '' : undefined}>
+          <div className="eg-side-rest">{side}</div>
+          {probeNode}
+        </div>
       </div>
       <div className="eg-legend">
         <ul aria-label="Legend">

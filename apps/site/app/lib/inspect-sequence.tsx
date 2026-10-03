@@ -59,21 +59,84 @@ export function InspectSequence() {
     const root = rootRef.current;
     if (!root || typeof IntersectionObserver === 'undefined') return;
     const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-inspect-step]'));
-    // A one-pixel band across the viewport: the step whose block crosses it is
-    // the step on stage. On narrow screens the stage is pinned over the top
-    // half, so the band sits lower, where the step text is actually visible.
-    const narrow = window.matchMedia('(max-width: 959px)').matches;
-    const band = narrow ? '-68% 0px -32% 0px' : '-50% 0px -50% 0px';
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) root.dataset.step = e.target.getAttribute('data-inspect-step') ?? '1';
+    const stage = root.querySelector<HTMLElement>('.inspect-stage');
+    let io: IntersectionObserver | null = null;
+
+    const setStep = (el: Element) => {
+      const step = el.closest('[data-inspect-step]');
+      root.dataset.step = step?.getAttribute('data-inspect-step') ?? '1';
+    };
+
+    /**
+     * Wide: a one-pixel band across the middle of the viewport; the step whose
+     * block crosses it is on stage.
+     *
+     * Narrow: the stage is pinned over the top of the screen, and a step's
+     * heading must stay readable for as long as that step is on stage. Before,
+     * a step lit at a fixed line (68% down) with its text centred in a 46vh
+     * block, so for the last third of each step its own heading sat under the
+     * pinned stage (measured at 390x844, 2026-10-03). Now, from the stage's
+     * real bottom edge S and the readable region R below it:
+     *   - the trigger is the step HEADING crossing L = S + 0.6R, and
+     *   - steps are spaced 0.6R apart,
+     * so the active heading travels from L up to exactly S before the next
+     * heading reaches L and takes over. Works scrolling either way: the last
+     * heading to touch the band wins.
+     * Where R cannot hold a step's text plus that travel (a short phone), the
+     * stage stops pinning and the steps read as a plain list (data-pin="off").
+     */
+    const setup = () => {
+      io?.disconnect();
+      const narrow = window.matchMedia('(max-width: 959px)').matches;
+      const vh = window.innerHeight;
+      let band = '-50% 0px -50% 0px';
+      let targets: Element[] = steps;
+      root.style.removeProperty('--ix-step-h');
+      delete root.dataset.pin;
+      if (narrow && stage) {
+        const S = (parseFloat(getComputedStyle(stage).top) || 0) + stage.getBoundingClientRect().height;
+        const R = vh - S;
+        // The text's own height (numeral to paragraph), not the block's: the
+        // block carries the min-height this computes.
+        const textH = (s: HTMLElement) => {
+          const a = s.firstElementChild?.getBoundingClientRect();
+          const z = s.lastElementChild?.getBoundingClientRect();
+          return a && z ? z.bottom - a.top : s.scrollHeight;
+        };
+        const tallest = Math.max(...steps.map(textH));
+        if (0.6 * R < tallest + 24) {
+          root.dataset.pin = 'off';
+        } else {
+          const L = Math.round(S + 0.6 * R);
+          root.style.setProperty('--ix-step-h', `${Math.round(0.6 * R)}px`);
+          band = `-${L}px 0px -${Math.max(0, vh - L - 1)}px 0px`;
+          targets = steps.map((s) => s.querySelector('.inspect-step-title') ?? s);
         }
-      },
-      { rootMargin: band, threshold: 0 }
-    );
-    steps.forEach((s) => io.observe(s));
-    return () => io.disconnect();
+      }
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) if (e.isIntersecting) setStep(e.target);
+        },
+        { rootMargin: band, threshold: 0 }
+      );
+      targets.forEach((t) => io!.observe(t));
+    };
+
+    let raf = 0;
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(setup);
+    };
+    setup();
+    window.addEventListener('resize', schedule);
+    const ro = typeof ResizeObserver !== 'undefined' && stage ? new ResizeObserver(schedule) : null;
+    if (ro && stage) ro.observe(stage);
+    return () => {
+      io?.disconnect();
+      ro?.disconnect();
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', schedule);
+    };
   }, []);
 
   return (

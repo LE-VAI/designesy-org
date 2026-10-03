@@ -81,6 +81,14 @@
      blocks stay on --maxw to protect readability (the published contract
      pins --maxw at 1080px; --maxw-wide is additive only). */
   --maxw-wide: 1180px;
+  /* Third tier: the shell CHROME on very large viewports. At 2560px the 1180
+     island used 44% of the screen and the page gained dead margin instead of
+     presence. Up to a 1440px viewport the shell is exactly --maxw-wide; above
+     it grows at half the viewport's rate, capped at 1560px (61% of a 2560
+     screen). Prose never rides this: body copy keeps --maxw and its own
+     measure caps, so the contract's >75ch rule is untouched. Header, main and
+     footer all use it, so their edges agree at every width. */
+  --maxw-shell: clamp(var(--maxw-wide), calc(var(--maxw-wide) + (100vw - 1440px) / 2), 1560px);
   --radius: 6px;
   --radius-sm: 4px;
   /* --radius-md is an INTERMEDIATE tier, not part of the published 4-step
@@ -687,7 +695,7 @@ p {
 /* --- Layout shell --- */
 
 .site-shell {
-  max-width: var(--maxw-wide);
+  max-width: var(--maxw-shell);
   margin: 0 auto;
   padding: 0 var(--space-24);
   /* Lift above body's fixed background texture layers (Stage 4) */
@@ -745,7 +753,7 @@ p {
 .topbar-inner {
   position: relative;
   z-index: 1;
-  max-width: var(--maxw-wide);
+  max-width: var(--maxw-shell);
   margin: 0 auto;
   padding: 0 max(var(--space-24), env(safe-area-inset-right)) var(--space-16) max(var(--space-24), env(safe-area-inset-left));
   display: flex;
@@ -1188,13 +1196,21 @@ html[data-motion="paused"] *::after {
   font-size: 0.75rem;
 }
 
-/* Hide the kbd hint + label on very small screens — keep just the icon */
-@media (max-width: 720px) {
+/* Icon-only search below 1024px. It was icon-only only below 720, so between
+   721 and ~770 the label and Ctrl K hint took the ~86px the primary links
+   needed and "Docs" sat clipped behind an overflowing row. The button keeps
+   its accessible name (aria-label "Open search (Ctrl+K)"). On phones the
+   scrolled "search-expanded" pill still shows the label (rule below). */
+@media (max-width: 1023px) {
   .cmdk-trigger-kbd,
   .cmdk-trigger-label {
     display: none;
   }
   .cmdk-trigger {
+    /* A square target, like its neighbours: with the label gone and no width
+       of its own it collapsed to a 24px sliver between 721 and 1023. */
+    width: 2.75rem;
+    flex: 0 0 auto;
     padding: 0;
     justify-content: center;
   }
@@ -2850,13 +2866,22 @@ a.surface-card:active {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-16);
-  max-width: 100%;
+  /* No max-width override here. This element is also .site-shell; a
+     `max-width: 100%` added for the dock-overflow fix (2026-07-15) beat the
+     shell's cap and made the footer full-bleed under a centred page: 2545px
+     wide at a 2560 viewport against a 1180px column. overflow and min-width
+     still contain the dock. */
+  min-width: 0;
   overflow: hidden;
 }
 
 .footer-meta {
   display: flex;
   flex-direction: column;
+  /* The full row: sized to its content, the block narrowed to the rails'
+     links once they stopped scrolling, and the rails ended short of the
+     column edge everything above them ends on. */
+  flex: 1 1 100%;
   gap: var(--space-fine-35);
   font-size: 0.8rem;
   color: var(--muted-dim);
@@ -3125,6 +3150,22 @@ a.surface-card:active {
   }
 }
 
+/* A rail whose links all fit holds still (footer.tsx sets data-fits on resize):
+   one row, the loop's duplicate gone, no edge fade, because there is nothing
+   off-screen to fade toward. It scrolls only when the links outrun the rail. */
+.footer-dock[data-fits] .footer-dock-clip {
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.footer-dock[data-fits] .footer-dock-track {
+  width: auto;
+  animation: none;
+}
+.footer-dock[data-fits] .footer-dock-track > [aria-hidden="true"] {
+  display: none;
+}
+
 .footer-link {
   font-size: 0.8rem;
   color: var(--muted);
@@ -3140,7 +3181,7 @@ a.surface-card:active {
 /* --- Route page shells --- */
 
 .surface-page {
-  max-width: var(--maxw-wide);
+  max-width: var(--maxw-shell);
   margin: 0 auto;
   padding: 0 var(--space-24);
   min-height: 100vh;
@@ -11905,7 +11946,7 @@ select {
 
 .topbar .topbar-inner {
   width: calc(100% - 2 * max(var(--space-16), env(safe-area-inset-left)));
-  max-width: var(--maxw-wide);
+  max-width: var(--maxw-shell);
   padding: var(--space-6) var(--space-6) var(--space-6) var(--space-16);
   gap: var(--space-16);
   isolation: isolate;
@@ -12306,7 +12347,9 @@ select {
   }
 }
 
-@media (max-width: 1023px) {
+/* The one primary action stays from 860px (it hid below 1024): with the
+   search icon-only there is room for it beside the five links. */
+@media (max-width: 859px) {
   .topbar-cta {
     display: none;
   }

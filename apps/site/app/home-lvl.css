@@ -62,7 +62,10 @@
      a score landed. */
   grid-template-columns: minmax(0, 1fr);
   justify-items: start;
-  max-width: 58rem;
+  /* Grows in step with the headline's cap (home.css): the same 3-line break
+     at every width, 58rem up to a 1440px viewport, then +0.4287px per pixel
+     (0.034 x 928/73.6) to 77.6rem. The form and lede keep their own caps. */
+  max-width: clamp(58rem, 58rem + (100vw - 1440px) * 0.4287, 77.6rem);
 }
 
 /* The score form sizes to its content like the rest of the hero column, but
