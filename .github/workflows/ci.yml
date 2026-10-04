@@ -432,10 +432,12 @@ jobs:
           exit 1
 
   # ── Job 5: Runtime visual gates ──────────────────────────────────────────
-  # The alignment, glass and keyboard gates. Each needs a browser and a running
-  # site, so none of them can live in the build chain — that is exactly why the
-  # 280 edge violations and the dead capsule blur both survived the build gate.
-  # This job serves the build CI just made and measures it.
+  # The alignment, glass, keyboard and incremental a11y gates. Each needs a
+  # browser and a running site, so none of them can live in the build chain —
+  # that is exactly why the 280 edge violations and the dead capsule blur both
+  # survived the build gate. This job serves the build CI just made and
+  # measures it. The a11y sweep runs on the routes the commit touches
+  # (touched-routes.js maps the diff; shared surfaces mean the full set).
   #
   # WHY AGAINST A LOCAL BUILD AND NOT THE VERCEL PREVIEW: preview deployments sit
   # behind deployment protection, so a CI runner without a bypass token gets a
@@ -445,7 +447,7 @@ jobs:
   # @sparticuz/chromium is already a dependency, so no browser install step is
   # needed on Linux; each script launches it itself.
   visual-gates:
-    name: Visual gates (edges, glass, keyboard)
+    name: Visual gates (edges, glass, keyboard, a11y)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build-site
@@ -510,6 +512,34 @@ jobs:
 
       - name: Keyboard QA
         run: node scripts/qa-keyboard.js --base http://127.0.0.1:3422
+
+      # The incremental a11y sweep (handoff item #10): measure the routes the
+      # commit touches — page.tsx -> its route, shared surfaces (globals.css,
+      # layout, lib, next.config, public/) -> the full set, scripts-only
+      # commits -> nothing. On a pull request the base is the merge base; on
+      # push to main the base is the parent commit. An empty route list skips
+      # the sweep (a scripts-only commit has no rendered surface).
+      - name: A11y sweep (touched routes)
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+          fi
+          echo "sweep base: $BASE_SHA"
+          ROUTES=$(node scripts/touched-routes.js --base-sha "$BASE_SHA")
+          if [ -z "$ROUTES" ]; then
+            echo "No rendered surface touched — sweep skipped"
+            exit 0
+          fi
+          if [ "$ROUTES" = "FULL" ]; then
+            echo "Shared surface touched — sweeping the full set"
+            node scripts/a11y-sweep.js --base http://127.0.0.1:3422
+          else
+            echo "Sweeping: $ROUTES"
+            node scripts/a11y-sweep.js --base http://127.0.0.1:3422 --routes "$ROUTES"
+          fi
 
       - name: Summarize
         if: always()
