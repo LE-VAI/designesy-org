@@ -14,6 +14,10 @@
  *                                        route)
  *   apps/site/public/*                -> FULL (assets render wherever they are
  *                                        referenced)
+ *   .github/workflows/ci.yml, the sweep and this mapper -> FULL (instrument
+ *                                        changes re-measure everything: a
+ *                                        sweep whose own PR never runs it
+ *                                        would never be CI-proofed)
  *   any OTHER file under apps/site/app (globals.css, layout.tsx, lib/*,
  *   per-family css)                   -> FULL set (a shared surface touches
  *                                        every route; measuring all of them is
@@ -24,7 +28,7 @@
  *   anything else (scripts, .github)  -> nothing (no rendered surface)
  *
  * USAGE
- *   node scripts/touched-routes.js --base-sha <sha>   # git diff <sha>...HEAD
+ *   node scripts/touched-routes.js --base-sha <sha>   # git diff <sha> HEAD
  * Prints comma-separated routes, or nothing when the diff has no rendered
  * surface. Exits 0 either way — an empty list means the CI step skips the
  * sweep, and a skipped sweep for a scripts-only commit is correct.
@@ -41,8 +45,12 @@ if (!baseSha) {
 const cp = require('node:child_process');
 let files;
 try {
+  // Two-dot (tree-to-tree), NOT three-dot: CI checks out with depth 1, and a
+  // shallow clone cannot compute a merge base ("no merge base" fatal). The
+  // two-dot form diffs the two trees directly, which needs no history — and
+  // against the PR merge ref it yields exactly the PR's delta.
   files = cp
-    .execSync(`git diff --name-only ${baseSha}...HEAD`, { encoding: 'utf8' })
+    .execSync(`git diff --name-only ${baseSha} HEAD`, { encoding: 'utf8' })
     .trim()
     .split(/\r?\n/)
     .filter(Boolean);
@@ -60,6 +68,17 @@ const APP = 'apps/site/app/';
 let full = false;
 const routes = new Set();
 for (const f of files) {
+  // Instrument changes must re-measure everything: a sweep whose own PR never
+  // runs it would never be CI-proofed, and the same goes for the workflow that
+  // wires it in. Measuring more is the conservative, correct direction for a
+  // measuring instrument.
+  if (
+    f === '.github/workflows/ci.yml' ||
+    /^apps\/site\/scripts\/(a11y-sweep|touched-routes)\.js$/.test(f)
+  ) {
+    full = true;
+    continue;
+  }
   // Shared surface outside app/: next.config.ts rewrites/redirects serve
   // every route, and public/* assets render on any page that references them.
   if (f === 'apps/site/next.config.ts' || f.startsWith('apps/site/public/')) {

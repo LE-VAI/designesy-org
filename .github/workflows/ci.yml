@@ -519,12 +519,20 @@ jobs:
       # commits -> nothing. On a pull request the base is the merge base; on
       # push to main the base is the parent commit. An empty route list skips
       # the sweep (a scripts-only commit has no rendered surface).
+      #
+      # The checkout above is shallow (depth 1). On pull requests the base SHA
+      # is not local, so fetch it; on push to main, HEAD~1 does not exist at
+      # depth 1, so deepen to 2 before naming it. touched-routes.js then diffs
+      # the two trees directly (no merge base — shallow clones cannot compute
+      # one).
       - name: A11y sweep (touched routes)
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --prune --depth=1 origin "+$BASE_SHA:refs/remotes/origin/base-sweep"
           else
+            git fetch --no-tags --prune --depth=2 origin "${{ github.sha }}"
             BASE_SHA="HEAD~1"
           fi
           echo "sweep base: $BASE_SHA"
