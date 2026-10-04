@@ -19,9 +19,34 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
-// The pips run to the largest stage, so every stage's count is drawn on the
-// same scale (a fixed scale of four overflowed on Shipped Work's five).
-const MAX_EXAMPLES = Math.max(...graph.chain.map((s) => s.public_examples.length));
+type Stage = (typeof graph.chain)[number]['stage'];
+
+// Where each stage's public examples can be read on this site: the side pane's
+// data. Each route renders the examples it is listed for (the DTCG research,
+// Cuelume and the DTCG gap on /acoustic-tokens; better-typography on
+// /labs/cadence; press scale 0.97 and "louder than the action" on /labs/poise;
+// the motion purpose line on /contracts/motion; the three open tensions on
+// /contracts/design-system and dual-source drift on /review/takt; the
+// principles on /docs; labs, field checks and case studies on /labs, /review
+// and /work; press settle, concentric radii and the rem scale on
+// /contracts/design-system; --ease-out and the radius on /contracts and
+// --cue:action on /acoustic-tokens; the field checks on /review and the
+// keyboard path on /review/keyboard; the shipped work on /work). Keyed by the
+// stage's own name, so a renamed or added stage fails the type check rather
+// than rendering an empty pane. The pane used to hold a pip count of the
+// bullets beside it, which told the reader nothing the face did not.
+const STAGE_ROUTES: Record<Stage, readonly string[]> = {
+  Source: ['/acoustic-tokens', '/labs/cadence'],
+  Observation: ['/acoustic-tokens', '/labs/poise'],
+  Claim: ['/contracts/motion', '/labs/poise'],
+  Tension: ['/contracts/design-system', '/review/takt'],
+  Principle: ['/docs'],
+  Pattern: ['/labs', '/review', '/work'],
+  'Contract Rule': ['/contracts/design-system'],
+  'Token / Component / Behavior': ['/contracts', '/acoustic-tokens'],
+  'Verification Artifact': ['/review', '/review/keyboard'],
+  'Shipped Work': ['/work', '/work/designesy-org'],
+};
 
 export default function GraphPage() {
   return (
@@ -54,14 +79,14 @@ export default function GraphPage() {
             examples drawn from real evidence.
           </p>
           {/* Each stage is a reading card split on the page's 7-line: the
-              stage and its examples in the face, the evidence count in the
-              side pane behind a hairline (graph.css). The count is drawn as
-              one pip per public example, so it needs no invented scale. */}
+              stage and its examples in the face; in the side pane behind a
+              hairline, the routes where those examples can be read and the
+              stage it hands on to (graph.css). */}
           <div className="chain-rail" data-reveal-group>
             {graph.chain.map((stage, i) => {
-              const count = stage.public_examples.length;
               const num = String(i + 1).padStart(2, '0');
               const isLast = i === graph.chain.length - 1;
+              const next = graph.chain[i + 1];
 
               return (
                 <div className="chain-cell" key={stage.stage} data-reveal data-terminal={isLast || undefined}>
@@ -79,22 +104,43 @@ export default function GraphPage() {
                         ))}
                       </ul>
                     </div>
-                    <div className="chain-cell-side">
-                      <p className="chain-cell-side-label">Public examples</p>
-                      <div className="chain-cell-meter">
-                        <span className="chain-cell-pips" aria-hidden="true">
-                          {Array.from({ length: MAX_EXAMPLES }, (_, k) => (
-                            <span key={k} className="chain-cell-pip" data-on={k < count || undefined} />
+                    <dl className="chain-cell-side">
+                      <div className="chain-cell-fact">
+                        <dt>On the site</dt>
+                        {/* Links straight in the <dd>, not a <ul>: the markdown
+                            twin keeps every <ul>, and a second bullet list
+                            right after the examples would merge into them
+                            and read as two more examples. */}
+                        <dd className="chain-cell-routes">
+                          {STAGE_ROUTES[stage.stage].map((route) => (
+                            <Link key={route} href={route} className="chain-cell-route">
+                              <span className="chain-cell-route-path">{route}</span>
+                              <span className="chain-cell-route-arrow" aria-hidden="true" />
+                            </Link>
                           ))}
-                        </span>
-                        <span className="chain-cell-meter-label">{count}</span>
+                        </dd>
                       </div>
-                      {isLast && (
-                        <span className="row-side-chip chain-cell-live" data-state="pass">
-                          Live
-                        </span>
+                      {next ? (
+                        <div className="chain-cell-fact chain-cell-fact--feeds">
+                          <dt>Feeds</dt>
+                          <dd className="chain-cell-next">
+                            <span className="chain-cell-next-num">
+                              {String(i + 2).padStart(2, '0')}
+                            </span>{' '}
+                            {next.stage}
+                          </dd>
+                        </div>
+                      ) : (
+                        <div className="chain-cell-fact">
+                          <dt>Status</dt>
+                          <dd>
+                            <span className="row-side-chip chain-cell-live" data-state="pass">
+                              Live
+                            </span>
+                          </dd>
+                        </div>
                       )}
-                    </div>
+                    </dl>
                   </div>
                 </div>
               );

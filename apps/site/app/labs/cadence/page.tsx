@@ -178,17 +178,11 @@ const RELATED = [
 
 const BUILDER_PROMPT = `You are working with Designesy Lab Three: Cadence.
 
-Authority: designesy.org is the canonical public source for Designesy
-open design intelligence. Cadence is Lab Three: text rhythm as portable
-rules with exact values.
+Authority: designesy.org is the canonical public source for Designesy open design intelligence. Cadence is Lab Three: text rhythm as portable rules with exact values.
 
-Permission: read-only by default. Inspect, review, and report.
-Do not edit files, deploy changes, or claim write authority
-the operator did not grant.
+Permission: read-only by default. Inspect, review, and report. Do not edit files, deploy changes, or claim write authority the operator did not grant.
 
-Goal: Review the target interface for cadence (the rhythm and
-readability of text on the page). Check every rule below and report
-which pass, which fail, and which are not applicable.
+Goal: Review the target interface for cadence (the rhythm and readability of text on the page). Check every rule below and report which pass, which fail, and which are not applicable.
 
 Rules (each with an exact value):
   1. Font smoothing: antialiased + grayscale on :root
@@ -219,9 +213,7 @@ Output format:
   Group by rule heading. Omit rules that have no findings.
   Express all fixes in the target project's styling system.
 
-Provenance: rules compiled from external design intelligence
-(Jakub Krehel /better-typography, MIT), cross-referenced against
-contract v0.1.2, and adopted into design system contract v0.1.3.
+Provenance: rules compiled from external design intelligence (Jakub Krehel /better-typography, MIT), cross-referenced against contract v0.1.2, and adopted into design system contract v0.1.3.
 
 Primary lab page: https://www.designesy.org/labs/cadence
 Design system contract: https://www.designesy.org/contracts/design-system

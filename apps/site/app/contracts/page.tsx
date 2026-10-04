@@ -221,9 +221,20 @@ const PRIMITIVE_SURFACES = [
   { token: '--signal-dim', value: 'rgba(1, 51, 203, 0.14)', role: 'Signal wash / badge fill' },
 ];
 
+// The radius rows are the contract module's: the four published steps and the
+// 8px tier between them, smallest first, so this table, section 06 and the
+// rack below name the same values.
+const RADIUS_ROWS = (['sm', 'default', 'md', 'lg', 'xl'] as const).map((k) => ({
+  token: ds.rounded[k].token,
+  value: ds.rounded[k].value,
+  role: ds.rounded[k].role,
+}));
+
+// The rack draws the published scale only; the 8px tier is named in its note.
+const RADIUS_RACK = RADIUS_ROWS.filter((r) => r.token !== ds.rounded.md.token);
+
 const PRIMITIVE_SHAPE_MOTION = [
-  { token: '--radius', value: '6px', role: 'Default corner radius' },
-  { token: '--radius-sm', value: '4px', role: 'Compact controls / nav chips' },
+  ...RADIUS_ROWS,
   { token: '--maxw', value: '1080px', role: 'Content shell max width' },
   { token: '--duration', value: '0.6s', role: 'Primary entrance duration' },
   { token: '--duration-quick', value: '150ms', role: 'Close, swap, tooltip' },
@@ -280,9 +291,9 @@ const TYPOGRAPHY_RULES = [
 // Section 06, as the stylesheet ships it: the material system (design spec
 // 3.1 to 3.3), measured against globals.css, not remembered.
 const SHAPE_RULES = [
-  'Radius scale 4 · 6 · 8 · 12 · 16px: 6px default, 4px compact controls; cards and primary or ghost buttons never round to pills',
+  'Radius scale 4 · 6 · 12 · 16px, with a documented 8px tier (--radius-md) between: 6px default, 4px compact controls, 12px large panels, 16px flagship surfaces; cards and primary or ghost buttons never round to pills',
   'Depth is surface lightness: paper, reading material, instrument, float. One top-lit rim on every raised surface, and --elev-1 to --elev-4 cast straight down',
-  'No hover lift: a card you can press heats its rim (--rim-hot) and takes contact light at the pointer, and a panel you only read holds still. The Four ways cards keep their tilt while that open tension stands',
+  'No hover lift: a card you can press heats its rim (--rim-hot) and takes contact light at the pointer, and a panel you only read holds still. The Four ways tilt and the 1px rise on two score controls are the exceptions, kept open in section 14',
   'Status notes and definitions are reading material: opaque --mat-reading with the rim and --elev-1, never a tinted callout box',
   'Glass only on surfaces you command over moving content: the header capsule, command slab, palette, drawer, popovers, dock pills and verdict HUD',
   'One signal accent family and no secondary brand hues; --ok, --warn and --error appear only as state',
@@ -294,21 +305,21 @@ const COMPONENT_STATES = ds.components;
 
 const A11Y_REQUIREMENTS = [
   'html lang="en"; meaningful page titles via metadata template',
-  'Focus-visible: 2px solid --signal-light, offset 2px',
-  'Sound control exposes aria-label, aria-pressed, and title',
+  'Focus-visible: a 2px solid outline on every control, --signal-light at a 3px offset over a --signal-dim halo by default; cards and dense lists tune the offset, and reading cards draw it in --signal-access',
+  'Sound control is named by its visible Sound label and exposes aria-pressed',
   'Decorative glyphs (sound icon, arrows) use aria-hidden where text is already labeled',
   'Prefer semantic landmarks: sticky header, main, footer',
   'Do not rely on color alone for state; pair with label, border, or weight change',
-  'Respect prefers-reduced-motion: collapse animations/transitions to near-zero duration',
-  'Scroll padding-top 4rem so in-page anchors clear the sticky topbar',
+  'Respect prefers-reduced-motion, tiered: travel stops, opacity fades and transitions of 200ms or less stay, and a motion demo plays on request',
+  'Scroll padding-top 4.5rem (72px) so in-page anchors clear the sticky topbar',
 ];
 
 const MOTION_RULES = [
-  'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
+  'Entrance: fadeUp 0.6s --ease-out, rising 12px from scale(0.98), with staggered delays (0.08s steps)',
   'Interactive settle: 160ms --ease-out on press scale',
-  'Hover lift only under (hover: hover) and (pointer: fine); touch gets no fake hover',
+  'Hover is gated: reading-card contact (rim heat, contact light) runs only under (hover: hover) and (pointer: fine), other hover motion under (hover: hover), so touch gets no fake hover',
   'Wordmark dot pulse: opacity heartbeat only; no blur glow, no gradient blobs',
-  'prefers-reduced-motion: reduce → disable non-essential motion; sound defaults off as acoustic proxy',
+  'prefers-reduced-motion: reduce is tiered: travel stops, fades and transitions of 200ms or less stay, motion demos play on request; sound defaults off as the acoustic proxy',
 ];
 
 const TEN_MOTION_STANDARDS = [
@@ -343,7 +354,7 @@ const MOTION_CAUTION = [
 const ACOUSTIC_TOKENS_REF = [
   'Engine: Cuelume v0.2.2 (MIT), interaction sound synthesis via the Web Audio API',
   'Custom $type: sound via $extensions.designesy; net-new relative to W3C DTCG 2025.10',
-  '19 cues mapped to 19 interaction roles: see /acoustic-tokens for the full table',
+  '19 cues in the acoustic token document: the 10 adopted cue tokens and 9 extended feedback cues; see /acoustic-tokens for the full table',
   'Preference key: designesy:sound in localStorage; engine follows Designesy',
   'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
   'No focus sounds: sounds fire on pointer/click, never on focus',
@@ -393,10 +404,11 @@ const VERIFICATION = [
 ];
 
 const OPEN_TENSIONS = [
-  'Light theme is not contracted; the dark technical foundation is provisional',
+  'Light theme is partly contracted: materials, field and instrument tokens carry light values, the color roles do not; the dark technical foundation is provisional',
   '--activation exists but has limited public surface usage',
-  'Inter is named in the stack but not self-hosted; system fallback is intentional',
-  'Four ways cards keep their flat line borders and no elevation; whether they take the rim, --elev-3 and a floor pool is still open',
+  'Four ways cards keep their flat line borders, no elevation and their hover tilt; whether they take the rim, --elev-3 and a floor pool is still open',
+  'Two score controls (the action button and the engine tile) still rise 1px on hover, outside the no-lift rule',
+  'The row and check-cell arrows nudge under (hover: hover) alone, without the fine-pointer gate Poise asks for',
   'Human contract page and machine export remain dual sources until a single generator owns both',
   'Keyboard-path verification packets cover Poise only; other public routes have none yet',
   'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical',
@@ -649,21 +661,17 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up" id={sectionId('primitive-tokens')}>
           <h2 className="doctrine-heading">02 · Primitive tokens</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Colors (exact values)
-          </p>
+          {/* Group labels are headings, in the section's one subhead style. */}
+          <h3 style={SUBHEAD}>Colors (exact values)</h3>
           <TokenTable rows={PRIMITIVE_COLORS} />
-          <p className="surface-note" style={{ margin: '1.5rem 0 1rem' }}>
-            Surfaces and lines
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Surfaces and lines</h3>
           <TokenTable rows={PRIMITIVE_SURFACES} />
-          <p className="surface-note" style={{ margin: '1.5rem 0 1rem' }}>
-            Shape, shell, motion primitives
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Shape, shell, motion primitives</h3>
           <TokenTable rows={PRIMITIVE_SHAPE_MOTION} />
-          <p className="surface-note" style={{ margin: '1.5rem 0 1rem' }}>
-            Material and depth: surface lightness first, one top-lit rim, one
-            light straight down
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem', marginBottom: '0.25rem' }}>Material and depth</h3>
+          <p className="surface-note" style={{ marginBottom: '0.75rem' }}>
+            Depth comes from surface lightness first, then one top-lit rim and
+            one light straight down.
           </p>
           <TokenTable rows={DEPTH_TOKENS} />
           <p className="surface-note" style={{ marginTop: '1rem' }}>
@@ -749,21 +757,20 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Radius scale"
-              note={<>6px default · 4px compact. Cards and primary buttons stay on the scale.</>}
+              note={<>The published scale, smallest first: 4px compact, 6px default, 12px large panels, 16px flagship. The 8px tier sits between, off the scale.</>}
             >
+              {/* Four 48px squares: four of the rack's 72px boxes overflowed the
+                  271px stage at 1024. Each corner is its token, not a number. */}
               <div className="demo-radius-pair">
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-default" />
-                  <span className="demo-radius-tag">6px</span>
-                </div>
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-sm" />
-                  <span className="demo-radius-tag">4px</span>
-                </div>
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-none" />
-                  <span className="demo-radius-tag">none</span>
-                </div>
+                {RADIUS_RACK.map((step) => (
+                  <div className="demo-radius-card" key={step.token}>
+                    <div
+                      className="demo-radius-box"
+                      style={{ width: '3rem', height: '3rem', borderRadius: `var(${step.token})` }}
+                    />
+                    <span className="demo-radius-tag">{step.value}</span>
+                  </div>
+                ))}
               </div>
             </DemoCell>
           </DemoGrid>
@@ -984,21 +991,13 @@ export default function ContractsPage() {
             Copywriting discipline. 4 principles are codified as verification
             checks (v38 to v41); 12 are governance.
           </p>
-          <p className="surface-note" style={{ marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Principles</strong>
-          </p>
+          <h3 style={SUBHEAD}>Principles</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_PRINCIPLES)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Verification checks (automated)</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Verification checks (automated)</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_VERIFICATION)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Governance (human review)</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Governance (human review)</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_GOVERNANCE)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Tooling</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Tooling</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_TOOLING)} />
         </section>
 

@@ -328,10 +328,14 @@
   gap: 0.5rem;
 }
 
+/* Both words start on the LED's side of their shared slot, so the LED keeps
+   its 8px to either word and the slack of the shorter "Verified" falls
+   before the count. End-aligned, the gap grew from 8 to 14.9px at the
+   payoff (judged at 1440, 2026-10-03). */
 .inspect-status-word {
   position: relative;
   display: inline-grid;
-  justify-items: end;
+  justify-items: start;
 }
 
 .inspect-status-word > span {
@@ -397,7 +401,13 @@
 
 .inspect[data-step="2"] .inspect-rail i { transform: scaleX(0.5); }
 .inspect[data-step="3"] .inspect-rail i { transform: scaleX(0.75); }
-.inspect[data-step="4"] .inspect-rail i { transform: scaleX(1); }
+
+/* The full bar is part of the verdict: it lands with "Verified" and the
+   counter's last row, all three 300ms from the same step-four frame. */
+.inspect[data-step="4"] .inspect-rail i {
+  transform: scaleX(1);
+  transition-duration: 300ms;
+}
 
 /* Its text starts on the window's edge, not 4px inside it. */
 .inspect-caption {
@@ -1372,21 +1382,35 @@
   display: none;
 }
 
+/* Sized in row units: the pin plus its 1.5px ring is one log row (16px
+   wide, 14.4px on the phone) less a pixel, top-aligned with 2px above and
+   below, so the ring is drawn inside its row and the phone's two stacked
+   rings keep a 1px gap. At 1.5em of the 10px floor the pin drew 18px in a
+   14.4px row and its ring was cut flat by the row's clip (judged at 390,
+   2026-10-03). The type stays on the specimen's 10px floor. */
 .ix-log-pin {
   display: inline-grid;
   place-items: center;
-  width: 1.5em;
-  height: 1.5em;
+  box-sizing: border-box;
+  width: calc(var(--ix-log-lh) - 4px);
+  height: calc(var(--ix-log-lh) - 4px);
+  margin-block: 2px;
+  vertical-align: top;
   border-radius: 50%;
   background: var(--mp-paper);
   color: var(--mp-ink);
-  font-weight: 700;
-  /* 0.9em of the phone log's 0.64rem is 9.2px: floored like the specimen. */
-  font-size: max(10px, 0.9em);
+  font: 700 10px/1 var(--mono);
 }
 
 .ix-log-pin.is-warn { box-shadow: 0 0 0 1.5px var(--ix-warn); }
 .ix-log-pin.is-fail { box-shadow: 0 0 0 1.5px var(--ix-fail); }
+
+/* The row that opens on a pin leaves its ring room at the clip's left edge
+   (the value's overflow is hidden for its ellipsis); the ring's outer edge
+   then sits on the other rows' text edge. */
+.ix-log-line[data-n="3"] .ix-log-v {
+  padding-inline-start: 2px;
+}
 
 /* Wide: results accumulate, one row per step; the current one is in ink. */
 .inspect[data-step="1"] .ix-log-line[data-n="1"],
@@ -1438,14 +1462,24 @@
 }
 
 /* The checks-run counter: a third per step, each third its own segment.
-   Without the scroll layer it rolls to the step's total in 380ms. */
+   Without the scroll layer it rolls to the step's total in 380ms. The fourth
+   segment, the last three checks, is the verdict's in every path: it rolls
+   on data-step 4, from the same frame as "Verified" and the title-bar
+   progress (both 300ms on --ease-out, below and above). Its three rows land
+   at 0, 100 and 200ms (jump-start), so the total arrives where those two
+   curves read complete (99% at two thirds) instead of 100ms after them. */
 .ix-count .digit-strip-seg {
   transition: transform 380ms steps(var(--ds-seg));
 }
 
+.ix-count [data-seg="4"] {
+  transition: transform 300ms steps(var(--ds-seg), jump-start);
+}
+
 .inspect .ix-count [data-seg="1"],
 .inspect:is([data-step="2"], [data-step="3"], [data-step="4"]) .ix-count [data-seg="2"],
-.inspect:is([data-step="3"], [data-step="4"]) .ix-count [data-seg="3"] {
+.inspect:is([data-step="3"], [data-step="4"]) .ix-count [data-seg="3"],
+.inspect[data-step="4"] .ix-count [data-seg="4"] {
   transform: translateY(calc(var(--ds-seg) * -1 * var(--ds-lh)));
 }
 
@@ -1648,7 +1682,10 @@
       animation-range: cover calc(20% + var(--i) * 8%) cover calc(30% + var(--i) * 8%);
     }
 
-    .inspect[data-ix-scrub] .ix-count .digit-strip-seg {
+    /* Segments 1-3 only: the fourth is the verdict's event (see above). The
+       list keeps this rule at the per-segment rules' specificity, so their
+       timelines and ranges below still win over this shorthand's reset. */
+    .inspect[data-ix-scrub] .ix-count :is([data-seg="1"], [data-seg="2"], [data-seg="3"]) {
       animation: ix-seg linear both;
       animation-timing-function: steps(var(--ds-seg));
     }
@@ -1697,10 +1734,14 @@
       animation-range: cover 0% cover 60%;
     }
 
-    /* STEP 3, FIND: the last third of the count. */
+    /* STEP 3, FIND: the last third of the count, short of its final three
+       (the verdict's), spread across the whole step: each of its rows,
+       the last included, holds an equal share, and the last holds until
+       step four lights and the verdict's roll takes over. It ended at 60%
+       of the step and read the full total 200px early. */
     .inspect[data-ix-scrub] .ix-count [data-seg="3"] {
       animation-timeline: --s3;
-      animation-range: cover 0% cover 60%;
+      animation-range: cover 0% cover calc(100% * var(--ds-seg) / (var(--ds-seg) + 1));
     }
 
     @keyframes ix-lean {
@@ -1749,21 +1790,40 @@
     }
   }
 
-  /* The steps' rail follows the scroll too, but it moves, so it is motion. */
+  /* The steps' rail follows the scroll too, tied to the line the steps light
+     on. The list is a view timeline inset to the observer's own band (the
+     step timelines' inset above), so its cover range runs from the list's
+     top on the line to its bottom on the line. The rail starts its padding
+     below the list's top and ends its padding above the bottom, so a range
+     offset by that padding at each end scales the fill to end ON the line at
+     every scroll position: it crosses into a step's block the instant that
+     step lights, in either direction. On a range of contain -30% to 130%
+     the fill end drifted at 0.2px per scrolled px and stopped 25-183px short
+     of the lit numeral at 1440, and at 768 it held a 26px stub through every
+     pinned step (judged 2026-10-03). Only with the scrub layer: reduced
+     motion, the play loop and an unpinned stage keep the stepped fill. */
   .inspect-steps {
     view-timeline-name: --inspect;
+    view-timeline-inset: var(--ix-band-start, 50%) var(--ix-band-end, 50%);
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    html:not([data-motion="paused"]) .inspect-steps::after {
+    .inspect[data-ix-scrub] .inspect-steps::after {
       transition: none;
       animation: ix-rail linear both;
       animation-timeline: --inspect;
-      animation-range: contain -30% contain 130%;
+      animation-range: cover 12vh cover calc(100% - 18vh);
+    }
+
+    /* Narrow: the list's padding (and the rail's ends) are 4vh and 2vh. */
+    @container g12 (width < 57rem) {
+      .inspect[data-ix-scrub] .inspect-steps::after {
+        animation-range: cover 4vh cover calc(100% - 2vh);
+      }
     }
 
     @keyframes ix-rail {
-      from { transform: scaleY(0.04); }
+      from { transform: scaleY(0); }
       to { transform: scaleY(1); }
     }
   }

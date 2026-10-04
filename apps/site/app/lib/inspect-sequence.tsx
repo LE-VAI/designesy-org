@@ -93,10 +93,17 @@ const PASS = ENGINE_CHECK_COUNT - WARN - FAIL;
 const TALLY = `${PASS} pass · ${WARN} warn · ${FAIL} fail`;
 
 // The chrome counter rolls 0..total across steps 1-3, one third per step, each
-// third on its own clock (nested strip segments; see lib/digit-strip).
+// third on its own clock (nested strip segments; see lib/digit-strip). The
+// last few checks are not scrolled: they roll with the step-four verdict, on
+// the same event and in the same 300ms as "Verified" and the full title-bar
+// progress, so the total can never read complete beside "Verifying" and a
+// bar at three quarters (it did for 200px of scroll at 1440, judged
+// 2026-10-03).
 const THIRD_A = Math.floor(ENGINE_CHECK_COUNT / 3);
 const THIRD_B = Math.floor((2 * ENGINE_CHECK_COUNT) / 3) - THIRD_A;
 const THIRD_C = ENGINE_CHECK_COUNT - THIRD_A - THIRD_B;
+const VERDICT_ROLL = Math.min(3, THIRD_C - 1);
+const COUNT_SEGMENTS = [THIRD_A, THIRD_B, THIRD_C - VERDICT_ROLL, VERDICT_ROLL] as const;
 const COUNT_ROWS = Array.from({ length: ENGINE_CHECK_COUNT + 1 }, (_, i) => i);
 
 // Measurement read-outs: the strip lands on each row in steps(n).
@@ -566,7 +573,7 @@ export function InspectSequence() {
                 <span className="inspect-status-done">Verified</span>
               </span>
               <span className="ix-count">
-                <DigitStrip values={COUNT_ROWS} at={0} segments={[THIRD_A, THIRD_B, THIRD_C]} />
+                <DigitStrip values={COUNT_ROWS} at={0} segments={COUNT_SEGMENTS} />
                 <span className="ix-count-of">/{ENGINE_CHECK_COUNT}</span>
               </span>
             </span>

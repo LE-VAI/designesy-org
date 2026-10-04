@@ -9,6 +9,12 @@
    node filled with the signal: the chain ends in shipped work. The rail is
    the chain's query container, so a card can find the page's 7-line in its
    own width (below).
+
+   The line is drawn per stage, from its node's centre to the next node's
+   centre (the cell's height plus the 8px gap: every node sits at the same
+   offset in its cell), and the terminal stage draws none, so the line ends
+   in the filled node. One line on the rail ran 24px short of the list's
+   foot, so it hung 136px past the terminal node at 1440 and 337px at 390.
    -------------------------------------------------------------------------- */
 .chain-rail {
   position: relative;
@@ -16,19 +22,20 @@
   padding-left: var(--space-28);
 }
 
-.chain-rail::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: 1.5rem;
-  bottom: 1.5rem;
-  width: 1px;
-  background: var(--line-strong);
-}
-
 .chain-cell {
   position: relative;
   margin-bottom: var(--space-8);
+}
+
+.chain-cell:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: calc(7px - var(--space-28));
+  top: calc(var(--space-20) + 0.65rem);
+  width: 1px;
+  height: calc(100% + var(--space-8));
+  background: var(--line-strong);
+  pointer-events: none;
 }
 
 .chain-cell:last-child {
@@ -158,7 +165,7 @@ html[data-motion="paused"] .chain-cell-main::after {
   .chain-cell-main::after {
     display: none;
   }
-  .chain-rail::before,
+  .chain-cell::before,
   .chain-rail-node {
     forced-color-adjust: none;
     background: CanvasText;
@@ -171,9 +178,20 @@ html[data-motion="paused"] .chain-cell-main::after {
    hairline run across the card. From a 64rem page column (the rail's content
    box is the column less its 28px inset, so 62.25rem here) the face is the
    page's first seven tracks and the side's 1px --line-faint border is the
-   7-line (x 804.2 at 1440), so the count sits beside its own stage, not
-   500px across an empty card. --chain-split is --track-split measured from
-   the card's left edge: the column is 100cqi plus the rail's inset.
+   7-line (x 804.2 at 1440), so the side's data sits beside its own stage.
+   --chain-split is --track-split measured from the card's left edge: the
+   column is 100cqi plus the rail's inset.
+
+   The side is data the face does not carry: where the stage's examples can
+   be read on this site (route lines, the row region's side-line vocabulary:
+   12px mono in --muted, the arrow at the pane's end, ink on contact) and the
+   stage it feeds. It is a <dl> on the split definition's key/value grid: a
+   12px caps key column, values in the second, each pair's first line on one
+   baseline. Split, the first route line (a 24px target) is centred on the
+   title's line, as the rail node is. Stacked, the hand-off is left out (the
+   next card is the next thing in view) and, below a 24rem rail, each key sits
+   over its value, so the longest route (24 characters) keeps one line down to
+   a 320px screen and never breaks inside a slug.
    -------------------------------------------------------------------------- */
 .chain-cell-face {
   min-width: 0;
@@ -183,12 +201,31 @@ html[data-motion="paused"] .chain-cell-main::after {
 .chain-cell-side {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: start;
-  justify-items: start;
+  column-gap: var(--space-16);
   row-gap: var(--space-8);
+  align-content: start;
   min-width: 0;
-  padding: var(--space-16) var(--space-24) var(--space-20);
+  margin: 0;
+  padding: var(--space-12) var(--space-24) var(--space-16);
   border-top: 1px solid var(--line-faint);
+}
+
+.chain-cell-fact {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.chain-cell-fact--feeds {
+  display: none;
+}
+
+@container chain (width >= 24rem) {
+  .chain-cell-side {
+    grid-template-columns: fit-content(8rem) minmax(0, 1fr);
+  }
 }
 
 @container chain (width >= 62.25rem) {
@@ -197,9 +234,12 @@ html[data-motion="paused"] .chain-cell-main::after {
     grid-template-columns: var(--chain-split) minmax(0, 1fr);
   }
   .chain-cell-side {
-    padding: var(--space-20) var(--space-24);
+    padding: calc(var(--space-20) + 0.65rem - 0.75rem) var(--space-24) var(--space-20);
     border-top: 0;
     border-left: 1px solid var(--line-faint);
+  }
+  .chain-cell-fact--feeds {
+    display: grid;
   }
 }
 
@@ -228,10 +268,16 @@ html[data-motion="paused"] .chain-cell-main::after {
   }
 }
 
+/* The site's card title recipe (.principle-body h3: Schibsted 1rem/600 in
+   ink): the display serif belongs to the page title alone. As Fraunces 16.8px
+   these were the only serif card titles on a content page. The 1.3rem line
+   stays, so the node (centred on it) does not move. */
 .chain-cell-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
   line-height: 1.3rem;
+  letter-spacing: -0.005em;
   color: var(--ink);
   flex: 1 1 0;
   min-width: 0;
@@ -270,9 +316,10 @@ html[data-motion="paused"] .chain-cell-main::after {
   font-weight: 700;
 }
 
-/* The side's key, the split definition's key vocabulary: 12px caps on a
-   16px line, so its baseline sits on the title's line. */
-.chain-cell-side-label {
+/* The side's keys: the split definition's key vocabulary, 12px/600 caps in
+   --muted on a 16px line, baseline-aligned with the first line of the value
+   beside or under it. */
+.chain-cell-fact dt {
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
@@ -282,48 +329,92 @@ html[data-motion="paused"] .chain-cell-main::after {
   color: var(--muted);
 }
 
-/* The count, drawn as one pip per public example on a scale of the largest
-   stage, with the number beside it. Neutral: a count is not a state. */
-.chain-cell-meter {
+.chain-cell-fact dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.chain-cell-fact .chain-cell-routes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A route line: the row side-line's 12px mono in --muted with the arrow at
+   the pane's end, as on every row list. The whole line is the link, 24px
+   tall (the WCAG 2.5.8 target), and the path never wraps: the layout above
+   leaves room for the longest one at every width. */
+.chain-cell-route {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-12);
-}
-
-.chain-cell-pips {
-  display: flex;
-  gap: var(--space-4);
-}
-
-.chain-cell-pip {
-  width: 12px;
-  height: 6px;
-  border-radius: 2px;
-  background: var(--line);
-}
-
-.chain-cell-pip[data-on] {
-  background: var(--muted);
-}
-
-.chain-cell-meter-label {
-  font: 500 0.8125rem/1rem var(--mono);
+  min-height: 1.5rem;
+  font: 500 0.75rem/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s var(--ease);
+}
+
+.chain-cell-route-path {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.chain-cell-route-arrow {
+  flex: none;
+  font-family: var(--sans);
+  transition: transform 160ms var(--ease-out);
+}
+
+.chain-cell-route-arrow:empty::before {
+  content: "\2192";
+}
+
+@media (hover: hover) {
+  .chain-cell-route:hover {
+    color: var(--ink);
+  }
+  .chain-cell-route:hover .chain-cell-route-arrow {
+    transform: translateX(2px);
+  }
+}
+
+.chain-cell-route:focus-visible {
   color: var(--ink);
+}
+
+/* Reduced motion, tiered: the colour change stays, the arrow holds still. */
+@media (prefers-reduced-motion: reduce) {
+  .chain-cell-route-arrow {
+    transition: none;
+  }
+  .chain-cell-route:hover .chain-cell-route-arrow {
+    transform: none;
+  }
+}
+
+html[data-motion="paused"] .chain-cell-route:hover .chain-cell-route-arrow {
+  transform: none;
+}
+
+/* The hand-off: the next stage's number (the face's index vocabulary) and
+   its name in ink. */
+.chain-cell-next {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.chain-cell-next-num {
+  font: 500 0.75rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 /* The terminal stage is live: the row chip's pass state (globals,
    .row-side-chip), never a brand-blue badge. */
 .chain-cell-live {
   justify-self: start;
-}
-
-@media (forced-colors: active) {
-  .chain-cell-pip {
-    forced-color-adjust: none;
-    background: GrayText;
-  }
-  .chain-cell-pip[data-on] {
-    background: CanvasText;
-  }
 }

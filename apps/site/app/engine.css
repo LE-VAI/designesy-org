@@ -1853,15 +1853,30 @@
   }
 }
 
-.eg-file {
-  grid-template-rows: auto 1fr auto;
-  gap: var(--space-6);
+/* A file's lines (id, name, size, and where it goes) sit on rows its whole
+   grid row shares: the li spans one track per line and both it and the cell
+   take them as a subgrid. So the names in a row share one line and the label
+   block starts under them at one height, whatever a destination's length.
+   The cell used to anchor its lines to its foot (auto 1fr auto auto): g05's
+   destination wraps to three lines, which lifted its name 17.5px above
+   g04's and g06's at 1280 and 1440. The row keeps the list's 8px gap to the
+   next row of files; the lines inside a cell keep 6px. */
+.eg-files > li {
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--space-6);
 }
 
 /* Where the file goes, as the cell's last line: the destination sits with
    the file instead of in a list beside the face. */
-.eg-file:has(.eg-file-where) {
-  grid-template-rows: auto 1fr auto auto;
+.eg-files:has(.eg-file-where) > li {
+  grid-row: span 4;
+}
+
+.eg-files > li > .eg-file {
+  grid-row: 1 / -1;
+  grid-template-rows: subgrid;
+  gap: var(--space-6);
 }
 
 .eg-file-where {
@@ -1874,6 +1889,7 @@
 }
 
 .eg-file .eg-cell-label {
+  align-self: start;
   font: 500 0.84rem/1.25 var(--mono);
   overflow-wrap: anywhere;
 }
@@ -2882,6 +2898,15 @@ button.mt-row {
   text-wrap: pretty;
 }
 
+/* A token name in a step is one word: it never breaks at its hyphens
+   ("--md-" over "sys-color-primary" on /m3-bridge), set in the prose's
+   code face. */
+.eg-step code {
+  font: 400 0.88em/1 var(--mono);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
 .eg-rule {
   display: none;
 }
@@ -3036,9 +3061,12 @@ button.mt-row {
 
 /* Four figures on the cells' own lattice (8px gap): two to a row on a narrow
    face, and where the five checks under them run as one five-track row
-   (the cells' rule), the figures stand on the same five tracks, the last
-   ("checks pass", the figure the row below answers) spanning two, so three
-   seams run straight down into the cells. */
+   (the cells' rule), the figures stand on the same five tracks, one of them
+   spanning two, so three seams run straight down into the cells. The wide
+   one is "types found", the only figure whose line grows with the result
+   (16 color · 10 duration · 5 dimension · 4 cubicBezier · 3 string on the
+   sample): on one track it wrapped to five lines and converting raised the
+   whole strip 70px, while the two tracks went to "5/5 checks pass". */
 .m3-pipe {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3122,7 +3150,7 @@ button.mt-row {
   .m3-map {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
-  .m3-pipe > li:last-child,
+  .m3-pipe > li:nth-child(3),
   .m3-map > div:last-child {
     grid-column: span 2;
   }
@@ -3132,23 +3160,37 @@ button.mt-row {
    an inset well on the instrument material and taking whatever height the
    side has left under the figures and the actions, so the result fills its
    own pane (it ended 230px into a 470px pane, beside a full face). It
-   scrolls inside itself, from the keyboard too (tabindex), and grows from a
-   zero basis, so a long file never makes the pane taller than the face. At
-   rest the same frame holds a muted { }: the slot is there before the
-   output is. */
+   scrolls inside itself, from the keyboard too (tabindex), and the frame
+   holds a muted { } at rest: the slot is there before the output is.
+   A zero flex basis alone did not keep it in the pane: the side's row is
+   sized from content, and a <pre> still offers its whole file as its
+   max-content height, so converting the sample grew the instrument from
+   486px to 7,415px beside an empty face. Size containment takes the file
+   out of that sum: the well's height is only the space the face leaves
+   (beside it), or its own floor (stacked under it on a narrow bench, where
+   the full file also sits in the tokens.json viewer below). The frame is a
+   border, not an inset ring: content scrolls inside the padding box, so a
+   long line can no longer paint over the right edge. */
 .m3-preview {
   flex: 1 1 0;
-  min-height: 8rem;
+  min-height: 16rem;
+  contain: size;
   margin: 0;
-  padding: var(--space-12) var(--space-14);
+  padding: calc(var(--space-12) - 1px) calc(var(--space-14) - 1px);
   overflow: auto;
+  border: 1px solid var(--lv-well-line);
   border-radius: var(--radius-lg);
   background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--lv-well-line);
   font: 400 0.75rem/1.6 var(--mono);
   color: var(--muted);
   tab-size: 2;
   white-space: pre;
+}
+
+@container bench (width >= 52rem) {
+  .m3-preview {
+    min-height: 10rem;
+  }
 }
 
 /* The browser's own code rule (font-family: monospace) outranks the
@@ -3423,11 +3465,12 @@ html[data-motion="paused"] .eg .eg-rule {
     border: 1px solid CanvasText;
   }
   /* An outline, not a border: a border would take 1px off each side of the
-     content box --track-split resolves against and move the divider. */
+     content box --track-split resolves against and move the divider.
+     (.m3-preview needs neither: it draws a real border, which forced
+     colours keep.) */
   .eg-inst,
   .eg-formula,
-  .eg-next-list,
-  .m3-preview:not(:focus-visible) {
+  .eg-next-list {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }

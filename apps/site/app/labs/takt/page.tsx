@@ -207,17 +207,11 @@ const RELATED: { href: string; title: string; meta: string; datum: string; state
 
 const BUILDER_PROMPT = `You are working with Designesy Lab Two: Takt.
 
-Authority: designesy.org is the canonical public source for Designesy
-open design intelligence. Takt is Lab Two: interface feel as portable
-rules with exact values.
+Authority: designesy.org is the canonical public source for Designesy open design intelligence. Takt is Lab Two: interface feel as portable rules with exact values.
 
-Permission: read-only by default. Inspect, review, and report.
-Do not edit files, deploy changes, or claim write authority
-the operator did not grant.
+Permission: read-only by default. Inspect, review, and report. Do not edit files, deploy changes, or claim write authority the operator did not grant.
 
-Goal: Review the target interface for takt (the physical feel
-of surfaces under your hands). Check every rule below and report
-which pass, which fail, and which are not applicable.
+Goal: Review the target interface for takt (the physical feel of surfaces under your hands). Check every rule below and report which pass, which fail, and which are not applicable.
 
 Rules (each with an exact value):
   1. Concentric radii: outerRadius = innerRadius + padding on every nested pair
@@ -235,11 +229,7 @@ Output format:
   Group by rule heading. Omit rules that have no findings.
   Express all fixes in the target project's styling system.
 
-Provenance: rules compiled from external design intelligence
-(Amicro, Jakub Krehel /better-ui, Emil Kowalski /emil-design-eng,
-/apple-design, /find-animation-opportunities, /animate),
-cross-referenced against contract v0.1.1, and adopted into design
-system contract v0.1.2.
+Provenance: rules compiled from external design intelligence (Amicro, Jakub Krehel /better-ui, Emil Kowalski /emil-design-eng, /apple-design, /find-animation-opportunities, /animate), cross-referenced against contract v0.1.1, and adopted into design system contract v0.1.2.
 
 Primary lab page: https://www.designesy.org/labs/takt
 Design system contract: https://www.designesy.org/contracts/design-system

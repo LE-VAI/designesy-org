@@ -295,6 +295,7 @@ export function SpringValidator() {
   const verdict = VERDICT[result.verdict];
   const reducedMs = Math.min(result.settleTime, 150);
   const band = overshootBand(result.overshoot);
+  const checks = checklistOf(result);
 
   // The verdict glow fires once when the verdict changes (never on first
   // paint: a page at rest shows no coloured light). Each change remounts the
@@ -467,38 +468,30 @@ export function SpringValidator() {
         </div>
       </section>
 
-      {/* Accessibility checklist. It carries the verdict too, so a row that
-          fails under a Violation takes the fail hue the verdict shows. */}
+      {/* Accessibility checklist, in two groups. The reduced-motion rows
+          are read from the verdict's own classification (checklistOf), so no
+          row can argue with the answer; the motion budget is a separate
+          bound and says so. The section carries the verdict too, so a row
+          that fails under a Violation takes the fail hue the verdict shows. */}
       <section className="sv-checklist" aria-labelledby={`${uid}-checks`} data-verdict={result.verdict}>
         <h2 className="sv-checklist-title" id={`${uid}-checks`}>
-          Reduced-motion compliance checklist
+          Compliance checklist
         </h2>
-        <ul className="sv-checks">
-          <ChecklistItem
-            checked={result.reducedMotionRequired === false}
-            label="Spring does not produce perceptible overshoot (>2%)"
-            detail="If overshoot > 2%, the spring is visible to vestibular-sensitive users"
-          />
-          <ChecklistItem
-            checked={result.classification !== 'underdamped' || result.reducedMotionRequired}
-            label="Underdamped springs have explicit @media (prefers-reduced-motion: reduce) rule"
-            detail="Underdamped springs MUST be suppressed or replaced under reduced-motion"
-          />
-          <ChecklistItem
-            checked={result.settleTime <= 300}
-            label="Settle time ≤ 300ms (UI animation bound)"
-            detail="UI animation should stay at or below 300ms unless justified"
-          />
-          <ChecklistItem
-            checked={result.overshoot <= 10}
-            label="Overshoot ≤ 10% (not a vestibular trigger)"
-            detail="Overshoot > 10% is clearly visible and likely triggers discomfort"
-          />
-          <ChecklistItem
-            checked={true}
-            label="Spring uses transform/opacity only (no layout animation)"
-            detail="Never animate width, height, margin, or padding; use transform and opacity"
-          />
+        <h3 className="sv-checks-head" id={`${uid}-checks-rm`}>
+          Reduced motion <span className="sv-checks-scope">· follows the verdict</span>
+        </h3>
+        <ul className="sv-checks" aria-labelledby={`${uid}-checks-rm`}>
+          {checks.reducedMotion.map((row) => (
+            <ChecklistItem key={row.label} {...row} />
+          ))}
+        </ul>
+        <h3 className="sv-checks-head" id={`${uid}-checks-budget`}>
+          Motion budget <span className="sv-checks-scope">· outside the verdict</span>
+        </h3>
+        <ul className="sv-checks" aria-labelledby={`${uid}-checks-budget`}>
+          {checks.budget.map((row) => (
+            <ChecklistItem key={row.label} {...row} />
+          ))}
         </ul>
       </section>
 
@@ -616,17 +609,82 @@ function Metric({
   );
 }
 
-// ── ChecklistItem subcomponent ──────────────────────────────────────────────
+// ── Checklist ───────────────────────────────────────────────────────────────
 
-function ChecklistItem({ checked, label, detail }: { checked: boolean; label: string; detail: string }) {
+type CheckState = 'pass' | 'fail' | 'na';
+interface CheckRow {
+  state: CheckState;
+  label: string;
+  detail: string;
+}
+
+/**
+ * The checklist's rows, derived from the same result the verdict reads.
+ * The reduced-motion rows are the verdict's own thresholds: overshoot over
+ * 2% (reducedMotionRequired, Caution and up) and over 10% (Violation). The
+ * @media row asked for a rule on every underdamped spring, so it warned
+ * under a Safe verdict (M3 Default: zeta 0.990, 0.0% overshoot) and passed
+ * under a Violation; now it is not applicable wherever the verdict needs no
+ * rule, and met where it does, because the snippet this tool emits carries
+ * the rule. The budget rows check the emitted CSS against bounds the verdict
+ * does not cover, and are grouped apart so a miss there never reads as a
+ * second verdict.
+ */
+function checklistOf(r: SpringResult): { reducedMotion: CheckRow[]; budget: CheckRow[] } {
+  const required = r.reducedMotionRequired;
+  return {
+    reducedMotion: [
+      {
+        state: r.verdict === 'safe' ? 'pass' : 'fail',
+        label: 'Spring does not produce perceptible overshoot (>2%)',
+        detail: 'If overshoot > 2%, the spring is visible to vestibular-sensitive users',
+      },
+      {
+        state: required ? 'pass' : 'na',
+        label: 'Visible overshoot has an explicit @media (prefers-reduced-motion: reduce) rule',
+        detail: required
+          ? 'Required above 2% overshoot: the CSS snippet carries the rule, so ship it with the spring'
+          : r.classification === 'underdamped'
+            ? 'Not required: overshoot of 2% or less is imperceptible'
+            : 'Not required: the spring does not oscillate',
+      },
+      {
+        state: r.verdict === 'violation' ? 'fail' : 'pass',
+        label: 'Overshoot ≤ 10% (not a vestibular trigger)',
+        detail: 'Overshoot > 10% is clearly visible and likely triggers discomfort',
+      },
+    ],
+    budget: [
+      {
+        state: r.settleTime <= 300 ? 'pass' : 'fail',
+        label: 'Settle time ≤ 300ms (UI animation bound)',
+        detail: 'UI animation should stay at or below 300ms unless justified',
+      },
+      {
+        state: 'pass',
+        label: 'Spring uses transform/opacity only (no layout animation)',
+        detail: 'Never animate width, height, margin, or padding; use transform and opacity',
+      },
+    ],
+  };
+}
+
+const CHECK_MARK: Record<CheckState, { glyph: string; sr: string }> = {
+  pass: { glyph: '✓', sr: 'Met: ' },
+  fail: { glyph: '!', sr: 'Not met: ' },
+  na: { glyph: '–', sr: 'Not applicable: ' },
+};
+
+function ChecklistItem({ state, label, detail }: CheckRow) {
+  const mark = CHECK_MARK[state];
   return (
-    <li className="sv-check-item" data-ok={checked ? '' : undefined}>
+    <li className="sv-check-item" data-state={state}>
       <span className="sv-check-mark" aria-hidden="true">
-        {checked ? '✓' : '!'}
+        {mark.glyph}
       </span>
       <div>
         <p className="sv-check-label">
-          <span className="sr-only">{checked ? 'Met: ' : 'Not met: '}</span>
+          <span className="sr-only">{mark.sr}</span>
           {label}
         </p>
         <p className="sv-check-detail">{detail}</p>

@@ -1,0 +1,96 @@
+/* /learn/design-verification-vs-linting-vs-visual-regression only. Imported
+   by its page.tsx, so Next.js splits it to this route. Every selector carries
+   a .learn-compare class this page alone sets, so the rules stay put if the
+   sheet outlives a client-side navigation.
+
+   The side-by-side. The article promises one, and its three practice cards
+   each stacked their own lines, so the labels drifted apart across the row:
+   "Output" at 124, 124 and 146px into the cards and "Where it fails alone" at
+   176, 198 and 221 (1440). Now every card is asked the same five things on
+   shared rows. The cards stay reading material (the .principle recipe: mat,
+   elevation, rim) on the shell's twelve tracks. From a 48rem list they sit
+   3-up on span 4 (the bento and pillar module) and each card is a subgrid of
+   the list's seven rows: number, name, then one row per attribute. Row n is
+   then one height in all three cards (the tallest cell's), so a label sits at
+   one y across the three and the hairline over "Where it fails alone" runs
+   through them as one line; all three cards share top and bottom edges by
+   construction. Below 48rem the cards stack, one per row, and each keeps its
+   own labels. */
+.learn-compare {
+  display: grid;
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--grid-gutter);
+  container: learn-compare / inline-size;
+}
+
+.learn-compare > .learn-compare-card {
+  grid-column: full-start / full-end;
+  min-width: 0;
+}
+
+/* Stacked, the body is its own column of rows on the same 12px step the
+   subgrid uses, with the reading measure on a full-width card. */
+.learn-compare-card > .principle-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-12);
+  max-inline-size: 66ch;
+}
+
+/* The row label: the definition-label and kv key vocabulary (12px/600 caps
+   in --muted), set over its value so the value keeps the full card measure.
+   It is a <strong> in the value's <p>, not a <dt>: the markdown twin is built
+   from the rendered page and keeps "**Question** ..." lines, where a <dl>
+   would drop the comparison from it. */
+.learn-compare-card .learn-compare-key {
+  display: block;
+  margin-bottom: var(--space-4);
+  font: 600 0.75rem/1rem var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The question is what the section is named for: its answer reads in ink,
+   the other values keep the card body's --muted (both lift to ink on
+   contact, the .principle-body p rule). */
+.learn-compare-card .principle-body .learn-compare-attr[data-attr="question"] {
+  color: var(--ink);
+}
+
+/* The failure mode closes each card behind a hairline. On shared rows the
+   three hairlines sit at one y, so they read as one rule across the row. */
+.learn-compare-card .learn-compare-attr[data-attr="fails"] {
+  padding-top: var(--space-12);
+  border-top: 1px solid var(--line-faint);
+}
+
+@container learn-compare (width >= 48rem) {
+  .learn-compare > .learn-compare-card {
+    grid-column: span 4;
+    grid-row: span 7;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: var(--space-12);
+  }
+
+  /* The body hands its rows to the card's subgrid: the name and the five
+     attribute lines become rows 2-7 directly. The h3 keeps the shared card
+     title recipe (.principle-body h3), which still matches through it. */
+  .learn-compare-card > .principle-body {
+    display: contents;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .learn-compare-card .learn-compare-attr[data-attr="fails"] {
+    border-top-color: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .learn-compare-card .learn-compare-attr[data-attr="fails"] {
+    border-top-color: CanvasText;
+  }
+}

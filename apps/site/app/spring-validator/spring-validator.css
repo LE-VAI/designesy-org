@@ -700,6 +700,31 @@ html[data-motion="paused"] .sv-answer-glow {
   color: var(--ink);
 }
 
+/* The two groups: reduced motion (the verdict's own thresholds) and the
+   motion budget (bounds the verdict does not cover). A group head is the
+   eyebrow voice; its scope note says which of the two a row answers to, so
+   a budget miss under a Safe verdict reads as a budget miss. The second
+   group opens on a hairline, 16px under the last row of the first. */
+.sv-checks-head {
+  margin: 0 0 var(--space-10);
+  font: 600 0.7rem/1.35 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sv-checks-scope {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.sv-checks + .sv-checks-head {
+  margin-top: var(--space-16);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line-faint);
+}
+
 .sv-checks {
   display: grid;
   gap: var(--space-10);
@@ -730,15 +755,26 @@ html[data-motion="paused"] .sv-answer-glow {
   color: color-mix(in srgb, var(--warn) 70%, var(--ink));
 }
 
-.sv-check-item[data-ok] .sv-check-mark {
+.sv-check-item[data-state="pass"] .sv-check-mark {
   color: color-mix(in srgb, var(--ok) 70%, var(--ink));
 }
 
 /* Under a Violation a row that fails is a failure, in the fail token the
    verdict shows (it was amber beside a red verdict: one result, three
    hues). The token holds 4.5:1 on reading material in both themes. */
-.sv-checklist[data-verdict="violation"] .sv-check-item:not([data-ok]) .sv-check-mark {
+.sv-checklist[data-verdict="violation"] .sv-check-item[data-state="fail"] .sv-check-mark {
   color: var(--error);
+}
+
+/* Not applicable: a neutral hold mark and a quieter label. It carries no
+   state hue, so a rule the verdict does not need never reads as a warning
+   beside a Safe answer. */
+.sv-check-item[data-state="na"] .sv-check-mark {
+  color: var(--muted);
+}
+
+.sv-check-item[data-state="na"] .sv-check-label {
+  color: var(--muted);
 }
 
 .sv-check-label {

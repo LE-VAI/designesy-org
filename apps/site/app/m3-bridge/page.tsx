@@ -54,8 +54,10 @@ export default function M3BridgePage() {
 
         <EngineMethod
           steps={[
-            { title: 'Read the tokens', text: '--md- custom properties from CSS, or md. keys from a JSON file.' },
-            { title: 'Map the paths', text: 'Each name becomes a DTCG path: --md-sys-color-primary becomes color.primary.' },
+            // Token names as code, written whole (a bare "md." read as the end
+            // of a sentence) and kept on one line (engine.css, .eg-step code).
+            { title: 'Read the tokens', text: <><code>--md-*</code> custom properties from CSS, or <code>md.*</code> keys from a JSON file.</> },
+            { title: 'Map the paths', text: <>Each name becomes a DTCG path: <code>--md-sys-color-primary</code> becomes <code>color.primary</code>.</> },
             { title: 'Type the values', text: 'Colors, dimensions, durations, easing curves, numbers and font families, each with its $type.' },
             { title: 'Validate', text: 'Five checks against the DTCG format, before you download the file.' },
           ]}
@@ -72,7 +74,7 @@ export default function M3BridgePage() {
           <p>
             Material 3&apos;s own token export, the Design System Package, was{' '}
             <a href="https://github.com/material-foundation/material-tokens" target="_blank" rel="noopener noreferrer">
-              archived on 17 October 2024
+              archived on 17&nbsp;October&nbsp;2024
             </a>
             , and it never wrote the W3C DTCG format. No replacement has been announced.
           </p>

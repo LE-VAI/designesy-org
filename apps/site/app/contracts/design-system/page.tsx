@@ -375,10 +375,10 @@ export default function DesignSystemContractPage() {
               ::selection with --signal, user-select on UI chrome, and 16px
               input floor. Rules compiled from external typography intelligence
               (Krehel /better-typography, /better-layout for reading order and
-              measure) and verified on live CSS. Three open tensions
-              documented: font-synthesis, logical properties, and
-              underline-from-font. Silence was not adoption; this version is the
-              explicit order.
+              measure) and verified on live CSS. Three open tensions were
+              documented at adoption: font-synthesis and underline-from-font
+              have since closed, and logical properties stays open. Silence was
+              not adoption; this version is the explicit order.
             </p>
           </div>
           <CheckGrid items={checkItemsFromStrings(c.cadence.rules)} />

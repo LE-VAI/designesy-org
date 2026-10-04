@@ -661,7 +661,11 @@
   left: 50%;
 }
 
-.cs-axis-end::before {
+/* The end tick hangs from the label's right edge, which is the scale's end
+   (the last cell's right edge). It names the parent like the base rule does:
+   .cs-axis-end::before alone (0,1,1) lost to .cs-axis-cells > span::before
+   (0,1,2), so the tick drew at the label's left edge, three cells short. */
+.cs-axis-cells > .cs-axis-end::before {
   left: auto;
   right: 0;
 }

@@ -7,8 +7,13 @@ import { useState, useCallback, type ReactNode } from 'react';
  * Wraps existing row content (index, body) and adds a checkmark
  * when toggled. Matches CheckGrid interaction vocabulary.
  *
- * Use for: non-link .row items that have hover/press effects but
- * no click handler. Link rows stay as <Link>.
+ * Use for: steps a reader checks off as they verify them (a tab
+ * order, a re-run method, inputs to confirm). Its well is drawn at
+ * rest, so the row reads as a checklist item. A list of statements
+ * (disclosures, refusals, facts) is not a checklist: render it as
+ * static rows, div.row[role="listitem"], with no toggle. Empty boxes
+ * beside the /privacy disclosures read as consent toggles. Link rows
+ * stay as <Link>.
  *
  * a11y: the outer wrapper carries role="listitem" so the row-stack
  * parent (role="list") stays semantic; the inner button carries

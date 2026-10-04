@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './compare.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
@@ -49,6 +50,16 @@ const PRACTICES = [
   },
 ];
 
+// The five rows of the side-by-side, in reading order. Each card renders one
+// line per row, so the rows line up across the three cards (compare.css).
+const ATTRIBUTES = [
+  { key: 'question', label: 'Question' },
+  { key: 'input', label: 'Input' },
+  { key: 'output', label: 'Output' },
+  { key: 'scope', label: 'Scope' },
+  { key: 'fails', label: 'Where it fails alone' },
+] as const;
+
 export default function ComparisonPage() {
   return (
     <>
@@ -74,24 +85,26 @@ export default function ComparisonPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The three questions</h2>
-          <div className="principle-list">
+          {/* The side-by-side: every card is asked the same five things, and
+              from a 48rem list each card is a subgrid of the list's rows, so
+              a label sits at one height in all three (compare.css). Each
+              label is a <strong> in its own <p>, so the markdown twin keeps
+              the comparison as "**Question** ..." lines. */}
+          <div className="learn-compare">
             {PRACTICES.map((p) => (
-              <div className="principle" key={p.num}>
+              <div className="principle learn-compare-card" key={p.num}>
                 <span className="principle-num">{p.num}</span>
                 <div className="principle-body">
                   <h3>{p.name}</h3>
-                  <p>
-                    <strong>Question:</strong> {p.question}
-                    <br />
-                    <strong>Input:</strong> {p.input}
-                    <br />
-                    <strong>Output:</strong> {p.output}
-                    <br />
-                    <strong>Scope:</strong> {p.scope}
-                  </p>
-                  <p style={{ marginTop: '0.5rem' }}>
-                    <strong>Where it fails alone:</strong> {p.fails}
-                  </p>
+                  {ATTRIBUTES.map((a) => (
+                    <p
+                      key={a.key}
+                      className="learn-compare-attr"
+                      data-attr={a.key}
+                    >
+                      <strong className="learn-compare-key">{a.label}</strong> {p[a.key]}
+                    </p>
+                  ))}
                 </div>
               </div>
             ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useCallback, useRef, type CSSProperties, type ReactNode } from 'react';
 
 /**
  * A prompt block with its own title bar: the block's name on the left and
@@ -73,10 +73,66 @@ export function CopyPrompt({
         </button>
       </div>
       <pre ref={ref} className="copy-prompt-pre" tabIndex={0}>
-        <code>{children}</code>
+        <code>{typeof children === 'string' ? <PromptLines text={children} /> : children}</code>
       </pre>
     </div>
   );
+}
+
+/**
+ * A text prompt, one block per authored line, each hung on its own indent:
+ * a list item that wraps continues under its first word ("  1. Rem-based
+ * scale ..." wraps to the column after "1. "), and an indented line wraps
+ * under its indent. Paragraphs are authored as one line each and reflow to
+ * the card's measure. Every line keeps its newline inside its block, so the
+ * <pre>'s textContent, which Copy reads, is the authored string exactly.
+ */
+function PromptLines({ text }: { text: string }) {
+  const lines = text.split('\n');
+  return (
+    <>
+      {lines.map((line, i) => {
+        const hang = hangOf(line);
+        return (
+          <span
+            key={i}
+            className="copy-prompt-line"
+            style={hang ? ({ '--hang': `${hang}ch` } as CSSProperties) : undefined}
+          >
+            {holdTokens(line)}
+            {i < lines.length - 1 ? '\n' : ''}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+/**
+ * A hyphenated token ("pseudo-element", "/better-ui", "will-change:") is
+ * held as one unit, so a wrap moves it whole instead of splitting a name at
+ * its own hyphen; one wider than the line (a long URL on a phone) still
+ * breaks inside itself. The spans add no characters, so the copied text is
+ * unchanged.
+ */
+function holdTokens(line: string): ReactNode {
+  if (!/\w-\w/.test(line)) return line;
+  return line.split(/(\s+)/).map((part, i) =>
+    /\w-\w/.test(part) ? (
+      <span key={i} className="copy-prompt-hold">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
+/** Columns a line's wrapped continuation sits in: its indent plus a list
+ * marker ("1. ", "10. ", "- "), counted in the mono face's ch. */
+function hangOf(line: string): number {
+  const m = /^( *)((?:\d+\.|[-*•]) +)?/.exec(line);
+  return m ? m[0].length : 0;
 }
 
 /**

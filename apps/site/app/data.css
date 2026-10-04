@@ -254,11 +254,15 @@
   color: var(--ink);
 }
 
-/* The rail strip's figures are whole counts (42, 39, 3, 1, 14), never a
-   range, so on a phone they keep a figure's size instead of stepping down to
-   body text (16.5px): 24px from a 390 screen up to the 26px they hold wide. */
+/* A strip of single figures, a count or a score and never a range or an
+   "of N" (the rail strip's 42, 39, 3, 1, 14; /state-of-compliance's 30, 69.8,
+   69.7, 1, 5), keeps a figure's size on a phone instead of stepping down
+   below the body copy above it (15.8px under a 17px lede): 24px from a 390
+   screen up to the 26px it holds wide. Only a compound figure ("44.9 to
+   93.0", "12 of 30") needs the step-down, and its <small> keys it out. */
 @container dxstats (width < 64rem) {
-  .dx-stats-rail dd {
+  .dx-stats-rail dd,
+  .dx-stats:not(:has(dd small)) dd {
     font-size: clamp(1.5rem, 5vw, 1.625rem);
   }
 }

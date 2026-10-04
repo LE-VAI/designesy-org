@@ -2,9 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
-import { CheckGrid } from '../lib/check-grid';
-import { ToggleRow } from '../lib/toggle-row';
-import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 
@@ -167,11 +164,18 @@ export default function PrivacyPage() {
           </div>
         </section>
 
+        {/* Both lists are statements of fact, so their rows are static: no
+            toggle, no check well. A pressable row with an empty box beside
+            each disclosure read as a consent toggle, the theatre principle
+            02 says this page does not run. */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">What may be collected</h2>
           <div className="row-stack" role="list">
             {COLLECT.map((item, i) => (
-              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
+              <div className="row" role="listitem" key={item.title}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
@@ -180,16 +184,25 @@ export default function PrivacyPage() {
                   <span className="row-side-line">{item.held}</span>
                   <span className="row-side-line">{item.limit}</span>
                 </span>
-              </ToggleRow>
+              </div>
             ))}
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">What we do not do here</h2>
-          <CheckGrid
-            items={checkItemsFromStrings(DO_NOT, { avoid: true })}
-          />
+          <div className="row-stack" role="list">
+            {DO_NOT.map((item, i) => (
+              <div className="row is-avoid" role="listitem" key={item}>
+                <span className="row-index">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="row-body">
+                  <span className="row-title">{item}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
