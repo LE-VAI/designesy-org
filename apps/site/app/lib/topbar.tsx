@@ -84,6 +84,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeRef = useRef<HTMLAnchorElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const barRef = useRef<HTMLElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const scrimRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -121,6 +122,30 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
       window.removeEventListener('resize', onScroll);
     };
   }, [scrolled]);
+
+  // Publish the bar's live height as --topbar-h, which html's scroll-padding-top
+  // derives from (globals.css). The clearance for a focused element must match
+  // the bar it is clearing: a fixed token (the old --space-72) went NEGATIVE at
+  // <=720px once the glass capsule made the phone bar 74.4px tall, so a focused
+  // element could settle under the bar. Measured rather than assumed, and on a
+  // ResizeObserver so the drawer, the expanded search and orientation changes
+  // all keep it true.
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const publish = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) document.documentElement.style.setProperty('--topbar-h', `${h.toFixed(1)}px`);
+    };
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    window.addEventListener('orientationchange', publish);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('orientationchange', publish);
+    };
+  }, []);
 
   // Close drawer on route change
   useEffect(() => {
@@ -209,7 +234,7 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
 
   return (
     <>
-      <header className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}`} id="topbar" data-pagefind-ignore>
+      <header ref={barRef} className={`topbar${isScrolled ? ' scrolled' : ''}${deepScrolled ? ' deep-scrolled' : ''}`} id="topbar" data-pagefind-ignore>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>

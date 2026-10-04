@@ -569,7 +569,23 @@ read-along {
 
 html {
   scroll-behavior: auto;
-  scroll-padding-top: var(--space-72);
+  /* Clearance for the sticky topbar, DERIVED from the topbar's own height plus
+     a small gap — never a fixed token.
+
+     This was `var(--space-72)`. That worked while the bar measured 68px
+     (giving 4px of clearance) and then silently stopped working when the
+     glass capsule was redesigned and the phone bar grew to 74.4px: the
+     clearance went NEGATIVE at <=720px, so a focused element could scroll to
+     a resting position under the bar. Nothing in the automated sweep catches
+     it — the failure only appears when an element happens to land exactly
+     there, which is why a real a09 failure at 1280px was misread as a
+     transient on 2026-10-04.
+
+     A fixed number cannot be right here: the bar's height depends on the
+     capsule's content and on safe-area insets. --topbar-h is measured from the
+     live element and republished on resize/orientation change; the fallback
+     keeps a sane value before the first measurement and for no-JS. */
+  scroll-padding-top: calc(var(--topbar-h, var(--space-72)) + var(--space-4));
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   /* Reserve scrollbar gutter space even on pages without overflow.
