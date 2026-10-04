@@ -237,7 +237,7 @@ export default function TaktFieldCheckPage() {
             stylesheet. Outcome leads with consequences.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
-            <span className="status-badge">Pass with notes</span>
+            <span className="status-badge status-badge--warn">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · /labs/takt</span>
             <span className="lab-meta-item">Date · {REVIEWED}</span>
@@ -249,7 +249,7 @@ export default function TaktFieldCheckPage() {
           <h2 className="doctrine-heading">Summary</h2>
           <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
             <div className="definition-face">
-              <p className="definition-label">Outcome · pass with notes</p>
+              <p className="definition-label">Outcome</p>
               <p>{SUMMARY}</p>
             </div>
             <div className="definition-side">
@@ -280,6 +280,10 @@ export default function TaktFieldCheckPage() {
 
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Inputs used</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            Each input fills one slot in the Kit One prompt; the side line
+            names the slot it fills.
+          </p>
           <div className="row-stack" role="list">
             <ToggleRow index="01">
               <span className="row-body">

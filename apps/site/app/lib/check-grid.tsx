@@ -10,13 +10,17 @@ function pad(n: number) {
 
 // A result chip reads its state first: FAIL and WARN take their state hue and
 // an LED, HOLD the signal; PASS (and any other label) stays neutral, so the
-// exceptions are what the eye finds in a row of results.
+// exceptions are what the eye finds in a row of results. OPEN maps to WARN
+// (an open tension is the attention state; resolved stays neutral) — before
+// this the merged Tensions grid drew Open and Resolved as the same grey pill
+// and only the word distinguished them (round-3 judges, /review/cadence).
 function statusClass(status?: string) {
   if (!status) return '';
   const key = status.trim().toLowerCase();
   if (key === 'hold' || key === 'holds') return ' is-hold';
   if (key === 'fail' || key === 'failed') return ' is-fail';
   if (key === 'warn' || key === 'warning') return ' is-warn';
+  if (key === 'open') return ' is-warn';
   return '';
 }
 
@@ -76,10 +80,13 @@ function midCols(count: number, stack: boolean, long: boolean) {
  * `text-decoration-skip-ink:`, `prefers-reduced-motion`, `:root`) are code:
  * mono, and never broken at their own hyphens (a hyphen is a line-break
  * opportunity whatever `hyphens` says, so "--radius-" / "sm 4px" happened in
- * a 235px cell). Plain hyphenated words ("press-and-release") stay prose.
+ * a 235px cell). Internal route paths (`/contracts#design-system-contract`)
+ * are code too, for the same reason: a path that broke at its hyphen read
+ * "/contracts#design-system-" / "contract" (round-3 judges, Evidence cells).
+ * Plain hyphenated words ("press-and-release") stay prose.
  */
 const CODE_TOKEN =
-  /(^|[^\w-])(var\(--[\w-]+\)|--[a-z][\w-]*|:root|[a-z]+(?:-[a-z0-9]+)+(?=:)|(?:prefers|margin|padding|border|font|text|user|will|focus|tabular|inset|scroll|overflow|line|letter|word|white|align|justify|grid|flex|place|box|outline|transition|animation|transform|backdrop|background|aspect|pointer|touch|data)-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z]+(?:-[a-z]+)*-\d+)(?![\w-])/g;
+  /(^|[^\w-])(var\(--[\w-]+\)|--[a-z][\w-]*|:root|\/[a-z0-9/#._-]*[a-z0-9](?:-[a-z0-9]+)+[a-z0-9/#._-]*|#[a-z][\w-]*|\[[a-z-]+(?:="?[\w-]+"?)?\]|[a-z][a-z0-9-]*(?:\.[a-z][\w-]*)+|[a-z]+(?:-[a-z0-9]+)+(?=:)|(?:prefers|margin|padding|border|font|text|user|will|focus|tabular|inset|scroll|overflow|line|letter|word|white|align|justify|grid|flex|place|box|outline|transition|animation|transform|backdrop|background|aspect|pointer|touch|data|aria)-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z]+(?:-[a-z]+)*-\d+)(?![\w-])/g;
 
 // No lookbehind in the pattern (a parse error before Safari 16.4 would take
 // the whole client bundle down): the boundary is a captured leading character.

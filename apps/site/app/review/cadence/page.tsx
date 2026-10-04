@@ -240,7 +240,7 @@ export default function CadenceFieldCheckPage() {
             what holds, what stays open, and what to do next.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
-            <span className="status-badge">Pass with notes</span>
+            <span className="status-badge status-badge--warn">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · /labs/cadence</span>
             <span className="lab-meta-item">Date · {REVIEWED}</span>
@@ -252,7 +252,7 @@ export default function CadenceFieldCheckPage() {
           <h2 className="doctrine-heading">Summary</h2>
           <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
             <div className="definition-face">
-              <p className="definition-label">Outcome · pass with notes</p>
+              <p className="definition-label">Outcome</p>
               <p>{SUMMARY}</p>
             </div>
             <div className="definition-side">

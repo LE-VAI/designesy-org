@@ -215,11 +215,14 @@ export default function PublicSurfaceReviewPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id="verdict">
           <h2 className="doctrine-heading">Verdict</h2>
           <div className="definition definition-split" data-copy={VERDICT} data-copy-label="verdict">
             <div className="definition-face">
-              <p className="definition-label">Considered after functional</p>
+              {/* The chip carries the state; the label names the subject
+                  (round-3 judge: label + chip repeated "Considered" within
+                  one card). */}
+              <p className="definition-label">Public surface</p>
               <p>{VERDICT}</p>
             </div>
             <div className="definition-side">
@@ -295,7 +298,10 @@ export default function PublicSurfaceReviewPage() {
           <h2 className="doctrine-heading">Adoption stance</h2>
           <div className="definition definition-split" data-copy={ADOPTION} data-copy-label="adoption stance">
             <div className="definition-face">
-              <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract {CONTRACT_VERSION}</p>
+              {/* The subject, not the state: the full lab list wrapped to two
+                  tracked lines on phones and fought the copy badge for its
+                  first line (round-3 judge). The chip below says adopted. */}
+              <p className="definition-label">Adoption · contract {CONTRACT_VERSION}</p>
               <p>{ADOPTION}</p>
             </div>
             <div className="definition-side">

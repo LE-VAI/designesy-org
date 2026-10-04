@@ -3011,17 +3011,27 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* A card title, in the section heading's family: the display serif belongs
    to the page title alone (see .doctrine-heading). In Fraunces bold at 17.4px
    it out-flavoured the 20px Schibsted h2 above it; Schibsted 1rem/600 in ink
-   ranks under the h2 (1.25x) and over the muted body by weight and colour. */
+   ranks under the h2 (1.25x) and over the muted body by weight and colour.
+   Lifted to 1.125rem/650 (2026-10-04, round-3 judges): the Observation./
+   Judgment. run-ins below are 15px/700 by browser default, so the run-in was
+   heavier than its own card title; the title now wins on both size and
+   weight, and the run-ins sit at 600 (the rule below), restoring the order
+   title > run-in > body on every dimension card. */
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
   font-family: var(--sans);
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.005em;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
   text-wrap: balance;
+}
+/* Run-in labels (Observation., Judgment., Character., Role.) are labels, not
+   headings: 600 keeps them under the card title and above the muted body. */
+.principle-body strong {
+  font-weight: 600;
 }
 .principle-body p {
   transition: color 200ms var(--ease);
@@ -4072,6 +4082,21 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   padding: 0;
+}
+
+/* The verdict card is the page's one standing object (round-3 judges,
+   2026-10-04): it computed the same --mat-reading / --elev-1 recipe as every
+   finding card, so the verdict had no more presence than any cell. Promoted
+   to the instrument material with the page's one floor pool under it. Both
+   card pseudos are taken (the rim ::before, the copy stripe ::after), so the
+   pool is a background layer on the card itself, in the same bottom band the
+   demo rack draws. The two named sections are the only ones on review pages
+   whose direct child is the split card, so nothing else is touched. */
+.surface-page .doctrine-section:is([id="verdict"], [id="summary"]) > .definition.definition-split {
+  background:
+    var(--floor-pool) bottom / 100% min(18%, 4.5rem) no-repeat,
+    var(--mat-instrument) var(--surface-raised);
+  box-shadow: var(--elev-2);
 }
 
 .definition-face {
@@ -6314,20 +6339,16 @@ button.check-cell {
 
 /* CSS names in a cell (CheckGrid wraps them in code): mono, and one unit.
    A hyphen is a break opportunity whatever hyphens says, so a 235px cell
-   read "--radius-" / "sm 4px" and "text-underline-" / "position". From the
-   two-up tier a name never breaks; on a phone's one column it may, rather
-   than run past the cell's clip. */
+   read "--radius-" / "sm 4px" and "text-underline-" / "position". Nowrap at
+   EVERY width (round-3 judges): the >=34rem gate let phone cells break
+   tokens at their own hyphens ("border-inline-" / "start"), and a token
+   shorter than its cell never needs the break. */
 :is(.check-cell-title, .check-cell-meta) code {
   font-family: var(--mono);
   font-size: 0.92em;
   font-weight: 500;
   letter-spacing: 0;
-}
-
-@container check-grid (width >= 34rem) {
-  :is(.check-cell-title, .check-cell-meta) code {
-    white-space: nowrap;
-  }
+  white-space: nowrap;
 }
 
 /* avoid / anti-pattern cells — same grid, quieter signal */
@@ -6366,23 +6387,29 @@ button.check-cell {
   background: var(--surface-soft);
 }
 
+/* HOLD is the pass state, in the same hue the verdict chip above it uses
+   (.row-side-chip[data-state="pass"]): text pulled 28% toward ink, a 28%
+   state border, and the green LED. It used to be brand blue, so one state
+   carried two hues on one page (round-3 judges, the keyboard reviews).
+   Brand blue stays for interaction only. */
 .check-cell-status.is-hold {
-  color: var(--signal-text);
-  border-color: color-mix(in srgb, var(--signal) 28%, var(--line));
+  --check-status-hue: var(--ok);
+  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
+  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
 }
 
-/* FAIL and WARN read first: the state hue as text (pulled 18-30% toward ink,
-   so it holds 4.5:1 on the chip in both themes; light --warn alone is
+/* FAIL, WARN and HOLD read first: the state hue as text (pulled 18-30% toward
+   ink, so it holds 4.5:1 on the chip in both themes; light --warn alone is
    3.12:1), a 28% state border, and a 6px LED in the full hue (non-text,
    >= 3:1). PASS stays neutral, so the exceptions are what the eye finds.
    They were the same grey pill as PASS (/labs/cadence Verification). The
    label still names the state, so nothing rides on colour alone. */
-.check-cell-status:is(.is-fail, .is-warn) {
+.check-cell-status:is(.is-fail, .is-warn, .is-hold) {
   align-items: center;
   gap: var(--space-fine-35);
 }
 
-.check-cell-status:is(.is-fail, .is-warn)::before {
+.check-cell-status:is(.is-fail, .is-warn, .is-hold)::before {
   content: "";
   flex: none;
   width: 6px;
@@ -6405,7 +6432,7 @@ button.check-cell {
 
 /* Forced colours would flatten the LED into Canvas; it keeps a system ink. */
 @media (forced-colors: active) {
-  .check-cell-status:is(.is-fail, .is-warn)::before {
+  .check-cell-status:is(.is-fail, .is-warn, .is-hold)::before {
     forced-color-adjust: none;
     background: CanvasText;
   }
@@ -8195,6 +8222,17 @@ a.field-card:active {
 .status-badge--neutral {
   color: var(--ink);
   border-color: var(--line-strong);
+  background: transparent;
+}
+
+/* The warn state in the chip grammar, with the LED: the review heroes read
+   "PASS WITH NOTES" in brand blue while their outcome side chip carried the
+   amber warn state, so one state carried two hues in one viewport
+   (round-3 judges, 2026-10-04). Now the hero badge speaks the state's own
+   colour, pulled toward ink like the side chip. */
+.status-badge--warn {
+  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
   background: transparent;
 }
 
