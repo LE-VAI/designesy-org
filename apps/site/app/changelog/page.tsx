@@ -303,6 +303,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'The contract asks product copy to state its claim plainly and to write ranges a screen reader can read: an unspaced en dash is skipped, so a range written with one is heard as two bare numbers. A patch version marks text that changed while every rule stayed the same.',
     source: 'Designesy public-copy rules, GOV.UK style guide, plainlanguage.gov, NVDA symbol handling',
   },
+
+  // ── v0.4.2: alignment pass ──
+  {
+    version: 'v0.4.2',
+    date: '2026-10-04',
+    dimension: 'tokens',
+    change: 'added',
+    title: 'One shell edge, a 12-column grid, and the accessibility tint tokens',
+    description:
+      'The header, the page wrappers and the footer now share the content edges at every width, so nothing sits on a different gutter than the thing above it. A 12-column grid with a named 7|5 seam replaces the per-page split rules. The material, elevation and floor recipes became tokens rather than values repeated per component. The WCAG 2.2 AA pass added the accessibility tint tokens, including --signal-text as the text-safe role for the brand blue. The reduced-motion tiering is stated as it now behaves: movement stops, opacity fades and transitions of 200ms or less stay.',
+    rationale:
+      'The site described one alignment system and implemented four, and the disagreement was invisible to every automated check because none of them compared one region\'s edge to another\'s. The accessibility tokens close a measured contrast failure: the brand blue as text read 2.0 to 2.3 to 1 in dark mode against a 4.5 to 1 minimum. Naming the motion tiering settles a documented conflict between two readings of the same clause.',
+    source: 'Designesy a11y contract v0.1.1, WCAG 2.2 AA (2.4.11, 1.4.3, 2.5.8), edge-contract measurements',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -327,7 +341,8 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.3.0', date: '2026-07-20', checks: 38, title: 'Acoustics adopted', summary: 'Mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
   { version: 'v0.4.0', date: '2026-07-28', checks: 40, title: 'Copywriting adopted', summary: '4 copywriting checks. Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
   { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
-  { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
+  { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed.' },
+  { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

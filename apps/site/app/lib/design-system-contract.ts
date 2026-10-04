@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.1: machine + human source.
+ * Designesy design system contract v0.4.2: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -15,17 +15,22 @@
  *   non-codifiable principles are governance.
  * v0.4.1 is an editorial revision (2026-09-28): the contract text follows the
  *   public-copy rules; no rule, value, token or check changed.
+ * v0.4.2 is the alignment pass (2026-10-04): one shell edge at every width,
+ *   the 12-column grid with its 7|5 seam, the material and elevation recipes,
+ *   and the accessibility tokens the WCAG 2.2 AA pass introduced. It adds
+ *   public tokens and rewords the reduced-motion tiering; no check was
+ *   removed and no value was silently changed.
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.1',
+  version: '0.4.2',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-09-28',
+  updated: '2026-10-04',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -1285,6 +1290,17 @@ export const designSystemContract = {
         'Editorial revision. The contract text follows the public-copy rules: a colon or parentheses in place of em dashes, the positive claim in place of rhetorical negation pivots, and number ranges written with "to". No rule, value, token or check changed. The sibling contracts took the same pass and keep their versions.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/changelog',
+      ],
+    },
+    {
+      version: '0.4.2',
+      date: '2026-10-04',
+      summary:
+        'Alignment pass. One shell edge at every width so the header, the wrappers and the footer share the content edges; a 12-column grid with a named 7|5 seam for the instrument and page layouts; the material, elevation and floor recipes as tokens instead of per-component values; the accessibility tint tokens and the `--signal-text` text-safe role the WCAG 2.2 AA pass required; and the reduced-motion tiering reworded to state what it now does (movement stops, fades and short transitions stay). Adds public tokens; removes no check.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/contracts/a11y.json',
         'https://www.designesy.org/changelog',
       ],
     },
