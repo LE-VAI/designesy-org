@@ -120,9 +120,15 @@ export function Footer() {
             data-cuelume-hover="droplet"
             data-cuelume-press="tick"
           >
+            {/* badge.svg is the dark-surface variant (black ground, white
+                text); badge-light.svg is the white chip the /badge page
+                documents "for light-background sites". The footer is black, so
+                the white chip read as a foreign sticker with a barely legible
+                mark on it (2026-10-04). The dark variant belongs on this
+                surface. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/badge-light.svg"
+              src="/badge.svg"
               alt="Verified by Designesy badge: see our live score"
               width={156}
               height={32}

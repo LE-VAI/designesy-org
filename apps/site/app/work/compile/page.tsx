@@ -227,7 +227,9 @@ export default function CompileCaseStudyPage() {
             to Tools chain. Pending hosting and publication.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
-            <span className="status-badge">Ready for review</span>
+            {/* Neutral, not brand blue: the /work index shows this same state
+                as a neutral ink chip, and state chips are never brand blue. */}
+            <span className="status-badge status-badge--neutral">Ready for review</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · Local build · pending deploy</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
