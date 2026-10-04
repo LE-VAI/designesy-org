@@ -81,11 +81,15 @@ function main() {
   // The runtime gates need a LIVE server and a browser, so they run in the
   // separate `visual-gates` job after `build-site` serves the build — they can
   // never chain into `npm run build`, which runs before anything is served.
+  // touched-routes.js is the sweep's route mapper, invoked by the CI step, not
+  // a gate of its own.
   const CI_ONLY = new Set([
     'check-gate-parity.js',
     'edge-contract.js',
     'check-glass-blur.js',
     'qa-keyboard.js',
+    'a11y-sweep.js',
+    'touched-routes.js',
   ]);
 
   const onlyInBuild = inBuild.filter((g) => !inCi.includes(g));
