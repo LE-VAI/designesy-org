@@ -14,8 +14,16 @@
    left edge at every width. Heights sit on a 4 px grid: 56 for the well and
    the key, 48 for the choices (44 px targets), 20 px lines in the foot.
 
-   Materials come from instrument.css; everything else resolves to contract
-   tokens. The layout answers to the slab's own width (container ctl).
+   Material (design spec 3.2): the slab is the one piece of glass on an
+   engine page, the lid you command docked over the opaque instrument that
+   reads. Regular glass tint and blur, a masked top-lit rim, grain, and
+   floating elevation. Its active light is a pre-rendered layer whose opacity
+   fades, never a transitioned shadow. Wells and seg tracks still come from
+   instrument.css; everything else resolves to contract tokens.
+
+   Width: no cap of its own. The slot decides (engine.css: the bench gives a
+   single bar the 7-line, full-start / split; pair and textarea bars run
+   full). The layout answers to the slab's own width (container ctl).
    ========================================================================== */
 
 /* The key also stands alone (the maturity steps, the M3 converter), so it
@@ -33,24 +41,133 @@
   --ctl-warn: var(--lv-warn-a);
 }
 
+/* --muted-dim is re-pointed to --muted inside the slab. On regular glass only
+   --ink and --muted hold 4.5:1 at the worst case the spec measures (full-ink
+   content under the glass, design spec 3.3): --muted-dim reads 3.32:1 on the
+   dark glass and 2.99:1 in a well there (light: 4.17 and 3.89), while --muted
+   reads 5.23 and 4.70 (light: 6.27 and 5.85). The tags, the seg label, the
+   "optional" mark and the placeholder take it. */
 .eg-bar {
+  --muted-dim: var(--muted);
+  --rim-rest: 0.6;
   container: ctl / inline-size;
   position: relative;
   display: grid;
+  /* One column that may be narrower than its rows' min-content: an auto
+     track grew to the line's min-content (two inputs at their 20-character
+     intrinsic width plus the key), so the pair bar's key ran 24 to 48px off
+     the page at 768-800px. The wells shrink instead (they carry min-width 0). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ctl-pad);
   width: 100%;
-  max-width: 46rem;
+  max-width: none;
   padding: var(--ctl-pad);
   border-radius: var(--ctl-r);
-  background: var(--lv-glass);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 0 0 1px var(--lv-glass-ring), inset 0 1px 0 var(--lv-glass-edge), var(--lv-glass-shadow);
-  transition: box-shadow var(--ctl-t), transform var(--ctl-t);
+  background: var(--glass-regular);
+  -webkit-backdrop-filter: var(--glass-filter-regular);
+  backdrop-filter: var(--glass-filter-regular);
+  box-shadow: var(--elev-3);
+  /* Its own stacking context even where the backdrop filter is off (reduced
+     transparency, forced colours), so its z -1 layers stay over its tint. */
+  isolation: isolate;
 }
 
 [data-theme="light"] .eg-bar {
   --ctl-warn: var(--lv-warn-b);
+  --rim-rest: 0.75;
+}
+
+/* The rim: one masked 1px layer painted with --rim-hot. At rest its opacity
+   brings it down to the resting rim (dark: 0.6 x rim-hot's .24/.08/.05 stops
+   is .144/.048/.03, the --rim stops .14/.05/.03 within 0.01; light keeps the
+   white top brighter at 0.75), and hover, focus and a run raise it to 1. One
+   layer whose opacity moves, so the hot edge is a crossfade and no gradient
+   is ever transitioned. Abs-positioned, so it takes no cell of the grid. */
+.eg-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim-hot);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: var(--rim-rest);
+  transition: opacity var(--mat-t-out);
+  pointer-events: none;
+}
+
+/* The active light: --glow-signal pre-rendered under the slab, faded in while
+   a field is in use or a run is out (material law 3: coloured light is a
+   state). The slab is a stacking context, so z -1 paints over the slab's own
+   tint, under everything in it; the shadow falls outside the box. */
+.eg-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: var(--glow-signal);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+  pointer-events: none;
+}
+
+/* The grain: static noise over the tint, the third ingredient of the glass
+   (blur, tint, noise). Both of the slab's own pseudo-elements carry the rim
+   and the light, so the grain rides the first child's ::before. That child
+   (.eg-bar-line, or .m3-head on the converter) is not positioned, so this
+   layer sizes to the slab itself and never enters the line's flex flow.
+   Normal blend, never overlay: no blended layer sits inside an isolated
+   glass context (the header capsule lost its blur to exactly that; the
+   slab's own filter survived it only because it sits on the slab itself). */
+.eg-bar > :first-child::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--ctl-r);
+  background: var(--glass-grain);
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+/* A bar set straight into a .g12 region outside an engine bench (the
+   leaderboard's submit form) takes the same slot the bench gives it: a
+   single bar ends on the 7-line, a pair or a textarea runs full. The bench's
+   own rule lives in engine.css. 64rem is the documented span switch (custom
+   properties are invalid in a query condition). */
+@container g12 (width >= 64rem) {
+  .g12 > .eg-bar:not(.is-pair):not(:has(.is-area)) {
+    grid-column: full-start / split;
+  }
+}
+
+/* A pair bar in an engine bench (/compare, /monitor) lays its wells on the
+   bench's own columns: field A on full-start / mirror (five columns), field B
+   on the next five, the key on the last two. The seams are the shell's one
+   gutter, so A ends on the mirror line's track end and B starts on its track
+   start, and B and the key meet on line 11: the same x on both pages,
+   whatever the key's label says (flex fields put the A|B seam at 638 on
+   /compare and 626 on /monitor, both off the mirror at 621).
+
+   Not a subgrid: the slab is a size container (ctl), and containment makes it
+   an independent formatting context, so `subgrid` computes to none. The line
+   measures a bench column itself instead: the line is the bench less the
+   slab's padding on each side, so one column is (100% + 2 pad - 11 gutters)
+   / 12, and the outer tracks give the padding back. Here, not in engine.css,
+   because it reads --ctl-pad, which this sheet declares. */
+@container bench (width >= 64rem) {
+  .eg-bench > .eg-bar.is-pair .eg-bar-line {
+    --pair-col: calc((100% + 2 * var(--ctl-pad) - 11 * var(--grid-gutter)) / 12);
+    display: grid;
+    grid-template-columns:
+      calc(5 * var(--pair-col) + 4 * var(--grid-gutter) - var(--ctl-pad))
+      calc(5 * var(--pair-col) + 4 * var(--grid-gutter))
+      minmax(0, 1fr);
+    column-gap: var(--grid-gutter);
+  }
 }
 
 /* The selected tile is raised in both themes: lighter than its track in the
@@ -59,19 +176,27 @@
   background: var(--surface);
 }
 
-/* The lift: while a field is in use the slab rises a pixel and the signal
-   pools under it. */
-.eg-bar:focus-within {
-  box-shadow:
-    0 0 0 1px var(--lv-glass-ring),
-    inset 0 1px 0 var(--lv-glass-edge),
-    var(--lv-glass-shadow),
-    0 18px 44px -26px var(--signal-light);
+/* Active: while a field is in use, or a run is out (the cause of the
+   instrument's reading below), the signal pools under the slab and the rim
+   runs hot. Opacity only, in 150ms and out in 250ms. The slab no longer lifts
+   a pixel: it is docked on the 7-line over its instrument, and its depth is
+   light, not travel. */
+.eg-bar:focus-within::after,
+.eg-bar[aria-busy="true"]::after {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion="paused"]) .eg-bar:focus-within {
-    transform: translateY(-1px);
+.eg-bar:focus-within::before,
+.eg-bar[aria-busy="true"]::before {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .eg-bar:hover::before {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
   }
 }
 
@@ -98,7 +223,6 @@
     inset 0 1px 2px color-mix(in srgb, var(--paper) 30%, transparent);
   color: var(--muted);
   cursor: text;
-  transition: box-shadow var(--ctl-t), color var(--ctl-t);
 }
 
 .eg-bar-field > svg {
@@ -135,10 +259,11 @@
   padding: 0;
 }
 
-/* A secondary well in the foot: shorter, its tag in place of an icon. */
+/* A secondary well in the foot: shorter, its tag in place of an icon. Its
+   tag starts where the main well's icon starts (the well's content edge). */
 .eg-bar-field.is-sub {
   min-height: var(--space-48);
-  padding-inline: var(--space-12);
+  padding-inline: var(--ctl-inset) var(--space-12);
 }
 
 .eg-bar-tag {
@@ -159,7 +284,6 @@
   font: 500 0.8125rem/1.25rem var(--sans);
   color: var(--muted);
   cursor: pointer;
-  transition: color var(--ctl-t);
 }
 
 .eg-more > summary::-webkit-details-marker {
@@ -200,11 +324,15 @@
   box-shadow: none;
 }
 
+/* The optional wells are wells, so they hang on the wells' edges, not on the
+   foot's text edge: the body steps back out by the foot's inset. The first
+   well's left edge is the main well's left edge, the last well's right edge
+   is the key's right edge (the leaderboard sat 16px inside both). */
 .eg-more-body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-8);
-  margin-top: var(--space-8);
+  margin: var(--space-8) calc(-1 * var(--ctl-inset)) 0;
 }
 
 /* The compare pair: a letter in place of the globe says which side is which. */
@@ -269,7 +397,9 @@
   font: 600 0.94rem/1.25 var(--sans);
   letter-spacing: -0.005em;
   cursor: pointer;
-  transition: transform var(--ctl-t-quick), box-shadow var(--ctl-t), filter var(--ctl-t);
+  /* The press is the key's one motion; its hover light and brightness
+     change at once (only transform and opacity ever animate). */
+  transition: transform var(--ctl-t-quick);
 }
 
 /* Both labels share one cell: the key is as wide as the longer one, so it
@@ -347,6 +477,11 @@
   padding: var(--space-4) var(--ctl-inset) var(--space-8);
 }
 
+/* The status line spans the foot's inner box: under the choices it carries
+   the slab's divider (below), and a divider runs the surface's full content
+   width, never the length of a text measure (design spec rule d: measure caps
+   belong on text). The 66ch cap sits on the lines inside it instead, so a
+   full-width pair bar still never sets a 140-character line. */
 .eg-bar-status {
   display: grid;
   min-width: 0;
@@ -359,6 +494,7 @@
 .eg-bar-status > span {
   grid-area: 1 / 1;
   min-width: 0;
+  max-inline-size: 66ch;
 }
 
 .eg-bar-note[data-off] {
@@ -401,7 +537,10 @@
 }
 
 /* Below the choices the status line reads as the slab's status bar: a
-   hairline divides what you chose from what the run will read. */
+   hairline divides what you chose from what the run will read. The line is
+   the status element's own border, and the element is the foot's full inner
+   width (no measure of its own), so the rule starts and ends on the foot's
+   content edges, the first choice's left and the last one's right. */
 .eg-bar-foot > * + .eg-bar-status {
   padding-top: var(--space-12);
   border-top: 1px solid var(--line-faint);
@@ -479,7 +618,6 @@
   font: 500 0.8125rem/1 var(--sans);
   white-space: nowrap;
   cursor: pointer;
-  transition: color var(--ctl-t);
 }
 
 .eg-seg-opt[aria-checked="true"] {
@@ -571,13 +709,16 @@
 /* The converter's input is the control surface (command-bar.css) with a
    textarea for its well: the format choice and the sample above it, the note
    and the key below, all on the well's content edge. */
+/* The choice starts on the well's content edge; the sample button ends on the
+   field's own edge, the edge the run key below ends on, so the slab's two
+   buttons share one right edge (it stopped 16px short, 1278 beside 1294). */
 .m3-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-12) var(--space-16);
-  padding: var(--space-4) var(--ctl-inset) var(--space-4);
+  padding: var(--space-4) 0 var(--space-4) var(--ctl-inset);
 }
 
 /* The format's reading stays under the choice here, at every width: the
@@ -607,6 +748,9 @@
 
 /* Qualified by the well: command-bar.css may load after this sheet, and its
    input rule sets the same properties at single-class specificity. */
+/* Code keeps its lines: no soft wrap, a long declaration scrolls sideways
+   (on a phone a value fell to column 0 under its indented property, and the
+   CSS lost its shape). */
 .eg-bar-field > .m3-textarea {
   display: block;
   width: 100%;
@@ -615,6 +759,9 @@
   border-radius: inherit;
   /* 16 px, the input floor: below it iOS zooms the page on focus. */
   font: 400 1rem/1.6 var(--mono);
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
   resize: vertical;
 }
 
@@ -643,44 +790,99 @@
       "track"
       "hint";
   }
+  /* One law for the slab's controls on a phone: every control stands on the
+     field's edges (the textarea and the key below run 24 to 366 at 390), and
+     every line of text on the well's content edge. The head drops its inset,
+     so the choice track and the sample button span the field; the label and
+     the hint take the inset back themselves. (The track started on the text
+     inset and ended on the field edge, and the button stopped at 247.) */
+  .m3-head {
+    padding-inline-start: 0;
+  }
+  .m3-head .eg-seg-label,
+  .m3-head .eg-seg-hint {
+    padding-inline-start: var(--ctl-inset);
+  }
+  .m3-head .eg-share-btn {
+    width: 100%;
+  }
 }
 
 /* --- Motion preferences --------------------------------------------------- */
 
+/* Movement stops. The slab's light and rim keep their opacity fades: the
+   150ms entry is inside the 200ms allowance (tiered reduced motion), and the
+   exit is brought to the same 150ms. */
 @media (prefers-reduced-motion: reduce) {
-  .eg-bar,
-  .eg-bar-field,
   .eg-bar-go,
   .eg-go-glyph,
   .eg-seg-thumb,
-  .eg-seg-opt,
-  .eg-more > summary,
   .eg-more > summary::before {
     transition: none;
+  }
+  .eg-bar::before,
+  .eg-bar::after {
+    transition: opacity var(--duration-quick) var(--ease-out);
   }
   .eg-go-spin {
     animation: none;
   }
 }
 
-html[data-motion="paused"] .eg-bar,
-html[data-motion="paused"] .eg-bar-field,
 html[data-motion="paused"] .eg-bar-go,
 html[data-motion="paused"] .eg-go-glyph,
 html[data-motion="paused"] .eg-seg-thumb,
-html[data-motion="paused"] .eg-seg-opt,
-html[data-motion="paused"] .eg-more > summary,
 html[data-motion="paused"] .eg-more > summary::before {
   transition: none;
+}
+
+html[data-motion="paused"] .eg-bar::before,
+html[data-motion="paused"] .eg-bar::after {
+  transition: opacity var(--duration-quick) var(--ease-out);
 }
 
 html[data-motion="paused"] .eg-go-spin {
   animation: none;
 }
 
+/* --- Transparency and contrast preferences (design spec 3.3) -------------- */
+
+/* Asked for less transparency: the slab becomes an opaque floating surface,
+   the tier-3 material, with no blur and no grain. */
+@media (prefers-reduced-transparency: reduce) {
+  .eg-bar {
+    background: var(--mat-float);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .eg-bar > :first-child::before {
+    display: none;
+  }
+}
+
+/* Asked for more contrast: the rim is a solid strong line at every state. */
+@media (prefers-contrast: more) {
+  .eg-bar::before {
+    background: var(--line-strong);
+    opacity: 1;
+  }
+}
+
 /* --- Forced colors -------------------------------------------------------- */
 
+/* Glass becomes Canvas with a CanvasText edge; the light, the rim and the
+   grain are decoration and leave. */
 @media (forced-colors: active) {
+  .eg-bar {
+    background: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .eg-bar::before,
+  .eg-bar::after,
+  .eg-bar > :first-child::before {
+    display: none;
+  }
   .eg-bar,
   .eg-bar-field,
   .eg-seg-track {

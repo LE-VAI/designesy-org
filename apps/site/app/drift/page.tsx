@@ -6,7 +6,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { registry } from '../lib/engine/registry';
-import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
+import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../lib/engine/engine-page';
 import { DriftForm } from './drift-form';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +54,7 @@ export default async function DriftPage({ searchParams }: { searchParams?: Promi
           formula={
             <>
               <span><b>score</b> = (pass + warn × 0.5) ÷ checks scored × 100</span>
-              <span><b>A</b> ≥ 90 · <b>B</b> ≥ 80 · <b>C</b> ≥ 70 · <b>D</b> ≥ 60 · <b>F</b> below</span>
+              <GradeLine />
               <span>Static analysis of compiled CSS: no browser, no login.</span>
             </>
           }

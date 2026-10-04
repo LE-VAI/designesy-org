@@ -4,10 +4,12 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
-import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import '../../instrument.css';
+import '../work.css';
+import { InputList, SourceList, ViewsReadout, type Input, type Source } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Continuity: case study',
@@ -97,7 +99,32 @@ const FINDINGS = [
   'Single engagement data point: the pattern is consistent, but the sample is too small to be statistically robust',
 ];
 
-const SOURCES = [
+/* Each input's datum sits in its row's side pane: the host, the post and
+   its date, the account it went out on, the contract version. */
+const INPUTS: Input[] = [
+  {
+    title: 'Artifact',
+    meta: 'Long-form article on GitHub Pages: dark default with a yellow-field mode',
+    side: ['le-vai.github.io/continuity'],
+  },
+  {
+    title: 'Purpose claim',
+    meta: 'Founder narrative article',
+    side: ['1 X post · 2026-07-12'],
+  },
+  {
+    title: 'Audience and context',
+    meta: 'Public builders on X, in a feed context',
+    side: ['@levainbey · 1,891 followers'],
+  },
+  {
+    title: 'Governing rules',
+    meta: 'Kit One Design Review · VAI brand boundary',
+    side: [`Contract ${CONTRACT_VERSION}`],
+  },
+];
+
+const SOURCES: Source[] = [
   {
     href: 'https://le-vai.github.io/continuity/',
     title: 'Continuity · live artifact',
@@ -175,51 +202,33 @@ export default function ContinuityCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="engagement">
           <h2 className="doctrine-heading">Engagement</h2>
-          <div className="definition">
-            <p className="definition-label">X post · 2026-07-12</p>
-            <p>
-              Continuity did not surface in the top visible posts on the
-              profile after 24 hours. Tile&apos;s product-demo format earned
-              617 views in the same period. The feed format rewards shipped,
-              visible product over narrative content.
-            </p>
-          </div>
+          {/* No view count was captured for Continuity, so none is drawn: its
+              track is an empty well beside Tile's measured bar, and its value
+              column says so in the readout's words. */}
+          <ViewsReadout
+            label="Engagement for Continuity on X, 2026-07-12: not in the top visible posts after 24 hours, beside Tile in the same period"
+            date="2026-07-12"
+            lamp="warn"
+            posts={[
+              { label: 'Continuity', views: null, absent: 'Not surfaced' },
+              { label: 'Tile', views: 617 },
+            ]}
+            max={700}
+            readout={{ label: 'After 24 hours', text: 'Not surfaced', sub: 'Tile, same period: 617 views' }}
+            note="The feed format rewards shipped, visible product over narrative content."
+            caption={
+              <>
+                Continuity did not surface in the top visible posts on the
+                profile after 24 hours. Tile&apos;s product-demo format earned
+                617 views in the same period.
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Inputs used</h2>
-          <div className="row-stack" role="list">
-            <ToggleRow index="01">
-              <span className="row-body">
-                <span className="row-title">Artifact</span>
-                <span className="row-meta">https://le-vai.github.io/continuity/</span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="02">
-              <span className="row-body">
-                <span className="row-title">Purpose claim</span>
-                <span className="row-meta">
-                  Founder narrative article
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="03">
-              <span className="row-body">
-                <span className="row-title">Audience and context</span>
-                <span className="row-meta">
-                  Public builders on X via @levainbey, in a feed context
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="04">
-              <span className="row-body">
-                <span className="row-title">Governing rules</span>
-                <span className="row-meta">
-                  Contract {CONTRACT_VERSION} · Kit One Design Review · VAI brand boundary
-                </span>
-              </span>
-            </ToggleRow>
-          </div>
+          <InputList items={INPUTS} />
         </section>
 
         <section className="doctrine-section fade-up" id="dimensions">
@@ -232,7 +241,7 @@ export default function ContinuityCaseStudyPage() {
               <div className="principle" key={d.num}>
                 <span className="principle-num">{d.num}</span>
                 <div className="principle-body">
-                  <h3>{d.title}</h3>
+                  <h3 className="cs-card-title">{d.title}</h3>
                   <p>
                     <strong style={{ color: 'var(--muted)' }}>Observation.</strong>{' '}
                     {d.observation}
@@ -262,26 +271,7 @@ export default function ContinuityCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources used</h2>
-          <div className="row-stack" role="list">
-            {SOURCES.map((item, i) => (
-              <div role="listitem" key={item.href}>
-                <Link
-                  href={item.href}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item.title}</span>
-                    <span className="row-meta">{item.meta}</span>
-                  </span>
-                </Link>
-              </div>
-            ))}
-          </div>
+          <SourceList items={SOURCES} />
         </section>
 
         <div className="status-note">

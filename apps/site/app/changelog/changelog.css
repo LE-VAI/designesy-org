@@ -1,0 +1,317 @@
+/* changelog route-only styles. Plain .css imported in changelog/page.tsx, so
+   Next.js code-splits it to /changelog. They replace the page's inline
+   styles, which could not express hover, focus or a container query. */
+
+/* ── Dimension jump links ───────────────────────────────────────────────
+   Inline boxes in a balanced block: text-wrap: balance evens the rows, so
+   thirteen links take two rows of six and seven at 1180px instead of a full
+   row and "Verification (4)" alone on the next. Each count is its own quiet
+   badge ("Tokens 1"), not a glued parenthesis ("Tokens(1)"). */
+.changelog-tabs {
+  margin: 0 0 var(--space-32);
+  text-wrap: balance;
+}
+
+.changelog-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  /* 44px target: these are the only way to move through the log. */
+  min-height: 2.75rem;
+  margin: 0 var(--space-8) var(--space-8) 0;
+  padding: 0 var(--space-12);
+  vertical-align: top;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .changelog-tab:hover {
+    background: var(--surface-raised);
+    color: var(--ink);
+  }
+}
+
+.changelog-tab:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+.changelog-tab-count {
+  min-width: 1.25rem;
+  padding: var(--space-2) var(--space-6);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .changelog-tab {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .changelog-tab {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ── Log entries ────────────────────────────────────────────────────────
+   Each row is the shared instrument row (globals.css, .surface-page
+   .row-stack .row): index and body in the face, and anything after the body
+   in the side pane, which starts on the 7-line from a 64rem list (804.17px at
+   1440). Here the side pane holds what a reader scans by: version, date,
+   dimension, the kind of change and the checks it touched. They were stacked
+   in the face over the prose, beside a 490px dead column on all 16 rows.
+   Under 64rem the row is single-column and the side pane follows the prose
+   in the body's column. */
+.changelog-entry > .changelog-entry-side {
+  grid-column: 2;
+  min-width: 0;
+  margin-top: var(--space-12);
+}
+
+@container rows (width >= 64rem) {
+  .surface-page .row-stack .changelog-entry > .changelog-entry-side {
+    margin-top: 0;
+  }
+}
+
+/* Below a 64rem list the key is one line under the title, the way a log is
+   scanned on a phone: "v0.4.1 · 2026-09-28 · All dimensions · MODIFIED".
+   The side pane used to stack after the description, the rationale and the
+   source, so version and date landed 285 to 438px under their title, off
+   screen with it. The body and the side step out of the way (display:
+   contents on plain divs; the dl keeps its semantics), so the title, the
+   key, the prose and the check chips are the row's own cells in its body
+   column, ordered title, key, prose, chips. The labels stay for screen
+   readers; the eye gets values parted by a middle dot. The check chips stay
+   at the end of the entry. */
+@container rows (width < 64rem) {
+  .surface-page .row-stack .changelog-entry {
+    row-gap: 0;
+  }
+
+  .changelog-entry > .row-body,
+  .changelog-entry > .changelog-entry-side {
+    display: contents;
+  }
+
+  .changelog-entry > .row-body > *,
+  .changelog-entry > .changelog-entry-side > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .changelog-entry .changelog-entry-meta {
+    order: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-8);
+    margin-top: var(--space-6);
+  }
+
+  .changelog-entry .changelog-entry-meta > div {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+  }
+
+  .changelog-entry .changelog-entry-meta > div + div::before {
+    content: "\00b7" / "";
+    color: var(--muted-dim);
+  }
+
+  /* A four-part key (the log) sets two lines, version and date over
+     dimension and change, so no line opens on a dangling dot where a free
+     wrap would have broken it. The break is the list's own zero-height
+     flex item, ordered between the pairs. The three-part summary key
+     ("v0.1.3 · 2026-07-12 · 38 checks") fits one line. */
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4))::after {
+    content: "";
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(-n + 2) {
+    order: 1;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(n + 3) {
+    order: 3;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(3)::before {
+    content: none;
+  }
+
+  .changelog-entry .changelog-entry-meta dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .changelog-entry .changelog-entry-meta dd {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .changelog-entry .changelog-entry-meta .changelog-version {
+    color: var(--ink);
+  }
+
+  .changelog-entry .changelog-entry-meta .changelog-dimension {
+    color: var(--signal-text);
+  }
+
+  .changelog-entry .changelog-check-count::after {
+    content: " checks" / "";
+  }
+
+  .changelog-entry :is(.changelog-entry-desc, .changelog-entry-why, .changelog-entry-source) {
+    order: 2;
+  }
+
+  .changelog-entry .changelog-entry-checks {
+    order: 3;
+  }
+}
+
+.changelog-entry-desc {
+  max-width: 70ch;
+  margin: var(--space-8) 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.changelog-entry-why {
+  max-width: 70ch;
+  margin: var(--space-12) 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* Capped like the rationale above it: uncapped, this full sentence ran 108
+   characters. */
+.changelog-entry-source {
+  max-width: 70ch;
+  margin: var(--space-4) 0 0;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--muted-dim);
+}
+
+.changelog-entry-meta {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.changelog-entry-meta > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: baseline;
+}
+
+.changelog-entry-meta dt {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.changelog-entry-meta dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.changelog-entry-meta .changelog-version {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+/* Every dimension in the one colour, the check chips' blue: a category is
+   named by its label and never borrows a state colour (Accessibility was
+   --ok and Security --error). */
+.changelog-entry-meta .changelog-dimension {
+  color: var(--signal-text);
+}
+
+.changelog-change {
+  display: inline-block;
+  padding: var(--space-2) var(--space-8);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.changelog-entry-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-fine-40);
+  margin-top: var(--space-12);
+}
+
+/* 44px target in both dimensions: the label is three characters. */
+.changelog-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--signal-text);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .changelog-check:hover {
+    background: var(--surface-raised);
+  }
+}
+
+.changelog-check:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}

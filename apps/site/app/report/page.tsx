@@ -7,7 +7,7 @@ import { pageMeta, SITE_BASE } from '../lib/site-meta';
 import { ReportForm } from './report-form';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { registry } from '../lib/engine/registry';
-import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
+import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../lib/engine/engine-page';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -92,7 +92,7 @@ export default async function ReportPage({ searchParams }: { searchParams?: Prom
           formula={
             <>
               <span><b>composite</b> = round(score × 0.5 + drift × 0.3 + readiness × 0.2)</span>
-              <span><b>A</b> ≥ 90 · <b>B</b> ≥ 80 · <b>C</b> ≥ 70 · <b>D</b> ≥ 60 · <b>F</b> below</span>
+              <GradeLine />
               <span>The synthesis checks grade the report itself, apart from the composite.</span>
             </>
           }

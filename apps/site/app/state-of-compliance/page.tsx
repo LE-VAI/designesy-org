@@ -326,9 +326,9 @@ export default function StateOfCompliancePage() {
           <div className="dx-table-box">
             <DataTable
               caption={`Design systems in the cohort, ranked by composite score, weekly run of ${SCORES_DATE}.`}
-              head={['System', 'Grade', 'Score', 'Cohort rank', 'Pass · warn · fail']}
-              numeric={[2, 3, 4]}
-              opt={[3, 4]}
+              head={['System', 'Grade', 'Score', 'Cohort rank', 'Pass', 'Warn', 'Fail']}
+              numeric={[2, 3, 4, 5, 6]}
+              opt={[3, 4, 5, 6]}
               rows={SYSTEMS.map((s) => [
                 <Link key={s.slug} href={`/frameworks/${s.slug}`}>
                   {s.name}
@@ -339,7 +339,9 @@ export default function StateOfCompliancePage() {
                 </span>,
                 fmt(s.score),
                 s.rank,
-                `${s.pass} · ${s.warn} · ${s.fail}`,
+                s.pass,
+                s.warn,
+                s.fail,
               ])}
             />
           </div>

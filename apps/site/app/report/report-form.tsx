@@ -148,7 +148,7 @@ export function ReportForm({
         busy={phase === 'running'}
         go="Build the report"
         goBusy="Building"
-        note="Three engines run in parallel, each fetching the page itself. It takes a few seconds longer than one."
+        note="Three engines run in parallel, a few seconds longer than one."
       />
       <Instrument
         name="Report"
@@ -179,7 +179,7 @@ export function ReportForm({
             <p>{error}</p>
           </>
         }
-        scoring="composite = score × 0.5 + drift × 0.3 + readiness × 0.2"
+        scoring="re-weighted when an engine returns nothing"
         restNote="Build a report and each share of the bar fills to its engine's score. The composite is their weighted sum."
         restCard={
           <div className="eg-ref">

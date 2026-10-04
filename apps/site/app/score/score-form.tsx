@@ -18,6 +18,8 @@ import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { CATEGORIES, categoryChips, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
+import { ScoreEmptyRun } from './score-empty-run';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -77,6 +79,9 @@ type ScoreResponse = {
   slop?: SlopResult;
   originality?: OriginalityResult;
   error?: string;
+  /** The site could not be fetched: ok, with total 0 and score/grade null. */
+  unreachable?: boolean;
+  unreachableDetail?: string;
 };
 
 type SlopFinding = {
@@ -117,19 +122,8 @@ type AuditResponse = {
 
 type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: 'tokens', label: 'Tokens' },
-  { key: 'responsive', label: 'Responsive' },
-  { key: 'interaction', label: 'Interaction' },
-  { key: 'poise', label: 'Poise' },
-  { key: 'motion', label: 'Motion' },
-  { key: 'accessibility', label: 'Accessibility' },
-  { key: 'identity', label: 'Identity' },
-  { key: 'takt', label: 'Takt' },
-  { key: 'cadence', label: 'Cadence' },
-  { key: 'performance', label: 'Performance' },
-  { key: 'semantic', label: 'Semantic' },
-];
+// CATEGORIES, topCategories and verdictLine live in ./verdict, with the
+// empty-run guard, so a script can test them without a browser.
 
 // ── Constellation geometry ────────────────────────────────────────────────
 // The category constellation replaces the radar/wheel idiom (Observable's
@@ -153,32 +147,6 @@ const NODE_ARC_CIRC = 2 * Math.PI * NODE_ARC_R; // 43.9823
 function constellationPoint(index: number, total: number, r: number): { x: number; y: number } {
   const angle = (index / total) * 2 * Math.PI - Math.PI / 2; // 12 o'clock start
   return { x: CONSTEL_C + r * Math.cos(angle), y: CONSTEL_C + r * Math.sin(angle) };
-}
-
-// Verdict line — PSI "Core Web Vitals Assessment: Passed" pattern: the
-// one-line human verdict leads, in words not color, before the number.
-function verdictLine(r: ScoreResponse): string {
-  const total = r.total ?? 0;
-  const fails = r.fail ?? 0;
-  if (fails === 0 && (r.warn ?? 0) <= Math.max(1, Math.floor(total * 0.15))) {
-    return 'Strong conformance: this design system reads as engineered rather than assembled.';
-  }
-  if (fails > 0) {
-    const worst = topCategories(r, 'worst');
-    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
-  }
-  return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
-}
-
-// Strongest / weakest scored categories for the hero meta line.
-function topCategories(r: ScoreResponse, mode: 'best' | 'worst'): { label: string; score: number | null } {
-  const entries = Object.entries(r.categoryScores || {}).filter(([, v]) => v.score !== null);
-  if (entries.length === 0) return { label: '', score: null };
-  const sorted = entries.sort((a, b) => (mode === 'best' ? (b[1].score! - a[1].score!) : (a[1].score! - b[1].score!)));
-  const [key, val] = sorted[0];
-  const label = CATEGORIES.find((c) => c.key === key)?.label
-    || key.charAt(0).toUpperCase() + key.slice(1);
-  return { label, score: val.score };
 }
 
 // Sort order for check cards — failures and warnings first, passes/skips last.
@@ -257,13 +225,27 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // highlight pill behind it. The ::before pseudo-element on
   // .score-filter-segmented reads --indicator-x / --indicator-w.
   // Runs on layout (before paint) so the indicator never flashes at 0,0.
+  // On a phone the tabs wrap into rows, so the pill follows offsetTop too, and
+  // it re-measures when the strip resizes (the tabs are flex: 1, so a resize
+  // moved every tab while the pill stayed where it was). It takes the tab's
+  // height as well: a coarse pointer makes the tabs 44px, and a fixed 36px
+  // pill sat short of the tab it marked.
   useLayoutEffect(() => {
     const container = filterSegmentedRef.current;
     if (!container) return;
-    const active = container.querySelector<HTMLElement>('.score-filter-tab.is-active');
-    if (!active) return;
-    container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
-    container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
+    const place = () => {
+      const active = container.querySelector<HTMLElement>('.score-filter-tab.is-active');
+      if (!active) return;
+      container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
+      container.style.setProperty('--indicator-y', `${active.offsetTop}px`);
+      container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
+      container.style.setProperty('--indicator-h', `${active.offsetHeight}px`);
+    };
+    place();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(place);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [filterStatus, result]);
 
   // Load history on mount (client-only). SSR-safe via the guards inside
@@ -455,6 +437,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       setStatus('ok');
       setScoredUrl(targetUrl);
       setResult(data);
+      // A run that read nothing is answered, not scored: no history entry
+      // (an F at 0% would sit in Recent scores as if it were a grade), and
+      // the retry cue the fetch-failure path uses.
+      if (isEmptyRun(data)) {
+        if (soundIsEnabled()) playExtended('retry');
+        return;
+      }
       // Persist to free-tier local history. saveScore is SSR-safe and
       // dedupes by URL (most-recent wins), caps at 5 entries. The entry
       // carries prevScore so we can show a delta chip ("▲ +3.8 since last").
@@ -764,7 +753,20 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       )}
 
-      {status === 'ok' && result && result.ok && (
+      {/* Nothing ran: the empty-run card stands in for the whole result, so
+          no ring, no 0%, no counts, no signals, no filters and no list. */}
+      {status === 'ok' && result && result.ok && isEmptyRun(result) && (
+        <div className="score-results fade-up" ref={resultsRef}>
+          <ScoreEmptyRun
+            url={scoredUrl}
+            reason={emptyRunReason(result, scoredUrl)}
+            onRetry={() => void runScore(scoredUrl)}
+            titleRef={verdictRef}
+          />
+        </div>
+      )}
+
+      {status === 'ok' && result && result.ok && !isEmptyRun(result) && (
         <div className="score-results fade-up" ref={resultsRef}>
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
@@ -1201,17 +1203,34 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     <span className="score-signals-group-chip is-neg">−{animatedCounts.slopTotal}pt{result.slop.total !== 1 ? 's' : ''}</span>
                   </p>
                   <ul className="score-signals-list">
-                    {result.slop.findings.map((f) => (
-                      <li key={f.id} className="score-signal-row is-slop">
-                        <span className="score-signal-points is-neg">−{f.deduction}</span>
-                        <span className="score-signal-body">
-                          <span className="score-signal-label">{f.label}</span>
-                          {f.evidence && f.evidence.length > 0 && (
-                            <span className="score-signal-evidence">{f.evidence.slice(0, 3).join(' · ')}</span>
-                          )}
-                        </span>
-                      </li>
-                    ))}
+                    {result.slop.findings.map((f) => {
+                      // Names, values and counts read as they are; a
+                      // declaration block from minified CSS is said in words,
+                      // with the block itself one disclosure away.
+                      const ev = readEvidence((f.evidence || []).slice(0, 3));
+                      return (
+                        <li key={f.id} className="score-signal-row is-slop">
+                          <span className="score-signal-points is-neg">−{f.deduction}</span>
+                          <div className="score-signal-body">
+                            <span className="score-signal-label">{f.label}</span>
+                            {ev.plain.length > 0 && (
+                              <span className="score-signal-evidence">{ev.plain.join(' · ')}</span>
+                            )}
+                            {ev.raw.length > 0 && (
+                              <>
+                                <span className="score-signal-evidence">{ev.summary}</span>
+                                <details className="score-signal-raw">
+                                  <summary>{ev.raw.length === 1 ? 'Show the CSS rule' : `Show the ${ev.raw.length} CSS rules`}</summary>
+                                  {ev.raw.map((block, i) => (
+                                    <code key={i} className="score-signal-code">{block}</code>
+                                  ))}
+                                </details>
+                              </>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -1220,11 +1239,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
           {/* Interactive Filter & Search Controls */}
           <div className="score-controls-card">
-            <div className="score-filter-segmented" ref={filterSegmentedRef}>
+            <div className="score-filter-segmented" ref={filterSegmentedRef} role="group" aria-label="Filter checks by status">
               <button
                 type="button"
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('ALL')}
+                aria-pressed={filterStatus === 'ALL'}
               >
                 All <span className="score-tab-count">{animatedCounts.total}</span>
               </button>
@@ -1232,6 +1252,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 type="button"
                 className={`score-filter-tab is-pass ${filterStatus === 'PASS' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('PASS')}
+                aria-pressed={filterStatus === 'PASS'}
               >
                 Pass <span className="score-tab-count">{animatedCounts.pass}</span>
               </button>
@@ -1240,6 +1261,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-fail ${filterStatus === 'FAIL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('FAIL')}
+                  aria-pressed={filterStatus === 'FAIL'}
                 >
                   Fail <span className="score-tab-count">{animatedCounts.fail}</span>
                 </button>
@@ -1249,6 +1271,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-warn ${filterStatus === 'WARN' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('WARN')}
+                  aria-pressed={filterStatus === 'WARN'}
                 >
                   Warn <span className="score-tab-count">{animatedCounts.warn}</span>
                 </button>
@@ -1258,6 +1281,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-manual ${filterStatus === 'MANUAL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('MANUAL')}
+                  aria-pressed={filterStatus === 'MANUAL'}
                 >
                   Manual <span className="score-tab-count">{result.manual}</span>
                 </button>
@@ -1266,6 +1290,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 type="button"
                 className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('SKIP')}
+                aria-pressed={filterStatus === 'SKIP'}
               >
                 N/A <span className="score-tab-count">{result.skip}</span>
               </button>
@@ -1292,23 +1317,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               />
             </div>
 
-            <div className="score-category-chips">
+            <div className="score-category-chips" role="group" aria-label="Filter checks by category">
               <button
                 type="button"
                 className={`score-category-chip ${selectedCategory === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setSelectedCategory('ALL')}
+                aria-pressed={selectedCategory === 'ALL'}
               >
                 All Categories
               </button>
-              {CATEGORIES.map((cat) => {
-                const count = checks.filter((c) => c.category === cat.key).length;
-                if (count === 0) return null;
+              {categoryChips(checks).map((cat) => {
+                const count = cat.count;
                 return (
                   <button
                     key={cat.key}
                     type="button"
                     className={`score-category-chip ${selectedCategory === cat.key ? 'is-active' : ''}`}
                     onClick={() => setSelectedCategory(cat.key)}
+                    aria-pressed={selectedCategory === cat.key}
                   >
                     {cat.label}
                     <span className="score-chip-num">{count}</span>
@@ -1395,6 +1421,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                               key={check.id}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
                               data-category={check.category}
+                              data-status={check.status.toLowerCase()}
                               onClick={() => setExpandedId(isExpanded ? null : check.id)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {

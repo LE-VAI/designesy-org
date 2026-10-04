@@ -2,9 +2,10 @@
    Plain .css imported in continuity/page.tsx — Next.js code-splits
    this to the /continuity route only. */
 
+/* One gutter: the 2x2 sits on the shell's 16px, so its seam is the 6|6 line. */
 .continuity-card-grid {
   display: grid;
-  gap: var(--space-fine-85);
+  gap: var(--grid-gutter);
 }
 
 @media (min-width: 720px) {
@@ -13,10 +14,43 @@
   }
 }
 
-.continuity-card {
-  background: var(--surface);
-  border: 1px solid var(--line-faint);
+/* Reading material (spec 3.2): --mat-reading, --elev-1 and the top-lit rim
+   on a masked layer, in place of the flat line border. The ladder and the
+   cards share the recipe; the waitlist panel below is the instrument. */
+.continuity-card,
+.continuity-ladder {
+  position: relative;
   border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.continuity-card::before,
+.continuity-ladder::before,
+.continuity-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .continuity-card,
+  .continuity-ladder,
+  .continuity-panel {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+}
+
+.continuity-card {
   padding: var(--space-fine-110) var(--space-fine-115);
   min-height: 100%;
 }
@@ -44,15 +78,18 @@
 }
 
 .continuity-ladder {
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
   overflow: hidden;
 }
 
+/* A ladder row is a face and a side pane. The face holds the tier, its price
+   and what it includes (the price over its description); the side holds the
+   row's state, as a chip (Live, Early access, By conversation), and the one
+   action that state allows. Under 64rem of section the side follows the
+   face as a line under the description, the chip at its start and the
+   action at its end. */
 .continuity-ladder-row {
   display: grid;
-  gap: var(--space-fine-35) var(--space-16);
-  padding: var(--space-16) var(--space-fine-110);
+  grid-template-columns: minmax(0, 1fr);
   border-top: 1px solid var(--line-faint);
   background: var(--surface);
 }
@@ -61,11 +98,84 @@
   border-top: 0;
 }
 
+.continuity-ladder-face {
+  display: grid;
+  gap: var(--space-fine-35) var(--space-16);
+  min-width: 0;
+  padding: var(--space-16) var(--space-fine-110) var(--space-8);
+}
+
+.continuity-ladder-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-16);
+  min-width: 0;
+  padding: 0 var(--space-fine-110) var(--space-8);
+}
+
 @media (min-width: 640px) {
-  .continuity-ladder-row {
-    grid-template-columns: 7.5rem 1fr;
+  .continuity-ladder-face {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
     align-items: baseline;
   }
+
+  /* The side line starts under the description, on the body column. */
+  .continuity-ladder-side {
+    padding-inline-start: calc(var(--space-fine-110) + 7.5rem + var(--space-16));
+  }
+}
+
+/* The action: a 44px text link with an arrow, the row's only control. */
+.continuity-ladder-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.continuity-ladder-action::after {
+  content: "\2192" / "";
+  color: var(--signal-text);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .continuity-ladder-action:hover {
+    color: var(--signal-text);
+  }
+
+  .continuity-ladder-action:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+.continuity-ladder-action:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .continuity-ladder-action::after {
+    transition: none;
+  }
+
+  @media (hover: hover) {
+    .continuity-ladder-action:hover::after {
+      transform: none;
+    }
+  }
+}
+
+html[data-motion="paused"] .continuity-ladder-action:hover::after {
+  transform: none;
 }
 
 .continuity-ladder-name {
@@ -84,17 +194,149 @@
   font-weight: 650;
 }
 
+/* The prose measure: the Continuity line ran x277 to x1225, about 140
+   characters at 14px. A block, so the cap applies. */
 .continuity-ladder-body span {
+  display: block;
+  max-inline-size: 66ch;
   color: var(--muted);
   font-size: 0.9rem;
   text-wrap: pretty;
 }
 
+/* At 64rem of section the face is the first seven tracks and the side pane
+   starts on the 7-line, behind a 1px divider at 804.17px (1440): the face
+   carries the tier, the price and the description under it (the body
+   column runs about 510px, the measure, so the description ends near the
+   7-line), and the side carries the state chip over the action. The face
+   used to hold only the tier and a price 80 to 130px long, a 450px dead
+   band mid-row, while the descriptions wrapped in the 482px side. The
+   panes carry the row's padding, so each divider meets the hairlines
+   between rows. The chip sits on the tier label's line. */
+.doctrine-section:has(> .continuity-ladder) {
+  container: continuity-ladder / inline-size;
+}
+
+@container continuity-ladder (width >= 64rem) {
+  .continuity-ladder-row {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .continuity-ladder-face {
+    padding: var(--space-16) var(--space-24) var(--space-16) var(--space-fine-110);
+  }
+
+  .continuity-ladder-side {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--space-8);
+    padding: var(--space-16) var(--space-24);
+    border-left: 1px solid var(--line-faint);
+  }
+
+  .continuity-ladder-side > .row-side-chip {
+    align-self: flex-start;
+  }
+
+  .continuity-ladder-action {
+    margin-block: calc(-1 * var(--space-8));
+  }
+}
+
+/* The waitlist card: an opaque instrument (the fields are wells set into it)
+   with a face and a side pane. At 64rem of section the face takes the first
+   seven tracks, so the fields end on the 7-line like the hero form instead of
+   running 1138px, and the side pane says what happens after you join, behind
+   a 1px divider at 804.17px (1440). --track-split resolves against the card's
+   content box, so the card has no inline padding and no border; the panes
+   carry the padding. Under 64rem the side pane follows the form. */
+.doctrine-section:has(> .continuity-panel) {
+  container: continuity-waitlist / inline-size;
+}
+
 .continuity-panel {
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-radius: var(--radius-lg);
+  background: var(--mat-instrument);
+  box-shadow: var(--specular), var(--elev-2);
+}
+
+.continuity-panel-face {
+  min-width: 0;
   padding: var(--space-fine-135) var(--space-20) var(--space-24);
+}
+
+.continuity-panel-side {
+  min-width: 0;
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  border-top: 1px solid var(--line-faint);
+}
+
+@container continuity-waitlist (width >= 64rem) {
+  .continuity-panel {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .continuity-panel-side {
+    padding: var(--space-fine-135) var(--space-24) var(--space-24);
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+.continuity-panel-side-title {
+  margin: 0 0 var(--space-16);
+  font: 500 0.6875rem/1rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.continuity-next {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-16);
+  counter-reset: continuity-next;
+}
+
+.continuity-next li {
+  position: relative;
+  padding-inline-start: var(--space-32);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+  counter-increment: continuity-next;
+}
+
+.continuity-next li::before {
+  content: counter(continuity-next, decimal-leading-zero);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.1rem;
+  font: 600 0.72rem/1.4 var(--mono);
+  color: var(--signal-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.continuity-next strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.continuity-panel-side-note {
+  margin: var(--space-20) 0 0;
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line-faint);
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 /* One rhythm for the whole form: 20 px between fields, on the 4 px grid. */

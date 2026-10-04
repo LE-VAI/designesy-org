@@ -6,7 +6,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { MonitorForm } from './monitor-form';
 import { registry } from '../lib/engine/registry';
-import { EngineHead, EngineMethod, EngineNext } from '../lib/engine/engine-page';
+import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../lib/engine/engine-page';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -58,7 +58,7 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
           formula={
             <>
               <span><b>governance</b> = (pass + warn × 0.5) ÷ 10 × 100</span>
-              <span>The grade measures the watch; the drift checks measure the site.</span>
+              <GradeLine />
               <span>Snapshots stay in this browser: 50 runs per URL.</span>
             </>
           }

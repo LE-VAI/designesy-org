@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.1: machine + human source.
+ * Designesy design system contract v0.4.2: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -15,17 +15,22 @@
  *   non-codifiable principles are governance.
  * v0.4.1 is an editorial revision (2026-09-28): the contract text follows the
  *   public-copy rules; no rule, value, token or check changed.
+ * v0.4.2 is the alignment pass (2026-10-04): one shell edge at every width,
+ *   the 12-column grid with its 7|5 seam, the material and elevation recipes,
+ *   and the accessibility tokens the WCAG 2.2 AA pass introduced. It adds
+ *   public tokens and rewords the reduced-motion tiering; no check was
+ *   removed and no value was silently changed.
  */
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.1',
+  version: '0.4.2',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-09-28',
+  updated: '2026-10-04',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -448,6 +453,163 @@ export const designSystemContract = {
       value: '0 24px 80px rgba(0, 0, 0, 0.5)',
     },
   },
+  // Material system. Glass is the operating layer and nothing else: only the
+  // surfaces you command, floating over content that moves beneath them, are
+  // translucent. Everything you read is an opaque, top-lit instrument whose
+  // depth comes from surface lightness, one straight-down light and light
+  // pooling beneath it, never from blur. Values read "dark · light: x" where
+  // the light theme differs. --shadow-sm/md/lg keep their published values;
+  // they are not aliases of the elevation steps.
+  materials: {
+    mat_base: { token: '--mat-base', value: 'var(--paper)', role: 'Tier 0: the page plane and the ambient field' },
+    mat_reading: {
+      token: '--mat-reading',
+      value: 'var(--surface)',
+      role: 'Tier 1, opaque reading surface: principle cells, pillars, surface cards, history and state panels',
+    },
+    mat_instrument: {
+      token: '--mat-instrument',
+      value: 'linear-gradient(180deg, var(--surface-lifted), var(--surface-raised)) · light: linear-gradient(180deg, #ffffff, var(--surface-raised))',
+      role: 'Tier 2, opaque instrument body: the score console, the Drift instrument, the health panel, the inspection window',
+    },
+    mat_float: {
+      token: '--mat-float',
+      value: 'var(--surface-lifted) · light: #ffffff',
+      role: 'Tier 3, opaque floating element over static content; also the reduced-transparency fallback for all glass',
+    },
+    glass_thin: {
+      token: '--glass-thin',
+      value: 'color-mix(in srgb, var(--surface-raised) 80%, transparent) · light: color-mix(in srgb, var(--surface) 84%, transparent)',
+      role: 'Thin glass tint, header capsule only. Text on it is --ink only (7.2:1 worst case)',
+    },
+    glass_regular: {
+      token: '--glass-regular',
+      value: 'color-mix(in srgb, var(--surface-raised) 88%, transparent) · light: color-mix(in srgb, var(--surface) 92%, transparent)',
+      role: 'Regular glass tint for every text-bearing glass surface: command slab, palette, drawer, popovers, dock pills, verdict HUD. --muted is allowed on it (5.2:1 worst case)',
+    },
+    glass_filter_thin: {
+      token: '--glass-filter-thin',
+      value: 'blur(16px) saturate(140%) · light: blur(16px)',
+      role: 'Backdrop recipe for thin glass; the light theme drops saturate',
+    },
+    glass_filter_regular: {
+      token: '--glass-filter-regular',
+      value: 'blur(24px) saturate(140%) · light: blur(24px) · coarse pointer: blur(16px)',
+      role: 'Backdrop recipe for regular glass. Blur is capped at 24px (cost scales with radius times area) and steps down on coarse pointers',
+    },
+    glass_grain: {
+      token: '--glass-grain',
+      value: 'static SVG feTurbulence noise (data URI), used at opacity .035 with mix-blend-mode: overlay',
+      role: 'Grain on a glass ::after: kills banding and turns a blur into a material. Glass only, never animated',
+    },
+    rim: {
+      token: '--rim',
+      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05) 38%, rgb(255 255 255 / 0.03)) · light: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(10 20 60 / 0.08) 40%, rgb(10 20 60 / 0.11))',
+      role: 'The 1px top-lit edge on every tier-1+ surface, painted on a masked ::before',
+    },
+    rim_hot: {
+      token: '--rim-hot',
+      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.08) 38%, rgb(255 255 255 / 0.05)) · light: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(10 20 60 / 0.12) 40%, rgb(10 20 60 / 0.16))',
+      role: 'Rim on hover and focus-visible, on a second pre-rendered layer whose opacity crossfades',
+    },
+    specular: {
+      token: '--specular',
+      value: 'inset 0 1px 0 rgb(255 255 255 / 0.07) · light: inset 0 1px 0 rgb(255 255 255 / 0.9)',
+      role: 'Inner top highlight that pairs with --rim',
+    },
+    elev_1: {
+      token: '--elev-1',
+      value: '0 1px 1px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.22) · light: rgb(20 32 90) at 0.06 / 0.05',
+      role: 'Elevation 1: reading cards. Every x offset is 0 (one light, straight down)',
+    },
+    elev_2: {
+      token: '--elev-2',
+      value: '0 1px 1px rgb(0 0 0 / 0.28), 0 4px 8px -2px rgb(0 0 0 / 0.3), 0 12px 24px -8px rgb(0 0 0 / 0.36) · light: rgb(20 32 90) at 0.06 / 0.07 / 0.09',
+      role: 'Elevation 2: instruments and paired panels',
+    },
+    elev_3: {
+      token: '--elev-3',
+      value: '0 2px 2px rgb(0 0 0 / 0.26), 0 8px 16px -4px rgb(0 0 0 / 0.32), 0 24px 48px -12px rgb(0 0 0 / 0.42), 0 48px 96px -32px rgb(0 0 0 / 0.55) · light: rgb(20 32 90) at 0.05 / 0.07 / 0.1 / 0.14',
+      role: 'Elevation 3: floating controls and objects (command slab, popovers, verdict HUD)',
+    },
+    elev_4: {
+      token: '--elev-4',
+      value: '0 2px 4px rgb(0 0 0 / 0.3), 0 16px 32px -8px rgb(0 0 0 / 0.4), 0 40px 80px -16px rgb(0 0 0 / 0.5), 0 80px 140px -40px rgb(0 0 0 / 0.6) · light: rgb(20 32 90) at 0.06 / 0.1 / 0.14 / 0.18',
+      role: 'Elevation 4: transient overlays only (find palette, mobile drawer)',
+    },
+    floor_pool: {
+      token: '--floor-pool',
+      value: 'radial-gradient(closest-side, oklch(0.55 0.2 265 / 0.16), transparent) · light: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent)',
+      role: 'Floor under a standing object, one per viewport. Luminous in dark mode, where a dark pool cannot be seen; a navy shadow in light mode',
+    },
+    glow_signal: {
+      token: '--glow-signal',
+      value: '0 18px 44px -26px var(--signal-light)',
+      role: 'Coloured light meaning "this surface is active" (focused or running); faded in on a layer, gone at rest',
+    },
+    glow_contact: {
+      token: '--glow-contact',
+      value: 'radial-gradient(240px circle at var(--spot-x, 50%) var(--spot-y, 0%), color-mix(in srgb, var(--signal-access) 12%, transparent), transparent 62%) · light: 8%',
+      role: 'Hover light at the point of contact. A surface re-declares it on itself so its own --spot-x / --spot-y apply',
+    },
+    mat_t_in: {
+      token: '--mat-t-in',
+      value: 'var(--duration-quick) var(--ease-out)',
+      role: 'Material state entry (150ms), under the 200ms reduced-motion opacity allowance',
+    },
+    mat_t_out: {
+      token: '--mat-t-out',
+      value: 'var(--duration-fast) var(--ease-out)',
+      role: 'Material state exit (250ms)',
+    },
+    // The instrument palette (app/instrument.css): the wells, status fills and
+    // the legacy instrument glass shared by the homepage console and the
+    // engine instruments. --lv-glass was 74-82% alpha with no blur; all five
+    // surfaces that painted with it moved to --mat-instrument or
+    // --glass-regular, and it is now a deprecated alias of --mat-instrument.
+    instrument_palette: {
+      lv_glass: {
+        token: '--lv-glass',
+        value: 'var(--mat-instrument)',
+        role: 'Deprecated alias of --mat-instrument (no rule paints with it); kept so older references resolve to the opaque instrument body, not the old translucent fill',
+      },
+      lv_glass_ring: { token: '--lv-glass-ring', value: 'rgba(255, 255, 255, 0.09) · light: rgba(10, 20, 60, 0.09)', role: 'Instrument outer ring' },
+      lv_glass_edge: { token: '--lv-glass-edge', value: 'rgba(255, 255, 255, 0.07) · light: rgba(255, 255, 255, 0.9)', role: 'Instrument inner top edge' },
+      lv_glass_shadow: {
+        token: '--lv-glass-shadow',
+        value: '0 44px 110px -44px rgba(0, 0, 0, 0.85), 0 14px 36px -16px rgba(0, 0, 0, 0.55) · light: 0 36px 80px -36px rgba(20, 32, 90, 0.28), 0 10px 26px -14px rgba(20, 32, 90, 0.16)',
+        role: 'Instrument drop shadow',
+      },
+      lv_sheen: { token: '--lv-sheen', value: 'rgba(255, 255, 255, 0.3) · light: rgba(255, 255, 255, 0.95)', role: 'The single specular sheen line on an instrument' },
+      lv_well: { token: '--lv-well', value: 'rgba(255, 255, 255, 0.035) · light: rgba(10, 20, 60, 0.035)', role: 'Recessed well fill (inputs, tracks)' },
+      lv_well_line: { token: '--lv-well-line', value: 'rgba(255, 255, 255, 0.1) · light: rgba(10, 20, 60, 0.1)', role: 'Recessed well outline' },
+      lv_pass_a: { token: '--lv-pass-a', value: '#5b7cff · light: #3a63f5', role: 'Pass fill, light stop' },
+      lv_pass_b: { token: '--lv-pass-b', value: '#2c50ec · light: #0133cb', role: 'Pass fill, deep stop' },
+      lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)', role: 'Pass glow' },
+      lv_warn_a: { token: '--lv-warn-a', value: '#f7c948 · light: #e0a917', role: 'Warn fill, light stop' },
+      lv_warn_b: { token: '--lv-warn-b', value: '#d79a06 · light: #b07d04', role: 'Warn fill, deep stop' },
+      lv_fail_a: { token: '--lv-fail-a', value: '#ff7f7f · light: #ef5b5b', role: 'Fail fill, light stop' },
+      lv_fail_b: { token: '--lv-fail-b', value: '#e0454a · light: #c62828', role: 'Fail fill, deep stop' },
+      lv_hatch: { token: '--lv-hatch', value: 'rgba(255, 255, 255, 0.2) · light: rgba(10, 20, 60, 0.22)', role: 'Hatching for skipped or person-checked cells: the drawing convention for a different material' },
+      lv_head: { token: '--lv-head', value: '#8aa0ff · light: #0133cb', role: 'Inspection highlight: the element outline and tag fill in the inspection demo' },
+      lv_head_ink: {
+        token: '--lv-head-ink',
+        value: '#010102 · light: var(--paper-on-signal)',
+        role: 'Text on a --lv-head fill (8.5:1 dark; white on #0133cb is 8.99:1 light)',
+      },
+      lv_ink_accent: { token: '--lv-ink-accent', value: 'var(--signal-access)', role: 'Accent text on an instrument' },
+      lv_shine: {
+        token: '--lv-shine',
+        value: 'color-mix(in srgb, var(--paper-on-signal) 34%, transparent)',
+        role: 'The one specular highlight on lit cells',
+      },
+      lv_shine_soft: {
+        token: '--lv-shine-soft',
+        value: 'color-mix(in srgb, var(--paper-on-signal) 26%, transparent)',
+        role: 'Softer specular highlight on lit cells',
+      },
+    },
+  },
   rounded: {
     default: { token: '--radius', value: '6px', role: 'Default corner radius' },
     sm: {
@@ -484,15 +646,62 @@ export const designSystemContract = {
       value: '1180px',
       role: 'Wider shell for hero / section chrome (additive only)',
     },
-    shell_horizontal: '1.5rem (1rem at ≤560px)',
-    section_vertical: '3.5rem / 3rem doctrine',
-    card_padding: '1.25 to 1.5rem',
-    grid_gap: '0.75 to 1rem',
-    control_min_height: '42px buttons, 32px sound toggle',
+    max_width_shell: {
+      token: '--maxw-shell',
+      value: 'clamp(var(--maxw-wide), calc(var(--maxw-wide) + (100vw - 1440px) / 2), 1560px)',
+      role: 'Shell chrome on very large viewports: exactly --maxw-wide up to a 1440px viewport, then grows at half the viewport rate to 1560px. Header, main and footer share it so their edges agree. Prose never rides it: body copy keeps --maxw and its measure caps (additive only)',
+    },
+    // One shell box: --maxw-shell is the CONTENT box on every page wrapper and
+    // the header pill, and the gutter sits outside it. Before this the token
+    // meant three different boxes, so edges agreed only by coincidence.
+    shell_gutter: {
+      token: '--shell-gutter',
+      value: 'clamp(var(--space-16), 4vw, var(--space-24))',
+      role: 'The one outer gutter: page wrappers pad by it and the header pill insets by it, so pill edges equal content edges at every width (16px on a phone, 24px from a 600px viewport)',
+    },
+    shell_outer: {
+      token: '--shell-outer',
+      value: 'calc(var(--maxw-shell) + 2 * var(--shell-gutter))',
+      role: 'max-width of every page wrapper, so its content box equals --maxw-shell equals the header pill',
+    },
+    grid_gutter: {
+      token: '--grid-gutter',
+      value: 'var(--space-16)',
+      role: 'Column gap of the 12-column grid; the same 16px the Four ways and pillar grids use',
+    },
+    grid_12: {
+      token: '--grid-12',
+      value: '[full-start] repeat(5, minmax(0, 1fr)) [mirror] repeat(2, minmax(0, 1fr)) [split] repeat(5, minmax(0, 1fr)) [full-end]',
+      role: 'The one track list. split is line 8 (the 7|5 seam, the 7-line); mirror is line 6 (the 5|7 seam). Spans switch at @container g12 (width >= 64rem), a literal because custom properties are invalid in query conditions',
+    },
+    track_split: {
+      token: '--track-split',
+      value: 'calc((100% - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter))',
+      role: 'First track of a face/side card or title bar: 7 columns and 6 gaps of its own content box, so the side pane divider lands on the 7-line. Its element carries no horizontal padding or border',
+    },
+    z_index: {
+      z_content: { token: '--z-content', value: '1', role: 'In-flow content lifted above the page background layers' },
+      z_sticky: { token: '--z-sticky', value: '10', role: 'Sticky elements inside content' },
+      z_chrome: { token: '--z-chrome', value: '100', role: 'Site chrome: the header capsule' },
+      z_popover: { token: '--z-popover', value: '120', role: 'Popovers anchored to chrome (senses panel)' },
+      z_scrim: { token: '--z-scrim', value: '150', role: 'Dim layer under a drawer or dialog' },
+      z_drawer: { token: '--z-drawer', value: '200', role: 'Mobile navigation drawer' },
+      z_modal: { token: '--z-modal', value: '300', role: 'Modal dialogs and the find palette: always above the chrome' },
+      z_toast: { token: '--z-toast', value: '400', role: 'Transient notices above everything' },
+    },
+    shell_horizontal: 'var(--shell-gutter): clamp(1rem, 4vw, 1.5rem), outside the --maxw-shell content box',
+    // Read by /contracts section 05 and the agent skill. Layout switches on
+    // container width (the component's own box), so the grid line is a
+    // container query; the viewport queries left are the chrome's and a few
+    // older blocks' (demo racks, pricing, the home hero use 860px and 560px).
+    section_vertical: 'clamp(2.5rem, 5vw, 3.5rem) doctrine · clamp(3.5rem, 8vw, 6.5rem) bands',
+    card_padding: '1 to 1.5rem',
+    grid_gap: '1rem (--grid-gutter), one gutter',
+    control_min_height: '44px buttons, sense toggles and preference switches',
     breakpoints: {
-      grids: '860px',
+      grids: '@container 64rem (mid tiers 34 to 48rem; 57rem for the inspection demo)',
       topbar: '720px',
-      single_column: '560px',
+      single_column: '560px viewport on older blocks; layouts stack on their own container width',
     },
     // ── Spacing scale tokens (added 2026-08-12, closes drift d04) ──────────
     // 4px-base scale with off-grid values for specific component needs.
@@ -603,11 +812,11 @@ export const designSystemContract = {
       role: 'Drawer / panel slide',
     },
     rules: [
-      'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
+      'Entrance: fadeUp 0.6s --ease-out, rising 12px from scale(0.98), with staggered delays (0.08s steps)',
       'Interactive settle: scale(0.97) at ~160ms --ease-out (Poise · adopted v0.1.1)',
-      'Hover lift only under (hover: hover) and (pointer: fine) (Poise · adopted v0.1.1)',
+      'Hover is gated: reading-card contact (rim heat, contact light) runs only under (hover: hover) and (pointer: fine), other hover motion under (hover: hover), so touch gets no fake hover (Poise · adopted v0.1.1)',
       'Wordmark mark: opacity breath only (~3.2s --ease-in-out); no blur, glow, or gradient decoration (Poise · adopted v0.1.1)',
-      'prefers-reduced-motion: reduce collapses non-essential motion; sound defaults off (Poise · adopted v0.1.1)',
+      'prefers-reduced-motion: reduce is tiered: travel stops, fades and transitions of 200ms or less stay, motion demos play on request; sound defaults off (Poise · adopted v0.1.1)',
     ],
     entrance: {
       min_scale: { value: 0.9, description: 'Minimum entrance scale: never animate from scale(0)' },
@@ -719,7 +928,7 @@ export const designSystemContract = {
       'Selection: ::selection styled with a token color (never default browser blue)',
       'user-select: none on UI chrome (buttons, labels, meta); body text stays selectable',
       '16px input floor on mobile: inputs never below 16px to avoid iOS auto-zoom',
-      'No decorative display fonts: system stack is the contract for public UI',
+      'Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data (amended from the v0.1.3 system-stack rule)',
     ],
     verified_against: 'Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed',
     verification: [
@@ -765,7 +974,7 @@ export const designSystemContract = {
       '0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
     lede: '1.1 to 1.5rem, weight 500, ink: one clear claim',
     supporting_note: '0.85 to 0.95rem, muted, max-width ~520 to 580px',
-    rule: 'Hybrid system: Fraunces serif for headlines (authority), Geist sans for UI (precision), Geist Mono for data (systems). No single-sans: the 2026 anti-pattern.',
+    rule: 'Hybrid system: Fraunces serif for headlines (authority), Schibsted Grotesk for interface and reading (precision), Geist Mono for data (systems). Three faces and no more; no single-sans: the 2026 anti-pattern.',
     cadence_adopted: 'v0.1.3: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
     font_synthesis: 'none set on :root: prevents fake browser weights (fixed 2026-07-15)',
     text_underline_position: 'from-font set on :root: aligns underlines to font metrics (fixed 2026-07-15)',
@@ -913,28 +1122,28 @@ export const designSystemContract = {
     {
       name: 'Card / pillar',
       states:
-        'surface + line · hover raised + line-strong · active scale(0.985); lift only on fine pointer hover',
+        'reading material (--mat-reading) + top-lit rim + elev-1 · fine-pointer hover heats the rim and adds contact light, no lift · active scale(0.99)',
     },
     {
       name: 'Sound toggle',
       states:
-        'aria-pressed sync · pressed shows signal-light · Cuelume setEnabled(true|false)',
+        'switch with a visible Sound label and an On/Off state word · aria-pressed sync · Cuelume setEnabled(true|false)',
     },
     {
       name: 'Definition block',
       states:
-        'bordered surface · hover line-strong · label uppercase muted-dim',
+        'reading material + top-lit rim + elev-1 · a copyable one heats its rim and draws a 3px signal edge on hover, focus or copy · label 12px uppercase muted',
     },
   ],
   accessibility: [
     'html lang="en"; meaningful page titles via metadata template',
-    'Focus-visible: 2px solid --signal-light, offset 2px',
-    'Sound control exposes aria-label, aria-pressed, and title',
+    'Focus-visible: a 2px solid outline on every control, --signal-light at a 3px offset over a --signal-dim halo by default; cards and dense lists tune the offset, and reading cards draw it in --signal-access',
+    'Sound control is named by its visible label and exposes aria-pressed',
     'Decorative glyphs use aria-hidden where text is already labeled',
     'Prefer semantic landmarks: sticky header, main, footer',
     'Do not rely on color alone for state',
-    'Respect prefers-reduced-motion',
-    'Scroll padding-top 4rem for sticky topbar anchors',
+    'Respect prefers-reduced-motion, tiered: travel stops, opacity fades and transitions of 200ms or less stay, and a motion demo plays on request',
+    'Scroll padding-top 4.5rem (72px) for sticky topbar anchors',
   ],
   anti_patterns: [
     'Glowing blobs, random gradients, or sparkle decoration',
@@ -989,10 +1198,11 @@ export const designSystemContract = {
     'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
   ],
   open_tensions: [
-    'Light theme is not contracted; the dark technical foundation is provisional',
+    'Light theme is partly contracted: materials, field and instrument tokens carry light values, the color roles do not; the dark technical foundation is provisional',
     '--activation exists but has limited public surface usage',
-    'Inter is named in the stack but not self-hosted; system fallback is intentional',
-    'Shadow tokens exist; elevation language is still light-touch (borders lead)',
+    'Four ways cards keep their flat line borders, no elevation and their hover tilt; whether they take the rim, --elev-3 and a floor pool is still open',
+    'Two score controls (the action button and the engine tile) still rise 1px on hover, outside the no-lift rule',
+    'The row and check-cell arrows nudge under (hover: hover) alone, without the fine-pointer gate Poise asks for',
     'Human contract page and machine export remain dual sources until a single generator owns both',
     'Keyboard-path verification packets cover Poise only; other public routes have none yet',
     'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical (Cadence partial migration)',
@@ -1080,6 +1290,17 @@ export const designSystemContract = {
         'Editorial revision. The contract text follows the public-copy rules: a colon or parentheses in place of em dashes, the positive claim in place of rhetorical negation pivots, and number ranges written with "to". No rule, value, token or check changed. The sibling contracts took the same pass and keep their versions.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/changelog',
+      ],
+    },
+    {
+      version: '0.4.2',
+      date: '2026-10-04',
+      summary:
+        'Alignment pass. One shell edge at every width so the header, the wrappers and the footer share the content edges; a 12-column grid with a named 7|5 seam for the instrument and page layouts; the material, elevation and floor recipes as tokens instead of per-component values; the accessibility tint tokens and the `--signal-text` text-safe role the WCAG 2.2 AA pass required; and the reduced-motion tiering reworded to state what it now does (movement stops, fades and short transitions stay). Adds public tokens; removes no check.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/contracts/a11y.json',
         'https://www.designesy.org/changelog',
       ],
     },

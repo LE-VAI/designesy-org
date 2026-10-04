@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import './contracts.css';
 import { Topbar } from '../lib/topbar';
@@ -11,9 +12,34 @@ import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION, designSystemContract } from '../lib/design-system-contract';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { a11yContract } from '../lib/a11y-contract';
+import { compareContract } from '../lib/compare-contract';
+import { driftContract } from '../lib/drift-contract';
+import { guardrailsContract } from '../lib/guardrails-contract';
+import { monitorContract } from '../lib/monitor-contract';
+import { motionContract } from '../lib/motion-contract';
+import { readinessContract } from '../lib/readiness-contract';
+import { reportContract } from '../lib/report-contract';
+import { tokensContract } from '../lib/tokens-contract';
+
+const ds = designSystemContract;
 
 // The version copywriting arrived in: history, not the live version.
-const COPYWRITING_SINCE = 'v' + designSystemContract.copywriting.adopted_in;
+const COPYWRITING_SINCE = 'v' + ds.copywriting.adopted_in;
+
+// A group label inside a section: the section heading's family (--sans) one
+// step down, never the global Fraunces h3 at 14.4px, which set it smaller
+// than the body under it and in another family from its h2.
+const SUBHEAD: CSSProperties = {
+  fontFamily: 'var(--sans)',
+  fontSize: '1rem',
+  fontWeight: 600,
+  lineHeight: 1.3,
+  letterSpacing: '-0.005em',
+  color: 'var(--ink)',
+  marginBottom: '0.75rem',
+};
 
 export const metadata: Metadata = pageMeta({
   title: 'Contracts',
@@ -26,21 +52,140 @@ export const metadata: Metadata = pageMeta({
     'Portable design judgment · designesy.org/contracts/design-system',
 });
 
+// The fourteen parts of a contract, in the order the published contract below
+// numbers them: each Contents cell links to its section (01 to 14).
+// Copywriting keeps its older id so links already pointing at it still land.
 const CONTRACT_CONTENTS = [
-  'Source and provenance',
-  'Primitive tokens',
-  'Semantic tokens',
-  'Typography rules',
-  'Spacing and layout rules',
-  'Shape and surface rules',
-  'Component behavior and states',
-  'Accessibility requirements',
-  'Motion and reduced-motion guidance',
-  'Copywriting principles',
-  'Anti-patterns',
-  'Implementation notes',
-  'Verification criteria',
-  'Open tensions',
+  { title: 'Source and provenance', id: 'source-and-provenance' },
+  { title: 'Primitive tokens', id: 'primitive-tokens' },
+  { title: 'Semantic tokens', id: 'semantic-tokens' },
+  { title: 'Typography rules', id: 'typography-rules' },
+  { title: 'Spacing and layout rules', id: 'spacing-and-layout' },
+  { title: 'Shape and surface rules', id: 'shape-and-surface' },
+  { title: 'Component behavior and states', id: 'component-states' },
+  { title: 'Accessibility requirements', id: 'accessibility-requirements' },
+  { title: 'Motion and reduced-motion guidance', id: 'motion-and-reduced-motion' },
+  { title: 'Copywriting principles', id: '09e-copywriting' },
+  { title: 'Anti-patterns', id: 'anti-patterns' },
+  { title: 'Implementation notes', id: 'implementation-notes' },
+  { title: 'Verification criteria', id: 'verification-criteria' },
+  { title: 'Open tensions', id: 'open-tensions' },
+] as const;
+
+type ContentsId = (typeof CONTRACT_CONTENTS)[number]['id'];
+
+const sectionId = (id: ContentsId) => id;
+
+/** A sub-contract's side datum: its live version and verification count. */
+function packageDatum(c: { version: string; verification: { checks: readonly unknown[] } }) {
+  return `v${c.version} · ${c.verification.checks.length} checks`;
+}
+
+// Published now: each row's side pane carries its data (version, count) and
+// its route, read from the module that serves it, so a bump moves the row.
+const PUBLISHED: { href: string; title: string; meta: string; datum: string }[] = [
+  {
+    href: '/contracts/design-system',
+    title: 'Design system',
+    meta: 'Human overview, full tables below, machine JSON export',
+    datum: `${CONTRACT_VERSION} · ${ENGINE_CHECK_COUNT} checks`,
+  },
+  {
+    href: '/contracts/tokens',
+    title: 'Tokens',
+    meta: 'W3C DTCG 2025.10 format conformance: color spaces, custom types, validation',
+    datum: packageDatum(tokensContract),
+  },
+  {
+    href: '/contracts/a11y',
+    title: 'Accessibility',
+    meta: 'WCAG 2.2 AA via axe-core 4.13.0',
+    datum: packageDatum(a11yContract),
+  },
+  {
+    href: '/contracts/motion',
+    title: 'Motion',
+    meta: 'Lottie spec v1.0.1 and the Ten Non-Negotiable Motion Standards',
+    datum: packageDatum(motionContract),
+  },
+  {
+    href: '/labs/poise',
+    title: 'Poise adopted',
+    meta: 'Lab One interaction rules',
+    datum: `adopted v${ds.interaction.adopted_in} · ${ds.interaction.rules.length} rules`,
+  },
+  {
+    href: '/labs/takt',
+    title: 'Takt adopted',
+    meta: 'Lab Two interface-feel rules',
+    datum: `adopted v${ds.takt.adopted_in} · ${ds.takt.rules.length} rules`,
+  },
+  {
+    href: '/labs/cadence',
+    title: 'Cadence adopted',
+    meta: 'Lab Three typography rules',
+    datum: `adopted v${ds.cadence.adopted_in} · ${ds.cadence.rules.length} rules`,
+  },
+  {
+    href: '/labs/acoustics',
+    title: 'Acoustics adopted',
+    meta: 'Lab Four acoustic mapping rules',
+    datum: `adopted v${ds.acoustic.adopted_in} · ${ds.acoustic.cues.length} cues`,
+  },
+  {
+    href: '/contracts#09e-copywriting',
+    title: 'Copywriting adopted',
+    meta: 'UX copy principles from NN/g, Polaris, Carbon, Fluent, and HIG',
+    datum: `adopted ${COPYWRITING_SINCE} · ${ds.copywriting.principles.length} principles`,
+  },
+  {
+    href: '/contracts/skill',
+    title: 'Agent skill export',
+    meta: 'SKILL.md format for AI coding agents, built from the same source as the JSON',
+    datum: `SKILL.md · ${CONTRACT_VERSION}`,
+  },
+  {
+    href: '/review/designesy-org',
+    title: 'Field check',
+    meta: 'Live site reviewed against this contract',
+    datum: `against ${CONTRACT_VERSION}`,
+  },
+  {
+    href: '/contracts/drift',
+    title: 'Drift',
+    meta: 'AI-generated UI drift detection: token fabrication, value variance, and off-contract patterns',
+    datum: packageDatum(driftContract),
+  },
+  {
+    href: '/contracts/readiness',
+    title: 'AI Readiness',
+    meta: 'The 6th maturity axis: probes for machine-readable tokens, llms.txt, agent.json, MCP, and DESIGN.md',
+    datum: packageDatum(readinessContract),
+  },
+  {
+    href: '/contracts/guardrails',
+    title: 'Guardrails',
+    meta: 'The product layer: emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents',
+    datum: packageDatum(guardrailsContract),
+  },
+  {
+    href: '/contracts/monitor',
+    title: 'Monitor',
+    meta: 'The continuous-governance layer: re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound',
+    datum: packageDatum(monitorContract),
+  },
+  {
+    href: '/contracts/compare',
+    title: 'Compare',
+    meta: 'The diff engine: fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions (added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta)',
+    datum: packageDatum(compareContract),
+  },
+  {
+    href: '/contracts/report',
+    title: 'Report',
+    meta: 'The synthesis capstone: fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade',
+    datum: packageDatum(reportContract),
+  },
 ];
 
 const CONTRACT_ANTI = [
@@ -76,9 +221,20 @@ const PRIMITIVE_SURFACES = [
   { token: '--signal-dim', value: 'rgba(1, 51, 203, 0.14)', role: 'Signal wash / badge fill' },
 ];
 
+// The radius rows are the contract module's: the four published steps and the
+// 8px tier between them, smallest first, so this table, section 06 and the
+// rack below name the same values.
+const RADIUS_ROWS = (['sm', 'default', 'md', 'lg', 'xl'] as const).map((k) => ({
+  token: ds.rounded[k].token,
+  value: ds.rounded[k].value,
+  role: ds.rounded[k].role,
+}));
+
+// The rack draws the published scale only; the 8px tier is named in its note.
+const RADIUS_RACK = RADIUS_ROWS.filter((r) => r.token !== ds.rounded.md.token);
+
 const PRIMITIVE_SHAPE_MOTION = [
-  { token: '--radius', value: '6px', role: 'Default corner radius' },
-  { token: '--radius-sm', value: '4px', role: 'Compact controls / nav chips' },
+  ...RADIUS_ROWS,
   { token: '--maxw', value: '1080px', role: 'Content shell max width' },
   { token: '--duration', value: '0.6s', role: 'Primary entrance duration' },
   { token: '--duration-quick', value: '150ms', role: 'Close, swap, tooltip' },
@@ -91,51 +247,79 @@ const PRIMITIVE_SHAPE_MOTION = [
   { token: '--ease-drawer', value: 'cubic-bezier(0.32, 0.72, 0, 1)', role: 'Drawer / panel slide' },
 ];
 
+// The material system, read from the contract module (dark values; the
+// light theme's live beside them in the machine export).
+const DEPTH_TOKENS = (
+  [
+    ds.materials.mat_reading,
+    ds.materials.mat_instrument,
+    ds.materials.mat_float,
+    ds.materials.rim,
+    ds.materials.rim_hot,
+    ds.materials.elev_1,
+    ds.materials.elev_2,
+    ds.materials.elev_3,
+    ds.materials.elev_4,
+  ] as const
+).map((t) => ({ token: t.token, value: t.value.split(' · light:')[0], role: t.role }));
+
+// Section 05 reads the layout strings the machine export and the agent skill
+// serve, so the three cannot disagree.
+const LAYOUT = ds.layout;
+
 const SPACING_RULES = [
-  { name: 'Shell horizontal', value: '1.5rem (1rem ≤560px)', note: '.site-shell / .surface-page' },
-  { name: 'Section vertical', value: '3.5rem / 3rem doctrine', note: '.section / .doctrine-section' },
-  { name: 'Card padding', value: '1.25 to 1.5rem', note: 'pillars, surfaces, items' },
-  { name: 'Grid gap', value: '0.75 to 1rem', note: 'pillar / surface grids' },
-  { name: 'Control min height', value: '42px buttons, 32px sound toggle', note: 'touch-friendly targets' },
-  { name: 'Breakpoints', value: '860px · 720px · 560px', note: 'grids · topbar · single-column' },
+  { name: 'Shell horizontal', value: 'clamp(1rem, 4vw, 1.5rem)', note: '--shell-gutter, outside the content box' },
+  { name: 'Layout grid', value: '12 columns, 1rem gutter, 7|5 split', note: '.g12; bars end on the instrument divider' },
+  { name: 'Section vertical', value: LAYOUT.section_vertical, note: '.doctrine-section / .section' },
+  { name: 'Card padding', value: LAYOUT.card_padding, note: 'status notes 1rem, definitions and cards 1.25 to 1.5rem' },
+  { name: 'Grid gap', value: LAYOUT.grid_gap, note: 'the 12-column grid and the card grids it holds' },
+  { name: 'Control min height', value: LAYOUT.control_min_height, note: 'touch and pointer targets' },
+  { name: 'Layout switch', value: LAYOUT.breakpoints.grids, note: 'grids, row lists and panels query their own width' },
+  { name: 'Viewport queries', value: `${LAYOUT.breakpoints.topbar} chrome · 860px and 560px older blocks`, note: 'header and drawer; demo racks, pricing, home hero' },
 ];
 
 const TYPOGRAPHY_RULES = [
-  'Body: 16px / 1.55, system stack (-apple-system, BlinkMacSystemFont, Inter, Segoe UI, Arial, Helvetica, sans-serif)',
-  'Headings: weight 700, line-height 1.08, letter-spacing -0.02em',
+  'Body: Schibsted Grotesk (--sans), 16 to 17px fluid, line-height 1.55; the system sans covers other scripts',
+  'Headings h1 to h4: Fraunces (--display), weight 700, line-height 1.08, letter-spacing -0.02em; section headings and subheads set in --sans at weight 600',
   'Hero wordmark: clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
   'Eyebrows: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
   'Lede: 1.1 to 1.5rem, weight 500, ink (one clear claim in a single paragraph)',
   'Supporting note: 0.85 to 0.95rem, muted, max-width ~520 to 580px',
-  'Never invent decorative display fonts for public UI; system stack is the contract',
+  'Three faces and no more: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data and token names',
 ];
 
-const COMPONENT_STATES = [
-  { name: 'Primary button', states: 'default signal fill · hover signal-light · active scale(0.97) · focus-visible 2px signal-light' },
-  { name: 'Ghost button', states: 'transparent + line-strong · hover surface-hover · active scale(0.97)' },
-  { name: 'Nav link', states: 'muted · hover ink + surface-hover · sticky topbar blur when scrolled' },
-  { name: 'Card / pillar', states: 'surface + line · hover raised + line-strong · active scale(0.985); lift only on fine pointer hover' },
-  { name: 'Sound toggle', states: 'aria-pressed sync · pressed shows signal-light · Cuelume setEnabled(true|false)' },
-  { name: 'Definition block', states: 'bordered surface · hover line-strong · label uppercase muted-dim' },
+// Section 06, as the stylesheet ships it: the material system (design spec
+// 3.1 to 3.3), measured against globals.css, not remembered.
+const SHAPE_RULES = [
+  'Radius scale 4 · 6 · 12 · 16px, with a documented 8px tier (--radius-md) between: 6px default, 4px compact controls, 12px large panels, 16px flagship surfaces; cards and primary or ghost buttons never round to pills',
+  'Depth is surface lightness: paper, reading material, instrument, float. One top-lit rim on every raised surface, and --elev-1 to --elev-4 cast straight down',
+  'No hover lift: a card you can press heats its rim (--rim-hot) and takes contact light at the pointer, and a panel you only read holds still. The Four ways tilt and the 1px rise on two score controls are the exceptions, kept open in section 14',
+  'Status notes and definitions are reading material: opaque --mat-reading with the rim and --elev-1, never a tinted callout box',
+  'Glass only on surfaces you command over moving content: the header capsule, command slab, palette, drawer, popovers, dock pills and verdict HUD',
+  'One signal accent family and no secondary brand hues; --ok, --warn and --error appear only as state',
 ];
+
+// Section 07 is the contract module's component list: the same states the
+// machine export and /contracts/components serve.
+const COMPONENT_STATES = ds.components;
 
 const A11Y_REQUIREMENTS = [
   'html lang="en"; meaningful page titles via metadata template',
-  'Focus-visible: 2px solid --signal-light, offset 2px',
-  'Sound control exposes aria-label, aria-pressed, and title',
+  'Focus-visible: a 2px solid outline on every control, --signal-light at a 3px offset over a --signal-dim halo by default; cards and dense lists tune the offset, and reading cards draw it in --signal-access',
+  'Sound control is named by its visible Sound label and exposes aria-pressed',
   'Decorative glyphs (sound icon, arrows) use aria-hidden where text is already labeled',
   'Prefer semantic landmarks: sticky header, main, footer',
   'Do not rely on color alone for state; pair with label, border, or weight change',
-  'Respect prefers-reduced-motion: collapse animations/transitions to near-zero duration',
-  'Scroll padding-top 4rem so in-page anchors clear the sticky topbar',
+  'Respect prefers-reduced-motion, tiered: travel stops, opacity fades and transitions of 200ms or less stay, and a motion demo plays on request',
+  'Scroll padding-top 4.5rem (72px) so in-page anchors clear the sticky topbar',
 ];
 
 const MOTION_RULES = [
-  'Entrance: fadeUp 0.6s --ease with staggered delays (0.08s steps)',
+  'Entrance: fadeUp 0.6s --ease-out, rising 12px from scale(0.98), with staggered delays (0.08s steps)',
   'Interactive settle: 160ms --ease-out on press scale',
-  'Hover lift only under (hover: hover) and (pointer: fine); touch gets no fake hover',
+  'Hover is gated: reading-card contact (rim heat, contact light) runs only under (hover: hover) and (pointer: fine), other hover motion under (hover: hover), so touch gets no fake hover',
   'Wordmark dot pulse: opacity heartbeat only; no blur glow, no gradient blobs',
-  'prefers-reduced-motion: reduce → disable non-essential motion; sound defaults off as acoustic proxy',
+  'prefers-reduced-motion: reduce is tiered: travel stops, fades and transitions of 200ms or less stay, motion demos play on request; sound defaults off as the acoustic proxy',
 ];
 
 const TEN_MOTION_STANDARDS = [
@@ -170,7 +354,7 @@ const MOTION_CAUTION = [
 const ACOUSTIC_TOKENS_REF = [
   'Engine: Cuelume v0.2.2 (MIT), interaction sound synthesis via the Web Audio API',
   'Custom $type: sound via $extensions.designesy; net-new relative to W3C DTCG 2025.10',
-  '19 cues mapped to 19 interaction roles: see /acoustic-tokens for the full table',
+  '19 cues in the acoustic token document: the 10 adopted cue tokens and 9 extended feedback cues; see /acoustic-tokens for the full table',
   'Preference key: designesy:sound in localStorage; engine follows Designesy',
   'Reduced-motion proxy: sound defaults off under prefers-reduced-motion',
   'No focus sounds: sounds fire on pointer/click, never on focus',
@@ -220,10 +404,11 @@ const VERIFICATION = [
 ];
 
 const OPEN_TENSIONS = [
-  'Light theme is not contracted; the dark technical foundation is provisional',
+  'Light theme is partly contracted: materials, field and instrument tokens carry light values, the color roles do not; the dark technical foundation is provisional',
   '--activation exists but has limited public surface usage',
-  'Inter is named in the stack but not self-hosted; system fallback is intentional',
-  'Shadow tokens exist; elevation language is still light-touch (borders lead)',
+  'Four ways cards keep their flat line borders, no elevation and their hover tilt; whether they take the rim, --elev-3 and a floor pool is still open',
+  'Two score controls (the action button and the engine tile) still rise 1px on hover, outside the no-lift rule',
+  'The row and check-cell arrows nudge under (hover: hover) alone, without the fine-pointer gate Poise asks for',
   'Human contract page and machine export remain dual sources until a single generator owns both',
   'Keyboard-path verification packets cover Poise only; other public routes have none yet',
   'Inline-axis logical properties (margin-inline, padding-inline) applied; block-axis and border-inline remain physical',
@@ -339,278 +524,27 @@ export default function ContractsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Published now</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Design system · {CONTRACT_VERSION}</span>
-                  <span className="row-meta">
-                    Human overview, full tables below, machine JSON export
+            {PUBLISHED.map((row, i) => (
+              <div role="listitem" key={row.href}>
+                <Link
+                  href={row.href}
+                  className="row"
+                  data-cuelume-hover="whisper"
+                  data-cuelume-press
+                >
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/tokens"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Tokens · v0.1.0</span>
-                  <span className="row-meta">
-                    W3C DTCG 2025.10 format conformance: color spaces, custom types, validation
+                  <span className="row-side">
+                    <span className="row-side-line">{row.datum}</span>
+                    <span className="row-side-line">{row.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/a11y"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Accessibility · v0.1.0</span>
-                  <span className="row-meta">
-                    11 verification checks: WCAG 2.2 AA via axe-core 4.13.0
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/motion"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Motion · v0.1.0</span>
-                  <span className="row-meta">
-                    10 verification checks: Lottie spec v1.0.1 and the Ten Non-Negotiable Motion Standards
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/poise"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Poise adopted</span>
-                  <span className="row-meta">
-                    Lab One interaction rules adopted in contract v0.1.1
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/takt"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">Takt adopted</span>
-                  <span className="row-meta">
-                    Lab Two interface-feel rules adopted in contract v0.1.2
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/cadence"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">07</span>
-                <span className="row-body">
-                  <span className="row-title">Cadence adopted</span>
-                  <span className="row-meta">
-                    Lab Three typography rules adopted in contract v0.1.3
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/acoustics"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">08</span>
-                <span className="row-body">
-                  <span className="row-title">Acoustics adopted</span>
-                  <span className="row-meta">
-                    Lab Four acoustic mapping rules adopted in contract v0.3.0
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts#09e-copywriting"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">09</span>
-                <span className="row-body">
-                  <span className="row-title">Copywriting adopted</span>
-                  <span className="row-meta">
-                    UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, Carbon, Fluent, and HIG
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/skill"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">10</span>
-                <span className="row-body">
-                  <span className="row-title">Agent skill export</span>
-                  <span className="row-meta">
-                    SKILL.md format for AI coding agents, built from the same source as the JSON
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/designesy-org"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">11</span>
-                <span className="row-body">
-                  <span className="row-title">Field check</span>
-                  <span className="row-meta">
-                    Live site reviewed against this contract
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/drift"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">12</span>
-                <span className="row-body">
-                  <span className="row-title">Drift · v0.1.0</span>
-                  <span className="row-meta">
-                    AI-generated UI drift detection: 12 checks for token fabrication, value variance, and off-contract patterns
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/readiness"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">13</span>
-                <span className="row-body">
-                  <span className="row-title">AI Readiness · v0.1.0</span>
-                  <span className="row-meta">
-                    The 6th maturity axis: 10 checks probe for machine-readable tokens, llms.txt, agent.json, MCP, and DESIGN.md
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/guardrails"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">14</span>
-                <span className="row-body">
-                  <span className="row-title">Guardrails · v0.1.0</span>
-                  <span className="row-meta">
-                    The product layer: emit a frozen build contract (DTCG tokens, Stylelint, AGENTS.md) for AI coding agents
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/monitor"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">15</span>
-                <span className="row-body">
-                  <span className="row-title">Monitor · v0.1.0</span>
-                  <span className="row-meta">
-                    The continuous-governance layer: re-score on a cadence, store snapshots, compute drift deltas, surface regressions before they compound
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/compare"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">16</span>
-                <span className="row-body">
-                  <span className="row-title">Compare · v0.1.0</span>
-                  <span className="row-meta">
-                    The diff engine: fetch two URLs, extract their token systems, and surface what actually changed across 8 dimensions (added, removed, renamed, value-changed, scale drift, contrast drift, structure delta, score delta)
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/report"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">17</span>
-                <span className="row-body">
-                  <span className="row-title">Report · v0.1.0</span>
-                  <span className="row-meta">
-                    The synthesis capstone: fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -639,10 +573,14 @@ export default function ContractsPage() {
             <p className="surface-note">
               A Designesy Contract should include all of the following:
               structured values for machines, rationale for humans, and
-              verification criteria for both.
+              verification criteria for both. Each part opens its section of
+              the published contract below.
             </p>
           </div>
-          <CheckGrid dense items={checkItemsFromStrings(CONTRACT_CONTENTS)} />
+          <CheckGrid
+            dense
+            items={CONTRACT_CONTENTS.map((part) => ({ title: part.title, href: `#${part.id}` }))}
+          />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -659,16 +597,7 @@ export default function ContractsPage() {
               and verification, and keep the standard contract visible to tools.
             </p>
           </div>
-          <h3
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: 'var(--ink)',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Anti-patterns
-          </h3>
+          <h3 style={SUBHEAD}>Anti-patterns</h3>
           <CheckGrid items={checkItemsFromStrings(CONTRACT_ANTI, { avoid: true })} />
         </section>
 
@@ -700,7 +629,7 @@ export default function ContractsPage() {
           </p>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('source-and-provenance')}>
           <h2 className="doctrine-heading">01 · Source and provenance</h2>
           <CheckGrid items={[
               {
@@ -730,27 +659,27 @@ export default function ContractsPage() {
             ]} />
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('primitive-tokens')}>
           <h2 className="doctrine-heading">02 · Primitive tokens</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Colors (exact values)
-          </p>
+          {/* Group labels are headings, in the section's one subhead style. */}
+          <h3 style={SUBHEAD}>Colors (exact values)</h3>
           <TokenTable rows={PRIMITIVE_COLORS} />
-          <p className="surface-note" style={{ margin: '1.5rem 0 1rem' }}>
-            Surfaces and lines
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Surfaces and lines</h3>
           <TokenTable rows={PRIMITIVE_SURFACES} />
-          <p className="surface-note" style={{ margin: '1.5rem 0 1rem' }}>
-            Shape, shell, motion primitives
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Shape, shell, motion primitives</h3>
           <TokenTable rows={PRIMITIVE_SHAPE_MOTION} />
-          <p className="surface-note" style={{ marginTop: '1.5rem' }}>
-            Shadows (supporting elevation, borders lead):{' '}
-            <code style={{ color: 'var(--ink)' }}>--shadow-sm</code> 0 1px 3px
-            rgba(0,0,0,0.4) · <code style={{ color: 'var(--ink)' }}>--shadow-md</code>{' '}
-            0 8px 30px rgba(0,0,0,0.35) ·{' '}
-            <code style={{ color: 'var(--ink)' }}>--shadow-lg</code> 0 24px 80px
-            rgba(0,0,0,0.5)
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem', marginBottom: '0.25rem' }}>Material and depth</h3>
+          <p className="surface-note" style={{ marginBottom: '0.75rem' }}>
+            Depth comes from surface lightness first, then one top-lit rim and
+            one light straight down.
+          </p>
+          <TokenTable rows={DEPTH_TOKENS} />
+          <p className="surface-note" style={{ marginTop: '1rem' }}>
+            <code style={{ color: 'var(--ink)' }}>--shadow-sm</code>,{' '}
+            <code style={{ color: 'var(--ink)' }}>--shadow-md</code> and{' '}
+            <code style={{ color: 'var(--ink)' }}>--shadow-lg</code> keep their
+            published values in the token export; no surface on this site
+            paints with them.
           </p>
 
           <DemoGrid>
@@ -792,7 +721,7 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Surface depth"
-              note={<>Surfaces are near-black. Depth comes from opacity layers first, shadows second.</>}
+              note={<>Depth is surface lightness: paper, surface, raised, lifted. The last three are washes: soft fill, hover, badge.</>}
             >
               <div className="demo-swatch-grid">
                 <div className="demo-swatch">
@@ -828,27 +757,26 @@ export default function ContractsPage() {
 
             <DemoCell
               label="Radius scale"
-              note={<>6px default · 4px compact. No pill inflation.</>}
+              note={<>The published scale, smallest first: 4px compact, 6px default, 12px large panels, 16px flagship. The 8px tier sits between, off the scale.</>}
             >
+              {/* Four 48px squares: four of the rack's 72px boxes overflowed the
+                  271px stage at 1024. Each corner is its token, not a number. */}
               <div className="demo-radius-pair">
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-default" />
-                  <span className="demo-radius-tag">6px</span>
-                </div>
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-sm" />
-                  <span className="demo-radius-tag">4px</span>
-                </div>
-                <div className="demo-radius-card">
-                  <div className="demo-radius-box r-none" />
-                  <span className="demo-radius-tag">none</span>
-                </div>
+                {RADIUS_RACK.map((step) => (
+                  <div className="demo-radius-card" key={step.token}>
+                    <div
+                      className="demo-radius-box"
+                      style={{ width: '3rem', height: '3rem', borderRadius: `var(${step.token})` }}
+                    />
+                    <span className="demo-radius-tag">{step.value}</span>
+                  </div>
+                ))}
               </div>
             </DemoCell>
           </DemoGrid>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('semantic-tokens')}>
           <h2 className="doctrine-heading">03 · Semantic tokens</h2>
           <div className="doctrine-cols">
             <div className="definition">
@@ -883,7 +811,7 @@ export default function ContractsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('typography-rules')}>
           <h2 className="doctrine-heading">04 · Typography rules</h2>
           <ul className="principle-list">
             {TYPOGRAPHY_RULES.map((rule, i) => (
@@ -899,7 +827,7 @@ export default function ContractsPage() {
           </ul>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('spacing-and-layout')}>
           <h2 className="doctrine-heading">05 · Spacing and layout rules</h2>
           <TokenTable
             rows={SPACING_RULES.map((r) => ({
@@ -909,25 +837,19 @@ export default function ContractsPage() {
             }))}
           />
           <p className="surface-note" style={{ marginTop: '1.5rem' }}>
-            Layout doctrine: one max-width shell, editorial vertical rhythm,
-            grids collapse before type becomes unreadable. Prefer fewer columns
-            over cramped four-up layouts on mid widths.
+            Layout doctrine: one shell, one 16px gutter, and the 7|5 seam that
+            notes, definitions and row lists hang on. Grids switch on their own
+            width before type becomes unreadable; fewer columns beat cramped
+            four-up layouts at mid widths.
           </p>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('shape-and-surface')}>
           <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
-          <CheckGrid items={checkItemsFromStrings([
-              'Default radius 6px, compact controls 4px, no pill inflation',
-              'Borders define structure first; shadows are secondary depth',
-              'Dark technical foundation: paper black, surfaces near-black',
-              'One signal accent family; do not invent secondary brand hues',
-              'Cards stay flat until interaction: lift is earned on hover',
-              'Status notes use a soft surface and a line instead of loud callout chrome',
-            ])} />
+          <CheckGrid items={checkItemsFromStrings(SHAPE_RULES)} />
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('component-states')}>
           <h2 className="doctrine-heading">07 · Component behavior and states</h2>
           <div className="principle-list">
             {COMPONENT_STATES.map((item, i) => (
@@ -993,12 +915,12 @@ export default function ContractsPage() {
           </DemoGrid>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('accessibility-requirements')}>
           <h2 className="doctrine-heading">08 · Accessibility requirements</h2>
           <CheckGrid items={checkItemsFromStrings(A11Y_REQUIREMENTS)} />
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id={sectionId('motion-and-reduced-motion')}>
           <h2 className="doctrine-heading">09 · Motion and reduced-motion</h2>
           <CheckGrid items={checkItemsFromStrings(MOTION_RULES)} />
         </section>
@@ -1025,27 +947,9 @@ export default function ContractsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">09b · Motion anti-patterns</h2>
-          <h3
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: 'var(--ink)',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Block on sight
-          </h3>
+          <h3 style={SUBHEAD}>Block on sight</h3>
           <CheckGrid items={checkItemsFromStrings(MOTION_BLOCK_ON_SIGHT, { avoid: true })} />
-          <h3
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: 'var(--ink)',
-              margin: '1.5rem 0 0.75rem',
-            }}
-          >
-            Caution
-          </h3>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Caution</h3>
           <CheckGrid items={checkItemsFromStrings(MOTION_CAUTION, { avoid: true })} />
         </section>
 
@@ -1059,7 +963,8 @@ export default function ContractsPage() {
           <TokenTable rows={SPRING_TOKENS} />
         </section>
 
-        <section className="doctrine-section fade-up">
+        {/* Linked from the design system contract's Contents (Acoustics). */}
+        <section className="doctrine-section fade-up" id="acoustic-tokens">
           <h2 className="doctrine-heading">09d · Acoustic tokens</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Custom <code style={{ color: 'var(--ink)' }}>$type: sound</code> via{' '}
@@ -1070,8 +975,8 @@ export default function ContractsPage() {
           <CheckGrid items={checkItemsFromStrings(ACOUSTIC_TOKENS_REF)} />
         </section>
 
-        <section className="doctrine-section fade-up" id="09e-copywriting">
-          <h2 className="doctrine-heading">09e · Copywriting ({COPYWRITING_SINCE})</h2>
+        <section className="doctrine-section fade-up" id={sectionId('09e-copywriting')}>
+          <h2 className="doctrine-heading">10 · Copywriting ({COPYWRITING_SINCE})</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, IBM
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
@@ -1086,41 +991,33 @@ export default function ContractsPage() {
             Copywriting discipline. 4 principles are codified as verification
             checks (v38 to v41); 12 are governance.
           </p>
-          <p className="surface-note" style={{ marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Principles</strong>
-          </p>
+          <h3 style={SUBHEAD}>Principles</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_PRINCIPLES)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Verification checks (automated)</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Verification checks (automated)</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_VERIFICATION)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Governance (human review)</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Governance (human review)</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_GOVERNANCE)} />
-          <p className="surface-note" style={{ marginTop: '1.25rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Tooling</strong>
-          </p>
+          <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Tooling</h3>
           <CheckGrid items={checkItemsFromStrings(COPYWRITING_TOOLING)} />
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">10 · Anti-patterns</h2>
+        <section className="doctrine-section fade-up" id={sectionId('anti-patterns')}>
+          <h2 className="doctrine-heading">11 · Anti-patterns</h2>
           <CheckGrid items={checkItemsFromStrings(ANTI_PATTERNS, { avoid: true })} />
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">11 · Implementation notes</h2>
+        <section className="doctrine-section fade-up" id={sectionId('implementation-notes')}>
+          <h2 className="doctrine-heading">12 · Implementation notes</h2>
           <CheckGrid items={checkItemsFromStrings(IMPLEMENTATION_NOTES)} />
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">12 · Verification criteria</h2>
+        <section className="doctrine-section fade-up" id={sectionId('verification-criteria')}>
+          <h2 className="doctrine-heading">13 · Verification criteria</h2>
           <CheckGrid items={checkItemsFromStrings(VERIFICATION)} />
         </section>
 
-        <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">13 · Open tensions</h2>
+        <section className="doctrine-section fade-up" id={sectionId('open-tensions')}>
+          <h2 className="doctrine-heading">14 · Open tensions</h2>
           <CheckGrid items={checkItemsFromStrings(OPEN_TENSIONS, { avoid: true })} />
         </section>
 

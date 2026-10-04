@@ -19,6 +19,35 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
+type Stage = (typeof graph.chain)[number]['stage'];
+
+// Where each stage's public examples can be read on this site: the side pane's
+// data. Each route renders the examples it is listed for (the DTCG research,
+// Cuelume and the DTCG gap on /acoustic-tokens; better-typography on
+// /labs/cadence; press scale 0.97 and "louder than the action" on /labs/poise;
+// the motion purpose line on /contracts/motion; the three open tensions on
+// /contracts/design-system and dual-source drift on /review/takt; the
+// principles on /docs; labs, field checks and case studies on /labs, /review
+// and /work; press settle, concentric radii and the rem scale on
+// /contracts/design-system; --ease-out and the radius on /contracts and
+// --cue:action on /acoustic-tokens; the field checks on /review and the
+// keyboard path on /review/keyboard; the shipped work on /work). Keyed by the
+// stage's own name, so a renamed or added stage fails the type check rather
+// than rendering an empty pane. The pane used to hold a pip count of the
+// bullets beside it, which told the reader nothing the face did not.
+const STAGE_ROUTES: Record<Stage, readonly string[]> = {
+  Source: ['/acoustic-tokens', '/labs/cadence'],
+  Observation: ['/acoustic-tokens', '/labs/poise'],
+  Claim: ['/contracts/motion', '/labs/poise'],
+  Tension: ['/contracts/design-system', '/review/takt'],
+  Principle: ['/docs'],
+  Pattern: ['/labs', '/review', '/work'],
+  'Contract Rule': ['/contracts/design-system'],
+  'Token / Component / Behavior': ['/contracts', '/acoustic-tokens'],
+  'Verification Artifact': ['/review', '/review/keyboard'],
+  'Shipped Work': ['/work', '/work/designesy-org'],
+};
+
 export default function GraphPage() {
   return (
     <>
@@ -49,38 +78,69 @@ export default function GraphPage() {
             Ten stages from source to shipped work. Each stage has public
             examples drawn from real evidence.
           </p>
+          {/* Each stage is a reading card split on the page's 7-line: the
+              stage and its examples in the face; in the side pane behind a
+              hairline, the routes where those examples can be read and the
+              stage it hands on to (graph.css). */}
           <div className="chain-rail" data-reveal-group>
             {graph.chain.map((stage, i) => {
-              const count = stage.public_examples.length;
-              const maxCount = 4;
-              const fillPct = Math.round((count / maxCount) * 100);
               const num = String(i + 1).padStart(2, '0');
               const isLast = i === graph.chain.length - 1;
+              const next = graph.chain[i + 1];
 
               return (
-                <div className="chain-cell" key={stage.stage} data-reveal>
+                <div className="chain-cell" key={stage.stage} data-reveal data-terminal={isLast || undefined}>
                   <span className="chain-rail-node" aria-hidden="true" />
                   <div className="chain-cell-main">
-                    <div className="chain-cell-header">
-                      <span className="chain-cell-num">{num}</span>
-                      <h3 className="chain-cell-title" data-scramble>{stage.stage}</h3>
-                      <div className="chain-cell-meter" aria-label={`${count} examples`}>
-                        <div className="chain-cell-meter-bar">
-                          <span
-                            className="chain-cell-meter-fill"
-                            style={{ width: `${fillPct}%` }}
-                          />
-                        </div>
-                        <span className="chain-cell-meter-label">{count}</span>
+                    <div className="chain-cell-face">
+                      <div className="chain-cell-header">
+                        <span className="chain-cell-num">{num}</span>
+                        <h3 className="chain-cell-title" data-scramble>{stage.stage}</h3>
                       </div>
+                      <p className="chain-cell-definition">{stage.description}</p>
+                      <ul className="chain-cell-examples">
+                        {stage.public_examples.map((ex, j) => (
+                          <li key={j}>{ex}</li>
+                        ))}
+                      </ul>
                     </div>
-                    <p className="chain-cell-definition">{stage.description}</p>
-                    <ul className="chain-cell-examples">
-                      {stage.public_examples.map((ex, j) => (
-                        <li key={j}>{ex}</li>
-                      ))}
-                    </ul>
-                    {isLast && <span className="chain-cell-badge">LIVE</span>}
+                    <dl className="chain-cell-side">
+                      <div className="chain-cell-fact">
+                        <dt>On the site</dt>
+                        {/* Links straight in the <dd>, not a <ul>: the markdown
+                            twin keeps every <ul>, and a second bullet list
+                            right after the examples would merge into them
+                            and read as two more examples. */}
+                        <dd className="chain-cell-routes">
+                          {STAGE_ROUTES[stage.stage].map((route) => (
+                            <Link key={route} href={route} className="chain-cell-route">
+                              <span className="chain-cell-route-path">{route}</span>
+                              <span className="chain-cell-route-arrow" aria-hidden="true" />
+                            </Link>
+                          ))}
+                        </dd>
+                      </div>
+                      {next ? (
+                        <div className="chain-cell-fact chain-cell-fact--feeds">
+                          <dt>Feeds</dt>
+                          <dd className="chain-cell-next">
+                            <span className="chain-cell-next-num">
+                              {String(i + 2).padStart(2, '0')}
+                            </span>{' '}
+                            {next.stage}
+                          </dd>
+                        </div>
+                      ) : (
+                        <div className="chain-cell-fact">
+                          <dt>Status</dt>
+                          <dd>
+                            <span className="row-side-chip chain-cell-live" data-state="pass">
+                              Live
+                            </span>
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
                   </div>
                 </div>
               );
@@ -129,6 +189,10 @@ export default function GraphPage() {
                   <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
                   <span className="row-meta">Contract rules and tokens</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/contracts/design-system</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -142,6 +206,10 @@ export default function GraphPage() {
                 <span className="row-body">
                   <span className="row-title">Review surface</span>
                   <span className="row-meta">Verification artifacts</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/review</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -157,6 +225,10 @@ export default function GraphPage() {
                   <span className="row-title">Work · case studies</span>
                   <span className="row-meta">Shipped work</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/work</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -171,6 +243,10 @@ export default function GraphPage() {
                   <span className="row-title">Machine export</span>
                   <span className="row-meta">graph.json</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/graph.json</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -183,7 +259,11 @@ export default function GraphPage() {
                 <span className="row-index">05</span>
                 <span className="row-body">
                   <span className="row-title">Docs</span>
-                  <span className="row-meta">Architecture and seven layers</span>
+                  <span className="row-meta">Architecture and eight layers</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/docs</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

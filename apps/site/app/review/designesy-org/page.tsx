@@ -20,6 +20,23 @@ export const metadata: Metadata = pageMeta({
     'Field check against design system contract ' + CONTRACT_VERSION + ' · designesy.org/review/designesy-org',
 });
 
+const REVIEWED = '2026-07-13';
+
+const VERDICT =
+  'The public surface is functional and largely considered. It earns its restraint. What remains is synchronization, fuller verification proof, and keeping adopted Poise, Takt, Cadence, and Acoustics rules synchronized. The design itself stands.';
+
+const ADOPTION =
+  'Poise is Lab One; its portable interaction rules were adopted into contract v0.1.1. Takt is Lab Two; its interface-feel rules were adopted into contract v0.1.2. Cadence is Lab Three; its typography rules were adopted into contract v0.1.3. Acoustics is Lab Four; its nine acoustic mapping rules were adopted into contract v0.3.0. The labs remain the live demos; the contract carries the rules.';
+
+// The side of the adoption card: each lab and the contract version that took
+// its rules (the statement beside it says the same in prose).
+const ADOPTED = [
+  { name: 'Poise', version: 'v0.1.1' },
+  { name: 'Takt', version: 'v0.1.2' },
+  { name: 'Cadence', version: 'v0.1.3' },
+  { name: 'Acoustics', version: 'v0.3.0' },
+];
+
 const HOLDS = [
   {
     dim: 'Purpose',
@@ -166,7 +183,7 @@ export default function PublicSurfaceReviewPage() {
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
             <span className="lab-meta-item">Baseline · contract {CONTRACT_VERSION}</span>
-            <span className="lab-meta-item">Date · 2026-07-13</span>
+            <span className="lab-meta-item">Date · {REVIEWED}</span>
           </div>
           <AgentActions mdPath="/review/designesy-org.md" label="the designesy.org review" />
         </section>
@@ -187,7 +204,10 @@ export default function PublicSurfaceReviewPage() {
                   </span>
                   <span className="row-body">
                     <span className="row-title">{item.label}</span>
-                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.meta}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
                 </Link>
               </div>
@@ -197,14 +217,30 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Verdict</h2>
-          <div className="definition">
-            <p className="definition-label">Considered after functional</p>
-            <p>
-              The public surface is functional and largely considered. It earns
-              its restraint. What remains is synchronization, fuller
-              verification proof, and keeping adopted Poise, Takt, Cadence, and
-              Acoustics rules synchronized. The design itself stands.
-            </p>
+          <div className="definition definition-split" data-copy={VERDICT} data-copy-label="verdict">
+            <div className="definition-face">
+              <p className="definition-label">Considered after functional</p>
+              <p>{VERDICT}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                Considered
+              </span>
+              <dl>
+                <div>
+                  <dt>Baseline</dt>
+                  <dd>Contract {CONTRACT_VERSION}</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{REVIEWED}</dd>
+                </div>
+                <div>
+                  <dt>Scope</dt>
+                  <dd>{SCOPE.length} routes</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -257,16 +293,24 @@ export default function PublicSurfaceReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Adoption stance</h2>
-          <div className="definition">
-            <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract {CONTRACT_VERSION}</p>
-            <p>
-              Poise is Lab One; its portable interaction rules were adopted into
-              contract v0.1.1. Takt is Lab Two; its interface-feel rules were
-              adopted into contract v0.1.2. Cadence is Lab Three; its typography
-              rules were adopted into contract v0.1.3. Acoustics is Lab Four; its
-              nine acoustic mapping rules were adopted into contract v0.3.0. The
-              labs remain the live demos; the contract carries the rules.
-            </p>
+          <div className="definition definition-split" data-copy={ADOPTION} data-copy-label="adoption stance">
+            <div className="definition-face">
+              <p className="definition-label">Poise, Takt, Cadence, Acoustics, and contract {CONTRACT_VERSION}</p>
+              <p>{ADOPTION}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                {ADOPTED.length} of {ADOPTED.length} adopted
+              </span>
+              <dl>
+                {ADOPTED.map((lab) => (
+                  <div key={lab.name}>
+                    <dt>{lab.name}</dt>
+                    <dd>{lab.version}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
         </section>
 

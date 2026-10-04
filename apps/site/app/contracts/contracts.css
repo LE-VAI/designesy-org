@@ -222,3 +222,416 @@
   border: 1px solid var(--line-strong);
 }
 
+
+/* ==========================================================================
+   Sibling contract instruments: /contracts/a11y, compare, drift, guardrails,
+   monitor, motion, readiness, report and tokens import this sheet for the
+   rules below (the demo rules above belong to /contracts itself).
+
+   THE KEY/VALUE INSTRUMENT (.kv-grid)
+   Source authority ran as four to six one-line definition cards stacked full
+   width: 98px slabs whose value ended a third of the way across, about 1.5
+   viewports of empty reading surface per page, with the page's statistics
+   ("23% vs 4%", "84% / 40%") left inside sentences. It is now one opaque
+   instrument: --mat-reading, --elev-1 and the masked top-lit rim, on the
+   shell's twelve modules. A cell spans four modules (three up), so its 1px
+   seams sit on the module gutter centres the check grid uses: 513.17 and 912
+   at 1440 (the track list is explained at .check-grid in globals.css).
+
+     <div className="kv-grid">
+       <dl className="kv-cell"><dt>Label</dt><dd>Value</dd></dl>     three
+       <dl className="kv-cell is-wide"><dt>…</dt><dd>…</dd></dl>     optional
+       <dl className="kv-cell is-foot"><dt>Primary source</dt><dd>…</dd></dl>
+     </div>
+
+   Every grid on these pages carries exactly three cells, then an optional
+   wide cell and an optional foot. Each cell is its own <dl>, so a value may
+   carry its footnote as a second <dd>. A wide cell takes the whole row and
+   sets its value on the 4|8 line, the second cell's text edge. The foot is
+   the instrument's provenance line: compact, the citation in mono.
+   Values are --ink at the reading size; versions, URLs and commands are mono
+   (.kv-mono). A statistic is a figure: a 40-48px tabular numeral over its
+   caption, the comparison beside it, the source as a mono footnote.
+   ========================================================================== */
+.kv-grid {
+  --kv-m: calc((100% - 11 * var(--grid-gutter)) / 12);
+  --kv-edge: calc(var(--kv-m) + var(--grid-gutter) / 2 - 0.5px);
+  --kv-mid: calc(var(--kv-m) + var(--grid-gutter) - 1px);
+  --rim-rest: 0.6;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: var(--kv-edge) repeat(10, var(--kv-mid)) var(--kv-edge);
+  gap: 1px;
+  container: kv / inline-size;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+[data-theme="light"] .kv-grid {
+  --rim-rest: 0.75;
+}
+
+/* The rim: read, never pressed, so it never heats. */
+.kv-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim-hot);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: var(--rim-rest);
+  pointer-events: none;
+}
+
+/* A cell paints its own seams into the 1px gaps after it (right, below); the
+   grid clips the ones that fall past its edge. */
+.kv-cell {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: var(--space-16) var(--space-24);
+  background: var(--mat-reading);
+  box-shadow: 1px 0 0 0 var(--line-faint), 0 1px 0 0 var(--line-faint);
+}
+
+.kv-cell > dt {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-8);
+}
+
+.kv-cell > dd {
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.kv-cell > dd + dd {
+  margin-top: var(--space-8);
+}
+
+.kv-cell a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--muted);
+}
+
+@media (hover: hover) {
+  .kv-cell a:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* Versions, URLs and commands. A URL is one long token, so it may break
+   anywhere rather than run past the cell. */
+.kv-mono,
+.kv-cell > dd.kv-mono {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* A quotation and its attribution: the words in ink, the source under them. */
+.kv-cell > dd.kv-quote q {
+  quotes: "\201C" "\201D" "\2018" "\2019";
+}
+
+.kv-cell > dd.kv-source {
+  font: 500 0.75rem/1.4 var(--mono);
+  color: var(--muted);
+}
+
+.kv-cell > dd.kv-quote + dd.kv-source,
+.kv-cell > dd.kv-figures + dd.kv-source {
+  margin-top: var(--space-12);
+}
+
+.kv-cell > dd.kv-note {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* The figure: numerals on one line, each over its caption. */
+.kv-cell > dd.kv-figures {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-12) var(--space-24);
+}
+
+.kv-figure {
+  display: grid;
+  grid-template-columns: minmax(0, auto);
+  row-gap: var(--space-4);
+  min-width: 0;
+}
+
+.kv-figure-num {
+  font-family: var(--sans);
+  font-size: clamp(2.5rem, 2.1rem + 0.6vw, 3rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.kv-figure-cap {
+  max-width: 14rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+/* The foot: the citation the whole instrument rests on. */
+.kv-cell.is-foot {
+  padding-block: var(--space-12);
+}
+
+.kv-cell.is-foot > dt {
+  margin-bottom: var(--space-4);
+}
+
+.kv-cell.is-foot > dd {
+  font: 500 0.8125rem/1.45 var(--mono);
+  color: var(--muted);
+}
+
+/* Two up between a 36rem and a 56rem grid; the third cell takes the row, so
+   no row ends on a blank half. */
+@container kv (width >= 36rem) {
+  .kv-cell {
+    grid-column: span 6;
+  }
+  .kv-cell:nth-child(3),
+  .kv-cell:is(.is-wide, .is-foot) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Three up from a 56rem grid (976px at a 1024 window, 1180 at 1440). A wide
+   cell or the foot takes the row and lays its label on the first four
+   modules and its value from the fifth, so the value's text edge is the
+   second cell's above it. */
+@container kv (width >= 56rem) {
+  .kv-cell,
+  .kv-cell:nth-child(3) {
+    grid-column: span 4;
+  }
+  .kv-cell:is(.is-wide, .is-foot) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    row-gap: var(--space-8);
+  }
+  .kv-cell:is(.is-wide, .is-foot) > dt {
+    grid-column: 1 / 5;
+    grid-row: 1;
+    margin-bottom: 0;
+  }
+  .kv-cell:is(.is-wide, .is-foot) > dd {
+    grid-column: 5 / -1;
+    padding-inline-start: var(--space-24);
+    margin-top: 0;
+  }
+  .kv-cell.is-foot {
+    row-gap: var(--space-4);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .kv-grid::before {
+    background: var(--line-strong);
+    opacity: 1;
+  }
+  .kv-cell {
+    box-shadow: 1px 0 0 0 var(--line-strong), 0 1px 0 0 var(--line-strong);
+  }
+}
+
+/* Forced colours drop box-shadow, so the seams become outlines (they meet in
+   the 1px gap and read as one line) and the rim becomes a border. */
+@media (forced-colors: active) {
+  .kv-grid {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  .kv-grid::before {
+    display: none;
+  }
+  .kv-cell {
+    outline: 1px solid CanvasText;
+  }
+}
+
+/* ==========================================================================
+   CHECK ROWS: the outcome criteria in the side pane
+   A verification row's PASS / WARN / FAIL criteria were one face line, "PASS:
+   x · FAIL: y · WARN: z", wrapping to two to four lines beside an empty side
+   pane. Each outcome is now its own .row-side-line, led by the row region's
+   state chip (globals.css, row region): the chips share one width so the
+   criteria start on one x, the chip sits on its line's first baseline, and
+   a long criterion wraps under itself, never under the chip. A criterion of
+   "n/a" (an outcome the check cannot reach) takes the neutral hold chip.
+   ========================================================================== */
+.check-side > .row-side-line {
+  flex-wrap: nowrap;
+}
+
+.check-side .row-side-chip {
+  flex: none;
+  min-width: 4rem;
+  align-self: baseline;
+}
+
+.check-side-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* An identifier (a bundle key, a snapshot field) is set in mono in the face,
+   as it is written in the machine export. */
+.row-title.contract-ident {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* A file's format: a neutral tag, never a state (no LED, no hue). */
+.contract-format {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-fine-12) var(--space-fine-42);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: 650 0.6875rem/1.2 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+/* /contracts/report: the weight is the row's datum. A 2rem tabular numeral
+   ends one gutter inside the list's edge (the row keeps 12px end padding, so
+   the pane gives 4px more), centred on the face, with a meter drawn to the
+   weight beside it. The meter restates the numeral, so it is hidden from
+   assistive tech. */
+.row > .row-side.report-weight {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  align-self: center;
+  column-gap: var(--space-16);
+  padding-inline-end: var(--space-4);
+}
+
+.row-side.report-weight > .report-weight-bar {
+  grid-column: 1;
+  position: relative;
+  height: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.report-weight-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--muted);
+  transform: scaleX(var(--weight, 0));
+  transform-origin: left center;
+}
+
+.row-side.report-weight > .report-weight-num {
+  grid-column: 2;
+  font-family: var(--sans);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Below a 64rem list the weight sits under the face text, in the body
+   column; it drops to 1.5rem there so it does not outweigh the title. */
+@container rows (width < 64rem) {
+  .row-side.report-weight > .report-weight-num {
+    font-size: 1.5rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .report-weight-bar {
+    border: 1px solid CanvasText;
+  }
+  .report-weight-bar::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}
+
+/* ==========================================================================
+   COPY ORDER
+   Every sibling contract sets its Open questions one way: unbulleted 16px
+   items at a 1.5 line, 12px apart (three pages bulleted them at a 30px pitch
+   on 17px type, three did not). A Validation note gets a label and 32px from
+   the list above it; unlabelled, 27px under the last row, it read as that
+   row's overflow. A sub-list's label (Snapshot structure) is the same eyebrow.
+   ========================================================================== */
+.open-questions {
+  display: grid;
+  row-gap: var(--space-12);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.open-questions > li {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.contract-validation {
+  margin-top: var(--space-32);
+}
+
+.contract-eyebrow,
+.doctrine-section .contract-eyebrow {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--space-8);
+}
+
+.contract-eyebrow.is-spaced {
+  margin-top: var(--space-32);
+}

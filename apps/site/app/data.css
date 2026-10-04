@@ -13,6 +13,12 @@
    Marks: series and boundaries are drawn in the instrument palette's grade
    tones, each at 3:1 or better against the ground it sits on in both themes.
    Layout answers to each component's own width (container queries).
+
+   Modules: readouts, definitions and the reading rail sit on the shell's
+   twelve tracks (--grid-12, one --grid-gutter), and tables that declare their
+   columns take them from the same twelve, so a column, a divider or a rail
+   edge lands on the line the next surface down uses. Spans switch at 64rem,
+   the documented g12 switch (a custom property cannot be a query condition).
    ========================================================================== */
 
 .dx {
@@ -49,6 +55,46 @@
   margin-top: var(--space-24);
 }
 
+/* The share action is a peer of the primary beside it: one height (44px) and
+   one type size, so the cluster sits on one line instead of a 36px button
+   between 44px ones (the same lift .hero-actions gives it). */
+.dx-actions .score-share-btn {
+  height: 2.75rem;
+  padding: 0 var(--space-20);
+  font-size: 0.875rem;
+  border-radius: var(--radius);
+}
+
+/* On a phone the head's actions are two even rows, not three lengths of
+   left-aligned stack: the primary with Share beside it (1fr | auto, both
+   44px), then the two agent actions as equal halves. Where the row holds
+   two full buttons (no Share), or Share's fallback links (no Web Share),
+   it keeps its wrapping row. */
+@container eg (width < 36rem) {
+  .dx-actions:has(> .score-share-btn):has(> .button):not(:has(> :nth-child(3))) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .dx .eg-head .agent-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dx .eg-head .agent-action {
+    justify-content: center;
+  }
+}
+
+/* The path line keeps to one line where it fits. On a phone it wraps between
+   facts (each fact stays whole) instead of scrolling: a sideways scroller cut
+   at "15 top-level" read as clipped text, not as a line that continues. */
+@container eg (width < 36rem) {
+  .dx .eg-path {
+    flex-wrap: wrap;
+    row-gap: var(--space-4);
+    overflow-x: visible;
+  }
+}
+
 /* Text measures are in rem, never ch: a ch is the width of "0" in the face
    that is rendering, and the fallback's is narrower than Schibsted's (65ch is
    585px in one, 650px in the other), so a ch measure re-wraps when the web
@@ -77,26 +123,118 @@
 
 /* --- Key figures: a readout row, hairlines between ----------------------- */
 
+/* On the shell's twelve tracks, so the hairlines fall on module lines and not
+   wherever auto-fit put them (5 x 236px left them 12px off the reading column
+   below). Each figure starts on its track's start line; the hairline sits in
+   the gutter's centre before it. Spans are count-aware: five figures are
+   2/2/3/3/2 (the range and the "of N" figures get the wide cells), four are
+   3 each, three are 4, six are 2. The reading-rail strip (.dx-stats-rail, on
+   /methodology) puts its first figure over the rail (3) and divides the
+   reading column with the rest (2/2/2/3), so its first hairline is the rail's
+   gutter. Under 64rem: three to a row, and a row of two takes 6 each. */
 .dx-stats {
   container: dxstats / inline-size;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: var(--space-16) 0;
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--space-20);
   margin: 0 0 var(--space-32);
   padding: 0;
 }
 
 .dx-stats > div {
+  position: relative;
   display: grid;
   align-content: start;
   gap: var(--space-6);
-  padding: 0 var(--space-20);
-  border-left: 1px solid var(--line-faint);
+  grid-column: span 4;
+  min-width: 0;
 }
 
-.dx-stats > div:first-child {
-  padding-left: 0;
-  border-left: 0;
+.dx-stats > div::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--grid-gutter) / -2);
+  width: 1px;
+  background: var(--line-faint);
+}
+
+/* Narrow: three to a row; the first figure of each row has no hairline. */
+.dx-stats > div:nth-child(3n + 1)::before {
+  content: none;
+}
+
+.dx-stats:where(:has(> :nth-child(4):last-child, > :nth-child(2):last-child)) > div {
+  grid-column: span 6;
+}
+
+/* Five under 64rem: three, then one third and two thirds, so row 2's
+   hairline falls under row 1's first one. Halves (6 + 6) put it under no
+   line at all, and the rules zig-zagged between the rows. */
+.dx-stats:where(:has(> :nth-child(5):last-child)) > div:nth-child(4) {
+  grid-column: span 4;
+}
+
+.dx-stats:where(:has(> :nth-child(5):last-child)) > div:nth-child(5) {
+  grid-column: span 8;
+}
+
+.dx-stats:where(:has(> :nth-child(4):last-child)) > div:nth-child(3)::before {
+  content: none;
+}
+
+.dx-stats:where(:has(> :nth-child(4):last-child)) > div:nth-child(4)::before {
+  content: "";
+}
+
+@container dxstats (width >= 64rem) {
+  .dx-stats > div,
+  .dx-stats:where(:has(> :nth-child(5):last-child)) > div:nth-child(n + 4) {
+    grid-column: span 2;
+  }
+  .dx-stats > div:nth-child(n + 2)::before,
+  .dx-stats:where(:has(> :nth-child(4):last-child)) > div:nth-child(3)::before {
+    content: "";
+  }
+  .dx-stats:where(:has(> :nth-child(5):last-child)) > div:nth-child(3),
+  .dx-stats:where(:has(> :nth-child(5):last-child)) > div:nth-child(4),
+  .dx-stats:where(:has(> :nth-child(4):last-child)) > div {
+    grid-column: span 3;
+  }
+  .dx-stats:where(:has(> :nth-child(3):last-child)) > div {
+    grid-column: span 4;
+  }
+  .dx-stats:where(:has(> :nth-child(2):last-child)) > div {
+    grid-column: span 6;
+  }
+  .dx-stats.dx-stats-rail > div {
+    grid-column: span 2;
+  }
+  .dx-stats.dx-stats-rail > div:first-child,
+  .dx-stats.dx-stats-rail > div:last-child {
+    grid-column: span 3;
+  }
+}
+
+/* Five figures (not the rail strip), from a 64rem page: equal thirds of
+   the face, the first seven tracks, and equal halves of the side, so the
+   middle hairline is the 7-line's gutter (x 812.2 at 1440) and no figure is
+   wider than its neighbour for no reason (2/2/3/3/2 gave the range and the
+   "of N" cells the room and made the strip's rhythm uneven). The strip is
+   its own query container, and a query cannot restyle its own container, so
+   this keys to the page (container eg, whose content box the strip spans). */
+@container eg (width >= 64rem) {
+  .dx-stats:where(:has(> :nth-child(5):last-child)):not(.dx-stats-rail) {
+    grid-template-columns: repeat(3, calc((var(--track-split) - 2 * var(--grid-gutter)) / 3)) repeat(2, minmax(0, 1fr));
+  }
+  .dx-stats:where(:has(> :nth-child(5):last-child)):not(.dx-stats-rail) > div:nth-child(n) {
+    grid-column: auto;
+  }
+  .dx-stats:where(:has(> :nth-child(5):last-child)):not(.dx-stats-rail) > div:nth-child(n + 2)::before {
+    content: "";
+  }
 }
 
 .dx-stats dt {
@@ -106,11 +244,27 @@
   color: var(--muted-dim);
 }
 
+/* A phone's third of a row is about 100px: the figure steps down with the
+   strip's own width (4.6cqi is 26px at a 565px strip, 15.8px at 343px), so a
+   value like "44.9 to 93.0" keeps to one line in it. */
 .dx-stats dd {
   margin: 0;
-  font: 600 1.625rem/1.1 var(--sans);
+  font: 600 clamp(0.9375rem, 4.6cqi, 1.625rem)/1.1 var(--sans);
   letter-spacing: -0.01em;
   color: var(--ink);
+}
+
+/* A strip of single figures, a count or a score and never a range or an
+   "of N" (the rail strip's 42, 39, 3, 1, 14; /state-of-compliance's 30, 69.8,
+   69.7, 1, 5), keeps a figure's size on a phone instead of stepping down
+   below the body copy above it (15.8px under a 17px lede): 24px from a 390
+   screen up to the 26px it holds wide. Only a compound figure ("44.9 to
+   93.0", "12 of 30") needs the step-down, and its <small> keys it out. */
+@container dxstats (width < 64rem) {
+  .dx-stats-rail dd,
+  .dx-stats:not(:has(dd small)) dd {
+    font-size: clamp(1.5rem, 5vw, 1.625rem);
+  }
 }
 
 .dx-stats dd small {
@@ -119,21 +273,6 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   color: var(--muted-dim);
-}
-
-@container dxstats (width < 34rem) {
-  .dx-stats > div {
-    padding-left: 0;
-    padding-right: var(--space-12);
-    border-left: 0;
-  }
-}
-
-/* A phone's two columns: a value like "44.9 to 93.0" keeps to one line. */
-@container dxstats (width < 22rem) {
-  .dx-stats dd {
-    font-size: 1.375rem;
-  }
 }
 
 /* --- Figure: title, drawing, source, the numbers ------------------------- */
@@ -179,7 +318,12 @@
   gap: 0 var(--space-16);
 }
 
+/* A source line or a footnote keeps a reading measure (spec rule d), never
+   the shell's width: a footnote under a full-width table ran 150 to 190
+   characters a line. 43.2em is 72 characters of Geist Mono (0.6em advance),
+   and an em does not change when the fallback face swaps out. */
 .dx-src {
+  max-width: 43.2em;
   margin: 0;
   padding-block: var(--space-12);
   font: 500 0.72rem/1.25rem var(--mono);
@@ -247,19 +391,40 @@
 /* --- Tables --------------------------------------------------------------- */
 
 /* The box scrolls sideways when a table is wider than its column; the page
-   never does. */
+   never does.
+
+   Material: an opaque reading instrument, never an outline over the paper
+   grid (the paper showed through every table). --mat-reading fills the
+   padding box, the shared top-lit --rim fills a 1px transparent border, and
+   --elev-1 lifts it. The rim is a border-box background rather than the
+   usual masked ::before because the box is a scroll container: an absolute
+   layer inside it would scroll away with the columns, and the overflow clip
+   would cut it. The head row is a raised band of --mat-instrument.
+   position: relative makes the box the containing block of what is
+   absolutely placed inside it (a cell's visually hidden "Not measured"), so
+   the scroll clip holds it: outside, those 1px spans sat at the table's far
+   columns and gave a tablet page 363px of sideways scroll. */
 .dx-table-box {
   container: dxtable / inline-size;
+  position: relative;
   min-width: 0;
   overflow-x: auto;
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line-faint);
+  background:
+    linear-gradient(var(--mat-reading), var(--mat-reading)) padding-box,
+    var(--rim) border-box;
+  box-shadow: var(--elev-1);
 }
 
 .dx-table {
   width: 100%;
   border-collapse: collapse;
   font: 400 0.875rem/1.45 var(--sans);
+}
+
+.dx-table thead {
+  background: var(--mat-instrument);
 }
 
 .dx-table th,
@@ -270,11 +435,14 @@
   vertical-align: baseline;
 }
 
+/* --muted, not --muted-dim: on the head band --muted-dim measures 4.38:1
+   dark (the lifted top) and 4.49:1 light (the raised foot); --muted holds
+   6.9:1 and 6.7:1. */
 .dx-table thead th {
   font: 500 0.6875rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted-dim);
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -302,10 +470,39 @@
   border-bottom: 0;
 }
 
+/* break-word, never anywhere: anywhere lets every character be a break, so
+   it drops a column's min-content to one glyph and the FIELD and TYPE columns
+   collapsed to 52-65px ("schemaVersio/n", "strin/g"). break-word only breaks
+   a token that cannot fit a line on its own, so a column keeps its longest
+   token's width. A row's own name (the row header) never wraps at all. */
 .dx-table code {
   font: 500 0.78rem/1.4 var(--mono);
   color: var(--ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+.dx-table tbody th code {
+  white-space: nowrap;
+}
+
+/* Declared columns. A table whose head cells carry data-span takes its
+   column widths from the twelve tracks (n of 12 of the table), fixed, so a
+   column sits at the same x in every table of a page family: /benchmarks'
+   hallmark and slop-eval columns, /specs' field and type columns. The widths
+   sit on the head cells, not a <colgroup>, so a head cell that steps out
+   (data-opt) takes its column with it. Fixed only at 64rem, where every
+   declared column is wider than its longest token; under it the table sizes
+   to its content again. */
+@container dxtable (width >= 64rem) {
+  .dx-table:has(> thead th[data-span]) {
+    table-layout: fixed;
+  }
+  .dx-table th[data-span="1"] { width: calc(100% / 12); }
+  .dx-table th[data-span="2"] { width: calc(100% * 2 / 12); }
+  .dx-table th[data-span="3"] { width: calc(100% * 3 / 12); }
+  .dx-table th[data-span="4"] { width: calc(100% * 4 / 12); }
+  .dx-table th[data-span="5"] { width: calc(100% * 5 / 12); }
+  .dx-table th[data-span="6"] { width: calc(100% * 6 / 12); }
 }
 
 .dx-toc .dx-num {
@@ -332,6 +529,151 @@
   .dx-table th,
   .dx-table td {
     padding-inline: var(--space-10);
+  }
+}
+
+/* Stacked rows. Under 36rem a table that carries data-stack stops being a
+   grid of columns and reads as a run of blocks, one per row, with a hairline
+   between, so nothing scrolls sideways or cuts a column at the edge (the
+   three-tools table ran 27px past its box on a phone). The head row leaves
+   the screen but stays in the document for assistive tech.
+     data-stack="fields": the row's name and its first cells share one mono
+       line (field and type), and the last cell, the description, runs under
+       them at full width.
+     data-stack="rows": the row header is the block's title, and each cell
+       is labelled by its column (data-label, set from the head) above its
+       value. The label's alternative text is empty (content: ... / ""), so a
+       screen reader, which already announces the column header, does not
+       hear it twice. */
+@container dxtable (width < 36rem) {
+  .dx-table[data-stack],
+  .dx-table[data-stack] > tbody,
+  .dx-table[data-stack] > tbody > tr {
+    display: block;
+  }
+  .dx-table[data-stack] > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .dx-table[data-stack] > tbody > tr {
+    padding: var(--space-12) var(--space-10);
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .dx-table[data-stack] > tbody > tr:last-child {
+    border-bottom: 0;
+  }
+  .dx-table[data-stack] > tbody > tr > :is(th, td) {
+    padding: 0;
+    border: 0;
+    text-align: left;
+  }
+  .dx-table[data-stack="fields"] > tbody > tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-4) var(--space-12);
+  }
+  .dx-table[data-stack="fields"] > tbody > tr > :last-child {
+    flex: 1 0 100%;
+  }
+  .dx-table[data-stack="fields"] > tbody > tr > td:empty {
+    display: none;
+  }
+  .dx-table[data-stack="fields"] code {
+    white-space: nowrap;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr > :is(th, td) {
+    display: block;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr > td {
+    margin-top: var(--space-10);
+  }
+  .dx-table[data-stack="rows"] > tbody > tr > td[data-label]::before {
+    content: attr(data-label) / "";
+    display: block;
+    margin-bottom: var(--space-2);
+    font: 500 0.6875rem/1rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+  /* A number (severity, points) is not a paragraph: it joins the block's
+     title line at its end, labelled inline ("SEVERITY 5"), instead of taking
+     a 40px labelled block of its own (a 12-rule table ran 2,700px). */
+  .dx-table[data-stack="rows"] > tbody > tr:has(> td[data-num]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-12);
+    align-items: baseline;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr:has(> td[data-num]) > :is(th, td) {
+    grid-column: 1 / -1;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr:has(> td[data-num]) > th {
+    grid-area: 1 / 1;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr > td[data-num] {
+    grid-area: 1 / 2;
+    margin-top: 0;
+    text-align: right;
+  }
+  .dx-table[data-stack="rows"] > tbody > tr > td[data-num][data-label]::before {
+    display: inline;
+    margin: 0 var(--space-6) 0 0;
+  }
+
+  /* data-stack="lead": the row's name and its first cell share the title
+     line (a check's id and its question), and every other cell is one line,
+     its label in a fixed gutter on the left and its value beside it. Three
+     lines for a three-way comparison, not seven. */
+  .dx-table[data-stack="lead"] > tbody > tr > th,
+  .dx-table[data-stack="lead"] > tbody > tr > th + td {
+    display: inline;
+    margin-inline-end: var(--space-8);
+  }
+  .dx-table[data-stack="lead"] > tbody > tr > th + td {
+    color: var(--ink);
+  }
+  .dx-table[data-stack="lead"] > tbody > tr > th + td ~ td {
+    position: relative;
+    display: block;
+    margin-top: var(--space-6);
+    padding-inline-start: 6rem;
+  }
+  .dx-table[data-stack="lead"] > tbody > tr > th + td ~ td[data-label]::before {
+    content: attr(data-label) / "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 5.5rem;
+    font: 500 0.6875rem/calc(0.875rem * 1.45) var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+}
+
+/* The required marker in a field table: a caps token in a hairline ring,
+   the field's third mono token when the table stacks. */
+.dx-req {
+  display: inline-block;
+  padding: 1px var(--space-6);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 600 0.625rem/1.4 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@media (forced-colors: active) {
+  .dx-req {
+    border: 1px solid CanvasText;
   }
 }
 
@@ -740,8 +1082,7 @@
 }
 
 .dx-tag {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--line);
@@ -755,16 +1096,136 @@
   border: 1px dashed var(--line-strong);
 }
 
+/* A tag is one token: it never wraps ("held over from" over "2026-08-31"
+   made a 37px box and a row 100px tall beside 62px neighbours). Where a
+   table is a phone's width the held-over tag says it in short ("held ·
+   08-31"); the full wording stays in the document for assistive tech, and
+   the short form is hidden from it, so it is announced once. */
+.dx-tag {
+  white-space: nowrap;
+}
+
+.dx-tag-short {
+  display: none;
+}
+
+@container dxtable (width < 36rem) {
+  .dx-tag-short {
+    display: inline;
+  }
+  .dx-tag-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 /* --- The ranking --------------------------------------------------------- */
+
+/* Fixed columns, declared on the head cells, so a column holds one x in
+   every ranking on a page: the ten tables on /frameworks put BY CATEGORY
+   anywhere from 849 to 1084 when each sized itself. The site column takes
+   what is left. At 64rem the side columns take the shell's tracks: a peer
+   table's score and profile fill the last three columns and their gutters
+   (the site ends on the 9-line); the leaderboard's score, profile and four
+   counts fill the last five (the site ends on the 7-line, the split). 100cqi
+   is the box's content width, the table's own. Each count is its own column,
+   right-aligned in tabular figures under its own label: one interpolated
+   "17 . 8 . 1 . 13" cell made the separators zig-zag row to row. */
+.dx-rank {
+  table-layout: fixed;
+}
 
 .dx-rank td,
 .dx-rank th {
   vertical-align: middle;
 }
 
+.dx-rank .dx-col-n {
+  width: 3.75rem;
+}
+
+.dx-rank .dx-col-score {
+  width: 8.5rem;
+}
+
+.dx-rank .dx-col-cat {
+  width: 8rem;
+}
+
+.dx-rank .dx-col-count {
+  width: 3.5rem;
+  padding-left: var(--space-6);
+}
+
+/* A table that mixes seed categories names each row's group in its own
+   column, inside the site's share of the width, so the score and profile
+   columns stay where every other table on the page has them. */
+.dx-rank .dx-col-group {
+  width: 7.5rem;
+}
+
+.dx-rank .dx-rank-group {
+  color: var(--muted);
+}
+
+/* Under 36rem the group column steps out (data-opt) and the group joins the
+   meta line instead; at any width exactly one of the two is displayed, so it
+   is announced once. */
+.dx-rank-meta-group {
+  display: none;
+}
+
+/* At 64rem every ranking's site column ends on the 7-line, the split the
+   page's header and lists use, and a hairline draws it: the score and the
+   profile (and the leaderboard's counts) fill the last five tracks. The
+   /frameworks tables ended the site on the 9-line, so a name ending near
+   x 380 sat 670px from its grade with nothing between, and the 7-line was
+   nowhere in ten tables. */
+@container dxtable (width >= 64rem) {
+  .dx-rank .dx-col-cat {
+    width: calc((100cqi - 11 * var(--grid-gutter)) * 5 / 12 + 5 * var(--grid-gutter) - 8.5rem);
+  }
+  .dx-rank:has(.dx-col-count) .dx-col-cat {
+    width: calc((100cqi - 11 * var(--grid-gutter)) * 5 / 12 + 5 * var(--grid-gutter) - 22.5rem);
+  }
+  .dx-rank :is(.dx-col-score, .dx-rank-score) {
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+/* A row band under the pointer or the keyboard, so the eye can carry a name
+   across to its score. Instant, not animated: it marks the row, it does not
+   move. The self-scored row keeps its tint under the band. */
+@media (hover: hover) and (pointer: fine) {
+  .dx-rank tbody tr:hover > * {
+    background-color: var(--surface-raised);
+  }
+}
+
+.dx-rank tbody tr:focus-within > * {
+  background-color: var(--surface-raised);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-rank tbody tr[data-self]:hover > * {
+    background-color: color-mix(in srgb, var(--signal-access) 6%, var(--surface-raised));
+  }
+}
+
+.dx-rank tbody tr[data-self]:focus-within > * {
+  background-color: color-mix(in srgb, var(--signal-access) 6%, var(--surface-raised));
+}
+
 .dx-rank .dx-rank-n {
-  width: 3rem;
   color: var(--muted-dim);
+}
+
+.dx-rank .dx-rank-count {
+  padding-left: var(--space-6);
 }
 
 .dx-rank-site a {
@@ -773,6 +1234,8 @@
      2px step made 23.5px, half a pixel short (axe target-size on /leaderboard,
      2026-10-01). The padding now derives from the target, not a spacing step. */
   padding-block: max(var(--space-2), calc((1.5rem - 1.3em) / 2));
+  /* and at least 24px wide: a one-letter name ("X") was an 11px target. */
+  min-width: var(--space-24);
   font: 600 0.9375rem/1.3 var(--sans);
   color: var(--ink);
   text-decoration: none;
@@ -796,6 +1259,13 @@
   color: var(--muted-dim);
 }
 
+/* A host is one long token ("carbondesignsystem.com"): in a phone's fixed
+   site column it breaks rather than run into the score column. */
+.dx-rank-meta > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 /* Grade and score share a cell: the chip, then the number, the change under
    the number. */
 .dx-rank-sg {
@@ -815,9 +1285,18 @@
 }
 
 @container dxtable (width < 36rem) {
-  .dx-rank .dx-rank-n {
-    width: 2rem;
+  .dx-rank .dx-col-n {
+    width: 2.75rem;
+  }
+  .dx-rank .dx-rank-n,
+  .dx-rank .dx-col-n {
     padding-right: 0;
+  }
+  .dx-rank .dx-col-score {
+    width: 7.5rem;
+  }
+  .dx-rank-meta-group {
+    display: inline;
   }
 }
 
@@ -825,17 +1304,65 @@
   background: color-mix(in srgb, var(--signal-access) 6%, transparent);
 }
 
-.dx-rank .dx-rank-checks {
-  color: var(--muted);
-}
-
 /* --- Definitions ------------------------------------------------------------ */
 
+/* On the shell's twelve tracks with the one gutter, never auto-fit at a 40px
+   gap: 4 x 265 drifted 6, 12 and 18px off the 3-span module lines, and six
+   items fell 4 + 2 with two orphans. Four (or eight) definitions take 3
+   columns each, any other count 4 (three to a row: six is a clean 3 x 2),
+   two to a row under 64rem and one under 36rem. In the reading column beside
+   a rail (nine tracks wide) they take 3 of its 9, which is 3 shell columns.
+   Each item spans two rows of the list (subgrid), so the terms of a row share
+   one line and their descriptions start on the next one, however many lines
+   a long term wraps to. */
 .dx-defs {
+  container: dxdefs / inline-size;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: var(--space-24) var(--space-40);
+  grid-template-columns: var(--grid-12);
+  column-gap: var(--grid-gutter);
+  row-gap: var(--space-24);
   margin: var(--space-24) 0 var(--space-8);
+}
+
+.dx-defs > div {
+  grid-column: full-start / full-end;
+  min-width: 0;
+}
+
+@supports (grid-template-rows: subgrid) {
+  .dx-defs > div {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    row-gap: var(--space-6);
+  }
+  .dx-defs > div > dd {
+    margin-top: 0;
+  }
+}
+
+@container dxdefs (width >= 36rem) {
+  .dx-defs > div {
+    grid-column: span 6;
+  }
+}
+
+@container dxdefs (width >= 64rem) {
+  .dx-defs > div {
+    grid-column: span 4;
+  }
+  .dx-defs:where(:has(> :nth-child(4):last-child, > :nth-child(8):last-child)) > div {
+    grid-column: span 3;
+  }
+}
+
+@container dxpage (width >= 64rem) {
+  .dx-flow .dx-defs {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+  .dx-flow .dx-defs > div {
+    grid-column: span 3;
+  }
 }
 
 .dx-defs dt {
@@ -916,13 +1443,23 @@
   }
 }
 
-/* Wide: the navigation is a rail beside the reading column and stays in view. */
-@container dxpage (width >= 62rem) {
+/* Wide: the navigation is a rail beside the reading column and stays in view.
+   Both sit on the shell's tracks, the rail on the first three and the reading
+   column on the last nine, so the column starts on a module line, the same
+   line the readout strip above divides on (.dx-stats-rail), instead of a
+   12.5rem rail and a 48px gap that put it on no line at all. */
+@container dxpage (width >= 64rem) {
   .dx-with-toc {
     display: grid;
-    grid-template-columns: 12.5rem minmax(0, 1fr);
-    gap: var(--space-48);
+    grid-template-columns: var(--grid-12);
+    column-gap: var(--grid-gutter);
     align-items: start;
+  }
+  .dx-with-toc > .dx-toc {
+    grid-column: full-start / span 3;
+  }
+  .dx-with-toc > .dx-flow {
+    grid-column: span 9 / full-end;
   }
   .dx-toc {
     position: sticky;
@@ -1036,6 +1573,12 @@
   color: var(--muted-dim);
 }
 
+/* The light well (#f3f3f5) holds --muted-dim at 4.41:1, under the text
+   floor; the comments step up to --muted there (6.6:1). Dark keeps 4.8:1. */
+[data-theme="light"] .dx-f-c {
+  color: var(--muted);
+}
+
 @container dxformula (width < 40rem) {
   .dx-formula {
     padding: var(--space-16);
@@ -1049,8 +1592,9 @@
   }
 }
 
+/* The scale spans the band rows under it: a 40rem bar ended 292px short of
+   the 932px rows it labels, a strip narrower than the surface beneath it. */
 .dx-scale {
-  max-width: 40rem;
   margin: 0 0 var(--space-24);
 }
 
@@ -1100,13 +1644,25 @@
   }
 }
 
+/* A rule stated on its own: a reading surface the width of the column it
+   sits in (a 40rem slab over a 932px table was a third surface width with no
+   relation to either), in the reading material and the shared top-lit rim
+   (the same border-box layering as the table box), with no signal stripe.
+   The measure stays on the text inside it. */
 .dx-callout {
-  max-width: 40rem;
   margin: 0 0 var(--space-20);
   padding: var(--space-16) var(--space-20);
-  border-left: 2px solid var(--signal-access);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--lv-well);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(var(--mat-reading), var(--mat-reading)) padding-box,
+    var(--rim) border-box;
+  box-shadow: var(--elev-1);
+}
+
+.dx-callout > p {
+  max-width: 40rem;
+  margin: 0;
   font-size: 1rem;
   line-height: 1.6;
   color: var(--ink);
@@ -1260,18 +1816,66 @@
   margin-top: var(--space-20);
 }
 
-/* A long list of short checks reads in two columns where there is room. */
-.dx-checks-cols {
-  container: dxcols / inline-size;
+/* A long list of short checks. The id sits in a fixed column at every width,
+   so a row's label starts on one line whether it carries one id or three
+   (a three-id row put "v08, v09, v10" on a line of its own, and the text
+   edge jumped row to row); a long run of ids wraps inside its column. At
+   64rem the rows run in two columns on the 6|6 module (the page's own
+   width, container eg), so twenty rows fill the shell in ten instead of
+   running down its left half. */
+/* The id column is as wide as the page's longest id run (--dx-id-len, in
+   characters, set by the page): Geist Mono advances 0.6em and the id is set
+   at 0.84em of the row, so the run fits on one line ("x01, x02, x03" wrapped
+   in a fixed 4.5rem) and every label starts at one x. A narrower fallback
+   mono only leaves slack. */
+.dx-checks-cols .dx-check-head {
+  display: grid;
+  grid-template-columns: calc(var(--dx-id-len, 9) * 0.6 * 0.84em) minmax(0, 1fr);
+  column-gap: var(--space-12);
 }
 
-@container dxpage (width >= 50rem) {
+.dx-checks-cols code {
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+/* These lists are secondary to the comparison tables above them, so their
+   labels read in the tables' body tone, not brighter: the ids stay in ink
+   and lead each row; a source line steps down again. */
+.dx-checks-cols .dx-check-item,
+.dx-checks-split .dx-check-item {
+  color: var(--muted);
+}
+
+.dx-checks-split .dx-check-how {
+  color: var(--muted-dim);
+}
+
+/* A token a line must not split: an ISO date, a CSS custom property
+   (lib/data/unbroken). */
+.dx-nowrap {
+  white-space: nowrap;
+}
+
+@container eg (width >= 64rem) {
   .dx-checks-cols {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--space-32);
+    column-gap: var(--grid-gutter);
   }
-  .dx-checks-cols > li:nth-last-child(2) {
+  .dx-checks-cols > li:nth-last-child(2):nth-child(odd) {
     border-bottom: 0;
+  }
+}
+
+/* A list of findings with a source each: at 64rem the finding takes the
+   first seven tracks and its source the last five, so the row fills the
+   shell and the sources read down the 7-line (--track-split needs a box with
+   no inline padding or border, which the rows are). */
+@container eg (width >= 64rem) {
+  .dx-checks-split > li {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+    column-gap: var(--grid-gutter);
+    align-items: baseline;
   }
 }
 
@@ -1311,6 +1915,12 @@ html[data-motion="paused"] .dx-toc a {
   .dx-grade,
   .dx-tag {
     border: 1px solid CanvasText;
+  }
+  /* The rim is a background, which forced colors drop: the border draws the
+     edge instead. */
+  .dx-table-box,
+  .dx-callout {
+    border-color: CanvasText;
   }
 }
 

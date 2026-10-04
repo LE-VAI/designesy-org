@@ -2,22 +2,40 @@
    Plain .css imported in pricing/page.tsx — Next.js code-splits
    this to the /pricing route only. */
 
+/* One row of equal columns, one per tier, on the site's grid gutter. The old
+   repeat(4, 1fr) held three tiers, so the cards stopped a full column short of
+   the desk above them (733px of a 961px desk at 1024), and the 860px step put
+   the third tier alone on a second row. Auto columns follow the tier count;
+   with three tiers and the 16px gutter each card is exactly a 4-column span of
+   the 12-column shell (382.67px at 1440), the bento's module. Under 860px
+   (the old two-up step) the tiers stack: three-up there left 224px cards. */
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-fine-85);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gutter);
 }
 
-@media (max-width: 860px) {
+/* Three shared rows, head / bullets / call to action: each card spans them
+   and lays its own three parts on them (subgrid), so the three heads, the
+   three first bullets and the three buttons share a top across the row.
+   Each card sized its own rows, so Enterprise's three-line sub-line put its
+   bullet list 20px below the other two. Stacked on a phone, each card takes
+   three rows of its own. Inside a card the parts are 24px apart; between
+   stacked cards the grid's 16px gutter holds. */
+@media (min-width: 860px) {
   .pricing-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: none;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 560px) {
-  .pricing-grid {
-    grid-template-columns: 1fr;
-  }
+.pricing-grid > .pricing-card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--space-24);
 }
 
 .pricing-card-head {
@@ -63,14 +81,21 @@
   line-height: 1.5;
 }
 
+/* The header reads as one group and the list as the next: price to sub-line
+   about 11px (it was 4px, so the two crowded each other), sub-line to list
+   24px (the card's row gap). */
+.pricing-card-price + .pricing-card-sub {
+  margin-top: var(--space-fine-40);
+}
+
 .pricing-card-bullets {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+  align-self: start;
   gap: var(--space-8);
-  flex: 1 0 auto;
 }
 
 .pricing-card-bullets li {
@@ -95,8 +120,7 @@
 }
 
 .pricing-card-cta {
-  margin-top: auto;
-  padding-top: var(--space-8);
+  align-self: start;
 }
 
 .pricing-cta-link {
@@ -132,27 +156,58 @@
   outline-offset: 2px;
 }
 
-.pricing-desk {
-  background: var(--surface);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
-  padding: var(--space-24) var(--space-fine-135);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-55);
-}
-
-.pricing-desk-lede {
-  /* 66ch, matching the site's shared prose measure. Without it this ran 123
-     characters -- the widest line on any of the 40 measured routes. */
-  max-width: 66ch;
-  font-size: 1rem;
+/* One primary per row of tiers, matching the ranking the cards declare: the
+   featured tier keeps the fill, Continuity is a secondary (raised surface and
+   a rim) and the Enterprise mailto a tertiary (text and an arrow). Three
+   identical filled buttons on one row is the stock pricing table. */
+.pricing-card:not(.pricing-card--primary) .pricing-cta-link {
+  background: var(--surface-raised);
   color: var(--ink);
-  line-height: 1.5;
-  text-wrap: pretty;
-  letter-spacing: -0.01em;
+  box-shadow: inset 0 0 0 1px var(--line-strong), var(--specular);
 }
 
+@media (hover: hover) {
+  .pricing-card:not(.pricing-card--primary) .pricing-cta-link:hover {
+    background: var(--surface-lifted);
+  }
+}
+
+.pricing-card .pricing-cta-link[href^="mailto:"] {
+  gap: var(--space-8);
+  padding-inline: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.pricing-card .pricing-cta-link[href^="mailto:"]::after {
+  content: "→" / "";
+  color: var(--signal-text);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .pricing-card .pricing-cta-link[href^="mailto:"]:hover {
+    background: none;
+    color: var(--signal-text);
+  }
+
+  .pricing-card .pricing-cta-link[href^="mailto:"]:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card .pricing-cta-link[href^="mailto:"]::after {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .pricing-card .pricing-cta-link[href^="mailto:"]::after {
+  transition: none;
+}
+
+/* The closing note under the comparison. (The desk paragraph that restated
+   the lede between the header and the tiers is gone.) */
 .pricing-desk-note {
   font-size: 0.875rem;
   color: var(--muted);
@@ -174,13 +229,30 @@
   }
 }
 
+/* The FAQ is one reading surface: the rows' --mat-reading fill, --elev-1, and
+   the top-lit rim on a masked layer in place of the flat line border. */
 .pricing-faq {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid var(--line-faint);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--elev-1);
+}
+
+.pricing-faq::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 .pricing-faq-item {
@@ -195,6 +267,10 @@
 .pricing-faq-q {
   list-style: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
   padding: var(--space-16) var(--space-fine-115);
   font-size: 0.95rem;
   font-weight: 600;
@@ -206,6 +282,46 @@
 
 .pricing-faq-q::-webkit-details-marker {
   display: none;
+}
+
+/* The disclosure glyph at the row's end: a chevron that turns from pointing
+   right to pointing down as the answer opens (transform only, 150ms). With
+   the marker hidden and nothing in its place, nothing said these rows open. */
+.pricing-faq-q::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline-end: var(--space-4);
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+.pricing-faq-item[open] .pricing-faq-q::after {
+  transform: rotate(45deg);
+}
+
+.pricing-faq-q:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-faq-q::after {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .pricing-faq-q::after {
+  transition: none;
+}
+
+@media (forced-colors: active) {
+  .pricing-faq-q::after {
+    border-color: CanvasText;
+  }
 }
 
 @media (hover: hover) {
@@ -224,29 +340,75 @@
   color: var(--muted);
   line-height: 1.6;
   text-wrap: pretty;
-  max-width: 580px;
+  /* The site's prose measure, in place of a 580px cap. */
+  max-width: 66ch;
 }
 
 @media (max-width: 720px) {
   .pricing-card-price-value {
     font-size: 1.65rem;
   }
-  .pricing-desk {
-    padding: var(--space-20) var(--space-fine-110);
+}
+
+/* At 64rem of section the table hangs on the 7-line: the Feature column ends
+   where a full-start / split item ends, and the three tiers share the 5-column
+   side equally. Auto layout sized the tiers by content, 130/238/260px, so the
+   marks formed an uneven lattice. The column width is --track-split's formula
+   on 100cqi, the section (the table spans it): a table cell treats a calc()
+   that mixes a percentage with lengths as auto, so var(--track-split) itself
+   would leave four equal columns. */
+/* The table's surface: the FAQ's reading recipe (--mat-reading, --elev-1,
+   the masked top-lit rim, --radius), in place of the table's own 6% line.
+   A table cannot carry the rim's ::before (it would become a cell), so the
+   wrapper carries it, and it is the query container (it spans the section).
+   It scrolls sideways if a narrow phone ever runs out of room. */
+.pricing-compare-wrap {
+  container: pricing-compare / inline-size;
+  position: relative;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.pricing-compare-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+@container pricing-compare (width >= 64rem) {
+  .pricing-compare {
+    table-layout: fixed;
+  }
+
+  .pricing-compare th:first-child {
+    width: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
+  }
+
+  /* The seam the table hangs on, drawn: features in the face, tiers behind it. */
+  .pricing-compare :is(th, td):nth-child(2) {
+    border-left: 1px solid var(--line-faint);
   }
 }
 
 .pricing-compare {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
-  overflow: hidden;
   font-size: 0.875rem;
 }
 
+/* The head row a step up from the surface it sits on. */
 .pricing-compare thead {
-  background: var(--surface);
+  background: var(--surface-raised);
 }
 
 .pricing-compare th {
@@ -324,5 +486,90 @@
   }
   .pricing-faq-a {
     padding: 0 var(--space-16) var(--space-16);
+  }
+}
+
+/* Independence firewall: one reading card in two panes, on the shared
+   face/side split (globals.css .definition-split: the face is the first
+   seven tracks from the 67rem viewport, the side's 1px --line-faint border is
+   the divider on the 7-line, and below that the side stacks under a
+   hairline). The statement is the face; what is not for sale is the side's
+   key rows. It was the page's fourth recipe: inline styles with a flat 1px
+   line, a 135deg gradient, an inner light and a resting 3px brand stripe
+   down its left edge (coloured light on a reading surface at rest, which
+   the material system reserves for state), and its paragraph ended at x 747
+   in a 1180px box. Now it takes the tiers' and FAQ's reading recipe, and
+   the mono eyebrow alone names it. */
+.pricing-firewall {
+  position: relative;
+  margin: 0;
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.pricing-firewall::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.pricing-firewall .definition-face {
+  padding: var(--space-24) var(--space-28);
+}
+
+.pricing-firewall .definition-side {
+  padding: var(--space-24) var(--space-28);
+}
+
+.pricing-firewall-label {
+  margin: 0 0 var(--space-12);
+  font: 700 0.7rem/1rem var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--signal-text);
+}
+
+.pricing-firewall-text {
+  max-width: 66ch;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.pricing-firewall-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .pricing-firewall .definition-face,
+  .pricing-firewall .definition-side {
+    padding: var(--space-20);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .pricing-firewall::before,
+  .pricing-compare-wrap::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .pricing-firewall,
+  .pricing-compare-wrap {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
   }
 }

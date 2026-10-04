@@ -262,12 +262,18 @@ export function CompareForm({ initialA, initialB, registry }: { initialA: string
         name="Compare"
         registry={registry}
         face="diff"
-        sides={{ a: hostA || 'site A', b: hostB || 'site B' }}
+        // The column heads before a run name each side's role, as the pair
+        // bar's placeholders do ('Your site', 'A reference'); the letter chip
+        // already says which side is which.
+        sides={{ a: hostA || 'Your site', b: hostB || 'Reference' }}
         diffValues={diffValues}
         phase={phase}
         target={hostA && hostB ? `${hostA} and ${hostB}` : ''}
         outcomes={outcomes}
         verdictNode={verdictNode}
+        // The diff replaces the verdict when a run lands, so the side keeps
+        // its reading guide at rest instead of an empty grade row.
+        restGrade={false}
         error={
           <>
             <p><b>{hostA && hostB ? `${hostA} and ${hostB}` : 'These URLs'}</b> could not be compared.</p>

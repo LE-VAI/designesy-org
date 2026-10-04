@@ -213,8 +213,6 @@ export default function RootLayout({
       <body>
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <CuelumeBinder />
-        <BackButton />
-        <DirectorDock />
         <DefinitionCopyEnhancer />
         <EffectEnhancer />
         <ScrambleEnhancer />
@@ -231,6 +229,13 @@ export default function RootLayout({
             blobs, no AI sparkles), and the dots floated over body text. Motion
             now lives only in instruments that show the product working. */}
         {children}
+        {/* The floating pills (Back, Ask the Studio) are position: fixed, so
+            their place here is invisible, but it is their place in the Tab
+            order. Rendered before the page they took the first two stops,
+            ahead of "Skip to content"; after it, the skip link leads and the
+            pills come last, where a floating control belongs. */}
+        <BackButton />
+        <DirectorDock />
         <Analytics />
         <SpeedInsights />
       </body>

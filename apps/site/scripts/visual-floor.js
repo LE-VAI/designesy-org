@@ -213,6 +213,84 @@ const PROBE = `(() => {
   return JSON.stringify(out);
 })()`;
 
+/**
+ * The homepage demo's own finding flags (lib/inspect-sequence).
+ *
+ * WHY THIS EXISTS
+ * The flag that reads "v06 muted text 3.8 : 1 WARN" was itself under AA: dark,
+ * the fail flag was white on a 92% red mix at 3.24:1; light, the warn flag was
+ * dark ink on a deepened amber at 4.01:1 (judged 2026-10-03). axe never saw it:
+ * the flags sit at opacity 0 until the reader scrolls to step three, and the
+ * light theme is only checked when someone switches to it. So this measures
+ * the COMPUTED pairs directly, in BOTH themes, whatever the scroll position:
+ * every text run in each flag against the flag's fill, the run's own opacity
+ * chain included (an 0.85 status word was a second failure hiding inside the
+ * first). The flags' text is 10-11px, so the bar is 4.5:1.
+ *
+ * Passed to page.evaluate as a function, so it carries no backtick hazard.
+ */
+function demoFlagProbe() {
+  const root = document.querySelector('.inspect');
+  if (!root) return [];
+  const parse = (s) => {
+    let m = s.match(/^rgba?\(([^)]+)\)/);
+    if (m) {
+      const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+      return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+    }
+    m = s.match(/^color\(srgb ([^)]+)\)/);
+    if (m) {
+      const p = m[1].split(/[\s/]+/).filter(Boolean).map(Number);
+      return [p[0] * 255, p[1] * 255, p[2] * 255, p.length > 3 ? p[3] : 1];
+    }
+    return null;
+  };
+  const lin = (c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  const over = (fg, a, bg) => [0, 1, 2].map((i) => fg[i] * a + bg[i] * (1 - a));
+  const html = document.documentElement;
+  const theme0 = html.getAttribute('data-theme');
+  const out = [];
+  try {
+    for (const theme of ['dark', 'light']) {
+      html.setAttribute('data-theme', theme);
+      const paper = parse(getComputedStyle(root.querySelector('.mp')).backgroundColor) || [0, 0, 0, 1];
+      for (const flag of root.querySelectorAll('.ix-flag')) {
+        const fill = parse(getComputedStyle(flag).backgroundColor);
+        if (!fill) {
+          out.push({ theme, flag: flag.className, error: 'unparsed fill ' + getComputedStyle(flag).backgroundColor });
+          continue;
+        }
+        const bg = over(fill, fill[3], paper);
+        let worst = null;
+        for (const el of [flag, ...flag.querySelectorAll('*')]) {
+          const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+          if (!own || getComputedStyle(el).display === 'none') continue;
+          const fg = parse(getComputedStyle(el).color);
+          if (!fg) continue;
+          // The flag's own opacity is its show/hide; anything below it dims text.
+          let a = fg[3];
+          for (let p = el; p && p !== flag; p = p.parentElement) a *= parseFloat(getComputedStyle(p).opacity);
+          const ink = over(fg, a, bg);
+          const l1 = lum(ink), l2 = lum(bg);
+          const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+          if (!worst || ratio < worst.ratio) worst = { ratio: Math.round(ratio * 100) / 100, text: el.textContent.trim().slice(0, 24) };
+        }
+        out.push({ theme, flag: flag.className, fill: bg.map(Math.round), ...worst });
+      }
+    }
+  } finally {
+    if (theme0 === null) html.removeAttribute('data-theme');
+    else html.setAttribute('data-theme', theme0);
+  }
+  return out;
+}
+
+const DEMO_FLAG_MIN = 4.5;
+
 // NOTE: there is no runtime guard for backticks inside PROBE, deliberately.
 //
 // One was written and then removed: injecting an unbalanced backtick makes this
@@ -356,6 +434,21 @@ async function main() {
         }
 
         raw = await page.evaluate(PROBE);
+        if (route === '/') {
+          const flags = await page.evaluate(demoFlagProbe);
+          if (!flags.length) {
+            findings.push({ route, kind: 'demo-flag-contrast', detail: 'no .ix-flag found -- the probe measured nothing' });
+          }
+          for (const f of flags) {
+            if (f.error || !(f.ratio >= DEMO_FLAG_MIN)) {
+              findings.push({
+                route,
+                kind: 'demo-flag-contrast',
+                detail: f.error || `${f.theme} .${f.flag.replace(/ /g, '.')} ${f.ratio}:1 < ${DEMO_FLAG_MIN} ("${f.text}" on rgb(${f.fill}))`,
+              });
+            }
+          }
+        }
       } catch (e) {
         findings.push({ route, kind: 'load', detail: String(e).slice(0, 160) });
         await page.close();

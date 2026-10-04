@@ -42,19 +42,23 @@ export function CopyRow({
     }
   }, [text]);
 
+  // The wrapper carries the list item role and the button keeps its own, as
+  // in ToggleRow: role="listitem" on the button itself replaced its button
+  // role, so assistive tech announced a list item, not a copy control.
   return (
-    <button
-      className={`row${copied ? ' is-copied' : ''}`}
-      type="button"
-      role="listitem"
-      onClick={copy}
-      aria-label={copied ? `${label} copied` : `Copy ${label}`}
-    >
-      {index && <span className="row-index">{index}</span>}
-      {children}
-      <span className="row-copy-badge" aria-hidden="true">
-        {copied ? 'Copied' : 'Copy'}
-      </span>
-    </button>
+    <div role="listitem">
+      <button
+        className={`row${copied ? ' is-copied' : ''}`}
+        type="button"
+        onClick={copy}
+        aria-label={copied ? `${label} copied` : `Copy ${label}`}
+      >
+        {index && <span className="row-index">{index}</span>}
+        {children}
+        <span className="row-copy-badge" aria-hidden="true">
+          {copied ? 'Copied' : 'Copy'}
+        </span>
+      </button>
+    </div>
   );
 }

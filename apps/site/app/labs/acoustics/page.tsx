@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './acoustics.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
-import { SoundToggle } from '../../lib/sound-toggle';
+import { SoundSwitch } from '../../lib/preference-switch';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { ToggleRow } from '../../lib/toggle-row';
@@ -12,6 +12,8 @@ import { pageMeta } from '../../lib/site-meta';
 import { acousticTokens } from '../../lib/acoustic-tokens';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { TokenFormatCard } from '../../acoustic-tokens/token-format';
+import { AdoptedTally } from '../adopted-tally';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics',
@@ -122,15 +124,25 @@ export default function AcousticsLabPage() {
             happen: no ambient bed, no focus sounds, no randomization.
           </p>
 
-          <div className="poise-actions" style={{ marginBottom: '1.5rem' }}>
-            <SoundToggle />
-            <span className="surface-note" style={{ marginLeft: '0.75rem' }}>
+          <div className="cue-pref">
+            <SoundSwitch />
+            <p className="cue-pref-note">
               Preference stored under <code>designesy:sound</code>. Defaults off
               under reduced motion.
-            </span>
+            </p>
           </div>
 
           <div className="cue-grid">
+            <div className="cue-rack-bar">
+              <p className="cue-rack-title">
+                Cues <span className="cue-rack-count">· {acousticTokens.tokens.length}</span>
+              </p>
+              <p className="cue-rack-state">
+                <i className="cue-led" aria-hidden="true" />
+                <span className="cue-rack-on">Sound on</span>
+                <span className="cue-rack-off">Sound off</span>
+              </p>
+            </div>
             {acousticTokens.tokens.map((token, i) => (
               <div
                 key={token.token}
@@ -149,6 +161,12 @@ export default function AcousticsLabPage() {
                 <span className="cue-cell-role">{token.interaction_role}</span>
               </div>
             ))}
+            <div className="cue-key">
+              <span className="cue-cell-num">Key</span>
+              <code className="cue-cell-token">--cue:token</code>
+              <span className="cue-cell-cue">Cuelume cue</span>
+              <span className="cue-cell-role">Interaction role</span>
+            </div>
           </div>
         </section>
 
@@ -207,22 +225,29 @@ export default function AcousticsLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Portable contract</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Mapping rules adopted into design system contract v0.3.0:
-          </p>
-          <div className="row-stack" role="list">
-            {acousticTokens.mapping_rules.map((rule, i) => (
-              <ToggleRow
-                key={i}
-                index={String(i + 1).padStart(2, '0')}
-              >
-                <span className="row-body">
-                  <span className="row-title">Rule {String(i + 1).padStart(2, '0')}</span>
-                  <span className="row-meta">{rule}</span>
-                </span>
-              </ToggleRow>
-            ))}
-          </div>
+          <AdoptedTally
+            total={acousticTokens.mapping_rules.length}
+            lede={
+              <>
+                Mapping rules adopted into design system contract v0.3.0. Check
+                a rule off as your surface adopts it.
+              </>
+            }
+          >
+            <div className="row-stack" role="list">
+              {acousticTokens.mapping_rules.map((rule, i) => (
+                <ToggleRow
+                  key={i}
+                  index={String(i + 1).padStart(2, '0')}
+                >
+                  <span className="row-body">
+                    <span className="row-title">Rule {String(i + 1).padStart(2, '0')}</span>
+                    <span className="row-meta">{rule}</span>
+                  </span>
+                </ToggleRow>
+              ))}
+            </div>
+          </AdoptedTally>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts/design-system">
@@ -354,7 +379,7 @@ export default function AcousticsLabPage() {
             items={[
               {
                 title:
-                  'Cue grid renders on /labs/acoustics with SoundToggle control',
+                  'Cue grid renders on /labs/acoustics with the Sound switch',
               },
               {
                 title:
@@ -386,24 +411,7 @@ export default function AcousticsLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Standards context</h2>
-          <div className="definition">
-            <p className="definition-label">W3C DTCG 2025.10</p>
-            <p>
-              {acousticTokens.standards_context.w3c_dtgc_2025_10}
-            </p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Proposed type</p>
-            <p>
-              {acousticTokens.standards_context.proposed_type}
-            </p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Reference format</p>
-            <p>
-              <code>{acousticTokens.standards_context.reference_format}</code>
-            </p>
-          </div>
+          <TokenFormatCard />
         </section>
 
         <div className="status-note">

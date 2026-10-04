@@ -7,6 +7,7 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { openIndex } from '../../lib/open-index';
+import '../docs.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'MCP server',
@@ -209,6 +210,17 @@ const CLIENT_CONFIGS = [
   },
 ];
 
+const RELATED = [
+  { href: '/docs', title: 'Docs · orientation', meta: 'Mission, principles, architecture, public voice' },
+  { href: '/open', title: 'Open design intelligence', meta: 'Human index and machine feed of portable packages' },
+  { href: '/open.json', title: 'open.json', meta: 'Machine catalog: the same data the MCP server serves' },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: CONTRACT_VERSION + ': the contract behind designesy_contract',
+  },
+];
+
 export default function McpDocsPage() {
   return (
     <>
@@ -254,15 +266,18 @@ export default function McpDocsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
+          {/* Left-aligned like every other card: the copy starts 20px in, on
+              the card's own edge, and the link sits under it at the same
+              edge (centred, the copy started 274px further in than the
+              definitions above it). */}
           <div
-            className="surface-card"
+            className="surface-card mcp-card"
             style={{
-              padding: '1.25rem 1.5rem',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '1rem',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              gap: 'var(--space-8)',
             }}
           >
             <div>
@@ -296,20 +311,11 @@ export default function McpDocsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Conformance</h2>
-          <div
-            style={{
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div
-              className="surface-card"
-              style={{
-                padding: '1rem 1.25rem',
-                flex: '1 1 240px',
-              }}
-            >
+          {/* A 12-column row (docs.css): three 4-column cards whose label,
+              value and note share rows (the cards' subgrid), so the three
+              values sit on one baseline. */}
+          <div className="g12 mcp-conformance">
+            <div className="surface-card mcp-card">
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 WCAG 2.2 AA
               </p>
@@ -327,13 +333,7 @@ export default function McpDocsPage() {
                 axe-core 4.13.0 · wcag22aa · pinned to current npm latest (verified 2026-08-30 via registry check)
               </p>
             </div>
-            <div
-              className="surface-card"
-              style={{
-                padding: '1rem 1.25rem',
-                flex: '1 1 240px',
-              }}
-            >
+            <div className="surface-card mcp-card">
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 DTCG 2025.10
               </p>
@@ -351,13 +351,7 @@ export default function McpDocsPage() {
                 /export/dtcg · 9/10 checks pass · 1 WARN (custom types non-standard, namespaced designesy.* per t07) · verified 2026-08-30
               </p>
             </div>
-            <div
-              className="surface-card"
-              style={{
-                padding: '1rem 1.25rem',
-                flex: '1 1 240px',
-              }}
-            >
+            <div className="surface-card mcp-card">
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 Contract score
               </p>
@@ -389,50 +383,37 @@ export default function McpDocsPage() {
             composite report. One accessibility framework provides the WCAG
             2.2 Playwright + axe-core script template. All tools return JSON.
           </p>
-          <div className="row-stack" role="list">
+          {/* Each tool's args and source are data, so they sit in the row's
+              side pane (globals, "THE ROW CONTRACT"): two mono lines on the
+              7-line, never a wrapped pair in the face with a blank line
+              between them. A source that names two endpoints links each. */}
+          <div className="row-stack mcp-tools" role="list">
             {TOOLS.map((tool, i) => (
-              <div
-                key={tool.name}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
-              >
+              <div key={tool.name} className="row" role="listitem">
                 <span className="row-index">
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span className="row-body" style={{ width: '100%' }}>
+                <span className="row-body">
                   <span className="row-title">
-                    {tool.name}{' '}
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: tool.kind === 'Executable' ? 'var(--accent)' : 'var(--muted)',
-                        marginLeft: '0.5rem',
-                      }}
-                    >
-                      {tool.kind}
-                    </span>
+                    {tool.name}
+                    <span className="mcp-kind">{tool.kind}</span>
                   </span>
                   <span className="row-meta">{tool.desc}</span>
-                  <span
-                    style={{
-                      display: 'flex',
-                      gap: '1.5rem',
-                      flexWrap: 'wrap',
-                      marginTop: '0.5rem',
-                      fontSize: '0.8rem',
-                      fontFamily: 'var(--font-mono, monospace)',
-                    }}
-                  >
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">
+                    <span className="mcp-key">args</span>
+                    <span>{tool.args}</span>
+                  </span>
+                  <span className="row-side-line">
+                    <span className="mcp-key">source</span>
                     <span>
-                      <strong>args:</strong> {tool.args}
-                    </span>
-                    <span>
-                      <strong>source:</strong>{' '}
-                      <a href={tool.source}>{tool.source}</a>
+                      {tool.source.split(' + ').map((path, j) => (
+                        <span key={path}>
+                          {j > 0 && ' + '}
+                          <a href={path}>{path}</a>
+                        </span>
+                      ))}
                     </span>
                   </span>
                 </span>
@@ -448,39 +429,18 @@ export default function McpDocsPage() {
             Streamable HTTP natively: just point them at the endpoint. For
             stdio-only clients, use the mcp-remote bridge.
           </p>
-          <div className="doctrine-cols" style={{ flexDirection: 'column', gap: '2rem' }}>
+          <div className="g12 config-cols">
             {CLIENT_CONFIGS.map((cfg) => (
               <div key={cfg.client}>
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.5rem' }}>
-                  {cfg.client}
-                </h3>
-                <p
-                  style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--muted)',
-                    fontFamily: 'var(--font-mono, monospace)',
-                    marginBottom: '0.75rem',
-                    whiteSpace: 'pre-wrap',
-                    // A Windows config path is one 45-character word.
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  {cfg.file}
-                </p>
-                <pre
-                  style={{
-                    background: 'var(--surface, #0a0a0c)',
-                    border: '1px solid var(--border, rgba(255,255,255,0.08))',
-                    borderRadius: '0.5rem',
-                    padding: '1rem 1.25rem',
-                    overflowX: 'auto',
-                    fontSize: '0.82rem',
-                    fontFamily: 'var(--font-mono, monospace)',
-                    lineHeight: 1.6,
-                    color: 'var(--ink, #f5f5f7)',
-                  }}
-                >
-                  {cfg.config}
+                <h3 className="mcp-client">{cfg.client}</h3>
+                {/* One path per line (docs.css, .mcp-paths). */}
+                <ul className="mcp-paths" aria-label={`${cfg.client} config file`}>
+                  {cfg.file.split('\n').map((path) => (
+                    <li key={path}>{path}</li>
+                  ))}
+                </ul>
+                <pre className="mcp-pre">
+                  <code data-scroll-region={`${cfg.client} config`}>{cfg.config}</code>
                 </pre>
                 <p
                   style={{
@@ -537,21 +497,11 @@ export default function McpDocsPage() {
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Verify the endpoint is live with a single curl:
           </p>
-          <pre
-            style={{
-              background: 'var(--surface, #0a0a0c)',
-              border: '1px solid var(--border, rgba(255,255,255,0.08))',
-              borderRadius: '0.5rem',
-              padding: '1rem 1.25rem',
-              overflowX: 'auto',
-              fontSize: '0.82rem',
-              fontFamily: 'var(--font-mono, monospace)',
-              lineHeight: 1.6,
-              color: 'var(--ink, #f5f5f7)',
-            }}
-          >{`curl -X POST ${ENDPOINT} \\
+          <pre className="mcp-pre">
+            <code data-scroll-region="curl test command">{`curl -X POST ${ENDPOINT} \\
   -H "Content-Type: application/json" \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</code>
+          </pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
             The response is a JSON-RPC 2.0 message listing all seventeen tools
             with their schemas.
@@ -560,71 +510,29 @@ export default function McpDocsPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
+          {/* Link rows show where they go: the route in the side pane, with
+              the arrow at its end. */}
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/docs"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Docs · orientation</span>
-                  <span className="row-meta">
-                    Mission, principles, architecture, public voice
+            {RELATED.map((item, i) => (
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/open"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Open design intelligence</span>
-                  <span className="row-meta">
-                    Human index and machine feed of portable packages
+                  <span className="row-side">
+                    <span className="row-side-line">{item.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/open.json"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">open.json</span>
-                  <span className="row-meta">
-                    Machine catalog: the same data the MCP server serves
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract</span>
-                  <span className="row-meta">
-                    {CONTRACT_VERSION}: the contract behind designesy_contract
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 

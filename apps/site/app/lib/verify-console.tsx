@@ -37,7 +37,9 @@ import { logLabel } from './check-labels';
  * the log at its last lines, the counters at their totals. Reduced motion
  * removes the animations and that state is what renders. The negative delay
  * starts the loop inside the hold, so first paint (and every screenshot,
- * preview, and crawler) shows the complete verdict, not an empty grid.
+ * preview, and crawler) shows the complete verdict, not an empty grid. The
+ * one exception is the verdict light (.vc-glow): coloured light means a state,
+ * so its static style is off and reduced motion shows the verdict unlit.
  */
 
 type Status = 'pass' | 'warn' | 'fail' | 'manual' | 'ran';
@@ -53,6 +55,9 @@ const PH = {
 };
 const START_AT = 0.63; // first paint lands at the start of the hold: the verdict is on screen
 const RESOLVE_AT = 0.34; // a cell resolves a third of the way through its step
+const GLOW_IN_S = 0.15; // the verdict light's entry, seconds (material law: 150 ms, under the 200 ms reduced-motion allowance)
+const GLOW_HOLD_S = 1.2; // it holds while the result is news (material law 3)
+const GLOW_OUT_S = 0.6; // then decays to the rest floor, long before the verdict leaves
 const LOG_ROWS = 5;
 const LOG_LH = 1.45; // rem, one log line
 const DIGIT_LH = 1.25; // em, one counter digit line
@@ -181,6 +186,19 @@ function choreography(rows: Row[], cells: Cell[]) {
       `${pc(PH.fadeOut)},100%{transform:translateX(101%)}}`
   );
 
+  // The verdict light under the window (.vc-glow): it reaches full on the
+  // frame the verdict does, so the claim's underline, the verdict and the
+  // light land on one beat. Then it behaves as news, not decoration: 1.2 s
+  // of hold and a 600 ms decay, and the verdict stays on screen unlit for
+  // the rest of the hold. Opacity of a pre-rendered shadow layer only; the
+  // shadow itself never animates.
+  const glowHold = PH.verdictIn + GLOW_HOLD_S / LOOP_S;
+  css.push(
+    `@keyframes vc-glow{0%,${pc(PH.verdictIn - GLOW_IN_S / LOOP_S)}{opacity:0;animation-timing-function:${EASE_OUT}}` +
+      `${pc(PH.verdictIn)},${pc(glowHold)}{opacity:1;animation-timing-function:${EASE_IN_OUT}}` +
+      `${pc(glowHold + GLOW_OUT_S / LOOP_S)},100%{opacity:0}}`
+  );
+
   return { css: css.join('\n'), tally, logEnd: logY(n + 1) };
 }
 
@@ -257,6 +275,7 @@ export function VerifyConsole({
     <figure className="vc" data-reconciled={reconciled ? 'yes' : 'no'}>
       <style>{css}</style>
       <div className="vc-window" style={windowVars} role="img" aria-label={summary}>
+        <span className="vc-glow" aria-hidden="true" />
         <div className="vc-bar" aria-hidden="true">
           <span className="vc-bar-app">
             <span className="vc-bar-mark">

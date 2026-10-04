@@ -35,6 +35,13 @@ const GROUPS = [...new Set(COHORT.map((s) => s.category))]
 
 const idOf = (c: string) => `fw-${c.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
+// A group of one site is a row, not an instrument: the one-site groups share
+// a table with a group column (and keep their anchors, on their rows), so the
+// page is not seven frames around single rows.
+const MULTI = GROUPS.filter((g) => g.sites.length > 1);
+const SINGLE = GROUPS.filter((g) => g.sites.length === 1);
+const SINGLE_SITES = SINGLE.flatMap((g) => g.sites).sort((a, b) => a.rank - b.rank);
+
 export default function FrameworksIndexPage() {
   return (
     <>
@@ -71,7 +78,7 @@ export default function FrameworksIndexPage() {
           </ol>
         </nav>
 
-        {GROUPS.map((g) => (
+        {MULTI.map((g) => (
           <section className="eg-section" id={idOf(g.name)} key={g.name} aria-labelledby={`${idOf(g.name)}-h`}>
             <div className="eg-section-head">
               <div>
@@ -86,6 +93,27 @@ export default function FrameworksIndexPage() {
             <SiteTable sites={g.sites} caption={`${g.name}: ${g.sites.length} scored sites, by cohort rank.`} />
           </section>
         ))}
+
+        {SINGLE.length > 0 && (
+          <section className="eg-section" id="fw-one-site" aria-labelledby="fw-one-site-h">
+            <div className="eg-section-head">
+              <div>
+                <h2 className="eg-h2" id="fw-one-site-h">
+                  One site each
+                </h2>
+                <p className="eg-section-sub">
+                  {SINGLE.length} groups · {SINGLE.map((g) => g.name).join(', ')}
+                </p>
+              </div>
+            </div>
+            <SiteTable
+              sites={SINGLE_SITES}
+              group
+              rowId={(s) => idOf(s.category)}
+              caption={`Groups of one: ${SINGLE_SITES.length} scored sites, each the only site in its group, by cohort rank.`}
+            />
+          </section>
+        )}
 
         <p className="dx-src">
           Rank is the site&apos;s place among all {COHORT.length}. By category: one column per category, heaviest first (

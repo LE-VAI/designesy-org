@@ -5,6 +5,7 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { lockScroll } from './scroll-lock';
+import { pushLayer, yieldToModal } from './overlay-stack';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { useTheme } from './use-theme';
@@ -32,14 +33,27 @@ import { useMotionPreference } from './use-motion-pref';
  *   - Groups render once each, in the order of their best match, and arrow
  *     keys walk rows in exactly the visual order (the old list grouped only
  *     adjacent rows, so "Machine, Verify, Machine" repeated headings).
- *   - No open animation: the site's motion contract keeps keyboard-initiated
- *     actions still. The list height eases between result sets (120 ms) so the
- *     panel grows downward from a fixed top edge instead of jumping.
- *   - Focus stays in the input while open (Tab is held), Escape and click-away
- *     close from anywhere, and focus returns to the trigger.
+ *   - Open and close are a utility layer's state change, nothing more: the
+ *     panel scales .98 -> 1 with its opacity in 150 ms and leaves in 120 ms;
+ *     reduced motion (or the site's motion pause) makes both instant. The list
+ *     height eases between result sets (120 ms) so the panel grows downward
+ *     from a fixed top edge instead of jumping.
+ *   - Focus stays in the input while open (Tab is held, and a press anywhere
+ *     else in the panel does not take focus), click-away closes, and the page
+ *     behind is inert.
+ *
+ * LAYERING (lib/overlay-stack, 2026-10-03)
+ *   The palette is one layer on the shared stack, on the modal z tier above
+ *   the topbar. Escape closes the top layer only, and focus returns to where
+ *   it was, or the trigger. Ctrl+K or "/" with the phone menu open closes the
+ *   menu first, then opens here with focus in the field.
  *
  * Accessibility: combobox + listbox with aria-activedescendant; groups are
- * role="group" labelled by their heading; reduced motion drops the height ease.
+ * role="group" labelled by their heading; a polite status region announces
+ * the settled result count (debounced 300 ms) without repeating the active
+ * option, which aria-activedescendant already speaks; with no results the
+ * list is not a listbox (an empty listbox fails aria-required-children).
+ * Reduced motion drops the height ease and the open scale.
  */
 
 type SearchItem = {
@@ -52,13 +66,16 @@ type SearchItem = {
 
 const INDEX: SearchItem[] = [
   // Verify
-  { title: 'Score a site', href: '/score', group: 'Verify', keywords: 'verify audit grade checks engine test url', meta: `${ENGINE_CHECK_COUNT}-check engine` },
-  { title: 'Drift radar', href: '/drift', group: 'Verify', keywords: 'drift ai generated ui token fabrication variance off contract', meta: '12-check drift' },
-  { title: 'AI Readiness score', href: '/readiness', group: 'Verify', keywords: 'ai readiness machine readable llms.txt agent.json mcp design.md maturity', meta: '10-check readiness' },
-  { title: 'Guardrails', href: '/guardrails', group: 'Verify', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint enforce', meta: '5-check emitter' },
-  { title: 'Drift monitor', href: '/monitor', group: 'Verify', keywords: 'monitor drift continuous governance watch cadence snapshot delta trend alert regression', meta: '10-check monitor' },
-  { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: '8-check diff' },
-  { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report synthesis composite score drift readiness unified grade holistic assessment', meta: 'synthesis capstone' },
+  { title: 'Score a site', href: '/score', group: 'Verify', keywords: 'verify audit grade checks engine test url composite four engines contract conformance contrast typography spacing motion accessibility score my site', meta: `${ENGINE_CHECK_COUNT}-check engine` },
+  { title: 'Score your Bolt site', href: '/score/bolt', group: 'Verify', keywords: 'bolt bolt.new stackblitz ai built site app score grade', meta: 'Bolt' },
+  { title: 'Score your Lovable site', href: '/score/lovable', group: 'Verify', keywords: 'lovable lovable.dev ai built site app score grade', meta: 'Lovable' },
+  { title: 'Score your v0 site', href: '/score/v0', group: 'Verify', keywords: 'v0 v0.dev vercel ai generated ui site score grade', meta: 'v0' },
+  { title: 'Drift radar', href: '/drift', group: 'Verify', keywords: 'drift ai generated ui token fabrication value variance off contract patterns compiled css failure modes deterministic radar', meta: '12-check drift' },
+  { title: 'AI Readiness score', href: '/readiness', group: 'Verify', keywords: 'ai readiness machine readable tokens llms.txt agent.json mcp endpoint design.md sitemap robots.txt social meta maturity axis', meta: '10-check readiness' },
+  { title: 'Guardrails', href: '/guardrails', group: 'Verify', keywords: 'guardrails frozen build contract coding agents emit generate dtcg tokens stylelint config agents.md component contract anti-patterns design.md lint enforce', meta: '5-check emitter' },
+  { title: 'Drift monitor', href: '/monitor', group: 'Verify', keywords: 'monitor drift over time continuous governance watch cadence re-score snapshot baseline delta trend email alert regression', meta: '10-check monitor' },
+  { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff two design systems urls side by side tokens added removed renamed value changed scale structure contrast drift score delta', meta: '8-check diff' },
+  { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report design intelligence synthesis composite score drift readiness unified one grade holistic assessment capstone', meta: 'synthesis capstone' },
   { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
   { title: 'Framework evaluations', href: '/frameworks', group: 'Verify', keywords: 'framework evaluation article per site breakdown category score grade dedicated page deep dive', meta: '30 evaluations' },
   { title: 'State of Design Compliance', href: '/state-of-compliance', group: 'Verify', keywords: 'annual report compliance cohort material 3 framework rankings independence', meta: 'annual report' },
@@ -81,10 +98,22 @@ const INDEX: SearchItem[] = [
   { title: 'Monitor', href: '/contracts/monitor', group: 'Contract', keywords: 'monitor drift continuous governance watch cadence snapshot delta trend alert', meta: 'v0.1.0' },
   { title: 'Compare', href: '/contracts/compare', group: 'Contract', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: 'v0.1.0' },
   { title: 'Report', href: '/contracts/report', group: 'Contract', keywords: 'report synthesis composite score drift readiness unified grade holistic', meta: 'v0.1.0' },
+  { title: 'Components contract', href: '/contracts/components', group: 'Contract', keywords: 'components states tokens bindings accessibility obligations machine readable button input', meta: 'component states' },
   { title: 'Acoustic tokens', href: '/acoustic-tokens', group: 'Contract', keywords: 'sound cues audio cue', meta: '19 cues' },
   // Learn
   { title: 'Docs', href: '/docs', group: 'Learn', keywords: 'orientation mission principles architecture', meta: '' },
   { title: 'Learn', href: '/learn', group: 'Learn', keywords: 'tutorials guides education', meta: '' },
+  { title: 'What is design verification?', href: '/learn/what-is-design-verification', group: 'Learn', keywords: 'definition explainer automated evaluation live site published contract', meta: 'Article' },
+  { title: 'Design verification vs linting vs visual regression', href: '/learn/design-verification-vs-linting-vs-visual-regression', group: 'Learn', keywords: 'lint linting stylelint visual regression snapshot baseline diff token drift comparison', meta: 'Article' },
+  { title: 'Why we built a public design score', href: '/learn/why-we-built-a-public-design-score', group: 'Learn', keywords: 'public score honesty transparency same checks same thresholds', meta: 'Article' },
+  // Blog: each of these routes redirects to its post on dev.to, so none is
+  // prerendered as a page and Pagefind cannot index them; this list is how
+  // Find reaches them.
+  { title: 'Blog', href: '/blog', group: 'Learn', keywords: 'blog posts field reports findings articles dev.to', meta: 'on dev.to' },
+  { title: "Fintech sites that can't pass a design contract", href: '/blog/scoring-11-fintech', group: 'Learn', keywords: 'blog fintech finance banking payments money klarna robinhood scoring 11 sites field report', meta: 'Blog, on dev.to' },
+  { title: 'Dev tools score worse than the design awards', href: '/blog/scoring-16-devtools', group: 'Learn', keywords: 'blog dev tools developer tools devtools scoring 16 more sites field report', meta: 'Blog, on dev.to' },
+  { title: 'We scored 30 real websites', href: '/blog/scoring-30-sites', group: 'Learn', keywords: 'blog scoring 30 sites websites cohort field report', meta: 'Blog, on dev.to' },
+  { title: 'We scored 57 sites. None passed.', href: '/blog/scoring-57-synthesis', group: 'Learn', keywords: 'blog scoring 57 sites synthesis cohort none passed field report', meta: 'Blog, on dev.to' },
   { title: 'Open', href: '/open', group: 'Learn', keywords: 'portable intelligence index feed open.json', meta: 'open.json' },
   { title: 'Open handoff', href: '/open/handoff', group: 'Learn', keywords: 'handoff agent ingest', meta: '' },
   { title: 'Graph', href: '/graph', group: 'Learn', keywords: 'relationships map nodes', meta: '' },
@@ -92,10 +121,20 @@ const INDEX: SearchItem[] = [
   { title: 'Labs', href: '/labs', group: 'Labs', keywords: 'experiments research poise takt cadence', meta: '' },
   { title: 'Takt lab', href: '/labs/takt', group: 'Labs', keywords: 'interface feel experiments touch target hit area button size tap feel spacing', meta: '' },
   { title: 'Cadence lab', href: '/labs/cadence', group: 'Labs', keywords: 'text rhythm typography line-height font type', meta: '' },
+  { title: 'Poise lab', href: '/labs/poise', group: 'Labs', keywords: 'poise interaction restraint wordmark press sound haptics reduced motion lab one', meta: 'Lab One' },
+  { title: 'Orb', href: '/labs/poise/orb', group: 'Labs', keywords: 'orb webgl webgl2 shader sphere embed parameters export blue', meta: 'WebGL embed' },
+  { title: 'Acoustics lab', href: '/labs/acoustics', group: 'Labs', keywords: 'acoustics sound cues audio interaction sound token system engine lab four', meta: 'Lab Four' },
   // Kits
   { title: 'Kits', href: '/kits', group: 'Kits', keywords: 'instruction packages agents people', meta: '' },
   { title: 'Design Review kit', href: '/kits/design-review', group: 'Kits', keywords: 'review critique eight dimensions rubric', meta: 'Kit One' },
   { title: 'Review', href: '/review', group: 'Kits', keywords: 'field checks dimensions surface', meta: '' },
+  { title: 'designesy.org review', href: '/review/designesy-org', group: 'Kits', keywords: 'review site self review contract labs public', meta: 'Review' },
+  { title: 'Keyboard path', href: '/review/keyboard', group: 'Kits', keywords: 'review keyboard skip link tab order focus visible activation site wide', meta: 'Review' },
+  { title: 'Poise field check', href: '/review/poise', group: 'Kits', keywords: 'review poise lab one design review eight dimensions holds tensions corrections', meta: 'Review' },
+  { title: 'Poise keyboard path', href: '/review/poise/keyboard', group: 'Kits', keywords: 'review poise keyboard tab order focus visible activation', meta: 'Review' },
+  { title: 'Takt field check', href: '/review/takt', group: 'Kits', keywords: 'review takt lab two interface feel design review eight dimensions', meta: 'Review' },
+  { title: 'Cadence field check', href: '/review/cadence', group: 'Kits', keywords: 'review cadence lab three typography rhythm design review eight dimensions', meta: 'Review' },
+  { title: 'Acoustics field check', href: '/review/acoustics', group: 'Kits', keywords: 'review acoustics lab four sound cues design review eight dimensions', meta: 'Review' },
   // Machine
   { title: 'open.json', href: '/open.json', group: 'Machine', keywords: 'catalog packages machine feed', meta: 'JSON' },
   { title: 'llms.txt', href: '/llms.txt', group: 'Machine', keywords: 'agent brief llm', meta: 'text' },
@@ -106,6 +145,10 @@ const INDEX: SearchItem[] = [
   // Company
   { title: 'Work', href: '/work', group: 'Company', keywords: 'case studies tile continuity', meta: '' },
   { title: 'Continuity case study', href: '/work/continuity', group: 'Company', keywords: 'continuity case study work artifact live', meta: 'case study' },
+  { title: 'Compile case study', href: '/work/compile', group: 'Company', keywords: 'compile principle compiler plain language contracts case study work', meta: 'case study' },
+  { title: 'Tile case study', href: '/work/tile', group: 'Company', keywords: 'tile interactive series composer case study work', meta: 'case study' },
+  { title: 'lovable.dev case study', href: '/work/lovable-dev', group: 'Company', keywords: 'lovable A on arrival ai built site snapshot case study work', meta: 'case study' },
+  { title: 'designesy.org case study', href: '/work/designesy-org', group: 'Company', keywords: 'self score D to A before after publisher case study work', meta: 'case study' },
   { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost price how much plans continuity free subscribe upgrade tiers', meta: '' },
   { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current monitoring alerts scheduled scans recurring paid subscription cost price how much', meta: 'waitlist' },
   { title: 'Badge', href: '/badge', group: 'Company', keywords: 'verified badge embed svg', meta: '' },
@@ -142,7 +185,8 @@ function normalize(s: string) {
 
 type PagefindResultData = {
   url: string;
-  meta?: { title?: string };
+  // href: the real route of a wrapped JSON endpoint (data-pagefind-meta).
+  meta?: { title?: string; href?: string };
   excerpt?: string;
 };
 
@@ -165,6 +209,10 @@ type PagefindApi = {
 };
 
 let pagefindPromise: Promise<PagefindApi | null> | null = null;
+// When the last load failed (offline, or no index under `next dev`). A failure
+// is not cached for the session: after a short pause the next search retries.
+let pagefindFailedAt = 0;
+const PAGEFIND_RETRY_MS = 10_000;
 
 const FLAGSHIP_HREFS = new Set([
   '/score',
@@ -177,12 +225,17 @@ const FLAGSHIP_HREFS = new Set([
 function loadPagefind(): Promise<PagefindApi | null> {
   if (typeof window === 'undefined') return Promise.resolve(null);
   if (!pagefindPromise) {
-    // Load the Pagefind stub at RUNTIME only. We use a non-literal specifier
-    // (a const variable, not a string literal) so neither TypeScript nor the
-    // Turbopack/webpack bundler tries to resolve or bundle the module at build
-    // time — the import resolves against the deployed static chunk only when
-    // the user actually searches. Zero bundle cost; dev falls back to the
-    // curated INDEX.
+    // Inside the pause after a failed load, do not re-request on every keystroke.
+    if (Date.now() - pagefindFailedAt < PAGEFIND_RETRY_MS) return Promise.resolve(null);
+    // Load the Pagefind stub at RUNTIME only, as a native browser import(). A
+    // non-literal specifier alone is NOT enough: webpack still parses it, finds
+    // no static prefix to resolve, and compiles it into an empty context module
+    // that always throws "Cannot find module". That shipped: full-text search
+    // never loaded in production, and the catch below hid it. The magic
+    // comments tell webpack (next build) and Turbopack (next dev --turbopack)
+    // to leave the call alone; scripts/check-search-coverage.js fails the build
+    // if the emitted chunk ever stops carrying a native import() here. Zero
+    // bundle cost; dev falls back to the curated INDEX.
     //
     // NOTE: Do NOT use `new Function()` here — that requires the CSP directive
     // 'unsafe-eval' (distinct from 'wasm-unsafe-eval'). A non-literal import()
@@ -204,7 +257,7 @@ function loadPagefind(): Promise<PagefindApi | null> {
       .catch(() => 'noversion')
       .then((version) => {
         const pagefindUrl = `${PAGEFIND_DIR}/pagefind.js?v=${version}`;
-        return import(/* @vite-ignore */ pagefindUrl);
+        return import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pagefindUrl);
       })
       .then(async (mod) => {
         const pf = (mod as { default?: PagefindApi }).default ?? (mod as unknown as PagefindApi);
@@ -217,7 +270,13 @@ function loadPagefind(): Promise<PagefindApi | null> {
         });
         return pf;
       })
-      .catch(() => null);
+      .catch(() => {
+        // Drop the failed promise so a later open can retry (a transient
+        // offline moment must not disable full-text search for the session).
+        pagefindPromise = null;
+        pagefindFailedAt = Date.now();
+        return null;
+      });
   }
   return pagefindPromise;
 }
@@ -495,6 +554,22 @@ function marked(title: string, q: string): ReactNode {
   );
 }
 
+/** The panel's exit (globals.css cmdk-out runs the same 120 ms). */
+const CLOSE_MS = 120;
+
+/**
+ * Open and close are instant under reduced motion and under the site's motion
+ * pause. The pause freezes every CSS animation on its first frame
+ * (animation-play-state), which would hold the panel at opacity 0, so CSS
+ * drops the animations there too; this keeps the exit from waiting on one.
+ */
+function exitIsInstant(): boolean {
+  return (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    document.documentElement.getAttribute('data-motion') === 'paused'
+  );
+}
+
 export function CommandPalette() {
   const router = useRouter();
   const modLabel = useModifierLabel();
@@ -507,10 +582,19 @@ export function CommandPalette() {
   const [mentions, setMentions] = useState<SearchItem[]>([]);
   const [searching, setSearching] = useState(false);
   const [listH, setListH] = useState<number | null>(null);
+  // Closing: the panel stays mounted, inert, for its 120 ms exit.
+  const [closing, setClosing] = useState(false);
+  // What the polite status region says (the settled result count).
+  const [announce, setAnnounce] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  // Focus candidates of a layer that closed so this one could open (the
+  // phone menu): where focus would have gone had that layer closed alone.
+  const yieldedFocusRef = useRef<() => (HTMLElement | null | undefined)[]>(() => []);
+  const closeTimerRef = useRef<number | undefined>(undefined);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const keyNavRef = useRef(false);
   const searchSeq = useRef(0);
@@ -541,16 +625,38 @@ export function CommandPalette() {
         if (seq === searchSeq.current) setSearching(false);
         return;
       }
-      const res = await pf.debouncedSearch(text, { debounceTimeoutMs: 140 });
+      // A rejected search (a shard request failing on a flaky network, or a
+      // stale index after a deploy) settles as "no result", so the searching
+      // dot clears instead of pulsing for the rest of the session.
+      const res = await pf.debouncedSearch(text, { debounceTimeoutMs: 140 }).catch(() => null);
       if (cancelled || seq !== searchSeq.current || !res) {
         if (!res && seq === searchSeq.current) setSearching(false);
         return;
       }
-      const rows = await Promise.all(
-        res.results.slice(0, 8).map(async (hit) => {
-          const d = await hit.data();
-          const href = cleanHref(d.url);
-          if (!href) return null;
+      // Up to eight distinct, navigable rows. Each data() call fetches a
+      // fragment, so hits are opened only while rows are still needed: every
+      // batch is as large as the slots left, and a hit cleanHref drops (an
+      // internal page) or one repeating an href costs a refill, never a row.
+      // Slicing to eight BEFORE filtering let junk fill every slot, and loaded
+      // fragments that were then thrown away.
+      const MENTION_LIMIT = 8;
+      const hits = res.results.slice(0, MENTION_LIMIT * 4);
+      const rows: SearchItem[] = [];
+      const seen = new Set<string>();
+      for (let i = 0; i < hits.length && rows.length < MENTION_LIMIT; ) {
+        const batch = hits.slice(i, i + MENTION_LIMIT - rows.length);
+        i += batch.length;
+        // A fragment that fails to load costs its row, not the whole group.
+        const loaded = await Promise.all(batch.map((hit) => hit.data().catch(() => null)));
+        if (cancelled || seq !== searchSeq.current) return;
+        for (const d of loaded) {
+          if (!d) continue;
+          // A wrapped JSON endpoint names its real route in meta; its staged
+          // file is not a route (scripts/postbuild-pagefind.js).
+          const own = d.meta?.href;
+          const href = own && /^\/(?!\/)/.test(own) ? own : cleanHref(d.url);
+          if (!href || seen.has(href)) continue;
+          seen.add(href);
           const title = d.meta?.title?.trim() || titleFromHref(href);
           const meta = d.excerpt
             ? d.excerpt
@@ -559,11 +665,10 @@ export function CommandPalette() {
                 .trim()
                 .slice(0, 110)
             : '';
-          return { title, href, group: groupForHref(href), keywords: '', meta } as SearchItem;
-        })
-      );
-      if (cancelled || seq !== searchSeq.current) return;
-      setMentions(rows.filter(Boolean) as SearchItem[]);
+          rows.push({ title, href, group: groupForHref(href), keywords: '', meta });
+        }
+      }
+      setMentions(rows);
       setSearching(false);
     })();
     return () => {
@@ -571,20 +676,42 @@ export function CommandPalette() {
     };
   }, [text, facet]);
 
-  const close = useCallback(() => {
-    setOpen(false);
+  // Clears what the panel showed once it is gone (not during its exit, so
+  // the leaving panel does not flash back to the zero state).
+  const finishClose = useCallback(() => {
+    setClosing(false);
     setQuery('');
     setMentions([]);
-    setSearching(false);
     setListH(null);
-    searchSeq.current += 1;
-    const back = returnFocusRef.current ?? triggerRef.current;
-    back?.focus?.();
   }, []);
 
+  // Focus goes back through the overlay stack when the layer pops (below),
+  // after the page behind is no longer inert.
+  const close = useCallback(() => {
+    setOpen(false);
+    setSearching(false);
+    searchSeq.current += 1;
+    window.clearTimeout(closeTimerRef.current);
+    if (exitIsInstant()) {
+      finishClose();
+      return;
+    }
+    setClosing(true);
+    closeTimerRef.current = window.setTimeout(finishClose, CLOSE_MS);
+  }, [finishClose]);
+
   const openPalette = useCallback(() => {
-    returnFocusRef.current = (document.activeElement as HTMLElement | null) ?? null;
+    // Body is not a place to return to (Safari does not focus a clicked
+    // button); null falls through to the trigger.
+    const a = document.activeElement;
+    returnFocusRef.current = a instanceof HTMLElement && a !== document.body ? a : null;
+    // The phone menu closes first: the palette never opens under it.
+    yieldedFocusRef.current = yieldToModal();
+    window.clearTimeout(closeTimerRef.current);
+    setClosing(false);
     setQuery('');
+    setMentions([]);
+    setListH(null);
     setOpen(true);
   }, []);
 
@@ -642,33 +769,42 @@ export function CommandPalette() {
     }
 
     const out: Group[] = [];
-    const target = facet ? null : urlTarget(query);
-    if (target) {
-      out.push({
-        name: 'Score',
-        rows: [
-          {
-            key: 'act-score',
-            title: `Score ${target}`,
-            meta: `Run the ${ENGINE_CHECK_COUNT} checks against contract ${CONTRACT_VERSION}`,
-            href: `/score?url=${encodeURIComponent(target)}`,
-            icon: 'score',
-            hint: 'Enter',
-          },
-        ],
-      });
-    }
-
     const ranked = INDEX.filter((i) => (facet ? i.group === facet : true))
       .map((item) => ({ item, s: text ? rankItem(item, text) : 1 }))
       .filter((r) => r.s > 0)
       .sort((a, b) => b.s - a.s || GROUP_ORDER.indexOf(a.item.group) - GROUP_ORDER.indexOf(b.item.group))
       .slice(0, 14);
+
+    // "llms.txt" and "open.json" are shaped like hostnames, but they name pages
+    // this site serves. When the query IS a page (its title or its path), that
+    // page leads and Enter opens it; scoring the string as a URL comes second.
+    const target = facet ? null : urlTarget(query);
+    const exactPage = ranked.some(
+      (r) => r.item.title.toLowerCase() === text || r.item.href.toLowerCase() === `/${text}`,
+    );
+    const scoreGroup: Group | null = target
+      ? {
+          name: 'Score',
+          rows: [
+            {
+              key: 'act-score',
+              title: `Score ${target}`,
+              meta: `Run the ${ENGINE_CHECK_COUNT} checks against contract ${CONTRACT_VERSION}`,
+              href: `/score?url=${encodeURIComponent(target)}`,
+              icon: 'score',
+              hint: exactPage ? undefined : 'Enter',
+            },
+          ],
+        }
+      : null;
+    if (scoreGroup && !exactPage) out.push(scoreGroup);
+
     const order: SearchItem['group'][] = [];
     for (const r of ranked) if (!order.includes(r.item.group)) order.push(r.item.group);
     for (const g of order) {
       out.push({ name: g, rows: ranked.filter((r) => r.item.group === g).map((r) => pageRow(r.item)) });
     }
+    if (scoreGroup && exactPage) out.push(scoreGroup);
 
     if (!facet && text) {
       const matched = commands.filter((c) => c.words.split(' ').some((w) => w.startsWith(text)) || c.title.toLowerCase().includes(text));
@@ -726,6 +862,8 @@ export function CommandPalette() {
   );
 
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Enter and the arrows belong to an IME while it composes a candidate.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     const n = flat.length;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -751,7 +889,8 @@ export function CommandPalette() {
     }
   };
 
-  // Global keys: capture phase, so Escape works from any focus.
+  // Global keys: capture phase, so the shortcuts work from any focus. Escape
+  // is not here: the overlay stack delivers it to the top layer only.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
@@ -759,11 +898,6 @@ export function CommandPalette() {
         e.preventDefault();
         if (open) close();
         else openPalette();
-        return;
-      }
-      if (e.key === 'Escape' && open) {
-        e.preventDefault();
-        close();
         return;
       }
       if (e.key === '/' && !open) {
@@ -779,10 +913,66 @@ export function CommandPalette() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [open, openPalette, close]);
 
-  // Focus the field the moment the panel exists.
+  // The palette is a modal layer on the shared stack (lib/overlay-stack): the
+  // page behind goes inert (the topbar too, so Find cannot be clicked again
+  // under the scrim), Escape reaches the palette only while it is the top
+  // layer, and on close focus returns to where it was, else to where a
+  // yielded phone menu would have sent it, else to the trigger. Layout
+  // phase, so the field takes focus the moment the panel exists.
   useLayoutEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (!open) return;
+    const layer = pushLayer({
+      modal: true,
+      element: () => overlayRef.current,
+      onEscape: close,
+      returnFocus: () => [returnFocusRef.current, ...yieldedFocusRef.current(), triggerRef.current],
+    });
+    inputRef.current?.focus();
+    return () => layer.release({ restoreFocus: true });
+  }, [open, close]);
+
+  // iOS keeps 100dvh at the full screen when the keyboard rises, so the list's
+  // lower rows sat under the keyboard. While open, the bottom of the visible
+  // area (visualViewport, in the fixed overlay's own coordinates) is written to
+  // --cmdk-vvh, and the list's max-height is measured from it (globals.css).
+  // Pinch zoom shrinks the visual viewport for another reason; then the
+  // property is dropped and the dvh fallback applies.
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    const el = overlayRef.current;
+    if (!vv || !el) return;
+    const write = () => {
+      if (vv.scale > 1.01) el.style.removeProperty('--cmdk-vvh');
+      else el.style.setProperty('--cmdk-vvh', `${Math.round(vv.offsetTop + vv.height)}px`);
+    };
+    write();
+    vv.addEventListener('resize', write);
+    vv.addEventListener('scroll', write);
+    return () => {
+      vv.removeEventListener('resize', write);
+      vv.removeEventListener('scroll', write);
+    };
   }, [open]);
+
+  // The result count, for a screen reader, once it settles: 300 ms after the
+  // last change and never while full text is still loading, so one query is
+  // one announcement. It says only the count; the active option is spoken by
+  // aria-activedescendant, and repeating its title here would say it twice.
+  // An unchanged message is not re-set, so it is not re-announced.
+  useEffect(() => {
+    if (!open || !q) {
+      setAnnounce('');
+      return;
+    }
+    if (searching) return;
+    const n = flat.length;
+    const msg = n === 0 ? `No matches for “${query.trim()}”` : `${n} ${n === 1 ? 'result' : 'results'}`;
+    const t = window.setTimeout(() => setAnnounce(msg), 300);
+    return () => window.clearTimeout(t);
+  }, [open, q, query, searching, flat.length]);
+
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
 
   // The page behind stays put: scroll is locked on the root (lib/scroll-lock;
   // html reserves its scrollbar gutter, so nothing shifts sideways).
@@ -815,7 +1005,11 @@ export function CommandPalette() {
         ref={triggerRef}
         type="button"
         className="cmdk-trigger"
-        aria-label="Open search (Ctrl+K)"
+        // The accessible name is the visible label (WCAG 2.5.3, Label in
+        // Name): "Open search (Ctrl+K)" did not contain "Find", so a voice
+        // user saying what they see missed it. Kept as aria-label because the
+        // label is hidden below 1024px; the shortcut lives in aria-keyshortcuts.
+        aria-label="Find"
         aria-keyshortcuts="Control+K Meta+K"
         onClick={openPalette}
         data-cuelume-hover="tick"
@@ -831,11 +1025,16 @@ export function CommandPalette() {
         </kbd>
       </button>
 
-      {open &&
+      {(open || closing) &&
         createPortal(
           <div
+            ref={overlayRef}
             className="cmdk-overlay"
             role="presentation"
+            data-state={open ? 'open' : 'closing'}
+            // Leaving: still painted for its exit, out of reach of focus and
+            // of a screen reader.
+            inert={!open}
             onPointerDown={(e) => {
               if (e.target === e.currentTarget) {
                 e.preventDefault();
@@ -843,7 +1042,22 @@ export function CommandPalette() {
               }
             }}
           >
-            <div className="cmdk-panel" role="dialog" aria-modal="true" aria-label="Search designesy.org">
+            <div
+              className="cmdk-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Search designesy.org"
+              // A press on the panel's own surface (a group label, the
+              // footer, an empty state, a row) must not take focus from the
+              // field: from body, the arrows and Enter stop working and the
+              // phone keyboard drops. Buttons keep their focus, and the list
+              // itself is left alone so its scrollbar can still be dragged.
+              onPointerDown={(e) => {
+                const t = e.target as HTMLElement;
+                if (t === inputRef.current || t.closest('button') || t.classList.contains('cmdk-list')) return;
+                e.preventDefault();
+              }}
+            >
               <div className="cmdk-input-row">
                 <svg className="cmdk-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="7" />
@@ -863,7 +1077,7 @@ export function CommandPalette() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onInputKeyDown}
                   role="combobox"
-                  aria-expanded="true"
+                  aria-expanded={!empty}
                   aria-controls={listId}
                   aria-activedescendant={activeKey && !empty ? optionId(activeKey) : undefined}
                   aria-autocomplete="list"
@@ -886,18 +1100,26 @@ export function CommandPalette() {
                 </button>
               </div>
 
+              {/* With no results the list is not a listbox: an empty
+                  listbox fails aria-required-children, and the empty state
+                  is a message, not an option. */}
               <div
                 className="cmdk-list"
                 id={listId}
-                role="listbox"
-                aria-label="Results"
+                role={empty ? undefined : 'listbox'}
+                aria-label={empty ? undefined : 'Results'}
                 style={listH === null ? undefined : { height: listH }}
                 data-sized={listH === null ? undefined : ''}
               >
                 <div className="cmdk-list-inner" ref={innerRef}>
                   {empty ? (
                     <div className="cmdk-empty">
-                      <p className="cmdk-empty-title">Nothing matches &ldquo;{query}&rdquo;</p>
+                      {/* "Nothing matches" only once full text has answered:
+                          said earlier, it was contradicted by the rows that
+                          arrived a moment later. */}
+                      <p className="cmdk-empty-title">
+                        {searching ? <>Searching full text for &ldquo;{query}&rdquo;</> : <>Nothing matches &ldquo;{query}&rdquo;</>}
+                      </p>
                       <p className="cmdk-empty-sub">
                         Try a page name, a check ID, or a domain like example.com to score it.
                       </p>
@@ -965,6 +1187,12 @@ export function CommandPalette() {
                   <kbd>labs:</kbd> filter by section
                 </span>
               </div>
+
+              {/* Present from the moment the panel opens, so the first count
+                  is a change a screen reader announces. */}
+              <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {announce}
+              </p>
             </div>
           </div>,
           document.body

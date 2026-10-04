@@ -6,6 +6,50 @@ import { pageMeta } from '../lib/site-meta';
 import { acousticTokens } from '../lib/acoustic-tokens';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { AgentActions } from '../lib/agent-actions';
+import { TokenFormatCard } from './token-format';
+
+/* Provenance. Each row's licence and version (or count) and its route stand
+   in the side pane behind the 7-line, in mono; the face keeps the title and
+   one line. They sat in the face as grey meta beside an empty pane. */
+const PROVENANCE: {
+  href: string;
+  title: string;
+  meta: string;
+  datum: string;
+  route: string;
+  external?: boolean;
+}[] = [
+  {
+    href: acousticTokens.provenance.npm,
+    title: 'Cuelume',
+    meta: 'Interaction audio engine by Daniel Belyi, on npm',
+    datum: 'MIT · v0.2.2',
+    route: 'npmjs.com/package/cuelume',
+    external: true,
+  },
+  {
+    href: acousticTokens.provenance.repo,
+    title: 'GitHub repository',
+    meta: 'Cuelume source',
+    datum: 'MIT · Daniel Belyi',
+    route: acousticTokens.provenance.repo.replace(/^https:\/\//, ''),
+    external: true,
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: 'Visual token system',
+    datum: CONTRACT_VERSION,
+    route: '/contracts/design-system',
+  },
+  {
+    href: '/acoustic-tokens.json',
+    title: 'Machine export',
+    meta: 'This token set as JSON',
+    datum: `v${acousticTokens.version} · ${acousticTokens.tokens.length} tokens`,
+    route: '/acoustic-tokens.json',
+  },
+];
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustic tokens',
@@ -14,7 +58,7 @@ export const metadata: Metadata = pageMeta({
   path: '/acoustic-tokens',
   ogTitle: 'Acoustic tokens · Designesy',
   ogDescription:
-    'Ten acoustic cues, ten interaction roles, one documented system. No sound without a token name and rationale.',
+    'Nineteen acoustic cues, nineteen interaction roles, one documented system. No sound without a token name and rationale.',
   twitterDescription: 'Acoustic token system · designesy.org/acoustic-tokens',
 });
 
@@ -46,24 +90,7 @@ export default function AcousticTokensPage() {
 
         <section className="doctrine-section fade-up" id="standards-context">
           <h2 className="doctrine-heading">Standards context</h2>
-          <div className="definition">
-            <p className="definition-label">W3C DTCG 2025.10</p>
-            <p>
-              {acousticTokens.standards_context.w3c_dtgc_2025_10}
-            </p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Proposed type</p>
-            <p>
-              {acousticTokens.standards_context.proposed_type}
-            </p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Reference format</p>
-            <p>
-              <code>{acousticTokens.standards_context.reference_format}</code>
-            </p>
-          </div>
+          <TokenFormatCard />
         </section>
 
         <section className="doctrine-section fade-up" id="token-reference">
@@ -150,66 +177,51 @@ export default function AcousticTokensPage() {
         <section className="doctrine-section fade-up" id="provenance">
           <h2 className="doctrine-heading">Provenance</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <a
-                href={acousticTokens.provenance.npm}
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Cuelume v0.2.2 (MIT)</span>
-                  <span className="row-meta">{acousticTokens.provenance.library}</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href={acousticTokens.provenance.repo}
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">GitHub repository</span>
-                  <span className="row-meta">{acousticTokens.provenance.repo}</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                  <span className="row-meta">Visual token system</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/acoustic-tokens.json"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Machine export</span>
-                  <span className="row-meta">acoustic-tokens.json</span>
-                </span>
-              </Link>
-            </div>
+            {PROVENANCE.map((row, i) => {
+              const body = (
+                <>
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{row.datum}</span>
+                    <span className="row-side-line">{row.route}</span>
+                    <span className="row-side-arrow" aria-hidden="true">
+                      {row.external ? (
+                        <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 9.5 9.5 2.5M4 2.5h5.5V8" /></svg>
+                      ) : null}
+                    </span>
+                  </span>
+                </>
+              );
+              return (
+                <div role="listitem" key={row.href}>
+                  {row.external ? (
+                    <a
+                      href={row.href}
+                      className="row"
+                      data-cuelume-hover="bloom"
+                      data-cuelume-press
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {body}
+                    </a>
+                  ) : (
+                    <Link
+                      href={row.href}
+                      className="row"
+                      data-cuelume-hover="bloom"
+                      data-cuelume-press
+                    >
+                      {body}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 

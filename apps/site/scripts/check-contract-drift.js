@@ -2,7 +2,7 @@
 /**
  * Contract-drift guard — fails the build when the design-system contract
  * (app/lib/design-system-contract.ts) drifts from the live CSS token surface
- * (app/globals.css :root).
+ * (the :root blocks of app/globals.css and app/instrument.css).
  *
  * Why this exists (2026-08-09): the audit found 13 real tokens defined in
  * :root but absent from the contract — radius-lg/xl, hover/press/focus state
@@ -26,10 +26,17 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..'); // apps/site
 const CONTRACT_PATH = path.join(ROOT, 'app', 'lib', 'design-system-contract.ts');
-const CSS_PATH = path.join(ROOT, 'app', 'globals.css');
+// Every stylesheet that declares tokens on :root. instrument.css joined on
+// 2026-10-03: its 20+ --lv-* tokens (the console and engine instrument palette)
+// sat on :root but outside the gate, so they could change or multiply without
+// the contract ever hearing about it.
+const CSS_PATH = [
+  path.join(ROOT, 'app', 'globals.css'),
+  path.join(ROOT, 'app', 'instrument.css'),
+];
 
 const contractSrc = fs.readFileSync(CONTRACT_PATH, 'utf8');
-const cssSrc = fs.readFileSync(CSS_PATH, 'utf8');
+const cssSources = CSS_PATH.map((p) => ({ file: path.relative(ROOT, p), src: fs.readFileSync(p, 'utf8') }));
 
 // Custom properties declared in :root (the canonical token surface).
 // Every :root block counts, including ones nested in @media. This read only the
@@ -52,10 +59,17 @@ function rootBlocks(css) {
   }
   return bodies;
 }
-const blocks = rootBlocks(cssSrc);
-if (blocks.length === 0) {
-  console.error('[check-contract-drift] no :root block found in globals.css');
-  process.exit(1);
+// Each listed sheet must contribute at least one :root block: a sheet that
+// stops declaring tokens (or moves them) should be removed from CSS_PATH on
+// purpose, not silently pass with nothing to check.
+const blocks = [];
+for (const { file, src } of cssSources) {
+  const found = rootBlocks(src);
+  if (found.length === 0) {
+    console.error(`[check-contract-drift] no :root block found in ${file}`);
+    process.exit(1);
+  }
+  blocks.push(...found);
 }
 const rootProps = new Set(
   blocks.flatMap((b) => [...b.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)].map((m) => m[1]))

@@ -49,6 +49,19 @@ const INTERNAL_PATTERNS = [
   /^(icon|apple-icon|favicon|opengraph-image|twitter-image|sitemap|robots|manifest)\./i,
 ];
 
+// Next's file-trace manifests (page.js.nft.json, route.js.nft.json). Build
+// metadata, never content: they must not enter the index under any name.
+const TRACE_MANIFEST = /\.nft\.json$/i;
+
+// The public JSON endpoints Find may index: route (as served) and the title a
+// result row shows, matching the palette's curated INDEX rows. Add an endpoint
+// here, never by walking the build output (see buildStageIndex).
+const JSON_ENDPOINTS = [
+  { route: '/open.json', title: 'open.json' },
+  { route: '/.well-known/agent.json', title: 'agent.json' },
+  { route: '/contracts/design-system.json', title: 'design-system.json' },
+];
+
 /** Walk a directory tree, returning every file path relative to root. */
 function walkFiles(dir, base = dir) {
   const out = [];
@@ -109,42 +122,49 @@ function buildStageIndex() {
   }
   console.log(`[postbuild-pagefind] staged ${copied} route HTML(s) to ${path.relative(ROOT, STAGE_DIR)} (${skipped} internal skipped)`);
 
-  // Also stage JSON contract/endpoint files as searchable HTML wrappers.
-  // Pagefind only indexes HTML, so we wrap each JSON file's content in a
-  // minimal HTML document with data-pagefind-body so token names, values,
-  // and endpoints become searchable in the command palette.
+  // Also stage the public JSON endpoints as searchable HTML wrappers, so their
+  // keys and values reach Find. Pagefind only indexes HTML, so each body is
+  // wrapped in a minimal document.
+  //
+  // An explicit ALLOWLIST, never a walk. The only *.json files Next writes
+  // under server/app are its *.nft.json file-trace manifests (lists of
+  // node_modules paths). Walking them indexed 281 junk "pages" (page_count 372
+  // against ~91 real ones), boosted their titles over real pages, and published
+  // the path lists as public fragments. A static route handler's response is
+  // prerendered to <route>.body; a force-dynamic one (design-system.json
+  // negotiates on Accept) has no body at build time, is skipped here, and is
+  // reached through the palette's curated INDEX instead.
   let jsonCount = 0;
   const jsonSrcDir = path.join(SITE_DIR, 'server', 'app');
-  for (const rel of walkFiles(jsonSrcDir)) {
-    if (!rel.endsWith('.json')) continue;
-    // Skip metadata-route JSON (icon, manifest, etc.)
-    if (INTERNAL_PATTERNS.some((re) => re.test(path.basename(rel)))) continue;
-
-    // Read the JSON content
+  for (const { route, title } of JSON_ENDPOINTS) {
+    if (TRACE_MANIFEST.test(route)) continue; // never a build trace, whatever the list says
+    const bodyPath = path.join(jsonSrcDir, `${route.replace(/^\//, '')}.body`);
     let jsonContent;
     try {
-      jsonContent = fs.readFileSync(path.join(jsonSrcDir, rel), 'utf8');
-    } catch { continue; }
+      jsonContent = fs.readFileSync(bodyPath, 'utf8');
+    } catch {
+      console.log(`[postbuild-pagefind] ${route}: no prerendered body (dynamic route), not indexed`);
+      continue;
+    }
 
-    // Build a minimal HTML wrapper so Pagefind indexes the JSON tokens
-    const title = rel.replace(/\.json$/, '').replace(/\//g, ' · ');
-    const wrapper = `<!DOCTYPE html><html><head><title>${title}</title></head><body data-pagefind-body><pre>${jsonContent.replace(/</g, '&lt;')}</pre></body></html>`;
+    // The staged file is not a route, so the wrapper names its real one in
+    // meta (`href`), which the palette navigates to. lang="en" puts it in the
+    // same language index as the pages; without it Pagefind files it under an
+    // "unknown" index that searches from English pages never load.
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const wrapper =
+      `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title></head>` +
+      `<body data-pagefind-body data-pagefind-meta="href:${esc(route)}"><h1>${esc(title)}</h1>` +
+      `<pre>${esc(jsonContent)}</pre></body></html>`;
 
-    // Map to a clean route path (same logic as HTML files above)
-    let routeRel = rel;
-    if (/\/index\.json$/i.test(routeRel)) routeRel = routeRel.replace(/\/index\.json$/i, '.json');
-    else if (routeRel === 'index.json') routeRel = '.json';
-    if (routeRel === '.json') routeRel = 'index.json';
-
-    // Write as .html so Pagefind picks it up
-    const dest = path.join(STAGE_DIR, routeRel.replace(/\.json$/, '.json.html'));
+    // Staged under endpoints/ with a .json.html name: if the meta were ever
+    // lost, cleanHref() drops a *.json route instead of offering a dead link.
+    const dest = path.join(STAGE_DIR, 'endpoints', `${path.basename(route)}.html`);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, wrapper);
     jsonCount++;
   }
-  if (jsonCount > 0) {
-    console.log(`[postbuild-pagefind] staged ${jsonCount} JSON endpoint(s) as searchable HTML wrappers`);
-  }
+  console.log(`[postbuild-pagefind] staged ${jsonCount} of ${JSON_ENDPOINTS.length} allowlisted JSON endpoint(s) as searchable HTML wrappers`);
 
   return true;
 }
@@ -186,6 +206,22 @@ function main() {
     console.log(
       `[postbuild-pagefind] index written: ${countIn('fragment')} page fragment(s), ${countIn('index')} index shard(s)`
     );
+
+    // Junk guard: about one document per real public route. More than 1.2x
+    // means something other than pages was staged (the *.nft.json walk did
+    // exactly that). Warn here, where the cause is; check-search-coverage.js,
+    // the next build step, fails the build on it.
+    try {
+      const { publicRoutes, indexedPageCount, PAGE_COUNT_RATIO } = require('./check-search-coverage.js');
+      const { pages, jsonEndpoints } = publicRoutes(SITE_DIR);
+      const real = pages.length + jsonEndpoints.length;
+      const indexed = indexedPageCount(OUT_DIR);
+      const line = `page_count ${indexed} against ${real} public route(s) (${pages.length} page(s) + ${jsonEndpoints.length} JSON endpoint(s)); ceiling ${Math.floor(PAGE_COUNT_RATIO * real)}`;
+      if (indexed > PAGE_COUNT_RATIO * real) console.warn(`[postbuild-pagefind] WARNING ${line}: the index holds more than pages`);
+      else console.log(`[postbuild-pagefind] ${line}`);
+    } catch (e) {
+      console.warn(`[postbuild-pagefind] could not measure page_count against the route count: ${e.message}`);
+    }
 
     // Patch pagefind.js to append a cache-busting query param to the Worker
     // URL and all WASM shard fetches. Pagefind constructs the Worker URL as

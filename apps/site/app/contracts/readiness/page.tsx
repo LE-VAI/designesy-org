@@ -6,6 +6,8 @@ import { readinessContract } from '../../lib/readiness-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'AI Readiness contract',
@@ -38,17 +40,19 @@ export default function ReadinessContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Definition</p>
-            <p>{c.source_authority.ai_ready_definition}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">How-to</p>
-            <p>{c.source_authority.how_to}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Primary</dt>
+              <KvValue text={c.source_authority.primary} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Definition</dt>
+              <KvValue text={c.source_authority.ai_ready_definition} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>How-to</dt>
+              <KvValue text={c.source_authority.how_to} />
+            </dl>
           </div>
         </section>
 
@@ -56,10 +60,10 @@ export default function ReadinessContractPage() {
           <h2 className="doctrine-heading">The six maturity axes</h2>
           <div className="row-stack" role="list">
             {c.conformance.six_maturity_axes.map((axis, i) => (
-              <div key={axis.axis} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={axis.axis} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
-                  <span className="row-title">{axis.axis}{axis.axis === 'AI Readiness' && ' (new)'}</span>
+                  <span className="row-title">{axis.axis}{axis.axis === 'AI Readiness' && ' (new)'}</span>{' '}
                   <span className="row-meta">{axis.description}</span>
                 </span>
               </div>
@@ -83,26 +87,26 @@ export default function ReadinessContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={check.id} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass} · FAIL: {check.fail}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Validation: {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
-          </p>
+          <div className="contract-validation">
+            <p className="contract-eyebrow">Validation</p>
+            <p className="surface-note">
+              {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
               <li key={i}>{q}</li>
             ))}

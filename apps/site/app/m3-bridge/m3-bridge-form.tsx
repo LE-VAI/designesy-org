@@ -543,6 +543,20 @@ export function M3BridgeTool() {
     </div>
   );
 
+  // What each Material 3 family becomes, in the face beside the counts it
+  // produces (it was a list in the side pane, apart from the conversion).
+  const mapping = (
+    <div className="eg-weights">
+      <span className="eg-label">What it maps</span>
+      <dl className="m3-map">
+        <div><dt>--md-sys-color-*</dt><dd>Color tokens, written as colorSpace and components.</dd></div>
+        <div><dt>--md-sys-shape-*</dt><dd>Corner radii, as dimension tokens.</dd></div>
+        <div><dt>--md-sys-motion-*</dt><dd>Durations and easing curves.</dd></div>
+        <div><dt>--md-sys-typescale-*</dt><dd>Type sizes, weights and line heights, each typed from its own value.</dd></div>
+      </dl>
+    </div>
+  );
+
   return (
     <div className="eg-bench">
       <div className="eg-bar m3-input">
@@ -552,8 +566,10 @@ export function M3BridgeTool() {
             value={inputFormat}
             onChange={setInputFormat}
             options={[
-              { value: 'css', label: 'CSS custom properties', hint: <>A <code>:root</code> block of <code>--md-sys-*</code> custom properties.</> },
-              { value: 'json', label: 'JSON tokens', hint: <>A flat map of <code>md.sys.*</code> names to values.</> },
+              // Short labels, so the two equal segments never wrap one and not
+              // the other on a phone; the hint beside them says the rest.
+              { value: 'css', label: 'CSS', hint: <>A <code>:root</code> block of <code>--md-sys-*</code> custom properties.</> },
+              { value: 'json', label: 'JSON', hint: <>A flat map of <code>md.sys.*</code> names to values.</> },
             ]}
           />
           <button type="button" className="eg-share-btn" onClick={handleLoadSample} data-cuelume-press="tick">
@@ -565,6 +581,7 @@ export function M3BridgeTool() {
           <textarea
             id="m3-input"
             className="eg-bar-input m3-textarea"
+            wrap="off"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             spellCheck={false}
@@ -594,7 +611,7 @@ export function M3BridgeTool() {
         name="M3 to DTCG"
         registry={VIEW}
         face="tiles"
-        faceTop={pipeline}
+        faceTop={<>{pipeline}{mapping}</>}
         phase={phase}
         target={result ? `${result.count} tokens` : ''}
         outcomes={outcomes}
@@ -615,9 +632,28 @@ export function M3BridgeTool() {
                 <button type="button" className="eg-share-btn" onClick={handleDownload}>Download tokens.json</button>
                 <button type="button" className="eg-share-btn" onClick={copy} aria-live="polite">{copied ? 'Copied' : 'Copy'}</button>
               </div>
+              {/* The file itself fills the rest of the pane (engine.css,
+                  m3-preview): the result, not a void, under its actions. */}
+              <pre className="m3-preview" tabIndex={0} role="region" aria-label="tokens.json preview">
+                <code>{outputJson}</code>
+              </pre>
             </>
           ) : null
         }
+        // At rest the pane is already the output's: the same frame, holding
+        // a muted { } until there is a file to show. No grade scale: the
+        // converter is valid or not, it does not grade.
+        restSide={
+          <>
+            <span className="eg-label">Output</span>
+            <p className="eg-side-note">Paste Material 3 tokens, or load the sample, and convert. The converted file lands here.</p>
+            <div className="m3-preview is-empty" aria-hidden="true">{'{ }'}</div>
+            <div className="eg-ref">
+              <p className="eg-ref-note">Paths follow the names: --md-sys-color-primary becomes color.primary.</p>
+            </div>
+          </>
+        }
+        idleTarget="waiting for tokens"
         error={
           <>
             <p><b>No Material 3 tokens found.</b></p>
@@ -627,30 +663,6 @@ export function M3BridgeTool() {
         }
         scoring="valid when all five checks pass"
         restNote="Paste Material 3 tokens, or load the sample, and convert. Each stage of the conversion counts what it found."
-        restCard={
-          <div className="eg-ref">
-            <span className="eg-label">What it maps</span>
-            <dl>
-              <div>
-                <dt>--md-sys-color-*</dt>
-                <dd>Color tokens, written as colorSpace and components.</dd>
-              </div>
-              <div>
-                <dt>--md-sys-shape-*</dt>
-                <dd>Corner radii, as dimension tokens.</dd>
-              </div>
-              <div>
-                <dt>--md-sys-motion-*</dt>
-                <dd>Durations and easing curves.</dd>
-              </div>
-              <div>
-                <dt>--md-sys-typescale-*</dt>
-                <dd>Type sizes, weights and line heights.</dd>
-              </div>
-            </dl>
-            <p className="eg-ref-note">Paths follow the names: --md-sys-color-primary becomes color.primary.</p>
-          </div>
-        }
       />
 
       {result && result.warnings.length > 0 && (

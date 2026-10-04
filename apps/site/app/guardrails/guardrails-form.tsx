@@ -50,11 +50,12 @@ function fileText(bundle: Bundle | undefined, id: string): string {
   }
 }
 
+const bytesOf = (text: string) => new TextEncoder().encode(text).length;
+const kb = (bytes: number) => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`);
+
 function size(text: string): string {
-  const bytes = new TextEncoder().encode(text).length;
   const lines = text ? text.split('\n').length : 0;
-  const kb = bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
-  return `${kb} · ${lines} lines`;
+  return `${kb(bytesOf(text))} · ${lines} lines`;
 }
 
 export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; registry: RegistryView }) {
@@ -77,6 +78,29 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
   const text = fileText(result?.bundle, file);
   const meta: Record<string, string> = {};
   if (result?.bundle) for (const c of registry.checks) meta[c.id] = size(fileText(result.bundle, c.id));
+
+  // The bundle's readout in the side pane: at rest it reads 0 of 6 files and
+  // 0 KB, and the run fills the same two figures in place (files written,
+  // the bundle's total size), so the verdict slot holds a reading at every
+  // phase instead of a dead band under the scale.
+  const done = phase === 'done' && !!result;
+  const written = done ? registry.checks.filter((c) => outcomes[c.id]?.status === 'PASS').length : 0;
+  const bytes = done && result?.bundle ? registry.checks.reduce((n, c) => n + bytesOf(fileText(result.bundle, c.id)), 0) : 0;
+  const readout = (
+    <dl className="eg-figs">
+      <div>
+        <dt>Files written</dt>
+        <dd>
+          {written}
+          <small> of {registry.checks.length}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>Bundle size</dt>
+        <dd>{bytes ? kb(bytes) : '0 KB'}</dd>
+      </div>
+    </dl>
+  );
 
   const pick = (id: string) => {
     setFile(id);
@@ -149,34 +173,33 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
         }
         scoring="written 1 · not written 0 · over 6 files"
         restNote="Emit from a URL and each file fills in with its size. Pick a file to read it below."
+        // Where each file goes, as the last line of its own cell (it was a
+        // list in the side pane, apart from the files it described): one
+        // destination per file, each saying what the file does there (two
+        // pairs used to share a sentence word for word).
+        fileWhere={{
+          g01: 'Your design repo, as the one source of values.',
+          g02: 'CI, so an off-token value fails the build.',
+          g03: 'The repo root, where coding agents look first.',
+          g04: 'Beside AGENTS.md: the tokens each prop may take.',
+          g05: 'Beside AGENTS.md: the inline values and invented tokens to remove.',
+          g06: 'The repo root, as the design brief any agent can read.',
+        }}
         restCard={
-          <div className="eg-ref">
-            <span className="eg-label">Where each file goes</span>
-            <dl>
-              <div>
-                <dt>tokens.json <span className="eg-ref-where">g01</span></dt>
-                <dd>Your design repo, as the one source of values.</dd>
-              </div>
-              <div>
-                <dt>stylelint.json <span className="eg-ref-where">g02</span></dt>
-                <dd>CI, so an off-token value fails the build.</dd>
-              </div>
-              <div>
-                <dt>AGENTS.md and DESIGN.md <span className="eg-ref-where">g03 g06</span></dt>
-                <dd>The repo root, where coding agents look first.</dd>
-              </div>
-              <div>
-                <dt>components.json and anti-patterns.json <span className="eg-ref-where">g04 g05</span></dt>
-                <dd>Beside AGENTS.md, as context the rules point to.</dd>
-              </div>
-            </dl>
-            <p className="eg-ref-note">The grade counts files written. It says nothing about the design itself; the contract score does.</p>
-          </div>
+          <>
+            {readout}
+            <div className="eg-ref">
+              <p className="eg-ref-note">The grade counts files written. It says nothing about the design itself; the contract score does.</p>
+            </div>
+          </>
         }
         onOpen={(id) => (phase === 'done' ? pick(id) : undefined)}
         sideExtra={
           phase === 'done' && scanned ? (
-            <EngineShare path={`/guardrails?url=${encodeURIComponent(scanned)}`} text={`Designesy guardrails: ${host}`} label="Share this result" />
+            <>
+              {readout}
+              <EngineShare path={`/guardrails?url=${encodeURIComponent(scanned)}`} text={`Designesy guardrails: ${host}`} label="Share this result" />
+            </>
           ) : null
         }
       />

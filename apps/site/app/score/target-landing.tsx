@@ -4,6 +4,19 @@ import { Footer } from '../lib/footer';
 import { ScoreForm } from './score-form';
 import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { CONTRACT_VERSION } from '../lib/design-system-contract';
+
+// The snapshot each Proof row's case study records, for the row's side pane:
+// the grade and score the engine returned, and the day it ran. Source: the
+// case study page itself (app/work/lovable-dev/page.tsx: A, 93.2, captured
+// 2026-07-25). A landing without an entry shows no side pane.
+const CASE_SNAPSHOTS: Record<string, { grade: string; score: string; date: string }> = {
+  lovable: { grade: 'A', score: '93.2', date: '2026-07-25' },
+};
+
+// The copy payload of THE OUTPUT card: its sentence, without the side key.
+const OUTPUT_TEXT =
+  "A letter grade, a per-check breakdown (pass, fail, warn, skip), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. No backend. No data kept. The score is the artifact.";
 
 /**
  * Shared shell for target-specific score landing pages
@@ -50,6 +63,7 @@ export function TargetLanding({
   caseStudyTitle,
   caseStudyMeta,
 }: TargetLandingProps) {
+  const snapshot = CASE_SNAPSHOTS[slug];
   return (
     <>
       <Topbar scrolled />
@@ -103,6 +117,21 @@ export function TargetLanding({
                     <span className="row-title">{caseStudyTitle}</span>
                     <span className="row-meta">{caseStudyMeta}</span>
                   </span>
+                  {/* The side pane carries the snapshot the case study is
+                      about (grade, score, date) and the route's arrow. */}
+                  {snapshot && (
+                    <span className="row-side">
+                      <span className="row-side-line">
+                        <span className="row-side-chip" data-state="pass">
+                          {snapshot.grade} · {snapshot.score}
+                        </span>
+                      </span>
+                      <span className="row-side-line">
+                        Snapshot · <time dateTime={snapshot.date}>{snapshot.date}</time>
+                      </span>
+                      <span className="row-side-arrow" aria-hidden="true" />
+                    </span>
+                  )}
                 </Link>
               </div>
             </div>
@@ -111,14 +140,37 @@ export function TargetLanding({
 
         <section className="doctrine-section fade-up fade-up-delay-2">
           <h2 className="doctrine-heading">What you get</h2>
-          <div className="definition">
-            <p className="definition-label">The output</p>
-            <p>
-              A letter grade, a per-check breakdown (pass, fail, warn, skip),
-              the tokens extracted from your site&rsquo;s <code>:root</code>,
-              and a copyable receipt citing the contract version. No login.
-              No backend. No data kept. The score is the artifact.
-            </p>
+          {/* Face and side pane (globals.css .score-output): the paragraph in
+              the 7-column face, under the result column above, and its key in
+              the side pane. data-copy keeps the copy payload to the sentence. */}
+          <div className="definition score-output" data-copy={OUTPUT_TEXT} data-copy-label="output summary">
+            <div className="score-output-face">
+              <p className="definition-label">The output</p>
+              <p>
+                A letter grade, a per-check breakdown (pass, fail, warn, skip),
+                the tokens extracted from your site&rsquo;s <code>:root</code>,
+                and a copyable receipt citing the contract version. No login.
+                No backend. No data kept. The score is the artifact.
+              </p>
+            </div>
+            <dl className="score-output-side">
+              <div>
+                <dt>Grade</dt>
+                <dd>A to F, with the percentage</dd>
+              </div>
+              <div>
+                <dt>Checks</dt>
+                <dd>{ENGINE_CHECK_COUNT}, each pass, fail, warn or skip</dd>
+              </div>
+              <div>
+                <dt>Receipt</dt>
+                <dd>Cites contract {CONTRACT_VERSION}</dd>
+              </div>
+              <div>
+                <dt>Data kept</dt>
+                <dd>None</dd>
+              </div>
+            </dl>
           </div>
           <p className="surface-note">
             The contract the engine runs against is public at{' '}

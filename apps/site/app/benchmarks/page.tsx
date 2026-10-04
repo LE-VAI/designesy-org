@@ -4,6 +4,7 @@
 // research of 2026-08-01, dated where it is shown.
 
 import type { Metadata } from 'next';
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import '../instrument.css';
 import '../engine.css';
@@ -18,6 +19,7 @@ import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import { display } from '../lib/engine/types';
 import { byUrl, SELF_URL, SCORES_DATE, fmt, toneOf } from '../lib/data/cohort';
 import { DataTable } from '../lib/data/figure';
+import { unbroken } from '../lib/data/unbroken';
 
 export const metadata: Metadata = pageMeta({
   title: 'Benchmarks',
@@ -84,6 +86,9 @@ const DESIGNESY_ONLY = [
   { id: 'v37', what: 'DESIGN.md spec layer (Google @google/design.md lint)' },
 ];
 
+// The longest id run, in characters: the id column's width (data.css).
+const ID_LEN = Math.max(...DESIGNESY_ONLY.map((c) => c.id.length));
+
 const THEIRS_ONLY = [
   { what: 'AI-slop look: purple gradients, centred heroes, fake chrome', where: 'hallmark 1 to 7, 42, 43, 45, 47; slop-eval C1 to C15, T1 to T10, K1 to K27, L1 to L21' },
   { what: 'Structural variety across pages', where: 'hallmark 8, 20, 21, 32, 57; slop-eval L15, L19, L21, axis 7' },
@@ -104,6 +109,13 @@ const FIELD = [
   { name: 'anti-slop-design', approach: 'Design-quality guardrails', note: 'Lints before output instead of scoring after' },
   { name: 'Atlassian ADS MCP', approach: 'A design-system MCP server (v0.21.1)', note: 'Benchmarked against design.md: fewer tokens, lower variance' },
 ];
+
+// One column law for every table on the page, in shell columns (of 12): the
+// label takes 2 and the next column 4, so the hallmark and slop-eval columns
+// (3 and 3) fall on the same lines in each comparison, and a descriptive
+// table's last column starts on the hallmark line.
+const COMPARE = [2, 4, 3, 3];
+const DESCRIBE = [2, 4, 6];
 
 const SOURCES = [
   { what: 'designesy score', where: `the weekly leaderboard run of ${SCORES_DATE}, engine ${ENGINE_VERSION}` },
@@ -135,14 +147,18 @@ export default function BenchmarksPage() {
               <h2 className="eg-h2" id="bm-tools-h">
                 The three tools
               </h2>
-              <p className="eg-section-sub">designesy from its registry; the others as researched on {RESEARCHED}</p>
+              <p className="eg-section-sub">
+                designesy from its registry; the others as researched on <span className="dx-nowrap">{RESEARCHED}</span>
+              </p>
             </div>
           </div>
           <div className="dx-table-box">
             <DataTable
               caption="designesy, hallmark and slop-eval compared, attribute by attribute."
-              head={['', 'designesy', 'hallmark', 'slop-eval']}
-              rows={TOOLS.map((t) => [t.attr, t.d, t.h, t.s])}
+              head={[<span key="h" className="sr-only">Attribute</span>, 'designesy', 'hallmark', 'slop-eval']}
+              cols={COMPARE}
+              stack="rows"
+              rows={TOOLS.map((t) => [unbroken(t.attr), unbroken(t.d), unbroken(t.h), unbroken(t.s)])}
             />
           </div>
           <p className="dx-lead dx-after">
@@ -165,6 +181,8 @@ export default function BenchmarksPage() {
             <DataTable
               caption="designesy checks with an equivalent in hallmark or slop-eval."
               head={['Check', 'What it asks', 'hallmark', 'slop-eval']}
+              cols={COMPARE}
+              stack="lead"
               rows={SHARED.map((r) => [<code key="c">{r.d}</code>, r.what, r.h, r.s])}
             />
           </div>
@@ -179,12 +197,15 @@ export default function BenchmarksPage() {
               <p className="eg-section-sub">{DESIGNESY_ONLY.length} checks with no hallmark or slop-eval equivalent</p>
             </div>
           </div>
-          <ul className="dx-checks dx-checks-cols">
+          {/* The id column is as wide as the longest id run (data.css,
+              .dx-checks-cols), so "x01, x02, x03" never wraps in it and every
+              row's label starts at one x. */}
+          <ul className="dx-checks dx-checks-cols" style={{ '--dx-id-len': ID_LEN } as CSSProperties}>
             {DESIGNESY_ONLY.map((c) => (
               <li key={c.id}>
                 <span className="dx-check-head">
                   <code>{c.id}</code>
-                  <span className="dx-check-item">{c.what}</span>
+                  <span className="dx-check-item">{unbroken(c.what)}</span>
                 </span>
               </li>
             ))}
@@ -200,11 +221,11 @@ export default function BenchmarksPage() {
               <p className="eg-section-sub">the gaps: how a design looks, which the contract leaves to them</p>
             </div>
           </div>
-          <ul className="dx-checks">
+          <ul className="dx-checks dx-checks-split">
             {THEIRS_ONLY.map((c) => (
               <li key={c.what}>
-                <span className="dx-check-item">{c.what}</span>
-                <span className="dx-check-how">{c.where}</span>
+                <span className="dx-check-item">{unbroken(c.what)}</span>
+                <span className="dx-check-how">{unbroken(c.where)}</span>
               </li>
             ))}
           </ul>
@@ -216,13 +237,17 @@ export default function BenchmarksPage() {
               <h2 className="eg-h2" id="bm-self-h">
                 On designesy.org itself
               </h2>
-              <p className="eg-section-sub">weekly run of {SCORES_DATE}</p>
+              <p className="eg-section-sub">
+                weekly run of <span className="dx-nowrap">{SCORES_DATE}</span>
+              </p>
             </div>
           </div>
           <div className="dx-table-box">
             <DataTable
               caption="Each tool on designesy.org."
               head={['Tool', 'Result', 'What it found']}
+              cols={DESCRIBE}
+              stack="rows"
               rows={[
                 [
                   'designesy',
@@ -253,18 +278,22 @@ export default function BenchmarksPage() {
               <h2 className="eg-h2" id="bm-field-h">
                 The wider field
               </h2>
-              <p className="eg-section-sub">newer entrants worth tracking, as of {RESEARCHED}</p>
+              <p className="eg-section-sub">
+                newer entrants worth tracking, as of <span className="dx-nowrap">{RESEARCHED}</span>
+              </p>
             </div>
           </div>
           <div className="dx-table-box">
             <DataTable
               caption={`Newer design-verification tools, as of ${RESEARCHED}.`}
               head={['Tool', 'Approach', 'What sets it apart']}
-              rows={FIELD.map((f) => [f.name, f.approach, f.note])}
+              cols={DESCRIBE}
+              stack="rows"
+              rows={FIELD.map((f) => [f.name, unbroken(f.approach), unbroken(f.note)])}
             />
           </div>
           <p className="dx-src">
-            mcpservers.org indexed 81 design-related MCP servers on {RESEARCHED}. The designesy MCP server has 17 tools; see the{' '}
+            mcpservers.org indexed 81 design-related MCP servers on <span className="dx-nowrap">{RESEARCHED}</span>. The designesy MCP server has 17 tools; see the{' '}
             <Link href="/docs/mcp">MCP docs</Link>.
           </p>
         </section>
@@ -277,7 +306,7 @@ export default function BenchmarksPage() {
             {SOURCES.map((s) => (
               <div key={s.what}>
                 <dt>{s.what}</dt>
-                <dd>{display(s.where)}</dd>
+                <dd>{unbroken(display(s.where))}</dd>
               </div>
             ))}
           </dl>

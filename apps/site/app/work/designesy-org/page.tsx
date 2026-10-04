@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../../instrument.css';
+import '../work.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
-import { CountUp } from '../../lib/count-up';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { CaseTitle, ScoreDelta, SourceList, StateMove, type Source } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'designesy.org: D to A case study',
@@ -21,6 +23,8 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'designesy.org D to A case study · designesy.org/work/designesy-org',
 });
 
+const BEFORE_SCORE = 67.4;
+const AFTER_SCORE = 96.3;
 const BEFORE_COUNTS = { pass: 12, fail: 9, warn: 2, skip: 3 };
 const AFTER_COUNTS = { pass: 23, fail: 0, warn: 0, skip: 3 };
 
@@ -35,6 +39,32 @@ const DELTA = [
   { id: 'v08', item: 'Poise interaction rules match live /labs/poise', before: 'SKIP', after: 'PASS' },
   { id: 'v09', item: 'Poise keyboard-path published', before: 'SKIP', after: 'PASS' },
   { id: 'v10', item: 'Takt rules match CSS', before: 'SKIP', after: 'PASS' },
+];
+
+const SUMMARY =
+  'designesy.org was scored by its own engine and got a D. The failures were concentrated in four areas: token discipline (raw hex, magic numbers), keyboard affordance (no focus-visible rings), reduced-motion handling (a kill switch rather than tiered), and Cadence typography (no text-wrap, no tabular-nums, no font-synthesis guards). One session resolved all 9 failures and 2 warnings, plus converted 3 SKIPs to PASSes by implementing the static contract-diff halves. The score moved from D 67.4 to A 96.3, a 28.9-point gain in a single working session.';
+
+const SOURCES: Source[] = [
+  {
+    href: '/score?url=designesy.org',
+    title: 'Score designesy.org now',
+    meta: 'Run the live engine against the publisher',
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract ' + CONTRACT_VERSION,
+    meta: 'The standard the score runs against',
+  },
+  {
+    href: '/learn/why-we-built-a-public-design-score',
+    title: 'Why a public score',
+    meta: 'The argument this case study is evidence for',
+  },
+  {
+    href: '/work',
+    title: 'Work · case studies',
+    meta: 'Index',
+  },
 ];
 
 const LESSONS = [
@@ -59,7 +89,7 @@ export default function DesignesyOrgCaseStudy() {
             <span aria-hidden="true"> · </span>
             Before/after case study
           </p>
-          <h1 className="surface-title">designesy.org · D to A</h1>
+          <CaseTitle name="designesy.org" tail="D to A" />
           <p className="surface-lede">
             The publisher scores itself, fixes the gaps, and publishes the
             grade.
@@ -83,48 +113,61 @@ export default function DesignesyOrgCaseStudy() {
 
         <section className="doctrine-section fade-up" id="summary">
           <h2 className="doctrine-heading">Summary</h2>
-          <div className="definition">
-            <p className="definition-label">Outcome · A · 96.3</p>
-            <p>
-              designesy.org was scored by its own engine and got a D. The
-              failures were concentrated in four areas: token discipline
-              (raw hex, magic numbers), keyboard affordance (no focus-visible
-              rings), reduced-motion handling (a kill switch rather than
-              tiered), and Cadence typography (no text-wrap, no tabular-nums,
-              no font-synthesis guards). One session resolved all 9 failures
-              and 2 warnings, plus converted 3 SKIPs to PASSes by implementing
-              the static contract-diff halves. The score moved from D 67.4 to
-              A 96.3, a 28.9-point gain in a single working session.
-            </p>
+          {/* Face and side (globals.css .definition-split): the statement on
+              the face, the grade and its move in the side, divided on the
+              7-line the Score delta instrument below divides on. The copy
+              payload is the statement, which states every number itself. */}
+          <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
+            <div className="definition-face">
+              <p className="definition-label">Outcome</p>
+              <p>{SUMMARY}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                A · {AFTER_SCORE}
+              </span>
+              <dl>
+                <div>
+                  <dt>Before</dt>
+                  <dd>D · {BEFORE_SCORE}</dd>
+                </div>
+                <div>
+                  <dt>Gain</dt>
+                  <dd>+{(AFTER_SCORE - BEFORE_SCORE).toFixed(1)} in one session</dd>
+                </div>
+                <div>
+                  <dt>Scored</dt>
+                  <dd>2026-07-25</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
         <section className="doctrine-section fade-up" id="score-delta">
           <h2 className="doctrine-heading">Score delta</h2>
-          <div className="doctrine-cols">
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                Before · D · 67.4
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                <CountUp value={BEFORE_COUNTS.pass} /> pass · <CountUp value={BEFORE_COUNTS.fail} /> fail · <CountUp value={BEFORE_COUNTS.warn} /> warn · <CountUp value={BEFORE_COUNTS.skip} /> skip
-              </p>
-            </div>
-            <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
-                After · A · 96.3
-              </h3>
-              <p className="surface-note" style={{ fontSize: '0.85rem' }}>
-                <CountUp value={AFTER_COUNTS.pass} /> pass · <CountUp value={AFTER_COUNTS.fail} /> fail · <CountUp value={AFTER_COUNTS.warn} /> warn · <CountUp value={AFTER_COUNTS.skip} /> skip
-              </p>
-            </div>
-          </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            <strong>+<CountUp value={AFTER_COUNTS.pass - BEFORE_COUNTS.pass} /></strong> pass ·{' '}
-            <strong>-<CountUp value={BEFORE_COUNTS.fail - AFTER_COUNTS.fail} /></strong> fail ·{' '}
-            <strong>-<CountUp value={BEFORE_COUNTS.warn - AFTER_COUNTS.warn} /></strong> warn ·{' '}
-            skip unchanged (browser-only checks, honestly labeled).
-          </p>
+          <ScoreDelta
+            label="Score delta for designesy.org: before and after, scored by /api/score on 2026-07-25"
+            host="designesy.org"
+            date="2026-07-25"
+            runs={[
+              { label: 'Before', note: `D · ${BEFORE_SCORE}`, counts: BEFORE_COUNTS },
+              { label: 'After', note: `A · ${AFTER_SCORE}`, counts: AFTER_COUNTS },
+            ]}
+            before={BEFORE_SCORE}
+            after={AFTER_SCORE}
+            note={
+              <>
+                <span className="sr-only">
+                  Grade D, {BEFORE_SCORE}, to grade A, {AFTER_SCORE}:{' '}
+                </span>
+                <b>+{(AFTER_SCORE - BEFORE_SCORE).toFixed(1)}</b> points in one session.{' '}
+                +{AFTER_COUNTS.pass - BEFORE_COUNTS.pass} pass, -{BEFORE_COUNTS.fail - AFTER_COUNTS.fail} fail,
+                -{BEFORE_COUNTS.warn - AFTER_COUNTS.warn} warn; the {AFTER_COUNTS.skip} skips are
+                unchanged (browser-only checks, honestly labeled).
+              </>
+            }
+          />
         </section>
 
         <section className="doctrine-section fade-up" id="checks-moved">
@@ -139,12 +182,8 @@ export default function DesignesyOrgCaseStudy() {
               <div className="principle" key={d.id}>
                 <span className="principle-num">{d.id}</span>
                 <div className="principle-body">
-                  <h3 style={{ fontSize: '0.95rem' }}>{d.item}</h3>
-                  <p style={{ marginTop: '0.25rem' }}>
-                    <strong style={{ color: 'var(--muted)' }}>{d.before}</strong>
-                    {' → '}
-                    <strong style={{ color: 'var(--signal-text)' }}>{d.after}</strong>
-                  </p>
+                  <h3 className="cs-check-title">{d.item}</h3>
+                  <StateMove before={d.before} after={d.after} />
                 </div>
               </div>
             ))}
@@ -191,64 +230,7 @@ export default function DesignesyOrgCaseStudy() {
 
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
-          <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/score?url=designesy.org"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Score designesy.org now</span>
-                  <span className="row-meta">Run the live engine against the publisher</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                  <span className="row-meta">The standard the score runs against</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/learn/why-we-built-a-public-design-score"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Why a public score</span>
-                  <span className="row-meta">The argument this case study is evidence for</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/work"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Work · case studies</span>
-                  <span className="row-meta">Index</span>
-                </span>
-              </Link>
-            </div>
-          </div>
+          <SourceList items={SOURCES} />
         </section>
 
         <div className="status-note">

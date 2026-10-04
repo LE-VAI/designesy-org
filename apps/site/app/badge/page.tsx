@@ -6,6 +6,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { SnippetCopy } from './snippet-copy';
 
 export const metadata: Metadata = pageMeta({
   title: 'Badge',
@@ -17,12 +18,15 @@ export const metadata: Metadata = pageMeta({
     'Embed the badge. Link to your live score. Design coherence anyone can check.',
 });
 
+// The specimen papers. Light-site badges sit on a soft light grey, not pure
+// white: two #fff slabs a viewport were the brightest objects on the page and
+// outranked the code they illustrate.
 const VARIANTS = [
   {
     id: 'dark',
     label: 'Dark',
     desc: 'For light-background sites (most common).',
-    bg: '#ffffff',
+    bg: '#f3f4f6',
     file: 'badge.svg',
     w: 156,
     h: 32,
@@ -40,7 +44,7 @@ const VARIANTS = [
     id: 'compact',
     label: 'Compact',
     desc: 'Mark only, for footers, sidebars, and tight spaces.',
-    bg: '#ffffff',
+    bg: '#f3f4f6',
     file: 'badge-compact.svg',
     w: 28,
     h: 28,
@@ -78,7 +82,7 @@ export default function BadgePage() {
         {/* --- Badge variants gallery --- */}
         <section className="doctrine-section fade-up fade-up-delay-1">
           <h2 className="doctrine-heading">Badge variants</h2>
-          <div className="badge-gallery">
+          <div className="badge-gallery g12">
             {VARIANTS.map((v) => (
               <div key={v.id} className="badge-variant">
                 <div
@@ -111,22 +115,46 @@ export default function BadgePage() {
             Replace <code className="inline-code">YOURSITE.com</code> with your domain.
             The <code className="inline-code">href</code> links to your live score for verification.
           </p>
+          {/* Each snippet is one card on the 7-line: the code in the face, the
+              badge it renders in the side pane. Copy is a button in the face's
+              label row, named per variant (three buttons all called "Copy"
+              were indistinguishable to a screen reader). */}
           <div className="badge-snippets">
-            {VARIANTS.map((v) => (
-              <div key={v.id} className="badge-snippet">
-                <p className="badge-snippet-label">{v.label}</p>
-                {/* Named per variant: three copy buttons all called "Copy definition"
-                    were indistinguishable to a screen reader. */}
-                <pre className="definition definition-code" data-copy-label={`${v.label} embed snippet`}>
-                  <code>{`<a href="https://www.designesy.org/score?url=YOURSITE.com"
+            {VARIANTS.map((v) => {
+              const snippet = `<a href="https://www.designesy.org/score?url=YOURSITE.com"
    target="_blank" rel="noopener">
   <img src="https://www.designesy.org/${v.file}"
        alt="Verified by Designesy"
        width="${v.w}" height="${v.h}" />
-</a>`}</code>
-                </pre>
-              </div>
-            ))}
+</a>`;
+              return (
+                <div key={v.id} className="badge-snippet">
+                  <div className="badge-snippet-face">
+                    <div className="badge-snippet-label">
+                      <h3 className="badge-snippet-name">{v.label}</h3>
+                      <SnippetCopy text={snippet} label={`${v.label} embed snippet`} />
+                    </div>
+                    {/* Each line stays whole and the well scrolls sideways
+                        when a line is wider than it (badge.css); where it
+                        does, lib/scroll-regions gives it a keyboard stop
+                        named by data-scroll-region and the edge fade. */}
+                    <pre className="badge-snippet-code" data-scroll-region={`${v.label} embed snippet`}>
+                      <code>{snippet}</code>
+                    </pre>
+                  </div>
+                  <figure className="badge-snippet-side">
+                    <figcaption className="badge-snippet-label">
+                      <span className="badge-snippet-name">Renders as</span>
+                      <span className="badge-snippet-dim">{v.w} × {v.h}px</span>
+                    </figcaption>
+                    <div className="badge-snippet-specimen" style={{ background: v.bg }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/${v.file}`} alt={`The ${v.label} badge`} width={v.w} height={v.h} />
+                    </div>
+                  </figure>
+                </div>
+              );
+            })}
           </div>
         </section>
 

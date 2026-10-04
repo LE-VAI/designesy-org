@@ -20,11 +20,9 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 /**
  * A path as one unbreakable span per "/"-segment. On a phone the path column
- * is ~175px, and "/contracts/design-system.json" was split mid-word
- * ("…system.js" / "on") by break-all. These links are inline-flex (the 44px
- * target in .row-meta a) with flex-wrap, so each nowrap segment moves to the
- * next line whole. The text content, and so the link name and copy, is
- * unchanged.
+ * is ~280px, and "/contracts/design-system.json" was split mid-word
+ * ("…system.js" / "on") by break-all. Each nowrap segment moves to the next
+ * line whole. The text content, and so the link name and copy, is unchanged.
  */
 function breakablePath(path: string) {
   return path.split(/(?=\/)/).map((part, i) => (
@@ -33,6 +31,87 @@ function breakablePath(path: string) {
     </span>
   ));
 }
+
+// Where each kind of reader starts (the line beside it says what they do).
+const START_AT: Record<string, string> = {
+  People: '/open',
+  Agents: '/open.json',
+  Builders: '/contracts/design-system',
+};
+
+// The side pane of "Related": what each surface is.
+const RELATED = [
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: `${CONTRACT_VERSION} · tokens, motion, components, adopted lab rules`,
+    side: 'Contract · human + machine',
+  },
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'Portable agent prompt',
+    side: 'Kit · human + machine',
+  },
+  {
+    href: '/open/handoff',
+    title: 'Open handoff pack',
+    meta: 'Share copy, agent prompt, verification paths',
+    side: 'Share pack',
+  },
+  {
+    href: '/review/keyboard',
+    title: 'Keyboard path · site-wide',
+    meta: 'Skip link, main landmark, shared chrome',
+    side: 'Verification',
+  },
+  {
+    href: '/docs',
+    title: 'Docs',
+    meta: 'Mission, principles, architecture',
+    side: 'Doctrine',
+  },
+];
+
+// "External references": each standard or library and who publishes it.
+const EXTERNAL = [
+  {
+    href: 'https://www.designtokens.org/',
+    title: 'W3C Design Tokens Format Module 2025.10',
+    meta: 'Canonical token standard: color, dimension, motion (duration, cubicBezier, transition)',
+    side: 'W3C Community Group',
+  },
+  {
+    href: 'https://llmstxt.org',
+    title: 'llms.txt',
+    meta: 'Agent-facing website context standard',
+    side: 'Jeremy Howard · 2024',
+  },
+  {
+    href: 'https://agents.md',
+    title: 'AGENTS.md',
+    meta: 'Repo-level agent guidance format, used by 60k+ projects',
+    side: 'Linux Foundation',
+  },
+  {
+    href: 'https://github.com/Danilaa1/cuelume',
+    title: 'Cuelume v0.2.2',
+    meta: 'Interaction sound engine: powers acoustic tokens',
+    side: 'MIT · Daniel Belyi',
+  },
+  {
+    href: 'https://transitions.dev',
+    title: 'transitions.dev',
+    meta: 'Transition gallery: duration scale cross-referenced in contract',
+    side: 'Matthew Antalik',
+  },
+  {
+    href: 'https://github.com/google-labs-code/design.md',
+    title: 'design.md',
+    meta: `Input format for AI coding agents: YAML tokens + markdown prose. The brief layer this contract extends with ${ENGINE_CHECK_COUNT} verification checks.`,
+    side: 'Google Labs',
+  },
+];
 
 export const metadata: Metadata = pageMeta({
   title: 'Open design intelligence',
@@ -128,6 +207,11 @@ export default function OpenPage() {
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
+                {START_AT[item.title] ? (
+                  <span className="row-side">
+                    <span className="row-side-line">{START_AT[item.title]}</span>
+                  </span>
+                ) : null}
               </ToggleRow>
             ))}
           </div>
@@ -156,28 +240,38 @@ export default function OpenPage() {
                       ? `${KIND_LABEL[pkg.kind]} ${pkg.number} · `
                       : `${KIND_LABEL[pkg.kind]} · `}
                     {pkg.title}
-                    {pkg.version ? ` · v${pkg.version}` : ''}
                   </span>
                   <span className="row-meta">{pkg.lede}</span>
+                  {/* The paths: human, then machine. A separator leads the
+                      second and is clipped when the pair wraps, so no line
+                      starts or ends on one. */}
                   <span className="row-meta open-package-paths">
-                    <Link href={pkg.path} data-cuelume-hover="tick">
-                      {breakablePath(pkg.path)}
-                    </Link>
-                    {pkg.machine_path ? (
-                      <>
-                        <span className="open-path-sep" aria-hidden="true">
-                          ·
-                        </span>
-                        <Link href={pkg.machine_path} data-cuelume-hover="chime">
-                          {breakablePath(pkg.machine_path)}
+                    <span className="open-paths">
+                      <span className="open-path">
+                        <Link href={pkg.path} data-cuelume-hover="tick">
+                          {breakablePath(pkg.path)}
                         </Link>
-                      </>
-                    ) : (
-                      <span className="open-path-note"> · human surface</span>
-                    )}
+                      </span>
+                      {pkg.machine_path ? (
+                        <span className="open-path">
+                          <span className="open-path-sep" aria-hidden="true">
+                            ·
+                          </span>
+                          <Link href={pkg.machine_path} data-cuelume-hover="chime">
+                            {breakablePath(pkg.machine_path)}
+                          </Link>
+                        </span>
+                      ) : null}
+                    </span>
                   </span>
                 </span>
                 <ListenButton pkgId={pkg.id} title={pkg.title} />
+                <span className="row-side">
+                  <span className="row-side-line">
+                    v{pkg.version} ·{' '}
+                    {pkg.machine_path ? 'JSON, CORS-open' : 'human surface'}
+                  </span>
+                </span>
               </div>
             ))}
           </div>
@@ -199,9 +293,11 @@ export default function OpenPage() {
                   </span>
                   <span className="row-body">
                     <span className="row-title">{item.title}</span>
-                    <span className="row-meta">
-                      {item.path} · {item.meta}
-                    </span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.path}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
                 </Link>
               </div>
@@ -224,84 +320,28 @@ export default function OpenPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/contracts/design-system"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract</span>
-                  <span className="row-meta">{CONTRACT_VERSION} · human + machine</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/kits/design-review"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Use Kit One · Design Review</span>
-                  <span className="row-meta">
-                    Portable agent prompt · human + machine
+            {RELATED.map((item, i) => (
+              <div role="listitem" key={item.href}>
+                <Link
+                  className="row"
+                  href={item.href}
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/open/handoff"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Open handoff pack</span>
-                  <span className="row-meta">
-                    Share copy, agent prompt, verification paths
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/review/keyboard"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Keyboard path · site-wide</span>
-                  <span className="row-meta">
-                    Skip link, main landmark, shared chrome
+                  <span className="row-side">
+                    <span className="row-side-line">{item.side}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/docs"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Docs</span>
-                  <span className="row-meta">
-                    Mission, principles, architecture
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -312,104 +352,33 @@ export default function OpenPage() {
             libraries. These are the external surfaces cited in the contract and labs.
           </p>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <a
-                href="https://www.designtokens.org/"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">W3C Design Tokens Format Module 2025.10</span>
-                  <span className="row-meta">Canonical token standard: color, dimension, motion (duration, cubicBezier, transition)</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://llmstxt.org"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">llms.txt</span>
-                  <span className="row-meta">Agent-facing website context standard (Jeremy Howard, 2024)</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://agents.md"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">AGENTS.md</span>
-                  <span className="row-meta">Repo-level agent guidance format (Linux Foundation, 60k+ projects)</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://github.com/Danilaa1/cuelume"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Cuelume v0.2.2</span>
-                  <span className="row-meta">Interaction sound engine (MIT, Daniel Belyi): powers acoustic tokens</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://transitions.dev"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">transitions.dev</span>
-                  <span className="row-meta">Transition gallery (Matthew Antalik): duration scale cross-referenced in contract</span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://github.com/google-labs-code/design.md"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="chime"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">design.md (Google Labs)</span>
-                  <span className="row-meta">
-                    Input format for AI coding agents: YAML tokens + markdown prose. The brief layer this contract extends with {ENGINE_CHECK_COUNT} verification checks.
+            {EXTERNAL.map((item, i) => (
+              <div role="listitem" key={item.href}>
+                <a
+                  href={item.href}
+                  className="row"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-cuelume-hover="chime"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </a>
-            </div>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.side}</span>
+                    {/* Leaves the site: the arrow points out. */}
+                    <span className="row-side-arrow" aria-hidden="true">
+                      ↗
+                    </span>
+                  </span>
+                </a>
+              </div>
+            ))}
           </div>
         </section>
 

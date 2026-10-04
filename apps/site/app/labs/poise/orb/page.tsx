@@ -22,7 +22,7 @@ export default function OrbLabPage() {
   return (
     <>
       <Topbar />
-      <main id="main-content" className="surface-page orb-lab-page">
+      <main id="main-content" data-pagefind-body className="surface-page orb-lab-page">
         <section className="orb-hero">
           <p className="surface-eyebrow">
             <Link href="/labs" className="lab-crumb">

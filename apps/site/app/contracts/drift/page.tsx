@@ -6,6 +6,8 @@ import { driftContract } from '../../lib/drift-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvFigures, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Drift contract',
@@ -19,6 +21,23 @@ export const metadata: Metadata = pageMeta({
 });
 
 const c = driftContract;
+
+// The two statistics, read out of the contract's own sentences so the figure
+// cannot drift from its source. If a sentence is reworded and no longer
+// matches, the cell prints the sentence instead.
+//   "OverlayQA: ~160 visual issues per AI-generated app (Jason Arbon, 1000+ checks)"
+const SCALE = /^(.+?):\s*(~?\d[\d,]*)\s+(.+?)\s*\((.+)\)$/.exec(c.source_authority.scale_signal);
+//   "Figma 2025: 23% design-system drift in 8 weeks without formal review vs 4% with it"
+const RATE = /^(.+?):\s*(\d+%)\s+(.+?)\s+without\s+(.+?)\s+vs\s+(\d+%)\s+with it$/.exec(c.source_authority.drift_rate);
+
+// The checks that detect each mode, and the limit the contract's own open
+// questions name for it. Ids are the verification list's own.
+const MODE_SIDE: Record<string, { checks?: string; gap?: string }> = {
+  token_fabrication: { checks: 'd02 · d11 · d12' },
+  within_session_drift: { checks: 'd04 · d05 · d06 · d07 · d08 · d09', gap: 'on the fetched URL only' },
+  between_session_amnesia: { gap: 'needs historical snapshots' },
+  silent_breaking_changes: { gap: 'needs version tracking' },
+};
 
 export default function DriftContractPage() {
   return (
@@ -38,36 +57,66 @@ export default function DriftContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Drift taxonomy</p>
-            <p>{c.source_authority.drift_modes}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Scale of the problem</p>
-            <p>{c.source_authority.scale_signal}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Drift rate</p>
-            <p>{c.source_authority.drift_rate}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Drift taxonomy</dt>
+              <KvValue text={c.source_authority.drift_modes} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Scale of the problem</dt>
+              {SCALE ? (
+                <KvFigures figures={[{ value: SCALE[2], caption: SCALE[3] }]} source={`${SCALE[1]} · ${SCALE[4]}`} />
+              ) : (
+                <KvValue text={c.source_authority.scale_signal} />
+              )}
+            </dl>
+            <dl className="kv-cell">
+              <dt>Drift rate</dt>
+              {RATE ? (
+                <KvFigures
+                  figures={[
+                    { value: RATE[2], caption: `without ${RATE[4]}` },
+                    { value: RATE[5], caption: `with ${RATE[4]}` },
+                  ]}
+                  note={RATE[3]}
+                  source={RATE[1]}
+                />
+              ) : (
+                <KvValue text={c.source_authority.drift_rate} />
+              )}
+            </dl>
+            <dl className="kv-cell is-foot">
+              <dt>Primary source</dt>
+              <dd>{c.source_authority.primary}</dd>
+            </dl>
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">The four drift modes</h2>
           <div className="row-stack" role="list">
-            {c.conformance.four_drift_modes.map((mode, i) => (
-              <div key={mode.mode} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">{mode.mode.replace(/_/g, ' ')}</span>
-                  <span className="row-meta">{mode.description}</span>
-                </span>
-              </div>
-            ))}
+            {c.conformance.four_drift_modes.map((mode, i) => {
+              const side = MODE_SIDE[mode.mode] ?? {};
+              return (
+                <div key={mode.mode} className="row" role="listitem">
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
+                  <span className="row-body">
+                    <span className="row-title">{mode.mode.replace(/_/g, ' ')}</span>{' '}
+                    <span className="row-meta">{mode.description}</span>
+                  </span>{' '}
+                  <span className="row-side">
+                    {side.checks ? (
+                      <span className="row-side-line">{side.checks}</span>
+                    ) : (
+                      <span className="row-side-line">
+                        <span className="row-side-chip" data-state="hold">No check</span>
+                      </span>
+                    )}
+                    {side.gap ? <>{' '}<span className="row-side-line">{side.gap}</span></> : null}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -86,26 +135,26 @@ export default function DriftContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={check.id} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass} · FAIL: {check.fail}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Validation: {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
-          </p>
+          <div className="contract-validation">
+            <p className="contract-eyebrow">Validation</p>
+            <p className="surface-note">
+              {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
               <li key={i}>{q}</li>
             ))}

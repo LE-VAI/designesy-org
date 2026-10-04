@@ -144,6 +144,10 @@ export default function WhyPublicScorePage() {
                   <span className="row-title">Score designesy.org</span>
                   <span className="row-meta">The verifier against its own publisher</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/score?url=designesy.org</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -158,6 +162,10 @@ export default function WhyPublicScorePage() {
                   <span className="row-title">Score any URL</span>
                   <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against your own site</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/score</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -171,6 +179,10 @@ export default function WhyPublicScorePage() {
                 <span className="row-body">
                   <span className="row-title">What is design verification?</span>
                   <span className="row-meta">The category definition this score belongs to</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/learn/what-is-design-verification</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

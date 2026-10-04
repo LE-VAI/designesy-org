@@ -3,7 +3,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
-import { designSystemContract, CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { componentsContract } from '../../lib/components-contract';
 
 export const metadata: Metadata = pageMeta({
@@ -37,10 +37,14 @@ export default function ComponentsContractPage() {
             can check a component against the contract instead of guessing at
             it.
           </p>
+          {/* CONTRACT_VERSION already carries its "v" (it read "vv0.4.1"). */}
           <p className="surface-note">
             Version {componentsContract.version} · derived from the design
-            system contract v{CONTRACT_VERSION}
+            system contract v{CONTRACT_VERSION.replace(/^v/, '')}
           </p>
+          {/* Under the version line, as on every sibling contract page; it
+              used to sit alone in a full-width text cell at the page's end. */}
+          <AgentActions mdPath="/contracts/components.md" label="the components contract" />
         </section>
 
         <section className="doctrine-section fade-up">
@@ -60,32 +64,24 @@ export default function ComponentsContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Components</h2>
+          {/* The token table's own row classes (the shape contracts/page.tsx
+              uses): the old token-row / token-row-head had no styles, so the
+              header read "ComponentStates" and every row ran name into states
+              with no padding. Two cells per row: the name on the first three
+              tracks, the states from the Value line to the end. */}
           <div className="token-table" role="table" aria-label="Component contract">
-            <div role="rowgroup">
-              <div role="row" className="token-row token-row-head">
-                <span role="columnheader">Component</span>
-                <span role="columnheader">States</span>
+            <div className="token-table-head" role="row">
+              <span role="columnheader">Component</span>
+              <span role="columnheader">States</span>
+            </div>
+            {components.map((c) => (
+              <div className="token-table-row" role="row" key={c.name}>
+                <span role="cell">
+                  <strong>{c.name}</strong>
+                </span>
+                <span role="cell">{c.states}</span>
               </div>
-            </div>
-            <div role="rowgroup">
-              {components.map((c) => (
-                <div role="row" className="token-row" key={c.name}>
-                  <span role="cell">
-                    <strong>{c.name}</strong>
-                  </span>
-                  <span role="cell">{c.states}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up">
-          <div className="text-cell">
-            <AgentActions
-              mdPath="/contracts/components.md"
-              label="the components contract"
-            />
+            ))}
           </div>
         </section>
       </main>

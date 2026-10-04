@@ -5,6 +5,7 @@ import { useSoundPreference } from './use-sound';
 import { useHapticsPreference } from './use-haptics';
 import { useMotionPreference } from './use-motion-pref';
 import { useTheme, originOf } from './use-theme';
+import { pushLayer } from './overlay-stack';
 
 /**
  * Senses — one control centre for motion, sound, haptics, and theme.
@@ -133,24 +134,36 @@ export function SensesMenu() {
   const haptics = useHapticsPreference();
   const theme = useTheme();
 
+  // Whether closing hands focus back to the trigger: yes for Escape; no for a
+  // press elsewhere (the reader went there) or the trigger itself (it has it).
+  const restoreRef = useRef(false);
   const close = useCallback((returnFocus: boolean) => {
+    restoreRef.current = returnFocus;
     setOpen(false);
-    if (returnFocus) triggerRef.current?.focus();
   }, []);
 
+  // A non-modal layer on the shared overlay stack (lib/overlay-stack): the
+  // page stays live, but Escape reaches this panel only while it is the top
+  // layer, so with the palette open over it one Escape closes the palette
+  // and leaves this open. Click-away likewise acts only from the top: a
+  // press inside the palette is not a press away from this panel.
   useEffect(() => {
     if (!open) return;
+    const layer = pushLayer({
+      modal: false,
+      element: () => rootRef.current,
+      onEscape: () => close(true),
+      returnFocus: () => [triggerRef.current],
+    });
     const onPointer = (e: PointerEvent) => {
+      if (!layer.isTop()) return;
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) close(false);
     };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close(true);
-    };
     document.addEventListener('pointerdown', onPointer);
-    document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('pointerdown', onPointer);
-      document.removeEventListener('keydown', onKey);
+      layer.release({ restoreFocus: restoreRef.current });
+      restoreRef.current = false;
     };
   }, [open, close]);
 

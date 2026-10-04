@@ -1,0 +1,1344 @@
+/* ==========================================================================
+   Work case studies (2026-10-03): the case-study instruments, the state
+   chips, the split title and the index rows' side pane. Route-scoped: plain
+   .css imported by the app/work pages, so Next.js code-splits it to /work.
+   Markup: app/work/case-instrument.tsx and app/work/page.tsx.
+
+   The register is the engine instrument's (engine.css .eg-inst): an opaque,
+   top-lit panel (material tier 2: --mat-instrument, the masked --rim,
+   --elev-2), a title bar and a body that split their face from their side
+   on the 7-line, mono labels, one lit glass cell per check. It paints with
+   the instrument palette (instrument.css) and declares nothing on :root.
+
+   Motion law, as on the console: claims hold still, proof moves. The moving
+   parts are the after-run's cells resolving, the bars filling and the
+   numerals rolling to their value, all on the panel's scroll timeline,
+   transform and opacity only. Every one of them is DRAWN AT ITS VALUE by
+   default; only browsers with scroll timelines, with motion allowed and the
+   motion switch on, run them. Nothing loops.
+   ========================================================================== */
+
+/* --- Declared defaults ----------------------------------------------------
+   Every custom property these rules read is declared once in this sheet, so
+   the stylesheet never references a property it does not define (the site's
+   own drift checks read stylesheets: d02, d11). Components override the
+   per-element ones inline with their real, data-derived values. */
+.cs-bench {
+  --cs-cell-h: 1.1rem;
+  --cs-cell-gap: var(--space-4);
+  --cs-head-w: 6.5rem;
+  --cs-steps: 2;
+}
+
+.cs-cells { --cs-n: 1; }
+.cs-cell { --i: 0; }
+.cs-scale-zone,
+.cs-scale-ticks > span { --w: 10; }
+.cs-scale-mark { --at: 0; --to: 0; }
+.cs-post-track { --lo: 0; --hi: 0; }
+.cs-post-fill { --v: 0; }
+.cs-axis.is-views > span > span { --at: 0; }
+.cs-axis-cells > span { --c: 1; }
+
+/* The noise-floor hatch is drawn in ink, not --lv-hatch: it has to read on
+   the empty well and on a lit fill in both themes (the light hatch, navy at
+   22%, vanished on the light theme's blue). */
+.cs-post-track,
+.cs-legend {
+  --cs-band-ink: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+/* State text. The state tokens are text-safe on the reading surfaces in
+   both themes except light-mode warn (#b07d04 is 3.6:1 on white, an icon
+   colour), which mixes toward ink to 5.8:1 and keeps its hue. */
+.cs-state,
+.work-index {
+  --cs-warn-ink: var(--warn);
+}
+
+[data-theme="light"] .cs-state,
+[data-theme="light"] .work-index {
+  --cs-warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink));
+}
+
+/* ==========================================================================
+   Type pieces
+   ========================================================================== */
+
+/* --- The split title (CaseTitle) ------------------------------------------
+   Two flex parts that wrap as wholes. Each part carries the separator's
+   width as leading padding, and the run is pulled back by the same width,
+   so the first part's text starts on the title's edge. The tail's dot hangs
+   in its padding: beside the name it reads " · "; wrapped, it falls in the
+   strip left of the title's edge, which the clip removes (inset -0.06em on
+   the left keeps Fraunces' side bearing, the other sides leave the glyphs
+   room). No line starts or ends on the dot, at any width or face. */
+.cs-title {
+  --cs-sep: 0.7em;
+  clip-path: inset(-0.5em -0.5em -0.5em -0.06em);
+}
+
+.cs-title-run {
+  display: flex;
+  flex-wrap: wrap;
+  margin-inline-start: calc(-1 * var(--cs-sep));
+}
+
+.cs-title-part {
+  min-width: 0;
+  padding-inline-start: var(--cs-sep);
+}
+
+.cs-title-sep {
+  display: inline-block;
+  inline-size: var(--cs-sep);
+  margin-inline-start: calc(-1 * var(--cs-sep));
+  text-align: center;
+}
+
+/* --- Check titles ----------------------------------------------------------
+   Check identifiers ("Cadence typography contract-diff", "tabular-nums: 8
+   instances") are code-like names, not editorial titles: Fraunces 700 at
+   15px with the heading's -0.02em closed their word spaces into run-ons.
+   They set in the UI face at 600 with open tracking. Two classes, so the
+   rule outranks .principle-body h3 wherever the sheets land. */
+.principle-body .cs-check-title {
+  font: 600 1rem/1.35 var(--sans);
+  letter-spacing: 0;
+}
+
+/* Editorial card titles under 18px keep Fraunces and lose the tightening. */
+.principle-body .cs-card-title {
+  letter-spacing: 0;
+}
+
+/* --- State chips (StateChip, StateMove) ------------------------------------
+   A check status in its state token: the lamp and the ring take the hue,
+   the label takes the text-safe ink. The superseded state is drawn at
+   reduced emphasis in the same hue: a hollow lamp, a quieter ring, regular
+   weight. The fill is transparent, so the label's contrast is measured
+   against the card itself (light fail #dc2626 on white is 4.83:1). */
+.cs-move {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+
+/* A status line above a card's note keeps the note a beat below it. */
+.principle-body .cs-move + p {
+  margin-top: var(--space-8);
+}
+
+.cs-move-arrow {
+  font: 500 0.8rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.cs-state {
+  --cs-hue: var(--muted);
+  --cs-ink: var(--cs-hue);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-8) var(--space-5) var(--space-6);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cs-hue) 48%, transparent);
+  font: 600 0.7rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  color: var(--cs-ink);
+  white-space: nowrap;
+}
+
+.cs-state::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cs-hue);
+}
+
+.cs-state[data-state="pass"] { --cs-hue: var(--ok); }
+.cs-state[data-state="fail"] { --cs-hue: var(--error); }
+.cs-state[data-state="warn"] { --cs-hue: var(--warn); --cs-ink: var(--cs-warn-ink); }
+.cs-state[data-state="skip"] { --cs-hue: var(--muted); }
+
+.cs-state.is-before {
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cs-hue) 28%, transparent);
+}
+
+.cs-state.is-before::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--cs-hue);
+}
+
+/* ==========================================================================
+   The instrument
+   ========================================================================== */
+
+/* The bench: the figure is the query container and the scroll timeline, so
+   the panel inside stays out of containment (not a stacking context): its
+   floor sits at z -1 in the figure's context, under the panel, never over
+   its face. */
+.cs-bench {
+  container: cs-bench / inline-size;
+  view-timeline: --cs-bench block;
+  margin: 0;
+}
+
+/* An opaque, top-lit instrument (material tier 2): read, not commanded, so
+   no glass. No inline padding and no border (the rim is a masked layer), so
+   --track-split resolves against the full panel and the side's 1px border
+   lands on the 7-line. Nothing inside paints into the rounded corners, so
+   it needs no clip. */
+.cs-inst {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--mat-instrument);
+  box-shadow: var(--elev-2);
+}
+
+/* The rim: the 1px top-lit edge, plus the hairline of light along the top
+   (12% in from each corner), the one specular note (as .eg-inst, .vc-window). */
+.cs-inst::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 12%, var(--lv-sheen), transparent 88%) top / 100% 1px no-repeat,
+    var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The floor: light pooling under the page's one standing object. It never
+   moves; a case study holds one instrument, so one per viewport. */
+.cs-inst::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: max(-7%, -1.75rem);
+  z-index: -1;
+  height: min(18%, 4.5rem);
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* --- Title bar --- */
+
+.cs-inst-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-12);
+  min-height: 2.9rem;
+  padding-inline: var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+  font: 500 0.78rem/1 var(--sans);
+  color: var(--muted);
+}
+
+.cs-inst-face {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+.cs-inst-app {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.cs-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1.5px var(--lv-ink-accent);
+}
+
+.cs-mark i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lv-ink-accent);
+}
+
+/* The target pill ends the face (margin-inline-start: auto), its right edge
+   12px in from the 7-line. */
+.cs-inst-target {
+  min-width: 0;
+  margin-inline-start: auto;
+  padding: 0.38rem 0.85rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  font: 500 0.74rem/1 var(--mono);
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-inst-state {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 0.72rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Lamps (title bar and index rows) --------------------------------------
+   Supplementary: every lamp sits beside the words that state it. */
+.cs-led {
+  --cs-lamp: var(--muted);
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cs-lamp);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cs-lamp) 18%, transparent);
+}
+
+.cs-led[data-lamp="pass"] { --cs-lamp: var(--lv-pass-a); }
+.cs-led[data-lamp="live"] { --cs-lamp: var(--live); }
+.cs-led[data-lamp="warn"] { --cs-lamp: var(--warn); }
+
+/* Pending: a hollow lamp, nothing lit yet. */
+.cs-led[data-lamp="pending"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--cs-lamp);
+}
+
+/* --- Body: face and side --- */
+
+.cs-inst-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cs-face {
+  display: grid;
+  align-content: start;
+  gap: var(--space-16);
+  min-width: 0;
+  padding: var(--space-20) var(--space-20) var(--space-24);
+}
+
+.cs-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  border-top: 1px solid var(--line-faint);
+}
+
+/* Labels sit in --muted, not --muted-dim: the instrument's top stop
+   (--surface-lifted) leaves --muted-dim at 4.4:1. */
+.cs-label {
+  font: 500 0.6875rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Narrow bench: the target pill steps out (the page header names the host),
+   so the app's name and the state share one row and never collide. */
+@container cs-bench (width < 36rem) {
+  .cs-inst-target {
+    display: none;
+  }
+}
+
+/* A 320px phone: the name and the state ("Build verification", "9 tests ·
+   2026-07-13") need 283px of the bar's 256, so the state takes a second
+   row. From a 20rem panel (a 352px viewport) they share one. */
+@container cs-bench (width < 20rem) {
+  .cs-inst-bar {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-6);
+    padding-block: var(--space-12);
+  }
+  .cs-inst-state {
+    justify-self: start;
+  }
+}
+
+/* A side pane beside the face from 40rem, and from there the face is
+   exactly the 7-column track: the side's 1px border-left is the divider, on
+   the 7-line (804.17 at 1440, where the engine instruments and the row
+   lists split too). The side is never under 16rem there (273px at 40rem).
+   The bar follows the panes with the same tracks (zero gap on both, so the
+   tracks are equal), and the state's cell draws the divider from the top of
+   the bar, so the line runs the panel's full height. The 40rem literal is a
+   documented query value: custom properties are invalid in conditions. */
+@container cs-bench (width >= 40rem) {
+  .cs-inst-bar,
+  .cs-inst-body {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+  .cs-inst-bar {
+    column-gap: 0;
+    padding-inline: 0;
+  }
+  .cs-inst-face {
+    padding-inline: var(--space-20) var(--space-12);
+  }
+  .cs-inst-state {
+    justify-self: stretch;
+    align-self: stretch;
+    padding-inline: var(--space-20);
+    border-left: 1px solid var(--line-faint);
+  }
+  .cs-side {
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+/* --- Runs: one cell per check, every run on the same columns ------------ */
+
+.cs-runs {
+  display: grid;
+  gap: var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-run {
+  display: grid;
+  grid-template-columns: var(--cs-head-w) minmax(0, 1fr);
+  grid-template-areas:
+    "head cells"
+    ".    tally";
+  align-items: center;
+  gap: var(--space-8) var(--space-16);
+}
+
+.cs-run-head {
+  grid-area: head;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cs-run-label {
+  font: 600 0.72rem/1.2 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.cs-run-note {
+  font: 500 0.78rem/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* Every run shares one column grid as wide as the longest run, so a cell
+   sits under the cell above it: equal counts are equal widths by
+   construction, and the two runs read as one table. */
+.cs-cells {
+  grid-area: cells;
+  display: grid;
+  /* Capped at the console's cell width (2.25rem), so a short run (nine
+     tests) reads as nine lamps, not nine bars. 26 cells never reach it. */
+  grid-template-columns: repeat(var(--cs-n), minmax(0, 2.25rem));
+  gap: var(--cs-cell-gap);
+}
+
+/* A short run with its count at the end (BuildReadout: nine tests). The
+   cells keep the console's lamp width (the cap above), so nine lamps end
+   166px short of the face at 1440. The count ("9 / 9") takes the row's last
+   track, right-aligned on the face's content edge (784.16 at 1440, where a
+   26-cell run ends), and a dotted leader runs from the last lamp to it, so
+   the open track reads as a leader to the count, never as missing tests. */
+.cs-run[data-count] {
+  /* The count's track is auto: it never drops below its text and a stub of
+     leader, and it alone stretches into the room the lamps leave. The lamps
+     take everything else up to their cap, so at a 40rem panel (247px for
+     both) they shrink to 17px instead of the count spilling over the
+     divider. */
+  grid-template-columns: var(--cs-head-w) minmax(0, max-content) auto;
+  grid-template-areas:
+    "head cells count"
+    ".    tally tally";
+}
+
+.cs-run-count {
+  grid-area: count;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+  font: 500 0.78rem/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.cs-run-count::before {
+  content: "";
+  flex: 1 1 0;
+  min-width: var(--space-8);
+  border-top: 1px dotted var(--line-strong);
+}
+
+.cs-cell {
+  position: relative;
+  height: var(--cs-cell-h);
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+/* The resolved state: a lit glass tile (the console's .vc-cell). */
+.cs-cell[class*="is-"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
+}
+
+.cs-cell.is-warn::before {
+  background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine);
+}
+
+.cs-cell.is-fail::before {
+  background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine);
+}
+
+/* Unrun: hatched and outlined, the drawing convention for "not measured". */
+.cs-cell.is-skip::before {
+  background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
+  box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+/* A projection is not a measurement: its cells are ghosts of the lit ones,
+   the same fills at 40% with no glow, and its label steps down to --muted. */
+.cs-run[data-projected] .cs-cell[class*="is-"]::before {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+.cs-run[data-projected] .cs-run-label {
+  color: var(--muted);
+}
+
+/* Its legend is a ghost too: the numerals step down to --muted and the
+   swatches go hollow (a 1px ring in the state's hue, the skip's hatch
+   dropped), so the projected tally can never be read as a measured one. */
+.cs-run[data-projected] .cs-tally-item b {
+  color: var(--muted);
+}
+
+.cs-run[data-projected] .cs-tally-item .cs-swatch {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--cs-swatch-ring);
+}
+
+.cs-tally {
+  grid-area: tally;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6) var(--space-16);
+  font: 400 0.78rem/1.25 var(--sans);
+  color: var(--muted);
+}
+
+.cs-tally-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.cs-tally-item b {
+  font: 500 0.78rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.cs-tally-item .cs-swatch {
+  flex: 0 0 auto;
+  width: 0.7rem;
+  height: 0.45rem;
+  border-radius: var(--radius-sm);
+}
+
+.cs-swatch.is-pass { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); }
+.cs-swatch.is-warn { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
+.cs-swatch.is-fail { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+.cs-swatch.is-skip {
+  background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 3px);
+  box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+/* The ring a hollow (projected) swatch draws. */
+.cs-swatch { --cs-swatch-ring: var(--muted); }
+.cs-swatch.is-pass { --cs-swatch-ring: var(--lv-pass-a); }
+.cs-swatch.is-warn { --cs-swatch-ring: var(--lv-warn-a); }
+.cs-swatch.is-fail { --cs-swatch-ring: var(--lv-fail-a); }
+
+/* The scale's axis, under the cells column (the run's own head track). */
+.cs-axis {
+  display: grid;
+  grid-template-columns: var(--cs-head-w) minmax(0, 1fr);
+  column-gap: var(--space-16);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--line-faint);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.cs-axis > span {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+/* The runs' ruler (CellAxis): the cells' own column grid, so a tick at 5
+   sits on the seam between the fifth and sixth cells at every width. Each
+   tick is a 5px mark through the axis rule with its count centred under it
+   (the first hangs from the scale's start); the end label hangs from the
+   scale's end and names the unit where the face is the 7-column track of a
+   64rem panel (narrower, "20" and "26 checks" meet). */
+.cs-axis > .cs-axis-cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cs-n), minmax(0, 2.25rem));
+  column-gap: var(--cs-cell-gap);
+}
+
+.cs-axis-cells > span {
+  position: relative;
+  grid-row: 1;
+  grid-column: var(--c);
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.cs-axis-tick + .cs-axis-tick {
+  transform: translateX(calc(-50% - var(--cs-cell-gap) / 2));
+}
+
+.cs-axis-cells > .cs-axis-end {
+  justify-self: end;
+}
+
+.cs-axis-cells > span::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--space-8) - 3px);
+  left: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--line-strong);
+}
+
+.cs-axis-tick + .cs-axis-tick::before {
+  left: 50%;
+}
+
+/* The end tick hangs from the label's right edge, which is the scale's end
+   (the last cell's right edge). It names the parent like the base rule does:
+   .cs-axis-end::before alone (0,1,1) lost to .cs-axis-cells > span::before
+   (0,1,2), so the tick drew at the label's left edge, three cells short. */
+.cs-axis-cells > .cs-axis-end::before {
+  left: auto;
+  right: 0;
+}
+
+.cs-axis-unit {
+  display: none;
+}
+
+@container cs-bench (width >= 64rem) {
+  .cs-axis-unit {
+    display: inline;
+  }
+}
+
+/* --- Build verification: the domains a run covered --------------------- */
+
+.cs-domains {
+  display: grid;
+  grid-template-columns: var(--cs-head-w) minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-8) var(--space-16);
+}
+
+.cs-domains ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-domains li {
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  font: 500 0.72rem/1.2 var(--mono);
+  color: var(--ink);
+}
+
+@container cs-bench (width < 30rem) {
+  .cs-domains {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Verdict (side) --- */
+
+.cs-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-12) var(--space-16);
+}
+
+.cs-was,
+.cs-now,
+.cs-projected {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+}
+
+.cs-glyph {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: 3.6rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.cs-score {
+  padding-bottom: 0.55rem;
+  font: 500 1.5rem/1.25 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* The superseded verdict: smaller and quieter, still above 4.5:1. */
+.cs-glyph.is-was {
+  font-size: 2rem;
+  color: var(--muted);
+}
+
+.cs-score.is-was {
+  padding-bottom: 0.3rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.cs-verdict-arrow {
+  padding-bottom: 0.7rem;
+  font: 500 1rem/1 var(--mono);
+  color: var(--muted);
+}
+
+/* A projected grade: drawn in a dashed frame, the convention for "not yet
+   built", in --muted (no number is shown for it, because none was measured). */
+.cs-projected {
+  align-self: stretch;
+  align-items: center;
+  padding: 0 var(--space-12);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+.cs-glyph.is-projected {
+  font-size: 2rem;
+  color: var(--muted);
+}
+
+.cs-projected-label {
+  font: 500 0.6875rem/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* The same projection in running data (lovable's Outcome side): the grade
+   in a dashed frame, in --muted, inside its line (the frame's 2px of border
+   come out of the line height, so the 16px row pitch holds). */
+.cs-ghost {
+  display: inline-block;
+  padding-inline: var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  line-height: calc(1rem - 2px);
+  color: var(--muted);
+}
+
+.cs-side-note,
+.cs-face-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.cs-side-note b {
+  font: 600 0.95rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+}
+
+/* --- The grade scale, drawn to scale -------------------------------------
+   F spans 0 to 60, each other grade ten points; the zones abut (their rings
+   are the separators), so a marker at --at% lands where the score lands. */
+.cs-scale {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+}
+
+.cs-scale-track {
+  position: relative;
+  display: flex;
+  height: 0.5rem;
+}
+
+.cs-scale-zone {
+  flex: var(--w) 0 0;
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+.cs-scale-zone.is-now {
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine);
+}
+
+.cs-scale-zone.is-was {
+  background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
+}
+
+.cs-scale-mark {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: calc(var(--at) * 1%);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
+
+.cs-scale-mark.is-was {
+  background: var(--muted);
+}
+
+/* A projected grade (lovable's A+): a hollow, dashed range from the measured
+   mark to the top of the scale, the dashed "A+ Projected" frame's own
+   convention, under the solid measured mark. It marks a direction, not a
+   value: no score was measured for it. Its grade is named over the range,
+   at the scale's end, 3px above the range's dashed top. */
+.cs-scale-mark.is-projected {
+  top: -3px;
+  bottom: -3px;
+  width: calc((var(--to) - var(--at)) * 1%);
+  margin-left: 0;
+  border: 1px dashed var(--muted);
+  border-radius: var(--radius-sm);
+  background: none;
+  box-shadow: none;
+}
+
+.cs-scale-proj {
+  justify-self: end;
+  font: 500 0.6875rem/1 var(--mono);
+  color: var(--muted);
+}
+
+.cs-scale-ticks {
+  display: flex;
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.cs-scale-ticks > span {
+  flex: var(--w) 0 0;
+}
+
+/* A ten-point zone is 46px at 1440 but 22px in a 40rem panel's side and
+   28px on a phone, under the 26px "D 60" needs: the band numbers show only
+   where the side is the 5-column track. */
+.cs-tick-n {
+  display: none;
+}
+
+@container cs-bench (width >= 64rem) {
+  .cs-tick-n {
+    display: inline;
+  }
+}
+
+/* --- Engagement: posts against the noise floor ---------------------------- */
+
+.cs-posts {
+  display: grid;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cs-post {
+  display: grid;
+  grid-template-columns: var(--cs-head-w) minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: var(--space-8) var(--space-16);
+}
+
+.cs-post-label {
+  font: 500 0.82rem/1.3 var(--sans);
+  color: var(--ink);
+}
+
+.cs-post-track {
+  position: relative;
+  height: var(--cs-cell-h);
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+}
+
+/* The noise floor, drawn on every track at the same values, over the fills:
+   a bar that ends inside it (the reply's 61) or runs through it (617) still
+   shows where the floor is. */
+.cs-post-band {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  left: calc(var(--lo) * 100%);
+  width: calc((var(--hi) - var(--lo)) * 100%);
+  background: repeating-linear-gradient(135deg, var(--cs-band-ink) 0 1px, transparent 1px 4px);
+  box-shadow: inset 1px 0 0 var(--cs-band-ink), inset -1px 0 0 var(--cs-band-ink);
+}
+
+/* Drawn at its width; the fill grows by transform only (Motion, below), so
+   its rounded end never distorts at rest. */
+.cs-post-fill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: calc(var(--v) * 100%);
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b));
+  box-shadow: inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
+  transform-origin: left center;
+}
+
+/* No number to draw. The row keeps the chart's track, drawn as an empty
+   dashed well with a tick at the origin (where its bar would start), and the
+   value column says why ("Not surfaced"). So the absent row ends on the same
+   edge as a measured row (680.16 at 1440), its words share the values' edge
+   (784.16), and nothing in it reads as a text field (a 1px box of mono text
+   spanning both columns did, and ended 104px past the bars). */
+.cs-post.is-absent .cs-post-track {
+  background: none;
+  box-shadow: none;
+  border: 1px dashed var(--line-strong);
+}
+
+.cs-post.is-absent .cs-post-track::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -1px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--muted);
+}
+
+.cs-post.is-absent .cs-post-value {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.cs-post-value {
+  justify-self: end;
+  font: 500 0.78rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* The views axis: ticks at their value, under the tracks column only. */
+.cs-axis.is-views {
+  grid-template-columns: var(--cs-head-w) minmax(0, 1fr) 5.5rem;
+}
+
+.cs-axis.is-views > span {
+  position: relative;
+  display: block;
+  height: 1em;
+}
+
+.cs-axis.is-views > span > span {
+  position: absolute;
+  left: calc(var(--at) * 100%);
+  transform: translateX(-50%);
+}
+
+/* The end ticks hang inside the track: 0 from its left edge, the last from
+   its right, so no label runs past the face's content edge. */
+.cs-axis.is-views > span > span:first-child {
+  transform: none;
+}
+
+.cs-axis.is-views > span > span:last-child {
+  transform: translateX(-100%);
+}
+
+.cs-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  font: 400 0.78rem/1.3 var(--sans);
+  color: var(--muted);
+}
+
+.cs-swatch.is-band {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 0.7rem;
+  border-radius: var(--radius-sm);
+  background: repeating-linear-gradient(135deg, var(--cs-band-ink) 0 1px, transparent 1px 4px);
+  box-shadow: inset 0 0 0 1px var(--cs-band-ink);
+}
+
+/* Narrow face: a run's label sits above its cells, so the cells take the
+   full face. */
+@container cs-bench (width < 30rem) {
+  .cs-run {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "cells"
+      "tally";
+  }
+  .cs-run-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+  }
+  .cs-axis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cs-axis > span {
+    grid-column: 1;
+  }
+  /* The short run's count joins its label's line, at the face's end. */
+  .cs-run[data-count] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head  count"
+      "cells cells"
+      "tally tally";
+  }
+  .cs-run-count::before {
+    content: none;
+  }
+  /* The views axis thins its interior ticks, never its ends: the first and
+     last always show (0 / 200 / 400 / 600 / 700, the 700 hung from the
+     track's end), so a bar never runs into an unlabelled stretch. */
+  .cs-axis.is-views > span > span:nth-child(even):not(:last-child) {
+    display: none;
+  }
+}
+
+/* A 320px phone: 600 and 700 would sit 4px apart, so the tick before the
+   end steps out too (0 / 200 / 400 / 700). */
+@container cs-bench (width < 21rem) {
+  .cs-axis.is-views > span > span:nth-last-child(2) {
+    display: none;
+  }
+}
+
+/* A post's track needs the face more than a run's cells do (eight axis
+   labels ran together under a 150px track at 768): until the face is the
+   7-column track of a 64rem panel, the label and value share a line and
+   the track runs the full face under them. */
+@container cs-bench (width < 64rem) {
+  .cs-post {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .cs-post-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .cs-axis.is-views {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cs-axis.is-views > span {
+    grid-column: 1;
+  }
+}
+
+/* --- Readout (side) --- */
+
+.cs-readout {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-8);
+}
+
+.cs-big {
+  font: 600 3rem/1.25 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* The unit sits on the numerals' baseline. The big numerals' box is their
+   1.25em line (a digit strip's window has no text baseline to align to, so
+   the row aligns box ends), and the unit's bottom padding lifts it to the
+   numerals' baseline: 0.7rem left it 0.95px high (measured with a baseline
+   probe in "617 views" and "9/9 passed"), hence the 1px. */
+.cs-unit {
+  padding-bottom: calc(0.7rem - 1px);
+  font: 500 0.86rem/1 var(--sans);
+  color: var(--muted);
+}
+
+.cs-readout-text {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: 2.2rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.cs-readout-sub {
+  margin: 0;
+  font: 500 0.86rem/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* --- Digit strips (lib/digit-strip) ----------------------------------------
+   The strip's mechanics, repeated and scoped: the shared rules live in
+   home-inspect.css, which a case study does not load. One 1.25em row shows;
+   the rest row is --ds-at (the last), so markup, reduced motion and every
+   crawler read the final value. The strip writes --ds-lh and --ds-at inline;
+   the same values are declared here (see Declared defaults). */
+.cs-inst .digit-strip {
+  --ds-lh: 1.25em;
+  --ds-at: 0;
+  --ds-last: 0;
+  display: inline-block;
+  height: var(--ds-lh);
+  overflow: hidden;
+  line-height: var(--ds-lh);
+  font-variant-numeric: tabular-nums;
+  vertical-align: bottom;
+}
+
+.cs-inst .digit-strip-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transform: translateY(calc(var(--ds-at) * -1 * var(--ds-lh)));
+}
+
+/* Letters hang from the left; numbers stay right-aligned (tabular). */
+.cs-glyph .digit-strip-rows {
+  align-items: flex-start;
+}
+
+.cs-inst .digit-strip-rows > span {
+  display: block;
+  height: var(--ds-lh);
+}
+
+/* ==========================================================================
+   Motion: on the panel's own scroll timeline (--cs-bench), so the proof
+   moves while the panel enters the viewport and is settled once it is in.
+   Scroll-bound, so nothing runs off screen and nothing loops. Without
+   timeline support, with reduced motion, or with the motion switch off,
+   none of this applies and every part is drawn at its value.
+   ========================================================================== */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* The measured run resolves cell by cell, left to right (the console's
+       resolve): each cell's lit layer fades in over its own slice of the
+       entry, 1.6% of it later than the cell before. */
+    html:not([data-motion="paused"]) .cs-run[data-resolve] .cs-cell[class*="is-"]::before {
+      animation: cs-resolve linear both;
+      animation-timeline: --cs-bench;
+      animation-range: entry calc(20% + var(--i) * 1.6%) entry calc(32% + var(--i) * 1.6%);
+    }
+
+    /* The numerals roll to their value in steps, one row per grade line
+       crossed, so the letter and the number change together. */
+    html:not([data-motion="paused"]) .cs-roll .digit-strip-rows {
+      animation: cs-roll steps(var(--cs-steps), jump-none) both;
+      animation-timeline: --cs-bench;
+      animation-range: entry 25% entry 80%;
+    }
+
+    /* A post's bar grows to its value. */
+    html:not([data-motion="paused"]) .cs-post-fill {
+      animation: cs-fill linear both;
+      animation-timeline: --cs-bench;
+      animation-range: entry 20% entry 75%;
+    }
+  }
+}
+
+@keyframes cs-resolve {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cs-roll {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(var(--ds-last) * -1 * var(--ds-lh))); }
+}
+
+@keyframes cs-fill {
+  from { transform: scaleX(0); }
+  to { transform: none; }
+}
+
+/* ==========================================================================
+   Work index: each row's side pane (app/work/page.tsx)
+   ========================================================================== */
+
+/* The row grid is the shared one (globals.css, "From a 64rem list every row
+   is a two-pane instrument row"): the list is the `rows` query container,
+   the side track starts on the 7-line, and the row's ::after draws the
+   divider through the row's block padding. This sheet only lays out what
+   sits in the pane, so the index splits on the same line as every list.
+
+   Below 64rem the side pane is a strip under the row's body: lamp, status,
+   grade chip and readout in one wrapping line. */
+.work-row-side {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+  margin-top: var(--space-8);
+  min-width: 0;
+}
+
+.work-row-status {
+  font: 500 0.78rem/1.3 var(--sans);
+  color: var(--ink);
+}
+
+/* The grade chip: the study's grade or review verdict in its tone, on a
+   transparent fill (the label's contrast is measured against the row). */
+.work-row-grade {
+  --cs-hue: var(--line-strong);
+  --cs-ink: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-5) var(--space-8);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--cs-hue);
+  font: 600 0.7rem/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--cs-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.work-row-grade[data-tone="pass"] {
+  --cs-hue: color-mix(in srgb, var(--ok) 48%, transparent);
+  --cs-ink: var(--ok);
+}
+
+.work-row-grade[data-tone="warn"] {
+  --cs-hue: color-mix(in srgb, var(--warn) 48%, transparent);
+  --cs-ink: var(--cs-warn-ink);
+}
+
+/* The readout's text breaks only between its segments (page.tsx binds each
+   segment with no-break spaces), and balance evens the lines it breaks into,
+   so a phone line never holds one stray word ("domains", "skip"). A segment
+   wider than its line (a 320px phone) still breaks rather than overflow. */
+.work-row-readout {
+  font: 500 0.74rem/1.35 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+/* From a 64rem list the pane fills the side track (the shared rule starts
+   it 16px past the divider and lets it shrink to its content; here it
+   stretches to the row's end padding). Two lines: lamp, status and grade
+   chip on the first, on the title's first baseline (the row aligns its
+   items on baseline, and the pane's baseline is the status line's); the
+   readout under the chip, right-aligned in tabular numerals, so chips and
+   readouts share one end edge down the list. The first line is as tall as
+   the chip, not the 44px box a link row's title no longer draws. Five
+   classes, so it outranks the shared placement rule (four) wherever the
+   sheets land; the margin is set per side, so the shared 16px start inset
+   stands. */
+@container rows (width >= 64rem) {
+  .surface-page .row-stack.work-index .row.work-row > .work-row-side {
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "lamp status  grade"
+      ".    readout readout";
+    align-content: start;
+    align-items: baseline;
+    gap: var(--space-6) var(--space-8);
+    margin-top: 0;
+  }
+  .work-index .work-row-side > .cs-led {
+    grid-area: lamp;
+    align-self: center;
+  }
+  .work-index .work-row-side > .work-row-status { grid-area: status; }
+  .work-index .work-row-side > .work-row-grade { grid-area: grade; }
+  .work-index .work-row-side > .work-row-readout {
+    grid-area: readout;
+    justify-self: end;
+    text-align: end;
+  }
+}

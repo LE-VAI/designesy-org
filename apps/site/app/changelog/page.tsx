@@ -10,6 +10,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './changelog.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
@@ -62,21 +63,10 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
   verification: 'Verification',
 };
 
-const DIMENSION_COLORS: Record<Dimension, string> = {
-  all: 'var(--signal-text)',
-  tokens: 'var(--signal-text)',
-  motion: 'var(--signal-text)',
-  cadence: 'var(--signal-text)',
-  accessibility: 'var(--ok)',
-  takt: 'var(--signal-text)',
-  poise: 'var(--signal-text)',
-  acoustics: 'var(--signal-text)',
-  copywriting: 'var(--signal-text)',
-  identity: 'var(--signal-text)',
-  security: 'var(--error)',
-  semantic: 'var(--signal-text)',
-  verification: 'var(--signal-text)',
-};
+// Every dimension value renders in the one colour (.changelog-dimension in
+// changelog.css). Accessibility used to take --ok and Security --error, so an
+// entry that ADDED a security check read as a failure: a category never
+// borrows a state colour; its label names it.
 
 // ── Changelog entries ───────────────────────────────────────────────────────
 
@@ -313,6 +303,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'The contract asks product copy to state its claim plainly and to write ranges a screen reader can read: an unspaced en dash is skipped, so a range written with one is heard as two bare numbers. A patch version marks text that changed while every rule stayed the same.',
     source: 'Designesy public-copy rules, GOV.UK style guide, plainlanguage.gov, NVDA symbol handling',
   },
+
+  // ── v0.4.2: alignment pass ──
+  {
+    version: 'v0.4.2',
+    date: '2026-10-04',
+    dimension: 'tokens',
+    change: 'added',
+    title: 'One shell edge, a 12-column grid, and the accessibility tint tokens',
+    description:
+      'The header, the page wrappers and the footer now share the content edges at every width, so nothing sits on a different gutter than the thing above it. A 12-column grid with a named 7|5 seam replaces the per-page split rules. The material, elevation and floor recipes became tokens rather than values repeated per component. The WCAG 2.2 AA pass added the accessibility tint tokens, including --signal-text as the text-safe role for the brand blue. The reduced-motion tiering is stated as it now behaves: movement stops, opacity fades and transitions of 200ms or less stay.',
+    rationale:
+      'The site described one alignment system and implemented four, and the disagreement was invisible to every automated check because none of them compared one region\'s edge to another\'s. The accessibility tokens close a measured contrast failure: the brand blue as text read 2.0 to 2.3 to 1 in dark mode against a 4.5 to 1 minimum. Naming the motion tiering settles a documented conflict between two readings of the same clause.',
+    source: 'Designesy a11y contract v0.1.1, WCAG 2.2 AA (2.4.11, 1.4.3, 2.5.8), edge-contract measurements',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -325,6 +329,21 @@ const FIRST_OF_DIMENSION = new Set(
 );
 
 // ── Change badges ───────────────────────────────────────────────────────────
+
+// The version summary: one row per contract version, laid out as the log
+// above it is (a title and its one-line description in the face; version,
+// date and check count in the side pane's key).
+const VERSIONS: { version: string; date: string; checks: number; title: string; summary: string }[] = [
+  { version: 'v0.1.0', date: '2026-06-15', checks: 22, title: 'Initial contract', summary: 'Tokens, motion, accessibility, identity, security. Deterministic engine.' },
+  { version: 'v0.1.1', date: '2026-06-28', checks: 24, title: 'Poise adopted', summary: 'Interaction rules adopted from Lab One.' },
+  { version: 'v0.1.2', date: '2026-07-05', checks: 26, title: 'Takt adopted', summary: 'Interface-feel rules adopted from Lab Two.' },
+  { version: 'v0.1.3', date: '2026-07-12', checks: 38, title: 'Cadence adopted', summary: 'Typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
+  { version: 'v0.3.0', date: '2026-07-20', checks: 38, title: 'Acoustics adopted', summary: 'Mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
+  { version: 'v0.4.0', date: '2026-07-28', checks: 40, title: 'Copywriting adopted', summary: '4 copywriting checks. Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
+  { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
+  { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed.' },
+  { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
+];
 
 const CHANGE_COLORS: Record<string, string> = {
   added: 'var(--ok)',
@@ -371,136 +390,89 @@ export default function ChangelogPage() {
 
         {/* Dimension tabs */}
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <div id="changelog-tabs" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+          {/* Dimension jump links (changelog.css): they wrap into balanced
+              rows, never one orphan tab, and each count is its own quiet
+              badge. */}
+          <div id="changelog-tabs" className="changelog-tabs">
             {dimensions.map((dim) => {
               const count = dimensionCounts[dim] || 0;
               if (count === 0 && dim !== 'all') return null;
               return (
-                <a
-                  key={dim}
-                  href={`#dim-${dim}`}
-                  style={{
-                    // 44px target. Measured 131x33px: these are the only way to
-                    // filter the changelog, and there are 12 of them.
-                    minHeight: '44px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '0.4rem 0.85rem',
-                    background: 'var(--surface)',
-                    color: 'var(--muted)',
-                    border: `1px solid var(--line)`,
-                    borderRadius: '6px',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s var(--ease, cubic-bezier(0.22,0.61,0.36,1))',
-                  }}
-                  className="changelog-tab"
-                  data-dimension={dim}
-                >
-                  {DIMENSION_LABELS[dim]} <span style={{ color: 'var(--muted-dim)' }}>({count})</span>
+                <a key={dim} href={`#dim-${dim}`} className="changelog-tab" data-dimension={dim}>
+                  {DIMENSION_LABELS[dim]}{' '}
+                  <span className="changelog-tab-count">{count}</span>
                 </a>
               );
             })}
           </div>
 
-          {/* Entries */}
+          {/* Entries: each row is a log entry with a face (what changed and
+              why) and, from a 64rem list, a side pane behind the 7-line
+              holding the metadata a reader scans by: version, date,
+              dimension, the kind of change and the checks it touched. */}
           <div className="row-stack" role="list">
             {SORTED_CHANGELOG.map((entry, i) => (
               <div
                 key={`${entry.version}-${entry.dimension}-${i}`}
-                className="row"
+                className="row changelog-entry"
                 role="listitem"
                 // The dimension links above jump to a dimension's first entry;
                 // an id on every entry repeated it (ids must be unique).
                 id={FIRST_OF_DIMENSION.has(i) ? `dim-${entry.dimension}` : undefined}
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}
               >
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body" style={{ width: '100%' }}>
-                  <span className="row-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <span>{entry.title}</span>
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: CHANGE_COLORS[entry.change] || 'var(--muted)',
-                        padding: '0.15rem 0.5rem',
-                        border: `1px solid ${CHANGE_COLORS[entry.change] || 'var(--line)'}`,
-                        borderRadius: '4px',
-                      }}
-                    >
-                      {entry.change}
-                    </span>
-                  </span>
-                  <span className="row-meta" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{entry.version}</span>
-                    <span>{entry.date}</span>
-                    <span style={{ color: DIMENSION_COLORS[entry.dimension] }}>
-                      {DIMENSION_LABELS[entry.dimension]}
-                    </span>
-                  </span>
+                <div className="row-body">
+                  <span className="row-title">{entry.title}</span>
+                  <p className="changelog-entry-desc">{entry.description}</p>
+                  <p className="changelog-entry-why">{entry.rationale}</p>
+                  {entry.source && (
+                    <p className="changelog-entry-source">Source: {entry.source}</p>
+                  )}
+                </div>
 
-                  {/* Description */}
-                  <p style={{ fontSize: '0.85rem', color: 'var(--ink)', margin: '0.75rem 0 0.5rem', lineHeight: 1.6, maxWidth: '70ch' }}>
-                    {entry.description}
-                  </p>
+                {/* The shared row grid puts anything after the body in the
+                    side pane on the 7-line. */}
+                <div className="changelog-entry-side">
+                  <dl className="changelog-entry-meta">
+                    <div>
+                      <dt>Version</dt>
+                      <dd className="changelog-version">{entry.version}</dd>
+                    </div>
+                    <div>
+                      <dt>Date</dt>
+                      <dd>
+                        <time dateTime={entry.date}>{entry.date}</time>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Dimension</dt>
+                      <dd className="changelog-dimension">
+                        {DIMENSION_LABELS[entry.dimension]}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Change</dt>
+                      <dd>
+                        <span className="changelog-change" style={{ color: CHANGE_COLORS[entry.change] || 'var(--muted)' }}>
+                          {entry.change}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
 
-                  {/* Checks */}
+                  {/* Checks. 44px target in BOTH dimensions: min-height alone
+                      left these 31-35px wide ("v42" is three characters), and
+                      WCAG 2.5.8 is about the target's area. */}
                   {entry.checks && entry.checks.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    <div className="changelog-entry-checks">
                       {entry.checks.map((check) => (
-                        <Link
-                          key={check}
-                          href={`/methodology#check-${check}`}
-                          style={{
-                            // 44px target in BOTH dimensions.
-                            //
-                            // min-height alone left these 31-35px WIDE: the label
-                            // is "v42", three characters. WCAG 2.5.8 is about the
-                            // target's area, so a 34x44 chip is still a failure --
-                            // and it is the dimension a height-only fix silently
-                            // leaves behind. minWidth plus centring grows the hit
-                            // area without changing the chip's visible label.
-                            minHeight: '44px',
-                            minWidth: '44px',
-                            justifyContent: 'center',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            color: 'var(--signal-text)',
-                            background: 'var(--surface)',
-                            border: '1px solid var(--line)',
-                            borderRadius: '4px',
-                            padding: '0.15rem 0.4rem',
-                            textDecoration: 'none',
-                          }}
-                        >
+                        <Link key={check} href={`/methodology#check-${check}`} className="changelog-check">
                           {check}
                         </Link>
                       ))}
                     </div>
                   )}
-
-                  {/* Rationale */}
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0.75rem 0 0', lineHeight: 1.5, maxWidth: '70ch', fontStyle: 'italic' }}>
-                    {entry.rationale}
-                  </p>
-
-                  {/* Source */}
-                  {entry.source && (
-                    <p style={{ fontSize: '0.7rem', color: 'var(--muted-dim)', margin: '0.25rem 0 0', maxWidth: '70ch' }}>
-                      {/* maxWidth matches the rationale paragraph directly above.
-                          Without it this ran 108 characters — the rationale is
-                          capped at 70ch and the source line, which is a full
-                          sentence, was not. */}
-                      Source: {entry.source}
-                    </p>
-                  )}
-                </span>
+                </div>
               </div>
             ))}
           </div>
@@ -509,33 +481,35 @@ export default function ChangelogPage() {
         {/* Version summary */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Version summary</h2>
+          {/* The same row as the log: the shared grid and gap (no inline
+              override, so the body starts on the log's x) and the same key
+              in the side pane, here version, date and checks. */}
           <div className="row-stack" role="list">
-            {[
-              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract: tokens, motion, accessibility, identity, security. Deterministic engine.' },
-              { version: 'v0.1.1', date: '2026-06-28', checks: 24, summary: 'Poise interaction rules adopted from Lab One.' },
-              { version: 'v0.1.2', date: '2026-07-05', checks: 26, summary: 'Takt interface-feel rules adopted from Lab Two.' },
-              { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
-              { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
-              { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
-              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored.' },
-              { version: 'v0.4.1', date: '2026-09-28', checks: 42, summary: 'Editorial revision: the contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
-            ].map((v, i) => (
-              <div
-                key={v.version}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
-              >
+            {VERSIONS.map((v, i) => (
+              <div key={v.version} className="row changelog-entry" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">
-                    {v.version}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: '0.75rem' }}>
-                      {v.date} · {v.checks} checks
-                    </span>
-                  </span>
-                  <span className="row-meta">{v.summary}</span>
-                </span>
+                <div className="row-body">
+                  <span className="row-title">{v.title}</span>
+                  <p className="changelog-entry-desc">{v.summary}</p>
+                </div>
+                <div className="changelog-entry-side">
+                  <dl className="changelog-entry-meta">
+                    <div>
+                      <dt>Version</dt>
+                      <dd className="changelog-version">{v.version}</dd>
+                    </div>
+                    <div>
+                      <dt>Date</dt>
+                      <dd>
+                        <time dateTime={v.date}>{v.date}</time>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Checks</dt>
+                      <dd className="changelog-check-count">{v.checks}</dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
             ))}
           </div>

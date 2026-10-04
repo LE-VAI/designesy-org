@@ -9,7 +9,8 @@
 // Pointer or keyboard focus on a check shows that check's contract criterion
 // and result in the side column; activating it opens the matching finding.
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { DigitStrip } from '../digit-strip';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
@@ -22,6 +23,8 @@ export type EngineBlock = {
   count: number;
   ids: string[];
   score?: number | null;
+  /** The question the engine asks, read under its register in the face. */
+  asks?: ReactNode;
 };
 
 type Props = {
@@ -43,6 +46,10 @@ type Props = {
   origin?: string;
   /** guardrails: a size or line count per file, once emitted. */
   fileMeta?: Record<string, string>;
+  /** guardrails: where each file goes, as the last line of its cell. */
+  fileWhere?: Record<string, string>;
+  /** tiles: what a group catches, under its cells (keyed by group id). */
+  groupNotes?: Record<string, ReactNode>;
   /** score: the four engines as blocks of cells. */
   engines?: EngineBlock[];
   onOpen?: (id: string) => void;
@@ -61,6 +68,13 @@ type Props = {
   verdictNode?: ReactNode;
   /** Extra content under the verdict (monitor's history strip). */
   sideExtra?: ReactNode;
+  /** The target pill before a run: what the engine is waiting for. */
+  idleTarget?: string;
+  /** Draw the verdict row empty at rest, where the grade will land (default
+      on). Off for an engine whose result replaces the verdict (compare). */
+  restGrade?: boolean;
+  /** Replaces the whole resting side (the converter's output frame). */
+  restSide?: ReactNode;
 };
 
 const STATUS_WORD: Record<Status, string> = {
@@ -134,10 +148,14 @@ export function Instrument(props: Props) {
   const { name, registry, face, phase, target, outcomes = {}, verdict, error, scoring, restNote, onOpen } = props;
   const [inspect, setInspect] = useState<string | null>(null);
   const leave = useRef<number | null>(null);
+  const uid = useId();
   const { live: elapsed, took } = useElapsed(phase);
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
+  // The reading counter's rows, 1..n: the strip steps one row per check, on
+  // the scan cursor's clock (engine.css, eg-read).
+  const readRows = useMemo(() => registry.checks.map((_, i) => i + 1), [registry.checks]);
 
   const enter = (id: string) => {
     if (leave.current) window.clearTimeout(leave.current);
@@ -163,6 +181,8 @@ export function Instrument(props: Props) {
 
   const cellProps = (c: RegistryCheck) => {
     const o = outcomes[c.id];
+    // A file cell shows the file's name first, so its name says it too.
+    const named = face === 'files' && c.file ? `${c.file}, ${c.label}` : c.label;
     return {
       'data-status': phase === 'done' ? o?.status : undefined,
       'data-inspect': inspect === c.id ? 'true' : undefined,
@@ -170,7 +190,8 @@ export function Instrument(props: Props) {
       onMouseEnter: () => enter(c.id),
       onFocus: () => enter(c.id),
       onClick: () => onOpen?.(c.id),
-      'aria-label': `${c.id} ${c.label}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`,
+      'aria-label': `${c.id} ${named}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`,
+      'aria-describedby': props.fileWhere?.[c.id] ? `${uid}-where-${c.id}` : undefined,
       'aria-pressed': props.selected !== undefined && phase === 'done' ? props.selected === c.id : undefined,
       'aria-controls': props.controls,
       type: 'button' as const,
@@ -197,6 +218,9 @@ export function Instrument(props: Props) {
           <span className="eg-label">What an agent finds</span>
           <span className="eg-count">{rows.length} locations · {registry.checks.length} checks</span>
         </div>
+        {/* The description line every sibling group carries in this slot; the
+            tree's root no longer sits 4px under the label as if part of it. */}
+        <p className="eg-group-hint">Probed at the site&apos;s origin, whatever page the URL names.</p>
         <ul className="eg-paths">
           <li className="eg-paths-origin" aria-hidden="true">
             <i className="eg-mark"><i /></i>
@@ -243,7 +267,9 @@ export function Instrument(props: Props) {
         <div className="eg-diff" role="presentation">
           <div className="eg-diff-head" aria-hidden="true">
             <span className="eg-diff-a"><b>A</b> {sides.a}</span>
-            <span className="eg-diff-mid">{registry.checks.length} dimensions</span>
+            <span className="eg-diff-mid">
+              <span className="eg-diff-count">{registry.checks.length} dimensions</span>
+            </span>
             <span className="eg-diff-b"><b>B</b> {sides.b}</span>
           </div>
           <ul className="eg-diff-rows">
@@ -302,6 +328,7 @@ export function Instrument(props: Props) {
                 })}
               </ul>
               <span className="eg-engine-score">{phase === 'done' && typeof e.score === 'number' ? e.score : ''}</span>
+              {e.asks && <p className="eg-engine-ask">{e.asks}</p>}
             </div>
           ))}
         </div>
@@ -332,6 +359,11 @@ export function Instrument(props: Props) {
                     <span className="eg-file-meta">
                       {phase === 'done' && props.fileMeta?.[c.id] ? props.fileMeta[c.id] : c.label}
                     </span>
+                    {props.fileWhere?.[c.id] && (
+                      <span className="eg-file-where" id={`${uid}-where-${c.id}`}>
+                        {props.fileWhere[c.id]}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="eg-cell-label">{c.label}</span>
@@ -340,6 +372,7 @@ export function Instrument(props: Props) {
             </li>
           ))}
         </ul>
+        {props.groupNotes?.[g.id] && <p className="eg-group-note">{props.groupNotes[g.id]}</p>}
       </div>
         ))}
       </>
@@ -361,9 +394,13 @@ export function Instrument(props: Props) {
   const stateLabel =
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
-  let side: ReactNode;
-  if (probe) {
-    side = (
+  // The verdict light's hue: the grade's band once a verdict lands, the fail
+  // hue when the run stops without one. No band, no light.
+  const lightBand = phase === 'done' && verdict ? bandOf(verdict.grade) : phase === 'error' ? 'fail' : undefined;
+
+  // The probe (a check under the pointer or keyboard focus) is drawn OVER the
+  // resting side, not instead of it; see the eg-side render below.
+  const probeNode: ReactNode = probe ? (
       <div className="eg-probe">
         <span className="eg-probe-id">
           <Lamp status={probeOutcome?.status} />
@@ -384,8 +421,10 @@ export function Instrument(props: Props) {
           )}
         </dl>
       </div>
-    );
-  } else if (phase === 'running') {
+  ) : null;
+
+  let side: ReactNode;
+  if (phase === 'running') {
     side = (
       <>
         <span className="eg-label">Checking</span>
@@ -443,12 +482,33 @@ export function Instrument(props: Props) {
         <div className="eg-error">{error}</div>
       </>
     );
-  } else {
+  } else if (props.restSide) {
+    side = props.restSide;
+  } else if (props.restGrade === false) {
     side = (
       <>
         <span className="eg-label">Verdict</span>
         <p className="eg-side-note">{restNote}</p>
         <GradeScale />
+        {props.restCard}
+        {props.sideExtra}
+      </>
+    );
+  } else {
+    // The verdict row waits, empty, where the grade will land, so the scale
+    // under it holds its line through rest, running and done, and the slot
+    // reads as a readout before it has a reading.
+    side = (
+      <>
+        <span className="eg-label">Verdict</span>
+        <div className="eg-verdict-row is-rest" aria-hidden="true">
+          <span className="eg-grade" />
+          <span className="eg-score">
+            <small>/100</small>
+          </span>
+        </div>
+        <GradeScale />
+        <p className="eg-side-note">{restNote}</p>
         {props.restCard}
         {props.sideExtra}
       </>
@@ -470,17 +530,37 @@ export function Instrument(props: Props) {
       aria-label={`${name}: ${registry.checks.length} checks`}
       style={{ '--n-all': registry.checks.length } as CSSProperties}
     >
+      {/* State light: pre-rendered layers under the panel whose opacity
+          moves (engine.css). Signal while a run is out; the verdict's hue
+          once, when the answer lands. */}
+      <i className="eg-inst-glow" aria-hidden="true" />
+      <i className="eg-inst-verdict" aria-hidden="true" data-band={lightBand} />
       <div className="eg-inst-bar">
         <span className="eg-inst-app">
           <i className="eg-mark" aria-hidden="true"><i /></i>
           {name}
         </span>
         <span className="eg-inst-target">
-          <span>{target || 'waiting for a URL'}</span>
+          {/* Keyed by the host, so a new target remounts and rises into the
+              pill (cause, the slab's submit; effect, the instrument). */}
+          <span key={target || ''} data-host={target ? '' : undefined}>
+            {target || props.idleTarget || 'waiting for a URL'}
+          </span>
         </span>
         <span className="eg-inst-state">
           <i className="eg-dot" aria-hidden="true" />
-          {registry.checks.length} checks · {stateLabel}
+          {phase === 'running' ? (
+            <>
+              <span className="eg-state-read" aria-hidden="true">
+                reading <DigitStrip values={readRows} at={0} className="eg-read-strip" />/{registry.checks.length}
+              </span>
+              <span className="eg-state-calm">reading {registry.checks.length} checks</span>
+            </>
+          ) : (
+            <span>
+              {registry.checks.length} checks · {stateLabel}
+            </span>
+          )}
         </span>
       </div>
       <div className="eg-inst-body">
@@ -495,7 +575,18 @@ export function Instrument(props: Props) {
         >
           {faceNode}
         </div>
-        <div className="eg-side">{side}</div>
+        {/* Both states share one grid cell, so the panel's height is the larger
+            of the two and never jumps. Swapping one for the other resized it on
+            every focus: stacked on a phone (/score at 390px) the resting side is
+            531px and a probe ~200px, so tabbing into the cells pulled the page up
+            ~300px and tabbing out pushed it back down 297px, carrying the focused
+            history button off the bottom of the screen (CLS 0.193, WCAG 2.4.11;
+            measured on production 2026-10-03). The resting side is hidden while a
+            probe shows, as it was absent before. */}
+        <div className="eg-side" data-probing={probeNode ? '' : undefined}>
+          <div className="eg-side-rest">{side}</div>
+          {probeNode}
+        </div>
       </div>
       <div className="eg-legend">
         <ul aria-label="Legend">
@@ -504,7 +595,13 @@ export function Instrument(props: Props) {
           <li><Lamp status="FAIL" />fail</li>
           <li><Lamp status="SKIP" />skipped</li>
         </ul>
-        <span>{scoring}</span>
+        {/* One item per clause, so the line wraps between clauses and the
+            separators are drawn by the sheet (engine.css, eg-legend-meta). */}
+        <span className="eg-legend-meta">
+          {scoring.split(' · ').map((s, i) => (
+            <span key={i}>{s}</span>
+          ))}
+        </span>
       </div>
       <p className="sr-only" aria-live="polite">{announce}</p>
     </section>

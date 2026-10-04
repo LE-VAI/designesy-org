@@ -1,31 +1,17 @@
 /* docs route-only styles — extracted from globals.css.
    Plain .css imported in docs/page.tsx — Next.js code-splits
-   this to the /docs route only. */
+   this to the /docs route only. The production build still ships this sheet
+   with other routes' CSS, so every rule here is scoped to a docs class. */
 
+/* A sub-heading in the sans, as every h3 inside a section is; the display
+   serif belongs to the page title. */
 .layer-heading {
+  font-family: var(--sans);
   font-size: 1rem;
   font-weight: 700;
+  letter-spacing: -0.005em;
   color: var(--ink);
   margin-bottom: var(--space-16);
-}
-
-.layer-body .layer-desc {
-  display: inline;
-  margin-top: 0;
-  color: var(--muted);
-  font-size: inherit;
-}
-
-.layer-body .layer-name {
-  display: inline;
-}
-
-.layer-state {
-  display: block;
-  margin-top: var(--space-fine-35);
-  font-size: 0.78rem;
-  color: var(--muted-dim);
-  line-height: 1.4;
 }
 
 .principle-orbit {
@@ -35,11 +21,274 @@
   opacity: 0.5;
 }
 
-@media (max-width: 720px) {
-  .layer-item {
-    grid-template-columns: 2rem 1fr;
-    gap: var(--space-8);
-    padding: var(--space-12) var(--space-8) var(--space-12) var(--space-12);
+/* --------------------------------------------------------------------------
+   /docs reading column. The content is nine of the shell's twelve tracks
+   (881px at 1440) and the on-page outline the other three, so the rows
+   container's 64rem switch and the 7-line rule for definitions (both keyed to
+   a full-width column) never fired here: STANDARD ran 881px wide with its
+   text ending at x 637, and the Architecture pair was stretched to match the
+   layer list. Everything below is keyed to the docs layout's own switch
+   (docs-layout, 64rem, where the content takes its nine tracks).
+   -------------------------------------------------------------------------- */
+
+/* Reading cards end on the page's 7-line, as they do on every other surface
+   page (x 804.2 at 1440, 1064.2 at 1920). A card's nearest query container is
+   .docs-layout, whose content box is the shell column, so 100cqi there is the
+   width --track-split is defined against. Only the cards a section stacks
+   directly: a card inside paired columns keeps its column. */
+@container docs-layout (width >= 64rem) {
+  .docs-content > .doctrine-section > :is(.definition, .text-cell, .status-note) {
+    width: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
   }
 }
 
+/* The page's closing note is the last child of the section it closes: 24px
+   under that section's last card (the card's own 16px bottom margin collapses
+   into this), and the section's block padding keeps it off the next rule. */
+.docs-content .doctrine-section > .status-note {
+  margin-top: var(--space-24);
+}
+
+/* Architecture: a sub-heading under the flow's cards, then the layers. */
+.docs-content .doctrine-section > .layer-heading {
+  margin-top: var(--space-32);
+}
+
+/* The layers as rows with a side pane on the page's 7-line. The list is the
+   rows query container (100cqi is its width: nine shell tracks and eight
+   gutters), so the 7-line sits seven tracks and six gutters in from its left
+   edge. Same geometry as the shared rows grid (globals, "@container rows"):
+   2.5rem index, the face up to the split, and the side track sized from the
+   right (the list less the split and the row's 12px end padding), so the side
+   pane starts exactly on the split whatever the column gap. The pane's
+   divider is the row's ::after, run through the row's block padding so it
+   reads as one line down the list. */
+.docs-layers .row-side {
+  display: grid;
+  row-gap: var(--space-2);
+}
+
+.docs-layers .row-side-line {
+  display: block;
+}
+
+.docs-layers .row-side-line[data-access] {
+  color: var(--ink);
+}
+
+@container docs-layout (width >= 64rem) {
+  .docs-content .row-stack.docs-layers .row {
+    --row-split: calc((100cqi - 8 * var(--grid-gutter)) * 7 / 9 + 6 * var(--grid-gutter));
+    grid-template-columns: 2.5rem minmax(0, 1fr) calc(100cqi - var(--row-split) - var(--space-12));
+    padding-block: var(--space-10);
+  }
+  .docs-content .row-stack.docs-layers .row > .row-index {
+    grid-area: 1 / 1;
+  }
+  .docs-content .row-stack.docs-layers .row > .row-body {
+    grid-area: 1 / 2;
+    padding-inline-end: var(--space-16);
+  }
+  .docs-content .row-stack.docs-layers .row > .row-side {
+    grid-area: 1 / 3;
+    align-self: baseline;
+    justify-self: stretch;
+    margin: 0 0 0 var(--space-16);
+  }
+  .docs-content .row-stack.docs-layers .row::after {
+    content: "";
+    grid-area: 1 / 3;
+    align-self: stretch;
+    margin-block: calc(-1 * var(--space-10));
+    border-left: 1px solid var(--line-faint);
+    pointer-events: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   /docs/mcp: the rows of cards sit on the shell's twelve tracks (.g12) with
+   the one gutter, never a flex row or a 32px gap of their own (the client
+   configurations split 574 | 32 | 574, off the 6|6 module the Conformance
+   cards above them use). Spans switch at the g12 width, 64rem.
+   -------------------------------------------------------------------------- */
+
+/* Conformance: three cards of 4 columns. Each card spans the row's four
+   tracks as a subgrid (globals, .surface-card), so label, value and note
+   share rows across the three: in a flex row each card's grid stretched its
+   own rows into its spare height, and the shortest card's value sat 8px
+   below the others'. */
+.mcp-conformance.g12 {
+  row-gap: var(--grid-gutter);
+}
+
+@container g12 (width >= 64rem) {
+  .mcp-conformance.g12 > * {
+    grid-column: span 4;
+  }
+}
+
+/* One inset for every reading card in the column: the definitions above
+   (Endpoint, Transport, Registry) pad 20 | 24, and the registry and
+   conformance cards padded 20 and 16 | 20, so text edges stepped 4px down
+   one column. */
+.surface-card.mcp-card {
+  padding: var(--space-20) var(--space-24);
+}
+
+/* Client configurations: two to a row (6 + 6); an odd last one takes the
+   whole row, so its config is never clipped beside an empty half (the fifth
+   block ran 40px past a 572px box next to 574px of nothing). The cards'
+   subgrid rows come from .config-cols in globals. */
+.config-cols.g12 {
+  row-gap: var(--space-32);
+}
+
+/* The scroll lives on the code inside each pre, so nothing in a card may
+   carry the config's longest line as its minimum width: without these zero
+   minimums the card grew to that line and ran past a phone's screen. */
+.config-cols.g12 > * {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.config-cols.g12 > * > .mcp-pre {
+  min-width: 0;
+}
+
+@container g12 (width >= 64rem) {
+  .config-cols.g12 > * {
+    grid-column: span 6;
+  }
+  .config-cols.g12 > :last-child:nth-child(odd) {
+    grid-column: full-start / full-end;
+  }
+  /* Full row for the card, reading measure for its notes. */
+  .config-cols.g12 > :last-child:nth-child(odd) p {
+    max-inline-size: 66ch;
+  }
+}
+
+/* A config's file paths, one per line: "(macOS)" dropped onto a line of its
+   own under a 66ch cap while the block below ran the full row. A path is a
+   long word, so on a phone it breaks anywhere rather than run past the card. */
+.mcp-paths {
+  margin: 0 0 var(--space-12);
+  padding: 0;
+  list-style: none;
+  font: 400 0.8rem/1.5 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Code blocks. The frame (border, fill, radius) is the <pre>; the sideways
+   scroll and its edge fade are the <code> inside it. With both on the pre,
+   the fade masked the box's own right border, so at 390 every config read as
+   cut off by the screen rather than as a box that scrolls. lib/scroll-regions
+   marks the code when it overflows (data-overflow, plus a keyboard stop named
+   by data-scroll-region); the fade is the shared edge-fade timeline
+   (globals, "Sideways scroll boxes"), so it follows the scroll position and
+   leaves an edge once that edge is reached. */
+.mcp-pre {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  color: var(--ink);
+  font: 400 0.82rem/1.6 var(--mono);
+}
+
+.mcp-pre > code {
+  display: block;
+  padding: var(--space-16) var(--space-24);
+  overflow-x: auto;
+  font: inherit;
+  color: inherit;
+  white-space: pre;
+  border-radius: inherit;
+}
+
+.mcp-pre > code:focus-visible {
+  outline: 2px solid var(--signal-light);
+  outline-offset: 2px;
+}
+
+@supports (animation-timeline: scroll()) {
+  .mcp-pre > code[data-overflow]:not(:focus-visible) {
+    -webkit-mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
+    mask-image: linear-gradient(90deg, transparent, var(--paper) var(--edge-l), var(--paper) calc(100% - var(--edge-r)), transparent);
+    animation: edge-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  /* A reading of position, not motion: it keeps working with motion paused. */
+  html[data-motion="paused"] .mcp-pre > code {
+    animation-play-state: running !important;
+  }
+}
+
+/* The tool kind beside its name: one quiet caps tag for every kind (the
+   executable tools asked for an undefined --accent and rendered in ink). */
+.mcp-kind {
+  margin-inline-start: var(--space-8);
+  font: 600 0.7rem/1 var(--sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* A tool row's args and source: two lines in the side pane (globals,
+   .row-side), each a key and its value, so a long args list never pushes
+   source onto a line of its own under a blank one. */
+.mcp-tools .row-side {
+  display: grid;
+  row-gap: var(--space-4);
+  min-width: 0;
+}
+
+.mcp-tools .row-side-line {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.mcp-key {
+  margin-inline-end: var(--space-6);
+  color: var(--muted-dim);
+}
+
+/* A source path is a link: ink on a strong-line underline drawn at the
+   glyphs (the status note's idiom), the underline taking the signal on hover. */
+.mcp-tools .row-side a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color 0.2s var(--ease);
+}
+
+@media (hover: hover) {
+  .mcp-tools .row-side a:hover {
+    text-decoration-color: var(--signal-light);
+  }
+}
+
+/* These descriptions are paragraphs people read, three to six lines each,
+   not one-line captions: --muted at 14px holds the body floor where the
+   caption grey (--muted-dim at 13px, about Lc 38) did not. */
+.mcp-tools .row-meta {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* A client's name over its config: a sub-heading in the sans, as every h3
+   inside a section is (the inline size and weight left it in the display
+   serif). */
+.mcp-client {
+  margin: 0 0 var(--space-8);
+  font: 700 0.9rem/1.35 var(--sans);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}

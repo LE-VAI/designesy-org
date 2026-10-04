@@ -1,0 +1,49 @@
+/* The reference-format card (token-format.tsx), imported by the component,
+   so /acoustic-tokens and /labs/acoustics both carry it. The card is P2's
+   face/side definition (globals.css, .definition-split); only the code well
+   and the accented value are set here.
+
+   The JSON is code, so it never wraps: white-space: pre, one pair per line,
+   in a well that scrolls sideways if a line is ever wider than the face.
+   Inherited overflow-wrap: anywhere broke '"$des|cription"' across two lines
+   at 390. Its size steps down with the face (the face is the query
+   container) so the longest line, 37 characters, fits from a 320px screen up
+   and the well never needs to scroll at a supported width; at 390 and wider
+   it is the 12px mono step. 23.5em leaves room for a mono advance up to
+   0.635em (Geist Mono measures 0.624em here). */
+.token-format > .definition-face {
+  container-type: inline-size;
+}
+
+.token-format-json {
+  margin: var(--space-8) 0 var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  color: var(--ink);
+  font: 500 min(0.75rem, (100cqi - 2 * var(--space-12)) / 23.5) / 1.6 var(--mono);
+  font-variant-ligatures: none;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.token-format-json code {
+  font: inherit;
+  color: inherit;
+  white-space: inherit;
+}
+
+/* The proposal is the card's one accent: the type this system adds. */
+.definition-side .token-format-proposal {
+  color: var(--signal-text);
+}
+
+@media (forced-colors: active) {
+  .token-format-json {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+}

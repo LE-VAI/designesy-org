@@ -250,8 +250,11 @@ export function EngineBar({
       <div className="eg-bar-foot">
         {choices}
         {/* The note keeps its place while a live line stands over it, so the
-            first keystroke never changes the bar's height. */}
-        <p className="eg-bar-status" id={`${id}-status`} data-tone={status.tone}>
+            first keystroke never changes the bar's height. The status is a
+            bar, not a paragraph: it spans the foot (it carries the slab's
+            divider under the choices) and holds the lines, which carry the
+            text and its 66ch measure (command-bar.css). */}
+        <div className="eg-bar-status" id={`${id}-status`} data-tone={status.tone}>
           <span className="eg-bar-note" data-off={status.tone !== 'note' || undefined}>
             {note}
           </span>
@@ -266,7 +269,7 @@ export function EngineBar({
               <span>{status.text}</span>
             </span>
           )}
-        </p>
+        </div>
         <span className="sr-only" role="status">
           {said}
         </span>

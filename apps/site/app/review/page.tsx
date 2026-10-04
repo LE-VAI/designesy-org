@@ -7,6 +7,7 @@ import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { AgentActions } from '../lib/agent-actions';
+import { designReviewKit } from '../lib/kits/design-review';
 
 export const metadata: Metadata = pageMeta({
   title: 'Review',
@@ -27,6 +28,49 @@ const DIMENSIONS = [
   { num: '06', title: 'Durability', desc: 'Will this hold up under repeated use? Can it be maintained, repaired, localized, and adapted? Is the need more durable than the trend?' },
   { num: '07', title: 'Delight', desc: 'Does the emotional quality clarify purpose, trust, identity, learning, or human connection? Or does it distract from weak function?' },
   { num: '08', title: 'Responsibility', desc: 'What environmental, economic, social, or human costs are hidden? Does the design distribute effort fairly? What would make it more honest?' },
+];
+
+const STANDARD =
+  'The artifact should feel considered after it becomes functional.';
+
+// "Review against": each row's side is the version that carries its rules.
+const REVIEW_AGAINST = [
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: 'Human home and machine export · Poise + Takt + Cadence + Acoustics',
+    side: CONTRACT_VERSION,
+  },
+  {
+    href: '/labs/poise',
+    title: 'Lab One · Poise',
+    meta: 'Restrained interaction',
+    side: 'adopted v0.1.1',
+  },
+  {
+    href: '/labs/takt',
+    title: 'Lab Two · Takt',
+    meta: 'Interface feel',
+    side: 'adopted v0.1.2',
+  },
+  {
+    href: '/labs/cadence',
+    title: 'Lab Three · Cadence',
+    meta: 'Text rhythm',
+    side: 'adopted v0.1.3',
+  },
+  {
+    href: '/labs/acoustics',
+    title: 'Lab Four · Acoustics',
+    meta: 'Interaction sound',
+    side: 'adopted v0.3.0',
+  },
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'Runnable package of these dimensions',
+    side: `Kit v${designReviewKit.version}`,
+  },
 ];
 
 const REVIEW_CHECKS = [
@@ -86,11 +130,30 @@ export default function ReviewPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Quality bar</h2>
-          <div className="definition">
-            <p className="definition-label">Standard</p>
-            <p>
-              The artifact should feel considered after it becomes functional.
-            </p>
+          <div className="definition definition-split" data-copy={STANDARD} data-copy-label="standard">
+            <div className="definition-face">
+              <p className="definition-label">Standard</p>
+              <p>{STANDARD}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                Considered
+              </span>
+              <dl>
+                <div>
+                  <dt>Baseline</dt>
+                  <dd>Functional</dd>
+                </div>
+                <div>
+                  <dt>Checked</dt>
+                  <dd>{DIMENSIONS.length} dimensions</dd>
+                </div>
+                <div>
+                  <dt>Method</dt>
+                  <dd>Kit One v{designReviewKit.version}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
           <p className="surface-note">
             Functional is the baseline. Considered is the bar. An artifact is
@@ -234,123 +297,80 @@ export default function ReviewPage() {
           <h2 className="doctrine-heading">Use this as a kit</h2>
           <Link
             href="/kits/design-review"
-            className="lab-card"
+            className="lab-card is-split"
             data-cuelume-hover="tick"
             data-cuelume-press
           >
-            <div className="lab-card-top">
-              <span className="status-badge status-badge--kit">Kit One</span>
-              <span className="lab-card-status">Live</span>
+            <div className="lab-card-panes">
+              <div className="lab-card-face">
+                <div className="lab-card-top">
+                  <span className="status-badge status-badge--kit">Kit One</span>
+                </div>
+                <h3 className="lab-card-title">Design Review</h3>
+                <p className="lab-card-lede">
+                  Portable package of these dimensions for agents and teams.
+                </p>
+                <p className="lab-card-desc">
+                  Prompt, output format, verification, and anti-patterns, ready
+                  to hand off as a shareable path.
+                </p>
+                <span className="lab-card-arrow">
+                  Open kit <span aria-hidden="true">→</span>
+                </span>
+              </div>
+              {/* Read from the kit record /kits/design-review.json serves, so
+                  the card cannot drift from the package. */}
+              <dl className="lab-card-side">
+                <div>
+                  <dt>Status</dt>
+                  <dd>Live</dd>
+                </div>
+                <div>
+                  <dt>Version</dt>
+                  <dd>v{designReviewKit.version}</dd>
+                </div>
+                <div>
+                  <dt>Dimensions</dt>
+                  <dd>{designReviewKit.dimensions.length}</dd>
+                </div>
+                <div>
+                  <dt>Permission</dt>
+                  <dd>{designReviewKit.permission.split(' · ')[0]}</dd>
+                </div>
+                <div>
+                  <dt>Machine export</dt>
+                  <dd>design-review.json</dd>
+                </div>
+              </dl>
             </div>
-            <h3 className="lab-card-title">Design Review</h3>
-            <p className="lab-card-lede">
-              Portable package of these dimensions for agents and teams.
-            </p>
-            <p className="lab-card-desc">
-              Prompt, output format, verification, and anti-patterns, ready to
-              hand off as a shareable path.
-            </p>
-            <span className="lab-card-arrow">Open kit →</span>
           </Link>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Review against</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                  <span className="row-meta">Human home and machine export · Poise + Takt + Cadence + Acoustics</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/poise"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Lab One · Poise</span>
-                  <span className="row-meta">
-                    Restrained interaction · adopted in v0.1.1
+            {REVIEW_AGAINST.map((item, i) => (
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="whisper"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/takt"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Two · Takt</span>
-                  <span className="row-meta">
-                    Interface feel · adopted in v0.1.2
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/cadence"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Three · Cadence</span>
-                  <span className="row-meta">
-                    Text rhythm · adopted in v0.1.3
+                  <span className="row-side">
+                    <span className="row-side-line">{item.side}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/acoustics"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Four · Acoustics</span>
-                  <span className="row-meta">
-                    Interaction sound · adopted in v0.3.0
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/kits/design-review"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">Use Kit One · Design Review</span>
-                  <span className="row-meta">
-                    Runnable package of these dimensions
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 

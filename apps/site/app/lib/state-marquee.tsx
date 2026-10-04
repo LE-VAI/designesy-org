@@ -8,11 +8,11 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 const SIGNALS = [
   { t: CONTRACT_VERSION + ' · LIVE', c: 'live', href: '/contracts/design-system' },
-  { t: 'Poise ✓ adopted', c: 'adopted', href: '/labs/poise' },
-  { t: 'Takt ✓ adopted', c: 'adopted', href: '/labs/takt' },
-  { t: 'Cadence ✓ adopted', c: 'adopted', href: '/labs/cadence' },
-  { t: 'Review ✓ pass', c: 'adopted', href: '/review' },
-  { t: 'Keyboard ✓ verified', c: 'adopted', href: '/review/keyboard' },
+  { t: 'Poise · adopted', c: 'adopted', href: '/labs/poise' },
+  { t: 'Takt · adopted', c: 'adopted', href: '/labs/takt' },
+  { t: 'Cadence · adopted', c: 'adopted', href: '/labs/cadence' },
+  { t: 'Review · pass', c: 'adopted', href: '/review' },
+  { t: 'Keyboard · verified', c: 'adopted', href: '/review/keyboard' },
   { t: 'Drift rule active', c: 'live', href: '/drift' },
   { t: 'SKILL.md published', c: 'live', href: '/contracts/skill' },
   { t: 'open.json · machine feed', c: 'info', href: '/open.json' },
@@ -62,7 +62,18 @@ export function StateMarquee() {
         aria-label={paused ? 'Resume system status' : 'Pause system status'}
         onClick={() => setPaused((p) => !p)}
       >
-        {paused ? '▶' : '❚❚'}
+        {/* Drawn, not typed: a 9px text glyph rendered at whatever weight the
+            font gave it. The label carries the name; the icon is decoration. */}
+        <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+          {paused ? (
+            <path d="M3.5 1.75v8.5L10.25 6z" />
+          ) : (
+            <>
+              <rect x="2.5" y="2" width="2.5" height="8" rx="0.5" />
+              <rect x="7" y="2" width="2.5" height="8" rx="0.5" />
+            </>
+          )}
+        </svg>
       </button>
       <div className="state-marquee-track" ref={trackRef}>
         {[0, 1].map((copy) => (

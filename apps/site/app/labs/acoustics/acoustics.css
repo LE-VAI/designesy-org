@@ -2,46 +2,209 @@
    Plain .css imported in labs/acoustics/page.tsx — Next.js code-splits
    this to the /labs/acoustics route only. */
 
-.cue-grid {
+/* --- Sound preference row ---
+   The switch and its note on two columns, so the note hangs on its own
+   column instead of wrapping back under the switch on a phone. */
+.cue-pref {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1px;
-  max-width: 100%;
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--line-faint);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-16);
+  margin-bottom: var(--space-24);
 }
 
-.cue-cell {
+.cue-pref-note {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* --- Cue grid: the live artifact as an instrument ---
+   Material tier 2 (design spec 3.1-3.3), the same as the labs' demo grid:
+   opaque --mat-instrument, the top-lit --rim, --elev-2 and the page's one
+   --floor-pool, with a title bar as its first row that carries the count and
+   the sound state. The cells used to be page paper behind 6% hairlines, so
+   the empty twentieth slot (the grid's hairline fill) was the brightest tile
+   in the instrument. Now every pane is the grid's own material and the last
+   slot holds the key to reading a cell.
+   No overflow clip (it would cut off the floor): the panes are transparent
+   and draw their seams only toward a neighbour, and the one pane in a bottom
+   corner that has a contact fill rounds that corner itself (below).
+   --muted-dim measures 4.38:1 on the gradient's lifted top, so the dim tier
+   rides --muted on this surface. */
+.cue-grid {
+  --muted-dim: var(--muted);
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-radius: var(--radius);
+  background: var(--mat-instrument) var(--surface-raised);
+  box-shadow: var(--elev-2);
+}
+
+/* The rim: read, not commanded, so it never heats; the cells keep their
+   own hover. */
+.cue-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* The floor, capped as under the console (.vc-window::after). */
+.cue-grid::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: max(-7%, -1.75rem);
+  z-index: -1;
+  height: min(18%, 4.5rem);
+  background: var(--floor-pool);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Title bar: the first row, across every column. The name and count sit
+   over the panes' text edge, the state at the far end. The state follows
+   html[data-audio], which the sound preference writes (lib/use-sound), so it
+   holds for either control that sets it. */
+.cue-rack-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  min-height: 2.9rem;
+  padding: 0 var(--space-fine-85);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.cue-rack-title {
+  font: 600 0.78rem/1 var(--sans);
+  color: var(--ink);
+}
+
+.cue-rack-count {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.cue-rack-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 0.72rem/1 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cue-led {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+}
+
+.cue-rack-on {
+  display: none;
+}
+
+html[data-audio="on"] .cue-led {
+  background: var(--signal-access);
+  box-shadow: none;
+}
+
+html[data-audio="on"] .cue-rack-on {
+  display: inline;
+}
+
+html[data-audio="on"] .cue-rack-off {
+  display: none;
+}
+
+.cue-cell,
+.cue-key {
   display: flex;
   flex-direction: column;
   gap: var(--space-fine-40);
-  padding: var(--space-16) var(--space-fine-85);
-  background: var(--paper);
-  cursor: pointer;
-  text-align: left;
-  appearance: none;
-  border: none;
-  font: inherit;
   min-width: 0;
-  transition: background 0.18s var(--ease), transform 160ms var(--ease-out);
+  padding: var(--space-16) var(--space-fine-85);
+  border: 0;
+  text-align: left;
 }
 
-@media (hover: hover) {
-  .cue-cell:hover {
-    background: var(--surface-hover);
+/* Contact: a pre-rendered wash under the content whose opacity moves (no
+   colour is transitioned). --surface-soft, not --surface-hover: the 6% wash
+   took the token's --signal-text to 4.47:1 on the lifted top; 3% holds 4.6. */
+.cue-cell {
+  position: relative;
+  isolation: isolate;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+
+.cue-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--surface-soft);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cue-cell:hover::before {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
   }
 }
 
 .cue-cell:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: -2px;
-  background: var(--surface-hover);
+}
+
+.cue-cell:focus-visible::before {
+  opacity: 1;
 }
 
 .cue-cell:active {
   transform: scale(0.97);
+}
+
+/* Seams: each pane draws its own, only toward a neighbour (see the demo
+   grid in globals.css). The title bar is child 1 and its rule is the first
+   row's top, so the panes count from 2: the 5n+2 pane opens each row. The
+   pane in the bottom-left corner rounds that corner (its contact fill
+   inherits it); the bottom-right pane is the key, which has no fill. */
+@media (min-width: 721px) {
+  .cue-grid > :not(.cue-rack-bar):not(:nth-child(5n + 2)) {
+    border-left: 1px solid var(--line-faint);
+  }
+
+  .cue-grid > :nth-child(n + 7) {
+    border-top: 1px solid var(--line-faint);
+  }
+
+  .cue-grid > :nth-child(5n + 2):nth-last-child(-n + 5) {
+    border-bottom-left-radius: var(--radius);
+  }
+}
+
+.cue-grid > :last-child {
+  border-bottom-right-radius: var(--radius);
 }
 
 .cue-cell-num {
@@ -71,17 +234,93 @@
   color: var(--muted);
 }
 
+/* The key: the anatomy of a cell, in the slot the nineteen cues leave
+   open. It is read, not pressed, so it carries no contact or press, and its
+   lines sit in the quiet tier. */
+.cue-key {
+  cursor: default;
+}
+
+.cue-key .cue-cell-token,
+.cue-key .cue-cell-cue {
+  color: var(--muted);
+}
+
+.cue-key .cue-cell-cue {
+  font-weight: 600;
+}
+
 @media (max-width: 720px) {
   .cue-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .cue-grid > :nth-child(odd):not(.cue-rack-bar) {
+    border-left: 1px solid var(--line-faint);
+  }
+
+  .cue-grid > :nth-child(n + 4) {
+    border-top: 1px solid var(--line-faint);
+  }
+
+  .cue-grid > :nth-child(even):nth-last-child(-n + 2) {
+    border-bottom-left-radius: var(--radius);
+  }
 }
 
+/* Reduced motion, tiered: the press stops; the wash fade stays, held to the
+   150ms entry. */
 @media (prefers-reduced-motion: reduce) {
   .cue-cell:active {
     transform: none;
   }
-  .cue-cell {
-    transition: background 0.15s;
+
+  .cue-cell::before,
+  .cue-cell:hover::before {
+    transition-duration: var(--duration-quick);
+  }
+}
+
+html[data-motion="paused"] .cue-cell:active {
+  transform: none;
+}
+
+html[data-motion="paused"] .cue-cell::before {
+  transition-duration: var(--duration-quick);
+}
+
+@media (prefers-contrast: more) {
+  .cue-grid::before {
+    background: var(--line-strong);
+  }
+
+  html .cue-grid > :nth-child(n),
+  .cue-rack-bar {
+    border-color: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .cue-grid {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .cue-grid::before,
+  .cue-grid::after {
+    display: none;
+  }
+
+  .cue-grid > * {
+    border-color: CanvasText;
+  }
+
+  .cue-led {
+    box-shadow: inset 0 0 0 1.5px CanvasText;
+  }
+
+  html[data-audio="on"] .cue-led {
+    background: CanvasText;
   }
 }

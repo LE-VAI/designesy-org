@@ -7,6 +7,8 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tokens contract',
@@ -18,6 +20,10 @@ export const metadata: Metadata = pageMeta({
     'Token-format conformance for W3C DTCG 2025.10. OKLCH mandatory, custom types via $extensions. Machine export available.',
   twitterDescription: 'Designesy tokens contract · designesy.org/contracts/tokens',
 });
+
+// The scoring note leads with the live count, so the contract's own leading
+// "10 checks." is dropped (every sibling page drops it the same way).
+const scoringRest = (s: string) => s.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '');
 
 export default function TokensContractPage() {
   const c = tokensContract;
@@ -38,17 +44,21 @@ export default function TokensContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary standard</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">JSON Schema</p>
-            <p><a href={c.source_authority.json_schema}>{c.source_authority.json_schema}</a></p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Reference validator</p>
-            <p>{c.source_authority.reference_validator}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Primary standard</dt>
+              <KvValue text={c.source_authority.primary} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>JSON Schema</dt>
+              <dd className="kv-mono">
+                <a href={c.source_authority.json_schema}>{c.source_authority.json_schema}</a>
+              </dd>
+            </dl>
+            <dl className="kv-cell">
+              <dt>Reference validator</dt>
+              <KvValue text={c.source_authority.reference_validator} mono />
+            </dl>
           </div>
         </section>
 
@@ -81,30 +91,28 @@ export default function TokensContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            <CountUp value={c.verification.checks.length} /> checks. {scoringRest(c.verification.scoring)}
+          </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={check.id} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass}
-                    {'fail' in check ? ` · FAIL: ${check.fail}` : ''}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>{c.verification.scoring}</p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
-              <li key={i} style={{ marginBottom: '0.75rem', color: 'var(--muted)' }}>{q}</li>
+              <li key={i}>{q}</li>
             ))}
           </ul>
         </section>

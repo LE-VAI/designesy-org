@@ -273,6 +273,24 @@ function roleList(body) {
     .filter(Boolean);
 }
 
+/**
+ * Index of the </div> that closes a <div> whose content starts at `from`.
+ * A role="list" body holds nested divs (each row's body), so a lazy match to
+ * the first </div> ended the list after its first row: /work.md listed one
+ * case study of five.
+ */
+function closingDiv(html, from) {
+  const tagRe = /<div\b|<\/div>/gi;
+  tagRe.lastIndex = from;
+  let depth = 1;
+  let t;
+  while ((t = tagRe.exec(html)) !== null) {
+    depth += t[0][1] === '/' ? -1 : 1;
+    if (depth === 0) return t.index;
+  }
+  return html.length;
+}
+
 /** Convert the main-container HTML to markdown. */
 function convert(html) {
   const out = [];
@@ -283,12 +301,18 @@ function convert(html) {
   // attributes are the semantic signal here; the tag names are not. Caught by
   // checking that the emitted file contained zero markdown links.
   const blockRe =
-    /<(h[1-6]|p|ul|ol|table|blockquote|pre)\b[^>]*>([\s\S]*?)<\/\1>|<div\b[^>]*role=["']list["'][^>]*>([\s\S]*?)<\/div>/gi;
+    /<(h[1-6]|p|ul|ol|table|blockquote|pre)\b[^>]*>([\s\S]*?)<\/\1>|<div\b[^>]*role=["']list["'][^>]*>/gi;
 
   let m;
   while ((m = blockRe.exec(html)) !== null) {
     const tag = m[1] ? m[1].toLowerCase() : 'list';
-    const body = m[1] ? m[2] : m[3];
+    let body = m[2];
+    if (!m[1]) {
+      // Only the opening tag matched: take the body up to its own closing tag.
+      const end = closingDiv(html, blockRe.lastIndex);
+      body = html.slice(blockRe.lastIndex, end);
+      blockRe.lastIndex = Math.min(html.length, end + '</div>'.length);
+    }
     // Eyebrow and label fragments ("Context surface", "Working sentence",
     // "Standard") are visual scaffolding. Once the styling that grouped them
     // with their body text is gone, they read as orphan capitalised nouns

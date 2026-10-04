@@ -3,9 +3,12 @@ import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { guardrailsContract } from '../../lib/guardrails-contract';
+import { registry } from '../../lib/engine/registry';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvFigures, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails contract',
@@ -19,6 +22,34 @@ export const metadata: Metadata = pageMeta({
 });
 
 const c = guardrailsContract;
+
+// The adoption statistic, read out of the contract's own sentence so the
+// figure cannot drift from its source (the sentence prints if it stops
+// matching).
+//   "zeroheight Design Systems Report 2025: token adoption 84% (up from 56% in
+//    2024), but 40% still sync tokens by hand"
+const ADOPTION = /^(.+?):\s*(.+?)\s+(\d+%)\s+\((.+?)\),\s*but\s+(\d+%)\s+(.+)$/.exec(c.source_authority.adoption_signal);
+
+// Each bundle key is emitted by one check, and that check names the file
+// (lib/engine/registry.ts, the /guardrails instrument's own list). The format
+// is the file's, as the contract describes it.
+const EMITTED_BY: Record<string, string> = {
+  tokens: 'g01',
+  lintConfig: 'g02',
+  agentRules: 'g03',
+  componentContract: 'g04',
+  antiPatterns: 'g05',
+  designMd: 'g06',
+};
+const FORMAT: Record<string, string> = {
+  tokens: 'DTCG JSON',
+  lintConfig: 'Stylelint',
+  agentRules: 'Markdown',
+  componentContract: 'JSON',
+  antiPatterns: 'JSON',
+  designMd: 'Markdown',
+};
+const FILE = new Map(registry('guardrails').checks.map((k) => [k.id, k.file]));
 
 export default function GuardrailsContractPage() {
   return (
@@ -38,21 +69,33 @@ export default function GuardrailsContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary source</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Contract shift</p>
-            <p>{c.source_authority.contract_shift}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Tokens as types</p>
-            <p>{c.source_authority.types_not_suggestions}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Adoption data</p>
-            <p>{c.source_authority.adoption_signal}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Contract shift</dt>
+              <KvValue text={c.source_authority.contract_shift} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Tokens as types</dt>
+              <KvValue text={c.source_authority.types_not_suggestions} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Adoption data</dt>
+              {ADOPTION ? (
+                <KvFigures
+                  figures={[
+                    { value: ADOPTION[3], caption: `${ADOPTION[2]}, ${ADOPTION[4]}` },
+                    { value: ADOPTION[5], caption: ADOPTION[6] },
+                  ]}
+                  source={ADOPTION[1]}
+                />
+              ) : (
+                <KvValue text={c.source_authority.adoption_signal} />
+              )}
+            </dl>
+            <dl className="kv-cell is-foot">
+              <dt>Primary source</dt>
+              <dd>{c.source_authority.primary}</dd>
+            </dl>
           </div>
         </section>
 
@@ -62,15 +105,24 @@ export default function GuardrailsContractPage() {
             {c.conformance.emission_method}
           </p>
           <div className="row-stack" role="list">
-            {c.conformance.output_bundle.map((item, i) => (
-              <div key={item.component} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">{item.component}</span>
-                  <span className="row-meta">{item.description}</span>
-                </span>
-              </div>
-            ))}
+            {c.conformance.output_bundle.map((item, i) => {
+              const file = FILE.get(EMITTED_BY[item.component] ?? '');
+              return (
+                <div key={item.component} className="row" role="listitem">
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
+                  <span className="row-body">
+                    <span className="row-title contract-ident">{item.component}</span>{' '}
+                    <span className="row-meta">{item.description}</span>
+                  </span>{' '}
+                  <span className="row-side">
+                    <span className="row-side-line">
+                      <span className="contract-format">{FORMAT[item.component] ?? 'File'}</span>
+                      {file ? <>{' '}{file}</> : null}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -81,12 +133,12 @@ export default function GuardrailsContractPage() {
           </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={check.id} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">PASS: {check.pass} · FAIL: {check.fail}</span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
@@ -94,7 +146,7 @@ export default function GuardrailsContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
               <li key={i}>{q}</li>
             ))}

@@ -7,6 +7,8 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Accessibility contract',
@@ -18,6 +20,10 @@ export const metadata: Metadata = pageMeta({
     'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks. Machine export available.',
   twitterDescription: 'Designesy accessibility contract · designesy.org/contracts/a11y',
 });
+
+// The scoring note leads with the live count, so the contract's own leading
+// "11 checks." is dropped (every sibling page drops it the same way).
+const scoringRest = (s: string) => s.replace(/^\d+ (?:synthesis )?checks[^.]*\.\s*/, '');
 
 export default function A11yContractPage() {
   const c = a11yContract;
@@ -38,62 +44,65 @@ export default function A11yContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary engine</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Conformance standard</p>
-            <p>{c.source_authority.wcag}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Provenance layer</p>
-            <p>{c.source_authority.act_rules}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Primary engine</dt>
+              <KvValue text={c.source_authority.primary} mono />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Conformance standard</dt>
+              <KvValue text={c.source_authority.wcag} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Provenance layer</dt>
+              <KvValue text={c.source_authority.act_rules} />
+            </dl>
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Conformance</h2>
-          <div className="definition">
-            <p className="definition-label">Conformance level</p>
-            <p>{c.conformance.level}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Ruleset export</p>
-            <p><code>{c.conformance.ruleset_export_command}</code></p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Provenance chain</p>
-            <p>{c.conformance.provenance_chain}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Conformance level</dt>
+              <KvValue text={c.conformance.level} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Ruleset export</dt>
+              <dd className="kv-mono">
+                <code>{c.conformance.ruleset_export_command}</code>
+              </dd>
+            </dl>
+            <dl className="kv-cell">
+              <dt>Provenance chain</dt>
+              <KvValue text={c.conformance.provenance_chain} />
+            </dl>
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Verification: <CountUp value={c.verification.checks.length} /> checks</h2>
+          <h2 className="doctrine-heading">Verification</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            <CountUp value={c.verification.checks.length} /> checks. {scoringRest(c.verification.scoring)}
+          </p>
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
-              <div key={check.id} className="row" role="listitem" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+              <div key={check.id} className="row" role="listitem">
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass}
-                    {'fail' in check ? ` · FAIL: ${check.fail}` : ''}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                    {'na' in check ? ` · N/A: ${check.na}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>{c.verification.scoring}</p>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
-              <li key={i} style={{ marginBottom: '0.75rem', color: 'var(--muted)' }}>{q}</li>
+              <li key={i}>{q}</li>
             ))}
           </ul>
         </section>

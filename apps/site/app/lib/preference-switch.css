@@ -1,0 +1,227 @@
+/* Preference switches (lib/preference-switch.tsx): the labs' sound and
+   haptics controls. Imported by the component, so only the routes that
+   render one load it.
+
+   Anatomy: a 44px track, the name, the state word. Off is an outlined track
+   with a --muted thumb at the start (6.9:1 dark, 7.5:1 light); on is the
+   senses panel's lit fill (signal-light to signal, the top highlight) with
+   the thumb at the end in on-signal white. Concentric: the 18px thumb sits
+   3px inside a 24px track, so its radius is the track's --radius less 3px
+   (Takt's outerRadius = innerRadius + padding). The radius scale holds: no
+   pill.
+
+   Motion, transform and opacity only: the thumb slides (translateX, the
+   contract's 160ms press settle on --ease-out) and the lit fill is a
+   pre-rendered layer whose opacity crossfades. Reduced motion and the motion
+   switch drop the slide and the press scale and keep the fade at 150ms. */
+
+.pref {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-6);
+}
+
+.pref-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  min-height: var(--space-44);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pref-switch:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.pref-switch-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--space-44);
+  height: var(--space-24);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: transform 160ms var(--ease-out);
+}
+
+/* The lit fill, pre-rendered; only its opacity moves. */
+.pref-switch-track::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--signal-light), var(--signal));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+}
+
+.pref-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: calc(var(--radius) - 3px);
+  background: var(--muted);
+  transition: transform 160ms var(--ease-out);
+}
+
+.pref-switch[aria-pressed="true"] .pref-switch-track::before {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+
+.pref-switch[aria-pressed="true"] .pref-switch-thumb {
+  background: var(--paper-on-signal);
+  transform: translateX(20px);
+}
+
+.pref-switch-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Fixed width, so On and Off never shift what follows. */
+.pref-switch-state {
+  min-width: 3ch;
+  font: 500 0.72rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: start;
+  color: var(--muted);
+}
+
+.pref-switch[aria-pressed="true"] .pref-switch-state {
+  color: var(--signal-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pref-switch:not(:disabled):hover .pref-switch-track {
+    box-shadow: inset 0 0 0 1px var(--muted);
+  }
+}
+
+.pref-switch:not(:disabled):active .pref-switch-track {
+  transform: scale(0.97);
+}
+
+/* Unavailable (haptics without vibration hardware): greyed and inert. The
+   readout under it carries the reason at full contrast. */
+.pref-switch:disabled {
+  cursor: default;
+  color: var(--muted);
+}
+
+.pref-switch:disabled .pref-switch-track {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.pref-switch:disabled .pref-switch-thumb {
+  background: var(--line-strong);
+}
+
+.pref-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The LED: a ring when off, lit when on. No halo: coloured light at rest is
+   a state the page does not have. */
+.pref-led {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+}
+
+.pref-led[data-on] {
+  background: var(--signal-access);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pref-switch-thumb,
+  .pref-switch-track {
+    transition: none;
+  }
+
+  .pref-switch:not(:disabled):active .pref-switch-track {
+    transform: none;
+  }
+
+  .pref-switch-track::before,
+  .pref-switch[aria-pressed="true"] .pref-switch-track::before {
+    transition-duration: var(--duration-quick);
+  }
+}
+
+html[data-motion="paused"] .pref-switch-thumb,
+html[data-motion="paused"] .pref-switch-track {
+  transition: none;
+}
+
+html[data-motion="paused"] .pref-switch:not(:disabled):active .pref-switch-track {
+  transform: none;
+}
+
+html[data-motion="paused"] .pref-switch-track::before {
+  transition-duration: var(--duration-quick);
+}
+
+@media (forced-colors: active) {
+  .pref-switch-track {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+    box-shadow: none;
+  }
+
+  .pref-switch-track::before {
+    display: none;
+  }
+
+  .pref-switch-thumb {
+    background: CanvasText;
+  }
+
+  .pref-switch[aria-pressed="true"] .pref-switch-track {
+    background: Highlight;
+  }
+
+  .pref-switch[aria-pressed="true"] .pref-switch-thumb {
+    background: HighlightText;
+  }
+
+  .pref-switch:disabled .pref-switch-track {
+    outline-color: GrayText;
+  }
+
+  .pref-switch:disabled .pref-switch-thumb {
+    background: GrayText;
+  }
+
+  .pref-led {
+    box-shadow: inset 0 0 0 1.5px CanvasText;
+  }
+
+  .pref-led[data-on] {
+    background: CanvasText;
+  }
+}

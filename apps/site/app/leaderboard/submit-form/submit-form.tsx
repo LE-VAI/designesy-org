@@ -46,7 +46,7 @@ export function SubmitForm() {
   }
 
   return (
-    <div className="lb-submit">
+    <div className="lb-submit g12">
       <EngineBar
         fields={[{ value: url, onChange: setUrl, label: 'URL to submit to the leaderboard', placeholder: 'Any public URL, like stripe.com' }]}
         onSubmit={() => void submit()}

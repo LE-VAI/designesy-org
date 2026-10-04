@@ -8,6 +8,8 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { designReviewKit } from '../../lib/kits/design-review';
+import { labs } from '../../lib/labs';
 
 export const metadata: Metadata = pageMeta({
   title: 'Takt field check',
@@ -166,36 +168,47 @@ const VERIFICATION = [
   'Cross-referenced against design system contract tokens; adopted into v0.1.2',
 ];
 
+const REVIEWED = '2026-07-13';
+
+const SUMMARY =
+  'Takt is a considered lab. The live CSS confirms every rule: no transition:all, will-change restricted to transform/opacity, press scale 0.96 on cells and 0.985 on larger surfaces, concentric radii holding, stagger at 80ms increments. The lab codifies what the site already does. Two rules remain unverified (image outlines, with no image surfaces yet; mobile hit area, tested on desktop only). Five rules are promoted into contract v0.1.2. Remaining work is verification and synchronization.';
+
 const SOURCES = [
   {
     href: '/labs/takt',
     title: 'Lab Two · Takt',
     meta: 'Artifact under review',
+    role: `Artifact · lab v${labs.takt.version}`,
   },
   {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
     meta: 'Method and output format',
+    role: `Method · kit v${designReviewKit.version}`,
   },
   {
     href: '/contracts/design-system',
     title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'Governing tokens · takt rules adopted in v0.1.2',
+    role: `Rules · ${CONTRACT_VERSION}`,
   },
   {
     href: '/labs/poise',
     title: 'Lab One · Poise',
     meta: 'Prior lab: motion restraint, same anatomy pattern',
+    role: 'Prior lab',
   },
   {
     href: '/review/poise',
     title: 'Field check · Poise',
     meta: 'Prior field check: pass with notes, adopted in v0.1.1',
+    role: 'Prior review',
   },
   {
     href: '/review',
     title: 'Review surface',
     meta: 'Eight dimensions doctrine',
+    role: 'Doctrine',
   },
 ];
 
@@ -227,25 +240,41 @@ export default function TaktFieldCheckPage() {
             <span className="status-badge">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · /labs/takt</span>
-            <span className="lab-meta-item">Date · 2026-07-13</span>
+            <span className="lab-meta-item">Date · {REVIEWED}</span>
           </div>
           <AgentActions mdPath="/review/takt.md" label="the takt review" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">
           <h2 className="doctrine-heading">Summary</h2>
-          <div className="definition">
-            <p className="definition-label">Outcome · pass with notes</p>
-            <p>
-              Takt is a considered lab. The live CSS confirms every rule: no
-              transition:all, will-change restricted to transform/opacity, press
-              scale 0.96 on cells and 0.985 on larger surfaces, concentric
-              radii holding, stagger at 80ms increments. The lab codifies what
-              the site already does. Two rules remain unverified (image
-              outlines, with no image surfaces yet; mobile hit area, tested on
-              desktop only). Five rules are promoted into contract v0.1.2. Remaining
-              work is verification and synchronization.
-            </p>
+          <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
+            <div className="definition-face">
+              <p className="definition-label">Outcome · pass with notes</p>
+              <p>{SUMMARY}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="warn">
+                Pass with notes
+              </span>
+              <dl>
+                <div>
+                  <dt>Kit</dt>
+                  <dd>Design Review v{designReviewKit.version}</dd>
+                </div>
+                <div>
+                  <dt>Artifact</dt>
+                  <dd>/labs/takt</dd>
+                </div>
+                <div>
+                  <dt>Adopted</dt>
+                  <dd>Contract v0.1.2</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{REVIEWED}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -259,6 +288,9 @@ export default function TaktFieldCheckPage() {
                   https://www.designesy.org/labs/takt + live CSS audit
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{ARTIFACT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="02">
               <span className="row-body">
@@ -267,6 +299,9 @@ export default function TaktFieldCheckPage() {
                   Make interfaces feel built rather than rendered through
                   exact-value rules
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{PURPOSE}}'}</span>
               </span>
             </ToggleRow>
             <ToggleRow index="03">
@@ -277,6 +312,9 @@ export default function TaktFieldCheckPage() {
                   system-agnostic rules for any styling framework
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{CONTEXT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="04">
               <span className="row-body">
@@ -285,6 +323,9 @@ export default function TaktFieldCheckPage() {
                   Contract v0.1.2 · Kit One Design Review · takt lab
                   anti-patterns
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{RULES}}'}</span>
               </span>
             </ToggleRow>
           </div>
@@ -361,6 +402,10 @@ export default function TaktFieldCheckPage() {
                     <span className="row-title">{item.title}</span>
                     <span className="row-meta">{item.meta}</span>
                   </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.role}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
+                  </span>
                 </Link>
               </div>
             ))}
@@ -382,6 +427,10 @@ export default function TaktFieldCheckPage() {
                   <span className="row-title">Open Lab Two · Takt</span>
                   <span className="row-meta">Live artifact</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/labs/takt</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -396,6 +445,10 @@ export default function TaktFieldCheckPage() {
                   <span className="row-title">Use Kit One · Design Review</span>
                   <span className="row-meta">Run the same method on your work</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/kits/design-review</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -409,6 +462,10 @@ export default function TaktFieldCheckPage() {
                 <span className="row-body">
                   <span className="row-title">Field check · Poise</span>
                   <span className="row-meta">Prior lab review: pass with notes</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/review/poise</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

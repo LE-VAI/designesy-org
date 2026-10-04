@@ -39,6 +39,34 @@ const SHARE_POSTS = [
   },
 ];
 
+// Each primary path and what it serves.
+const PRIMARY_PATHS = [
+  {
+    href: '/open',
+    title: 'Human index',
+    meta: 'designesy.org/open',
+    format: 'HTML',
+  },
+  {
+    href: '/open.json',
+    title: 'Machine feed',
+    meta: 'designesy.org/open.json',
+    format: 'JSON · CORS-open',
+  },
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'First agent-ready package',
+    format: 'HTML + JSON',
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract ' + CONTRACT_VERSION,
+    meta: 'Portable judgment',
+    format: 'HTML + JSON',
+  },
+];
+
 const VERIFY = [
   {
     title: 'Human index resolves',
@@ -121,64 +149,28 @@ export default function OpenHandoffPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Primary paths</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/open"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Human index</span>
-                  <span className="row-meta">designesy.org/open</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/open.json"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Machine feed</span>
-                  <span className="row-meta">designesy.org/open.json · CORS-open</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/kits/design-review"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Use Kit One · Design Review</span>
-                  <span className="row-meta">
-                    Human + machine · first agent-ready package
+            {PRIMARY_PATHS.map((item, i) => (
+              <div role="listitem" key={item.href}>
+                <Link
+                  href={item.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                  <span className="row-meta">Portable judgment · human + machine</span>
-                </span>
-              </Link>
-            </div>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.format}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
+                  </span>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -202,6 +194,11 @@ export default function OpenHandoffPage() {
                     {post.text}
                   </span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">
+                    {Array.from(post.text).length} characters
+                  </span>
+                </span>
               </CopyRow>
             ))}
           </div>
@@ -221,32 +218,14 @@ export default function OpenHandoffPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Catalog snapshot</h2>
-          <div className="row-stack" role="list">
-            {o.packages.map((pkg, i) => (
-              <div role="listitem" key={pkg.id}>
-                <Link
-                  href={pkg.path}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">
-                      {pkg.title}
-                      {pkg.version ? ` · v${pkg.version}` : ''}
-                    </span>
-                    <span className="row-meta">
-                      {pkg.path}
-                      {pkg.machine_path ? ` · ${pkg.machine_path}` : ' · human surface'}
-                    </span>
-                  </span>
-                </Link>
-              </div>
-            ))}
-          </div>
+          <CheckGrid
+            dense
+            items={o.packages.map((pkg) => ({
+              title: `${pkg.title}${pkg.version ? ` · v${pkg.version}` : ''}`,
+              meta: pkg.machine_path ?? 'Human surface',
+              href: pkg.path,
+            }))}
+          />
         </section>
 
         <section className="doctrine-section fade-up">

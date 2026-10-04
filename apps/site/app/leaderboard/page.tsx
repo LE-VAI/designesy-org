@@ -27,7 +27,7 @@ import {
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { CohortStrip } from '../lib/data/strip';
-import { CategoryProfile } from '../lib/data/cells';
+import { CategoryProfile, HeldTag } from '../lib/data/cells';
 
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
@@ -49,6 +49,8 @@ const LOW = COHORT[COHORT.length - 1];
 const A_SITES = COHORT.filter((s) => s.grade === 'A');
 const GRADE_LINE = GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(' · ');
 const CATEGORY_LIST = BATCH_CATEGORIES.map((k) => CATEGORY_LABELS[k].toLowerCase()).join(', ');
+// The check counts, one column each, so every count sits under its own label.
+const COUNTS = ['Pass', 'Warn', 'Fail', 'Skip'] as const;
 
 function Delta({ s }: { s: CohortSite }) {
   if (s.unreachable || s.prevScore === null) return null;
@@ -77,9 +79,7 @@ function Row({ s }: { s: CohortSite }) {
           </span>
           {s.self && <span className="dx-tag">self-scored</span>}
           {s.unreachable && (
-            <span className="dx-tag" data-kind="held">
-              held over from {s.scoredAt}
-            </span>
+            <HeldTag date={s.scoredAt} />
           )}
         </span>
       </th>
@@ -95,9 +95,11 @@ function Row({ s }: { s: CohortSite }) {
       <td data-opt className="dx-rank-profile">
         <CategoryProfile name={s.name} cats={s.categories} order={BATCH_CATEGORIES} />
       </td>
-      <td data-num data-opt="wide" className="dx-rank-checks">
-        {s.pass} · {s.warn} · {s.fail} · {s.skip}
-      </td>
+      {[s.pass, s.warn, s.fail, s.skip].map((n, i) => (
+        <td key={COUNTS[i]} data-num data-opt="wide" className="dx-rank-count">
+          {n}
+        </td>
+      ))}
     </tr>
   );
 }
@@ -226,19 +228,23 @@ export default function LeaderboardPage() {
               </caption>
               <thead>
                 <tr>
-                  <th scope="col" data-num>
+                  <th scope="col" data-num className="dx-col-n">
                     #
                   </th>
-                  <th scope="col">Site</th>
-                  <th scope="col" data-num>
+                  <th scope="col" className="dx-col-site">
+                    Site
+                  </th>
+                  <th scope="col" data-num className="dx-col-score">
                     Score
                   </th>
-                  <th scope="col" data-opt>
+                  <th scope="col" data-opt className="dx-col-cat">
                     By category
                   </th>
-                  <th scope="col" data-num data-opt="wide">
-                    Pass · warn · fail · skip
-                  </th>
+                  {COUNTS.map((c) => (
+                    <th key={c} scope="col" data-num data-opt="wide" className="dx-col-count">
+                      {c}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>

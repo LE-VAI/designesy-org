@@ -44,21 +44,41 @@ const CARDS = [
   },
 ];
 
-const LADDER = [
+// Each tier's availability is its row's state, in the words /pricing uses
+// ("Open features are live today. Continuity features are in early access.
+// Enterprise features are available by conversation"), with the one action
+// that state allows. Only Live is a pass; the other two are held.
+const LADDER: {
+  name: string;
+  title: string;
+  body: string;
+  status: string;
+  state: 'pass' | 'hold';
+  action: { label: string; href: string };
+}[] = [
   {
     name: 'Open',
     title: 'Free forever',
     body: `${ENGINE_CHECK_COUNT}-check score, drift radar, AI readiness, DTCG validation. No credit card. 5 local score history.`,
+    status: 'Live',
+    state: 'pass',
+    action: { label: 'Start scoring', href: '/score' },
   },
   {
     name: 'Continuity',
     title: '$29 / site / month',
     body: 'Scheduled scans (daily/weekly), email drift alerts, 30-day score history + trend charts, baseline snapshots, multi-site dashboard (5 sites included).',
+    status: 'Early access',
+    state: 'hold',
+    action: { label: 'Join the waitlist', href: '#waitlist-title' },
   },
   {
     name: 'Enterprise',
     title: 'Custom',
     body: 'API access, CI/CD gates, custom contract scoring, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
+    status: 'By conversation',
+    state: 'hold',
+    action: { label: 'Contact us', href: 'mailto:hello@designesy.org' },
   },
 ];
 
@@ -110,29 +130,79 @@ export default function ContinuityPage() {
             No live prices on this page. Founding access opens after early
             conversations. Open tools stay free either way.
           </p>
+          {/* Each row: the tier, its price and what it includes in the face
+              (ending on the 7-line), and its state and action in the side
+              pane (continuity.css). */}
           <div className="continuity-ladder" role="list">
             {LADDER.map((row) => (
               <div className="continuity-ladder-row" role="listitem" key={row.name}>
-                <div className="continuity-ladder-name">{row.name}</div>
-                <div className="continuity-ladder-body">
-                  <strong>{row.title}</strong>
-                  <span>{row.body}</span>
+                <div className="continuity-ladder-face">
+                  <div className="continuity-ladder-name">{row.name}</div>
+                  <div className="continuity-ladder-body">
+                    <strong>{row.title}</strong>
+                    <span>{row.body}</span>
+                  </div>
+                </div>
+                <div className="continuity-ladder-side">
+                  <span className="row-side-chip" data-state={row.state}>
+                    {row.status}
+                  </span>
+                  {row.action.href.startsWith('/') ? (
+                    <Link
+                      href={row.action.href}
+                      className="continuity-ladder-action"
+                      data-cuelume-hover="tick"
+                      data-cuelume-press="tick"
+                    >
+                      {row.action.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={row.action.href}
+                      className="continuity-ladder-action"
+                      data-cuelume-press="tick"
+                    >
+                      {row.action.label}
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </section>
 
+        {/* The waitlist card has a face and a side pane (continuity.css): the
+            fields end on the 7-line like the hero form, and what happens after
+            you join sits behind the divider. */}
         <section className="doctrine-section fade-up" aria-labelledby="waitlist-title">
           <div className="continuity-panel">
-            <h2 className="doctrine-heading" id="waitlist-title">
-              Join the Continuity waitlist
-            </h2>
-            <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-              No charge, no spam. We write when founding access opens, and only
-              about Continuity.
-            </p>
-            <ContinuityWaitlistForm />
+            <div className="continuity-panel-face">
+              <h2 className="doctrine-heading" id="waitlist-title">
+                Join the Continuity waitlist
+              </h2>
+              <ContinuityWaitlistForm />
+            </div>
+            <aside className="continuity-panel-side" aria-labelledby="waitlist-next">
+              <p className="continuity-panel-side-title" id="waitlist-next">
+                What happens next
+              </p>
+              <ol className="continuity-next">
+                <li>
+                  <strong>You join.</strong> No charge and no spam.
+                </li>
+                <li>
+                  <strong>Early conversations.</strong> We talk with builders
+                  to shape the monitoring features before billing starts.
+                </li>
+                <li>
+                  <strong>Founding access.</strong> We write when it opens, and
+                  only about Continuity.
+                </li>
+              </ol>
+              <p className="continuity-panel-side-note">
+                Open tools stay free either way.
+              </p>
+            </aside>
           </div>
         </section>
 
@@ -151,6 +221,10 @@ export default function ContinuityPage() {
                   <span className="row-title">Open index</span>
                   <span className="row-meta">Portable design intelligence catalog</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/open</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -164,6 +238,10 @@ export default function ContinuityPage() {
                 <span className="row-body">
                   <span className="row-title">Kit One · Design Review</span>
                   <span className="row-meta">Eight-dimension inspection method</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/kits/design-review</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -182,6 +260,11 @@ export default function ContinuityPage() {
                   <span className="row-meta">
                     Director + portable score export on designesy.ai.studio
                   </span>
+                </span>
+                {/* Another site: its domain stands where a route would. */}
+                <span className="row-side">
+                  <span className="row-side-line">designesy.ai.studio</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </a>
             </div>

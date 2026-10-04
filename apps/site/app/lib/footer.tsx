@@ -71,6 +71,35 @@ export function Footer() {
     return () => cleanups.forEach((fn) => fn());
   }, []);
 
+  // A rail whose links all fit has nothing to scroll. The loop is two copies
+  // translated by one copy's width, so when one copy is NARROWER than the rail
+  // the second copy shows beside the first and a gap opens at the end: at a
+  // 2560px viewport both rails repeated on screen. Such a rail holds still as
+  // one aligned row (the same layout reduced motion uses); it only scrolls when
+  // there is more than a rail's worth of links. Re-measured on every resize.
+  useEffect(() => {
+    const pairs: [HTMLDivElement | null, HTMLDivElement | null, number][] = [
+      [surfaceClipRef.current, surfaceTrackRef.current, SURFACE_LINKS.length],
+      [machineClipRef.current, machineTrackRef.current, MACHINE_LINKS.length],
+    ];
+    const measure = () => {
+      for (const [clip, track, count] of pairs) {
+        const dock = clip?.parentElement;
+        if (!clip || !track || !dock) continue;
+        let copy = 0;
+        for (const pill of Array.from(track.children).slice(0, count) as HTMLElement[]) {
+          copy += pill.offsetWidth + (parseFloat(getComputedStyle(pill).marginRight) || 0);
+        }
+        const lead = parseFloat(getComputedStyle(track).marginLeft) || 0;
+        dock.toggleAttribute('data-fits', copy + lead <= clip.clientWidth);
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    for (const [clip] of pairs) if (clip) ro.observe(clip);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <footer className="footer" data-pagefind-ignore>
       <div className="site-shell footer-inner">

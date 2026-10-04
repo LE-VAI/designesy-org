@@ -7,6 +7,111 @@ import { checkItemsFromStrings } from '../lib/check-items';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { labs } from '../lib/labs';
+import { acousticTokens } from '../lib/acoustic-tokens';
+import { designReviewKit } from '../lib/kits/design-review';
+import './labs.css';
+
+const LAB_INDEX = [labs.poise, labs.takt, labs.cadence, labs.acoustics];
+
+type VerdictState = 'pass' | 'warn' | 'fail';
+
+/** A field-check outcome as a state: a clean pass, a pass with notes (warn),
+ *  or anything else (fail). Never the brand blue. */
+function verdictState(outcome: string): VerdictState {
+  if (outcome === 'pass') return 'pass';
+  return outcome.startsWith('pass') ? 'warn' : 'fail';
+}
+
+/* When every lab carries the same field-check outcome the column says
+   nothing, so the bar states it once and each row shows what does differ
+   (its rule count). A lab whose outcome differs brings the column back. */
+const LAB_OUTCOMES = new Set(LAB_INDEX.map((lab) => lab.field_check.outcome));
+const SHARED_OUTCOME = LAB_OUTCOMES.size === 1 ? LAB_INDEX[0].field_check.outcome : null;
+
+type RelatedRow = {
+  href: string;
+  title: string;
+  meta: string;
+  /** The row's datum: a version or count, in the side pane's mono. */
+  datum?: string;
+  /** Or a field-check verdict, as a state chip. */
+  verdict?: string;
+  /** A route outside this site: the side shows its host and a ↗. */
+  external?: boolean;
+};
+
+/* Related surfaces. Each row's datum (a version, a count, or a field
+   check's verdict as a state chip) and its route stand in the side pane
+   behind the 7-line; the face keeps the title and one line. */
+const RELATED: RelatedRow[] = [
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: `Where lab behavior is measured: Poise in v${labs.poise.adopted_in_contract}, Takt in v${labs.takt.adopted_in_contract}, Cadence in v${labs.cadence.adopted_in_contract}, Acoustics in v${labs.acoustics.adopted_in_contract}`,
+    datum: CONTRACT_VERSION,
+  },
+  {
+    href: '/review/poise',
+    title: 'Field check · Poise',
+    meta: 'Kit One review of Lab One',
+    verdict: labs.poise.field_check.outcome,
+  },
+  {
+    href: '/review/takt',
+    title: 'Field check · Takt',
+    meta: 'Kit One review of Lab Two',
+    verdict: labs.takt.field_check.outcome,
+  },
+  {
+    href: '/review/cadence',
+    title: 'Field check · Cadence',
+    meta: 'Kit One review of Lab Three',
+    verdict: labs.cadence.field_check.outcome,
+  },
+  {
+    href: '/acoustic-tokens',
+    title: 'Acoustic token reference',
+    meta: 'Nineteen cues, nineteen roles: the sound parallel to the visual token system',
+    datum: `v${acousticTokens.version} · ${acousticTokens.tokens.length} tokens`,
+  },
+  {
+    href: '/review/acoustics',
+    title: 'Field check · Acoustics',
+    meta: 'Kit One review of Lab Four',
+    verdict: labs.acoustics.field_check.outcome,
+  },
+  {
+    href: '/review/designesy-org',
+    title: 'Public surface review',
+    meta: 'designesy.org checked against the design system contract',
+    datum: `baseline ${CONTRACT_VERSION}`,
+  },
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'Eight-dimension inspection method for any artifact',
+    datum: `v${designReviewKit.version} · ${designReviewKit.dimensions.length} dimensions`,
+  },
+  {
+    href: 'https://designesy.ai.studio/',
+    title: 'Try the Studio',
+    meta: 'The contract, conversational: type, motion, spacing, or score any site',
+    datum: 'external',
+    external: true,
+  },
+  {
+    href: '/continuity',
+    title: 'Continuity waitlist',
+    meta: 'Design judgment that stays current',
+    datum: 'early access · free to join',
+  },
+];
+
+/** The route as the side pane prints it: a path here, a host elsewhere. */
+function routeLabel(row: RelatedRow): string {
+  return row.external ? new URL(row.href).host : row.href;
+}
 
 export const metadata: Metadata = pageMeta({
   title: 'Labs',
@@ -46,21 +151,84 @@ export default function LabsPage() {
       <Topbar scrolled />
 
       <main id="main-content" data-pagefind-body className="surface-page">
-        <section className="surface-header fade-up">
-          <p className="surface-eyebrow" data-scramble>Experiment lane</p>
-          <h1 className="surface-title" data-scramble>Labs</h1>
-          <p className="surface-lede">
-            Experiments that compile into contracts.
-          </p>
-          <p className="surface-note">
-            A Lab is a controlled design experiment where a principle becomes
-            visible, testable, remixable, and reviewable. Labs are the public
-            practical layer of Designesy: a workbench where a thesis becomes a
-            live artifact, review checklist, portable contract, and
-            implementation-ready prompt.
-          </p>
-          <AgentActions mdPath="/labs.md" label="the labs index" />
-        </section>
+        <div className="labs-hero">
+          <section className="surface-header fade-up">
+            <p className="surface-eyebrow" data-scramble>Experiment lane</p>
+            <h1 className="surface-title" data-scramble>Labs</h1>
+            <p className="surface-lede">
+              Experiments that compile into contracts.
+            </p>
+            <p className="surface-note">
+              A Lab is a controlled design experiment where a principle becomes
+              visible, testable, remixable, and reviewable. Labs are the public
+              practical layer of Designesy: a workbench where a thesis becomes a
+              live artifact, review checklist, portable contract, and
+              implementation-ready prompt.
+            </p>
+            <AgentActions mdPath="/labs.md" label="the labs index" />
+          </section>
+
+          {/* The lab index: the page's standing object, on the far side of the
+              7-line. Every value is read from the labs' own records (the same
+              ones /labs/<lab>.json serves). */}
+          <nav className="labs-rack fade-up fade-up-delay-1" aria-labelledby="labs-rack-title">
+            <div className="labs-rack-bar">
+              <p className="labs-rack-title" id="labs-rack-title">
+                Lab index
+              </p>
+              <p className="labs-rack-state">
+                <span className="labs-rack-stat">
+                  <i className="labs-rack-led" aria-hidden="true" />
+                  {LAB_INDEX.filter((lab) => lab.status === 'live').length} live
+                  {SHARED_OUTCOME && <span className="sr-only">, </span>}
+                </span>
+                {SHARED_OUTCOME && (
+                  <span className="labs-rack-stat">
+                    <i
+                      className="labs-rack-led"
+                      data-state={verdictState(SHARED_OUTCOME)}
+                      aria-hidden="true"
+                    />
+                    all {SHARED_OUTCOME}
+                  </span>
+                )}
+              </p>
+            </div>
+            <ol className="labs-rack-list">
+              {LAB_INDEX.map((lab, i) => (
+                <li key={lab.id}>
+                  <Link
+                    href={`/labs/${lab.id}`}
+                    className="labs-rack-row"
+                    data-cuelume-hover="tick"
+                    data-cuelume-press="tick"
+                  >
+                    <span className="labs-rack-num">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="labs-rack-name">{lab.title}</span>
+                    {SHARED_OUTCOME ? (
+                      <span className="labs-rack-check">
+                        {lab.contract_rules.length} rules
+                      </span>
+                    ) : (
+                      <span className="labs-rack-check">
+                        <i
+                          className="labs-rack-led"
+                          data-state={verdictState(lab.field_check.outcome)}
+                          aria-hidden="true"
+                        />
+                        {lab.field_check.outcome}
+                      </span>
+                    )}
+                    <span className="labs-rack-meta">
+                      Lab {lab.number} · contract v{lab.adopted_in_contract}
+                      {SHARED_OUTCOME ? null : <> · {lab.contract_rules.length} rules</>}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        </div>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Live labs</h2>
@@ -153,168 +321,59 @@ export default function LabsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract</span>
-                  <span className="row-meta">
-                    Where lab behavior is measured: Poise in v0.1.1, Takt in v0.1.2, Cadence in v0.1.3, Acoustics in v0.3.0
+            {RELATED.map((row, i) => {
+              const body = (
+                <>
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/poise"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Poise</span>
-                  <span className="row-meta">
-                    Kit One review of Lab One · pass with notes
+                  <span className="row-side">
+                    <span className="row-side-line">
+                      {row.verdict ? (
+                        <span className="row-side-chip" data-state={verdictState(row.verdict)}>
+                          {row.verdict}
+                        </span>
+                      ) : (
+                        row.datum
+                      )}
+                    </span>
+                    <span className="row-side-line">{routeLabel(row)}</span>
+                    <span className="row-side-arrow" aria-hidden="true">
+                      {row.external ? (
+                        <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 9.5 9.5 2.5M4 2.5h5.5V8" /></svg>
+                      ) : null}
+                    </span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/takt"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Takt</span>
-                  <span className="row-meta">
-                    Kit One review of Lab Two · pass with notes
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/cadence"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Cadence</span>
-                  <span className="row-meta">
-                    Kit One review of Lab Three · pass with notes
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/acoustic-tokens"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Acoustic token reference</span>
-                  <span className="row-meta">
-                    Nineteen cues, nineteen roles: the sound parallel to the visual token system
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/acoustics"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Acoustics</span>
-                  <span className="row-meta">
-                    Kit One review of Lab Four · pass with notes
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/designesy-org"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">07</span>
-                <span className="row-body">
-                  <span className="row-title">Public surface review</span>
-                  <span className="row-meta">
-                    designesy.org checked against contract {CONTRACT_VERSION}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/kits/design-review"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">08</span>
-                <span className="row-body">
-                  <span className="row-title">Use Kit One · Design Review</span>
-                  <span className="row-meta">
-                    Eight-dimension inspection method for any artifact
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <a
-                href="https://designesy.ai.studio/"
-                className="row"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">09</span>
-                <span className="row-body">
-                  <span className="row-title">Try the Studio</span>
-                  <span className="row-meta">
-                    The contract, conversational: type, motion, spacing, or score any site
-                  </span>
-                </span>
-              </a>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/continuity"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">10</span>
-                <span className="row-body">
-                  <span className="row-title">Continuity waitlist</span>
-                  <span className="row-meta">
-                    Design judgment that stays current: early access, free to join
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </>
+              );
+              return (
+                <div role="listitem" key={row.href}>
+                  {row.external ? (
+                    <a
+                      href={row.href}
+                      className="row"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-cuelume-hover="bloom"
+                      data-cuelume-press
+                    >
+                      {body}
+                    </a>
+                  ) : (
+                    <Link
+                      href={row.href}
+                      className="row"
+                      data-cuelume-hover="bloom"
+                      data-cuelume-press
+                    >
+                      {body}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
