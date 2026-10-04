@@ -470,16 +470,20 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: apps/site/.next
+          # Exact-SHA key only, NO restore-keys fallback. A prefix fallback
+          # once handed this job another commit's .next (BUILD_ID existed, the
+          # rebuild was skipped, and the edge gate measured stale geometry and
+          # failed correctly). A gate that measures the wrong commit is worse
+          # than one that builds slowly.
           key: nextjs-${{ github.sha }}
-          restore-keys: nextjs-
 
-      # A cache miss must not silently skip the gates, so build if .next is not
-      # there. The restore above is keyed on the exact SHA, so a miss is normal
-      # on the first run of a commit.
+      # A cache miss must not silently skip the gates: build the commit with
+      # the full production chain (postbuild-pagefind generates the search
+      # index the keyboard gate's find-flow asserts against).
       - name: Build if the cache missed
         run: |
           if [ ! -f .next/BUILD_ID ]; then
-            npx next build
+            npm run build
           else
             echo "Reusing the cached .next for ${{ github.sha }}"
           fi
