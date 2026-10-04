@@ -106,6 +106,14 @@ jobs:
         if: always()
         run: node scripts/postbuild-pagefind.js
 
+      - name: Search coverage
+        if: always()
+        run: node scripts/check-search-coverage.js
+
+      - name: Score verdict
+        if: always()
+        run: node scripts/check-score-verdict.mjs
+
       - name: Generate markdown
         if: always()
         run: node scripts/generate-markdown.js
