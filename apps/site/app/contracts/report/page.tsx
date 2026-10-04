@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
@@ -6,6 +7,8 @@ import { reportContract } from '../../lib/report-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Report contract',
@@ -19,6 +22,15 @@ export const metadata: Metadata = pageMeta({
 });
 
 const c = reportContract;
+
+// The weight each sub-engine carries in the composite, by route. A related
+// surface the report does not run carries none.
+const WEIGHT = new Map<string, number>(c.conformance.weighting.map((w) => [`/${w.dimension}`, w.weight]));
+
+// The six surfaces "Relationship to core" names, in the contract's order.
+const RELATED = Object.entries(c.relationship_to_core)
+  .filter(([key]) => key.startsWith('designesy.org /'))
+  .map(([key, text]) => ({ route: key.slice('designesy.org '.length), text }));
 
 export default function ReportContractPage() {
   return (
@@ -38,25 +50,23 @@ export default function ReportContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary source</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Composition</p>
-            <p>{c.source_authority.composition}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Weighting</p>
-            <p>{c.source_authority.weighting}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Shareability</p>
-            <p>{c.source_authority.shareability}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">URL gap</p>
-            <p>{c.source_authority.url_gap}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Composition</dt>
+              <KvValue text={c.source_authority.composition} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Shareability</dt>
+              <KvValue text={c.source_authority.shareability} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>URL gap</dt>
+              <KvValue text={c.source_authority.url_gap} />
+            </dl>
+            <dl className="kv-cell is-foot">
+              <dt>Primary source</dt>
+              <dd>{c.source_authority.primary}</dd>
+            </dl>
           </div>
         </section>
 
@@ -73,10 +83,21 @@ export default function ReportContractPage() {
           <div className="row-stack" role="list">
             {c.conformance.weighting.map((w, i) => (
               <div key={w.dimension} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
-                  <span className="row-title">{w.dimension} × {w.weight}</span>
+                  <span className="row-title">{w.dimension}</span>{' '}
                   <span className="row-meta">{w.description}</span>
+                </span>{' '}
+                <span className="row-side report-weight">
+                  <span
+                    className="report-weight-bar"
+                    aria-hidden="true"
+                    style={{ '--weight': w.weight } as CSSProperties}
+                  />
+                  <span className="report-weight-num">
+                    <span className="sr-only">Weight </span>
+                    {w.weight}
+                  </span>
                 </span>
               </div>
             ))}
@@ -94,53 +115,52 @@ export default function ReportContractPage() {
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass} · FAIL: {check.fail}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Validation: {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
-          </p>
+          <div className="contract-validation">
+            <p className="contract-eyebrow">Validation</p>
+            <p className="surface-note">
+              {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Relationship to core</h2>
-          <div className="definition">
-            <p className="definition-label">/score</p>
-            <p>{c.relationship_to_core['designesy.org /score']}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">/drift</p>
-            <p>{c.relationship_to_core['designesy.org /drift']}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">/readiness</p>
-            <p>{c.relationship_to_core['designesy.org /readiness']}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">/guardrails</p>
-            <p>{c.relationship_to_core['designesy.org /guardrails']}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">/monitor</p>
-            <p>{c.relationship_to_core['designesy.org /monitor']}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">/compare</p>
-            <p>{c.relationship_to_core['designesy.org /compare']}</p>
+          <div className="row-stack" role="list">
+            {RELATED.map(({ route, text }, i) => {
+              const weight = WEIGHT.get(route);
+              return (
+                <div key={route} className="row" role="listitem">
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
+                  <span className="row-body">
+                    <span className="row-title contract-ident">{route}</span>{' '}
+                    <span className="row-meta">{text}</span>
+                  </span>{' '}
+                  <span className="row-side">
+                    {weight === undefined ? (
+                      <span className="row-side-line">
+                        <span className="row-side-chip" data-state="hold">Not run</span>
+                      </span>
+                    ) : (
+                      <span className="row-side-line">weight {weight}</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
               <li key={i}>{q}</li>
             ))}

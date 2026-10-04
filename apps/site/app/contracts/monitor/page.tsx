@@ -6,6 +6,8 @@ import { monitorContract } from '../../lib/monitor-contract';
 import { pageMeta } from '../../lib/site-meta';
 import { CountUp } from '../../lib/count-up';
 import { AgentActions } from '../../lib/agent-actions';
+import { CheckSide, KvValue } from '../contract-parts';
+import '../contracts.css';
 
 export const metadata: Metadata = pageMeta({
   title: 'Monitor contract',
@@ -19,6 +21,43 @@ export const metadata: Metadata = pageMeta({
 });
 
 const c = monitorContract;
+
+// Each snapshot field's JSON type, as the /api/monitor Snapshot carries it
+// (app/api/monitor/route.ts) and as its description defines it.
+const FIELD_TYPE: Record<string, string> = {
+  url: 'string',
+  timestamp: 'string',
+  score: 'number',
+  grade: 'string',
+  checks: 'CheckResult[]',
+  tokensExtracted: 'number',
+};
+
+// A cadence's interval, read from its own description ("every 24 hours").
+function interval(description: string): string | null {
+  const m = /every (\d+) (hour|day)s?/.exec(description);
+  return m ? `${m[1]}${m[2] === 'hour' ? 'h' : 'd'}` : null;
+}
+
+// A trigger's condition and the run it compares against, both read from its
+// own description: the default threshold where it states one, and baseline
+// where it names the baseline (every other trigger names the previous run).
+function triggerSide(description: string): { condition: string | null; against: string } {
+  const threshold = /default threshold: (\d+)/.exec(description);
+  const states = /(PASS\/WARN)\b.*\bnow (FAIL)/.exec(description);
+  const example = /\(e\.g\. ([^)]+)\)/.exec(description);
+  const changes = /^Tokens (added), (removed), or (renamed)\b/.exec(description);
+  const condition = threshold
+    ? `drop > ${threshold[1]} points`
+    : states
+      ? `${states[1]} → ${states[2]}`
+      : example
+        ? `e.g. ${example[1]}`
+        : changes
+          ? changes.slice(1).join(' · ')
+          : null;
+  return { condition, against: /baseline/.test(description) ? 'vs baseline' : 'vs previous run' };
+}
 
 export default function MonitorContractPage() {
   return (
@@ -38,25 +77,27 @@ export default function MonitorContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
-          <div className="definition">
-            <p className="definition-label">Primary source</p>
-            <p>{c.source_authority.primary}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Temporal gap</p>
-            <p>{c.source_authority.temporal_gap}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Drift shape</p>
-            <p>{c.source_authority.drift_shape}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Compounding</p>
-            <p>{c.source_authority.compounding}</p>
-          </div>
-          <div className="definition">
-            <p className="definition-label">Competitor lane</p>
-            <p>{c.source_authority.competitor_lane}</p>
+          <div className="kv-grid">
+            <dl className="kv-cell">
+              <dt>Temporal gap</dt>
+              <KvValue text={c.source_authority.temporal_gap} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Drift shape</dt>
+              <KvValue text={c.source_authority.drift_shape} />
+            </dl>
+            <dl className="kv-cell">
+              <dt>Compounding</dt>
+              <KvValue text={c.source_authority.compounding} />
+            </dl>
+            <dl className="kv-cell is-wide">
+              <dt>Competitor lane</dt>
+              <KvValue text={c.source_authority.competitor_lane} />
+            </dl>
+            <dl className="kv-cell is-foot">
+              <dt>Primary source</dt>
+              <dd>{c.source_authority.primary}</dd>
+            </dl>
           </div>
         </section>
 
@@ -66,16 +107,17 @@ export default function MonitorContractPage() {
             <p className="definition-label">How it works</p>
             <p>{c.conformance.monitoring_model}</p>
           </div>
-          <p className="surface-note" style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-            <strong style={{ color: 'var(--ink)' }}>Snapshot structure</strong>
-          </p>
+          <h3 className="contract-eyebrow is-spaced">Snapshot structure</h3>
           <div className="row-stack" role="list">
             {c.conformance.snapshot_structure.map((field, i) => (
               <div key={field.field} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
-                  <span className="row-title">{field.field}</span>
+                  <span className="row-title contract-ident">{field.field}</span>{' '}
                   <span className="row-meta">{field.description}</span>
+                </span>{' '}
+                <span className="row-side">
+                  <span className="row-side-line">{FIELD_TYPE[field.field] ?? 'JSON'}</span>
                 </span>
               </div>
             ))}
@@ -87,10 +129,13 @@ export default function MonitorContractPage() {
           <div className="row-stack" role="list">
             {c.conformance.cadence_options.map((opt, i) => (
               <div key={opt.cadence} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
-                  <span className="row-title">{opt.cadence}</span>
+                  <span className="row-title">{opt.cadence}</span>{' '}
                   <span className="row-meta">{opt.description}</span>
+                </span>{' '}
+                <span className="row-side">
+                  <span className="row-side-line">{interval(opt.description) ?? opt.cadence}</span>
                 </span>
               </div>
             ))}
@@ -100,15 +145,22 @@ export default function MonitorContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Alert triggers</h2>
           <div className="row-stack" role="list">
-            {c.conformance.alert_triggers.map((trigger, i) => (
-              <div key={trigger.trigger} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">{trigger.trigger.replace(/-/g, ' ')}</span>
-                  <span className="row-meta">{trigger.description}</span>
-                </span>
-              </div>
-            ))}
+            {c.conformance.alert_triggers.map((trigger, i) => {
+              const side = triggerSide(trigger.description);
+              return (
+                <div key={trigger.trigger} className="row" role="listitem">
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
+                  <span className="row-body">
+                    <span className="row-title">{trigger.trigger.replace(/-/g, ' ')}</span>{' '}
+                    <span className="row-meta">{trigger.description}</span>
+                  </span>{' '}
+                  <span className="row-side">
+                    {side.condition ? <span className="row-side-line">{side.condition}</span> : null}{' '}
+                    <span className="row-side-line">{side.against}</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -120,25 +172,25 @@ export default function MonitorContractPage() {
           <div className="row-stack" role="list">
             {c.verification.checks.map((check, i) => (
               <div key={check.id} className="row" role="listitem">
-                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                <span className="row-index">{String(i + 1).padStart(2, '0')}</span>{' '}
                 <span className="row-body">
                   <span className="row-title">{check.id} · {check.item}</span>
-                  <span className="row-meta">
-                    PASS: {check.pass} · FAIL: {check.fail}
-                    {'warn' in check ? ` · WARN: ${check.warn}` : ''}
-                  </span>
-                </span>
+                </span>{' '}
+                <CheckSide check={check} />
               </div>
             ))}
           </div>
-          <p className="surface-note" style={{ marginTop: '1rem' }}>
-            Validation: {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
-          </p>
+          <div className="contract-validation">
+            <p className="contract-eyebrow">Validation</p>
+            <p className="surface-note">
+              {c.verification.validation_tools.primary}. Method: {c.verification.validation_tools.method}. Browser-only checks: {c.verification.validation_tools.browser_only}.
+            </p>
+          </div>
         </section>
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Open questions</h2>
-          <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: 'var(--muted)', lineHeight: 1.8 }}>
+          <ul className="open-questions">
             {c.open_questions.map((q, i) => (
               <li key={i}>{q}</li>
             ))}

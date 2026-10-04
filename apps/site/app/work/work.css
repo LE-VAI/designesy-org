@@ -34,10 +34,11 @@
 .cs-cell { --i: 0; }
 .cs-scale-zone,
 .cs-scale-ticks > span { --w: 10; }
-.cs-scale-mark { --at: 0; }
+.cs-scale-mark { --at: 0; --to: 0; }
 .cs-post-track { --lo: 0; --hi: 0; }
 .cs-post-fill { --v: 0; }
 .cs-axis.is-views > span > span { --at: 0; }
+.cs-axis-cells > span { --c: 1; }
 
 /* The noise-floor hatch is drawn in ink, not --lv-hatch: it has to read on
    the empty well and on a lit fill in both themes (the light hatch, navy at
@@ -463,6 +464,43 @@
   gap: var(--cs-cell-gap);
 }
 
+/* A short run with its count at the end (BuildReadout: nine tests). The
+   cells keep the console's lamp width (the cap above), so nine lamps end
+   166px short of the face at 1440. The count ("9 / 9") takes the row's last
+   track, right-aligned on the face's content edge (784.16 at 1440, where a
+   26-cell run ends), and a dotted leader runs from the last lamp to it, so
+   the open track reads as a leader to the count, never as missing tests. */
+.cs-run[data-count] {
+  /* The count's track is auto: it never drops below its text and a stub of
+     leader, and it alone stretches into the room the lamps leave. The lamps
+     take everything else up to their cap, so at a 40rem panel (247px for
+     both) they shrink to 17px instead of the count spilling over the
+     divider. */
+  grid-template-columns: var(--cs-head-w) minmax(0, max-content) auto;
+  grid-template-areas:
+    "head cells count"
+    ".    tally tally";
+}
+
+.cs-run-count {
+  grid-area: count;
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  min-width: 0;
+  font: 500 0.78rem/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.cs-run-count::before {
+  content: "";
+  flex: 1 1 0;
+  min-width: var(--space-8);
+  border-top: 1px dotted var(--line-strong);
+}
+
 .cs-cell {
   position: relative;
   height: var(--cs-cell-h);
@@ -508,6 +546,18 @@
   color: var(--muted);
 }
 
+/* Its legend is a ghost too: the numerals step down to --muted and the
+   swatches go hollow (a 1px ring in the state's hue, the skip's hatch
+   dropped), so the projected tally can never be read as a measured one. */
+.cs-run[data-projected] .cs-tally-item b {
+  color: var(--muted);
+}
+
+.cs-run[data-projected] .cs-tally-item .cs-swatch {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--cs-swatch-ring);
+}
+
 .cs-tally {
   grid-area: tally;
   display: flex;
@@ -544,6 +594,12 @@
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
 }
 
+/* The ring a hollow (projected) swatch draws. */
+.cs-swatch { --cs-swatch-ring: var(--muted); }
+.cs-swatch.is-pass { --cs-swatch-ring: var(--lv-pass-a); }
+.cs-swatch.is-warn { --cs-swatch-ring: var(--lv-warn-a); }
+.cs-swatch.is-fail { --cs-swatch-ring: var(--lv-fail-a); }
+
 /* The scale's axis, under the cells column (the run's own head track). */
 .cs-axis {
   display: grid;
@@ -561,6 +617,63 @@
   display: flex;
   justify-content: space-between;
   gap: var(--space-12);
+}
+
+/* The runs' ruler (CellAxis): the cells' own column grid, so a tick at 5
+   sits on the seam between the fifth and sixth cells at every width. Each
+   tick is a 5px mark through the axis rule with its count centred under it
+   (the first hangs from the scale's start); the end label hangs from the
+   scale's end and names the unit where the face is the 7-column track of a
+   64rem panel (narrower, "20" and "26 checks" meet). */
+.cs-axis > .cs-axis-cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cs-n), minmax(0, 2.25rem));
+  column-gap: var(--cs-cell-gap);
+}
+
+.cs-axis-cells > span {
+  position: relative;
+  grid-row: 1;
+  grid-column: var(--c);
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.cs-axis-tick + .cs-axis-tick {
+  transform: translateX(calc(-50% - var(--cs-cell-gap) / 2));
+}
+
+.cs-axis-cells > .cs-axis-end {
+  justify-self: end;
+}
+
+.cs-axis-cells > span::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--space-8) - 3px);
+  left: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--line-strong);
+}
+
+.cs-axis-tick + .cs-axis-tick::before {
+  left: 50%;
+}
+
+.cs-axis-end::before {
+  left: auto;
+  right: 0;
+}
+
+.cs-axis-unit {
+  display: none;
+}
+
+@container cs-bench (width >= 64rem) {
+  .cs-axis-unit {
+    display: inline;
+  }
 }
 
 /* --- Build verification: the domains a run covered --------------------- */
@@ -670,6 +783,18 @@
   color: var(--muted);
 }
 
+/* The same projection in running data (lovable's Outcome side): the grade
+   in a dashed frame, in --muted, inside its line (the frame's 2px of border
+   come out of the line height, so the 16px row pitch holds). */
+.cs-ghost {
+  display: inline-block;
+  padding-inline: var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  line-height: calc(1rem - 2px);
+  color: var(--muted);
+}
+
 .cs-side-note,
 .cs-face-note {
   margin: 0;
@@ -730,6 +855,28 @@
 
 .cs-scale-mark.is-was {
   background: var(--muted);
+}
+
+/* A projected grade (lovable's A+): a hollow, dashed range from the measured
+   mark to the top of the scale, the dashed "A+ Projected" frame's own
+   convention, under the solid measured mark. It marks a direction, not a
+   value: no score was measured for it. Its grade is named over the range,
+   at the scale's end, 3px above the range's dashed top. */
+.cs-scale-mark.is-projected {
+  top: -3px;
+  bottom: -3px;
+  width: calc((var(--to) - var(--at)) * 1%);
+  margin-left: 0;
+  border: 1px dashed var(--muted);
+  border-radius: var(--radius-sm);
+  background: none;
+  box-shadow: none;
+}
+
+.cs-scale-proj {
+  justify-self: end;
+  font: 500 0.6875rem/1 var(--mono);
+  color: var(--muted);
 }
 
 .cs-scale-ticks {
@@ -812,21 +959,31 @@
   transform-origin: left center;
 }
 
-/* No number to draw: the track is an outline and says why, to the right of
-   the floor band. It takes the value column too (there is no value), and
-   grows to a second line rather than clip its words in a narrow face. */
+/* No number to draw. The row keeps the chart's track, drawn as an empty
+   dashed well with a tick at the origin (where its bar would start), and the
+   value column says why ("Not surfaced"). So the absent row ends on the same
+   edge as a measured row (680.16 at 1440), its words share the values' edge
+   (784.16), and nothing in it reads as a text field (a 1px box of mono text
+   spanning both columns did, and ended 104px past the bars). */
 .cs-post.is-absent .cs-post-track {
-  grid-column: 2 / -1;
-  height: auto;
-  min-height: var(--cs-cell-h);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  background: none;
+  box-shadow: none;
+  border: 1px dashed var(--line-strong);
 }
 
-.cs-post-absent {
-  display: block;
-  padding: var(--space-2) var(--space-8) var(--space-2) calc(var(--hi) * 100% + var(--space-8));
-  font: 500 0.72rem/1.35 var(--mono);
+.cs-post.is-absent .cs-post-track::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -1px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--muted);
+}
+
+.cs-post.is-absent .cs-post-value {
+  font-size: 0.72rem;
   color: var(--muted);
 }
 
@@ -904,7 +1061,29 @@
   .cs-axis > span {
     grid-column: 1;
   }
-  .cs-axis.is-views > span > span:nth-child(even) {
+  /* The short run's count joins its label's line, at the face's end. */
+  .cs-run[data-count] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head  count"
+      "cells cells"
+      "tally tally";
+  }
+  .cs-run-count::before {
+    content: none;
+  }
+  /* The views axis thins its interior ticks, never its ends: the first and
+     last always show (0 / 200 / 400 / 600 / 700, the 700 hung from the
+     track's end), so a bar never runs into an unlabelled stretch. */
+  .cs-axis.is-views > span > span:nth-child(even):not(:last-child) {
+    display: none;
+  }
+}
+
+/* A 320px phone: 600 and 700 would sit 4px apart, so the tick before the
+   end steps out too (0 / 200 / 400 / 700). */
+@container cs-bench (width < 21rem) {
+  .cs-axis.is-views > span > span:nth-last-child(2) {
     display: none;
   }
 }
@@ -917,8 +1096,7 @@
   .cs-post {
     grid-template-columns: minmax(0, 1fr) auto;
   }
-  .cs-post-track,
-  .cs-post.is-absent .cs-post-track {
+  .cs-post-track {
     grid-column: 1 / -1;
     grid-row: 2;
   }
@@ -945,8 +1123,13 @@
   color: var(--ink);
 }
 
+/* The unit sits on the numerals' baseline. The big numerals' box is their
+   1.25em line (a digit strip's window has no text baseline to align to, so
+   the row aligns box ends), and the unit's bottom padding lifts it to the
+   numerals' baseline: 0.7rem left it 0.95px high (measured with a baseline
+   probe in "617 views" and "9/9 passed"), hence the 1px. */
 .cs-unit {
-  padding-bottom: 0.7rem;
+  padding-bottom: calc(0.7rem - 1px);
   font: 500 0.86rem/1 var(--sans);
   color: var(--muted);
 }
@@ -1107,36 +1290,46 @@
   --cs-ink: var(--cs-warn-ink);
 }
 
+/* The readout's text breaks only between its segments (page.tsx binds each
+   segment with no-break spaces), and balance evens the lines it breaks into,
+   so a phone line never holds one stray word ("domains", "skip"). A segment
+   wider than its line (a 320px phone) still breaks rather than overflow. */
 .work-row-readout {
   font: 500 0.74rem/1.35 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  text-wrap: balance;
+  overflow-wrap: break-word;
 }
 
 /* From a 64rem list the pane fills the side track (the shared rule starts
    it 16px past the divider and lets it shrink to its content; here it
    stretches to the row's end padding). Two lines: lamp, status and grade
-   chip on the first, which is the interactive title's 44px box (2.75rem),
-   so the status reads on the title's line; the readout under the chip,
-   right-aligned in tabular numerals, so chips and readouts share one end
-   edge down the list. Five classes, so it outranks the shared placement
-   rule (four) wherever the sheets land; the margin is set per side, so the
-   shared 16px start inset stands. */
+   chip on the first, on the title's first baseline (the row aligns its
+   items on baseline, and the pane's baseline is the status line's); the
+   readout under the chip, right-aligned in tabular numerals, so chips and
+   readouts share one end edge down the list. The first line is as tall as
+   the chip, not the 44px box a link row's title no longer draws. Five
+   classes, so it outranks the shared placement rule (four) wherever the
+   sheets land; the margin is set per side, so the shared 16px start inset
+   stands. */
 @container rows (width >= 64rem) {
   .surface-page .row-stack.work-index .row.work-row > .work-row-side {
     justify-self: stretch;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: minmax(2.75rem, auto) auto;
     grid-template-areas:
       "lamp status  grade"
       ".    readout readout";
     align-content: start;
-    align-items: center;
-    column-gap: var(--space-8);
+    align-items: baseline;
+    gap: var(--space-6) var(--space-8);
     margin-top: 0;
   }
-  .work-index .work-row-side > .cs-led { grid-area: lamp; }
+  .work-index .work-row-side > .cs-led {
+    grid-area: lamp;
+    align-self: center;
+  }
   .work-index .work-row-side > .work-row-status { grid-area: status; }
   .work-index .work-row-side > .work-row-grade { grid-area: grade; }
   .work-index .work-row-side > .work-row-readout {

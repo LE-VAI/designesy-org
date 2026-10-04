@@ -208,18 +208,25 @@
   }
 }
 
-/* The code sits in a well set into the card. It wraps instead of scrolling:
-   at 390 the longest line is wider than the face, and a wrapped tag reads
-   better than a hidden one. break-all fills each line to the edge; breaking
-   at spaces first left "<a" alone on a line and a closing quote on another. */
+/* The code sits in a well set into the card. Every line stays whole, as
+   authored, and where the well is narrower than a line (phones) the well
+   scrolls sideways inside itself: lib/scroll-regions then gives it a keyboard
+   stop named for its variant, and the sideways-scroll edge fade (globals.css)
+   shows where the line continues. Wrapping with break-all split copyable
+   code mid-identifier ('badg' / 'e.svg', 'score?u' / 'rl='), and the
+   browser's own wrap points include the hyphen in 'badge-compact.svg'.
+   Authored <wbr> break points were not an option: the page's markdown twin
+   (/badge.md) turns every tag in a code block into a space, which would
+   have published 'https:// www.designesy.org/' to agents. */
 .badge-snippet-code {
   margin: 0;
   padding: var(--space-16);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--paper) 45%, transparent);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   /* Set on the pre, not only the code: the pre's own 17px strut set every
      line box to 26px around 12.5px type. */
   font-family: var(--mono);
@@ -233,15 +240,38 @@
   color: inherit;
 }
 
+/* The specimen is sized to what it shows: the badge with 24px of paper
+   round it, 80px tall, its top on the code well's top (both follow a 44px
+   label row). It filled the side pane, a 457x148 slab of white holding a
+   156x32 badge, the brightest object on the page. The paper is the
+   variant's (a soft grey for light sites, near-black for dark), edged with
+   the top-lit rim and, on a light page, a hairline. */
 .badge-snippet-specimen {
-  flex: 1;
+  position: relative;
+  flex: none;
+  align-self: flex-start;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 5.125rem;
-  padding: var(--space-16);
+  box-sizing: border-box;
+  block-size: 5rem;
+  min-inline-size: 5rem;
+  padding: 0 var(--space-24);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.badge-snippet-specimen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 .badge-snippet-specimen img {

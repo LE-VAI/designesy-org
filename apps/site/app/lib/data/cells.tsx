@@ -8,6 +8,23 @@ import type { CSSProperties } from 'react';
 import type { CategoryBreakdown } from '../../leaderboard/seed';
 import { CATEGORY_LABELS, scoreTone } from './cohort';
 
+/** A site whose latest run could not reach it keeps its previous score: the
+    tag says from when. In a phone-width table it reads "held · 08-31"; the
+    full wording is the one assistive tech hears (data.css, .dx-tag). */
+export function HeldTag({ date }: { date: string | null | undefined }) {
+  const d = date ?? '';
+  return (
+    <span className="dx-tag" data-kind="held">
+      <span className="dx-tag-full">
+        held over from <time dateTime={d || undefined}>{d}</time>
+      </span>
+      <span className="dx-tag-short" aria-hidden="true">
+        held · {d.slice(5)}
+      </span>
+    </span>
+  );
+}
+
 export function CategoryProfile({
   name,
   cats,

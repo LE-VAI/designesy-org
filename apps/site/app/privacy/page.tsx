@@ -41,22 +41,32 @@ const PRINCIPLES = [
   },
 ];
 
+// Each item's side pane states who holds it and the line it never crosses,
+// both taken from its own description (and principle 04 for mail).
 const COLLECT = [
   {
     title: 'What you send us',
     meta: 'Email you choose to write to hello@designesy.org, and any files or context you attach. Used to reply and run Designesy LLC work.',
+    held: 'Held by Designesy LLC',
+    limit: 'No marketing profiles',
   },
   {
     title: 'Continuity waitlist',
     meta: 'If you join /continuity, we collect the work email and optional role, interest, site URL, and note you submit. Used only to operate the Continuity early-access list and related product access. It is not sold and not used for ad profiles.',
+    held: 'Held by Designesy LLC',
+    limit: 'Not sold · no ad profiles',
   },
   {
     title: 'What the host may log',
     meta: 'Standard web-host logs for reliability and abuse defense: request path, approximate time, user-agent, and network address as retained by the hosting provider. Not used for advertising profiles on this surface.',
+    held: 'Kept by the hosting provider',
+    limit: 'No ad profiles',
   },
   {
     title: 'What the browser keeps locally',
     meta: 'Interface preferences that stay on your device when present (for example sound or motion preference used by live labs). These are not sold and are not required for reading docs.',
+    held: 'Stays on your device',
+    limit: 'Not sold · not required',
   },
 ];
 
@@ -68,26 +78,31 @@ const DO_NOT = [
   'Ask for more personal detail than the work requires',
 ];
 
+// Each export's side pane shows its route, as the link goes, and its format.
 const OPEN_SCOPE = [
   {
     href: '/open',
     title: 'Open index',
     meta: 'Human catalog of portable packages',
+    format: 'Page',
   },
   {
     href: '/open.json',
     title: 'open.json',
     meta: 'Machine feed of contracts, kits, labs, and reviews',
+    format: 'JSON',
   },
   {
     href: '/kits/design-review.json',
     title: 'Design Review kit JSON',
     meta: 'Portable agent prompt and verification shape',
+    format: 'JSON',
   },
   {
     href: '/contracts/design-system.json',
     title: 'Design system contract JSON',
     meta: 'Portable design judgment export',
+    format: 'JSON',
   },
 ];
 
@@ -161,6 +176,10 @@ export default function PrivacyPage() {
                   <span className="row-title">{item.title}</span>
                   <span className="row-meta">{item.meta}</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">{item.held}</span>
+                  <span className="row-side-line">{item.limit}</span>
+                </span>
               </ToggleRow>
             ))}
           </div>
@@ -195,6 +214,11 @@ export default function PrivacyPage() {
                   <span className="row-body">
                     <span className="row-title">{item.title}</span>
                     <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.href}</span>
+                    <span className="row-side-line">{item.format}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
                 </Link>
               </div>

@@ -70,20 +70,29 @@
   color: var(--ink);
 }
 
+/* The link's rule is a text underline, never a border: a border is drawn at
+   the box's foot, so once touch gives the link its 44px of padding (Touch,
+   below) a border sat 14 to 16px under the glyphs as a stray rule. An
+   underline follows the glyphs at any padding. Hover changes at once (only
+   transform and opacity animate). */
 .eg-path a {
   color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid var(--line);
-  transition: color var(--eg-t-move), border-color var(--eg-t-move);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .eg-path a:hover {
     color: var(--ink);
-    border-color: var(--line-strong);
+    text-decoration-color: var(--line-strong);
   }
 }
 
+/* The separator belongs to the fact after it: the dot is drawn inside that
+   fact's span, which never breaks (white-space above, flex: none), so a dot
+   can never end one line and leave its fact on the next. */
 .eg-path > span + span::before {
   content: "";
   display: inline-block;
@@ -93,6 +102,26 @@
   border-radius: 50%;
   background: var(--line-strong);
   vertical-align: middle;
+}
+
+/* A narrow page stacks the facts, one to a line, with no separators: the
+   line breaks are the separators. Neither a sideways scroller (it cut the
+   line mid-fact, with a dot at the visible end) nor a wrapping row (a dot
+   opened the next line, as on the leaderboard at 390) holds up there. Each
+   fact is far shorter than the line, so the stack's height is the same in
+   the fallback face and in Geist Mono: no reflow when the font arrives,
+   which is why the path never wrapped (CLS, above). One law on every page
+   that carries the path, engine and data pages alike. */
+@container eg (width < 36rem) {
+  .eg-path {
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: var(--space-4);
+    overflow-x: visible;
+  }
+  .eg-path > span + span::before {
+    content: none;
+  }
 }
 
 /* Optical size pinned at 32, as on the homepage headline: next/font sizes the
@@ -465,6 +494,23 @@
   height: var(--ds-lh);
 }
 
+/* A row is a whole pixel. 1.25em of the state's 0.72rem is 14.4px, so the
+   strip stepped by 14.4px and landed between device pixels: the counter's
+   digit drew 0.5px above "/12" beside it (measured on /drift at 1440, DPR
+   4). Rounded, every step is an integer translate. The line around it
+   takes the same rounded height, so the row's baseline is the text's. The
+   strip writes --ds-lh inline (lib/digit-strip), so the override needs the
+   !important; behind @supports, because a custom property that fails to
+   compute would leave the strip with no height at all. */
+@supports (width: round(1.5px, 1px)) {
+  .eg-state-read {
+    line-height: round(1.25em, 1px);
+  }
+  .eg-inst-state .digit-strip {
+    --ds-lh: round(1.25em, 1px) !important;
+  }
+}
+
 .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
   animation: eg-read calc(var(--n-all) * 110ms) steps(var(--n-all), jump-end) infinite;
 }
@@ -816,12 +862,15 @@
   min-width: 0;
 }
 
-/* The resting side fills the pane's height and docks its reference (the
-   .eg-ref block: hairline, label, note) on the pane's foot, so when the face
-   is the taller pane (each row's explanation now reads in the face) the
-   side's last line sits level with the face's last row, a shared bottom
-   edge, instead of the side running out under its grade scale. When the
-   side is the taller pane there is no free space and nothing moves. */
+/* The resting side fills the pane's height (a column whose box is the
+   pane's), and its content runs from the top in reading order. It used to
+   dock its reference (.eg-ref) on the pane's foot, which turned the free
+   space into a dead band in the middle of the verdict slot: 119px on drift,
+   137 on guardrails, 205 on the converter. The slot is filled instead, by a
+   resting readout that the result later occupies in place (the verdict row,
+   below; guardrails' file count; the converter's output preview), and an
+   element that should take the remaining height says so itself (flex-grow,
+   as .m3-preview does). */
 .eg-side {
   grid-template-rows: minmax(0, 1fr);
 }
@@ -829,11 +878,8 @@
 .eg-side-rest {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   gap: var(--space-16);
-}
-
-.eg-side-rest > .eg-ref {
-  margin-top: auto;
 }
 
 .eg-side > .eg-probe {
@@ -886,9 +932,76 @@
   color: var(--muted-dim);
 }
 
+/* At rest the verdict row is drawn empty where the result will land: a
+   hairline for the grade and a hairline with /100 for the score (the M3
+   pipeline's empty figures use the same mark), sitting on the slot's floor,
+   just over the scale. When a run lands the verdict row takes the slot, so
+   the scale holds its line, and the space that was a dead band in the side
+   pane reads as an empty readout waiting for its reading.
+
+   It only takes room the pane has spare. A size container with a zero flex
+   basis contributes no height of its own, so it never makes the side taller
+   than the face (at 1024 a fixed row pushed readiness, report and monitor 45
+   to 100px past their faces): it grows into the free space up to the
+   verdict row's 3.6rem plus the gap under it, and its marks stand a gap
+   above its floor at whatever height it gets, drawn once there is a line's
+   room. Its negative margin gives back the flex gap after it (the row
+   carries its own), so folded to nothing it leaves the label and the scale
+   one gap apart, as before, and at full height the scale sits exactly
+   where the verdict row puts it. Stacked on a phone the side has no spare
+   height, so the row folds and the side reads as it did. */
+.eg-verdict-row.is-rest {
+  container: rest-verdict / size;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  min-height: 0;
+  max-height: calc(3.6rem + var(--space-16));
+  margin-bottom: calc(-1 * var(--space-16));
+  overflow: clip;
+}
+
+.eg-verdict-row.is-rest > * {
+  margin-bottom: var(--space-16);
+  visibility: hidden;
+}
+
+/* The marks' one line (the score's 1.5rem line box) and the gap under it. */
+@container rest-verdict (height >= 2.5rem) {
+  .eg-verdict-row.is-rest > * {
+    visibility: visible;
+  }
+}
+
+.eg-verdict-row.is-rest .eg-grade {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.eg-verdict-row.is-rest .eg-grade::before,
+.eg-verdict-row.is-rest .eg-score::before {
+  content: "";
+  display: inline-block;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+
+.eg-verdict-row.is-rest .eg-grade::before {
+  width: 2.25rem;
+}
+
+.eg-verdict-row.is-rest .eg-score::before {
+  width: 1.5rem;
+}
+
+/* The running block holds the verdict row's height, so the scale stays on
+   one line through rest, running and done. */
 .eg-running {
   display: grid;
+  align-content: start;
   gap: var(--space-6);
+  min-height: 3.6rem;
 }
 
 .eg-running-line {
@@ -1388,10 +1501,39 @@
   height: 0.42rem;
 }
 
-/* The scoring line wraps balanced, never leaving one word alone on a
-   second line (readiness at 390 orphaned "checks"). */
-.eg-legend > span {
+/* The scoring line is a row of items (instrument.tsx splits it), so it
+   wraps between items, never inside "pass 1" or after a separator. On a
+   wide bench the items read as one line with a dot between each; the dot
+   is drawn, not typed (and hidden from assistive tech by its empty
+   alternative), so it belongs to the item it follows. On a narrow bench the
+   dots go and a 12px gap separates the items: a wrapping row of dots left
+   "fail 0 ·" dangling at a line end on drift, readiness and monitor at 390.
+   An item longer than the line shrinks onto its own line and wraps there. */
+.eg-legend-meta {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+  min-width: 0;
+}
+
+.eg-legend-meta > span {
+  min-width: 0;
   text-wrap: balance;
+}
+
+.eg-legend-meta > span + span::before {
+  content: "\00B7";
+  content: "\00B7" / "";
+  margin-inline: 1ch;
+}
+
+@container bench (width < 40rem) {
+  .eg-legend-meta {
+    column-gap: var(--space-12);
+  }
+  .eg-legend-meta > span + span::before {
+    content: none;
+  }
 }
 
 /* --- Face: origin map (readiness) ------------------------------------------ */
@@ -1593,8 +1735,12 @@
    holds three mono characters in every row, so the edges are shared by
    construction. */
 .eg-diff-mid {
+  /* The id track is a length, not auto: three mono characters at the id's
+     0.7rem (20.2px) with room to spare, so the header (which holds no id)
+     resolves the same three tracks as every row. */
+  --diff-id: 1.5rem;
   display: grid;
-  grid-template-columns: minmax(0, 2fr) auto minmax(0, 3fr);
+  grid-template-columns: minmax(0, 2fr) var(--diff-id) minmax(0, 3fr);
   align-items: center;
   gap: var(--space-8);
   min-width: 0;
@@ -1605,10 +1751,17 @@
   justify-self: end;
 }
 
+/* The header's middle cell stands on the spine's own grid: the count starts
+   on the id column, the x every row's id starts on, and runs on over the
+   label column. It was centred over a left-set spine and shared no edge
+   with the list it heads. */
 .eg-diff-head .eg-diff-mid {
-  display: flex;
-  justify-content: center;
   font-size: 0.72rem;
+}
+
+.eg-diff-head .eg-diff-count {
+  grid-column: 2 / -1;
+  white-space: nowrap;
 }
 
 /* A side with no answer yet holds a hairline at its inner edge, beside the
@@ -1666,6 +1819,14 @@
   .eg-diff-a {
     justify-self: start;
     text-align: left;
+  }
+  /* A side with no answer yet takes no line on a phone: the A and B slots
+     sit on their own row under the label here, so two waiting hairlines
+     per row (beside the lamp's dash) read as rows of stray rules. Each row
+     is the lamp, the id and the label until the values exist. */
+  .eg-diff-row .eg-diff-a:empty,
+  .eg-diff-row .eg-diff-b:empty {
+    display: none;
   }
 }
 
@@ -1960,24 +2121,35 @@
   color: var(--muted-dim);
 }
 
-/* One register lattice for the four engines. 42 is 3 x 14 and 6 x 7, so on
+/* One register lattice for the four engines. 42 is 3 x 14 and 7 x 6, so on
    fourteen tracks the contract score closes as three full rows ending on the
-   face's edge, and on a narrow face seven tracks close it as six (the auto-
-   fill lattice ended 75px short at 1440 and left 10/10/10/10/2 at 390). The
-   shorter engines stand on the same tracks, so their cells line up under
-   the contract score's columns. Seven across a phone face keeps each target
-   wider than the 24px floor; fourteen would not. */
+   face's edge (the auto-fill lattice ended 75px short at 1440 and left
+   10/10/10/10/2 at 390). A narrow face takes six tracks, the one count that
+   closes three of the four registers: contract 42 as 7 x 6, drift 12 as
+   2 x 6, guardrails 6 as one row (seven left drift at 7 + 5 and guardrails
+   one cell short of the edge). Readiness's ten close as two rows of five on
+   the same six-track cell width, so every cell still stands under a column
+   of the contract score and both rows are whole. Six across a phone face
+   keeps each target wider than the 24px floor; fourteen would not. The gap
+   is a property so the five-track column measure can read it (touch sets
+   4px, below). */
 .eg-minicells {
+  --mc-gap: 0px;
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--mc-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.eg-minicells:has(> li:nth-child(10):last-child) {
+  grid-template-columns: repeat(5, calc((100% - 5 * var(--mc-gap)) / 6));
+}
+
 @container face (width >= 34rem) {
-  .eg-minicells {
+  .eg-minicells,
+  .eg-minicells:has(> li:nth-child(10):last-child) {
     grid-template-columns: repeat(14, minmax(0, 1fr));
   }
 }
@@ -2184,10 +2356,19 @@
   list-style: none;
 }
 
+/* The question hangs on its options' columns: the number stands in the
+   stage chip's column (the option's 14px inset, then the 1.6rem chip) and
+   the question starts on the option text's line, 12px after it. Each block
+   had three left edges (number 123, question 148, option text 174 at
+   1440); it now has two, the card edge and the text line, and the number
+   sits centred over the chips' figures. The columns repeat .mt-opt's own
+   measures. */
 .mt-q-prompt {
-  display: flex;
-  gap: var(--space-12);
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  column-gap: var(--space-12);
   margin: 0 0 var(--mt-prompt-gap, var(--space-12));
+  padding-inline-start: var(--space-14);
   font-size: var(--mt-prompt-size, 0.98rem);
   font-weight: 600;
   line-height: var(--mt-prompt-lh, 1.4);
@@ -2196,7 +2377,7 @@
 }
 
 .mt-q-num {
-  flex: 0 0 auto;
+  justify-self: center;
   padding-top: 0.15rem;
   font: 500 0.74rem/1.4 var(--mono);
   color: var(--muted-dim);
@@ -2762,6 +2943,49 @@ button.mt-row {
   color: var(--ink);
 }
 
+/* The comparison operators. Geist Mono's served subset stops short of
+   U+2264/2265, so a bare "≥" fell through --mono to its metric fallback
+   (Arial at 134.59%): a sans glyph 2px taller than the figures, thinner,
+   with its foot 1px off the line. The operator is set in a platform mono
+   face that draws it on a mono cell instead (SF Mono, Menlo, Cascadia,
+   Consolas, DejaVu Sans Mono), skipping the Arial fallback, and scaled to Geist
+   Mono's x-height (0.53, measured) so its strokes and width match the
+   figures beside it. Measured on /drift at 1440, Cascadia Mono: the foot
+   sits 0.5px above the figures' baseline, where Geist Mono's own ">" sits
+   (0.03em up), and the cell is Geist's 0.6em. */
+.eg-op {
+  font-family: 'SF Mono', ui-monospace, Menlo, 'Cascadia Mono', 'Cascadia Code', Consolas, 'DejaVu Sans Mono', monospace;
+  font-size-adjust: 0.53;
+}
+
+/* The letter scale (engine-page.tsx, GradeLine): one item per grade, each
+   whole, a drawn dot between them on a method wide enough to hold the line,
+   a gap instead of dots on a phone, so no dot ever opens or closes a line. */
+.eg-grades {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.eg-grades > span {
+  white-space: nowrap;
+}
+
+.eg-grades > span + span::before {
+  content: "\00B7";
+  content: "\00B7" / "";
+  margin-inline: 1ch;
+}
+
+@container method (width < 26rem) {
+  .eg-grades {
+    column-gap: 2ch;
+  }
+  .eg-grades > span + span::before {
+    content: none;
+  }
+}
+
 /* The rim: the same 1px top-lit edge as the instrument, on a masked layer. */
 .eg-formula::before,
 .eg-next-list::before {
@@ -2797,6 +3021,15 @@ button.mt-row {
 .eg-prose code {
   font: 400 0.88em/1 var(--mono);
   color: var(--ink);
+}
+
+/* A command keeps its words whole: each word of it sits in a span that
+   never breaks, so a line may end only at a space between words. A browser
+   otherwise breaks after a hyphen, and "--format" split into "-" and
+   "-format" across two lines on /m3-bridge. The whole command may still
+   wrap at its spaces, so it never pushes a phone page sideways. */
+.eg-prose code > span {
+  white-space: nowrap;
 }
 
 /* --- M3 bridge: the input bench and the conversion pipeline ----------------- */
@@ -2893,6 +3126,46 @@ button.mt-row {
   .m3-map > div:last-child {
     grid-column: span 2;
   }
+}
+
+/* The output, in the pane that reports it: the converted tokens.json, set in
+   an inset well on the instrument material and taking whatever height the
+   side has left under the figures and the actions, so the result fills its
+   own pane (it ended 230px into a 470px pane, beside a full face). It
+   scrolls inside itself, from the keyboard too (tabindex), and grows from a
+   zero basis, so a long file never makes the pane taller than the face. At
+   rest the same frame holds a muted { }: the slot is there before the
+   output is. */
+.m3-preview {
+  flex: 1 1 0;
+  min-height: 8rem;
+  margin: 0;
+  padding: var(--space-12) var(--space-14);
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  font: 400 0.75rem/1.6 var(--mono);
+  color: var(--muted);
+  tab-size: 2;
+  white-space: pre;
+}
+
+/* The browser's own code rule (font-family: monospace) outranks the
+   inherited face, so code blocks set in the system mono instead of Geist
+   Mono; both code wells take the well's face. */
+.m3-preview code,
+.eg-code code {
+  font: inherit;
+}
+
+.m3-preview.is-empty {
+  display: grid;
+  place-items: center;
+  min-height: 6rem;
+  color: var(--muted-dim);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
 }
 
 /* --- Next: where this result leads ---------------------------------------- */
@@ -3153,9 +3426,17 @@ html[data-motion="paused"] .eg .eg-rule {
      content box --track-split resolves against and move the divider. */
   .eg-inst,
   .eg-formula,
-  .eg-next-list {
+  .eg-next-list,
+  .m3-preview:not(:focus-visible) {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
+  }
+  /* The resting verdict row's hairlines are painted backgrounds, which
+     forced colours remove; they draw as CanvasText rules instead. */
+  .eg-verdict-row.is-rest .eg-grade::before,
+  .eg-verdict-row.is-rest .eg-score::before {
+    forced-color-adjust: none;
+    background: CanvasText;
   }
   /* The rim, the floor and the state light are decoration. */
   .eg-inst::before,
@@ -3176,7 +3457,7 @@ html[data-motion="paused"] .eg .eg-rule {
   /* The 24px target is now the default on every pointer; touch keeps its
      full-height pill so the target and what you see are the same shape. */
   .eg-minicells {
-    gap: 4px;
+    --mc-gap: 4px;
   }
   .eg-minicell::before {
     inset: 0;
@@ -3187,7 +3468,9 @@ html[data-motion="paused"] .eg .eg-rule {
   }
   /* The path line's links ("the methodology") were 16px tall. The line is a
      scroller, which clips vertically too, so it takes the padding the links
-     need and gives it back as margin: 44px targets, the same layout. */
+     need and gives it back as margin: 44px targets, the same layout. The
+     link's rule is its text underline (above), so the padding moves the hit
+     area and never the rule: it stays 3px under the glyphs. */
   .eg-path {
     padding-block: var(--space-14);
     margin-top: calc(-1 * var(--space-14));

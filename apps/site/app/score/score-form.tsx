@@ -18,7 +18,7 @@ import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
-import { CATEGORIES, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
+import { CATEGORIES, categoryChips, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
 import { ScoreEmptyRun } from './score-empty-run';
 
 /**
@@ -227,7 +227,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // Runs on layout (before paint) so the indicator never flashes at 0,0.
   // On a phone the tabs wrap into rows, so the pill follows offsetTop too, and
   // it re-measures when the strip resizes (the tabs are flex: 1, so a resize
-  // moved every tab while the pill stayed where it was).
+  // moved every tab while the pill stayed where it was). It takes the tab's
+  // height as well: a coarse pointer makes the tabs 44px, and a fixed 36px
+  // pill sat short of the tab it marked.
   useLayoutEffect(() => {
     const container = filterSegmentedRef.current;
     if (!container) return;
@@ -237,6 +239,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
       container.style.setProperty('--indicator-y', `${active.offsetTop}px`);
       container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
+      container.style.setProperty('--indicator-h', `${active.offsetHeight}px`);
     };
     place();
     if (typeof ResizeObserver === 'undefined') return;
@@ -1236,11 +1239,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
           {/* Interactive Filter & Search Controls */}
           <div className="score-controls-card">
-            <div className="score-filter-segmented" ref={filterSegmentedRef}>
+            <div className="score-filter-segmented" ref={filterSegmentedRef} role="group" aria-label="Filter checks by status">
               <button
                 type="button"
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('ALL')}
+                aria-pressed={filterStatus === 'ALL'}
               >
                 All <span className="score-tab-count">{animatedCounts.total}</span>
               </button>
@@ -1248,6 +1252,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 type="button"
                 className={`score-filter-tab is-pass ${filterStatus === 'PASS' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('PASS')}
+                aria-pressed={filterStatus === 'PASS'}
               >
                 Pass <span className="score-tab-count">{animatedCounts.pass}</span>
               </button>
@@ -1256,6 +1261,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-fail ${filterStatus === 'FAIL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('FAIL')}
+                  aria-pressed={filterStatus === 'FAIL'}
                 >
                   Fail <span className="score-tab-count">{animatedCounts.fail}</span>
                 </button>
@@ -1265,6 +1271,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-warn ${filterStatus === 'WARN' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('WARN')}
+                  aria-pressed={filterStatus === 'WARN'}
                 >
                   Warn <span className="score-tab-count">{animatedCounts.warn}</span>
                 </button>
@@ -1274,6 +1281,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   type="button"
                   className={`score-filter-tab is-manual ${filterStatus === 'MANUAL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('MANUAL')}
+                  aria-pressed={filterStatus === 'MANUAL'}
                 >
                   Manual <span className="score-tab-count">{result.manual}</span>
                 </button>
@@ -1282,6 +1290,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 type="button"
                 className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('SKIP')}
+                aria-pressed={filterStatus === 'SKIP'}
               >
                 N/A <span className="score-tab-count">{result.skip}</span>
               </button>
@@ -1308,23 +1317,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               />
             </div>
 
-            <div className="score-category-chips">
+            <div className="score-category-chips" role="group" aria-label="Filter checks by category">
               <button
                 type="button"
                 className={`score-category-chip ${selectedCategory === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setSelectedCategory('ALL')}
+                aria-pressed={selectedCategory === 'ALL'}
               >
                 All Categories
               </button>
-              {CATEGORIES.map((cat) => {
-                const count = checks.filter((c) => c.category === cat.key).length;
-                if (count === 0) return null;
+              {categoryChips(checks).map((cat) => {
+                const count = cat.count;
                 return (
                   <button
                     key={cat.key}
                     type="button"
                     className={`score-category-chip ${selectedCategory === cat.key ? 'is-active' : ''}`}
                     onClick={() => setSelectedCategory(cat.key)}
+                    aria-pressed={selectedCategory === cat.key}
                   >
                     {cat.label}
                     <span className="score-chip-num">{count}</span>
@@ -1411,6 +1421,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                               key={check.id}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
                               data-category={check.category}
+                              data-status={check.status.toLowerCase()}
                               onClick={() => setExpandedId(isExpanded ? null : check.id)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {

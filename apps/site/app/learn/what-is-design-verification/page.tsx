@@ -213,6 +213,10 @@ export default function WhatIsDesignVerificationPage() {
                   <span className="row-title">Score a URL</span>
                   <span className="row-meta">Run the {ENGINE_CHECK_COUNT}-check engine against any live site, including this one</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/score</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -226,6 +230,10 @@ export default function WhatIsDesignVerificationPage() {
                 <span className="row-body">
                   <span className="row-title">Read the contract</span>
                   <span className="row-meta">Designesy design system {CONTRACT_VERSION}: tokens, rules, behavior, verification</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/contracts/design-system</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -241,6 +249,10 @@ export default function WhatIsDesignVerificationPage() {
                   <span className="row-title">Comparison article</span>
                   <span className="row-meta">Design verification vs design linting vs visual regression</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/learn/design-verification-vs-linting-vs-visual-regression</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -254,6 +266,10 @@ export default function WhatIsDesignVerificationPage() {
                 <span className="row-body">
                   <span className="row-title">Why a public score</span>
                   <span className="row-meta">The argument for publishing the grade instead of keeping it internal</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/learn/why-we-built-a-public-design-score</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

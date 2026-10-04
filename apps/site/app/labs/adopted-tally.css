@@ -1,0 +1,80 @@
+/* The Portable contract head (lib: app/labs/adopted-tally.tsx), imported by
+   the component, so every lab page that renders a tally carries its rules.
+
+   The rows below are toggles. A toggle row carries no side data, so the row
+   region closes the list on the 7-line (globals.css, the closed-list rule)
+   and draws each row's check well at the end of the face, 12px inside the
+   list's end, on the title's first line. The tally is the head of that
+   column of wells: the whole block takes the list's closed width (the same
+   formula, so the list inside it simply fills it), the lede runs in the
+   face, and the count sits at the end on the lede's first baseline, its
+   right edge on the wells' right edge. Below a 36rem block (phones, where
+   the wells move into the index column) the count stacks under the lede,
+   on the list's start edge. */
+.lab-tally {
+  container: lab-tally / inline-size;
+  width: calc(100% - clamp(0px, (100% - 64rem) * 1000, 100% - var(--track-split)));
+}
+
+.lab-tally-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-24);
+  row-gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+
+.lab-tally-head > .surface-note {
+  margin: 0;
+}
+
+/* Block, not flex: the count's baseline must be its text's, so the head can
+   align it to the lede's first line (a flex row would take the LED's). */
+.lab-tally-count {
+  margin: 0;
+  padding-inline-end: var(--space-12);
+  font: 500 0.75rem/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.lab-tally-count b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Neutral until every rule is checked; then the pass hue (a state, so it
+   is coloured only when it is one). Still: a count is not a loop. */
+.lab-tally-led {
+  display: inline-block;
+  margin-inline-end: var(--space-8);
+  vertical-align: 0.1em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.lab-tally-count[data-complete] .lab-tally-led {
+  background: var(--ok);
+}
+
+@container lab-tally (width < 36rem) {
+  .lab-tally-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lab-tally-count {
+    padding-inline-end: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .lab-tally-led,
+  .lab-tally-count[data-complete] .lab-tally-led {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}

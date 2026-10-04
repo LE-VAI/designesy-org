@@ -92,18 +92,10 @@ export default function PricingPage() {
           <AgentActions mdPath="/pricing.md" label="the pricing page" />
         </section>
 
+        {/* The tiers follow the header directly. A desk paragraph between
+            them restated the lede almost word for word in a hairline-bounded
+            section of its own. */}
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <div className="pricing-desk">
-            <p className="pricing-desk-lede">
-              The free tier is the whole verification engine: {ENGINE_CHECK_COUNT} checks, one
-              grade, real-time. Continuity adds scheduled
-              monitoring and drift alerts for teams shipping with agents.
-              Enterprise adds CI gates and on-prem for organizations at scale.
-            </p>
-          </div>
-        </section>
-
-        <section className="doctrine-section fade-up fade-up-delay-2">
           <div className="pricing-grid">
             {TIERS.map((tier) => (
               <div
@@ -155,52 +147,41 @@ export default function PricingPage() {
           </div>
         </section>
 
+        {/* The firewall is one reading card in two panes (pricing.css, on
+            the shared face/side split): the statement in the face, ending
+            on the 7-line, and what is not for sale as key rows behind the
+            divider. Its eyebrow names it; no resting stripe. */}
         <section className="doctrine-section fade-up fade-up-delay-2">
-          <div
-            className="pricing-firewall"
-            style={{
-              padding: '1.5rem 1.75rem',
-              background: 'var(--surface)',
-              backgroundImage: 'var(--surface-card-gradient)',
-              border: '1px solid var(--line)',
-              borderLeft: '3px solid var(--signal)',
-              borderRadius: '6px',
-              margin: '0 0 2rem',
-              boxShadow: 'var(--inner-light)',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '0.7rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.14em',
-                color: 'var(--signal-text)',
-                fontWeight: 700,
-                margin: '0 0 0.75rem',
-                fontFamily: 'var(--mono, ui-monospace, monospace)',
-              }}
-            >
-              Independence firewall
-            </p>
-            <p
-              style={{
-                color: 'var(--muted)',
-                fontSize: '0.95rem',
-                lineHeight: 1.6,
-                margin: 0,
-              }}
-            >
-              <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                Designesy does not accept payment for scores, methodology
-                changes, or leaderboard placement.
-              </strong>{' '}
-              Every score is computed by the same deterministic {ENGINE_CHECK_COUNT}-check engine
-              against the same published contract. Enterprise customers pay for
-              private scoring, custom contracts, and CI integration, never for
-              public leaderboard placement. If a scored site is also an
-              enterprise customer, their public score is computed identically to
-              any non-customer&rsquo;s score.
-            </p>
+          <div className="pricing-firewall definition-split">
+            <div className="definition-face">
+              <p className="pricing-firewall-label">Independence firewall</p>
+              <p className="pricing-firewall-text">
+                <strong>
+                  Designesy does not accept payment for scores, methodology
+                  changes, or leaderboard placement.
+                </strong>{' '}
+                Every score is computed by the same deterministic {ENGINE_CHECK_COUNT}-check engine
+                against the same published contract. Enterprise customers pay for
+                private scoring, custom contracts, and CI integration, never for
+                public leaderboard placement. If a scored site is also an
+                enterprise customer, their public score is computed identically to
+                any non-customer&rsquo;s score.
+              </p>
+            </div>
+            <dl className="definition-side">
+              <div>
+                <dt>Scores</dt>
+                <dd>Not for sale</dd>
+              </div>
+              <div>
+                <dt>Methodology</dt>
+                <dd>Not for sale</dd>
+              </div>
+              <div>
+                <dt>Placement</dt>
+                <dd>Not for sale</dd>
+              </div>
+            </dl>
           </div>
         </section>
 
@@ -283,114 +264,117 @@ export default function PricingPage() {
             All tiers use the same {ENGINE_CHECK_COUNT}-check engine and the same contract. The
             difference is monitoring, history, and infrastructure.
           </div>
-          <table className="pricing-compare">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th>Open</th>
-                <th>Continuity</th>
-                <th>Enterprise</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>{ENGINE_CHECK_COUNT}-check verification engine</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>12-check drift radar</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>10-check AI readiness</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>DTCG token validation</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Embeddable SVG badge + receipt export</td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Score history</td>
-                <td>5 local</td>
-                <td>30-day server</td>
-                <td>1-year server</td>
-              </tr>
-              <tr>
-                <td>Scheduled scans</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td>Daily or weekly</td>
-                <td>Custom schedule</td>
-              </tr>
-              <tr>
-                <td>Email drift alerts</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Baseline snapshots</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Multi-site dashboard</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td>5 sites included</td>
-                <td>Unlimited</td>
-              </tr>
-              <tr>
-                <td>Private contract host</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>API access + CI/CD gates</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>Custom contract scoring</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>SSO/SAML + audit trail</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>On-prem scoring engine</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-              <tr>
-                <td>SLA + dedicated CSM</td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                <td><span className="pricing-compare-check">✓</span></td>
-              </tr>
-            </tbody>
-          </table>
+          {/* The table sits in one rimmed reading surface, the FAQ's. */}
+          <div className="pricing-compare-wrap">
+            <table className="pricing-compare">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Open</th>
+                  <th>Continuity</th>
+                  <th>Enterprise</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{ENGINE_CHECK_COUNT}-check verification engine</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>12-check drift radar</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>10-check AI readiness</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>DTCG token validation</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Embeddable SVG badge + receipt export</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Score history</td>
+                  <td>5 local</td>
+                  <td>30-day server</td>
+                  <td>1-year server</td>
+                </tr>
+                <tr>
+                  <td>Scheduled scans</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td>Daily or weekly</td>
+                  <td>Custom schedule</td>
+                </tr>
+                <tr>
+                  <td>Email drift alerts</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Baseline snapshots</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Multi-site dashboard</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td>5 sites included</td>
+                  <td>Unlimited</td>
+                </tr>
+                <tr>
+                  <td>Private contract host</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>API access + CI/CD gates</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Custom contract scoring</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>SSO/SAML + audit trail</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>On-prem scoring engine</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>SLA + dedicated CSM</td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
             Open features are live today. Continuity features are in early
             access. Enterprise features are available by conversation:{' '}

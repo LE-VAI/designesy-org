@@ -1,10 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react';
+import Link from 'next/link';
 import { DigitStrip, stripValues } from '../lib/digit-strip';
+import { ToggleRow } from '../lib/toggle-row';
 
 /**
  * Case-study instruments: the score-delta panel, the build readout, the
- * engagement readout, and the type pieces the case-study pages share (the
- * split title, the state chips). Styles: app/work/work.css.
+ * engagement readout, and the pieces the case-study pages share (the split
+ * title, the state chips, the inputs and sources lists). Styles:
+ * app/work/work.css; the lists use the shared row contract (globals.css).
  *
  * The register is the engine instrument's (engine.css .eg-inst), so a case
  * study reads its evidence in the same language the engines report it: an
@@ -106,6 +109,78 @@ export function StateMove({ before, after }: { before: string; after: string }) 
 }
 
 /* ---------------------------------------------------------------------------
+   Inputs and sources: row lists whose side pane holds each row's datum
+   ------------------------------------------------------------------------ */
+
+/*
+ * Both lists fill the row contract's side slot (.row-side, globals.css "THE
+ * ROW CONTRACT"): from a 64rem list it is the pane right of the 7-line, so a
+ * row's datum (a host, a version, a channel, a route) reads in its own column
+ * instead of an empty pane behind the divider. Every row carries one, so the
+ * list draws its divider down every row; the face keeps the sentence.
+ */
+
+export type Input = {
+  title: string;
+  meta: string;
+  /** The side pane's lines: the row's datum first (a host, a version). */
+  side: string[];
+};
+
+/** "Inputs used": verification steps a reader can tick (ToggleRow). */
+export function InputList({ items }: { items: Input[] }) {
+  return (
+    <div className="row-stack" role="list">
+      {items.map((item, i) => (
+        <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
+          <span className="row-body">
+            <span className="row-title">{item.title}</span>
+            <span className="row-meta">{item.meta}</span>
+          </span>
+          <span className="row-side">
+            {item.side.map((line) => (
+              <span key={line} className="row-side-line">
+                {line}
+              </span>
+            ))}
+          </span>
+        </ToggleRow>
+      ))}
+    </div>
+  );
+}
+
+export type Source = { href: string; title: string; meta: string };
+
+/** A source's address as the side pane prints it: the route, or host and path. */
+function addressOf(href: string): string {
+  return href.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+/** "Sources used": links, each with its address in mono and the route arrow. */
+export function SourceList({ items }: { items: Source[] }) {
+  return (
+    <div className="row-stack" role="list">
+      {items.map((item, i) => (
+        <div role="listitem" key={item.href}>
+          <Link href={item.href} className="row" data-cuelume-hover="bloom" data-cuelume-press>
+            <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+            <span className="row-body">
+              <span className="row-title">{item.title}</span>
+              <span className="row-meta">{item.meta}</span>
+            </span>
+            <span className="row-side">
+              <span className="row-side-line">{addressOf(item.href)}</span>
+              <span className="row-side-arrow" aria-hidden="true" />
+            </span>
+          </Link>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
    The panel
    ------------------------------------------------------------------------ */
 
@@ -177,12 +252,21 @@ function RunRow({
   scale,
   resolve,
   states = ORDER,
+  count = false,
 }: {
   run: Run;
   scale: number;
   resolve: boolean;
   /** The states this registry reports (a test run has no warn or skip). */
   states?: readonly State[];
+  /**
+   * A short run (nine tests) keeps the console's lamp width, so its cells end
+   * well short of the face. Its note then moves to the end of the row as a
+   * count ("9 / 9"), right-aligned on the face's content edge, so the run
+   * ends on the same edge as a 26-cell run and the empty track reads as a
+   * leader to the count, never as missing tests.
+   */
+  count?: boolean;
 }) {
   const cells = cellsFor(run.counts);
   return (
@@ -190,10 +274,16 @@ function RunRow({
       className="cs-run"
       data-projected={run.projected ? '' : undefined}
       data-resolve={resolve ? '' : undefined}
+      data-count={count ? '' : undefined}
     >
       <span className="cs-run-head">
-        <span className="cs-run-label">{run.label}</span>{' '}
-        <span className="cs-run-note">{run.note}</span>
+        <span className="cs-run-label">{run.label}</span>
+        {count ? null : (
+          <>
+            {' '}
+            <span className="cs-run-note">{run.note}</span>
+          </>
+        )}
       </span>
       <span className="cs-cells" aria-hidden="true" style={{ '--cs-n': scale } as CSSProperties}>
         {Array.from({ length: scale }, (_, i) => (
@@ -204,6 +294,7 @@ function RunRow({
           />
         ))}
       </span>
+      {count ? <span className="cs-run-count">{run.note}</span> : null}
       <span className="cs-tally">
         {states.map((s) => (
           <span key={s} className="cs-tally-item">
@@ -216,11 +307,25 @@ function RunRow({
   );
 }
 
-function GradeScale({ marks }: { marks: { at: number; was?: boolean }[] }) {
+function GradeScale({
+  marks,
+  projected,
+}: {
+  marks: { at: number; was?: boolean }[];
+  /**
+   * A projected grade, drawn from the measured score to the top of the scale.
+   * No number was measured for it, so it is a hollow, dashed range, never a
+   * point: it says "higher, unscored", the convention of the dashed projected
+   * verdict above it. Its grade is named over the range, at the scale's end
+   * (the tick row has no room for it beside "A 90" in a 40px zone).
+   */
+  projected?: { from: number; grade: string };
+}) {
   const now = marks.find((m) => !m.was);
   const was = marks.find((m) => m.was);
   return (
     <div className="cs-scale" aria-hidden="true">
+      {projected ? <span className="cs-scale-proj">{projected.grade}</span> : null}
       <span className="cs-scale-track">
         {BANDS.map((b) => (
           <span
@@ -231,6 +336,12 @@ function GradeScale({ marks }: { marks: { at: number; was?: boolean }[] }) {
             style={{ '--w': b.to - b.from } as CSSProperties}
           />
         ))}
+        {projected ? (
+          <span
+            className="cs-scale-mark is-projected"
+            style={{ '--at': projected.from, '--to': 100 } as CSSProperties}
+          />
+        ) : null}
         {marks.map((m) => (
           <span
             key={m.at}
@@ -248,6 +359,32 @@ function GradeScale({ marks }: { marks: { at: number; was?: boolean }[] }) {
         ))}
       </span>
     </div>
+  );
+}
+
+/**
+ * The runs' axis: a ruler on the cells' own columns, ticked every five checks
+ * and ended at the scale ("26 checks"), so it measures what the cells count. A
+ * tick that would crowd the end label is left out (25 beside 26).
+ */
+function CellAxis({ scale }: { scale: number }) {
+  const ticks = Array.from({ length: Math.floor(scale / 5) + 1 }, (_, i) => i * 5).filter(
+    (t) => t <= scale - 5,
+  );
+  return (
+    <span className="cs-axis" aria-hidden="true">
+      <span className="cs-axis-cells" style={{ '--cs-n': scale } as CSSProperties}>
+        {ticks.map((t) => (
+          <span key={t} className="cs-axis-tick" style={{ '--c': t + 1 } as CSSProperties}>
+            {t}
+          </span>
+        ))}
+        <span className="cs-axis-end" style={{ '--c': scale } as CSSProperties}>
+          {scale}
+          <span className="cs-axis-unit"> checks</span>
+        </span>
+      </span>
+    </span>
   );
 }
 
@@ -299,12 +436,7 @@ export function ScoreDelta({
               <RunRow key={r.label} run={r} scale={scale} resolve={!r.projected && i === resolveAt} />
             ))}
           </ol>
-          <span className="cs-axis" aria-hidden="true">
-            <span>
-              <span>0</span>
-              <span>{scale} checks, one cell each</span>
-            </span>
-          </span>
+          <CellAxis scale={scale} />
         </>
       }
       side={
@@ -339,7 +471,10 @@ export function ScoreDelta({
             ) : null}
           </div>
           <p className="cs-side-note">{note}</p>
-          <GradeScale marks={after != null ? [{ at: before, was: true }, { at: after }] : [{ at: before }]} />
+          <GradeScale
+            marks={after != null ? [{ at: before, was: true }, { at: after }] : [{ at: before }]}
+            projected={projected ? { from: end, grade: projected } : undefined}
+          />
         </>
       }
     />
@@ -374,7 +509,7 @@ export function BuildReadout({
 }) {
   const run: Run = {
     label: 'Tests',
-    note: `${passed} of ${tests}`,
+    note: `${passed} / ${tests}`,
     counts: { pass: passed, fail: tests - passed, warn: 0, skip: 0 },
   };
   return (
@@ -387,7 +522,7 @@ export function BuildReadout({
       face={
         <>
           <ol className="cs-runs">
-            <RunRow run={run} scale={tests} resolve states={['pass', 'fail']} />
+            <RunRow run={run} scale={tests} resolve states={['pass', 'fail']} count />
           </ol>
           <div className="cs-domains">
             <span className="cs-label">{domains.length} domains</span>
@@ -432,7 +567,11 @@ export type Post = {
   label: string;
   /** Views; null when the post did not surface at all. */
   views: number | null;
-  /** Said in place of a bar when there is no number. */
+  /**
+   * Said in the value column when there is no number. The row keeps the
+   * chart's track (an empty dashed well from the origin), so every row ends
+   * on the same edge and every value on the face's.
+   */
   absent?: string;
 };
 
@@ -467,7 +606,7 @@ export function ViewsReadout({
   return (
     <Panel
       label={label}
-      app="Engagement"
+      app="Post analytics"
       target="X post"
       state={`24 h · ${date}`}
       lamp={lamp}
@@ -477,19 +616,16 @@ export function ViewsReadout({
             {posts.map((p) => (
               <li key={p.label} className={`cs-post${p.views == null ? ' is-absent' : ''}`}>
                 <span className="cs-post-label">{p.label}</span>
-                <span className="cs-post-track" style={band}>
-                  {floor ? <span className="cs-post-band" aria-hidden="true" /> : null}
-                  {p.views == null ? (
-                    <span className="cs-post-absent">{p.absent}</span>
-                  ) : (
+                <span className="cs-post-track" style={band} aria-hidden="true">
+                  {floor ? <span className="cs-post-band" /> : null}
+                  {p.views == null ? null : (
                     <span
                       className="cs-post-fill"
-                      aria-hidden="true"
                       style={{ '--v': Math.min(1, p.views / max) } as CSSProperties}
                     />
                   )}
                 </span>
-                {p.views == null ? null : <span className="cs-post-value">{p.views} views</span>}
+                <span className="cs-post-value">{p.views == null ? p.absent : `${p.views} views`}</span>
               </li>
             ))}
           </ol>

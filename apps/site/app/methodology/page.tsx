@@ -49,6 +49,7 @@ import {
   hostOf,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable } from '../lib/data/figure';
+import { unbroken } from '../lib/data/unbroken';
 import { CohortStrip } from '../lib/data/strip';
 import { BarList, RangeList } from '../lib/data/bars';
 import { OnThisPage } from '../lib/data/on-this-page';
@@ -515,7 +516,7 @@ const ORIGINALITY = [
   { id: 'O4', name: 'Tiered reduced motion', detection: <>A <code>prefers-reduced-motion</code> query that is targeted, where a blanket <code>{'* { animation: none }'}</code> earns nothing</>, points: '1, when targeted' },
   { id: 'O5', name: 'Motion choreography', detection: <>Scroll-driven animation (<code>animation-timeline</code>, <code>view-timeline</code>, <code>animation-range</code>), view transitions, or named <code>@keyframes</code></>, points: '1 for 3+ named keyframes · 2 for scroll-driven or view transitions' },
   { id: 'O6', name: 'Bespoke iconography', detection: <>Inline <code>&lt;svg viewBox&gt;</code> or <code>&lt;symbol&gt;</code> elements, placed by hand rather than from an icon font</>, points: '1 for 3+ inline SVGs or 2+ symbols' },
-  { id: 'O7', name: 'Semantic tokens', detection: <>Role-named custom properties such as <code>--surface</code>, <code>--ink</code>, <code>--paper</code>, over hue names like <code>--color-blue-500</code>. The shadcn fingerprint (6+ of its default names) scores zero.</>, points: '2 for 4+ · 4 for 8+ · +2 layering · +2 theming · at most 6' },
+  { id: 'O7', name: 'Semantic tokens', detection: <>Role-named custom properties such as <code className="dx-nowrap">--surface</code>, <code className="dx-nowrap">--ink</code>, <code className="dx-nowrap">--paper</code>, over hue names like <code className="dx-nowrap">--color-blue-500</code>. The shadcn fingerprint (6+ of its default names) scores zero.</>, points: '2 for 4+ · 4 for 8+ · +2 layering · +2 theming · at most 6' },
 ];
 
 const CEILINGS = [
@@ -931,9 +932,9 @@ export default function MethodologyPage() {
                       <span className="dx-check-head">
                         <code>{c.id}</code>
                         <span className="dx-tag">{c.manualReason ? 'manual' : 'conditional'}</span>
-                        <span className="dx-check-item">{itemOf(c.id)}</span>
+                        <span className="dx-check-item">{unbroken(itemOf(c.id))}</span>
                       </span>
-                      <span className="dx-check-how">{display(c.manualReason ?? c.skipReason ?? '')}</span>
+                      <span className="dx-check-how">{unbroken(display(c.manualReason ?? c.skipReason ?? ''))}</span>
                     </li>
                   ))}
                 </ul>
@@ -1067,7 +1068,7 @@ export default function MethodologyPage() {
                     <div className="dx-table-box">
                       <DataTable
                         caption={`Engine verdict against ${AXE} verdict, ${K.n} sites.`}
-                        head={['', `${AXE} passes`, `${AXE} fails`]}
+                        head={[<span key="h" className="sr-only">Engine verdict</span>, `${AXE} passes`, `${AXE} fails`]}
                         numeric={[1, 2]}
                         rows={[
                           ['Engine passes', K.bothPass, K.aPassBFail],
@@ -1169,9 +1170,9 @@ export default function MethodologyPage() {
                                 <code>{c.id}</code>
                                 {c.manualReason && <span className="dx-tag">manual</span>}
                                 {c.skipReason && <span className="dx-tag">conditional</span>}
-                                <span className="dx-check-item">{itemOf(c.id)}</span>
+                                <span className="dx-check-item">{unbroken(itemOf(c.id))}</span>
                               </span>
-                              <span className="dx-check-how">{display(c.how)}</span>
+                              <span className="dx-check-how">{unbroken(display(c.how))}</span>
                             </li>
                           ))}
                         </ul>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import './design-system.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { designSystemContract } from '../../lib/design-system-contract';
@@ -22,17 +23,113 @@ export const metadata: Metadata = pageMeta({
     'A reference format for AI-readable design contracts: input + verification. designesy.org/contracts/design-system',
 });
 
+// The contract's ten parts. Each opens its full table in the published
+// contract on /contracts (section ids set there).
 const SECTIONS = [
-  { title: 'Colors', meta: 'Primitive and semantic color roles' },
-  { title: 'Typography', meta: 'Stacks, scale, and type rules' },
-  { title: 'Rounded', meta: 'Radius tokens' },
-  { title: 'Spacing', meta: 'Layout spacing and breakpoints' },
-  { title: 'Motion', meta: 'Duration, easing, reduced-motion' },
-  { title: 'Components', meta: 'Behavior and states' },
-  { title: 'Accessibility', meta: 'Focus, preference, landmarks' },
-  { title: 'Copywriting', meta: `UX copy principles (v${designSystemContract.copywriting.adopted_in})` },
-  { title: 'Acoustics', meta: `Cue tokens and mapping rules (v${designSystemContract.acoustic.adopted_in})` },
-  { title: 'Verification', meta: 'How to know the system still holds' },
+  { title: 'Colors', meta: 'Primitive and semantic color roles', href: '/contracts#primitive-tokens' },
+  { title: 'Typography', meta: 'Stacks, scale, and type rules', href: '/contracts#typography-rules' },
+  { title: 'Rounded', meta: 'Radius scale and surface rules', href: '/contracts#shape-and-surface' },
+  { title: 'Spacing', meta: 'Layout spacing and container switches', href: '/contracts#spacing-and-layout' },
+  { title: 'Motion', meta: 'Duration, easing, reduced-motion', href: '/contracts#motion-and-reduced-motion' },
+  { title: 'Components', meta: 'Behavior and states', href: '/contracts#component-states' },
+  { title: 'Accessibility', meta: 'Focus, preference, landmarks', href: '/contracts#accessibility-requirements' },
+  { title: 'Copywriting', meta: `UX copy principles (v${designSystemContract.copywriting.adopted_in})`, href: '/contracts#09e-copywriting' },
+  { title: 'Acoustics', meta: `Cue tokens and mapping rules (v${designSystemContract.acoustic.adopted_in})`, href: '/contracts#acoustic-tokens' },
+  { title: 'Verification', meta: 'How to know the system still holds', href: '/contracts#verification-criteria' },
+];
+
+// Surfaces: each row's side pane is its route, in mono, with the arrow.
+type Surface = { href: string; title: string; meta: string };
+
+const SURFACES: Surface[] = [
+  {
+    href: '/contracts#design-system-contract',
+    title: 'Human contract',
+    meta: 'The full published contract, every table on one page',
+  },
+  {
+    href: '/contracts/design-system.json',
+    title: 'Machine export',
+    meta: 'This contract as JSON for agents and checkers',
+  },
+  {
+    href: '/contracts/skill',
+    title: 'Agent skill',
+    meta: 'SKILL.md format for AI coding agents',
+  },
+  {
+    href: '/open',
+    title: 'Open design intelligence',
+    meta: 'Package catalog · this contract is entry one',
+  },
+  {
+    href: '/labs/poise',
+    title: 'Lab One · Poise',
+    meta: `Source lab · interaction rules adopted in v${designSystemContract.interaction.adopted_in}`,
+  },
+  {
+    href: '/labs/takt',
+    title: 'Lab Two · Takt',
+    meta: `Source lab · interface-feel rules adopted in v${designSystemContract.takt.adopted_in}`,
+  },
+  {
+    href: '/labs/cadence',
+    title: 'Lab Three · Cadence',
+    meta: `Source lab · typography rules adopted in v${designSystemContract.cadence.adopted_in}`,
+  },
+  {
+    href: '/labs/acoustics',
+    title: 'Lab Four · Acoustics',
+    meta: `Source lab · interaction-sound rules adopted in v${designSystemContract.acoustic.adopted_in}`,
+  },
+  {
+    href: '/review/poise',
+    title: 'Field check · Poise',
+    meta: 'Kit One review that supported adoption',
+  },
+  {
+    href: '/review/takt',
+    title: 'Field check · Takt',
+    meta: 'Kit One review that supported adoption',
+  },
+  {
+    href: '/review/cadence',
+    title: 'Field check · Cadence',
+    meta: 'Kit One review that supported adoption',
+  },
+  {
+    href: '/review/acoustics',
+    title: 'Field check · Acoustics',
+    meta: 'Kit One review of Lab Four',
+  },
+  {
+    href: '/review/designesy-org',
+    title: 'Public review',
+    meta: 'Field check of designesy.org against this contract',
+  },
+  {
+    href: '/score',
+    title: 'Live verification',
+    meta: `Score any URL against this contract: ${ENGINE_CHECK_COUNT} checks, one grade`,
+  },
+];
+
+// The comparison's "Not covered" cells: an absence, so they read dim after a
+// drawn dash, never in the ink of a real value.
+const ABSENT = 'Not covered';
+
+const COMPARISON: { layer: string; designMd: string; ours: string }[] = [
+  { layer: 'Tokens', designMd: 'YAML frontmatter', ours: 'DTCG 2025.10 JSON + CORS endpoint' },
+  { layer: 'Rationale prose', designMd: '9 markdown sections', ours: 'Adoption narratives + lab provenance' },
+  { layer: 'Verification', designMd: 'CLI linter + WCAG contrast', ours: `${ENGINE_CHECK_COUNT} automated checks, live score engine` },
+  { layer: 'Anti-generic detection', designMd: ABSENT, ours: '12 anti-generic tells (AI sameness)' },
+  { layer: 'Acoustic cues', designMd: ABSENT, ours: '10 named cue tokens + mapping rules' },
+  { layer: 'Interface-feel (takt)', designMd: ABSENT, ours: 'Press scale, hit area, stagger rhythm' },
+  { layer: 'Copywriting', designMd: ABSENT, ours: '16 UX copy principles, 4 as checks (v38 to v41)' },
+  { layer: 'Motion', designMd: 'Duration + easing', ours: 'Spring physics + 3-tier reduced-motion' },
+  { layer: 'Provenance', designMd: ABSENT, ours: 'Source labs, adopted_in versions, external ingests' },
+  { layer: 'Live proof', designMd: ABSENT, ours: 'designesy.org/score: any URL, live grade' },
+  { layer: 'Agent skill', designMd: 'Reads the markdown', ours: 'SKILL.md format + MCP contract endpoint' },
 ];
 
 const COLOR_PREVIEW = [
@@ -129,67 +226,30 @@ export default function DesignSystemContractPage() {
             not carry. They are complementary: design.md is the brief; this
             contract is the brief and the proof.
           </p>
-          <div className="token-table" role="table" aria-label="Designesy contract vs design.md">
+          <div className="token-table ds-labelled" role="table" aria-label="Designesy contract vs design.md">
             <div className="token-table-head" role="row">
               <span role="columnheader">Layer</span>
               <span role="columnheader">design.md</span>
               <span role="columnheader">This contract</span>
             </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Tokens</code>
-              <span role="cell">YAML frontmatter</span>
-              <span role="cell">DTCG 2025.10 JSON + CORS endpoint</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Rationale prose</code>
-              <span role="cell">9 markdown sections</span>
-              <span role="cell">Adoption narratives + lab provenance</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Verification</code>
-              <span role="cell">CLI linter + WCAG contrast</span>
-              <span role="cell">{ENGINE_CHECK_COUNT} automated checks, live score engine</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Anti-generic detection</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">12 anti-generic tells (AI sameness)</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Acoustic cues</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">10 named cue tokens + mapping rules</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Interface-feel (takt)</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">Press scale, hit area, stagger rhythm</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Copywriting</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">16 UX copy principles, 4 as checks (v38 to v41)</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Motion</code>
-              <span role="cell">Duration + easing</span>
-              <span role="cell">Spring physics + 3-tier reduced-motion</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Provenance</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">Source labs, adopted_in versions, external ingests</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Live proof</code>
-              <span role="cell">Not covered</span>
-              <span role="cell">designesy.org/score: any URL, live grade</span>
-            </div>
-            <div className="token-table-row" role="row">
-              <code role="cell">Agent skill</code>
-              <span role="cell">Reads the markdown</span>
-              <span role="cell">SKILL.md format + MCP contract endpoint</span>
-            </div>
+            {COMPARISON.map((row) => (
+              <div className="token-table-row" role="row" key={row.layer}>
+                <code role="cell">{row.layer}</code>
+                {row.designMd === ABSENT ? (
+                  <span role="cell" data-label="design.md" className="ds-absent">
+                    <span className="ds-dash" aria-hidden="true" />
+                    {ABSENT}
+                  </span>
+                ) : (
+                  <span role="cell" data-label="design.md">
+                    {row.designMd}
+                  </span>
+                )}
+                <span role="cell" data-label="This contract">
+                  {row.ours}
+                </span>
+              </div>
+            ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             The gap design.md leaves open is the same gap every AI coding agent
@@ -213,7 +273,7 @@ export default function DesignSystemContractPage() {
             Core color roles from the live foundation. Full tables live on the
             contracts surface and in the machine export.
           </p>
-          <div className="token-table" role="table" aria-label="Core color tokens">
+          <div className="token-table ds-labelled" role="table" aria-label="Core color tokens">
             <div className="token-table-head" role="row">
               <span role="columnheader">Token</span>
               <span role="columnheader">Value</span>
@@ -222,10 +282,12 @@ export default function DesignSystemContractPage() {
             {COLOR_PREVIEW.map((row) => (
               <div className="token-table-row" role="row" key={row.token}>
                 <code role="cell">{row.token}</code>
-                <code role="cell" className="token-value">
+                <code role="cell" className="token-value" data-label="Value">
                   {row.value}
                 </code>
-                <span role="cell">{row.role}</span>
+                <span role="cell" data-label="Role">
+                  {row.role}
+                </span>
               </div>
             ))}
           </div>
@@ -234,235 +296,35 @@ export default function DesignSystemContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Surfaces</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/contracts#design-system-contract"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Human contract</span>
-                  <span className="row-meta">
-                    Full published contract on /contracts
+            {SURFACES.map((row, i) => (
+              <div role="listitem" key={row.href}>
+                <Link
+                  href={row.href}
+                  className="row"
+                  data-cuelume-hover="whisper"
+                  data-cuelume-press
+                >
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system.json"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Machine export</span>
-                  <span className="row-meta">/contracts/design-system.json</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/skill"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Agent skill</span>
-                  <span className="row-meta">/contracts/skill: SKILL.md format for AI coding agents</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/open"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Open design intelligence</span>
-                  <span className="row-meta">
-                    Package catalog · this contract is entry one
+                  <span className="row-side">
+                    <span className="row-side-line">{row.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/poise"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Lab One · Poise</span>
-                  <span className="row-meta">
-                    Source lab · interaction rules adopted in v{c.interaction.adopted_in}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/takt"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Two · Takt</span>
-                  <span className="row-meta">
-                    Source lab · interface-feel rules adopted in v{c.takt.adopted_in}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/cadence"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">07</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Three · Cadence</span>
-                  <span className="row-meta">
-                    Source lab · typography rules adopted in v{c.cadence.adopted_in}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/acoustics"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">08</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Four · Acoustics</span>
-                  <span className="row-meta">
-                    Source lab · interaction-sound rules adopted in v{c.acoustic.adopted_in}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/poise"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">09</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Poise</span>
-                  <span className="row-meta">
-                    Kit One review that supported adoption
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/takt"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">10</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Takt</span>
-                  <span className="row-meta">
-                    Kit One review that supported adoption
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/cadence"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">11</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Cadence</span>
-                  <span className="row-meta">
-                    Kit One review that supported adoption
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/acoustics"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">12</span>
-                <span className="row-body">
-                  <span className="row-title">Field check · Acoustics</span>
-                  <span className="row-meta">
-                    Kit One review of Lab Four
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review/designesy-org"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">13</span>
-                <span className="row-body">
-                  <span className="row-title">Public review</span>
-                  <span className="row-meta">
-                    Field check of designesy.org against this contract
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/score"
-                className="row"
-                data-cuelume-hover="whisper"
-                data-cuelume-press
-              >
-                <span className="row-index">14</span>
-                <span className="row-body">
-                  <span className="row-title">Live verification</span>
-                  <span className="row-meta">
-                    Score any URL against this contract: {ENGINE_CHECK_COUNT} checks, one grade
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Adoption</h2>
+          <h2 className="doctrine-heading">
+            Poise{' '}
+            <span className="ds-adopted">adopted in v{c.interaction.adopted_in}</span>
+          </h2>
           <div className="definition">
-            <p className="definition-label">
-              Poise · adopted in v{c.interaction.adopted_in}
-            </p>
             <p>
               Lab One portable rules are contract material: wordmark breath,
               press settle, sound preference ownership, reduced motion, hover
@@ -482,11 +344,11 @@ export default function DesignSystemContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Takt adoption</h2>
+          <h2 className="doctrine-heading">
+            Takt{' '}
+            <span className="ds-adopted">adopted in v{c.takt.adopted_in}</span>
+          </h2>
           <div className="definition">
-            <p className="definition-label">
-              Takt · adopted in v{c.takt.adopted_in}
-            </p>
             <p>
               Lab Two portable rules are contract material: concentric radii,
               press scale (0.96 for cells, 0.985 for cards), image outlines,
@@ -501,11 +363,11 @@ export default function DesignSystemContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Cadence adoption</h2>
+          <h2 className="doctrine-heading">
+            Cadence{' '}
+            <span className="ds-adopted">adopted in v{c.cadence.adopted_in}</span>
+          </h2>
           <div className="definition">
-            <p className="definition-label">
-              Cadence · adopted in v{c.cadence.adopted_in}
-            </p>
             <p>
               Lab Three portable rules are contract material: font smoothing
               on root, rem-based scale, line-height by role, tracking by size,
@@ -523,11 +385,11 @@ export default function DesignSystemContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Acoustics adoption</h2>
+          <h2 className="doctrine-heading">
+            Acoustics{' '}
+            <span className="ds-adopted">adopted in v{c.acoustic.adopted_in}</span>
+          </h2>
           <div className="definition">
-            <p className="definition-label">
-              Acoustics · adopted in v{c.acoustic.adopted_in}
-            </p>
             <p>
               Lab Four portable rules are contract material: ten named cue
               tokens (--cue:brand through --cue:contact), one primary cue
@@ -542,17 +404,20 @@ export default function DesignSystemContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Copywriting adoption</h2>
+          <h2 className="doctrine-heading">
+            Copywriting{' '}
+            <span className="ds-adopted">adopted in v{c.copywriting.adopted_in}</span>
+          </h2>
           <div className="definition">
-            <p className="definition-label">
-              Copywriting · adopted in v{c.copywriting.adopted_in}
-            </p>
             <p>
               UX copy principles from NN/g, Polaris, IBM Carbon, Microsoft
               Fluent, Apple HIG, and Atlassian. Gap source:{' '}
               <a
                 href="https://detail.design"
-                style={{ color: 'var(--signal-text)' }}
+                // Underlined: inside a sentence, color alone does not mark a
+                // link (WCAG 1.4.1; axe link-in-text-block measured 1.93:1
+                // against the light theme's paragraph ink).
+                style={{ color: 'var(--signal-text)', textDecoration: 'underline', textUnderlineOffset: '0.15em' }}
               >
                 detail.design
               </a>{' '}

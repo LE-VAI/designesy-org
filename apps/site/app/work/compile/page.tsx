@@ -4,13 +4,12 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
-import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import '../../instrument.css';
 import '../work.css';
-import { BuildReadout } from '../case-instrument';
+import { BuildReadout, InputList, SourceList, type Input, type Source } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Compile: case study',
@@ -148,7 +147,32 @@ const VERIFICATION = [
   'Deployment pattern verified: matches Tile and Continuity exactly',
 ];
 
-const SOURCES = [
+/* Each input's datum sits in its row's side pane: the build and where it
+   will be hosted, the tool's shape, its channel, the contract version. */
+const INPUTS: Input[] = [
+  {
+    title: 'Artifact',
+    meta: 'Self-contained single index.html: no framework, no CDN, no backend',
+    side: ['Local build', 'GitHub Pages · pending'],
+  },
+  {
+    title: 'Purpose claim',
+    meta: 'Compile a principle into tokens, a test, and a checklist; no substitute exists',
+    side: ['1 input · 4 output tabs'],
+  },
+  {
+    title: 'Audience and context',
+    meta: 'Builders and agents who need verifiable design contracts from plain language',
+    side: ['X · not yet published'],
+  },
+  {
+    title: 'Governing rules',
+    meta: 'Kit One Design Review · 10-cell Lab anatomy',
+    side: ['Contract v0.2.0'],
+  },
+];
+
+const SOURCES: Source[] = [
   {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
@@ -252,38 +276,7 @@ export default function CompileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Inputs used</h2>
-          <div className="row-stack" role="list">
-            <ToggleRow index="01">
-              <span className="row-body">
-                <span className="row-title">Artifact</span>
-                <span className="row-meta">Local build · pending hosting on GitHub Pages</span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="02">
-              <span className="row-body">
-                <span className="row-title">Purpose claim</span>
-                <span className="row-meta">
-                  Compile a principle into tokens, a test, and a checklist; no substitute exists
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="03">
-              <span className="row-body">
-                <span className="row-title">Audience and context</span>
-                <span className="row-meta">
-                  Builders and agents who need verifiable design contracts from plain language
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="04">
-              <span className="row-body">
-                <span className="row-title">Governing rules</span>
-                <span className="row-meta">
-                  Contract v0.2.0 · Kit One Design Review · 10-cell Lab anatomy
-                </span>
-              </span>
-            </ToggleRow>
-          </div>
+          <InputList items={INPUTS} />
         </section>
 
         <section className="doctrine-section fade-up" id="dimensions">
@@ -341,26 +334,7 @@ export default function CompileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources used</h2>
-          <div className="row-stack" role="list">
-            {SOURCES.map((item, i) => (
-              <div role="listitem" key={item.href}>
-                <Link
-                  href={item.href}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item.title}</span>
-                    <span className="row-meta">{item.meta}</span>
-                  </span>
-                </Link>
-              </div>
-            ))}
-          </div>
+          <SourceList items={SOURCES} />
         </section>
 
         <div className="status-note">

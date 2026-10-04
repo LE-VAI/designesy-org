@@ -8,11 +8,11 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
 const SIGNALS = [
   { t: CONTRACT_VERSION + ' · LIVE', c: 'live', href: '/contracts/design-system' },
-  { t: 'Poise ✓ adopted', c: 'adopted', href: '/labs/poise' },
-  { t: 'Takt ✓ adopted', c: 'adopted', href: '/labs/takt' },
-  { t: 'Cadence ✓ adopted', c: 'adopted', href: '/labs/cadence' },
-  { t: 'Review ✓ pass', c: 'adopted', href: '/review' },
-  { t: 'Keyboard ✓ verified', c: 'adopted', href: '/review/keyboard' },
+  { t: 'Poise · adopted', c: 'adopted', href: '/labs/poise' },
+  { t: 'Takt · adopted', c: 'adopted', href: '/labs/takt' },
+  { t: 'Cadence · adopted', c: 'adopted', href: '/labs/cadence' },
+  { t: 'Review · pass', c: 'adopted', href: '/review' },
+  { t: 'Keyboard · verified', c: 'adopted', href: '/review/keyboard' },
   { t: 'Drift rule active', c: 'live', href: '/drift' },
   { t: 'SKILL.md published', c: 'live', href: '/contracts/skill' },
   { t: 'open.json · machine feed', c: 'info', href: '/open.json' },

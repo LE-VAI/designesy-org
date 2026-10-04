@@ -150,10 +150,14 @@ export default function SpecsPage() {
             <DataTable
               caption="Top-level fields of the Design Review Findings schema."
               head={['Field', 'Type', 'Required', 'What it holds']}
-              opt={[2]}
               cols={[3, 2, 1]}
               stack="fields"
-              rows={TOP.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, REQUIRED.has(k) ? 'yes' : '', descOf(p)])}
+              rows={TOP.map(([k, p]) => [
+                <code key="k">{k}</code>,
+                <code key="t">{typeOf(p)}</code>,
+                REQUIRED.has(k) ? <span key="r" className="dx-req">required</span> : '',
+                descOf(p),
+              ])}
             />
           </div>
         </section>
@@ -175,10 +179,15 @@ export default function SpecsPage() {
           <div className="dx-table-box">
             <DataTable
               caption="Fields of a finding object."
-              head={['Field', 'Type', 'What it holds']}
-              cols={[3, 2]}
+              head={['Field', 'Type', 'Required', 'What it holds']}
+              cols={[3, 2, 1]}
               stack="fields"
-              rows={FINDING.map(([k, p]) => [<code key="k">{k}</code>, <code key="t">{typeOf(p)}</code>, descOf(p)])}
+              rows={FINDING.map(([k, p]) => [
+                <code key="k">{k}</code>,
+                <code key="t">{typeOf(p)}</code>,
+                FINDING_REQUIRED.has(k) ? <span key="r" className="dx-req">required</span> : '',
+                descOf(p),
+              ])}
             />
           </div>
         </section>
@@ -196,7 +205,7 @@ export default function SpecsPage() {
             <DataTable
               caption="Each tool's native severity and its canonical form."
               head={['Tool', 'Native', 'Canonical']}
-              cols={[3, 2]}
+              cols={[4, 4]}
               rows={SEVERITY.map(([t, n, c]) => [t, <code key="n">{n}</code>, <code key="c">{c}</code>])}
             />
           </div>

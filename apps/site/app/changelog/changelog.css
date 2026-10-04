@@ -93,6 +93,110 @@
   }
 }
 
+/* Below a 64rem list the key is one line under the title, the way a log is
+   scanned on a phone: "v0.4.1 · 2026-09-28 · All dimensions · MODIFIED".
+   The side pane used to stack after the description, the rationale and the
+   source, so version and date landed 285 to 438px under their title, off
+   screen with it. The body and the side step out of the way (display:
+   contents on plain divs; the dl keeps its semantics), so the title, the
+   key, the prose and the check chips are the row's own cells in its body
+   column, ordered title, key, prose, chips. The labels stay for screen
+   readers; the eye gets values parted by a middle dot. The check chips stay
+   at the end of the entry. */
+@container rows (width < 64rem) {
+  .surface-page .row-stack .changelog-entry {
+    row-gap: 0;
+  }
+
+  .changelog-entry > .row-body,
+  .changelog-entry > .changelog-entry-side {
+    display: contents;
+  }
+
+  .changelog-entry > .row-body > *,
+  .changelog-entry > .changelog-entry-side > * {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .changelog-entry .changelog-entry-meta {
+    order: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-8);
+    margin-top: var(--space-6);
+  }
+
+  .changelog-entry .changelog-entry-meta > div {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+  }
+
+  .changelog-entry .changelog-entry-meta > div + div::before {
+    content: "\00b7" / "";
+    color: var(--muted-dim);
+  }
+
+  /* A four-part key (the log) sets two lines, version and date over
+     dimension and change, so no line opens on a dangling dot where a free
+     wrap would have broken it. The break is the list's own zero-height
+     flex item, ordered between the pairs. The three-part summary key
+     ("v0.1.3 · 2026-07-12 · 38 checks") fits one line. */
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4))::after {
+    content: "";
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(-n + 2) {
+    order: 1;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(n + 3) {
+    order: 3;
+  }
+
+  .changelog-entry .changelog-entry-meta:has(> :nth-child(4)) > :nth-child(3)::before {
+    content: none;
+  }
+
+  .changelog-entry .changelog-entry-meta dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .changelog-entry .changelog-entry-meta dd {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .changelog-entry .changelog-entry-meta .changelog-version {
+    color: var(--ink);
+  }
+
+  .changelog-entry .changelog-entry-meta .changelog-dimension {
+    color: var(--signal-text);
+  }
+
+  .changelog-entry .changelog-check-count::after {
+    content: " checks" / "";
+  }
+
+  .changelog-entry :is(.changelog-entry-desc, .changelog-entry-why, .changelog-entry-source) {
+    order: 2;
+  }
+
+  .changelog-entry .changelog-entry-checks {
+    order: 3;
+  }
+}
+
 .changelog-entry-desc {
   max-width: 70ch;
   margin: var(--space-8) 0 0;
@@ -155,6 +259,13 @@
 .changelog-entry-meta .changelog-version {
   font-family: var(--mono);
   font-weight: 600;
+}
+
+/* Every dimension in the one colour, the check chips' blue: a category is
+   named by its label and never borrows a state colour (Accessibility was
+   --ok and Security --error). */
+.changelog-entry-meta .changelog-dimension {
+  color: var(--signal-text);
 }
 
 .changelog-change {

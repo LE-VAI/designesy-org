@@ -27,7 +27,7 @@ import {
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { CohortStrip } from '../lib/data/strip';
-import { CategoryProfile } from '../lib/data/cells';
+import { CategoryProfile, HeldTag } from '../lib/data/cells';
 
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
@@ -79,9 +79,7 @@ function Row({ s }: { s: CohortSite }) {
           </span>
           {s.self && <span className="dx-tag">self-scored</span>}
           {s.unreachable && (
-            <span className="dx-tag" data-kind="held">
-              held over from <time dateTime={s.scoredAt ?? undefined}>{s.scoredAt}</time>
-            </span>
+            <HeldTag date={s.scoredAt} />
           )}
         </span>
       </th>

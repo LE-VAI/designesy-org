@@ -241,6 +241,8 @@ export function InspectSequence() {
     let ends: IntersectionObserver | null = null;
     let line = 0; // the band, in viewport px
     let watched: Element[] = steps;
+    // The narrow stage is pinned over the list (setup decides).
+    let pinned = false;
 
     /**
      * The observer can only report a crossing it sees, and a jump (Home, an
@@ -259,6 +261,13 @@ export function InspectSequence() {
      *     2026-10-03), or if the lit step's block is off screen. One off with
      *     the lit block still in view is the observer's own scroll-up
      *     hysteresis, and is left alone.
+     *   - narrow and pinned, the step is always the geometry's. There the
+     *     stage covers the top of the screen, so a lit step can be "in view"
+     *     and still unreadable under it: after a jump at 768 (1700 to 1950)
+     *     step two stayed lit while only step three's copy could be read
+     *     (judged 2026-10-03). The band there is exact, the active heading
+     *     travels from L up to the stage's edge, so the last heading at or
+     *     above L is the step a reader can see, in either direction.
      */
     const fromGeometry = () => {
       let n = 1;
@@ -272,6 +281,10 @@ export function InspectSequence() {
       const n = fromGeometry();
       const cur = Number(root.dataset.step ?? 1);
       if (n === cur) return;
+      if (pinned) {
+        show(String(n));
+        return;
+      }
       const lit = steps[cur - 1]?.getBoundingClientRect();
       const gone = !lit || lit.bottom <= 0 || lit.top >= window.innerHeight;
       if (Math.abs(n - cur) >= 2 || n === steps.length || gone) show(String(n));
@@ -296,8 +309,10 @@ export function InspectSequence() {
       for (const p of ['--ix-step-h', '--ix-band-start', '--ix-band-end', '--ix-pin-end', '--ix-fit']) {
         root.style.removeProperty(p);
       }
+      root.removeAttribute('data-ix-fit');
       const wasOff = root.dataset.pin === 'off';
       delete root.dataset.pin;
+      pinned = false;
       if (narrow && stage) {
         const top = parseFloat(getComputedStyle(stage).top) || 0;
         const bottom = () => top + stage.getBoundingClientRect().height;
@@ -313,9 +328,16 @@ export function InspectSequence() {
         // no lower than this.
         const maxS = vh - (tallest + 24) / 0.6;
         let S = bottom();
-        // Fit: scale the specimen's type by the canvas height it must give
-        // up. The chrome and the log are fixed, so one pass undershoots;
-        // three converge. Synchronous reads, on setup and resize only.
+        // Fit. First the card descriptions give up their room (data-ix-fit,
+        // as on a phone's stage), so the specimen's 10px type floor costs no
+        // height; then the type scales by the canvas height it must give up.
+        // The chrome, the log and the floors are fixed, so one pass
+        // undershoots; three converge. Synchronous reads, on setup and
+        // resize only.
+        if (S > maxS) {
+          root.toggleAttribute('data-ix-fit', true);
+          S = bottom();
+        }
         let fit = 1;
         for (let k = 0; k < 3 && S > maxS && canvas; k++) {
           const h = canvas.getBoundingClientRect().height;
@@ -326,12 +348,14 @@ export function InspectSequence() {
         }
         if (S > maxS) {
           root.style.removeProperty('--ix-fit');
+          root.removeAttribute('data-ix-fit');
           root.dataset.pin = 'off';
           watched = [];
           if (!auto) rest();
           sync();
           return;
         }
+        pinned = true;
         const R = vh - S;
         const L = Math.round(S + 0.6 * R);
         root.style.setProperty('--ix-step-h', `${Math.round(0.6 * R)}px`);
@@ -552,107 +576,111 @@ export function InspectSequence() {
           </div>
 
           <div className="inspect-canvas" aria-hidden="true">
-            <div className="ix-scene">
-              <div className="mp">
-                <div className="mp-nav ix" data-z="1" data-verdict="pass" style={{ '--i': 0 } as CSSProperties}>
-                  <span className="ix-foot" />
-                  <span className="ix-sheet" />
-                  <span className="mp-logo">
-                    <i />
-                    yoursite
-                  </span>
-                  <span className="mp-links">
-                    <span>Product</span>
-                    <span>Pricing</span>
-                    <span>Docs</span>
-                  </span>
-                  <span className="mp-signin">Sign in</span>
-                  <span className="ix-box" />
-                  <span className="ix-tag ix-read">nav · 4 links</span>
-                </div>
-
-                <div className="mp-hero">
-                  <span className="mp-eyebrow">Release 4.2</span>
-
-                  <div className="mp-h1 ix" data-z="2" data-verdict="pass" style={{ '--i': 1 } as CSSProperties}>
+            {/* The scene's flat wrapper: it holds the lens and clips the
+                leaned page above the log row (home-inspect.css). */}
+            <div className="ix-clip">
+              <div className="ix-scene">
+                <div className="mp">
+                  <div className="mp-nav ix" data-z="1" data-verdict="pass" style={{ '--i': 0 } as CSSProperties}>
                     <span className="ix-foot" />
                     <span className="ix-sheet" />
-                    Ship interfaces people trust.
-                    <span className="ix-box" />
-                    <span className="ix-reticle">
+                    <span className="mp-logo">
                       <i />
+                      yoursite
                     </span>
-                    <span className="ix-tag ix-read">h1 · 32 / 36</span>
-                    <span className="ix-chip ix-measure">
-                      <b>15.8 : 1</b> contrast
+                    <span className="mp-links">
+                      <span>Product</span>
+                      <span>Pricing</span>
+                      <span>Docs</span>
                     </span>
+                    <span className="mp-signin">Sign in</span>
+                    <span className="ix-box" />
+                    <span className="ix-tag ix-read">nav · 4 links</span>
                   </div>
 
-                  <p className="mp-p ix" data-z="2" data-verdict="warn" style={{ '--i': 2 } as CSSProperties}>
-                    <span className="ix-foot" />
-                    <span className="ix-sheet" />
-                    Tokens, components, and checks in one place, so the page you ship is the page you
-                    designed.
-                    <span className="ix-box" />
-                    <span className="ix-tag ix-read">p · 17 / 27</span>
-                    <span className="ix-ruler ix-measure">
-                      <i className="ix-ruler-line" />
-                      <span className="ix-ruler-label">
-                        <DigitStrip values={MEASURE_CH} />
-                        {' '}ch
-                      </span>
-                    </span>
-                    <span className="ix-find is-warn">
-                      <Pin n={1} tone="warn" />
-                    </span>
-                    <span className="ix-flag is-warn">
-                      <b>v06</b> <span className="ix-flag-what">muted text</span> 3.8 : 1 <em>warn</em>
-                    </span>
-                  </p>
+                  <div className="mp-hero">
+                    <span className="mp-eyebrow">Release 4.2</span>
 
-                  <div className="mp-actions">
-                    <span className="mp-btn ix" data-z="3" data-verdict="fail" style={{ '--i': 3 } as CSSProperties}>
+                    <div className="mp-h1 ix" data-z="2" data-verdict="pass" style={{ '--i': 1 } as CSSProperties}>
                       <span className="ix-foot" />
                       <span className="ix-sheet" />
-                      Start free
+                      Ship interfaces people trust.
                       <span className="ix-box" />
-                      <span className="ix-tag ix-read">button · 128 × 44</span>
-                      <span className="ix-target ix-measure">
-                        <i className="ix-target-line" />
-                        <span className="ix-target-label">
-                          <DigitStrip values={TARGET_PX} />
-                          {' '}px
+                      <span className="ix-reticle">
+                        <i />
+                      </span>
+                      <span className="ix-tag ix-read">h1 · 32 / 36</span>
+                      <span className="ix-chip ix-measure">
+                        <b>15.8 : 1</b> contrast
+                      </span>
+                    </div>
+
+                    <p className="mp-p ix" data-z="2" data-verdict="warn" style={{ '--i': 2 } as CSSProperties}>
+                      <span className="ix-foot" />
+                      <span className="ix-sheet" />
+                      Tokens, components, and checks in one place, so the page you ship is the page you
+                      designed.
+                      <span className="ix-box" />
+                      <span className="ix-tag ix-read">p · 17 / 27</span>
+                      <span className="ix-ruler ix-measure">
+                        <i className="ix-ruler-line" />
+                        <span className="ix-ruler-label">
+                          <DigitStrip values={MEASURE_CH} />
+                          {' '}ch
                         </span>
                       </span>
-                      <span className="ix-find is-fail">
-                        <Pin n={2} tone="fail" />
+                      <span className="ix-find is-warn">
+                        <Pin n={1} tone="warn" />
                       </span>
-                      <span className="ix-flag is-fail">
-                        <b>v03</b> no :focus-visible ring <em>fail</em>
+                      <span className="ix-flag is-warn">
+                        <b>v06</b> <span className="ix-flag-what">muted text</span> 3.8 : 1 <em>warn</em>
                       </span>
-                    </span>
+                    </p>
+
+                    <div className="mp-actions">
+                      <span className="mp-btn ix" data-z="3" data-verdict="fail" style={{ '--i': 3 } as CSSProperties}>
+                        <span className="ix-foot" />
+                        <span className="ix-sheet" />
+                        Start free
+                        <span className="ix-box" />
+                        <span className="ix-tag ix-read">button · 128 × 44</span>
+                        <span className="ix-target ix-measure">
+                          <i className="ix-target-line" />
+                          <span className="ix-target-label">
+                            <DigitStrip values={TARGET_PX} />
+                            {' '}px
+                          </span>
+                        </span>
+                        <span className="ix-find is-fail">
+                          <Pin n={2} tone="fail" />
+                        </span>
+                        <span className="ix-flag is-fail">
+                          <b>v03</b> no :focus-visible ring <em>fail</em>
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mp-cards ix" data-z="1" data-verdict="pass" style={{ '--i': 4 } as CSSProperties}>
-                  <span className="ix-foot" />
-                  <span className="ix-sheet" />
-                  {[
-                    ['Tokens', 'One source for color, type, and space'],
-                    ['Components', 'Accessible by default, themable by design'],
-                    ['Checks', 'Every pull request, verified'],
-                  ].map(([t, d]) => (
-                    <span className="mp-card" key={t}>
-                      <i className="mp-card-ico" />
-                      <b>{t}</b>
-                      <span>{d}</span>
-                    </span>
-                  ))}
-                  <span className="ix-box" />
-                  <span className="ix-tag ix-read">3 × article</span>
-                </div>
+                  <div className="mp-cards ix" data-z="1" data-verdict="pass" style={{ '--i': 4 } as CSSProperties}>
+                    <span className="ix-foot" />
+                    <span className="ix-sheet" />
+                    {[
+                      ['Tokens', 'One source for color, type, and space'],
+                      ['Components', 'Accessible by default, themable by design'],
+                      ['Checks', 'Every pull request, verified'],
+                    ].map(([t, d]) => (
+                      <span className="mp-card" key={t}>
+                        <i className="mp-card-ico" />
+                        <b>{t}</b>
+                        <span>{d}</span>
+                      </span>
+                    ))}
+                    <span className="ix-box" />
+                    <span className="ix-tag ix-read">3 × article</span>
+                  </div>
 
-                <span className="ix-scan" />
+                  <span className="ix-scan" />
+                </div>
               </div>
             </div>
 

@@ -88,11 +88,14 @@ export function DataTable({
   cols?: number[];
   /** How the rows read when the box is narrow (data.css, "Stacked rows"):
       "fields" puts the name and its first cells on one line over the last
-      cell; "rows" makes each row a block of labelled cells. */
-  stack?: 'fields' | 'rows';
+      cell; "rows" makes each row a block of labelled cells; "lead" puts the
+      name and its first cell on the title line and each other cell on a
+      line of its own, labelled in a gutter. */
+  stack?: 'fields' | 'rows' | 'lead';
 }) {
   // A cell's column label for the stacked layout: the head's text, if any.
-  const labelOf = (j: number) => (stack === 'rows' && typeof head[j] === 'string' && head[j] ? (head[j] as string) : undefined);
+  const labelOf = (j: number) =>
+    (stack === 'rows' || stack === 'lead') && typeof head[j] === 'string' && head[j] ? (head[j] as string) : undefined;
   return (
     <table className="dx-table" data-stack={stack}>
       <caption className="sr-only">{caption}</caption>

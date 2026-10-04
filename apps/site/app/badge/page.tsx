@@ -18,12 +18,15 @@ export const metadata: Metadata = pageMeta({
     'Embed the badge. Link to your live score. Design coherence anyone can check.',
 });
 
+// The specimen papers. Light-site badges sit on a soft light grey, not pure
+// white: two #fff slabs a viewport were the brightest objects on the page and
+// outranked the code they illustrate.
 const VARIANTS = [
   {
     id: 'dark',
     label: 'Dark',
     desc: 'For light-background sites (most common).',
-    bg: '#ffffff',
+    bg: '#f3f4f6',
     file: 'badge.svg',
     w: 156,
     h: 32,
@@ -41,7 +44,7 @@ const VARIANTS = [
     id: 'compact',
     label: 'Compact',
     desc: 'Mark only, for footers, sidebars, and tight spaces.',
-    bg: '#ffffff',
+    bg: '#f3f4f6',
     file: 'badge-compact.svg',
     w: 28,
     h: 28,
@@ -131,7 +134,11 @@ export default function BadgePage() {
                       <h3 className="badge-snippet-name">{v.label}</h3>
                       <SnippetCopy text={snippet} label={`${v.label} embed snippet`} />
                     </div>
-                    <pre className="badge-snippet-code">
+                    {/* Each line stays whole and the well scrolls sideways
+                        when a line is wider than it (badge.css); where it
+                        does, lib/scroll-regions gives it a keyboard stop
+                        named by data-scroll-region and the edge fade. */}
+                    <pre className="badge-snippet-code" data-scroll-region={`${v.label} embed snippet`}>
                       <code>{snippet}</code>
                     </pre>
                   </div>

@@ -135,6 +135,10 @@ export default function ComparisonPage() {
                   <span className="row-title">What is design verification?</span>
                   <span className="row-meta">The category definition article</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/learn/what-is-design-verification</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -148,6 +152,10 @@ export default function ComparisonPage() {
                 <span className="row-body">
                   <span className="row-title">Why a public score</span>
                   <span className="row-meta">The argument for publishing the grade</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/learn/why-we-built-a-public-design-score</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

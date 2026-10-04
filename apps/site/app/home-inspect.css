@@ -10,6 +10,7 @@
    ONE OWNER PER PROPERTY PER ELEMENT. A running fill-both scroll animation
    beats a data-step declaration on the same property, so a shared property
    would silently freeze a state.
+     .ix-clip                      clip-path           static (3D only)
      .ix-scene                     transform           scrub (lean, --s1); loop
      .mp                           translate, rotate   event (flatten, step 4)
      plane [data-z]                translate           scrub (lift, --s1); loop
@@ -41,6 +42,7 @@
      data-ix-calm    reduced motion or the site's motion toggle (tiers below)
      data-ix-auto    the play-on-request loop owns the section
      data-ix-active  within a viewport of the screen: loops run, will-change
+     data-ix-fit     a fitted narrow specimen: card descriptions give way
    ========================================================================== */
 
 .home .home-inspect .home-split-head {
@@ -358,11 +360,21 @@
   background: var(--lv-ink-accent);
 }
 
+/* One baseline for the count and its total: both runs sit on the strip's
+   own row (a whole pixel; see "Digit strips") and share its bottom edge.
+   Centred, the 14.4px strip and the 11.5px "/42" line put the numerator 2px
+   above the total in every motion state (judged at 1440, 2026-10-03). */
 .inspect[data-ix-armed] .ix-count {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-end;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.ix-count-of {
+  display: block;
+  line-height: 1.25em;
+  line-height: round(1.25em, 1px);
 }
 
 .inspect-rail {
@@ -446,8 +458,19 @@
    canvas at the ratio it has at 1440 (15px on 681px, 2.2cqi), to 22px:
    capped at 15px the specimen shrank to 11px of a 903px window at 2560
    (judged 2026-10-03). Below 682px nothing changes. */
+/* One label size for every tag, chip and flag, in the page's root size: in
+   each element's own em they came out at 10, 11.1 and 11.3px side by side
+   (judged at 1440, 2026-10-03). --ix-tag-h is the label's height (line 1,
+   padding 0.38em each side); --ix-tag-dip is how far a tag reaches below
+   its outline's top edge (the one tag rule, below): 0.2 into the element
+   itself, clear of its glyphs. Where the label is larger than the page's
+   0.6em (it is at its 10px floor on a phone's stage), it rises above the
+   line instead of covering the text it names. */
 .inspect-canvas {
   --mp-fs: calc(clamp(8.5px, 2.45cqi, min(22px, max(15px, 2.2cqi))) * var(--ix-fit, 1));
+  --ix-tag-fs: max(10px, calc(0.74 * var(--mp-fs)));
+  --ix-tag-h: calc(1.76 * var(--ix-tag-fs));
+  --ix-tag-dip: calc(0.6 * var(--mp-fs));
   position: relative;
   container-type: inline-size;
   background:
@@ -462,6 +485,7 @@
    inline insets are the outlines' edges (the page's content edge less the
    0.5 outset every .ix-box takes), so log and outlines share two lines; it
    docks inside the page's foot: cards, 1.1em, log, 1.1em, edge. */
+.ix-clip,
 .ix-scene,
 .ix-verdict,
 .ix-log {
@@ -475,15 +499,20 @@
   --ix-log-h: 0px;
 }
 
+.inspect[data-ix-armed] .ix-clip,
 .inspect[data-ix-armed] .ix-scene,
 .inspect[data-ix-armed] .ix-verdict,
 .inspect[data-ix-armed] .ix-log {
   --ix-log-h: calc(var(--ix-log-rows) * var(--ix-log-lh) + 2 * var(--ix-log-pad));
 }
 
+/* The top padding keeps the nav's tag (centred on the nav outline's top
+   edge) inside the canvas where the 10px label floor outgrows 1.5em (a
+   phone's stage). */
 .mp {
   position: relative;
   padding: 1.5em 2.1em 2.2em;
+  padding-top: max(1.5em, calc(var(--ix-tag-h) + 0.1 * var(--mp-fs)));
   background: var(--mp-paper);
   font-family: var(--sans);
   font-size: var(--mp-fs);
@@ -510,14 +539,20 @@
   pointer-events: none;
 }
 
+/* The nav's outline ends ON its divider (--ix-out-b: -1px puts the
+   outline's bottom row on the border's row), so one rule draws where two
+   ran 6px apart (judged at 1440, 2026-10-03). Its block padding centres the
+   row between the outline's top and the divider, and clears the tag that
+   sits on the outline's top edge. Specimen type never drops below 10px:
+   --ix-fit and a phone's stage both shrink --mp-fs. */
 .mp-nav {
   position: relative;
   display: flex;
   align-items: center;
   gap: 2em;
-  padding-bottom: 1.1em;
+  padding-block: calc(0.5 * var(--mp-fs)) calc(0.9 * var(--mp-fs));
   border-bottom: 1px solid var(--mp-line);
-  font-size: 0.8em;
+  font-size: max(10px, 0.8em);
 }
 
 .mp-logo {
@@ -556,27 +591,35 @@
 }
 
 .mp-eyebrow {
-  font-size: 0.72em;
+  font-size: max(10px, 0.72em);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mp-accent);
 }
 
+/* 14em: at 13em the one-line headline sat on its cap to the pixel (457.5 of
+   458px at 1440) and wrapped to a one-word widow at 2560 (judged
+   2026-10-03). */
 .mp-h1 {
   position: relative;
-  max-width: 13em;
+  max-width: 14em;
   font-size: 2.35em;
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -0.025em;
+  /* Where it wraps (a phone's stage), no one-word widow ("trust."). */
+  text-wrap: balance;
 }
 
+/* The paragraph's top margin is the lane its tag needs above its outline:
+   the headline's outline ended 4.5px above that edge. */
 .mp-p {
   position: relative;
   max-width: 25em;
   margin: 0;
-  font-size: 1.02em;
+  margin-top: calc(var(--ix-tag-h) - 0.7 * var(--mp-fs));
+  font-size: max(10px, 1.02em);
   line-height: 1.55;
   color: var(--mp-muted);
 }
@@ -595,7 +638,7 @@
   border-radius: var(--mp-r-md);
   background: var(--mp-accent);
   color: var(--mp-on-accent);
-  font-size: 0.9em;
+  font-size: max(10px, 0.9em);
   font-weight: 600;
 }
 
@@ -619,9 +662,16 @@
   border-radius: var(--mp-r-lg);
   background: var(--mp-card);
   box-shadow: inset 0 0 0 1px var(--mp-line);
-  font-size: 0.78em;
+  font-size: max(10px, 0.78em);
   line-height: 1.4;
   color: var(--mp-muted);
+}
+
+/* A fitted specimen (inspect-sequence.tsx: a short tablet window) gives up
+   the card descriptions first, as a phone's stage does, so the 10px floor
+   costs no height. */
+.inspect[data-ix-fit] .mp-card > span {
+  display: none;
 }
 
 .mp-card b {
@@ -643,9 +693,18 @@
    lit state; the base state is the EXIT, quicker and unstaggered, so a layer
    leaving its step lifts off rather than replaying its arrival backwards. */
 
+/* The outline's block outsets, shared by the box, its footprint, its sheet
+   and the tag that sits on its top edge (the nav ends its own on its
+   divider). */
 .ix {
   --i: 0;
+  --ix-out-t: calc(-0.4 * var(--mp-fs));
+  --ix-out-b: calc(-0.4 * var(--mp-fs));
   position: relative;
+}
+
+.mp-nav.ix {
+  --ix-out-b: -1px;
 }
 
 /* Planes: each lifts by its own multiple of the plane gap. */
@@ -677,7 +736,7 @@
    outline jutted 10-12px past the others (judged at 1440, 2026-10-03), on a
    demo about measuring. Now every outline starts on one line. */
 .ix-box {
-  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
+  inset: var(--ix-out-t) calc(-0.5 * var(--mp-fs)) var(--ix-out-b);
   border-radius: var(--mp-r-sm);
   transition: opacity 380ms var(--ease-out) calc(var(--i, 0) * 70ms);
 }
@@ -703,7 +762,7 @@
    shows it. */
 .ix-foot {
   position: absolute;
-  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
+  inset: var(--ix-out-t) calc(-0.5 * var(--mp-fs)) var(--ix-out-b);
   border-radius: var(--mp-r-sm);
   border: 1px dashed var(--ix-head);
   background: var(--ix-foot-fill);
@@ -718,7 +777,7 @@
    sinks), its layers' opacity is the scrub (they come with the lift). */
 .ix-sheet {
   position: absolute;
-  inset: calc(-0.4 * var(--mp-fs)) calc(-0.5 * var(--mp-fs));
+  inset: var(--ix-out-t) calc(-0.5 * var(--mp-fs)) var(--ix-out-b);
   border-radius: var(--mp-r-sm);
   transform: translateZ(-1px);
   opacity: 0;
@@ -770,64 +829,30 @@
   border-radius: var(--mp-r-xs);
   font-family: var(--mono);
   font-weight: 500;
-  font-size: max(10px, 0.74em);
+  font-size: var(--ix-tag-fs);
   line-height: 1;
   white-space: nowrap;
   transform: translateY(4px);
 }
 
-/* Inside the headline, em is the headline's size: scale the chips back. */
-.mp-h1 .ix-tag,
-.mp-h1 .ix-chip,
-.mp-h1 .ix-flag {
-  font-size: max(10px, 0.315em);
-}
-
+/* ONE TAG RULE. Every tag sits on its outline's top edge (centred on it at
+   desktop sizes; see --ix-tag-dip) and ends flush with the outline's right
+   edge, in the page's root size like the outlines. Hand-placed, the five
+   tags had right insets of 1.8 to 14.2px and four anchoring schemes
+   (judged at 1440, 2026-10-03).
+   The button's outline is narrower than its tag, so its tag takes the lane
+   beside it instead, one outline outset (0.5) clear of the outline. */
 .ix-tag {
-  left: -0.5em;
-  bottom: calc(100% + 0.7em);
+  top: calc(var(--ix-out-t) + var(--ix-tag-dip) - var(--ix-tag-h));
+  right: calc(-0.5 * var(--mp-fs));
   background: var(--ix-head);
   color: var(--ix-head-ink);
 }
 
-.mp-nav .ix-tag {
-  top: calc(100% + 0.6em);
-  bottom: auto;
-  left: auto;
-  right: 0;
-}
-
-.mp-cards .ix-tag {
-  top: calc(100% + 0.7em);
-  bottom: auto;
-}
-
-/* Armed, the log docks under the cards, so their tag takes the lane on the
-   row's top border instead (the phone lane, below). */
-.inspect[data-ix-armed] .mp-cards .ix-tag {
-  top: -0.95em;
-  left: auto;
-  right: 0.6em;
-}
-
-/* Each tag sits where the page has room for it, the way an inspector does. */
-.mp-h1 .ix-tag {
-  left: auto;
-  right: -0.2em;
-  bottom: calc(100% + 0.3em);
-}
-
-.mp-p .ix-tag {
-  left: auto;
-  right: -0.5em;
-  bottom: auto;
-  top: calc(100% + 0.55em);
-}
-
 .mp-btn .ix-tag {
-  left: calc(100% + 0.9em);
-  bottom: auto;
   top: 50%;
+  right: auto;
+  left: calc(100% + var(--mp-fs));
   translate: 0 -50%;
 }
 
@@ -1356,7 +1381,8 @@
   background: var(--mp-paper);
   color: var(--mp-ink);
   font-weight: 700;
-  font-size: 0.9em;
+  /* 0.9em of the phone log's 0.64rem is 9.2px: floored like the specimen. */
+  font-size: max(10px, 0.9em);
 }
 
 .ix-log-pin.is-warn { box-shadow: 0 0 0 1.5px var(--ix-warn); }
@@ -1397,6 +1423,18 @@
 .digit-strip-rows > span {
   display: block;
   height: var(--ds-lh);
+}
+
+/* The row is a whole pixel. The strip writes --ds-lh = 1.25em inline
+   (lib/digit-strip), 14.4px on the 11.52px title bar, so a strip moved in
+   steps() came to rest on fractional offsets (14 rows = 201.6px) and showed
+   doubled strokes between rows (judged at 1440, 2026-10-03). Rounded, every
+   step lands on an exact row. !important only to outrank the inline value;
+   browsers without round() keep the inline 1.25em. */
+@supports (width: round(1.25em, 1px)) {
+  .inspect .digit-strip {
+    --ds-lh: round(1.25em, 1px) !important;
+  }
 }
 
 /* The checks-run counter: a third per step, each third its own segment.
@@ -1481,9 +1519,17 @@
    the findings sink and, 120ms later, the page flattens: .mp counter-rotates
    the scene's lean about the same origin, rotateX(t) translateZ(-r) then
    translateZ(r) rotateX(-t), which is exactly the identity. */
-.inspect[data-ix-3d] .inspect-canvas {
+/* The lens sits on .ix-clip, the scene's flat wrapper (the same box as the
+   canvas), because the wrapper also clips: the leaned paper's foot showed
+   between the log and the window's floor, a second white plate under the
+   log in light (judged at 1440, 2026-10-03). The page now ends on the log's
+   top edge, one line from window edge to window edge, and the log row is
+   the inspector's own well. clip-path flattens the element it sits on, so
+   it can never go on .ix-scene, the 3D root. */
+.inspect[data-ix-3d] .ix-clip {
   perspective: var(--ix-persp);
   perspective-origin: var(--ix-persp-origin);
+  clip-path: inset(0 0 calc(var(--ix-dock-b) + var(--ix-log-h)) 0);
 }
 
 .inspect[data-ix-3d] .ix-scene,
@@ -1510,17 +1556,23 @@
     translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
 }
 
+/* A sunk plane rests 1px ABOVE the paper, as its footprint does (ix-foot),
+   and lands on a curve that cannot overshoot. On --ease-land, translateZ(-z)
+   overshot the lift (net -1.3px at 1440), the plane passed behind the paper
+   and blinked out for ~100ms at the payoff; at rest, net 0 left DOM order as
+   the only tiebreak (judged at 390 and 1440, 2026-10-03). The weight of the
+   landing is the page's flatten, which stays on --ease-land. */
 .inspect[data-ix-3d][data-step="3"] .mp [data-verdict="pass"],
 .inspect[data-ix-3d][data-step="4"] .mp [data-z] {
-  transform: translateZ(calc(-1 * var(--z)));
+  transform: translateZ(calc(1px - var(--z)));
   transition:
-    transform 480ms var(--ease-land) calc(var(--i) * 40ms),
+    transform 480ms var(--ease-out) calc(var(--i) * 40ms),
     translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
 }
 
 .inspect[data-ix-3d][data-step="4"] .mp [data-z] {
   transition:
-    transform 480ms var(--ease-land) calc((var(--i) - 2) * 40ms),
+    transform 480ms var(--ease-out) calc((var(--i) - 2) * 40ms),
     translate 600ms var(--ease-out) calc(200ms + var(--i) * 60ms);
 }
 
@@ -1820,12 +1872,29 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
     top: 4.75rem;
     z-index: 2;
     padding-bottom: 0.75rem;
-    background: linear-gradient(180deg, var(--paper) 88%, transparent);
+    background: var(--paper);
+  }
+  /* The list fades out where it passes under the pinned stage, so no glyph
+     is guillotined by the stage's edge (judged at 390, 2026-10-03: the
+     step-01 heading sliced at the window's bottom, its body reading as the
+     stage's caption). A mask on the list would scroll with the list; this
+     fade is the stage's own, so it holds at S in the viewport: paper at S,
+     the page by S + 1.5rem. Nothing animates. */
+  .inspect > .inspect-stage::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 1.5rem;
+    background: linear-gradient(180deg, var(--paper), transparent);
+    pointer-events: none;
   }
   .inspect-caption { display: none; }
-  /* Under the pinned stage, then the list: it scrolls away with the steps. */
+  /* Under the pinned stage, then the list: it scrolls away with the steps.
+     Its top margin keeps it clear of the stage's fade at rest. */
   .inspect > .ix-play {
     order: 0;
+    margin-top: 1.5rem;
     margin-inline-start: 1.2rem;
   }
   .inspect > .inspect-steps {
@@ -1845,6 +1914,19 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
        the lit step's heading stays clear of the stage for its whole turn. */
     min-height: var(--ix-step-h, 46vh);
     align-content: start;
+    transition: opacity 300ms var(--ease-out);
+  }
+  /* A step that has been read leaves with the scroll: as its successor
+     lights, it fades out of the band between the stage and the reading
+     line, so the paragraph just read never sits under the stage as if it
+     were its caption (judged at 390, 2026-10-03). Scrolling back up relights
+     it there. Opacity 0, never a partial value (a dimmed step must stay
+     readable, see above). Not while the play loop drives the step, and not
+     when the stage rests unpinned (every step lit as a list). */
+  .inspect:not([data-pin="off"], [data-ix-auto]):is([data-step="2"], [data-step="3"], [data-step="4"]) [data-inspect-step="1"],
+  .inspect:not([data-pin="off"], [data-ix-auto]):is([data-step="3"], [data-step="4"]) [data-inspect-step="2"],
+  .inspect:not([data-pin="off"], [data-ix-auto])[data-step="4"] [data-inspect-step="3"] {
+    opacity: 0;
   }
   /* The last step needs no spacing after it: the pinned stage releases when
      the list ends, so trailing space only kept step 4's heading parked under
@@ -1874,6 +1956,9 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .inspect[data-pin="off"] .inspect-stage {
     position: relative;
     top: auto;
+  }
+  .inspect[data-pin="off"] .inspect-stage::after {
+    display: none;
   }
   .inspect[data-pin="off"] .inspect-step {
     min-height: 0;
@@ -1959,6 +2044,7 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
     display: none;
   }
 
+  .ix-clip,
   .ix-scene,
   .ix-verdict,
   .ix-log {
@@ -1994,18 +2080,12 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   }
 
   /* The specimen's smallest type read at 6-7px here (judged at 390,
-     2026-10-03). The card descriptions give up their room, and what stays is
-     floored at 10px, so depth never costs legibility. The nav links stay:
-     the read tag counts them ("4 links"), and they fit at 10px. */
+     2026-10-03). The card descriptions give up their room; what stays is
+     floored at 10px in the base rules, so depth never costs legibility. The
+     nav links stay: the read tag counts them ("4 links"), and they fit. */
   .mp-card > span {
     display: none;
   }
-
-  .mp-nav { font-size: max(10px, 0.8em); }
-  .mp-eyebrow { font-size: max(10px, 0.72em); }
-  .mp-p { font-size: max(10px, 1.02em); }
-  .mp-btn { font-size: max(10px, 0.9em); }
-  .mp-card { font-size: max(10px, 0.78em); }
 
   .ix-log-rows {
     display: grid;
@@ -2029,39 +2109,15 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .ix-log-bar {
     align-self: center;
   }
-
-  /* Every tag gets a lane of its own, the way an inspector draws them. At a
-     phone-width stage the outside placements collided (measured at 390px,
-     2026-10-03): the h1 tag landed on the nav tag and the eyebrow, the
-     button tag covered the paragraph tag, and the article tag hung off the
-     window's bottom edge. Each now sits in free space on its own element: the
-     h1 tag after "trust.", the paragraph tag after its short second line,
-     the article tag straddling the card row's top border. */
-  .mp-h1 .ix-tag {
-    top: auto;
-    bottom: 0.45em;
-    right: 0.45em;
-    left: auto;
-  }
-  .mp-p .ix-tag {
-    top: auto;
-    bottom: 0.3em;
-    right: 0.3em;
-    left: auto;
-  }
-  .mp-cards .ix-tag {
-    top: -0.95em;
-    bottom: auto;
-    left: auto;
-    right: 0.6em;
-  }
 }
 
-/* Narrower still (a phone's stage, ~356px), the paragraph's second line runs
-   the full box and no lane is free: its tag would cover the text it measures.
-   An inspector that hides what it inspects is worse than one tag fewer; the
-   other four still tell step one. */
+/* A phone's stage (~356px): the paragraph's tag stands down and gives its
+   lane back. Its lane would cost the stage the height it needs to pin, and
+   the log still names the paragraph ("nav · h1 · p · ..."). */
 @container (max-width: 400px) {
+  .mp-p {
+    margin-top: 0;
+  }
   .mp-p .ix-tag {
     display: none;
   }

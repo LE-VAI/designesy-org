@@ -4,13 +4,12 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
-import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 import '../../instrument.css';
 import '../work.css';
-import { ViewsReadout } from '../case-instrument';
+import { InputList, SourceList, ViewsReadout, type Input, type Source } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'Tile: case study',
@@ -111,7 +110,32 @@ const FINDINGS = [
   'Single engagement data point: 617 views is one post on one day',
 ];
 
-const SOURCES = [
+/* Each input's datum sits in its row's side pane: the host, the tool's
+   kind, the account it went out on, the contract version. */
+const INPUTS: Input[] = [
+  {
+    title: 'Artifact',
+    meta: 'Self-contained single index.html on GitHub Pages: no framework, no CDN, no backend',
+    side: ['le-vai.github.io/tile'],
+  },
+  {
+    title: 'Purpose claim',
+    meta: 'Compose a series grid that stays related without template energy',
+    side: ['Series composer'],
+  },
+  {
+    title: 'Audience and context',
+    meta: 'Public builders and creators on X',
+    side: ['@levainbey'],
+  },
+  {
+    title: 'Governing rules',
+    meta: 'Kit One Design Review · VAI brand boundary',
+    side: [`Contract ${CONTRACT_VERSION}`],
+  },
+];
+
+const SOURCES: Source[] = [
   {
     href: 'https://le-vai.github.io/tile/',
     title: 'Tile · live artifact',
@@ -213,38 +237,7 @@ export default function TileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="inputs">
           <h2 className="doctrine-heading">Inputs used</h2>
-          <div className="row-stack" role="list">
-            <ToggleRow index="01">
-              <span className="row-body">
-                <span className="row-title">Artifact</span>
-                <span className="row-meta">https://le-vai.github.io/tile/</span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="02">
-              <span className="row-body">
-                <span className="row-title">Purpose claim</span>
-                <span className="row-meta">
-                  Compose a series grid that stays related without template energy
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="03">
-              <span className="row-body">
-                <span className="row-title">Audience and context</span>
-                <span className="row-meta">
-                  Public builders and creators on X via @levainbey
-                </span>
-              </span>
-            </ToggleRow>
-            <ToggleRow index="04">
-              <span className="row-body">
-                <span className="row-title">Governing rules</span>
-                <span className="row-meta">
-                  Contract {CONTRACT_VERSION} · Kit One Design Review · VAI brand boundary
-                </span>
-              </span>
-            </ToggleRow>
-          </div>
+          <InputList items={INPUTS} />
         </section>
 
         <section className="doctrine-section fade-up" id="dimensions">
@@ -287,26 +280,7 @@ export default function TileCaseStudyPage() {
 
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources used</h2>
-          <div className="row-stack" role="list">
-            {SOURCES.map((item, i) => (
-              <div role="listitem" key={item.href}>
-                <Link
-                  href={item.href}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item.title}</span>
-                    <span className="row-meta">{item.meta}</span>
-                  </span>
-                </Link>
-              </div>
-            ))}
-          </div>
+          <SourceList items={SOURCES} />
         </section>
 
         <div className="status-note">

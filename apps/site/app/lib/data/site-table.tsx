@@ -6,7 +6,7 @@
 
 import Link from 'next/link';
 import { BATCH_CATEGORIES, fmt, toneOf, type CohortSite } from './cohort';
-import { CategoryProfile } from './cells';
+import { CategoryProfile, HeldTag } from './cells';
 
 export function SiteTable({
   sites,
@@ -72,9 +72,7 @@ export function SiteTable({
                   </span>
                   {s.self && <span className="dx-tag">self-scored</span>}
                   {s.unreachable && (
-                    <span className="dx-tag" data-kind="held">
-                      held over from <time dateTime={s.scoredAt ?? undefined}>{s.scoredAt}</time>
-                    </span>
+                    <HeldTag date={s.scoredAt} />
                   )}
                 </span>
               </th>

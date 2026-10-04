@@ -22,21 +22,24 @@ const ARTICLES = [
     title: 'What is design verification?',
     lede:
       'The automated evaluation of a live site against a published design system contract, distinct from linting, regression, and heuristic review.',
-    meta: 'Category definition · 6 min',
+    kind: 'Category definition',
+    minutes: 6,
   },
   {
     slug: 'design-verification-vs-linting-vs-visual-regression',
     title: 'Design verification vs design linting vs visual regression',
     lede:
       'Three adjacent practices, three different questions. Token drift, baseline diffing, and contract conformance: where each one fails alone.',
-    meta: 'Comparison · 5 min',
+    kind: 'Comparison',
+    minutes: 5,
   },
   {
     slug: 'why-we-built-a-public-design-score',
     title: 'Why we built a public design score',
     lede:
       'A score is a contract you can run. Making it public forces honesty: the same checks that score your site score ours, with the same thresholds.',
-    meta: 'Position · 4 min',
+    kind: 'Position',
+    minutes: 4,
   },
 ];
 
@@ -81,9 +84,14 @@ export default function LearnPage() {
                   </span>
                   <span className="row-body">
                     <span className="row-title">{article.title}</span>
-                    <span className="row-meta">
-                      {article.lede} · {article.meta}
-                    </span>
+                    <span className="row-meta">{article.lede}</span>
+                  </span>
+                  {/* The article's kind over its read time: data, so it sits
+                      in the side pane on the 7-line, with the arrow. */}
+                  <span className="row-side">
+                    <span className="row-side-line">{article.kind}</span>
+                    <span className="row-side-line">{article.minutes} min read</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
                 </Link>
               </div>

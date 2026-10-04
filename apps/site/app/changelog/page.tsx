@@ -63,21 +63,10 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
   verification: 'Verification',
 };
 
-const DIMENSION_COLORS: Record<Dimension, string> = {
-  all: 'var(--signal-text)',
-  tokens: 'var(--signal-text)',
-  motion: 'var(--signal-text)',
-  cadence: 'var(--signal-text)',
-  accessibility: 'var(--ok)',
-  takt: 'var(--signal-text)',
-  poise: 'var(--signal-text)',
-  acoustics: 'var(--signal-text)',
-  copywriting: 'var(--signal-text)',
-  identity: 'var(--signal-text)',
-  security: 'var(--error)',
-  semantic: 'var(--signal-text)',
-  verification: 'var(--signal-text)',
-};
+// Every dimension value renders in the one colour (.changelog-dimension in
+// changelog.css). Accessibility used to take --ok and Security --error, so an
+// entry that ADDED a security check read as a failure: a category never
+// borrows a state colour; its label names it.
 
 // ── Changelog entries ───────────────────────────────────────────────────────
 
@@ -327,6 +316,20 @@ const FIRST_OF_DIMENSION = new Set(
 
 // ── Change badges ───────────────────────────────────────────────────────────
 
+// The version summary: one row per contract version, laid out as the log
+// above it is (a title and its one-line description in the face; version,
+// date and check count in the side pane's key).
+const VERSIONS: { version: string; date: string; checks: number; title: string; summary: string }[] = [
+  { version: 'v0.1.0', date: '2026-06-15', checks: 22, title: 'Initial contract', summary: 'Tokens, motion, accessibility, identity, security. Deterministic engine.' },
+  { version: 'v0.1.1', date: '2026-06-28', checks: 24, title: 'Poise adopted', summary: 'Interaction rules adopted from Lab One.' },
+  { version: 'v0.1.2', date: '2026-07-05', checks: 26, title: 'Takt adopted', summary: 'Interface-feel rules adopted from Lab Two.' },
+  { version: 'v0.1.3', date: '2026-07-12', checks: 38, title: 'Cadence adopted', summary: 'Typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
+  { version: 'v0.3.0', date: '2026-07-20', checks: 38, title: 'Acoustics adopted', summary: 'Mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
+  { version: 'v0.4.0', date: '2026-07-28', checks: 40, title: 'Copywriting adopted', summary: '4 copywriting checks. Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
+  { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
+  { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
+];
+
 const CHANGE_COLORS: Record<string, string> = {
   added: 'var(--ok)',
   modified: 'var(--signal-text)',
@@ -428,7 +431,7 @@ export default function ChangelogPage() {
                     </div>
                     <div>
                       <dt>Dimension</dt>
-                      <dd style={{ color: DIMENSION_COLORS[entry.dimension] }}>
+                      <dd className="changelog-dimension">
                         {DIMENSION_LABELS[entry.dimension]}
                       </dd>
                     </div>
@@ -463,33 +466,35 @@ export default function ChangelogPage() {
         {/* Version summary */}
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Version summary</h2>
+          {/* The same row as the log: the shared grid and gap (no inline
+              override, so the body starts on the log's x) and the same key
+              in the side pane, here version, date and checks. */}
           <div className="row-stack" role="list">
-            {[
-              { version: 'v0.1.0', date: '2026-06-15', checks: 22, summary: 'Initial contract: tokens, motion, accessibility, identity, security. Deterministic engine.' },
-              { version: 'v0.1.1', date: '2026-06-28', checks: 24, summary: 'Poise interaction rules adopted from Lab One.' },
-              { version: 'v0.1.2', date: '2026-07-05', checks: 26, summary: 'Takt interface-feel rules adopted from Lab Two.' },
-              { version: 'v0.1.3', date: '2026-07-12', checks: 38, summary: 'Cadence typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
-              { version: 'v0.3.0', date: '2026-07-20', checks: 38, summary: 'Acoustics mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
-              { version: 'v0.4.0', date: '2026-07-28', checks: 40, summary: 'Copywriting adopted (4 checks). Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
-              { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, summary: 'Semantic category wired (v42 color vocabulary + v43 status colors). Reserved weight 12 now scored.' },
-              { version: 'v0.4.1', date: '2026-09-28', checks: 42, summary: 'Editorial revision: the contract text follows the public-copy rules. No rule, value, token or check changed. Current version.' },
-            ].map((v, i) => (
-              <div
-                key={v.version}
-                className="row"
-                role="listitem"
-                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}
-              >
+            {VERSIONS.map((v, i) => (
+              <div key={v.version} className="row changelog-entry" role="listitem">
                 <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
-                <span className="row-body">
-                  <span className="row-title">
-                    {v.version}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--muted-dim)', marginLeft: '0.75rem' }}>
-                      {v.date} · {v.checks} checks
-                    </span>
-                  </span>
-                  <span className="row-meta">{v.summary}</span>
-                </span>
+                <div className="row-body">
+                  <span className="row-title">{v.title}</span>
+                  <p className="changelog-entry-desc">{v.summary}</p>
+                </div>
+                <div className="changelog-entry-side">
+                  <dl className="changelog-entry-meta">
+                    <div>
+                      <dt>Version</dt>
+                      <dd className="changelog-version">{v.version}</dd>
+                    </div>
+                    <div>
+                      <dt>Date</dt>
+                      <dd>
+                        <time dateTime={v.date}>{v.date}</time>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Checks</dt>
+                      <dd className="changelog-check-count">{v.checks}</dd>
+                    </div>
+                  </dl>
+                </div>
               </div>
             ))}
           </div>

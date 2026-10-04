@@ -1,0 +1,59 @@
+/* Design system contract page (/contracts/design-system) only. Imported by
+   its page.tsx, so Next.js splits it to this route. Every selector carries a
+   class this page alone sets (.ds-*), so the rules stay put if the sheet
+   outlives a client-side navigation. */
+
+/* An absence in the design.md comparison. "Not covered" is not a value, so it
+   reads in --muted-dim (4.81:1 dark, 4.90:1 light on --mat-reading) behind a
+   drawn dash, never in the --muted of the real values beside it. The dash is
+   CSS, so it stays out of the copy (the voice gate counts em dashes in the
+   built HTML) and out of the accessible name (aria-hidden on its span). */
+.ds-labelled .ds-absent {
+  color: var(--muted-dim);
+}
+
+.ds-labelled .ds-dash::before {
+  content: "\2014";
+  margin-inline-end: 0.4em;
+}
+
+/* Stacked tables. From 720px down the head row is hidden and each row runs
+   one cell per line, so "Acoustic cues / Not covered / 10 named cue tokens"
+   had no column names at all. Each labelled cell carries its column's name
+   as an 11px eyebrow above its value: the head row's own caps and tracking,
+   in --muted (7.56:1 dark, 7.36:1 light on --mat-reading). The
+   generated text is part of the cell's accessible name, which is what a
+   screen reader needs there: the hidden head row takes its column headers
+   out of the accessibility tree. */
+@media (max-width: 720px) {
+  .ds-labelled .token-table-row > [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: var(--space-2);
+    font: 600 0.6875rem/1.35 var(--sans);
+    font-variant-numeric: normal;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* The eyebrow opens a row's second cell: 8px from the cell above it
+     (4px of row gap plus 4px here), so each label groups with its own
+     value, not the line before it. */
+  .ds-labelled .token-table-row > [data-label] {
+    margin-top: var(--space-4);
+  }
+}
+
+/* An adoption heading names the lab; the version it arrived in rides the
+   heading's line as quiet data, not a second label repeating the heading in
+   the card below. Mono, tabular, --muted (7.98:1 dark, 7.11:1 light on
+   paper). */
+.ds-adopted {
+  margin-inline-start: var(--space-4);
+  font: 500 0.8125rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--muted);
+  white-space: nowrap;
+}

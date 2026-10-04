@@ -8,6 +8,8 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { designReviewKit } from '../../lib/kits/design-review';
+import { labs } from '../../lib/labs';
 
 export const metadata: Metadata = pageMeta({
   title: 'Acoustics field check',
@@ -152,36 +154,47 @@ const VERIFICATION = [
   'Checked naming: Acoustics remains human product language; Cuelume is attributed',
 ];
 
+const REVIEWED = '2026-08-01';
+
+const SUMMARY =
+  'Acoustics is a considered lab. The cue grid confirms all ten tokens fire their named Cuelume sounds on hover (fine pointer) and press. Sound defaults off under reduced motion; the toggle remains functional. No focus-event sounds fire during keyboard navigation. Silent fallback handles blocked Web Audio without errors. Nine mapping rules are adopted into design system contract v0.3.0. Five accessibility protections are documented and verified. Eight anti-patterns are explicitly prohibited. Two tensions remain: this field check page did not exist until now (resolved by this page), and Cuelume engine coupling is a durability risk. Acoustic rules are adopted; remaining work is engine maintenance and synchronization.';
+
 const SOURCES = [
   {
     href: '/labs/acoustics',
     title: 'Lab Four · Acoustics',
     meta: 'Artifact under review',
+    role: `Artifact · lab v${labs.acoustics.version}`,
   },
   {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
     meta: 'Method and output format',
+    role: `Method · kit v${designReviewKit.version}`,
   },
   {
     href: '/contracts/design-system',
     title: 'Design system contract',
     meta: 'Governing tokens · acoustic section adopted in v0.3.0',
+    role: `Rules · ${CONTRACT_VERSION}`,
   },
   {
     href: '/acoustic-tokens',
     title: 'Acoustic token reference',
     meta: 'Nineteen cues, nineteen roles: the sound parallel to the visual token system',
+    role: 'Reference',
   },
   {
     href: '/review/poise',
     title: 'Field check · Poise',
     meta: 'Prior field check pattern (Lab One)',
+    role: 'Prior review',
   },
   {
     href: '/review',
     title: 'Review surface',
     meta: 'Eight dimensions doctrine',
+    role: 'Doctrine',
   },
 ];
 
@@ -212,29 +225,41 @@ export default function AcousticsFieldCheckPage() {
             <span className="status-badge">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · /labs/acoustics</span>
-            <span className="lab-meta-item">Date · 2026-08-01</span>
+            <span className="lab-meta-item">Date · {REVIEWED}</span>
           </div>
           <AgentActions mdPath="/review/acoustics.md" label="the acoustics review" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">
           <h2 className="doctrine-heading">Summary</h2>
-          <div className="definition">
-            <p className="definition-label">Outcome · pass with notes</p>
-            <p>
-              Acoustics is a considered lab. The cue grid confirms all ten tokens
-              fire their named Cuelume sounds on hover (fine pointer) and press.
-              Sound defaults off under reduced motion; the toggle remains
-              functional. No focus-event sounds fire during keyboard navigation.
-              Silent fallback handles blocked Web Audio without errors. Nine
-              mapping rules are adopted into design system contract v0.3.0.
-              Five accessibility protections are documented and verified. Eight
-              anti-patterns are explicitly prohibited. Two tensions remain:
-              this field check page did not exist until now (resolved by this
-              page), and Cuelume engine coupling is a durability risk. Acoustic
-              rules are adopted; remaining work is engine maintenance and
-              synchronization.
-            </p>
+          <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
+            <div className="definition-face">
+              <p className="definition-label">Outcome · pass with notes</p>
+              <p>{SUMMARY}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="warn">
+                Pass with notes
+              </span>
+              <dl>
+                <div>
+                  <dt>Kit</dt>
+                  <dd>Design Review v{designReviewKit.version}</dd>
+                </div>
+                <div>
+                  <dt>Artifact</dt>
+                  <dd>/labs/acoustics</dd>
+                </div>
+                <div>
+                  <dt>Adopted</dt>
+                  <dd>Contract v0.3.0</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{REVIEWED}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -248,6 +273,9 @@ export default function AcousticsFieldCheckPage() {
                   https://www.designesy.org/labs/acoustics
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{ARTIFACT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="02">
               <span className="row-body">
@@ -255,6 +283,9 @@ export default function AcousticsFieldCheckPage() {
                 <span className="row-meta">
                   Make interaction sound a token system
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{PURPOSE}}'}</span>
               </span>
             </ToggleRow>
             <ToggleRow index="03">
@@ -264,6 +295,9 @@ export default function AcousticsFieldCheckPage() {
                   Public builders, agents, and reviewers on designesy.org
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{CONTEXT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="04">
               <span className="row-body">
@@ -271,6 +305,9 @@ export default function AcousticsFieldCheckPage() {
                 <span className="row-meta">
                   Contract v0.3.0 acoustic section · Kit One Design Review · Cuelume v0.2.2
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{RULES}}'}</span>
               </span>
             </ToggleRow>
           </div>
@@ -347,6 +384,10 @@ export default function AcousticsFieldCheckPage() {
                     <span className="row-title">{item.title}</span>
                     <span className="row-meta">{item.meta}</span>
                   </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.role}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
+                  </span>
                 </Link>
               </div>
             ))}
@@ -368,6 +409,10 @@ export default function AcousticsFieldCheckPage() {
                   <span className="row-title">Open Lab Four · Acoustics</span>
                   <span className="row-meta">Live artifact</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/labs/acoustics</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -381,6 +426,10 @@ export default function AcousticsFieldCheckPage() {
                 <span className="row-body">
                   <span className="row-title">Acoustic token reference</span>
                   <span className="row-meta">Nineteen cues, nineteen roles</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/acoustic-tokens</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -396,6 +445,10 @@ export default function AcousticsFieldCheckPage() {
                   <span className="row-title">Field check · Cadence</span>
                   <span className="row-meta">Prior field check pattern (Lab Three)</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/review/cadence</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -409,6 +462,10 @@ export default function AcousticsFieldCheckPage() {
                 <span className="row-body">
                   <span className="row-title">Use Kit One · Design Review</span>
                   <span className="row-meta">Run the same method on your work</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/kits/design-review</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

@@ -1041,6 +1041,39 @@ html[data-motion="paused"] .vc-glow {
   font-size: 0.8rem;
 }
 
+/* A phone's hero: the cohort is a list on one set of columns, name | score
+   | grade, one entry per row, and "Lowest" is a row of its own on the same
+   columns. Flex-wrapped it broke 1-1-2 with nothing aligned (judged at 390,
+   2026-10-03). Each row is the link's own 44px touch box, ruled off from
+   the next by a hairline, so the pitch is the target, not target plus gap.
+   Scores start on one x, so their decimals line up ("44.9%" included). */
+@container g12 (width < 40rem) {
+  .hero-cohort-list {
+    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0 0.75rem;
+  }
+  .hero-cohort-list > li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    gap: normal; /* a subgrid's normal gap is the list's */
+    box-sizing: content-box; /* the hairline adds to the 44px, as on links */
+    min-height: 44px;
+  }
+  .hero-cohort-list > li + li {
+    border-top: 1px solid var(--line-faint);
+  }
+  .hero-cohort-link {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    gap: normal;
+  }
+}
+
 /* ==========================================================================
    Contract health: cell meters (contract-health-rack.tsx). Twenty cells a
    meter, five points a cell; the leftover points show as one dimmer cell.

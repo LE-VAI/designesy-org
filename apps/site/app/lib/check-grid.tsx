@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import type { CheckItem } from './check-items';
 
 function pad(n: number) {
@@ -21,23 +21,80 @@ function statusClass(status?: string) {
 }
 
 /**
- * Columns the grid takes at full width (its own width >= 64rem), chosen from
- * the item count so every row closes: 3 for 3, 6 and 9; 5 for 5, 10 and 15;
- * 4 for 4, 8 and 16; a dense grid opens to 6 for 6, 11 and 12 and to 7 for 14
- * (7 only from 80rem; below that 14 dense cells sit 4-up).
- * Any other count takes 4 and its last cell closes the row (globals.css,
- * "Count-aware columns"). auto-fit only drops empty tracks when there are
- * fewer items than columns, so 5, 6, 7, 9, 10 or 11 items used to end on 1-3
- * blank tiles painted as panel.
+ * Layout at full width (the grid's own width >= 64rem). Every family sits on
+ * ONE track list: the shell's twelve modules, with the 1px seams on the
+ * module's gutter centres (globals.css, "Count-aware columns"). So a cell
+ * spans 3 (4-up), 4 (3-up), 6 (2-up) or 12, and every seam a grid draws is a
+ * seam the 4-up, 3-up and 2-up grids stacked beside it draw too. The rows
+ * close by count:
+ *   3, 6, 9, 15 ...        3-up
+ *   4, 8, 12, 16 ...       4-up (a dense 12 too: six columns were 183px)
+ *   5                      3 + 2
+ *   10                     4 + 4 + 2
+ *   7, 11 ...  (4n + 3)    4-up, then a row of three
+ *   14, 22 ... (4n + 2)    4-up, then two rows of three (4 + 4 + 3 + 3)
+ *   13, 17 ... (4n + 1)    4-up, then three rows of three
+ *   long titles (mean over LONG_TITLE characters)
+ *                          2-up; an odd count opens on a row of three
+ * Five-up was the old answer for 5, 10 and 15, and its seams sat on no module
+ * line; seven-up for a dense 14 left one 885px cell under three rows of four.
  */
-function wideCols(count: number, dense: boolean, stack: boolean) {
+const LONG_TITLE = 70;
+
+function wideSpans(
+  count: number,
+  stack: boolean,
+  long: boolean,
+): number[] {
+  const all = (span: number) => Array.from({ length: count }, () => span);
+  if (stack || count <= 1) return all(12);
+  if (count === 2) return all(6);
+  if (long) {
+    // three peers open an odd count, then pairs: no cell takes the row
+    return count % 2 === 1 ? all(6).map((s, i) => (i < 3 ? 4 : s)) : all(6);
+  }
+  if (count === 5) return [4, 4, 4, 6, 6];
+  if (count === 10) return all(3).map((s, i) => (i >= 8 ? 6 : s));
+  if (count % 3 === 0 && count % 4 !== 0) return all(4);
+  // four-up; the remainder closes on rows of three
+  const threes = [0, 9, 6, 3][count % 4];
+  return all(3).map((s, i) => (i >= count - threes ? 4 : s));
+}
+
+/**
+ * The middle tier (34-64rem) is two-up, an odd last cell taking the row, but
+ * from 40rem a short-titled 6, 9 or 15 keeps three columns (span 4), the
+ * same list home's 3 x 3 principle cells set.
+ */
+function midCols(count: number, stack: boolean, long: boolean) {
   if (stack || count <= 1) return 1;
-  if (count === 2) return 2;
-  if (dense && count === 14) return 7;
-  if (dense && (count % 6 === 0 || count === 11)) return 6;
-  if (count % 5 === 0) return 5;
-  if (count % 3 === 0 && count % 4 !== 0) return 3;
-  return 4;
+  return !long && count > 3 && count % 3 === 0 ? 3 : 2;
+}
+
+/**
+ * CSS names and values set in a title (`--radius-sm`, `var(--signal)`,
+ * `text-decoration-skip-ink:`, `prefers-reduced-motion`, `:root`) are code:
+ * mono, and never broken at their own hyphens (a hyphen is a line-break
+ * opportunity whatever `hyphens` says, so "--radius-" / "sm 4px" happened in
+ * a 235px cell). Plain hyphenated words ("press-and-release") stay prose.
+ */
+const CODE_TOKEN =
+  /(^|[^\w-])(var\(--[\w-]+\)|--[a-z][\w-]*|:root|[a-z]+(?:-[a-z0-9]+)+(?=:)|(?:prefers|margin|padding|border|font|text|user|will|focus|tabular|inset|scroll|overflow|line|letter|word|white|align|justify|grid|flex|place|box|outline|transition|animation|transform|backdrop|background|aspect|pointer|touch|data)-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z]+(?:-[a-z]+)*-\d+)(?![\w-])/g;
+
+// No lookbehind in the pattern (a parse error before Safari 16.4 would take
+// the whole client bundle down): the boundary is a captured leading character.
+function withCode(text: string): ReactNode {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(CODE_TOKEN)) {
+    const start = (m.index ?? 0) + m[1].length;
+    if (start > last) out.push(text.slice(last, start));
+    out.push(<code key={start}>{m[2]}</code>);
+    last = start + m[2].length;
+  }
+  if (last === 0) return text;
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 /**
@@ -78,13 +135,21 @@ export function CheckGrid({
     .filter(Boolean)
     .join(' ');
 
+  const meanTitle =
+    items.reduce((sum, item) => sum + item.title.length, 0) /
+    Math.max(items.length, 1);
+  const long = meanTitle > LONG_TITLE;
+  const spans = wideSpans(items.length, stack, long);
+
   return (
     <div
       className={`check-grid${mods ? ` ${mods}` : ''}`}
       role="list"
       aria-labelledby={labelledBy}
       data-count={items.length}
-      data-cols={wideCols(items.length, dense, stack)}
+      data-cols={12 / (spans[0] ?? 12)}
+      data-mid={midCols(items.length, stack, long)}
+      data-density={long ? 'long' : undefined}
     >
       {items.map((item, i) => {
         const index = pad(start + i);
@@ -96,9 +161,13 @@ export function CheckGrid({
               {index}
             </span>
             <span className="check-cell-body">
-              <span className="check-cell-title">{item.title}</span>
+              <span className="check-cell-title">
+                {withCode(item.title)}
+              </span>
               {item.meta ? (
-                <span className="check-cell-meta">{item.meta}</span>
+                <span className="check-cell-meta">
+                  {withCode(item.meta)}
+                </span>
               ) : null}
               {item.status ? (
                 <span
@@ -150,7 +219,11 @@ export function CheckGrid({
 
         if (item.href) {
           return (
-            <div key={`${item.href}-${item.title}`} role="listitem">
+            <div
+              key={`${item.href}-${item.title}`}
+              role="listitem"
+              data-span={spans[i]}
+            >
               <Link
                 href={item.href}
                 className={cellClass}
@@ -164,7 +237,11 @@ export function CheckGrid({
         }
 
         return (
-          <div key={`${index}-${item.title}`} role="listitem">
+          <div
+            key={`${index}-${item.title}`}
+            role="listitem"
+            data-span={spans[i]}
+          >
             <button
               className={cellClass}
               type="button"

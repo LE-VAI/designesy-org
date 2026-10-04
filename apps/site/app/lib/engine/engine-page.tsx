@@ -45,6 +45,32 @@ export function EngineHead({
 
 export type Step = { title: string; text: ReactNode };
 
+// The letter scale every graded engine shares (A 90 and up, to F below 60),
+// as the formula strip's second item. One item per grade, so the line wraps
+// between grades and its separators are drawn by the sheet; the operator is
+// its own span, set in a face that has the glyph (engine.css, eg-op).
+const GRADES = [
+  ['A', 90],
+  ['B', 80],
+  ['C', 70],
+  ['D', 60],
+] as const;
+
+export function GradeLine() {
+  return (
+    <span className="eg-grades">
+      {GRADES.map(([g, n]) => (
+        <span key={g}>
+          <b>{g}</b> <span className="eg-op">≥</span> {n}
+        </span>
+      ))}
+      <span>
+        <b>F</b> below
+      </span>
+    </span>
+  );
+}
+
 export function EngineMethod({
   steps,
   formula,

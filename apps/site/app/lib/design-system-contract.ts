@@ -685,14 +685,18 @@ export const designSystemContract = {
       z_toast: { token: '--z-toast', value: '400', role: 'Transient notices above everything' },
     },
     shell_horizontal: 'var(--shell-gutter): clamp(1rem, 4vw, 1.5rem), outside the --maxw-shell content box',
-    section_vertical: '3.5rem / 3rem doctrine',
-    card_padding: '1.25 to 1.5rem',
-    grid_gap: '0.75 to 1rem',
-    control_min_height: '42px buttons, 32px sound toggle',
+    // Read by /contracts section 05 and the agent skill. Layout switches on
+    // container width (the component's own box), so the grid line is a
+    // container query; the viewport queries left are the chrome's and a few
+    // older blocks' (demo racks, pricing, the home hero use 860px and 560px).
+    section_vertical: 'clamp(2.5rem, 5vw, 3.5rem) doctrine · clamp(3.5rem, 8vw, 6.5rem) bands',
+    card_padding: '1 to 1.5rem',
+    grid_gap: '1rem (--grid-gutter), one gutter',
+    control_min_height: '44px buttons, sense toggles and preference switches',
     breakpoints: {
-      grids: '860px',
+      grids: '@container 64rem (mid tiers 34 to 48rem; 57rem for the inspection demo)',
       topbar: '720px',
-      single_column: '560px',
+      single_column: '560px viewport on older blocks; layouts stack on their own container width',
     },
     // ── Spacing scale tokens (added 2026-08-12, closes drift d04) ──────────
     // 4px-base scale with off-grid values for specific component needs.
@@ -1123,7 +1127,7 @@ export const designSystemContract = {
     {
       name: 'Definition block',
       states:
-        'reading material + top-lit rim + elev-1 · signal accent only when copied or focused · label uppercase',
+        'reading material + top-lit rim + elev-1 · a copyable one heats its rim and draws a 3px signal edge on hover, focus or copy · label 12px uppercase muted',
     },
   ],
   accessibility: [

@@ -169,7 +169,8 @@ const GUARDRAILS = build(
     g03: 'Agent rules',
     g04: 'Component contract',
     g05: 'Anti-patterns',
-    g06: 'DESIGN.md',
+    // The file's name is its cell title; the label says what it is.
+    g06: 'Design spec for agents',
   },
   { g01: 'bundle', g02: 'bundle', g03: 'bundle', g04: 'bundle', g05: 'bundle', g06: 'bundle' },
   [{ id: 'bundle', label: 'Build contract', hint: 'Six files an AI coding agent reads before it writes UI.' }],

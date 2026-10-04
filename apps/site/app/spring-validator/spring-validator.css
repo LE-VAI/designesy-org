@@ -10,8 +10,9 @@
    labels scaled with the box. Now:
    - the region is the 12-column module (--grid-12, --grid-gutter);
    - from 64rem (the documented span switch) the presets end on the 7-line,
-     and the instrument splits on it: the chart in the face, the parameters
-     and readouts in the side pane, the verdict as the title bar's state;
+     and the instrument splits on it: the chart in the face, the verdict,
+     parameters and readouts in the side pane (the verdict first, as the
+     answer, with an echo in the title bar);
    - below that the panes stack, and the parameters and readouts share one
      module, so slider edges land on tile edges at every width;
    - the checklist and the snippet pair on the 7-line under the instrument. */
@@ -50,7 +51,14 @@
   color: var(--muted-dim);
 }
 
-/* --- Presets: the command row over the face --- */
+/* --- Presets: the command row over the face ---
+   One segmented control of eight equal cells, four to a row, so both rows
+   close on the slot's edges: from 64rem that is the 7-line (x 804.2 at
+   1440), the divider of the instrument under it. The chips used to wrap
+   six and two, a ragged row over a clean instrument. Below a 36rem
+   validator the cells go two to a row (a phone fits "Critically damped" on
+   one line in half the slot, not in a quarter). The 1px gaps are the seams:
+   the control's line colour shows through between opaque cells. */
 
 .sv-presets {
   display: grid;
@@ -58,28 +66,79 @@
 }
 
 .sv-preset-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  border-radius: var(--radius);
+  background: var(--line);
 }
 
-/* No min-height here: the 44px coarse-pointer rule in globals.css sets it,
-   and a route sheet loads after that one. */
+@container sv (width < 36rem) {
+  .sv-preset-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The 44px coarse-pointer floor is set in globals.css, which loads before
+   this sheet, so the fine pointer's 36px cell is scoped away from it. The
+   outer corners follow the control's radius. */
 .sv-preset {
+  display: grid;
+  place-items: center;
+  min-width: 0;
   margin: 0;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  padding: var(--space-6) var(--space-8);
+  border: 0;
+  border-radius: 0;
   background: var(--surface);
   color: var(--muted);
   font: 500 0.75rem/1.2 var(--sans);
+  text-align: center;
   cursor: pointer;
   transition: transform 160ms var(--ease-out);
 }
 
+@media not all and (pointer: coarse) {
+  .sv-preset {
+    min-height: 2.25rem;
+  }
+}
+
+.sv-preset:first-child {
+  border-start-start-radius: calc(var(--radius) - 1px);
+}
+
+.sv-preset:last-child {
+  border-end-end-radius: calc(var(--radius) - 1px);
+}
+
+.sv-preset:nth-child(4) {
+  border-start-end-radius: calc(var(--radius) - 1px);
+}
+
+.sv-preset:nth-child(5) {
+  border-end-start-radius: calc(var(--radius) - 1px);
+}
+
+@container sv (width < 36rem) {
+  .sv-preset:nth-child(4),
+  .sv-preset:nth-child(5) {
+    border-radius: 0;
+  }
+
+  .sv-preset:nth-child(2) {
+    border-start-end-radius: calc(var(--radius) - 1px);
+  }
+
+  .sv-preset:nth-child(7) {
+    border-end-start-radius: calc(var(--radius) - 1px);
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .sv-preset:hover {
-    border-color: var(--line-strong);
+    background: var(--surface-raised);
     color: var(--ink);
   }
 }
@@ -88,16 +147,23 @@
   transform: scale(0.97);
 }
 
+/* Inside the control the ring is drawn inward, so the neighbouring cells
+   cannot cover it. */
 .sv-preset:focus-visible {
+  position: relative;
+  z-index: 1;
   outline: 2px solid var(--signal-access);
-  outline-offset: 2px;
+  outline-offset: -2px;
   box-shadow: none;
 }
 
 .sv-preset[aria-pressed="true"] {
-  border-color: var(--signal);
   background: var(--signal);
   color: var(--paper-on-signal);
+}
+
+.sv-preset[aria-pressed="true"]:focus-visible {
+  outline-color: var(--paper-on-signal);
 }
 
 /* --- The instrument --- */
@@ -230,9 +296,101 @@
   background: var(--sv-hue);
 }
 
+/* The bar's echo takes the state too: the hue mixed 30% with ink, so the
+   11.5px word holds 4.5:1 in both themes (light --warn alone is 3.5:1). */
 .sv-verdict {
   font-weight: 600;
-  color: var(--ink);
+  color: var(--sv-hue-ink);
+}
+
+/* --- The answer: the side pane's first block ---
+   The verdict is the one thing the tool exists to say, so it is the largest
+   type in the instrument: 24px/600 in the state token itself (24px is large
+   text, where light --warn's 3.5:1 clears the 3:1 bar), an 8px LED in the
+   same hue, and the reason under it. It ran 11.5px in ink in the title bar,
+   smaller than every readout, with only the LED and the curve in the hue.
+   The block spans the pane (its rule meets the divider and the rim) and
+   sits on the readouts' rhythm. */
+.sv-answer {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  margin-inline: calc(-1 * var(--space-20));
+  margin-bottom: var(--space-4);
+  padding: 0 var(--space-20) var(--space-16);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.sv-answer-copy {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.sv-answer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  margin: 0;
+}
+
+.sv-answer-led {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sv-hue);
+}
+
+.sv-answer-word {
+  font: 600 1.5rem/1.15 var(--sans);
+  letter-spacing: -0.015em;
+  color: var(--sv-hue);
+}
+
+.sv-answer-reason {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* --glow-verdict (component-scoped, spec 3.3): a result landed. A
+   pre-rendered shadow layer under the block whose opacity alone moves:
+   150ms in, 1.2s hold, 600ms decay to nothing. It runs once per verdict
+   change (the component remounts the layer) and never at rest. */
+.sv-answer-glow {
+  --vc-hue: var(--sv-hue);
+  --glow-verdict: 0 18px 44px -24px var(--vc-hue);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  box-shadow: var(--glow-verdict);
+  opacity: 0;
+  pointer-events: none;
+  animation: sv-verdict-glow 1950ms var(--ease-out) both;
+}
+
+/* 1950ms = 150 in + 1200 hold + 600 decay. */
+@keyframes sv-verdict-glow {
+  0% { opacity: 0; }
+  7.69% { opacity: 1; }
+  69.23% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Reduced motion, tier 1: the glow is decoration; the hue, the LED and the
+   word already carry the change, so it does not run. */
+@media (prefers-reduced-motion: reduce) {
+  .sv-answer-glow {
+    display: none;
+    animation: none;
+  }
+}
+
+html[data-motion="paused"] .sv-answer-glow {
+  display: none;
+  animation: none;
 }
 
 /* --- Body: face and side --- */
@@ -383,6 +541,12 @@
   fill: var(--sv-hue-ink);
 }
 
+/* The fallback's settle point, the reduced-motion label's anchor: the
+   dashed curve's own colour, solid (non-text, 3:1 against the face). */
+.sv-chart-settle {
+  fill: var(--muted);
+}
+
 .sv-note {
   max-width: 62ch;
   font-size: 0.8rem;
@@ -481,6 +645,13 @@
   color: var(--muted-dim);
 }
 
+/* Greek in a caps label keeps its case: uppercased, ζ becomes Ζ, which
+   reads as a Latin Z. */
+.sv-greek {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .sv-metric-value {
   margin: 0;
   font-size: 1.05rem;
@@ -493,6 +664,23 @@
   margin: 0;
   font-size: 0.7rem;
   color: var(--muted-dim);
+}
+
+/* A hint that names a state (the overshoot band) takes that state's hue,
+   mixed 30% with ink for 4.5:1 at 11px; the word names it either way. */
+.sv-metric-hint[data-tone="pass"] {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--ok) 70%, var(--ink));
+}
+
+.sv-metric-hint[data-tone="warn"] {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+}
+
+.sv-metric-hint[data-tone="fail"] {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--error) 70%, var(--ink));
 }
 
 /* --- Checklist: reading material (tier 1) --- */
@@ -544,6 +732,13 @@
 
 .sv-check-item[data-ok] .sv-check-mark {
   color: color-mix(in srgb, var(--ok) 70%, var(--ink));
+}
+
+/* Under a Violation a row that fails is a failure, in the fail token the
+   verdict shows (it was amber beside a red verdict: one result, three
+   hues). The token holds 4.5:1 on reading material in both themes. */
+.sv-checklist[data-verdict="violation"] .sv-check-item:not([data-ok]) .sv-check-mark {
+  color: var(--error);
 }
 
 .sv-check-label {
@@ -622,6 +817,12 @@
   }
 }
 
+@media (prefers-contrast: more) {
+  .sv-preset-row {
+    background: var(--line-strong);
+  }
+}
+
 html[data-motion="paused"] .sv-preset:active {
   transform: none;
 }
@@ -661,7 +862,28 @@ html[data-motion="paused"] .sv-preset:active {
   }
 
   .sv-led,
-  .sv-mark i {
+  .sv-answer-led,
+  .sv-mark i,
+  .sv-chart-settle {
     background: CanvasText;
+    fill: CanvasText;
+  }
+
+  /* The seams are background colour, which forced colours drop: each cell
+     draws its own edge, and the pressed one takes the selection colours. */
+  .sv-preset-row {
+    gap: var(--space-4);
+    padding: 0;
+  }
+
+  .sv-preset {
+    border: 1px solid ButtonText;
+  }
+
+  .sv-preset[aria-pressed="true"] {
+    forced-color-adjust: none;
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
   }
 }

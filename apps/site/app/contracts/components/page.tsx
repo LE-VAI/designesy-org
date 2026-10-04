@@ -3,7 +3,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
-import { designSystemContract, CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { componentsContract } from '../../lib/components-contract';
 
 export const metadata: Metadata = pageMeta({
@@ -37,9 +37,10 @@ export default function ComponentsContractPage() {
             can check a component against the contract instead of guessing at
             it.
           </p>
+          {/* CONTRACT_VERSION already carries its "v" (it read "vv0.4.1"). */}
           <p className="surface-note">
             Version {componentsContract.version} · derived from the design
-            system contract v{CONTRACT_VERSION}
+            system contract v{CONTRACT_VERSION.replace(/^v/, '')}
           </p>
           {/* Under the version line, as on every sibling contract page; it
               used to sit alone in a full-width text cell at the page's end. */}

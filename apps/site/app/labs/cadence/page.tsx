@@ -11,6 +11,9 @@ import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { designReviewKit } from '../../lib/kits/design-review';
+import { labs } from '../../lib/labs';
+import { AdoptedTally } from '../adopted-tally';
 
 export const metadata: Metadata = pageMeta({
   title: 'Cadence',
@@ -120,6 +123,57 @@ const ANTI = [
   'Invented decorative display fonts for public UI',
   'font-synthesis left at default (browser synthesizes fake weights)',
   'Physical properties (margin-left, padding-right) instead of logical ones',
+];
+
+/**
+ * The field check's facts for the card's side pane, read from /review/cadence
+ * (its Holds and Tensions lists and its Date line). Dimensions and the kit
+ * version come from the kit record, so they cannot drift from the kit.
+ */
+const FIELD_CHECK = { holds: 7, openTensions: 2, reviewed: '2026-07-13' };
+
+/** A field-check outcome as a state: a clean pass, a pass with notes (warn),
+ *  or anything else (fail). Never the brand blue. */
+function verdictState(outcome: string): 'pass' | 'warn' | 'fail' {
+  if (outcome === 'pass') return 'pass';
+  return outcome.startsWith('pass') ? 'warn' : 'fail';
+}
+
+/**
+ * Related surfaces. Each row's datum (a version) and its route stand in the
+ * side pane behind the 7-line; the face keeps the title and one line.
+ */
+const RELATED = [
+  {
+    href: '/labs/poise',
+    title: 'Lab One · Poise',
+    meta: 'Restrained interaction: motion, sound, reduced motion',
+    datum: `contract v${labs.poise.adopted_in_contract}`,
+  },
+  {
+    href: '/labs/takt',
+    title: 'Lab Two · Takt',
+    meta: 'Interface feel: radii, press scale, hit areas, stagger',
+    datum: `contract v${labs.takt.adopted_in_contract}`,
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: 'Tokens, interaction, takt, cadence, acoustics, verification',
+    datum: CONTRACT_VERSION,
+  },
+  {
+    href: '/kits/design-review',
+    title: 'Use Kit One · Design Review',
+    meta: 'Eight dimensions, portable agent prompt',
+    datum: `v${designReviewKit.version}`,
+  },
+  {
+    href: '/labs/acoustics',
+    title: 'Lab Four · Acoustics',
+    meta: 'Interaction sound: nineteen cues, nineteen roles, Cuelume v0.2.2',
+    datum: `contract v${labs.acoustics.adopted_in_contract}`,
+  },
 ];
 
 const BUILDER_PROMPT = `You are working with Designesy Lab Three: Cadence.
@@ -347,20 +401,27 @@ export default function CadenceLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Portable contract</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Rules agents can cite when proposing or reviewing typographic
-            changes. Each rule has an exact value.
-          </p>
-          <div className="row-stack" role="list">
-            {CONTRACT_RULES.map((rule, i) => (
-              <ToggleRow key={rule.title} index={String(i + 1).padStart(2, '0')}>
-                <span className="row-body">
-                  <span className="row-title">{rule.title}</span>
-                  <span className="row-meta">{rule.meta}</span>
-                </span>
-              </ToggleRow>
-            ))}
-          </div>
+          <AdoptedTally
+            total={CONTRACT_RULES.length}
+            lede={
+              <>
+                Rules agents can cite when proposing or reviewing typographic
+                changes. Each rule has an exact value. Check a rule off as your
+                surface adopts it.
+              </>
+            }
+          >
+            <div className="row-stack" role="list">
+              {CONTRACT_RULES.map((rule, i) => (
+                <ToggleRow key={rule.title} index={String(i + 1).padStart(2, '0')}>
+                  <span className="row-body">
+                    <span className="row-title">{rule.title}</span>
+                    <span className="row-meta">{rule.meta}</span>
+                  </span>
+                </ToggleRow>
+              ))}
+            </div>
+          </AdoptedTally>
         </section>
 
         <section className="doctrine-section fade-up">
@@ -434,98 +495,76 @@ export default function CadenceLabPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Field check</h2>
           <Link
-            className="lab-card"
+            className="lab-card is-split"
             href="/review/cadence"
             data-cuelume-hover="bloom"
             data-cuelume-press
           >
-            <div className="lab-card-top">
-              <span className="status-badge">Pass with notes</span>
-              <span className="status-badge-muted">Review</span>
+            <div className="lab-card-panes">
+              <div className="lab-card-face">
+                <div className="lab-card-top">
+                  <span className="row-side-chip" data-state={verdictState(labs.cadence.field_check.outcome)}>
+                    {labs.cadence.field_check.outcome}
+                  </span>
+                </div>
+                <h3 className="lab-card-title">Field check · Cadence</h3>
+                <p className="lab-card-lede">
+                  Lab Three reviewed with Use Kit One · Design Review
+                </p>
+                <p className="lab-card-desc">
+                  Eight-dimension inspection of typography rules on
+                  designesy.org. Evidence for contract adoption.
+                </p>
+                <span className="lab-card-arrow">
+                  Open field check <span aria-hidden="true">→</span>
+                </span>
+              </div>
+              <dl className="lab-card-side">
+                <div>
+                  <dt>Dimensions</dt>
+                  <dd>{designReviewKit.dimensions.length}</dd>
+                </div>
+                <div>
+                  <dt>Holds</dt>
+                  <dd>{FIELD_CHECK.holds}</dd>
+                </div>
+                <div>
+                  <dt>Open tensions</dt>
+                  <dd>{FIELD_CHECK.openTensions}</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{FIELD_CHECK.reviewed}</dd>
+                </div>
+                <div>
+                  <dt>Method</dt>
+                  <dd>Kit One v{designReviewKit.version}</dd>
+                </div>
+              </dl>
             </div>
-            <span className="lab-card-title">Field check · Cadence</span>
-            <span className="lab-card-lede">
-              Lab Three reviewed with Use Kit One · Design Review
-            </span>
-            <span className="lab-card-desc">
-              Eight-dimension inspection of typography rules on designesy.org.
-              Evidence for contract adoption.
-            </span>
-            <span className="lab-card-arrow" aria-hidden="true">
-              →
-            </span>
           </Link>
           <div className="row-stack" role="list" style={{ marginTop: '1.5rem' }}>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/labs/poise"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Lab One · Poise</span>
-                  <span className="row-meta">Restrained interaction: motion, sound, reduced motion</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/labs/takt"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Two · Takt</span>
-                  <span className="row-meta">Interface feel: radii, press scale, hit areas, stagger</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/contracts/design-system"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract</span>
-                  <span className="row-meta">{CONTRACT_VERSION} · tokens, interaction, takt, cadence, acoustics, verification</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/kits/design-review"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Use Kit One · Design Review</span>
-                  <span className="row-meta">Eight dimensions, portable agent prompt</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                className="row"
-                href="/labs/acoustics"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Four · Acoustics</span>
-                  <span className="row-meta">Interaction sound: nineteen cues, nineteen roles, Cuelume v0.2.2</span>
-                </span>
-              </Link>
-            </div>
+            {RELATED.map((row, i) => (
+              <div role="listitem" key={row.href}>
+                <Link
+                  className="row"
+                  href={row.href}
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{row.datum}</span>
+                    <span className="row-side-line">{row.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
+                  </span>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 

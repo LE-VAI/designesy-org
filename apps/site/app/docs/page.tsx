@@ -7,7 +7,6 @@ import { AgentActions } from '../lib/agent-actions';
 import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
-import { Toggle } from '../lib/toggle';
 import { LottieHint } from '../lib/lottie-hint';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
@@ -65,54 +64,65 @@ export const metadata: Metadata = pageMeta({
     'Orientation for a live design intelligence system · designesy.org/docs',
 });
 
+// Each layer's standing is a datum, not a third line of copy: whether it is
+// public, and where (or why not). The list puts it in the row's side pane on
+// the page's 7-line (docs.css, "Architecture").
 const LAYERS = [
   {
     num: '01',
     name: 'Core',
     desc: 'mission, doctrine, principles, quality bar',
-    state: 'Public on this surface',
+    access: 'Public',
+    where: 'this surface',
   },
   {
     num: '02',
     name: 'Open',
     desc: 'portable package catalog for people and agents',
-    state: 'Public · /open + open.json',
+    access: 'Public',
+    where: '/open + open.json',
   },
   {
     num: '03',
     name: 'Contracts',
     desc: 'portable design agreements',
-    state: 'Public · design system ' + CONTRACT_VERSION,
+    access: 'Public',
+    where: 'design system ' + CONTRACT_VERSION,
   },
   {
     num: '04',
     name: 'Labs',
     desc: 'experiments that compile into contracts',
-    state: 'Public · Poise + Takt + Cadence + Acoustics',
+    access: 'Public',
+    where: 'Poise + Takt + Cadence + Acoustics',
   },
   {
     num: '05',
     name: 'Review',
     desc: 'quality-control layer for artifacts',
-    state: 'Public · dimensions + field checks',
+    access: 'Public',
+    where: 'dimensions + field checks',
   },
   {
     num: '06',
     name: 'Kits',
     desc: 'portable instruction packages for people and agents',
-    state: 'Public · Kit One Design Review + machine export',
+    access: 'Public',
+    where: 'Kit One Design Review + machine export',
   },
   {
     num: '07',
     name: 'Graph',
     desc: 'living knowledge tree with provenance',
-    state: 'Internal; not published as a public browser',
+    access: 'Internal',
+    where: 'not published as a public browser',
   },
   {
     num: '08',
     name: 'Logs',
     desc: 'institutional memory, file-based',
-    state: 'Internal; not a public feed',
+    access: 'Internal',
+    where: 'not a public feed',
   },
 ];
 
@@ -326,44 +336,42 @@ export default function DocsPage() {
 
         <section id="architecture" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Architecture</h2>
-          <div className="doctrine-cols">
-            <div>
-              <div className="definition">
-                <p className="definition-label">System flow</p>
-                <p>
-                  Source → Observation → Claim → Tension → Principle → Pattern →
-                  Contract Rule → Token / Component / Behavior → Verification
-                  Artifact → Shipped Work
-                </p>
+          {/* Stacked, not paired: beside the eight-row list the flow and its
+              note were stretched into a 728px card holding three lines. The
+              statement and its note end on the page's 7-line; the layers run
+              the column as rows, each layer's standing in the side pane. */}
+          <div className="definition">
+            <p className="definition-label">System flow</p>
+            <p>
+              Source → Observation → Claim → Tension → Principle → Pattern →
+              Contract Rule → Token / Component / Behavior → Verification
+              Artifact → Shipped Work
+            </p>
+          </div>
+          <div className="text-cell">
+            <p className="surface-note">
+              The Graph preserves provenance and prevents design knowledge
+              from becoming anonymous taste. Every shipped artifact should
+              trace back through this chain.
+            </p>
+          </div>
+          <h3 className="layer-heading">Eight layers</h3>
+          <div className="row-stack docs-layers" role="list">
+            {LAYERS.map((layer) => (
+              <div className="row" role="listitem" key={layer.num}>
+                <span className="row-index">{layer.num}</span>
+                <span className="row-body">
+                  <span className="row-title">{layer.name}</span>
+                  <span className="row-meta">{layer.desc}</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line" data-access={layer.access.toLowerCase()}>
+                    {layer.access}
+                  </span>
+                  <span className="row-side-line">{layer.where}</span>
+                </span>
               </div>
-              <div className="text-cell">
-                <p className="surface-note">
-                  The Graph preserves provenance and prevents design knowledge
-                  from becoming anonymous taste. Every shipped artifact should
-                  trace back through this chain.
-                </p>
-              </div>
-            </div>
-            <div>
-              <h3 className="layer-heading">Seven layers</h3>
-              <div className="layer-stack">
-                {LAYERS.map((layer) => (
-                  <Toggle
-                    className="layer-item"
-                    key={layer.num}
-                    data-cuelume-hover="bloom"
-                    data-cuelume-toggle="toggle"
-                  >
-                    <span className="layer-num">{layer.num}</span>
-                    <div className="layer-body">
-                      <strong className="layer-name">{layer.name}</strong>
-                      <span className="layer-desc">{layer.desc}</span>
-                      <span className="layer-state">{layer.state}</span>
-                    </div>
-                  </Toggle>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
@@ -428,13 +436,16 @@ export default function DocsPage() {
               machine exports.
             </p>
           </div>
+          {/* The section's last child, so it sits 24px under the card it
+              closes (docs.css) and the section's own padding keeps it off the
+              next rule; between the sections it hung 95px down with its
+              bottom edge on the next section's border-top. */}
+          <div className="status-note">
+            Designesy is a live operating model. Graph and logs remain internal by
+            design. What is public here (principles, architecture, voice,
+            contracts, labs, kits, and review) is the real system.
+          </div>
         </section>
-
-        <div className="status-note">
-          Designesy is a live operating model. Graph and logs remain internal by
-          design. What is public here (principles, architecture, voice,
-          contracts, labs, kits, and review) is the real system.
-        </div>
 
         <section id="drift-score-acknowledged" className="doctrine-section fade-up" style={{ scrollMarginTop: '6rem' }}>
           <h2 className="doctrine-heading">Drift score acknowledged</h2>

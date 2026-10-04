@@ -15,12 +15,27 @@
   gap: var(--grid-gutter);
 }
 
+/* Three shared rows, head / bullets / call to action: each card spans them
+   and lays its own three parts on them (subgrid), so the three heads, the
+   three first bullets and the three buttons share a top across the row.
+   Each card sized its own rows, so Enterprise's three-line sub-line put its
+   bullet list 20px below the other two. Stacked on a phone, each card takes
+   three rows of its own. Inside a card the parts are 24px apart; between
+   stacked cards the grid's 16px gutter holds. */
 @media (min-width: 860px) {
   .pricing-grid {
     grid-template-columns: none;
+    grid-template-rows: repeat(3, auto);
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
   }
+}
+
+.pricing-grid > .pricing-card {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: var(--space-24);
 }
 
 .pricing-card-head {
@@ -68,13 +83,9 @@
 
 /* The header reads as one group and the list as the next: price to sub-line
    about 11px (it was 4px, so the two crowded each other), sub-line to list
-   24px. */
+   24px (the card's row gap). */
 .pricing-card-price + .pricing-card-sub {
   margin-top: var(--space-fine-40);
-}
-
-.pricing-card-head + .pricing-card-bullets {
-  margin-top: var(--space-8);
 }
 
 .pricing-card-bullets {
@@ -83,8 +94,8 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  align-self: start;
   gap: var(--space-8);
-  flex: 1 0 auto;
 }
 
 .pricing-card-bullets li {
@@ -109,8 +120,7 @@
 }
 
 .pricing-card-cta {
-  margin-top: auto;
-  padding-top: var(--space-8);
+  align-self: start;
 }
 
 .pricing-cta-link {
@@ -196,26 +206,8 @@ html[data-motion="paused"] .pricing-card .pricing-cta-link[href^="mailto:"]::aft
   transition: none;
 }
 
-/* The desk is prose on the page. As a 1180px opaque card it held one 660px
-   paragraph that restates the lede and 500px of empty card: a reading
-   surface with nothing to read in most of it. */
-.pricing-desk {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-55);
-}
-
-.pricing-desk-lede {
-  /* 66ch, matching the site's shared prose measure. Without it this ran 123
-     characters -- the widest line on any of the 40 measured routes. */
-  max-width: 66ch;
-  font-size: 1rem;
-  color: var(--ink);
-  line-height: 1.5;
-  text-wrap: pretty;
-  letter-spacing: -0.01em;
-}
-
+/* The closing note under the comparison. (The desk paragraph that restated
+   the lede between the header and the tiers is gone.) */
 .pricing-desk-note {
   font-size: 0.875rem;
   color: var(--muted);
@@ -365,8 +357,32 @@ html[data-motion="paused"] .pricing-faq-q::after {
    on 100cqi, the section (the table spans it): a table cell treats a calc()
    that mixes a percentage with lengths as auto, so var(--track-split) itself
    would leave four equal columns. */
-.doctrine-section:has(> .pricing-compare) {
+/* The table's surface: the FAQ's reading recipe (--mat-reading, --elev-1,
+   the masked top-lit rim, --radius), in place of the table's own 6% line.
+   A table cannot carry the rim's ::before (it would become a cell), so the
+   wrapper carries it, and it is the query container (it spans the section).
+   It scrolls sideways if a narrow phone ever runs out of room. */
+.pricing-compare-wrap {
   container: pricing-compare / inline-size;
+  position: relative;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.pricing-compare-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
 
 @container pricing-compare (width >= 64rem) {
@@ -387,14 +403,12 @@ html[data-motion="paused"] .pricing-faq-q::after {
 .pricing-compare {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius);
-  overflow: hidden;
   font-size: 0.875rem;
 }
 
+/* The head row a step up from the surface it sits on. */
 .pricing-compare thead {
-  background: var(--surface);
+  background: var(--surface-raised);
 }
 
 .pricing-compare th {
@@ -475,10 +489,87 @@ html[data-motion="paused"] .pricing-faq-q::after {
   }
 }
 
-/* Independence firewall: a bordered box that once carried the 66ch prose
-   cap as its own width, so it stopped at about 740px under the full-width
-   tier row and FAQ (stack rule (a)). The box takes the column; the cap lives
-   on its text. */
-.pricing-firewall > p {
+/* Independence firewall: one reading card in two panes, on the shared
+   face/side split (globals.css .definition-split: the face is the first
+   seven tracks from the 67rem viewport, the side's 1px --line-faint border is
+   the divider on the 7-line, and below that the side stacks under a
+   hairline). The statement is the face; what is not for sale is the side's
+   key rows. It was the page's fourth recipe: inline styles with a flat 1px
+   line, a 135deg gradient, an inner light and a resting 3px brand stripe
+   down its left edge (coloured light on a reading surface at rest, which
+   the material system reserves for state), and its paragraph ended at x 747
+   in a 1180px box. Now it takes the tiers' and FAQ's reading recipe, and
+   the mono eyebrow alone names it. */
+.pricing-firewall {
+  position: relative;
+  margin: 0;
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+.pricing-firewall::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.pricing-firewall .definition-face {
+  padding: var(--space-24) var(--space-28);
+}
+
+.pricing-firewall .definition-side {
+  padding: var(--space-24) var(--space-28);
+}
+
+.pricing-firewall-label {
+  margin: 0 0 var(--space-12);
+  font: 700 0.7rem/1rem var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--signal-text);
+}
+
+.pricing-firewall-text {
   max-width: 66ch;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.pricing-firewall-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .pricing-firewall .definition-face,
+  .pricing-firewall .definition-side {
+    padding: var(--space-20);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .pricing-firewall::before,
+  .pricing-compare-wrap::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .pricing-firewall,
+  .pricing-compare-wrap {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
 }

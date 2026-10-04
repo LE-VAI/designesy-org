@@ -148,7 +148,7 @@ export function ReportForm({
         busy={phase === 'running'}
         go="Build the report"
         goBusy="Building"
-        note="Three engines run in parallel, each fetching the page itself. It takes a few seconds longer than one."
+        note="Three engines run in parallel, a few seconds longer than one."
       />
       <Instrument
         name="Report"

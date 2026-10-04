@@ -7,6 +7,7 @@ import { ToggleRow } from '../../../lib/toggle-row';
 import { pageMeta } from '../../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../../lib/design-system-contract';
 import { AgentActions } from '../../../lib/agent-actions';
+import { withUrl } from '../../url-break';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise keyboard path',
@@ -184,15 +185,24 @@ const RESULTS = [
   },
 ];
 
+// Each re-run step and what it is done with: the key, setting or record the
+// step needs. The side pane of the method list reads as that second column.
 const METHOD = [
-  'Open https://www.designesy.org/labs/poise in a desktop browser',
-  'Use keyboard only: Tab / Shift+Tab through the page',
-  'Confirm each stop matches the tab order table',
-  'On buttons: Space and Enter activate without pointer',
-  'On sound toggle: confirm aria-pressed flips and no audio on focus alone',
-  'Enable prefers-reduced-motion and re-check that controls remain usable',
-  'Record any trap, missing ring, or unlabeled control as a tension',
+  { step: 'Open https://www.designesy.org/labs/poise in a desktop browser', uses: 'Desktop browser' },
+  { step: 'Use keyboard only: Tab / Shift+Tab through the page', uses: 'Tab · Shift+Tab' },
+  { step: 'Confirm each stop matches the tab order table', uses: `${TAB_ORDER.length} stops` },
+  { step: 'On buttons: Space and Enter activate without pointer', uses: 'Space · Enter' },
+  { step: 'On sound toggle: confirm aria-pressed flips and no audio on focus alone', uses: 'Space · Enter' },
+  { step: 'Enable prefers-reduced-motion and re-check that controls remain usable', uses: 'OS setting' },
+  { step: 'Record any trap, missing ring, or unlabeled control as a tension', uses: 'Tensions' },
 ];
+
+const REVIEWED = '2026-07-12';
+
+const VERDICT =
+  'Poise demo controls and shared chrome are reachable and operable by keyboard. Focus rings follow contract tokens. Sound does not fire on focus alone. Reduced motion removes non-essential motion without removing controls. Site-wide chrome is covered by /review/keyboard; this packet remains Lab One specific.';
+
+const HOLDING = RESULTS.filter((r) => r.status === 'Hold').length;
 
 const RELATED = [
   {
@@ -252,23 +262,40 @@ export default function PoiseKeyboardVerificationPage() {
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Published</span>
             <span className="lab-meta-item">Scope · Lab One · Poise</span>
-            <span className="lab-meta-item">Date · 2026-07-12</span>
-            <span className="lab-meta-item">Result · holds with one open</span>
+            <span className="lab-meta-item">Date · {REVIEWED}</span>
+            <span className="lab-meta-item">Result · holds</span>
           </div>
           <AgentActions mdPath="/review/poise/keyboard.md" label="the poise keyboard review" />
         </section>
 
         <section className="doctrine-section fade-up" id="verdict">
           <h2 className="doctrine-heading">Verdict</h2>
-          <div className="definition">
-            <p className="definition-label">Keyboard path · holds</p>
-            <p>
-              Poise demo controls and shared chrome are reachable and operable
-              by keyboard. Focus rings follow contract tokens. Sound does not
-              fire on focus alone. Reduced motion removes non-essential motion
-              without removing controls. Site-wide chrome is covered by
-              /review/keyboard; this packet remains Lab One specific.
-            </p>
+          <div className="definition definition-split" data-copy={VERDICT} data-copy-label="verdict">
+            <div className="definition-face">
+              <p className="definition-label">Keyboard path · holds</p>
+              <p>{VERDICT}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                Holds
+              </span>
+              <dl>
+                <div>
+                  <dt>Scope</dt>
+                  <dd>Lab One · Poise</dd>
+                </div>
+                <div>
+                  <dt>Results</dt>
+                  <dd>
+                    {HOLDING} of {RESULTS.length} hold
+                  </dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{REVIEWED}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -288,7 +315,9 @@ export default function PoiseKeyboardVerificationPage() {
               <ToggleRow key={item.step} index={item.step}>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">{item.meta}</span>
                 </span>
               </ToggleRow>
             ))}
@@ -319,9 +348,12 @@ export default function PoiseKeyboardVerificationPage() {
           <h2 className="doctrine-heading">Re-run method</h2>
           <div className="row-stack" role="list">
             {METHOD.map((item, i) => (
-              <ToggleRow key={item} index={String(i + 1).padStart(2, '0')}>
+              <ToggleRow key={item.step} index={String(i + 1).padStart(2, '0')}>
                 <span className="row-body">
-                  <span className="row-title">{item}</span>
+                  <span className="row-title">{withUrl(item.step)}</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">{item.uses}</span>
                 </span>
               </ToggleRow>
             ))}
@@ -345,6 +377,10 @@ export default function PoiseKeyboardVerificationPage() {
                   <span className="row-body">
                     <span className="row-title">{item.title}</span>
                     <span className="row-meta">{item.meta}</span>
+                  </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
                 </Link>
               </div>

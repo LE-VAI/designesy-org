@@ -9,17 +9,52 @@ import { CopyPrompt } from '../../lib/copy-prompt';
 import { pageMeta } from '../../lib/site-meta';
 import { JsonLd, creativeWorkJsonLd } from '../../lib/json-ld';
 import { AgentActions } from '../../lib/agent-actions';
+import { openIndex } from '../../lib/open-index';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 const ANATOMY_HREFS: Record<string, string> = {
   Purpose: '#purpose',
   'When to use': '#when',
   'Required inputs': '#inputs',
+  'Permission level': '#permission',
   'Eight review dimensions': '#dimensions',
   'Agent prompt': '#prompt',
   'Output format': '#output',
   'Verification checklist': '#verification',
+  'Anti-rationalizations': '#anti-rationalizations',
   'Anti-patterns': '#anti-patterns',
   'Related contracts and surfaces': '#related',
+};
+
+// The side pane of each related surface: what it is and the version or
+// outcome it carries. A field check's outcome is a state, so it reads as a
+// chip; everything else is a plain datum. The face keeps the line the kit
+// record carries, less the part the side now says.
+const RELATED_SIDE: Record<
+  string,
+  { meta: string; datum: string; state?: 'pass' | 'warn' | 'fail' }
+> = {
+  '/open': {
+    meta: 'Catalog of portable packages · human + machine',
+    datum: `Catalog v${openIndex.version}`,
+  },
+  '/review': { meta: 'Eight dimensions and field checks', datum: 'Doctrine' },
+  '/contracts/design-system': {
+    meta: 'Human home and machine export · Poise + Takt + Cadence + Acoustics adopted',
+    datum: `Contract ${CONTRACT_VERSION}`,
+  },
+  '/review/poise': { meta: 'Kit One applied to Lab One', datum: 'Pass with notes', state: 'warn' },
+  '/review/takt': { meta: 'Kit One applied to Lab Two', datum: 'Pass with notes', state: 'warn' },
+  '/review/designesy-org': {
+    meta: `Public surface review against contract ${CONTRACT_VERSION}`,
+    datum: 'Surface review',
+  },
+  '/labs/poise': { meta: 'Source lab · interaction rules', datum: 'adopted v0.1.1' },
+  '/labs/takt': { meta: 'Source lab · interface-feel rules', datum: 'adopted v0.1.2' },
+  '/labs/cadence': { meta: 'Source lab · typography rules', datum: 'adopted v0.1.3' },
+  '/labs/acoustics': { meta: 'Source lab · acoustic mapping rules', datum: 'adopted v0.3.0' },
+  '/review/cadence': { meta: 'Kit One applied to Lab Three', datum: 'Pass with notes', state: 'warn' },
+  '/review/acoustics': { meta: 'Kit One applied to Lab Four', datum: 'Pass with notes', state: 'warn' },
 };
 
 export const metadata: Metadata = pageMeta({
@@ -33,6 +68,11 @@ export const metadata: Metadata = pageMeta({
   twitterDescription:
     'Eight dimensions and a portable agent prompt · designesy.org/kits/design-review',
 });
+
+// The permission line in full: what an agent may do with this kit until an
+// operator widens it (the status note at the foot says the same).
+const PERMISSION =
+  'Agents report and recommend. The kit grants no edit rights, no deployment rights, and no secret access. Edit scope exists only when an operator grants it explicitly.';
 
 export default function DesignReviewKitPage() {
   return (
@@ -138,6 +178,34 @@ export default function DesignReviewKitPage() {
           />
         </section>
 
+        <section className="doctrine-section fade-up" id="permission">
+          <h2 className="doctrine-heading">Permission level</h2>
+          <div className="definition definition-split" data-copy={PERMISSION} data-copy-label="permission level">
+            <div className="definition-face">
+              <p className="definition-label">Read-only by default</p>
+              <p>{PERMISSION}</p>
+            </div>
+            <dl className="definition-side">
+              <div>
+                <dt>Default</dt>
+                <dd>Read-only</dd>
+              </div>
+              <div>
+                <dt>Edits</dt>
+                <dd>Operator grant only</dd>
+              </div>
+              <div>
+                <dt>Deploys</dt>
+                <dd>Not granted</dd>
+              </div>
+              <div>
+                <dt>Secrets</dt>
+                <dd>Not granted</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
         <section className="doctrine-section fade-up" id="dimensions">
           <h2 className="doctrine-heading">Eight review dimensions</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
@@ -193,6 +261,19 @@ export default function DesignReviewKitPage() {
           <CheckGrid items={checkItemsFromStrings(k.verification)} />
         </section>
 
+        <section className="doctrine-section fade-up" id="anti-rationalizations">
+          <h2 className="doctrine-heading">Anti-rationalizations</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            The reasons a review gets skipped, and what each one misses.
+          </p>
+          <CheckGrid
+            items={k.rationalizations.map((item) => ({
+              title: `\u201c${item.excuse}\u201d`,
+              meta: item.reality,
+            }))}
+          />
+        </section>
+
         <section className="doctrine-section fade-up" id="anti-patterns">
           <h2 className="doctrine-heading">Anti-patterns</h2>
           <CheckGrid
@@ -203,24 +284,39 @@ export default function DesignReviewKitPage() {
         <section className="doctrine-section fade-up" id="related">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
-            {k.related.map((item, i) => (
-              <div role="listitem" key={item.href}>
-                <Link
-                  href={item.href}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="row-body">
-                    <span className="row-title">{item.title}</span>
-                    <span className="row-meta">{item.meta}</span>
-                  </span>
-                </Link>
-              </div>
-            ))}
+            {k.related.map((item, i) => {
+              const side = RELATED_SIDE[item.href];
+              return (
+                <div role="listitem" key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="row"
+                    data-cuelume-hover="bloom"
+                    data-cuelume-press
+                  >
+                    <span className="row-index">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="row-body">
+                      <span className="row-title">{item.title}</span>
+                      <span className="row-meta">{side?.meta ?? item.meta}</span>
+                    </span>
+                    <span className="row-side">
+                      <span className="row-side-line">
+                        {side?.state ? (
+                          <span className="row-side-chip" data-state={side.state}>
+                            {side.datum}
+                          </span>
+                        ) : (
+                          (side?.datum ?? item.href)
+                        )}
+                      </span>
+                      <span className="row-side-arrow" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </section>
 

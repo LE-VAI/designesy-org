@@ -2594,24 +2594,61 @@ a.surface-card:focus-visible,
 }
 
 /* The score history panel (Recent Scores) is read, not commanded: reading
-   material at rest. A panel, not a card you press, so no contact light. */
+   material at rest. A panel, not a card you press, so no contact light. At
+   rest it paints --rim at full opacity, the edge every other tier-1 surface
+   in the result column rests on (the hero, controls and signals cards);
+   painting --rim-hot dimmed by --rim-rest read as the hot values in the
+   computed style. --rim-hot is a second layer (::after) that only shows
+   while a pointer is over the panel or one of its controls (Re-score,
+   Clear) has keyboard focus, by opacity (spec 3.3). On the score landing
+   pages it takes the result column's 12px card radius, the radius of the
+   hero, signals and status panels above it. */
 .score-history-panel {
   position: relative;
   isolation: isolate;
 }
-.score-history-panel::before {
+.surface-page .score-history-panel {
+  border-radius: var(--radius-lg);
+}
+.score-history-panel::before,
+.score-history-panel::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   padding: 1px;
   border-radius: inherit;
-  background: var(--rim-hot);
+  background: var(--rim);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: var(--rim-rest);
+  opacity: 1;
   pointer-events: none;
+}
+.score-history-panel::after {
+  background: var(--rim-hot);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .score-history-panel:hover::after {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
+  }
+}
+.score-history-panel:has(:focus-visible)::after {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+html[data-motion="paused"] .score-history-panel::after {
+  transition-duration: var(--duration-quick);
+}
+/* Reduced motion, tiered: the fade stays, both directions held to the
+   150ms entry (inside the 200ms opacity allowance). */
+@media (prefers-reduced-motion: reduce) {
+  .score-history-panel::after {
+    transition-duration: var(--duration-quick);
+  }
 }
 
 /* Reduced motion, tiered: movement stops (the press scale, the arrow's
@@ -2673,7 +2710,8 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   html .check-cell::before,
   .pillar-grid > .pillar::before,
   .pillar-grid > .pillar::after,
-  html .score-history-panel::before {
+  html .score-history-panel::before,
+  html .score-history-panel::after {
     display: none;
   }
 }
@@ -2954,10 +2992,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
     box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
   }
 }
+/* A card title, in the section heading's family: the display serif belongs
+   to the page title alone (see .doctrine-heading). In Fraunces bold at 17.4px
+   it out-flavoured the 20px Schibsted h2 above it; Schibsted 1rem/600 in ink
+   ranks under the h2 (1.25x) and over the muted body by weight and colour. */
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
-  font-size: 1.0875rem;
-  font-weight: 700;
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
   text-wrap: balance;
@@ -2989,16 +3034,18 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .footer-dock-pill:hover::after,
 .footer-link:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3010,15 +3057,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .lab-meta-item a:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3030,15 +3079,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .lab-crumb:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3053,15 +3104,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .text-link:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3075,16 +3128,18 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .scope-path-link:hover::after,
 .scope-line a:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3096,7 +3151,9 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   }
 }
 
-/* --- Copy prompt button: signal glow on hover --- */
+/* --- Copy prompt button: signal glow on hover ---
+   The ring is ::after; ::before is the button's 44px hit area (the prompt
+   block's bar, further down). */
 .copy-prompt-btn {
   position: relative;
   overflow: visible;
@@ -3146,7 +3203,9 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   }
 }
 
-/* --- Open package path links: signal underline grow --- */
+/* --- Open package path links: signal underline grow ---
+   A scaleX on a full-width line, not a transition on `right`: only transform
+   and opacity animate on this site. */
 .open-package-paths a {
   position: relative;
 }
@@ -3154,15 +3213,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   content: "";
   position: absolute;
   left: 0;
-  right: 100%;
+  right: 0;
   bottom: -1px;
   height: 1px;
   background: var(--signal);
-  transition: right 200ms var(--ease-out);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 200ms var(--ease-out);
 }
 @media (hover: hover) {
   .open-package-paths a:hover::after {
-    right: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -3922,13 +3983,225 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   overflow-wrap: anywhere;
 }
 
-.definition-label {
-  font-size: 0.7rem;
+/* The label is a caption, not a second title. Every label is a <p>, so
+   `.definition p` (0,1,1) out-specified a bare `.definition-label` (0,1,0):
+   labels set at the paragraph's 16.8px, in ink, with 2px tracking, tied the
+   20px section heading (1.19), read as double titles, and broke to two lines
+   in the copy lane at 390. Scoped under .definition (0,2,0) the label wins
+   wherever it sits: a plain card, a split card's face, the score output's
+   face. A label used alone as an eyebrow takes the same values. 12px caps in
+   --muted (7.6:1 dark, 7.5:1 light on --mat-reading; --muted-dim is too low
+   at this size) put the 20px heading at 1.67x the label. */
+.definition-label,
+.definition .definition-label {
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted-dim);
+  color: var(--muted);
   margin-bottom: var(--space-8);
+}
+
+/* A top-level definition ends on the 7-line, as the status note and the
+   surface header above it do: where the page column is at least 64rem (the
+   67rem viewport; see the Status note block) it takes the first seven tracks,
+   x 122.5-804.2 at 1440. Full width it was a 1180px rimmed slab whose 66ch
+   text ended near x 800, about 500px of empty fill per card, and a card and
+   the note under it disagreed by 498px. A code snippet (pre), a split card
+   (its own divider is on the 7-line) and the score output keep the full
+   width; nested definitions (paired columns, the docs column) keep their
+   region's width. */
+@media (min-width: 67rem) {
+  .surface-page > .doctrine-section > .definition:not(pre, .definition-split, .score-output) {
+    width: var(--track-split);
+  }
+}
+
+/* FACE AND SIDE. A definition that carries data beside its statement (a
+   verdict with its state, kit and date; a format with its standards) is one
+   card in two panes, and its divider is the page's 7-line. Markup:
+
+     <div className="definition definition-split">
+       <div className="definition-face">
+         <p className="definition-label">Outcome</p>
+         <p>The statement.</p>
+       </div>
+       <div className="definition-side">
+         <span className="row-side-chip" data-state="warn">Pass with notes</span>
+         <dl>
+           <div><dt>Kit</dt><dd>Kit One v0.1</dd></div>
+           <div><dt>Reviewed</dt><dd>2026-09-28</dd></div>
+         </dl>
+       </div>
+     </div>
+
+   The chip is optional and leads the side; data-state is pass, warn, fail or
+   hold (neutral), never brand blue. The side may instead be the <dl> itself.
+   The card gives up its padding and the panes carry it (20px 24px), so the
+   divider runs the card's full height. As a direct child of a doctrine
+   section in the page column, from the 67rem viewport, the face is the first
+   seven tracks and the side's 1px --line-faint border is the divider (x 804.2
+   at 1440). Below that, or nested in a narrower region, the side stacks under
+   the face behind the same hairline, run across the card. Split, the side
+   keeps the face's rhythm: the chip is centred on the label's 16px line and
+   the key/value rows step on the face paragraph's 25.2px line (1.05rem x
+   1.5, the size it holds at every width the card splits), so the first row
+   shares the first paragraph line. Every definition becomes copyable, and
+   the copy reads the card's whole text, keys and chip included, run
+   together: give a split card a data-copy with the statement. */
+.definition-split {
+  --definition-pitch: calc(1.05rem * 1.5);
+  --definition-divider: var(--line-faint);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+}
+
+.definition-face {
+  min-width: 0;
+  padding: var(--space-20) var(--space-24);
+}
+
+.definition-face > :is(p, ul, ol) {
+  max-width: 66ch;
+}
+
+.definition-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  row-gap: calc(var(--space-8) + (var(--definition-pitch) - 1rem) / 2);
+  min-width: 0;
+  padding: var(--space-20) var(--space-24);
+  border-top: 1px solid var(--definition-divider, var(--line-faint));
+}
+
+.definition-side dl {
+  margin: 0;
+}
+
+.definition-side > dl,
+dl.definition-side {
+  display: grid;
+  grid-template-columns: fit-content(10rem) minmax(0, 1fr);
+  column-gap: var(--space-16);
+  row-gap: calc(var(--definition-pitch) - 1rem);
+}
+
+:is(.definition-side > dl, dl.definition-side) > div {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.definition-side dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.definition-side dd {
+  margin: 0;
+  min-width: 0;
+  font: 500 0.8125rem/1rem var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.definition-side p {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* The side's state chip: the row chip's vocabulary (.row-side-chip in the
+   row region), restated here so a split card renders its state whatever the
+   row region scopes. Uppercase label, a 6px LED in the full state hue, the
+   label pulled toward ink so it holds 4.5:1 in both themes, a 28% state
+   border; hold is neutral. Its 19px box takes 16px of layout, centred on the
+   label's line. */
+.definition-side .row-side-chip {
+  --row-chip-hue: var(--muted-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-fine-35);
+  margin-block: calc((1rem - (0.6875rem * 1.2 + 2 * var(--space-fine-12) + 2px)) / 2);
+  padding: var(--space-fine-12) var(--space-fine-42);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 650 0.6875rem/1.2 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.definition-side .row-side-chip::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--row-chip-hue);
+}
+
+.definition-side .row-side-chip[data-state="pass"] {
+  --row-chip-hue: var(--ok);
+  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
+  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+}
+
+.definition-side .row-side-chip[data-state="warn"] {
+  --row-chip-hue: var(--warn);
+  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
+.definition-side .row-side-chip[data-state="fail"] {
+  --row-chip-hue: var(--error);
+  color: color-mix(in srgb, var(--error) 82%, var(--ink));
+  border-color: color-mix(in srgb, var(--error) 28%, var(--line));
+}
+
+@media (forced-colors: active) {
+  .definition-side .row-side-chip::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}
+
+@media (min-width: 67rem) {
+  .surface-page > .doctrine-section > .definition-split {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .surface-page > .doctrine-section > .definition-split > .definition-side {
+    border-top: 0;
+    border-left: 1px solid var(--definition-divider);
+  }
+
+  /* With no chip, the first key/value row takes the label's line (its key is
+     the same 12px caps) and the rows after it step on the paragraph's lines:
+     the first gap is the label-to-paragraph step (8px plus half the line's
+     leading), not the plain row step. */
+  .surface-page > .doctrine-section > .definition-split > dl.definition-side > div:first-child,
+  .surface-page > .doctrine-section > .definition-split > .definition-side:not(:has(> .row-side-chip)) > dl:first-child > div:first-child {
+    margin-bottom: calc(var(--space-8) - (var(--definition-pitch) - 1rem) / 2);
+  }
+}
+
+/* More contrast: the divider takes the strong line, as the rim does. */
+@media (prefers-contrast: more) {
+  .definition-split {
+    --definition-divider: var(--line-strong);
+  }
 }
 
 /* Engine breakdown — four cards under "What the engines measure" on /score.
@@ -4154,28 +4427,82 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   max-width: 66ch;
 }
 
-/* From a 64rem list every row is a two-pane instrument row. Full-width rows
-   whose text ended at x 400-720 left 50-78% of each row as empty hairline,
-   and the 7-line appeared in no list. Now the face (index, title, meta) is
-   the first seven tracks and the side pane starts on the 7-line: 804.17 at
-   1440, the x where the header column above ends. The face track is the
-   measure, so the meta loses its 66ch cap there.
+/* THE ROW CONTRACT (markup for page code)
+
+     <div className="row-stack" role="list">
+       <a className="row" href="/route">          (or div[role=listitem].row,
+         <span className="row-index">01</span>     or a ToggleRow / CopyRow)
+         <span className="row-body">
+           <span className="row-title">Title</span>
+           <span className="row-meta">One line of description</span>
+         </span>
+         <span className="row-side">                 optional: side data
+           <span className="row-side-line">
+             <span className="row-side-chip" data-state="pass">Pass</span>
+             0 violations
+           </span>
+           <span className="row-side-line">v0.4.1 · 24h</span>
+           <span className="row-side-arrow" aria-hidden="true" />  a.row only
+         </span>
+       </a>
+     </div>
+
+   .row-side holds data, never a control. Lines are 12px mono in --muted, 4px
+   apart, the first on the title's first baseline. data-state is pass, warn,
+   fail or hold: a 6px LED in the state hue and the label in a tint of it
+   (hold is neutral; brand blue is never a state). .row-side-arrow is left
+   empty: CSS draws the arrow at the pane's end, --muted at rest, --ink on
+   hover. The three row controls (.row-check, .row-copy-badge, .listen-cell)
+   are not side data: they sit at the end of the face, on the title's line.
+   From a 64rem list .row-side is the side pane, right of the 7-line divider;
+   below that it stacks under the meta in the body column.
+
+   A list where no row carries side data is not drawn as two panes: it ends
+   on the 7-line itself (--track-split, from a 64rem slot), so no list shows a
+   framed empty column. It was 482-498px of hairline under every list on
+   about 45 routes, because almost no row had a third child. */
+.surface-page .row-stack:not(:has(> .row > :not(.row-index, .row-body, .row-check, .row-copy-badge, .listen-cell), > * > .row > :not(.row-index, .row-body, .row-check, .row-copy-badge, .listen-cell))) {
+  width: calc(100% - clamp(0px, (100% - 64rem) * 1000, 100% - var(--track-split)));
+}
+
+/* Lists close. The last row draws the floor the 2px rail and the 7-line
+   divider meet; both ended in mid-air (/learn, /graph, /review/designesy-org). */
+.surface-page .row-stack > .row:last-child,
+.surface-page .row-stack > :last-child > .row {
+  border-bottom: 1px solid var(--line-faint);
+}
+
+/* The row's block padding is 10px wherever the list is wider than a phone,
+   so a one-line title over a one-line meta is 63px in a collapsed list too.
+   Phones keep the phone row's own padding. */
+@container rows (width >= 36rem) {
+  .surface-page .row-stack .row {
+    padding-block: var(--space-10);
+  }
+}
+
+/* From a 64rem list a row with side data is a two-pane instrument row. The
+   face (index, title, meta) is the first seven tracks and the side pane
+   starts on the 7-line: 804.17 at 1440, the x where the header column above
+   ends. The face track is the measure, so the meta loses its 66ch cap there.
    --row-split is --track-split measured on the list (100cqi), not on the row:
    the row's 2px rail and 16px inset would shift a percentage of its own
    content box. The side track is sized from the right (list width less the
    split and the row's end padding), so the divider holds whatever column-gap
-   a page sets inline. Anything after the body (the toggle check, the copy
-   badge, the listen cell, a status or path datum) sits in the side pane;
-   rows with nothing there keep the pane as one quiet hairline column. The
-   hairline is the row's ::after, run through the row's block padding so it
-   reads as one line down the list, and it never takes a click. The block
-   padding tightens to 10px, so a title-and-meta row is 63px, not 70 (93 with
-   the old 44px title box). Below 64rem rows stay single-column. */
+   a page sets inline. A row control takes an auto track at the end of the
+   face, never the pane, so it sits at the same x (792.17) as in a collapsed
+   list. Side data always takes the last track. The divider is the row's
+   ::after, drawn only on a row that has side data, run through the row's
+   block padding so it reads as one line down the list; it never takes a
+   click. Below 64rem rows stay single-column. */
 @container rows (width >= 64rem) {
   .surface-page .row-stack .row {
     --row-split: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
-    grid-template-columns: 2.5rem minmax(0, 1fr) calc(100cqi - var(--row-split) - var(--space-12));
-    padding-block: var(--space-10);
+    --row-side-track: calc(100cqi - var(--row-split) - var(--space-12));
+    grid-template-columns: 2.5rem minmax(0, 1fr) var(--row-side-track);
+  }
+  .surface-page .row-stack .row:has(> :is(.row-check, .row-copy-badge, .listen-cell)) {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto var(--row-side-track);
   }
   .surface-page .row-stack .row > .row-index {
     grid-area: 1 / 1;
@@ -4184,14 +4511,22 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
     grid-area: 1 / 2;
     padding-inline-end: var(--space-16);
   }
-  .surface-page .row-stack .row > :not(.row-index, .row-body) {
+  .surface-page .row-stack .row > :is(.row-check, .row-copy-badge, .listen-cell) {
     grid-area: 1 / 3;
+  }
+  .surface-page .row-stack .row > :not(.row-index, .row-body, .row-check, .row-copy-badge, .listen-cell) {
+    grid-row: 1;
+    grid-column: -2 / -1;
     justify-self: start;
     margin-inline-start: var(--space-16);
   }
   .surface-page .row-stack .row::after {
+    content: none;
+  }
+  .surface-page .row-stack .row:has(> :not(.row-index, .row-body, .row-check, .row-copy-badge, .listen-cell))::after {
     content: "";
-    grid-area: 1 / 3;
+    grid-row: 1;
+    grid-column: -2 / -1;
     align-self: stretch;
     margin-block: calc(-1 * var(--space-10));
     border-left: 1px solid var(--line-faint);
@@ -4199,6 +4534,167 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   }
   .surface-page .row-stack .row-meta {
     max-width: none;
+  }
+  /* The pane fills its track (the arrow sits at its end) and its first line
+     shares the title's first baseline (the row aligns items on baseline). */
+  .surface-page .row-stack .row > .row-side {
+    justify-self: stretch;
+    margin-top: 0;
+  }
+}
+
+/* The side pane's data. Below 64rem it is a block under the meta in the
+   body column. */
+.row > .row-side {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  row-gap: var(--space-4);
+  min-width: 0;
+  margin-top: var(--space-4);
+  font: 500 0.75rem/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.row > .row-side:has(> .row-side-arrow) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-12);
+}
+
+.row-side > :not(.row-side-arrow) {
+  grid-column: 1;
+}
+
+.row-side-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-8);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* A state chip: the check-cell-status vocabulary (uppercase label, 6px LED
+   in the full state hue, the label pulled toward ink so it holds 4.5:1 in
+   both themes, a 28% state border). Hold is neutral. No state is brand blue. */
+.row-side-chip {
+  --row-chip-hue: var(--muted-dim);
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: var(--space-fine-35);
+  padding: var(--space-fine-12) var(--space-fine-42);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 650 0.6875rem/1.2 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.row-side-chip::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--row-chip-hue);
+}
+
+.row-side-chip[data-state="pass"] {
+  --row-chip-hue: var(--ok);
+  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
+  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+}
+
+.row-side-chip[data-state="warn"] {
+  --row-chip-hue: var(--warn);
+  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
+.row-side-chip[data-state="fail"] {
+  --row-chip-hue: var(--error);
+  color: color-mix(in srgb, var(--error) 82%, var(--ink));
+  border-color: color-mix(in srgb, var(--error) 28%, var(--line));
+}
+
+@media (forced-colors: active) {
+  .row-side-chip::before {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}
+
+/* The route arrow, at the pane's end on the first line. */
+.row-side-arrow {
+  grid-area: 1 / 2;
+  justify-self: end;
+  color: var(--muted);
+  font-family: var(--sans);
+  transition: color 0.2s var(--ease), transform 160ms var(--ease-out);
+}
+
+.row-side-arrow:empty::before {
+  content: "\2192";
+}
+
+@media (hover: hover) {
+  a.row:hover .row-side-arrow {
+    color: var(--ink);
+    transform: translateX(2px);
+  }
+}
+
+a.row:focus-visible .row-side-arrow {
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-side-arrow {
+    transition: color 0.2s var(--ease);
+  }
+  @media (hover: hover) {
+    a.row:hover .row-side-arrow {
+      transform: none;
+    }
+  }
+}
+
+html[data-motion="paused"] a.row:hover .row-side-arrow {
+  transform: none;
+}
+
+/* Phones, below a 36rem list: the listen cell leaves its own track (it took
+   84px of a 330px row and broke package titles to three lines) and sits at
+   the end of the body column on the title's line. The 44px button is
+   centred on the title's first line (11.2px into the phone row's 12.8px
+   block padding, inside the row). The title gives up the cell's width at its
+   end and reaches the button's foot, so the meta lines below never run under
+   it. */
+@container rows (width < 36rem) {
+  .surface-page .row-stack .row--listen {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+  .surface-page .row-stack .row--listen > .row-index {
+    grid-area: 1 / 1;
+  }
+  .surface-page .row-stack .row--listen > .row-body {
+    grid-area: 1 / 2;
+  }
+  .surface-page .row-stack .row--listen > .listen-cell {
+    grid-area: 1 / 2;
+    justify-self: end;
+    width: var(--listen-cell-w);
+    justify-content: flex-end;
+    margin-top: calc((0.9rem * 1.5 - 2.75rem) / 2);
+  }
+  .surface-page .row-stack .row--listen:has(> .listen-cell) > .row-body > .row-title {
+    min-height: calc((0.9rem * 1.5 + 2.75rem) / 2);
+    padding-inline-end: calc(var(--listen-cell-w) + var(--space-8));
   }
 }
 
@@ -4211,48 +4707,133 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
 
   The card-grid pattern is what the docs-hub teardowns converge on: each card
   promises a task you can complete on the linked page, with no marketing copy.
-  Cards reflow 1 / 2 / 3 columns by available width, so the same markup serves
-  phone, tablet, and desktop without a breakpoint-specific layout.
+
+  Columns are counted, not auto-fit, on the one gutter, by the docs layout's
+  width: one, then two, then four from 48rem. auto-fit 3-up at 280px ended 16
+  cards on one card beside a 583px hole, its 12px gap seamed 3px off the
+  module, and four equal tracks on a 16px gap are spans of three, so their
+  seams sit on the docs column's quarter lines. A count that leaves a
+  remainder closes its row with the last card.
 
   Note the deliberate absence of a max-width on the grid itself: the measure
   constraint (v28, 66ch) belongs on prose, not on a grid. Constraining a grid
-  narrows one track and breaks the rhythm — the prose inside each card is
+  narrows one track and breaks the rhythm. The prose inside each card is
   short enough to stay readable at any track width. */
 .docs-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-12);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--grid-gutter);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+@container docs-layout (width >= 30rem) {
+  .docs-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .docs-card-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@container docs-layout (width >= 48rem) {
+  .docs-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .docs-card-grid > :last-child:nth-child(4n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  .docs-card-grid > :last-child:nth-child(4n + 2) {
+    grid-column: span 3;
+  }
+
+  .docs-card-grid > :last-child:nth-child(4n + 3) {
+    grid-column: span 2;
+  }
+
+  /* A quarter column is about 205px: the numeral sits above the title as
+     the card's eyebrow, so the title and its line get the card's width.
+     (The listitem step outranks the card's base rule, which sits below.) */
+  .docs-card-grid > [role="listitem"] > .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+}
+
+/* Reading material, as the definitions, principle cards and check grids
+   below it (see "Reading material, the rest of tier 1"): --mat-reading,
+   --elev-1, var(--radius) and the masked top-lit rim on ::before in place of
+   a flat 1px line-faint border on an 8px radius. The card is a link, so
+   contact heats the rim (its only hover change: no lift, no fill, no
+   border), and so does keyboard focus. */
 .docs-card-grid .row {
+  --rim-rest: 0.6;
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-12);
   align-items: start;
+  /* A card stretched to its row keeps its content on top: auto rows would
+     share the slack, so the numeral, title and meta sat at a different
+     height in every card of the row. */
+  align-content: start;
   height: 100%;
   padding: var(--space-16);
-  border: 1px solid var(--line-faint);
-  border-radius: var(--radius-md, 8px);
-  background: var(--surface);
-  transition:
-    border-color var(--duration-fast, 180ms) var(--ease, ease),
-    transform var(--duration-fast, 180ms) var(--ease, ease);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+  transition: transform 160ms var(--ease-out);
+}
+
+[data-theme="light"] .docs-card-grid .row {
+  --rim-rest: 0.75;
+}
+
+.docs-card-grid .row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim-hot);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: var(--rim-rest);
+  transition: opacity var(--mat-t-out);
+  pointer-events: none;
 }
 
 @media (hover: hover) {
   .docs-card-grid .row:hover {
-    border-color: var(--line-strong);
-    transform: translateY(-2px);
+    background: var(--mat-reading);
   }
 }
 
-/* Focus ring must remain visible on the card surface — the row is a link. */
+@media (hover: hover) and (pointer: fine) {
+  .docs-card-grid .row:hover::before {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
+  }
+}
+
+.docs-card-grid .row:focus-visible::before {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+
+/* Focus ring must remain visible on the card surface: the row is a link. */
 .docs-card-grid .row:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
+  border-radius: var(--radius);
 }
 
 .docs-card-grid .row-index {
@@ -4263,7 +4844,11 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   padding-top: 0.15em;
 }
 
-.docs-card-grid .row-title {
+/* The whole card is the 44px target, so the title is a line of text, not a
+   44px box: one- and two-line titles keep one title-to-meta gap. */
+.docs-card-grid .row .row-title {
+  display: block;
+  min-height: 0;
   font-size: 0.95rem;
 }
 
@@ -4271,16 +4856,40 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
   font-size: 0.8rem;
 }
 
-/* Reduced motion: the hover lift is decorative, so remove it rather than
-   shorten it. The border-color change still communicates hover. */
+/* Reduced motion, tiered: the press scale goes; the rim fade is opacity and
+   stays, held to the 150ms entry both ways. */
 @media (prefers-reduced-motion: reduce) {
-  .docs-card-grid .row {
-    transition: border-color 0.01ms;
+  .docs-card-grid .row,
+  .docs-card-grid .row:active {
+    transition: none;
+    transform: none;
   }
-  @media (hover: hover) {
-    .docs-card-grid .row:hover {
-      transform: none;
-    }
+  .docs-card-grid .row::before {
+    transition-duration: var(--duration-quick);
+  }
+}
+
+html[data-motion="paused"] .docs-card-grid .row::before {
+  transition-duration: var(--duration-quick);
+}
+
+/* More contrast: a solid strong rim at full opacity. Forced colours: Canvas
+   with a CanvasText edge; no rim, no shadow. */
+@media (prefers-contrast: more) {
+  .docs-card-grid .row::before {
+    background: var(--line-strong);
+    opacity: 1;
+  }
+}
+
+@media (forced-colors: active) {
+  .docs-card-grid .row {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  .docs-card-grid .row::before {
+    display: none;
   }
 }
 
@@ -4674,20 +5283,32 @@ button.row:active {
   overflow-wrap: break-word;
 }
 
-/* 44px minimum target where the title is, or sits in, the control. As a
-   block-level link inside table rows it measured 26px tall on /leaderboard's
-   30 site rows -- wide but short. A one-column grid, not inline-flex: its
-   minmax(0, 1fr) track has no automatic minimum, so an unbreakable word
-   (a URL, designesy_readiness_score) wraps inside the row instead of sizing
-   the box past a phone's edge. Its baseline is still the text's. */
-a.row .row-title,
-button.row .row-title,
+/* 44px minimum target where the title IS the control. As a block-level link
+   inside table rows it measured 26px tall on /leaderboard's 30 site rows --
+   wide but short. A one-column grid, not inline-flex: its minmax(0, 1fr)
+   track has no automatic minimum, so an unbreakable word (a URL,
+   designesy_readiness_score) wraps inside the row instead of sizing the box
+   past a phone's edge. Its baseline is still the text's. */
 a.row-title,
 button.layer-item .layer-name {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: center;
   min-height: 44px;
+}
+
+/* Inside a link or button row the ROW is the target, so the title is a line
+   of text like any other. Its 44px box made link rows 85-105px against 63
+   for static ones, and put 34px between title and meta against 23. The row
+   keeps the 44px minimum itself; a title-only row centres its one line. */
+a.row,
+button.row {
+  min-height: 2.75rem;
+}
+
+.row-stack a.row,
+.row-stack button.row {
+  align-content: center;
 }
 
 .row-meta,
@@ -4759,8 +5380,7 @@ button.layer-item {
   border-left: 2px solid var(--line);
 }
 
-/* checked state — shared across all toggle patterns */
-.row.is-checked,
+/* checked state — pillars and layer items dim; a toggle ROW does not (below) */
 .pillar.is-checked,
 .layer-item.is-checked {
   opacity: 0.48;
@@ -4768,14 +5388,12 @@ button.layer-item {
 }
 
 @media (hover: hover) {
-  .row.is-checked:hover,
-.pillar.is-checked:hover,
+  .pillar.is-checked:hover,
 .layer-item.is-checked:hover {
     opacity: 0.68;
   }
 }
 
-.row.is-checked .row-title,
 .pillar.is-checked .pillar-number {
   text-decoration: line-through;
   text-decoration-color: var(--muted-dim);
@@ -4787,28 +5405,113 @@ button.layer-item {
   color: var(--muted-dim);
 }
 
-/* checkmark indicator for rows */
+/* The toggle row's check well. A toggle row is a verification step, so
+   pressing it marks the step and leaves the step legible: no strike, no
+   dimmed title (the row used to fall to 48% opacity and strike its own
+   content). At rest the well is drawn: a 16px rounded square with a 1px ring
+   in --muted-dim (>= 4.5:1 on paper in both themes), so a toggle row never
+   reads as a link row; it was an empty span. Pressed, the access blue fills
+   it (a pre-rendered layer whose opacity changes) and the tick is --paper on
+   that fill (5.7:1 dark, 6.5:1 light; the old 10px --signal-text tick was
+   about 2.1:1). The well sits on the title's first line (on phones, under
+   the numeral: see the max-width: 720px rule below). */
 .row-check {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   width: 1rem;
   height: 1rem;
-  color: var(--signal-text);
-  animation: check-pop 280ms var(--ease-out) both;
-  will-change: transform, opacity;
+  align-self: start;
+  margin-top: calc((0.9rem * 1.5 - 1rem) / 2);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--muted-dim);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--paper);
 }
-/* copy badge for CopyRow (share posts) */
+
+.row-check::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--signal-access);
+  opacity: 0;
+  transition: opacity 160ms var(--ease-out);
+}
+
+.row.is-checked .row-check::before {
+  opacity: 1;
+}
+
+.row.is-checked .row-check {
+  box-shadow: inset 0 0 0 1px var(--signal-access);
+}
+
+@media (hover: hover) {
+  button.row:hover .row-check {
+    box-shadow: inset 0 0 0 1px var(--muted);
+  }
+  button.row.is-checked:hover .row-check {
+    box-shadow: inset 0 0 0 1px var(--signal-access);
+  }
+}
+
+.row-check svg {
+  position: relative;
+  animation: check-pop 280ms var(--ease-out) both;
+}
+
+/* Tiered: under reduce the tick fades in (no scale) inside 200ms; paused,
+   it is simply there (a paused check-pop would hold its invisible frame). */
+@media (prefers-reduced-motion: reduce) {
+  .row-check svg {
+    animation: check-fade 200ms var(--ease-out) both;
+  }
+}
+
+html[data-motion="paused"] .row-check svg {
+  animation: none;
+}
+
+html[data-motion="paused"] .row-check::before {
+  transition: none;
+}
+
+@media (forced-colors: active) {
+  .row-check {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+    color: HighlightText;
+  }
+  .row-check::before {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}
+
+/* The row's controls take the track after the body, on the first line,
+   wherever they sit in the markup. */
+.row > :is(.row-check, .row-copy-badge) {
+  grid-area: 1 / 3;
+}
+
+/* copy badge for CopyRow (share posts). It sits on the title's first line
+   at the row's end; centred in a 224-301px share row it floated 115px below
+   its title. */
 .row-copy-badge {
   font-size: 0.68rem;
   font-weight: 600;
+  line-height: 1rem;
   letter-spacing: 0.04em;
   color: var(--muted-dim);
   text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
   transition: opacity 0.2s var(--ease), color 0.2s var(--ease);
-  align-self: center;
+  align-self: start;
+  margin-top: calc((0.9rem * 1.5 - 1rem) / 2);
 }
 .row:focus-visible .row-copy-badge {
   opacity: 1;
@@ -4825,15 +5528,14 @@ button.layer-item {
 }
 
 /* Touch has no hover to reveal it: the badge rests visible, so a tap is
-   known to copy (the definition badge does the same). */
-@media (hover: none) {
-  .row .row-copy-badge {
-    opacity: 0.7;
-  }
-}
+   known to copy (the definition badge does the same), at full opacity in
+   --muted (it rested at --muted-dim and 70%, about 2.9:1). */
 @media (hover: none), (pointer: coarse) {
-  .row-copy-badge {
+  .row .row-copy-badge {
     opacity: 1;
+  }
+  .row:not(.is-copied) .row-copy-badge {
+    color: var(--muted);
   }
 }
 
@@ -4844,12 +5546,15 @@ button.row {
   align-items: baseline;
 }
 
-/* Phones: a toggle row's check moves into the numeral's cell (the end of
-   the 2rem index track; the numeral is 17px of it), and the row takes the
-   phone row's 2rem/8.8px rhythm, which this rule's specificity had been
-   overriding. The title gains 37px, so a URL step ("Open
+/* Phones: a toggle row's check moves into the numeral's cell, and the row
+   takes the phone row's 2rem/8.8px rhythm, which this rule's specificity had
+   been overriding. The title gains 37px, so a URL step ("Open
    https://www.designesy.org/labs/poise ...") keeps its last segment whole
-   instead of splitting 'poi/se' to leave room for an empty check column. */
+   instead of splitting 'poi/se' to leave room for a check column. The drawn
+   well (16px) and the numeral (17px) do not fit side by side in the 32px
+   track (they touched, -1.2px), so the well sits under the numeral on its
+   left edge, centred on the meta's first line: the index column reads as a
+   checklist gutter and every title keeps the list's shared x. */
 @media (max-width: 720px) {
   button.row:has(> .row-check) {
     grid-template-columns: 2rem minmax(0, 1fr);
@@ -4863,7 +5568,8 @@ button.row {
   }
   button.row > .row-check {
     grid-area: 1 / 1;
-    justify-self: end;
+    justify-self: start;
+    margin-top: calc(0.9rem * 1.5 + var(--space-fine-15) + (0.82rem * 1.45 - 1rem) / 2);
   }
 }
 
@@ -4890,11 +5596,38 @@ button.row {
    end, so COPY and COPIED never cross the text at any width: on touch they
    overlapped the label by 21x7px at 390. A margin, not padding, so the
    label's own box ends where the lane starts. A code snippet is handled
-   below: its first line starts at the top padding. */
-.definition.is-copyable:not(pre) > :first-child:not(.definition-copy-badge) {
+   below: its first line starts at the top padding. A split card's first
+   child is its face, a pane, so the lane moves inside it (next rule). */
+.definition.is-copyable:not(pre, .definition-split) > :first-child:not(.definition-copy-badge) {
   margin-inline-end: 3.5rem;
 }
 
+/* A split card's badge sits in the side pane. Side by side (from the 67rem
+   viewport, the card directly in a page-column section), the card's top end
+   corner is the side pane's, so the badge keeps its place and the side's
+   first block (the state chip, or the first key/value row) gives up the
+   lane. Stacked, the card's top end corner is the face's, so the face's
+   first block gives it up instead, as on a plain card. */
+.definition-split.is-copyable > .definition-face > :first-child {
+  margin-inline-end: 3.5rem;
+}
+
+@media (min-width: 67rem) {
+  .surface-page > .doctrine-section > .definition-split.is-copyable > .definition-face > :first-child {
+    margin-inline-end: 0;
+  }
+
+  .surface-page > .doctrine-section > .definition-split.is-copyable > .definition-side > :first-child {
+    margin-inline-end: 3.5rem;
+  }
+}
+
+/* The badge is set on the label's 16px line, so its 11px caps centre on the
+   12px label caps instead of hanging from the top of the box (its cap line
+   sat about 3px above the label's). A card that opens on a paragraph or a
+   list, with no label, sets the badge on that block's first line instead
+   (centred on the body's 1.5 line; a step list's first line lands within
+   2px of it). */
 .definition-copy-badge {
   position: absolute;
   top: var(--space-20);
@@ -4902,12 +5635,17 @@ button.row {
   z-index: 1;
   font-size: 0.6875rem;
   font-weight: 650;
+  line-height: 1rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
   opacity: 0;
   transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
   pointer-events: none;
+}
+
+.definition.is-copyable:not(pre):has(> :is(p, ul, ol):first-child:not(.definition-label)) > .definition-copy-badge {
+  top: calc(var(--space-20) + (clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem) * 1.5 - 1rem) / 2);
 }
 
 /* Shown by contact, by keyboard focus and by the copy itself, always at full
@@ -4973,12 +5711,18 @@ button.row {
   --check-pad-y: 0.95rem;
   --check-pad-x: 1rem;
   --check-index: 1.7rem;
-  --check-tracks: 4;
+  /* One track list for every family: the shell's twelve modules, with each
+     1px seam on a module's gutter centre (see "Count-aware columns" below).
+     --check-m is one module; the edge tracks carry half a gutter and the
+     inner ten a whole one, less the 1px seams, so the boundary after k
+     tracks sits at k modules + (k - 1) gutters + half a gutter: 413.5,
+     513.17, 712.5, 912, 1011.5 on a 1180 grid at 1440. The grid is its own
+     size container, so its cells choose their spans from its width. */
+  --check-m: calc((100% - 11 * var(--grid-gutter)) / 12);
+  --check-edge: calc(var(--check-m) + var(--grid-gutter) / 2 - 0.5px);
+  --check-mid: calc(var(--check-m) + var(--grid-gutter) - 1px);
   display: grid;
-  /* Track count by family (data-cols), never by auto-fit: see "Count-aware
-     columns" below. The grid is its own size container, so its cells choose
-     their spans from the grid's width, not the viewport's. */
-  grid-template-columns: repeat(var(--check-tracks), minmax(0, 1fr));
+  grid-template-columns: var(--check-edge) repeat(10, var(--check-mid)) var(--check-edge);
   container: check-grid / inline-size;
   gap: 1px;
   max-width: 100%;
@@ -5052,55 +5796,37 @@ button.row {
 }
 
 /* ------------------------------------------------------------------
-   Count-aware columns. CheckGrid stamps data-count (the item count) and
-   data-cols, the column count the grid takes at full width, chosen from the
-   count so every row closes (lib/check-grid.tsx wideCols): 3 for 3, 6, 9;
-   4 for 4, 8, 16; 5 for 5, 10, 15; 6 for a dense 6, 11, 12; 7 for a dense
-   14; 4 otherwise, with the last cell closing the row. auto-fit only drops
-   empty tracks when there are fewer items than columns, so 5, 6, 7, 9, 10 or
-   11 items ended on 1-3 blank tiles painted as panel (/review/takt
-   Corrections: an 886 x 128 hole).
-   The track list is fixed per family (--check-tracks, a common multiple of
-   every tier's column count) and each cell picks its span from the grid's
-   own width, so a tier changes the column count, never the track list:
+   Count-aware columns, on one track list. Every grid has the same twelve
+   tracks (the shell's modules, seams on the gutter centres; see the base
+   rule), so a tier or a family changes spans, never tracks, and a 4-up, a
+   3-up and a 2-up grid stacked on one page share every seam they can: 4-up
+   at 413.5 / 712.5 / 1011.5, 3-up at 513.17 / 912, 2-up at 712.5 (1440).
+   Equal 1fr tracks put those seams 2-4.5px off the module, and the old
+   five-up family (5, 10, 15) on no module line at all, with 235px cells
+   that split CSS names at their hyphens.
+   CheckGrid stamps the spans (lib/check-grid.tsx wideSpans), so every row
+   closes and none ends on a blank track:
      below 34rem   one column
-     34-64rem      two columns (three for 6 and 9, and the 6 family)
-     64rem up      data-cols (a dense 14 sits 4-up until 80rem: seven
-                   columns at 1180 cut "Accessibility" mid-word)
-   Where a row cannot divide evenly the last cell spans to the row's end. Six
-   and nine keep three tracks at every width, the same list home's 3 x 3
-   principle cells set (home.css), so the two never disagree. The 1px seams
-   stay the slab's: 4-up seams sit at 416.75 / 712.5 / 1007.25 at 1440, the
-   centre one on the shell's 6|6 line.
+     34-64rem      two-up (span 6), an odd last cell taking the row; from
+                   40rem a short 6, 9 or 15 keeps three columns (data-mid=
+                   "3", span 4), the same list home's 3 x 3 principle cells
+                   set; three alone read 2 + 1, so beside a 2 x 2 (/learn
+                   "We give up" | "We get") the pair keeps one row structure
+     64rem up      data-span on each item: 3 (4-up), 4 (3-up), 6 (2-up) or
+                   12. Five read 3 + 2, ten 4 + 4 + 2, and a 4-up remainder
+                   closes on rows of three (7: 4 + 3, 14: 4 + 4 + 3 + 3);
+                   long titles (data-density="long") sit 2-up
    ------------------------------------------------------------------ */
 .check-grid:is([data-cols="1"], .is-stack) {
-  --check-tracks: 1;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.check-grid[data-cols="2"] {
-  --check-tracks: 2;
-}
-
-.check-grid[data-cols="3"] {
-  --check-tracks: 3;
-}
-
-/* Three alone read 2 + 1 in the middle tier, so beside a 2 x 2 (/learn "We
-   give up" | "We get") the pair keeps one row structure. */
-.check-grid[data-cols="3"][data-count="3"] {
-  --check-tracks: 6;
-}
-
-.check-grid[data-cols="5"] {
-  --check-tracks: 10;
-}
-
-.check-grid[data-cols="6"] {
-  --check-tracks: 6;
-}
-
-.check-grid[data-cols="7"] {
-  --check-tracks: 28;
+/* The track list outranks a page's own column count. Home set its nine
+   principles on repeat(3, 1fr) from 600px (home.css), and spans of 4 and 6
+   on three tracks spill into implicit ones: one cell per row. Its 3 x 3 is
+   data-mid="3" / span 4 on these tracks, seamed on the module. */
+.check-grid:not(.is-stack):not([data-cols="1"]) {
+  grid-template-columns: var(--check-edge) repeat(10, var(--check-mid)) var(--check-edge);
 }
 
 .check-grid > * {
@@ -5109,112 +5835,193 @@ button.row {
 
 @container check-grid (34rem <= width < 64rem) {
   .check-grid > * {
-    grid-column: span 2;
+    grid-column: span 6;
   }
 
-  .check-grid:is([data-cols="1"], [data-cols="2"], [data-cols="3"], .is-stack) > * {
-    grid-column: span 1;
-  }
-
-  .check-grid[data-cols="5"] > * {
-    grid-column: span 5;
-  }
-
-  .check-grid[data-cols="7"] > * {
-    grid-column: span 14;
-  }
-
-  .check-grid[data-cols="3"][data-count="3"] > * {
-    grid-column: span 3;
-  }
-
-  /* two columns: an odd last cell takes the row */
-  .check-grid:is(:not([data-cols]), [data-cols="4"], [data-cols="5"], [data-cols="7"]) > :last-child:nth-child(odd),
-  .check-grid[data-cols="3"][data-count="3"] > :last-child {
+  .check-grid > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
 
-  /* three columns (6 family) */
-  .check-grid[data-cols="6"] > :last-child:nth-child(3n + 1) {
+  .check-grid:is([data-cols="1"], .is-stack) > * {
     grid-column: 1 / -1;
   }
+}
 
-  .check-grid[data-cols="6"] > :last-child:nth-child(3n + 2) {
+/* Three-up from 40rem only (thirds of 210px and up): at 34rem a third is a
+   170px cell, a 120px measure that set a 50-character title on four lines. */
+@container check-grid (40rem <= width < 64rem) {
+  .check-grid[data-mid="3"] > *,
+  .check-grid[data-mid="3"] > :last-child:nth-child(odd) {
     grid-column: span 4;
   }
 }
 
 @container check-grid (width >= 64rem) {
   .check-grid > * {
-    grid-column: span 1;
-  }
-
-  .check-grid:is([data-cols="5"], [data-count="3"][data-cols="3"]) > * {
-    grid-column: span 2;
-  }
-
-  /* four columns: 7, 11, 13, 17 ... */
-  .check-grid:is(:not([data-cols]), [data-cols="4"]) > :last-child:nth-child(4n + 1) {
-    grid-column: 1 / -1;
-  }
-
-  .check-grid:is(:not([data-cols]), [data-cols="4"]) > :last-child:nth-child(4n + 2) {
     grid-column: span 3;
   }
 
-  .check-grid:is(:not([data-cols]), [data-cols="4"]) > :last-child:nth-child(4n + 3) {
-    grid-column: span 2;
+  .check-grid > [data-span="4"] {
+    grid-column: span 4;
   }
 
-  /* six columns: a dense 11 */
-  .check-grid[data-cols="6"] > :last-child:nth-child(6n + 1) {
+  .check-grid > [data-span="6"] {
+    grid-column: span 6;
+  }
+
+  .check-grid > [data-span="12"],
+  .check-grid:is([data-cols="1"], .is-stack) > * {
     grid-column: 1 / -1;
-  }
-
-  .check-grid[data-cols="6"] > :last-child:nth-child(6n + 2) {
-    grid-column: span 5;
-  }
-
-  .check-grid[data-cols="6"] > :last-child:nth-child(6n + 3) {
-    grid-column: span 4;
-  }
-
-  .check-grid[data-cols="6"] > :last-child:nth-child(6n + 4) {
-    grid-column: span 3;
-  }
-
-  .check-grid[data-cols="6"] > :last-child:nth-child(6n + 5) {
-    grid-column: span 2;
-  }
-}
-
-/* a dense 14: four columns until 80rem (4 + 4 + 4 + 2), then seven */
-@container check-grid (64rem <= width < 80rem) {
-  .check-grid[data-cols="7"] > * {
-    grid-column: span 7;
-  }
-
-  .check-grid[data-cols="7"] > :last-child:nth-child(4n + 2) {
-    grid-column: span 21;
-  }
-}
-
-@container check-grid (width >= 80rem) {
-  .check-grid[data-cols="7"] > * {
-    grid-column: span 4;
   }
 }
 
 /* Paired grids ("What to imply" / "What to avoid" on /docs and /learn): each
    fills its .doctrine-cols column (see the column rule there), so the pair
-   shares top and bottom edges (edge contract rule (c)). Side by side, its
-   rows are equal (1fr), so grids with the same row count draw their internal
-   rules on the same lines: the three "What it is not" lists used to break
-   rows 10px apart. Stacked, rows keep their content height. Cell content
-   stays top-aligned. */
+   shares top and bottom edges (edge contract rule (c)). The card stretches,
+   not its rows: auto rows stretch to fill under align-content: normal, so
+   /docs "What to imply" (6 rows) ran 76px rows beside "What to avoid" (9
+   rows at 51px) and the two lists' text drifted out of step from row 2. At
+   start, rows keep their content height on one pitch and the slack is one
+   quiet floor under the shorter list. Cell content stays top-aligned. */
+.doctrine-cols .check-grid {
+  align-content: start;
+}
+
+/* Side by side, paired grids with the SAME count keep equal (1fr) rows, so
+   their internal rules land on the same lines: the three "What it is not"
+   lists (/learn, 3 + 3 + 3) used to break rows 10px apart. Counts that
+   differ keep their natural pitch (above). */
 @container doctrine-cols (width >= 42rem) {
-  .doctrine-cols > * > .check-grid:last-child {
+  .doctrine-cols:has(> :first-child > .check-grid):has(> :nth-child(n + 2) > .check-grid):is(
+      :not(:has(> * > .check-grid:not([data-count="2"]))),
+      :not(:has(> * > .check-grid:not([data-count="3"]))),
+      :not(:has(> * > .check-grid:not([data-count="4"]))),
+      :not(:has(> * > .check-grid:not([data-count="5"]))),
+      :not(:has(> * > .check-grid:not([data-count="6"]))),
+      :not(:has(> * > .check-grid:not([data-count="7"]))),
+      :not(:has(> * > .check-grid:not([data-count="8"]))),
+      :not(:has(> * > .check-grid:not([data-count="9"])))
+    )
+    > *
+    > .check-grid:last-child {
     grid-auto-rows: 1fr;
+  }
+}
+
+/* One pitch for paired one-column lists of any counts. Natural rows still
+   drifted wherever one list wrapped a title: /docs "What to imply" ran two
+   70px rows beside "What to avoid" at 51px, so every rule below row 3 sat
+   20-40px off its neighbour's. Where every column is a heading over a check
+   grid and each grid is one column wide (its column under 34rem: a pair
+   below 69rem, three below 104rem), each column spans the longest list's
+   rows plus the heading row, and the column and its grid take those rows as
+   subgrids. Row n is then one height in every list (the taller cell's) and
+   its seam one line across the pair. The shorter list ends on a floor of the
+   card's own material, and both cards keep one top and bottom edge.
+   A subgrid cannot carry layout containment, so here the grid is not a size
+   container; its width queries fall back to their one-column base, which is
+   what a grid under 34rem renders anyway. --pair-span is the longest
+   count plus the heading row (ascending rules: the largest match wins);
+   counts past twelve keep the natural pitch above. */
+.doctrine-cols:has(> * > .check-grid[data-count="2"]) { --pair-span: 3; }
+.doctrine-cols:has(> * > .check-grid[data-count="3"]) { --pair-span: 4; }
+.doctrine-cols:has(> * > .check-grid[data-count="4"]) { --pair-span: 5; }
+.doctrine-cols:has(> * > .check-grid[data-count="5"]) { --pair-span: 6; }
+.doctrine-cols:has(> * > .check-grid[data-count="6"]) { --pair-span: 7; }
+.doctrine-cols:has(> * > .check-grid[data-count="7"]) { --pair-span: 8; }
+.doctrine-cols:has(> * > .check-grid[data-count="8"]) { --pair-span: 9; }
+.doctrine-cols:has(> * > .check-grid[data-count="9"]) { --pair-span: 10; }
+.doctrine-cols:has(> * > .check-grid[data-count="10"]) { --pair-span: 11; }
+.doctrine-cols:has(> * > .check-grid[data-count="11"]) { --pair-span: 12; }
+.doctrine-cols:has(> * > .check-grid[data-count="12"]) { --pair-span: 13; }
+
+@container doctrine-cols (42rem <= width < 69rem) {
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > * {
+    grid-row: 1 / span var(--pair-span);
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > *
+    > .check-grid {
+    container-type: normal;
+    grid-row: 2 / -1;
+    grid-template-rows: subgrid;
+    row-gap: 1px;
+  }
+}
+
+@container doctrine-cols (42rem <= width < 104rem) {
+  .doctrine-cols:has(> :nth-child(3):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > * {
+    grid-row: 1 / span var(--pair-span);
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
+  .doctrine-cols:has(> :nth-child(3):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > *
+    > .check-grid {
+    container-type: normal;
+    grid-row: 2 / -1;
+    grid-template-rows: subgrid;
+    row-gap: 1px;
+  }
+}
+
+/* The same pair one tier up (69-97rem: columns of 34-48rem). The region
+   holds both grids two-up itself (an odd last cell takes the row; a short
+   6 or 9 that would go three-up from 40rem stays two-up beside its pair, so
+   both lists keep one row structure), since a subgrid is not a size
+   container, and
+   the columns span the longer list's rows, half its items rounded up, plus
+   the heading. Wider pairs keep the natural pitch. */
+.doctrine-cols:has(> * > .check-grid[data-count="2"]) { --pair-span-2: 2; }
+.doctrine-cols:has(> * > .check-grid[data-count="3"]) { --pair-span-2: 3; }
+.doctrine-cols:has(> * > .check-grid[data-count="4"]) { --pair-span-2: 3; }
+.doctrine-cols:has(> * > .check-grid[data-count="5"]) { --pair-span-2: 4; }
+.doctrine-cols:has(> * > .check-grid[data-count="6"]) { --pair-span-2: 4; }
+.doctrine-cols:has(> * > .check-grid[data-count="7"]) { --pair-span-2: 5; }
+.doctrine-cols:has(> * > .check-grid[data-count="8"]) { --pair-span-2: 5; }
+.doctrine-cols:has(> * > .check-grid[data-count="9"]) { --pair-span-2: 6; }
+.doctrine-cols:has(> * > .check-grid[data-count="10"]) { --pair-span-2: 6; }
+.doctrine-cols:has(> * > .check-grid[data-count="11"]) { --pair-span-2: 7; }
+.doctrine-cols:has(> * > .check-grid[data-count="12"]) { --pair-span-2: 7; }
+
+@container doctrine-cols (69rem <= width < 97rem) {
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > * {
+    grid-row: 1 / span var(--pair-span-2);
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > *
+    > .check-grid {
+    container-type: normal;
+    grid-row: 2 / -1;
+    grid-template-rows: subgrid;
+    row-gap: 1px;
+  }
+
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > *
+    > .check-grid
+    > * {
+    grid-column: span 6;
+  }
+
+  .doctrine-cols:has(> :nth-child(2):last-child):has(> * > .check-grid):not(:has(> * > :not(h3, h4, .check-grid), > * > :is(h3, h4):not(:first-child), > * > .check-grid:not(:is(h3, h4) + .check-grid:last-child), > * > .check-grid:is(.is-stack, :not([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"], [data-count="6"], [data-count="7"], [data-count="8"], [data-count="9"], [data-count="10"], [data-count="11"], [data-count="12"]))))
+    > *
+    > .check-grid
+    > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -5388,8 +6195,10 @@ button.check-cell {
 
 /* The cell clips (overflow: hidden, for its fill sweep), so one unbreakable
    token, such as the URL in /contracts' "metadataBase is https://www.designesy.org",
-   was cut at the cell edge instead of wrapping (5px hidden at 1024). Long
-   tokens break anywhere; ordinary words still wrap at spaces first. */
+   was cut at the cell edge instead of wrapping (5px hidden at 1024). A token
+   too long for a whole line breaks (break-word, not anywhere: a word never
+   splits while a line is free); ordinary words wrap at spaces first, and
+   nothing hyphenates. */
 .check-cell-title {
   font-size: 0.9rem;
   font-weight: 650;
@@ -5397,7 +6206,8 @@ button.check-cell {
   color: var(--ink);
   line-height: 1.38;
   text-wrap: pretty;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: manual;
 }
 
 .check-cell-meta {
@@ -5405,7 +6215,26 @@ button.check-cell {
   color: var(--muted-dim);
   line-height: 1.42;
   text-wrap: pretty;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: manual;
+}
+
+/* CSS names in a cell (CheckGrid wraps them in code): mono, and one unit.
+   A hyphen is a break opportunity whatever hyphens says, so a 235px cell
+   read "--radius-" / "sm 4px" and "text-underline-" / "position". From the
+   two-up tier a name never breaks; on a phone's one column it may, rather
+   than run past the cell's clip. */
+:is(.check-cell-title, .check-cell-meta) code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+@container check-grid (width >= 34rem) {
+  :is(.check-cell-title, .check-cell-meta) code {
+    white-space: nowrap;
+  }
 }
 
 /* avoid / anti-pattern cells — same grid, quieter signal */
@@ -6003,6 +6832,32 @@ button.check-cell {
   }
 }
 
+/* The closing note belongs to the page, not the footer. Its 40px top margin
+   stacked on the last section's 56px bottom padding, so it floated 96px
+   under the last content and 32px over the footer rule, and read as the
+   footer's preamble. Seated: the section before it closes on 24px (its last
+   block's own trailing margin dropped, so 24 is the whole gap), the note
+   takes no top margin, and it keeps the section rhythm under itself, the
+   same clamp as a section's block padding (56px at 1440, 40px at 390), so
+   the page still ends a full section pad above the footer. Only a note that
+   directly follows a section moves; a note after anything else keeps its
+   40px. Notes are not moved in markup. */
+.surface-page > .doctrine-section:has(+ .status-note) {
+  padding-bottom: var(--space-24);
+}
+
+.surface-page > .doctrine-section:has(+ .status-note) > :last-child {
+  margin-bottom: 0;
+}
+
+.surface-page > .doctrine-section + .status-note {
+  margin-top: 0;
+}
+
+.surface-page > .status-note {
+  margin-bottom: clamp(var(--space-40), 5vw, var(--space-56));
+}
+
 /* A link in the note ("Machine export") inherited the note's colour with no
    underline, so nothing but the pointer told it from the sentence. It reads
    as a link now: ink on a strong-line underline (the lab meta links' idiom),
@@ -6063,23 +6918,60 @@ button.check-cell {
   }
 }
 
-.open-package-paths {
+/* A package's paths on /open: the human page, then the machine export
+   (open/page.tsx). Each path is an item; the second leads with its
+   separator, pulled into the gap before it. The list is clipped, and its
+   first item on every line starts on the clip edge, so a separator that
+   would lead a wrapped line falls outside it: no line starts or ends on a
+   "·" (at 390 one hung at a line end, "/kits/design-review ·"). The clip
+   box reaches 6px past the text on every side, so a link's focus ring (2px
+   at a 3px offset) is never cut; a leading separator's glyph sits about
+   10px out, past it. The version and the "human surface" note are the
+   row's side data, so a path line holds paths only. */
+.row-meta.open-package-paths {
+  --open-path-gap: 1.25rem;
+  display: block;
+  overflow: hidden;
+  margin: calc(var(--space-fine-40) - 6px) -6px -6px;
+  padding: 6px;
+}
+
+.open-paths {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-4) var(--space-fine-40);
-  margin-top: var(--space-fine-40);
+  row-gap: var(--space-4);
+  margin-inline-start: calc(-1 * var(--open-path-gap));
 }
 
-.open-package-paths a {
+.open-path {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  margin-inline-start: var(--open-path-gap);
+}
+
+.open-path-sep {
+  flex: none;
+  width: var(--open-path-gap);
+  margin-inline-start: calc(-1 * var(--open-path-gap));
+  color: var(--muted-dim);
+  text-align: center;
+}
+
+/* Paths break before a "/", never inside a word: each "/"-segment is a
+   nowrap span (open/page.tsx), so wrap moves a whole segment to the next
+   line (break-all split "design-system.js" / "on"). The link's box is 24px,
+   the WCAG 2.5.8 floor, not the 44px of .row-meta a: that box left an empty
+   20px band under every path line and, when a pair wrapped, an empty line
+   between the two paths. Two wrapped paths still sit 28px apart. */
+.row-meta.open-package-paths a {
+  min-width: 0;
+  min-height: 1.5rem;
   color: var(--muted);
   text-decoration: underline;
   text-decoration-color: var(--line);
   text-underline-offset: 0.15em;
-  /* Paths break before a "/", never inside a word. These links are
-     inline-flex (the 44px target in .row-meta a); each "/"-segment is a
-     nowrap span (open/page.tsx), so wrap moves a whole segment to the next
-     line. break-all split at any letter ("design-system.js" / "on"). */
   flex-wrap: wrap;
 }
 
@@ -6088,18 +6980,20 @@ button.check-cell {
 }
 
 @media (hover: hover) {
-  .open-package-paths a:hover {
+  .row-meta.open-package-paths a:hover {
     color: var(--ink);
     text-decoration-color: var(--line-strong);
   }
 }
 
-.open-path-sep {
-  color: var(--muted-dim);
-}
-
-.open-path-note {
-  color: var(--muted-dim);
+/* A URL set in a line of copy (lib: app/review/url-break.tsx): code that
+   breaks only after "//" and each "/". Mono at the line's weight less a
+   step, so a re-run step reads as words and an address. */
+.row-url {
+  font-family: var(--mono);
+  font-size: 0.92em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 /* Reading material (tier 1): --mat-reading, --elev-1 and the rim on
@@ -6213,6 +7107,96 @@ html[data-motion="paused"] .lab-card:active {
   }
 }
 
+/* --- Lab card, face/side (.lab-card.is-split): the field-check card on
+   /labs/cadence, /labs/poise and /labs/takt. It was a 1180px link card whose
+   copy ended near x 560, with a loose tag word at the top right and a lone
+   arrow at the foot: 60-70% of the card empty. Now the face holds the
+   verdict chip, the title, the lede and the way in; the side pane holds the
+   check's facts as key/value rows behind a hairline on the 7-line, the same
+   card /kits draws. The card carries no padding (the panes do) and no border
+   (the rim is a layer), so --track-split resolves against exactly its width
+   and the divider lands where a full-start / split item above it ends. The
+   card is the query container, so the panes switch on its own width. --- */
+.lab-card.is-split {
+  container: lab-card / inline-size;
+  display: block;
+  padding: 0;
+}
+
+.lab-card-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lab-card-face {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: var(--space-24);
+}
+
+/* The way in sits on the face's foot, level with the side pane's last row. */
+.lab-card-face > .lab-card-arrow {
+  margin-top: auto;
+  padding-top: var(--space-12);
+}
+
+.lab-card-side {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-12) var(--space-24);
+  border-top: 1px solid var(--line-faint);
+}
+
+@container lab-card (width >= 64rem) {
+  .lab-card-panes {
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
+  }
+
+  .lab-card-side {
+    padding-block: var(--space-16);
+    border-top: 0;
+    border-left: 1px solid var(--line-faint);
+  }
+}
+
+/* Key/value rows on hairlines: the key in the quiet caps tier, the value in
+   mono ink, on one baseline. */
+.lab-card-side > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding-block: var(--space-10);
+}
+
+.lab-card-side > div + div {
+  border-top: 1px solid var(--line-faint);
+}
+
+.lab-card-side dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.lab-card-side dd {
+  margin: 0;
+  font: 500 0.8rem/1.35 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: end;
+}
+
+/* The verdict chip is the row region's state chip (.row-side-chip with
+   data-state pass, warn or fail; never brand blue), so a field check reads
+   in the one chip vocabulary the related rows under the card use. */
+
 
 .poise-actions {
   margin: 0;
@@ -6282,6 +7266,21 @@ html[data-motion="paused"] .lab-card:active {
      background-color is the material too, never transparent paper. */
   background: var(--mat-instrument) var(--surface-raised);
   box-shadow: var(--elev-2);
+}
+
+/* A rack stacked under other content in its section stands 32px clear of it,
+   the gap a definition keeps from what follows. It carried no block margin,
+   so on /contracts the principle cards and a note sat flush on its rim: two
+   opaque, rimmed objects welded into one edge. Under a note that captions it
+   the rack sits closer, 16px. Under the section heading the heading's own
+   margin holds. Margins collapse, so a larger gap above (a definition's 32px,
+   a note's inline 24px) is kept as it was. */
+.doctrine-section > :not(:first-child) + .demo-grid {
+  margin-top: var(--space-32);
+}
+
+.doctrine-section > .surface-note + .demo-grid {
+  margin-top: var(--space-16);
 }
 
 /* The rim: the shared 1px top-lit edge. Read, not commanded, so it never
@@ -7214,66 +8213,140 @@ a.field-card:active {
   }
 }
 
-/* Agent prompt block on kit pages */
+/* Prompt block (CopyPrompt, lib/copy-prompt.tsx): one reading surface with
+   its own title bar. Tier 1 reading material, the recipe every other reading
+   card takes ("Reading material, the rest of tier 1"): --mat-reading,
+   --elev-1 and the masked top-lit rim on ::before. It kept a flat 1px
+   rgba(255,255,255,.12) line directly under a rimmed definition in the same
+   section. The rim is read, never pressed, so it does not heat; the button
+   is the control.
+   The bar carries the block's name and Copy on the text's 1.35rem inset over
+   a --line-faint hairline. The button floated 8px from the corner while the
+   text sat 22px in, and on touch the block opened on an empty 70px band kept
+   clear for it. Now the band is the chrome and the button's edge is the
+   text's edge, at every width and on every pointer.
+   The material sits on the wrapper, not the <pre>, so the edge fade that
+   lib/scroll-regions puts on an overflowing <pre> masks the text only. */
 .kit-prompt {
+  --rim-rest: 0.6;
+  position: relative;
+  isolation: isolate;
+  max-width: 100%;
   margin: 0;
-  padding: var(--space-20) var(--space-fine-135);
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: var(--radius);
-  background: var(--surface);
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+}
+
+[data-theme="light"] .kit-prompt {
+  --rim-rest: 0.75;
+}
+
+.kit-prompt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim-hot);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: var(--rim-rest);
+  pointer-events: none;
+}
+
+.copy-prompt-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  min-height: 2.75rem;
+  padding-inline: var(--space-fine-135);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+/* The definition label's voice (12px caps, --muted), so a prompt's name and
+   a definition's label read as one family on the same page. */
+.copy-prompt-title {
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The first line's letters sit 16px under the bar's hairline: the top
+   padding gives back the line's half-leading (0.275em of a 1.55 line), so
+   the gap is measured to the text, as the bar's own padding is. break-word,
+   not anywhere: a URL breaks only when it cannot fit a line of its own, so a
+   phone reads the prompt top to bottom instead of scrolling one line
+   sideways. The copied text is the <pre>'s content and never changes. */
+.copy-prompt-pre {
+  max-width: 100%;
+  margin: 0;
+  padding: calc(var(--space-16) - 0.275em) var(--space-fine-135) var(--space-20);
   color: var(--muted);
   font-family: var(--mono);
   font-size: 0.78rem;
   line-height: 1.55;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
   overflow-x: auto;
-  max-width: 100%;
 }
 
-.kit-prompt code {
-  font-family: inherit;
-  color: inherit;
-  background: transparent;
+/* The keyboard stop's ring stays inside the card, under the hairline. */
+.copy-prompt-pre:focus-visible {
+  outline-offset: -2px;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.copy-prompt-pre code {
   padding: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
 }
 
-/* CopyPrompt — one-click copy button for agent prompts and share text */
-.copy-prompt-wrap {
-  position: relative;
-}
-.copy-prompt-pre {
-  margin: 0;
-}
+/* Copy rests visible: it is the bar's control, not a hover reveal. The chip
+   is 32px; its ::before takes the hit area to the bar's full 44px (the touch
+   floor, and above the 40px desktop floor) without a heavier chip. The
+   min-width holds the right-anchored chip still when Copy becomes Copied. */
 .copy-prompt-btn {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
+  position: relative;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-fine-30);
-  padding: var(--space-fine-32) var(--space-fine-70);
+  justify-content: center;
+  min-width: 4.5rem;
+  min-height: 2rem;
+  padding: 0 var(--space-12);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   color: var(--muted);
+  font-family: var(--sans);
   font-size: 0.72rem;
   font-weight: 600;
+  line-height: 1;
   letter-spacing: 0.03em;
-  font-family: var(--sans);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s var(--ease), border-color 0.2s var(--ease),
-    color 0.2s var(--ease), background 0.2s var(--ease),
-    transform 160ms var(--ease-out);
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease),
+    background 0.2s var(--ease), transform 160ms var(--ease-out);
 }
-.copy-prompt-btn:focus-visible {
-  opacity: 1;
+
+.copy-prompt-btn::before {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
 }
 
 @media (hover: hover) {
-  .copy-prompt-wrap:hover .copy-prompt-btn {
-    opacity: 1;
-  }
   .copy-prompt-btn:hover {
     border-color: var(--line-strong);
     color: var(--ink);
@@ -7288,24 +8361,34 @@ a.field-card:active {
   outline-offset: 1px;
 }
 .copy-prompt-btn.is-copied {
-  opacity: 1;
   border-color: color-mix(in srgb, var(--signal) 40%, var(--line));
   color: var(--signal-text);
   background: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
 }
-/* Touch: no hover to reveal the button, so it is always there, and it gets a
-   band of its own at the top of the block (it sat over the prompt's first
-   lines) at a full 44px. */
-@media (hover: none), (pointer: coarse) {
-  .copy-prompt-btn {
+
+/* More contrast: the rim is a solid strong line. Forced colours: Canvas with
+   a CanvasText edge and rule; no rim and no shadow. */
+@media (prefers-contrast: more) {
+  .kit-prompt::before {
+    background: var(--line-strong);
     opacity: 1;
-    top: var(--space-8);
-    right: var(--space-8);
-    min-height: 2.75rem;
-    padding: 0 var(--space-12);
   }
-  .copy-prompt-wrap .copy-prompt-pre {
-    padding-top: calc(2.75rem + var(--space-16));
+  .copy-prompt-bar {
+    border-bottom-color: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .kit-prompt {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  .kit-prompt::before {
+    display: none;
+  }
+  .copy-prompt-bar {
+    border-bottom-color: CanvasText;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -7315,6 +8398,10 @@ a.field-card:active {
   .copy-prompt-btn:active {
     transform: none;
   }
+}
+
+html[data-motion="paused"] .copy-prompt-btn:active {
+  transform: none;
 }
 
 @media (max-width: 720px) {
@@ -9200,38 +10287,126 @@ a.lab-card:focus-visible .lab-card-arrow {
    a header with status dot, label, count, and chevron. FAIL expanded by
    default; PASS collapsed (confirmation noise, not actionable). */
 
+/* Each status group is ONE reading panel (spec 3.2): --mat-reading, --elev-1,
+   the masked top-lit rim and the result column's 12px card radius, the
+   recipe of the hero, signals and controls cards beside it. Its header and
+   its checks are rows inside the panel, parted by 1px --line-faint
+   separators (a macOS list). The header and every check used to be separate
+   tiles on the old recipe (a flat 1px line, a 135deg gradient, a 6px
+   radius): about 15 floating boxes a viewport, a third material and a second
+   radius in one column. Touching a row heats the panel's rim by layer
+   opacity (::after, --rim-hot); nothing lifts. */
 .score-check-group {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: var(--space-fine-40);
+  gap: 0;
+  background: var(--mat-reading);
+  box-shadow: var(--elev-1);
+  border-radius: var(--radius-lg);
+}
+
+.score-check-group::before,
+.score-check-group::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.score-check-group::after {
+  background: var(--rim-hot);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .score-check-group:has(> .score-check-group-header:hover, .score-card-item:hover)::after {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
+  }
+}
+
+.score-check-group:has(:focus-visible)::after {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
+}
+
+html[data-motion="paused"] .score-check-group::after {
+  transition-duration: var(--duration-quick);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-check-group::after {
+    transition-duration: var(--duration-quick);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .score-check-group::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .score-check-group {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  .score-check-group::before,
+  .score-check-group::after {
+    display: none;
+  }
 }
 
 .score-check-group + .score-check-group {
   margin-top: var(--space-fine-60);
 }
 
+/* The header is the panel's first row: a 44px button on the panel's own
+   fill, its text on the checks' 16px inset. Open, its bottom edge is the
+   first separator (the first check's top border); closed, it is the whole
+   panel and takes all four corners. */
 .score-check-group-header {
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  padding: var(--space-8) var(--space-12);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  min-height: 2.75rem;
+  padding: var(--space-8) var(--space-16);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   cursor: pointer;
   font: inherit;
   color: var(--ink);
   text-align: left;
   width: 100%;
-  transition: border-color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.score-check-group-header[aria-expanded="false"] {
+  border-radius: var(--radius-lg);
 }
 
 @media (hover: hover) {
   .score-check-group-header:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-lifted);
+    background: var(--surface-hover);
   }
+}
+
+.score-check-group-header:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: -2px;
+  box-shadow: none;
 }
 
 .score-check-group-dot {
@@ -9288,15 +10463,14 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted-dim);
 }
 
-/* Cards sit flush under their group header, sharing its left and right
-   edges. The old 8px indent plus a 1px rail put every card 9px inside the
-   header and the filter card above it: a near-miss, not a hierarchy (stack
-   rule (a)). The header's dot, count and chevron carry the grouping. */
+/* The checks are the panel's rows, flush to its edges and stacked with no
+   gap: each one's top border is the separator above it. The header's dot,
+   count and chevron carry the grouping. */
 .score-check-group-body {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: var(--space-fine-40);
+  gap: 0;
 }
 
 /* ── Clickable scored URL link ────────────────────────────────────────────── */
@@ -9622,28 +10796,43 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   gap: 2px;
   position: relative;
   /* Sliding indicator: set by useLayoutEffect in score-form.tsx. -y is the
-     active tab's offsetTop, which only moves when the tabs wrap (phones). */
+     active tab's offsetTop, which only moves when the tabs wrap (phones);
+     -h is the tab's height (44px on a coarse pointer, 36px with a mouse). */
   --indicator-x: 0px;
   --indicator-y: 3px;
   --indicator-w: 0px;
+  --indicator-h: 2.25rem;
+  /* The selected segment is the track lifted a step toward ink: ink mixed
+     into the lifted surface, 3.7:1 against the dark track (it was the lifted
+     surface itself on a gradient, about 1.05:1, so selection rested on text
+     colour alone). Its label stays --ink (4.9:1 on it). */
+  --indicator-fill: color-mix(in srgb, var(--ink) 38%, var(--surface-lifted));
+  --indicator-ink: var(--ink);
 }
 
-/* The sliding highlight pill — sits behind the tabs and slides between them
-   with a transform transition. The active tab just changes text color; the
-   highlight provides the visual selection state. */
+/* The sliding highlight pill: the selected segment, on its own fill with the
+   top-lit --rim as its 1px edge (the rim painted on the border box under a
+   padding-box fill), sliding between tabs on a transform. Each tab also
+   says aria-pressed, so the selection is never colour alone. */
 .score-filter-segmented::before {
   content: '';
   position: absolute;
   top: 3px;
   left: 3px;
-  height: calc(2.25rem);
+  box-sizing: border-box;
+  height: var(--indicator-h);
   width: var(--indicator-w);
   transform: translate(calc(var(--indicator-x) - 3px), calc(var(--indicator-y) - 3px));
-  background: var(--surface-card-gradient), var(--surface-lifted);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--indicator-fill), var(--indicator-fill)) padding-box,
+    var(--rim) border-box;
   border-radius: var(--radius-sm);
-  box-shadow: var(--inner-light), 0 2px 6px color-mix(in srgb, var(--paper) 22%, transparent);
-  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
-              width var(--duration, 0.3s) var(--ease-out, ease-out);
+  box-shadow: var(--elev-1);
+  /* Transform only: the tabs share equal tracks, so the pill's width rarely
+     changes between them, and when it does it snaps rather than animating a
+     layout property. */
+  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out);
   pointer-events: none;
   z-index: 0;
 }
@@ -9652,6 +10841,30 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   /* Light theme: the dark slab (color-mix(in srgb, var(--paper) 40%, transparent)) reads as a foreign element
      against the light page. Use a quiet surface shade instead. */
   background: var(--surface-raised);
+  /* On a light track a lifted white pill is about 1.1:1; the selected
+     segment is ink-dark instead (7:1 against the track), its label white
+     (7.6:1). */
+  --indicator-fill: color-mix(in srgb, var(--ink) 75%, var(--surface));
+  --indicator-ink: var(--surface);
+}
+
+/* Asked for more contrast, or forced colours: the pill takes a solid edge
+   and the pressed tab keeps a system-colour mark of its own. */
+@media (prefers-contrast: more) {
+  .score-filter-segmented::before {
+    border-color: var(--line-strong);
+    background: var(--indicator-fill) padding-box;
+  }
+}
+
+@media (forced-colors: active) {
+  .score-filter-segmented::before {
+    display: none;
+  }
+  .score-filter-tab[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }
 
 .score-filter-tab {
@@ -9679,11 +10892,12 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 }
 
-/* The active tab no longer carries its own background — the sliding
-   ::before on the container handles the highlight. Just bump the text. */
+/* The active tab carries no background of its own: the sliding ::before on
+   the container is the selected segment, and the label takes the ink that
+   reads on it (--ink in dark, white on the dark pill in light). */
 .score-filter-tab.is-active {
   background: none;
-  color: var(--ink);
+  color: var(--indicator-ink, var(--ink));
   box-shadow: none;
 }
 
@@ -9748,13 +10962,16 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   color: var(--ink);
 }
 
+/* On the selected segment the count is a darker well in the pill, so its
+   label keeps the pill's ink at full contrast: an ink wash lightened the
+   grey pill to about 3.2:1 under the count. */
 .score-filter-tab.is-active .score-tab-count {
-  background: color-mix(in srgb, var(--ink) 20%, transparent);
-  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  color: var(--indicator-ink, var(--ink));
 }
 
 [data-theme="light"] .score-filter-tab.is-active .score-tab-count {
-  background: rgba(0, 0, 0, 0.10);
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
 }
 
 /* The check search after a run: a well of the control surface's material
@@ -9910,22 +11127,29 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   margin-bottom: var(--space-16);
 }
 
+/* A check is a ROW of its status group's reading panel (.score-check-group),
+   not a card of its own: no fill, no border, no shadow and no radius, only
+   a 1px --line-faint top border that is the separator above it (the first
+   one parts it from the group header). Each check used to be a tile on the
+   old recipe (a flat 1px line, a 135deg gradient, an inner light, a 6px
+   radius) beside the 12px rimmed hero, signals and controls cards: about 15
+   floating boxes a viewport and a third material in one column. The last row
+   takes the panel's bottom corners, so its hover band stays inside them. */
 .score-card-item {
   /* Block the hero's text-align: center inheritance — check cards are
      data-dense and read better left-aligned. */
   text-align: left;
-  background: var(--surface-card-gradient), var(--surface-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--inner-light);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line-faint);
+  border-radius: 0;
+  box-shadow: none;
   padding: var(--space-fine-85) var(--space-16);
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
   cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+  transition: background var(--duration-fast) var(--ease-out);
   position: relative;
   /* Staggered entrance — each card fades up in sequence.
      animationDelay set inline per-index (40ms step, capped at 600ms).
@@ -9946,26 +11170,37 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 }
 
+.score-check-group-body > .score-card-item:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Hover is a band on the row and the panel's rim heating by layer opacity
+   (.score-check-group::after); nothing lifts, so the rows' shared edges
+   stay locked. */
 @media (hover: hover) {
   .score-card-item:hover {
-    background: var(--surface-lifted);
-    border-color: var(--line-strong);
-    box-shadow: var(--inner-light);
+    background: var(--surface-hover);
   }
 }
 
+/* Open, the row is a step lighter than the panel (--surface-raised), the
+   drawer reading as part of the row. Brand blue is not a state, so the old
+   signal border and tint are gone, as is the floating shadow. */
 .score-card-item.is-expanded {
-  border-color: var(--signal);
-  /* Raised open panel: signal tint over the lifted plane + inner highlight,
-     so the expanded drawer reads as one elevated surface, not a recolor. */
-  background: linear-gradient(color-mix(in srgb, var(--signal) 6%, transparent), color-mix(in srgb, var(--signal) 6%, transparent)), var(--surface-lifted);
-  box-shadow: var(--inner-light), 0 8px 30px color-mix(in srgb, var(--paper) 28%, transparent);
+  background: var(--surface-raised);
 }
 
-/* Press state — contract takt: 0.985 on cards/rows (> 0.95 floor).
-   transform-only, quick ease-out, reduced-motion removes it below. */
+/* Focus sits inside the row, so the ring is not cut by the rows around it. */
+.score-card-item:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+/* Press: a row darkens instead of scaling, since a scaled row would pull its
+   edges off the separators above and below it. */
 .score-card-item:active {
-  transform: scale(0.985);
+  background: var(--surface-hover);
 }
 .score-cat-legend-row:active {
   transform: scale(0.985);
@@ -10415,8 +11650,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* --- Pricing page (/pricing) ----------------------------------------------
    Contract: design-system v0.4.0.
    Tokens only — no raw hex, no magic numbers.
-   Motion: Poise fade-up entrance (inherited from .fade-up), Takt press
-   scale 0.985 on cards (hover lift only on fine pointer + hover-capable).
+   Motion: Poise fade-up entrance (inherited from .fade-up); cards never
+   lift or scale, hover heats the rim by layer opacity (fine pointer only).
    Type: Cadence — rem scale, line-height by role, tracking by size,
    text-wrap balance+pretty, tabular-nums on prices via [data-tabular].
    Radius: --radius on cards, --radius-sm on chips/buttons.
@@ -10426,56 +11661,96 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
    -------------------------------------------------------------------------- */
 
 
+/* Every tier is a reading card (spec 3.2): --mat-reading, --elev-1, the
+   masked top-lit --rim on ::before, and --rim-hot on a second layer
+   (::after) whose opacity rises on hover and while a control inside has
+   keyboard focus. Nothing lifts: the three cards share their top and bottom
+   edges and keep them. Continuity and Enterprise were near-invisible ghosts
+   (--surface with a 6% line, no rim, no elevation) beside a featured card on
+   a 22% line, and the hover raised a card 2px off the row. The featured
+   tier keeps its signal-dim wash and wears the hot edge at rest. The card is
+   not itself a control, so it does not press: its button does. */
 .pricing-card {
-  background: var(--surface);
-  border: 1px solid var(--line-faint);
+  position: relative;
+  isolation: isolate;
+  background: var(--mat-reading);
+  border: 0;
   border-radius: var(--radius);
+  box-shadow: var(--elev-1);
   padding: var(--space-fine-135) var(--space-20) var(--space-24);
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
-  min-height: 100%;
-  /* Takt press scale 0.985 on cards/rows — never below 0.95. */
-  transition:
-    transform var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    background var(--duration-fast) var(--ease-out);
-  will-change: transform;
 }
 
-/* Hover lift only on fine pointer + hover-capable (Poise rule). */
+.pricing-card::before,
+.pricing-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.pricing-card::after {
+  background: var(--rim-hot);
+  opacity: 0;
+  transition: opacity var(--mat-t-out);
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .pricing-card:hover {
-    background: var(--surface-raised);
-    border-color: var(--line-strong);
-    transform: translateY(-2px);
+  .pricing-card:hover::after {
+    opacity: 1;
+    transition: opacity var(--mat-t-in);
   }
 }
 
-.pricing-card:active {
-  transform: scale(0.985);
+.pricing-card:has(:focus-visible)::after {
+  opacity: 1;
+  transition: opacity var(--mat-t-in);
 }
 
-/* Primary tier — Continuity Solo. Marked with --line-strong + signal-dim
-   wash so it reads as the recommended choice without a competing accent
-   (anti-pattern: multiple simultaneous accent colors competing with
+html[data-motion="paused"] .pricing-card::after {
+  transition-duration: var(--duration-quick);
+}
+
+/* Primary tier: the signal-dim wash over the reading surface, and the hot
+   edge at rest, so it reads as the recommended choice without a competing
+   accent (anti-pattern: multiple simultaneous accent colors competing with
    --signal). */
 .pricing-card--primary {
-  border-color: var(--line-strong);
   background: linear-gradient(
     to bottom,
     var(--signal-dim),
-    var(--surface) 45%
+    var(--mat-reading) 45%
   );
 }
 
-@media (hover: hover) {
-  .pricing-card--primary:hover {
-    background: linear-gradient(
-    to bottom,
-    var(--signal-dim),
-    var(--surface-raised) 45%
-  );
+.pricing-card--primary::after {
+  opacity: 1;
+}
+
+@media (prefers-contrast: more) {
+  .pricing-card::before {
+    background: var(--line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .pricing-card {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+    box-shadow: none;
+  }
+  .pricing-card::before,
+  .pricing-card::after {
+    display: none;
   }
 }
 
@@ -10501,18 +11776,15 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* --- Reduced motion: collapse non-essential motion (Poise rule) --- */
 
 @media (prefers-reduced-motion: reduce) {
-  .pricing-card,
   .pricing-cta-link,
   .pricing-faq-q {
     transition: none;
   }
-  @media (hover: hover) {
-    .pricing-card:hover {
-      transform: none;
-    }
+  /* Tiered: the rim's fade stays, held to the 150ms entry. */
+  .pricing-card::after {
+    transition-duration: var(--duration-quick);
   }
-  .pricing-cta-link:active,
-  .pricing-card:active {
+  .pricing-cta-link:active {
     transform: none;
   }
 }
@@ -11360,8 +12632,10 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
    on the 6|6 line (704.5|720.5). Three cards are three peers (/learn "The
    three questions", "What distinguishes it"), so from 64rem they sit 3-up on
    span 4 (382.67 at 1180), the bento and pillar module, instead of 2 + 1.
-   Any other odd last card spans the row: 5, 7 and 19 orphaned theirs beside
-   an empty half. Below 36rem (the old 640px viewport switch) one column. */
+   Below 64rem any other odd last card spans the row (5, 7 and 19 orphaned
+   theirs beside an empty half); from 64rem an odd count from five opens on
+   three peers, then pairs. Below 36rem (the old 640px viewport switch) one
+   column. */
 
 .principle-list {
   display: grid;
@@ -11395,6 +12669,23 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 @container principle-list (width >= 64rem) {
   .principle-list:has(> :nth-child(3):last-child) > * {
     grid-column: span 4;
+  }
+
+  /* An odd count from five opens on three peers (span 4), then pairs (span
+     6), the check grid's 3 + 2: no card spans the row. A full-width fifth
+     card held a 66ch paragraph in a 1180px box, half of it empty (/labs/
+     cadence, /labs/takt). Every card in a row stretches to the row, so row
+     two's pair shares its top and bottom edges. */
+  .principle-list:has(> :nth-child(5)):has(> :last-child:nth-child(odd)) > * {
+    grid-column: span 6;
+  }
+
+  .principle-list:has(> :nth-child(5)):has(> :last-child:nth-child(odd)) > :nth-child(-n + 3) {
+    grid-column: span 4;
+  }
+
+  .principle-list:has(> :nth-child(5)):has(> :last-child:nth-child(odd)) > :last-child > :not(.principle-num) {
+    max-inline-size: none;
   }
 }
 
@@ -12735,9 +14026,11 @@ select {
     font-size: 0.9375rem; /* 15px */
     line-height: 1.55;
   }
+  /* The card title holds its desktop 16px: weight and ink rank it over the
+     15px muted body, and 18.75px crowded the 20px section heading (1.07). */
   .principle-body h3 {
-    font-size: 1.171875rem; /* 18.75px — Major Third 1.25 from body p */
-    line-height: 1.3;
+    font-size: 1rem;
+    line-height: 1.35;
   }
 
   /* -- Caps micro-labels: lift from ~9.9px to 11px and relax tracking from
@@ -13001,28 +14294,9 @@ select {
   /* Loading: keep spin (functional state, not decorative) */
 }
 
-/* ==========================================================================
-   ReadingProgress — scroll position indicator for long-form pages
-   ==========================================================================
-   Thin 2px bar fixed at the top of the viewport. Fills with --signal as
-   the user scrolls. Zero JS bundle impact beyond this component. */
-
-.reading-progress-track {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: transparent;
-  z-index: 200;
-  pointer-events: none;
-}
-
-.reading-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--signal), var(--signal-light));
-  border-radius: 0 1px 1px 0;
-}
+/* (The ReadingProgress bar that sat here was retired on 2026-10-03: the
+   capsule's .scroll-progress line is the one scroll meter on every route.
+   See lib/reading-progress.tsx.) */
 
 /* ==========================================================================
    Universal-sphere preference coverage (T2.5)
@@ -13257,17 +14531,31 @@ select {
    ========================================================================== */
 
 .row--listen {
+  /* button + gap + a 4-character duration: the cell's width, which the
+     phone title gives up at its end (row region, @container rows < 36rem) */
+  --listen-cell-w: calc(44px + 0.5rem + 1.75rem);
   grid-template-columns: 2.5rem minmax(0, 1fr) auto;
 }
 
+/* On the title's first line, at the row's end, wherever it sits in the
+   markup. It was centred in 133px package rows, 50px below its title. The
+   44px button rises 8px into the row's block padding so its centre is near
+   the title line's. */
+.row--listen > .listen-cell {
+  grid-area: 1 / 3;
+  align-self: start;
+  margin-top: calc(-1 * var(--space-8));
+}
+
 .listen-cell {
-  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .listen-dur {
+  min-width: 1.75rem;
+  text-align: end;
   font-size: 0.72rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
@@ -13371,12 +14659,23 @@ select {
   margin-top: var(--space-fine-30);
 }
 
-/* v2026-08-25-scanability: 3-px category spine on each check card.
-   Answers "which category is failing" at a glance without reading a
-   single label. Colors come from the contract token set (one hue per
-   category family); the category chip remains the non-color signal
-   (a11y: color never carries alone). */
+/* The 3px spine on a check row says its STATUS, never its category: fail
+   in --error, warn in --warn, manual and not-applicable in --muted-dim, and
+   a pass carries none. It used to take a hue per category from the state
+   tokens (accessibility --ok, identity --error, cadence and copywriting
+   grade hues), so a FAIL accessibility check wore the pass green beside its
+   red FAIL pill and every passing identity check wore red. The category is
+   named by the mono chip; the status by the pill, which the spine repeats
+   at a glance (colour never carries alone). The row's data-status is the
+   status (score-form.tsx); a row without one reads it from its pill. */
 .score-card-item::before {
+  content: none;
+}
+
+.score-card-item:is(
+  [data-status='fail'], [data-status='warn'], [data-status='manual'], [data-status='skip'],
+  :not([data-status]):has(> .score-card-main .score-card-status-pill:is(.is-fail, .is-warn, .is-manual, .is-skip))
+)::before {
   content: '';
   position: absolute;
   left: 0;
@@ -13385,21 +14684,15 @@ select {
   width: 3px;
   border-radius: 0 2px 2px 0;
   background: var(--muted-dim);
-  opacity: 0.55;
-  transition: opacity var(--duration-fast) var(--ease-out);
+  pointer-events: none;
 }
-.score-card-item[data-category='tokens']::before { background: var(--signal); }
-.score-card-item[data-category='accessibility']::before { background: var(--ok); }
-.score-card-item[data-category='motion']::before { background: var(--signal-light); }
-.score-card-item[data-category='interaction']::before { background: var(--amber-notice); }
-.score-card-item[data-category='cadence']::before { background: var(--grade-b); }
-.score-card-item[data-category='copywriting']::before { background: var(--grade-c); }
-.score-card-item[data-category='identity']::before { background: var(--error); }
-.score-card-item[data-category='platform']::before { background: var(--muted); }
-@media (hover: hover) {
-  .score-card-item:hover::before {
-    opacity: 1;
-  }
+
+.score-card-item:is([data-status='fail'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-fail))::before {
+  background: var(--error);
+}
+
+.score-card-item:is([data-status='warn'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-warn))::before {
+  background: var(--warn);
 }
 
 /* --------------------------------------------------------------------------
@@ -13624,6 +14917,65 @@ select {
    ========================================================================== */
 .topbar {
   padding-top: max(var(--space-12), env(safe-area-inset-top));
+}
+
+/* The paper above the capsule. The capsule floats a gap below the viewport's
+   top edge, and on every scrolled frame that band showed the page crisp and
+   cut in half by the capsule's top edge. This layer is the page's own
+   backdrop for that band: the paper, grid, signal wash and (light) grain that
+   body::before, .ambient-signal and body::after paint, from the same viewport
+   origin (the bar is sticky at 0,0, so its box is the top of the viewport).
+   At rest it matches the bare page to within 2 levels, so it is always on and
+   needs no scroll state; content scrolling up passes under the paper. It is
+   solid through the gap, then fades over 8px under the capsule's top edge, so
+   at the rounded corners and in the gutters text dissolves instead of being
+   sliced. Opaque material, not glass: it sits at z -1 in the bar's stacking
+   context, under every capsule layer, and is never an ancestor of the glass,
+   so the capsule's backdrop root and blur do not change
+   (scripts/check-glass-blur.js). Change a backdrop layer, change it here. */
+.topbar::before {
+  --scrim-grid: color-mix(in srgb, var(--ink) 3%, transparent);
+  --scrim-wash-a: color-mix(in srgb, var(--signal-light) 5%, transparent);
+  --scrim-wash-b: color-mix(in srgb, var(--signal-light) 2%, transparent);
+  /* The dark grain (2.5% overlay) moves this paper by zero levels. */
+  --scrim-grain: none;
+  --scrim-grain-blend: normal;
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  /* The bar's padding-top (the gap, or the notch), plus the fade. */
+  height: calc(max(var(--space-12), env(safe-area-inset-top)) + var(--space-8));
+  background-color: var(--paper);
+  background-image:
+    var(--scrim-grain),
+    linear-gradient(var(--scrim-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--scrim-grid) 1px, transparent 1px),
+    radial-gradient(circle 110vmax at 76% 12vh, var(--scrim-wash-a), transparent 55%),
+    radial-gradient(circle 95vmax at 16% 78vh, var(--scrim-wash-b), transparent 60%);
+  background-size: 240px 240px, 56px 56px, 56px 56px, auto, auto;
+  background-repeat: repeat, repeat, repeat, no-repeat, no-repeat;
+  background-blend-mode: var(--scrim-grain-blend), normal, normal, normal, normal;
+  -webkit-mask-image: linear-gradient(#000 calc(100% - var(--space-8)), transparent);
+  mask-image: linear-gradient(#000 calc(100% - var(--space-8)), transparent);
+  pointer-events: none;
+}
+
+/* Light: the backdrop's light grid, wash and grain (4% multiply; the grain's
+   opacity rides inside the image because a background layer has none). */
+[data-theme="light"] .topbar::before {
+  --scrim-grid: rgb(0 0 0 / 0.04);
+  --scrim-wash-a: color-mix(in srgb, var(--signal) 3%, transparent);
+  --scrim-wash-b: color-mix(in srgb, var(--signal) 2%, transparent);
+  --scrim-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  --scrim-grain-blend: multiply;
+}
+
+/* Forced colours: the page is Canvas, so the paper is too. */
+@media (forced-colors: active) {
+  .topbar::before {
+    background: Canvas;
+  }
 }
 
 /* Inset by the shell's own gutter, so the capsule's outer edges ARE the page's

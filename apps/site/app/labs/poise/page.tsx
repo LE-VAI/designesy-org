@@ -12,6 +12,9 @@ import { DemoCell, DemoGrid } from '../../lib/demo-cell';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { designReviewKit } from '../../lib/kits/design-review';
+import { labs } from '../../lib/labs';
+import { AdoptedTally } from '../adopted-tally';
 
 export const metadata: Metadata = pageMeta({
   title: 'Poise',
@@ -63,6 +66,51 @@ const PROVENANCE = [
   'Cuelume v0.2.2: interaction audio; preference owned by Designesy',
   'Motion stance: short settles, entrance economy, reduced-motion respect',
   'Public naming: human, premium product names; no research-demo vocabulary',
+];
+
+/**
+ * The field check's facts for the card's side pane, read from /review/poise
+ * (its Holds and Tensions lists and its Date line). Dimensions and the kit
+ * version come from the kit record, so they cannot drift from the kit.
+ */
+const FIELD_CHECK = { holds: 6, openTensions: 4, reviewed: '2026-07-12' };
+
+/** A field-check outcome as a state: a clean pass, a pass with notes (warn),
+ *  or anything else (fail). Never the brand blue. */
+function verdictState(outcome: string): 'pass' | 'warn' | 'fail' {
+  if (outcome === 'pass') return 'pass';
+  return outcome.startsWith('pass') ? 'warn' : 'fail';
+}
+
+const CONTRACT_RULES = [
+  {
+    title: 'Wordmark mark',
+    meta: 'Opacity breath only; never blur, glow, or gradient decoration',
+  },
+  {
+    title: 'Press settle',
+    meta: 'scale(0.97) at ~160ms with --ease-out',
+  },
+  {
+    title: 'Sound preference',
+    meta: 'Key designesy:sound; engine follows Designesy',
+  },
+  {
+    title: 'Reduced motion',
+    meta: 'Disables non-essential animation; defaults sound off',
+  },
+  {
+    title: 'Hover translation',
+    meta: 'Only under fine pointer + hover-capable media',
+  },
+  {
+    title: 'Public names',
+    meta: 'Human and premium; internal token names may differ',
+  },
+  {
+    title: 'Louder than the action',
+    meta: 'If the response is louder than the action, it fails',
+  },
 ];
 
 const PROMPT = `Build interaction feedback that feels finished and restrained.
@@ -231,44 +279,26 @@ export default function PoiseLabPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Portable contract</h2>
-          <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            Rules adopted into design system contract v0.1.1:
-          </p>
-          <div className="row-stack" role="list">
-            {[
-              {
-                title: 'Wordmark mark',
-                meta: 'Opacity breath only; never blur, glow, or gradient decoration',
-              },
-              {
-                title: 'Press settle',
-                meta: 'scale(0.97) at ~160ms with --ease-out',
-              },
-              {
-                title: 'Sound preference',
-                meta: 'Key designesy:sound; engine follows Designesy',
-              },
-              {
-                title: 'Reduced motion',
-                meta: 'Disables non-essential animation; defaults sound off',
-              },
-              {
-                title: 'Hover translation',
-                meta: 'Only under fine pointer + hover-capable media',
-              },
-              {
-                title: 'Public names',
-                meta: 'Human and premium; internal token names may differ',
-              },
-            ].map((item, i) => (
-              <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
-                <span className="row-body">
-                  <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
-                </span>
-              </ToggleRow>
-            ))}
-          </div>
+          <AdoptedTally
+            total={CONTRACT_RULES.length}
+            lede={
+              <>
+                Rules adopted into design system contract v0.1.1. Check a rule
+                off as your surface adopts it.
+              </>
+            }
+          >
+            <div className="row-stack" role="list">
+              {CONTRACT_RULES.map((item, i) => (
+                <ToggleRow key={item.title} index={String(i + 1).padStart(2, '0')}>
+                  <span className="row-body">
+                    <span className="row-title">{item.title}</span>
+                    <span className="row-meta">{item.meta}</span>
+                  </span>
+                </ToggleRow>
+              ))}
+            </div>
+          </AdoptedTally>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             Source contract:{' '}
             <Link href="/contracts#design-system-contract">
@@ -365,9 +395,14 @@ export default function PoiseLabPage() {
                 <span className="row-body">
                   <span className="row-title">Orb · WebGL2 in Designesy blue</span>
                   <span className="row-meta">
-                    32KB shader, six parameters, one-line embed · painted from
-                    Martin Štrba&rsquo;s editor at postgeneric.com
+                    Six parameters, one-line embed · painted from Martin
+                    Štrba&rsquo;s editor at postgeneric.com
                   </span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">WebGL2 · 32KB shader</span>
+                  <span className="row-side-line">/labs/poise/orb</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -378,25 +413,54 @@ export default function PoiseLabPage() {
           <h2 className="doctrine-heading">Field check</h2>
           <Link
             href="/review/poise"
-            className="lab-card"
+            className="lab-card is-split"
             data-cuelume-hover="tick"
             data-cuelume-press="tick"
           >
-            <div className="lab-card-top">
-              <span className="status-badge">Pass with notes</span>
-              <span className="lab-card-status">Kit One</span>
+            <div className="lab-card-panes">
+              <div className="lab-card-face">
+                <div className="lab-card-top">
+                  <span className="row-side-chip" data-state={verdictState(labs.poise.field_check.outcome)}>
+                    {labs.poise.field_check.outcome}
+                  </span>
+                </div>
+                <h3 className="lab-card-title">Poise · public review</h3>
+                <p className="lab-card-lede">
+                  Design Review applied to this lab.
+                </p>
+                <p className="lab-card-desc">
+                  Eight dimensions, holds, tensions, and corrections: the kit
+                  output format made public for Lab One.
+                </p>
+                <span className="lab-card-arrow">
+                  Open field check <span aria-hidden="true">→</span>
+                </span>
+              </div>
+              <dl className="lab-card-side">
+                <div>
+                  <dt>Dimensions</dt>
+                  <dd>{designReviewKit.dimensions.length}</dd>
+                </div>
+                <div>
+                  <dt>Holds</dt>
+                  <dd>{FIELD_CHECK.holds}</dd>
+                </div>
+                <div>
+                  <dt>Open tensions</dt>
+                  <dd>{FIELD_CHECK.openTensions}</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{FIELD_CHECK.reviewed}</dd>
+                </div>
+                <div>
+                  <dt>Method</dt>
+                  <dd>Kit One v{designReviewKit.version}</dd>
+                </div>
+              </dl>
             </div>
-            <h3 className="lab-card-title">Poise · public review</h3>
-            <p className="lab-card-lede">
-              Design Review applied to this lab.
-            </p>
-            <p className="lab-card-desc">
-              Eight dimensions, holds, tensions, and corrections: the kit
-              output format made public for Lab One.
-            </p>
-            <span className="lab-card-arrow">Open field check →</span>
           </Link>
-          <div className="row-stack" role="list" style={{ marginTop: '0.75rem' }}>
+          <div className="row-stack" role="list" style={{ marginTop: '1.5rem' }}>
             <div role="listitem">
               <Link
                 href="/review/poise/keyboard"
@@ -410,6 +474,11 @@ export default function PoiseLabPage() {
                   <span className="row-meta">
                     Tab order, focus-visible, activation, reduced motion
                   </span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">keyboard proof · Lab One</span>
+                  <span className="row-side-line">/review/poise/keyboard</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>

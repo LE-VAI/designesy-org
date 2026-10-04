@@ -477,10 +477,14 @@
   padding: var(--space-4) var(--ctl-inset) var(--space-8);
 }
 
+/* The status line spans the foot's inner box: under the choices it carries
+   the slab's divider (below), and a divider runs the surface's full content
+   width, never the length of a text measure (design spec rule d: measure caps
+   belong on text). The 66ch cap sits on the lines inside it instead, so a
+   full-width pair bar still never sets a 140-character line. */
 .eg-bar-status {
   display: grid;
   min-width: 0;
-  max-inline-size: 66ch; /* a full-width pair bar must not set a 140-character line */
   margin: 0;
   font: 400 0.8125rem/1.25rem var(--sans);
   color: var(--muted);
@@ -490,6 +494,7 @@
 .eg-bar-status > span {
   grid-area: 1 / 1;
   min-width: 0;
+  max-inline-size: 66ch;
 }
 
 .eg-bar-note[data-off] {
@@ -532,7 +537,10 @@
 }
 
 /* Below the choices the status line reads as the slab's status bar: a
-   hairline divides what you chose from what the run will read. */
+   hairline divides what you chose from what the run will read. The line is
+   the status element's own border, and the element is the foot's full inner
+   width (no measure of its own), so the rule starts and ends on the foot's
+   content edges, the first choice's left and the last one's right. */
 .eg-bar-foot > * + .eg-bar-status {
   padding-top: var(--space-12);
   border-top: 1px solid var(--line-faint);
@@ -781,6 +789,22 @@
       "label"
       "track"
       "hint";
+  }
+  /* One law for the slab's controls on a phone: every control stands on the
+     field's edges (the textarea and the key below run 24 to 366 at 390), and
+     every line of text on the well's content edge. The head drops its inset,
+     so the choice track and the sample button span the field; the label and
+     the hint take the inset back themselves. (The track started on the text
+     inset and ended on the field edge, and the button stopped at 247.) */
+  .m3-head {
+    padding-inline-start: 0;
+  }
+  .m3-head .eg-seg-label,
+  .m3-head .eg-seg-hint {
+    padding-inline-start: var(--ctl-inset);
+  }
+  .m3-head .eg-share-btn {
+    width: 100%;
   }
 }
 

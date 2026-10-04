@@ -42,7 +42,7 @@ const emitWarning = process.emitWarning;
 process.emitWarning = (warning, ...rest) =>
   String(warning).includes('Module type of') ? undefined : emitWarning.call(process, warning, ...rest);
 
-const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss } = await import(
+const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss, categoryChips } = await import(
   pathToFileURL(path.join(APP, 'app', 'score', 'verdict.ts')).href
 );
 
@@ -113,10 +113,23 @@ check('raw CSS evidence is described in words; names stay plain', () => {
   assert.deepEqual(ev.plain, []);
   assert.equal(ev.raw.length, 2);
   assert.equal(describeCss(v0[0]), 'Linear gradient on a pseudo-element, animated');
-  assert.match(ev.summary, /^Linear gradient on a pseudo-element, animated · Linear gradient on a pseudo-element$/);
+  // Two blocks of one kind read as a count, not the same phrase twice.
+  assert.equal(ev.summary, '2 linear gradients on pseudo-elements, 1 animated');
+  assert.equal(readEvidence([v0[0]]).summary, 'Linear gradient on a pseudo-element, animated');
   const fonts = readEvidence(['roboto', 'inter', '#6366F1']);
   assert.deepEqual(fonts.plain, ['roboto', 'inter', '#6366F1']);
   assert.equal(fonts.summary, '');
+});
+
+check('category chips cover every evaluated category and sum to the check count', () => {
+  const checks = [
+    { category: 'motion' }, { category: 'copywriting' }, { category: 'accessibility' },
+    { category: 'spec' }, { category: 'copywriting' }, { category: 'novel' }, { category: 'motion' },
+  ];
+  const chips = categoryChips(checks);
+  assert.equal(chips.reduce((n, c) => n + c.count, 0), checks.length);
+  assert.deepEqual(chips.map((c) => c.key), ['motion', 'accessibility', 'copywriting', 'spec', 'novel']);
+  assert.deepEqual(chips.map((c) => c.label), ['Motion', 'Accessibility', 'Copywriting', 'Spec', 'Novel']);
 });
 
 // ── Render check ───────────────────────────────────────────────────────────

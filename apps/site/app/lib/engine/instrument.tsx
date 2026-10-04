@@ -68,6 +68,13 @@ type Props = {
   verdictNode?: ReactNode;
   /** Extra content under the verdict (monitor's history strip). */
   sideExtra?: ReactNode;
+  /** The target pill before a run: what the engine is waiting for. */
+  idleTarget?: string;
+  /** Draw the verdict row empty at rest, where the grade will land (default
+      on). Off for an engine whose result replaces the verdict (compare). */
+  restGrade?: boolean;
+  /** Replaces the whole resting side (the converter's output frame). */
+  restSide?: ReactNode;
 };
 
 const STATUS_WORD: Record<Status, string> = {
@@ -211,6 +218,9 @@ export function Instrument(props: Props) {
           <span className="eg-label">What an agent finds</span>
           <span className="eg-count">{rows.length} locations · {registry.checks.length} checks</span>
         </div>
+        {/* The description line every sibling group carries in this slot; the
+            tree's root no longer sits 4px under the label as if part of it. */}
+        <p className="eg-group-hint">Probed at the site&apos;s origin, whatever page the URL names.</p>
         <ul className="eg-paths">
           <li className="eg-paths-origin" aria-hidden="true">
             <i className="eg-mark"><i /></i>
@@ -257,7 +267,9 @@ export function Instrument(props: Props) {
         <div className="eg-diff" role="presentation">
           <div className="eg-diff-head" aria-hidden="true">
             <span className="eg-diff-a"><b>A</b> {sides.a}</span>
-            <span className="eg-diff-mid">{registry.checks.length} dimensions</span>
+            <span className="eg-diff-mid">
+              <span className="eg-diff-count">{registry.checks.length} dimensions</span>
+            </span>
             <span className="eg-diff-b"><b>B</b> {sides.b}</span>
           </div>
           <ul className="eg-diff-rows">
@@ -470,12 +482,33 @@ export function Instrument(props: Props) {
         <div className="eg-error">{error}</div>
       </>
     );
-  } else {
+  } else if (props.restSide) {
+    side = props.restSide;
+  } else if (props.restGrade === false) {
     side = (
       <>
         <span className="eg-label">Verdict</span>
         <p className="eg-side-note">{restNote}</p>
         <GradeScale />
+        {props.restCard}
+        {props.sideExtra}
+      </>
+    );
+  } else {
+    // The verdict row waits, empty, where the grade will land, so the scale
+    // under it holds its line through rest, running and done, and the slot
+    // reads as a readout before it has a reading.
+    side = (
+      <>
+        <span className="eg-label">Verdict</span>
+        <div className="eg-verdict-row is-rest" aria-hidden="true">
+          <span className="eg-grade" />
+          <span className="eg-score">
+            <small>/100</small>
+          </span>
+        </div>
+        <GradeScale />
+        <p className="eg-side-note">{restNote}</p>
         {props.restCard}
         {props.sideExtra}
       </>
@@ -511,7 +544,7 @@ export function Instrument(props: Props) {
           {/* Keyed by the host, so a new target remounts and rises into the
               pill (cause, the slab's submit; effect, the instrument). */}
           <span key={target || ''} data-host={target ? '' : undefined}>
-            {target || 'waiting for a URL'}
+            {target || props.idleTarget || 'waiting for a URL'}
           </span>
         </span>
         <span className="eg-inst-state">
@@ -562,7 +595,13 @@ export function Instrument(props: Props) {
           <li><Lamp status="FAIL" />fail</li>
           <li><Lamp status="SKIP" />skipped</li>
         </ul>
-        <span>{scoring}</span>
+        {/* One item per clause, so the line wraps between clauses and the
+            separators are drawn by the sheet (engine.css, eg-legend-meta). */}
+        <span className="eg-legend-meta">
+          {scoring.split(' · ').map((s, i) => (
+            <span key={i}>{s}</span>
+          ))}
+        </span>
       </div>
       <p className="sr-only" aria-live="polite">{announce}</p>
     </section>

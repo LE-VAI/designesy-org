@@ -9,7 +9,7 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
 import '../../instrument.css';
 import '../work.css';
-import { CaseTitle, ScoreDelta, StateChip } from '../case-instrument';
+import { CaseTitle, ScoreDelta, SourceList, StateChip, type Source } from '../case-instrument';
 
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev: A on arrival case study',
@@ -40,6 +40,32 @@ const SKIPS = [
   { id: 'v04', item: 'Sound toggle aria-pressed flip', note: 'Needs a browser to click the toggle and observe state. lovable.dev may not have a sound toggle, which would resolve as PASS or WARN.' },
   { id: 'v21', item: 'Core Web Vitals (LCP/INP/CLS)', note: 'Needs PageSpeed Insights API or a Chromium CDP trace. PSI_API_KEY on the deployment.' },
   { id: 'v22', item: 'Primary button WCAG AA contrast', note: 'Browser check: the static path cannot measure computed contrast against an accent fill.' },
+];
+
+const SUMMARY =
+  'lovable.dev scores A on the Designesy contract: 19 of 26 checks pass, 0 fail, 3 warn, 4 skip. The 3 warnings are token-strictness gaps (will-change scope, rem confirmation, tabular-nums). The 4 skips are browser-only checks that the current deployment cannot run. The headline is the zero in the failure column: an AI app platform shipped a site that breaks no contract rules the static engine can see.';
+
+const SOURCES: Source[] = [
+  {
+    href: '/score?url=lovable.dev',
+    title: 'Score lovable.dev now',
+    meta: 'Re-run the live engine against the same URL',
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract ' + CONTRACT_VERSION,
+    meta: 'The contract lovable.dev passes without citing',
+  },
+  {
+    href: '/score/lovable',
+    title: 'Score your Lovable site',
+    meta: 'Target landing page for Lovable-built sites',
+  },
+  {
+    href: '/work',
+    title: 'Work · case studies',
+    meta: 'Index',
+  },
 ];
 
 const LESSONS = [
@@ -89,17 +115,38 @@ export default function LovableCaseStudy() {
 
         <section className="doctrine-section fade-up" id="summary">
           <h2 className="doctrine-heading">Summary</h2>
-          <div className="definition">
-            <p className="definition-label">Outcome · A · 93.2</p>
-            <p>
-              lovable.dev scores A on the Designesy contract: 19 of 26
-              checks pass, 0 fail, 3 warn, 4 skip. The 3 warnings are
-              token-strictness gaps (will-change scope, rem confirmation,
-              tabular-nums). The 4 skips are browser-only checks that the
-              current deployment cannot run. The headline is the zero in
-              the failure column: an AI app platform shipped a site that
-              breaks no contract rules the static engine can see.
-            </p>
+          {/* Face and side (globals.css .definition-split): the statement on
+              the face; the measured grade, the zero that is the headline and
+              the projection, ghosted (no number was measured for it), in the
+              side. The copy payload is the statement. */}
+          <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
+            <div className="definition-face">
+              <p className="definition-label">Outcome</p>
+              <p>{SUMMARY}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="pass">
+                A · {SCORE}
+              </span>
+              <dl>
+                <div>
+                  <dt>Fail</dt>
+                  <dd>
+                    {COUNTS.fail} of {COUNTS.pass + COUNTS.fail + COUNTS.warn + COUNTS.skip}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Projected</dt>
+                  <dd>
+                    <span className="cs-ghost">A+</span> unscored
+                  </dd>
+                </div>
+                <div>
+                  <dt>Scored</dt>
+                  <dd>2026-07-25</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -173,64 +220,7 @@ export default function LovableCaseStudy() {
 
         <section className="doctrine-section fade-up" id="sources">
           <h2 className="doctrine-heading">Sources</h2>
-          <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/score?url=lovable.dev"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Score lovable.dev now</span>
-                  <span className="row-meta">Re-run the live engine against the same URL</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract {CONTRACT_VERSION}</span>
-                  <span className="row-meta">The contract lovable.dev passes without citing</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/score/lovable"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Score your Lovable site</span>
-                  <span className="row-meta">Target landing page for Lovable-built sites</span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/work"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Work · case studies</span>
-                  <span className="row-meta">Index</span>
-                </span>
-              </Link>
-            </div>
-          </div>
+          <SourceList items={SOURCES} />
         </section>
 
         <div className="status-note">

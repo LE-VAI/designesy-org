@@ -9,7 +9,7 @@
 //
 // All computation is client-side.
 
-import { useState, useMemo, useCallback, useRef, useEffect, useId, type CSSProperties } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, useId, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import './spring-validator.css';
 
@@ -221,13 +221,37 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-// The verdict as the instrument's title-bar state: a word, what it means,
-// and the LED's hue (spring-validator.css reads data-verdict).
-const VERDICT: Record<SpringResult['verdict'], { word: string; detail: string }> = {
-  safe: { word: 'Safe', detail: 'no reduced-motion concern' },
-  caution: { word: 'Caution', detail: 'minor overshoot' },
-  violation: { word: 'Violation', detail: 'overshoot requires suppression' },
+// The verdict: a word, the title bar's short echo, and the one-line reason
+// the side pane leads with. Its hue is the state token (spring-validator.css
+// reads data-verdict). The reason names the threshold, never the live
+// number, so the live region speaks only when the verdict changes.
+const VERDICT: Record<SpringResult['verdict'], { word: string; detail: string; reason: string }> = {
+  safe: {
+    word: 'Safe',
+    detail: 'no reduced-motion concern',
+    reason: 'Overshoot of 2% or less is imperceptible. No reduced-motion rule needed.',
+  },
+  caution: {
+    word: 'Caution',
+    detail: 'minor overshoot',
+    reason: 'Overshoot over 2% is perceptible. Add a reduced-motion rule.',
+  },
+  violation: {
+    word: 'Violation',
+    detail: 'overshoot requires suppression',
+    reason: 'Overshoot over 10% is a vestibular trigger. Suppress it under reduced motion.',
+  },
 };
+
+// What the overshoot readout says about its own value, on the verdict's
+// thresholds, and the state it is tinted with: none and subtle sit inside
+// Safe, visible is Caution, vestibular risk is Violation.
+function overshootBand(pct: number): { label: string; tone: 'pass' | 'warn' | 'fail' } {
+  if (pct < 0.5) return { label: 'none', tone: 'pass' };
+  if (pct <= 2) return { label: 'subtle', tone: 'pass' };
+  if (pct <= 10) return { label: 'visible', tone: 'warn' };
+  return { label: 'vestibular risk', tone: 'fail' };
+}
 
 // A settle time is infinite when damping is zero; say so instead of
 // rendering "Infinityms".
@@ -238,8 +262,9 @@ function fmtMs(ms: number): string {
 /**
  * One instrument (design spec 2.2 rule 4, 3.1): the curve and the controls
  * that drive it read as one device split on the 7-line. From 64rem the face
- * (7 columns) holds the chart and the side pane holds the parameters and the
- * readouts; the verdict is the title bar's state. Below 64rem the panes
+ * (7 columns) holds the chart and the side pane holds the verdict (first, as
+ * the answer), the parameters and the readouts; the title bar echoes the
+ * verdict. Below 64rem the panes
  * stack, and the parameters and readouts sit on the shared 12-column module
  * (sliders span 4, tiles span 2), so every slider edge lands on a tile edge.
  * Layout lives in spring-validator.css; nothing here sets geometry inline,
@@ -269,6 +294,18 @@ export function SpringValidator() {
 
   const verdict = VERDICT[result.verdict];
   const reducedMs = Math.min(result.settleTime, 150);
+  const band = overshootBand(result.overshoot);
+
+  // The verdict glow fires once when the verdict changes (never on first
+  // paint: a page at rest shows no coloured light). Each change remounts the
+  // glow layer under a new key, which restarts its one-shot animation. The
+  // key is adjusted during render when the verdict differs from the last one
+  // seen (React's pattern for state derived from a changed value).
+  const [glow, setGlow] = useState({ verdict: result.verdict, key: 0 });
+  if (glow.verdict !== result.verdict) {
+    setGlow({ verdict: result.verdict, key: glow.key + 1 });
+  }
+  const glowKey = glow.key;
 
   return (
     <div className="spring-validator sv">
@@ -304,10 +341,11 @@ export function SpringValidator() {
             </h2>
             <span className="sv-bar-pill">{selectedPreset}</span>
           </div>
+          {/* The bar's echo of the verdict. The answer itself, and the one
+              live region, lead the side pane below. */}
           <p className="sv-bar-state">
             <i className="sv-led" aria-hidden="true" />
-            <span aria-live="polite" aria-atomic="true">
-              <span className="sr-only">Accessibility verdict: </span>
+            <span>
               <span className="sv-verdict">{verdict.word}</span>
               <span className="sv-verdict-detail"> · {verdict.detail}</span>
             </span>
@@ -354,6 +392,20 @@ export function SpringValidator() {
           </div>
 
           <div className="sv-side">
+            {/* The answer: the tool's one result, first in the side pane, in
+                the state hue. */}
+            <div className="sv-answer">
+              {glowKey > 0 && <i className="sv-answer-glow" key={glowKey} aria-hidden="true" />}
+              <div className="sv-answer-copy" aria-live="polite" aria-atomic="true">
+                <p className="sv-answer-head">
+                  <i className="sv-answer-led" aria-hidden="true" />
+                  <span className="sr-only">Accessibility verdict: </span>
+                  <span className="sv-answer-word">{verdict.word}</span>
+                </p>
+                <p className="sv-answer-reason">{verdict.reason}</p>
+              </div>
+            </div>
+
             <p className="sv-eyebrow">Parameters</p>
             <div className="sv-params">
               <ParamSlider
@@ -389,8 +441,19 @@ export function SpringValidator() {
             {/* Six tiles always, so the module closes: an overdamped spring
                 has no damped frequency, and its tile says so. */}
             <dl className="sv-metrics">
-              <Metric label="Damping ratio (ζ)" value={result.dampingRatio.toFixed(3)} hint={result.classification} />
-              <Metric label="Overshoot" value={`${result.overshoot.toFixed(1)}%`} hint={result.overshoot > 0 ? 'visible' : 'none'} />
+              {/* The tile labels are set in caps; ζ keeps its case (a capital
+                  zeta reads as a Latin Z). */}
+              <Metric
+                label={<>Damping ratio (<span className="sv-greek">ζ</span>)</>}
+                value={result.dampingRatio.toFixed(3)}
+                hint={result.classification}
+              />
+              <Metric
+                label="Overshoot"
+                value={`${result.overshoot.toFixed(1)}%`}
+                hint={band.label}
+                tone={band.tone}
+              />
               <Metric label="Settle time (2%)" value={fmtMs(result.settleTime)} hint="to equilibrium" />
               <Metric label="Rise time" value={fmtMs(result.riseTime)} hint="to equilibrium" />
               <Metric label="Natural freq" value={`${(result.naturalFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.naturalFreq.toFixed(1)} rad/s`} />
@@ -404,8 +467,9 @@ export function SpringValidator() {
         </div>
       </section>
 
-      {/* Accessibility checklist */}
-      <section className="sv-checklist" aria-labelledby={`${uid}-checks`}>
+      {/* Accessibility checklist. It carries the verdict too, so a row that
+          fails under a Violation takes the fail hue the verdict shows. */}
+      <section className="sv-checklist" aria-labelledby={`${uid}-checks`} data-verdict={result.verdict}>
         <h2 className="sv-checklist-title" id={`${uid}-checks`}>
           Reduced-motion compliance checklist
         </h2>
@@ -527,12 +591,27 @@ function ParamSlider({
 
 // ── Metric subcomponent ─────────────────────────────────────────────────────
 
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Metric({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: ReactNode;
+  value: string;
+  hint?: string;
+  /** Tints the hint with a state hue; the word itself names the state. */
+  tone?: 'pass' | 'warn' | 'fail';
+}) {
   return (
     <div className="sv-metric">
       <dt className="sv-metric-label">{label}</dt>
       <dd className="sv-metric-value">{value}</dd>
-      {hint && <dd className="sv-metric-hint">{hint}</dd>}
+      {hint && (
+        <dd className="sv-metric-hint" data-tone={tone}>
+          {hint}
+        </dd>
+      )}
     </div>
   );
 }
@@ -716,18 +795,29 @@ function SpringChart({
     overshootLabel = { x: placed.x, y: placed.y, anchor: placed.anchor, text };
   }
 
+  // The fallback's name stays on the fallback: every candidate is anchored
+  // to the dashed curve's settle point (where it reaches 1.0), stepping out
+  // around it. On a bouncy spring the response crosses that point too, and
+  // the far corners of the plot used to win, 400px from the curve the word
+  // names. If nothing near it is clear, the label still sits 6px above the
+  // settle point on its halo, which keeps it legible over a crossing curve.
   let reducedLabel: { x: number; y: number; anchor: 'start' | 'end' } | null = null;
+  let settlePoint: Pt | null = null;
   if (reducedPts.length) {
     const [ex, ey] = reducedPts[reducedPts.length - 1];
+    settlePoint = [ex, ey];
+    const near: { x: number; y: number; anchor: 'start' | 'end' }[] = [
+      { x: ex + 6, y: ey - 6, anchor: 'start' },
+      { x: ex - 6, y: ey - 6, anchor: 'end' },
+      { x: ex + 6, y: ey + 16, anchor: 'start' },
+      { x: ex - 6, y: ey + 16, anchor: 'end' },
+      { x: ex + 6, y: ey - 20, anchor: 'start' },
+      { x: ex - 6, y: ey - 20, anchor: 'end' },
+      { x: ex + 6, y: ey + 30, anchor: 'start' },
+      { x: ex - 6, y: ey + 30, anchor: 'end' },
+    ];
     const placed = placeLabel(
-      [
-        { x: ex + 8, y: ey - 8, anchor: 'start' },
-        { x: ex + 8, y: ey + 18, anchor: 'start' },
-        { x: ex - 6, y: ey - 8, anchor: 'end' },
-        { x: padding.left + 8, y: yScale(yMax) + 12, anchor: 'start' },
-        { x: width - padding.right - 4, y: yScale(0.2), anchor: 'end' },
-        { x: width - padding.right - 4, y: yScale(yMax) + 12, anchor: 'end' },
-      ],
+      [...near, near[0]],
       'reduced-motion',
       [...responseObstacles, ...densify(reducedPts)],
       taken,
@@ -763,6 +853,11 @@ function SpringChart({
 
         {/* Spring response line */}
         <path className="sv-chart-response" d={linePath} data-verdict={verdict} />
+
+        {/* Where the fallback lands: its label hangs from this point. */}
+        {settlePoint && (
+          <circle className="sv-chart-settle" cx={settlePoint[0]} cy={settlePoint[1]} r={2.5} />
+        )}
 
         {/* Labels, after the curves */}
         {[0, 0.5, 1, 1.5].map((y) => (

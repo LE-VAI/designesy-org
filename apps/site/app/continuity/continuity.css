@@ -81,10 +81,15 @@
   overflow: hidden;
 }
 
+/* A ladder row is a face and a side pane. The face holds the tier, its price
+   and what it includes (the price over its description); the side holds the
+   row's state, as a chip (Live, Early access, By conversation), and the one
+   action that state allows. Under 64rem of section the side follows the
+   face as a line under the description, the chip at its start and the
+   action at its end. */
 .continuity-ladder-row {
   display: grid;
-  gap: var(--space-fine-35) var(--space-16);
-  padding: var(--space-16) var(--space-fine-110);
+  grid-template-columns: minmax(0, 1fr);
   border-top: 1px solid var(--line-faint);
   background: var(--surface);
 }
@@ -93,11 +98,84 @@
   border-top: 0;
 }
 
+.continuity-ladder-face {
+  display: grid;
+  gap: var(--space-fine-35) var(--space-16);
+  min-width: 0;
+  padding: var(--space-16) var(--space-fine-110) var(--space-8);
+}
+
+.continuity-ladder-side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-16);
+  min-width: 0;
+  padding: 0 var(--space-fine-110) var(--space-8);
+}
+
 @media (min-width: 640px) {
-  .continuity-ladder-row {
-    grid-template-columns: 7.5rem 1fr;
+  .continuity-ladder-face {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
     align-items: baseline;
   }
+
+  /* The side line starts under the description, on the body column. */
+  .continuity-ladder-side {
+    padding-inline-start: calc(var(--space-fine-110) + 7.5rem + var(--space-16));
+  }
+}
+
+/* The action: a 44px text link with an arrow, the row's only control. */
+.continuity-ladder-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.continuity-ladder-action::after {
+  content: "\2192" / "";
+  color: var(--signal-text);
+  transition: transform var(--duration-quick) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .continuity-ladder-action:hover {
+    color: var(--signal-text);
+  }
+
+  .continuity-ladder-action:hover::after {
+    transform: translateX(3px);
+  }
+}
+
+.continuity-ladder-action:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .continuity-ladder-action::after {
+    transition: none;
+  }
+
+  @media (hover: hover) {
+    .continuity-ladder-action:hover::after {
+      transform: none;
+    }
+  }
+}
+
+html[data-motion="paused"] .continuity-ladder-action:hover::after {
+  transform: none;
 }
 
 .continuity-ladder-name {
@@ -126,49 +204,44 @@
   text-wrap: pretty;
 }
 
-/* At 64rem of section the ladder reads as a spec table on the 7-line: tier
-   and price in the face, what it includes in the side pane behind a divider
-   at 804.17px (1440), where the pane's width is the measure (about 67
-   characters a line; 66ch alone still set 85 to 89). The body wrapper steps
-   out of the way (display: contents on a plain div) so its title and line
-   are the row's own cells; the cells carry the row's padding, so each row's
-   divider meets the hairlines between rows. */
+/* At 64rem of section the face is the first seven tracks and the side pane
+   starts on the 7-line, behind a 1px divider at 804.17px (1440): the face
+   carries the tier, the price and the description under it (the body
+   column runs about 510px, the measure, so the description ends near the
+   7-line), and the side carries the state chip over the action. The face
+   used to hold only the tier and a price 80 to 130px long, a 450px dead
+   band mid-row, while the descriptions wrapped in the 482px side. The
+   panes carry the row's padding, so each divider meets the hairlines
+   between rows. The chip sits on the tier label's line. */
 .doctrine-section:has(> .continuity-ladder) {
   container: continuity-ladder / inline-size;
 }
 
 @container continuity-ladder (width >= 64rem) {
   .continuity-ladder-row {
-    grid-template-columns:
-      calc(7.5rem + var(--space-fine-110))
-      calc(var(--track-split) - 7.5rem - var(--space-fine-110))
-      minmax(0, 1fr);
-    column-gap: 0;
-    padding: 0;
+    grid-template-columns: var(--track-split) minmax(0, 1fr);
   }
 
-  .continuity-ladder-body {
-    display: contents;
+  .continuity-ladder-face {
+    padding: var(--space-16) var(--space-24) var(--space-16) var(--space-fine-110);
   }
 
-  .continuity-ladder-name,
-  .continuity-ladder-body strong {
-    margin: 0;
-    padding-block: var(--space-16);
-  }
-
-  .continuity-ladder-name {
-    padding-inline-start: var(--space-fine-110);
-  }
-
-  .continuity-ladder-body strong {
-    padding-inline-end: var(--space-16);
-  }
-
-  .continuity-ladder-body span {
-    align-self: stretch;
+  .continuity-ladder-side {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--space-8);
     padding: var(--space-16) var(--space-24);
     border-left: 1px solid var(--line-faint);
+  }
+
+  .continuity-ladder-side > .row-side-chip {
+    align-self: flex-start;
+  }
+
+  .continuity-ladder-action {
+    margin-block: calc(-1 * var(--space-8));
   }
 }
 

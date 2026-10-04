@@ -38,13 +38,49 @@ function toneFor(cs: CaseStudy): 'pass' | 'warn' | 'neutral' {
   return 'neutral';
 }
 
-/** The readout: the score move where one was measured, else the study's metric. */
+/** The readout: the score move where one was measured, else the study's
+    metric. The chip above it states the grade, so a metric that opens with
+    the same grade and score drops that segment (row 05 read "A · 93.2" over
+    "A 93.2 · 19 pass / ..."). */
 function readoutFor(cs: CaseStudy): string {
   if (cs.beforeScore != null && cs.afterScore != null) {
     const delta = (cs.afterScore - cs.beforeScore).toFixed(1);
     return `${cs.gradeBefore} ${cs.beforeScore} → ${cs.gradeAfter} ${cs.afterScore} · +${delta}`;
   }
-  return cs.metrics;
+  const chip = cs.badge.replace(' · ', ' ');
+  return cs.metrics
+    .split(' · ')
+    .filter((seg) => seg !== chip)
+    .join(' · ');
+}
+
+const NBSP = ' ';
+
+/** The readout breaks only between its segments: inside a figure-bearing
+    segment every space is a no-break space ("617 views" never splits, nor
+    "7 design domains"), a tally breaks only after its slashes, and each
+    separator binds to the segment before it, so no line starts on a dot or
+    holds one lone word. A segment of plain words wraps as prose with its
+    first and last pairs bound ("Underperformed relative / to Tile" on a
+    320px phone, not "Underperformed / relative to Tile"). Text, not nested
+    spans: the markdown twin reads the readout span up to its first closing
+    tag. */
+function readoutText(s: string): string {
+  return s
+    .split(' · ')
+    .map((seg) => {
+      if (/\d/.test(seg)) {
+        return seg
+          .split(' / ')
+          .map((part) => part.replace(/ /g, NBSP))
+          .join(`${NBSP}/ `);
+      }
+      const words = seg.split(' ');
+      if (words.length < 4) return seg;
+      const last = words.length - 1;
+      return words.reduce((out, w, i) => (i === 0 ? w : out + (i === 1 || i === last ? NBSP : ' ') + w), '');
+    })
+    .join(`${NBSP}· `);
 }
 
 export default function WorkPage() {
@@ -105,7 +141,9 @@ export default function WorkPage() {
                     <span className="work-row-meta work-row-grade" data-tone={toneFor(cs)}>
                       {cs.badge}
                     </span>
-                    <span className="work-row-meta work-row-readout">{readoutFor(cs)}</span>
+                    <span className="work-row-meta work-row-readout">
+                      {readoutText(readoutFor(cs))}
+                    </span>
                   </span>
                 </Link>
               </div>

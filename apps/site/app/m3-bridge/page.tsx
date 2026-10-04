@@ -78,7 +78,7 @@ export default function M3BridgePage() {
           </p>
           <p>
             Google&apos;s DESIGN.md project does export DTCG, through{' '}
-            <code>npx @google/design.md export --format dtcg</code>, and the two projects do not share a token format.
+            <code><span>npx</span> <span>@google/design.md</span> <span>export</span> <span>--format</span> <span>dtcg</span></code>, and the two projects do not share a token format.
             This bridge carries M3 tokens across, then checks the result against the standard.
           </p>
         </section>

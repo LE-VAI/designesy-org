@@ -8,6 +8,7 @@ import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { designReviewKit as kit } from '../lib/kits/design-review';
+import { labs } from '../lib/labs';
 import './kits.css';
 
 export const metadata: Metadata = pageMeta({
@@ -32,6 +33,50 @@ const KIT_ANATOMY = [
   'Verification checklist',
   'Anti-patterns',
   'Related contracts and surfaces',
+];
+
+/* Kit One against the map: which map parts its package ships, and what it
+   ships beyond them (lib/kits/design-review anatomy). Its core method is its
+   eight review dimensions. The card states the count against the map, and
+   the map's note names the extra part, instead of a bare "11 parts" beside a
+   map of ten. */
+const partIn = (part: string, entry: string) =>
+  part === entry || (part === 'Core method or dimensions' && /dimensions/i.test(entry));
+const KIT_PARTS_COVERED = KIT_ANATOMY.filter((part) =>
+  kit.anatomy.some((entry) => partIn(part, entry)),
+).length;
+const KIT_EXTRAS = kit.anatomy.filter(
+  (entry) => !KIT_ANATOMY.some((part) => partIn(part, entry)),
+);
+
+/* Related surfaces. Each row's datum (a version or role) and its route
+   stand in the side pane behind the 7-line, in the kit card's mono; the
+   face keeps the title and one line. */
+const RELATED: { href: string; title: string; meta: string; datum: string }[] = [
+  {
+    href: '/open',
+    title: 'Open design intelligence',
+    meta: 'Package catalog, human and machine',
+    datum: 'catalog · /open.json feed',
+  },
+  {
+    href: '/review',
+    title: 'Review',
+    meta: 'Quality gate and public field checks',
+    datum: 'quality gate',
+  },
+  {
+    href: '/contracts/design-system',
+    title: 'Design system contract',
+    meta: 'Portable values and verification',
+    datum: CONTRACT_VERSION,
+  },
+  ...[labs.poise, labs.takt, labs.cadence, labs.acoustics].map((lab) => ({
+    href: `/labs/${lab.id}`,
+    title: `Lab ${lab.number} · ${lab.title}`,
+    meta: 'Source lab · rules adopted into the contract',
+    datum: `contract v${lab.adopted_in_contract}`,
+  })),
 ];
 
 const KIT_BOUNDARIES = [
@@ -108,7 +153,10 @@ export default function KitsPage() {
                 </div>
                 <div>
                   <dt>Anatomy</dt>
-                  <dd>{kit.anatomy.length} parts</dd>
+                  <dd>
+                    {KIT_PARTS_COVERED} of {KIT_ANATOMY.length}
+                    {KIT_EXTRAS.length > 0 ? ` (+${KIT_EXTRAS.length})` : null}
+                  </dd>
                 </div>
                 <div>
                   <dt>Permission</dt>
@@ -133,118 +181,27 @@ export default function KitsPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Related surfaces</h2>
           <div className="row-stack" role="list">
-            <div role="listitem">
-              <Link
-                href="/open"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">01</span>
-                <span className="row-body">
-                  <span className="row-title">Open design intelligence</span>
-                  <span className="row-meta">
-                    Package catalog · human + machine feed
+            {RELATED.map((row, i) => (
+              <div role="listitem" key={row.href}>
+                <Link
+                  href={row.href}
+                  className="row"
+                  data-cuelume-hover="bloom"
+                  data-cuelume-press
+                >
+                  <span className="row-index">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="row-body">
+                    <span className="row-title">{row.title}</span>
+                    <span className="row-meta">{row.meta}</span>
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/review"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">02</span>
-                <span className="row-body">
-                  <span className="row-title">Review</span>
-                  <span className="row-meta">
-                    Quality gate and public field checks
+                  <span className="row-side">
+                    <span className="row-side-line">{row.datum}</span>
+                    <span className="row-side-line">{row.href}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/contracts/design-system"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">03</span>
-                <span className="row-body">
-                  <span className="row-title">Design system contract</span>
-                  <span className="row-meta">
-                    Portable values and verification · {CONTRACT_VERSION}
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/poise"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">04</span>
-                <span className="row-body">
-                  <span className="row-title">Lab One · Poise</span>
-                  <span className="row-meta">
-                    Source lab · rules adopted into contract v0.1.1
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/takt"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">05</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Two · Takt</span>
-                  <span className="row-meta">
-                    Source lab · rules adopted into contract v0.1.2
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/cadence"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">06</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Three · Cadence</span>
-                  <span className="row-meta">
-                    Source lab · rules adopted into contract v0.1.3
-                  </span>
-                </span>
-              </Link>
-            </div>
-            <div role="listitem">
-              <Link
-                href="/labs/acoustics"
-                className="row"
-                data-cuelume-hover="bloom"
-                data-cuelume-press
-              >
-                <span className="row-index">07</span>
-                <span className="row-body">
-                  <span className="row-title">Lab Four · Acoustics</span>
-                  <span className="row-meta">
-                    Source lab · rules adopted into contract v0.3.0
-                  </span>
-                </span>
-              </Link>
-            </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -252,7 +209,9 @@ export default function KitsPage() {
           <h2 className="doctrine-heading">Kit anatomy</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Package map for a mature Use Kit. Missing parts mean the package is
-            not ready to publish.
+            not ready to publish. Kit One ships {KIT_PARTS_COVERED} of{' '}
+            {KIT_ANATOMY.length}
+            {KIT_EXTRAS.length > 0 ? <>, plus {KIT_EXTRAS.join(', ').toLowerCase()}</> : null}.
           </p>
           <CheckGrid dense items={checkItemsFromStrings(KIT_ANATOMY)} />
         </section>

@@ -8,6 +8,8 @@ import { ToggleRow } from '../../lib/toggle-row';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
+import { designReviewKit } from '../../lib/kits/design-review';
+import { labs } from '../../lib/labs';
 
 export const metadata: Metadata = pageMeta({
   title: 'Cadence field check',
@@ -110,25 +112,29 @@ const HOLDS = [
   'Open tensions named: logical properties remain; font-synthesis and underline-from-font resolved',
 ];
 
+// Open and resolved tensions are one list: each cell carries its state, so
+// the two resolved on 2026-07-15 sit beside the two still open instead of
+// in a second section of their own.
 const TENSIONS = [
   {
     title: 'Block-axis logical properties not migrated',
     meta: 'margin-block-start/end and border-inline-start still physical; direction-ready is partial (inline-axis only)',
+    status: 'Open',
   },
   {
     title: 'Inter not self-hosted',
     meta: 'Named in the system stack but not bundled. The system fallback is intentional; self-hosting remains a future option',
+    status: 'Open',
   },
-];
-
-const RESOLVED_TENSIONS = [
   {
-    title: 'font-synthesis: none · RESOLVED',
+    title: 'font-synthesis: none',
     meta: 'Added to :root in globals.css; prevents the browser from synthesizing fake weights (fixed 2026-07-15)',
+    status: 'Resolved',
   },
   {
-    title: 'text-underline-position and skip-ink · RESOLVED',
+    title: 'text-underline-position and skip-ink',
     meta: 'text-underline-position: from-font and text-decoration-skip-ink: auto added to :root, so underlines align to font metrics and skip descenders (fixed 2026-07-15)',
+    status: 'Resolved',
   },
 ];
 
@@ -166,36 +172,47 @@ const VERIFICATION = [
   'Mobile: 16px root, rem-based scale, text-wrap: pretty confirmed',
 ];
 
+const REVIEWED = '2026-07-13';
+
+const SUMMARY =
+  'Cadence is a considered lab. The live CSS audit confirms 12 of 13 verifiable typography rules: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance and pretty, tabular numbers, ::selection with the accent blue, user-select on UI chrome, 16px input floor, font-synthesis: none, and text-underline-position: from-font. Two rules identified in the initial field check have been resolved in globals.css. One rule remains open: block-axis logical properties are not yet migrated (inline-axis is done). Typography rules are adopted into design system contract v0.1.3. Remaining work is block-axis migration and synchronization; adoption is settled.';
+
 const SOURCES = [
   {
     href: '/labs/cadence',
     title: 'Lab Three · Cadence',
     meta: 'Artifact under review',
+    role: `Artifact · lab v${labs.cadence.version}`,
   },
   {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
     meta: 'Method and output format',
+    role: `Method · kit v${designReviewKit.version}`,
   },
   {
     href: '/contracts/design-system',
     title: 'Design system contract ' + CONTRACT_VERSION,
     meta: 'Governing tokens · typography block (Cadence adopted in v0.1.3)',
+    role: `Rules · ${CONTRACT_VERSION}`,
   },
   {
     href: 'https://github.com/jakubkrehel/skills',
     title: 'Krehel /better-typography',
     meta: '18 typography principles (MIT): source material',
+    role: 'Source · MIT',
   },
   {
     href: '/review/poise',
     title: 'Field check · Poise',
     meta: 'Prior field check pattern (Lab One)',
+    role: 'Prior review',
   },
   {
     href: '/review',
     title: 'Review surface',
     meta: 'Eight dimensions doctrine',
+    role: 'Doctrine',
   },
 ];
 
@@ -226,28 +243,41 @@ export default function CadenceFieldCheckPage() {
             <span className="status-badge">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · /labs/cadence</span>
-            <span className="lab-meta-item">Date · 2026-07-13</span>
+            <span className="lab-meta-item">Date · {REVIEWED}</span>
           </div>
           <AgentActions mdPath="/review/cadence.md" label="the cadence review" />
         </section>
 
         <section className="doctrine-section fade-up" id="summary">
           <h2 className="doctrine-heading">Summary</h2>
-          <div className="definition">
-            <p className="definition-label">Outcome · pass with notes</p>
-            <p>
-              Cadence is a considered lab. The live CSS audit confirms 12 of 13
-              verifiable typography rules: font smoothing on root, rem-based
-              scale, line-height by role, tracking by size, measure cap,
-              text-wrap balance and pretty, tabular numbers, ::selection with
-              the accent blue, user-select on UI chrome, 16px input floor,
-              font-synthesis: none, and text-underline-position: from-font.
-              Two rules identified in the initial field check have been resolved
-              in globals.css. One rule remains open: block-axis logical
-              properties are not yet migrated (inline-axis is done). Typography
-              rules are adopted into design system contract v0.1.3. Remaining
-              work is block-axis migration and synchronization; adoption is settled.
-            </p>
+          <div className="definition definition-split" data-copy={SUMMARY} data-copy-label="summary">
+            <div className="definition-face">
+              <p className="definition-label">Outcome · pass with notes</p>
+              <p>{SUMMARY}</p>
+            </div>
+            <div className="definition-side">
+              <span className="row-side-chip" data-state="warn">
+                Pass with notes
+              </span>
+              <dl>
+                <div>
+                  <dt>Kit</dt>
+                  <dd>Design Review v{designReviewKit.version}</dd>
+                </div>
+                <div>
+                  <dt>Artifact</dt>
+                  <dd>/labs/cadence</dd>
+                </div>
+                <div>
+                  <dt>Adopted</dt>
+                  <dd>Contract v0.1.3</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{REVIEWED}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 
@@ -261,6 +291,9 @@ export default function CadenceFieldCheckPage() {
                   https://www.designesy.org/labs/cadence
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{ARTIFACT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="02">
               <span className="row-body">
@@ -268,6 +301,9 @@ export default function CadenceFieldCheckPage() {
                 <span className="row-meta">
                   Make text feel composed rather than placed
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{PURPOSE}}'}</span>
               </span>
             </ToggleRow>
             <ToggleRow index="03">
@@ -277,6 +313,9 @@ export default function CadenceFieldCheckPage() {
                   Public builders, agents, and reviewers on designesy.org
                 </span>
               </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{CONTEXT}}'}</span>
+              </span>
             </ToggleRow>
             <ToggleRow index="04">
               <span className="row-body">
@@ -284,6 +323,9 @@ export default function CadenceFieldCheckPage() {
                 <span className="row-meta">
                   Contract {CONTRACT_VERSION} · Kit One Design Review · Krehel /better-typography
                 </span>
+              </span>
+              <span className="row-side">
+                <span className="row-side-line">{'{{RULES}}'}</span>
               </span>
             </ToggleRow>
           </div>
@@ -332,11 +374,6 @@ export default function CadenceFieldCheckPage() {
           <CheckGrid items={TENSIONS} />
         </section>
 
-        <section className="doctrine-section fade-up" id="resolved-tensions">
-          <h2 className="doctrine-heading">Resolved tensions</h2>
-          <CheckGrid items={RESOLVED_TENSIONS} />
-        </section>
-
         <section className="doctrine-section fade-up" id="corrections">
           <h2 className="doctrine-heading">Corrections</h2>
           <CheckGrid items={CORRECTIONS} />
@@ -365,6 +402,10 @@ export default function CadenceFieldCheckPage() {
                     <span className="row-title">{item.title}</span>
                     <span className="row-meta">{item.meta}</span>
                   </span>
+                  <span className="row-side">
+                    <span className="row-side-line">{item.role}</span>
+                    <span className="row-side-arrow" aria-hidden="true" />
+                  </span>
                 </Link>
               </div>
             ))}
@@ -386,6 +427,10 @@ export default function CadenceFieldCheckPage() {
                   <span className="row-title">Open Lab Three · Cadence</span>
                   <span className="row-meta">Live artifact</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/labs/cadence</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
             <div role="listitem">
@@ -399,6 +444,10 @@ export default function CadenceFieldCheckPage() {
                 <span className="row-body">
                   <span className="row-title">Lab Two · Takt</span>
                   <span className="row-meta">Prior field check pattern</span>
+                </span>
+                <span className="row-side">
+                  <span className="row-side-line">/labs/takt</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
                 </span>
               </Link>
             </div>
@@ -414,6 +463,10 @@ export default function CadenceFieldCheckPage() {
                   <span className="row-title">Use Kit One · Design Review</span>
                   <span className="row-meta">Run the same method on your work</span>
                 </span>
+                <span className="row-side">
+                  <span className="row-side-line">/kits/design-review</span>
+                  <span className="row-side-arrow" aria-hidden="true" />
+                </span>
               </Link>
             </div>
           </div>
@@ -423,7 +476,7 @@ export default function CadenceFieldCheckPage() {
           Field check of Lab Three · Cadence using Use Kit One · Design Review.
           Outcome: pass with notes. Institutional quality discipline. It is not
           a client report. Typography rules are adopted into contract v0.1.3;
-          remaining notes are three CSS additions and synchronization.
+          remaining notes are the block-axis migration and synchronization.
         </div>
       </main>
 
