@@ -77,7 +77,16 @@ function main() {
   // `check-gate-parity.js` is CI-only BY DESIGN: it cannot enumerate itself from
   // the build script's perspective without a chicken-and-egg, and Vercel has no
   // second list to compare against. Excluded explicitly rather than silently.
-  const CI_ONLY = new Set(['check-gate-parity.js']);
+  //
+  // The runtime gates need a LIVE server and a browser, so they run in the
+  // separate `visual-gates` job after `build-site` serves the build — they can
+  // never chain into `npm run build`, which runs before anything is served.
+  const CI_ONLY = new Set([
+    'check-gate-parity.js',
+    'edge-contract.js',
+    'check-glass-blur.js',
+    'qa-keyboard.js',
+  ]);
 
   const onlyInBuild = inBuild.filter((g) => !inCi.includes(g));
   const onlyInCi = inCi.filter((g) => !inBuild.includes(g) && !CI_ONLY.has(g));
