@@ -263,8 +263,8 @@ function RunRow({
    * A short run (nine tests) keeps the console's lamp width, so its cells end
    * well short of the face. Its note then moves to the end of the row as a
    * count ("9 / 9"), right-aligned on the face's content edge, so the run
-   * ends on the same edge as a 26-cell run and the empty track reads as a
-   * leader to the count, never as missing tests.
+   * ends on the same edge as a 26-cell run. No leader connects the lamps to
+   * the count: a dotted line read as unfilled slots (round-3 judge).
    */
   count?: boolean;
 }) {

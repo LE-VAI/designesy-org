@@ -8188,6 +8188,16 @@ a.field-card:active {
   background: transparent;
 }
 
+/* A state read as a neutral chip, never a brand signal: ink text on a line
+   border. The state grammar is "state chips are never brand blue" — the
+   /work index shows "ready for review" as a neutral ink chip, so a page hero
+   saying the same thing must too (round-3 judge, 2026-10-04). */
+.status-badge--neutral {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: transparent;
+}
+
 /*
   Field marks = dispersed modular elements.
   Same five-element grammar as the hero seam mark:

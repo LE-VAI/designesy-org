@@ -468,14 +468,15 @@
    cells keep the console's lamp width (the cap above), so nine lamps end
    166px short of the face at 1440. The count ("9 / 9") takes the row's last
    track, right-aligned on the face's content edge (784.16 at 1440, where a
-   26-cell run ends), and a dotted leader runs from the last lamp to it, so
-   the open track reads as a leader to the count, never as missing tests. */
+   26-cell run ends), so the run still ends on the same edge. No dotted
+   leader to the count: it read as unfilled slots, the same "missing tests"
+   signal the blank track gave before (round-3 judge, 2026-10-04). The open
+   track is plain room; the tally below states the pass/fail split. */
 .cs-run[data-count] {
-  /* The count's track is auto: it never drops below its text and a stub of
-     leader, and it alone stretches into the room the lamps leave. The lamps
-     take everything else up to their cap, so at a 40rem panel (247px for
-     both) they shrink to 17px instead of the count spilling over the
-     divider. */
+  /* The count's track is auto: it never drops below its text, and it alone
+     stretches into the room the lamps leave. The lamps take everything else
+     up to their cap, so at a 40rem panel (247px for both) they shrink to
+     17px instead of the count spilling over the divider. */
   grid-template-columns: var(--cs-head-w) minmax(0, max-content) auto;
   grid-template-areas:
     "head cells count"
@@ -486,19 +487,13 @@
   grid-area: count;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-12);
   min-width: 0;
   font: 500 0.78rem/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   white-space: nowrap;
-}
-
-.cs-run-count::before {
-  content: "";
-  flex: 1 1 0;
-  min-width: var(--space-8);
-  border-top: 1px dotted var(--line-strong);
 }
 
 .cs-cell {
@@ -1072,9 +1067,6 @@
       "head  count"
       "cells cells"
       "tally tally";
-  }
-  .cs-run-count::before {
-    content: none;
   }
   /* The views axis thins its interior ticks, never its ends: the first and
      last always show (0 / 200 / 400 / 600 / 700, the 700 hung from the
