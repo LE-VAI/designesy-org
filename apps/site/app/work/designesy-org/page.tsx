@@ -33,16 +33,16 @@ const DELTA = [
   { id: 'v05', item: 'focus-visible present on all interactive elements', before: 'FAIL', after: 'PASS' },
   { id: 'v06', item: 'Reduced-motion tiering (Tier 1/2/3) not a kill switch', before: 'FAIL', after: 'PASS' },
   { id: 'v11', item: 'No raw hex colors in component CSS', before: 'FAIL', after: 'PASS' },
-  { id: 'v14', item: 'Cadence typography contract-diff', before: 'SKIP', after: 'PASS' },
+  { id: 'v14', item: 'Cadence typography contract-diff', before: 'FAIL', after: 'PASS' },
   { id: 'v18', item: 'text-wrap: balance + pretty both present', before: 'WARN', after: 'PASS' },
-  { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', before: 'SKIP', after: 'PASS' },
-  { id: 'v08', item: 'Poise interaction rules match live /labs/poise', before: 'SKIP', after: 'PASS' },
-  { id: 'v09', item: 'Poise keyboard-path published', before: 'SKIP', after: 'PASS' },
-  { id: 'v10', item: 'Takt rules match CSS', before: 'SKIP', after: 'PASS' },
+  { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', before: 'FAIL', after: 'PASS' },
+  { id: 'v08', item: 'Poise interaction rules match live /labs/poise', before: 'FAIL', after: 'PASS' },
+  { id: 'v09', item: 'Poise keyboard-path published', before: 'FAIL', after: 'PASS' },
+  { id: 'v10', item: 'Takt rules match CSS', before: 'FAIL', after: 'PASS' },
 ];
 
 const SUMMARY =
-  'designesy.org was scored by its own engine and got a D. The failures were concentrated in four areas: token discipline (raw hex, magic numbers), keyboard affordance (no focus-visible rings), reduced-motion handling (a kill switch rather than tiered), and Cadence typography (no text-wrap, no tabular-nums, no font-synthesis guards). One session resolved all 9 failures and 2 warnings, plus converted 3 SKIPs to PASSes by implementing the static contract-diff halves. The score moved from D 67.4 to A 96.3, a 28.9-point gain in a single working session.';
+  'designesy.org was scored by its own engine and got a D. The failures were concentrated in four areas: token discipline (raw hex, magic numbers), keyboard affordance (no focus-visible rings), reduced-motion handling (a kill switch rather than tiered), and Cadence typography (no text-wrap, no tabular-nums, no font-synthesis guards). One session resolved all 9 failures and 2 warnings. The score moved from D 67.4 to A 96.3, a 28.9-point gain in a single working session.';
 
 const SOURCES: Source[] = [
   {
@@ -70,9 +70,9 @@ const SOURCES: Source[] = [
 const LESSONS = [
   'A score counts once it is public: running the engine against the publisher is the only honest test',
   '9 failures in one session is recoverable; the contract is reachable from a low baseline',
-  'SKIPs that hide behind "browser-only" can often be partially resolved with static contract-diff halves',
   'The biggest single jump came from token discipline: replacing raw hex and magic numbers moved 4 checks at once',
-  'The remaining 3 SKIPs are honest: v02/v04 need a browser, v21 needs PSI or CDP; each is shown as unrun',
+  'A SKIP is not a pass waiting to happen: the 3 browser-only checks stayed SKIP through the whole session, because no amount of static work can run a browser check',
+  'The 3 SKIPs are honest: v02/v04 need a browser, v21 needs PSI or CDP; each is shown as unrun',
 ];
 
 export default function DesignesyOrgCaseStudy() {
@@ -201,9 +201,9 @@ export default function DesignesyOrgCaseStudy() {
               Tier 3 keep; never a kill switch). Implemented the Cadence
               typography rules: text-wrap balance + pretty, tabular-nums in
               numeric contexts, font-synthesis guards, skip-ink on
-              underlines. Shipped the static contract-diff halves of the
-              Poise interaction, Poise keyboard-path, and Takt feel checks,
-              converting 3 SKIPs to PASSes without a browser path.
+              underlines. Fixed the Poise interaction, Poise keyboard-path,
+              and Takt feel checks, which had been failing rather than
+              unrun.
             </p>
           </div>
         </section>
