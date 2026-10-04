@@ -458,6 +458,10 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          # setup-node resolves this path from the repo root, NOT from
+          # working-directory. Must be explicit even though defaults.run
+          # is set to apps/site above (same as the build-site job).
+          cache-dependency-path: apps/site/package-lock.json
 
       - name: Install dependencies
         run: npm ci
