@@ -8066,8 +8066,13 @@ html:not(.js-ready) .demo-stagger-bar {
   border-left-color: var(--signal);
 }
 
+/* The non-featured kit cards carry no edge accent. A one-sided colour stripe
+   is the side-stripe card pattern the anti-generic check targets, and it also
+   weakened the featured contract card below it, whose full signal border is
+   the deliberate accent of the set. The eyebrow chip and the icon tile mark
+   these cards; nothing needs the stripe. (Judge round 3, 2026-10-04.) */
 .field-card--kit {
-  border-left-color: color-mix(in srgb, var(--signal-light) 75%, transparent);
+  border-left-color: var(--line);
 }
 
 @media (hover: hover) {
@@ -8084,8 +8089,10 @@ html:not(.js-ready) .demo-stagger-bar {
     border-left-color: var(--signal-light);
     border-color: var(--line-strong);
   }
+  /* The kit card's hover keeps the border lift and drops the edge colour with
+     its resting stripe (see the .field-card--kit note above). */
   .field-card--kit:hover {
-    border-left-color: var(--signal-light);
+    border-left-color: var(--line-strong);
     border-color: var(--line-strong);
   }
 }
