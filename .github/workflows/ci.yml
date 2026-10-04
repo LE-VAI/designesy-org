@@ -202,12 +202,17 @@ jobs:
         run: node scripts/check-gate-parity.js
 
       # Cache the Next.js build output for faster re-runs on the same PR.
+      #
+      # Exact-SHA key only, no prefix fallback: a prefix restore made the build
+      # incremental on top of an older commit's .next, and the runtime-gates
+      # job measured the stale output (the same failure twice). The build this
+      # job saves must be exactly this commit's source, or every consumer of
+      # the cache measures the wrong thing.
       - name: Cache .next
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: apps/site/.next
           key: nextjs-${{ github.sha }}
-          restore-keys: nextjs-
 
   # ── Job 2: Python MCP package gate ───────────────────────────────────────
   # The designesy-mcp Python package lives in packages/designesy-mcp and
@@ -466,27 +471,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Restore .next
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: apps/site/.next
-          # Exact-SHA key only, NO restore-keys fallback. A prefix fallback
-          # once handed this job another commit's .next (BUILD_ID existed, the
-          # rebuild was skipped, and the edge gate measured stale geometry and
-          # failed correctly). A gate that measures the wrong commit is worse
-          # than one that builds slowly.
-          key: nextjs-${{ github.sha }}
-
-      # A cache miss must not silently skip the gates: build the commit with
-      # the full production chain (postbuild-pagefind generates the search
-      # index the keyboard gate's find-flow asserts against).
-      - name: Build if the cache missed
-        run: |
-          if [ ! -f .next/BUILD_ID ]; then
-            npm run build
-          else
-            echo "Reusing the cached .next for ${{ github.sha }}"
-          fi
+      # No .next cache participation at all. Runs 2 and 3 of this job measured
+      # pre-#174 geometry even under an exact-SHA key, because the key's writer
+      # (build-site) had itself restored an older .next via a prefix fallback
+      # and built incrementally on top, then saved the result under the new
+      # SHA. A runtime gate must measure exactly what this commit's source
+      # builds, so the build here is always fresh. Costs ~2 min per run; that
+      # is the price of measuring the right thing.
+      - name: Build the site (full production chain)
+        run: npm run build
 
       - name: Serve the build
         run: |
