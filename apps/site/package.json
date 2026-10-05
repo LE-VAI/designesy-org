@@ -39,7 +39,7 @@
     "playwright-core": "^1.63.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "resend": "^6.28.0",
+    "resend": "^6.31.0",
     "sharp": "0.35.4",
     "web-haptics": "file:./vendor/web-haptics",
     "zod": "^4.6.5"
