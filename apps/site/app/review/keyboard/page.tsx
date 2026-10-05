@@ -258,6 +258,9 @@ export default function SiteKeyboardPage() {
 
         <section className="doctrine-section fade-up" id="verdict">
           <h2 className="doctrine-heading">Verdict</h2>
+          {/* The instrument material for this card comes from the shared rule
+              in globals.css: sections id="verdict"/"summary" holding the split
+              card get the standing-object treatment. */}
           <div className="definition definition-split" data-copy={VERDICT} data-copy-label="verdict">
             <div className="definition-face">
               <p className="definition-label">Keyboard path · holds</p>
