@@ -1,25 +1,36 @@
 {
-  "generatedAt": "2026-09-28",
+  "generatedAt": "2026-10-05",
   "formula": "score * 0.5 + drift * 0.3 + readiness * 0.2",
   "engines": {
     "score": {
-      "score": 93,
+      "score": 95.7,
       "grade": "A",
-      "pass": 39,
-      "warn": 0,
+      "pass": 37,
+      "warn": 2,
       "fail": 0,
       "skip": 0,
       "checks": 39
     },
     "drift": {
-      "score": 100,
-      "grade": "A",
-      "pass": 12,
+      "score": 83,
+      "grade": "B",
+      "pass": 10,
       "warn": 0,
-      "fail": 0,
+      "fail": 2,
       "checks": 12,
-      "tokenCount": 234,
-      "notes": []
+      "tokenCount": 339,
+      "notes": [
+        {
+          "id": "d02",
+          "status": "FAIL",
+          "detail": "13 var() references to undeclared custom properties: --topbar-h, --cmdk-vvh, --hang, --ix-fit, --n...; token fabrication detected (16 runtime tokens excluded)"
+        },
+        {
+          "id": "d12",
+          "status": "FAIL",
+          "detail": "13 alias chains reference undeclared tokens: dangling references"
+        }
+      ]
     },
     "readiness": {
       "score": 100,
@@ -31,5 +42,5 @@
       "notes": []
     }
   },
-  "composite": 96.5
+  "composite": 92.8
 }
