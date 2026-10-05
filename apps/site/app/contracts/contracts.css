@@ -3,12 +3,22 @@
    this to the /contracts route only. */
 
 .demo-swatch-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-8);
-  align-items: center;
-  justify-content: center;
   width: 100%;
+}
+
+@media (min-width: 561px) and (max-width: 860px) {
+  .demo-swatch-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .demo-swatch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .demo-swatch {
@@ -26,7 +36,7 @@
 }
 
 .demo-swatch-name {
-  font-size: 0.58rem;
+  font-size: 0.6875rem; /* 11px: captions below AA threshold at 0.58rem */
   color: var(--muted-dim);
   letter-spacing: 0.04em;
   text-align: center;
@@ -634,4 +644,35 @@
 
 .contract-eyebrow.is-spaced {
   margin-top: var(--space-32);
+}
+
+/* Numbered doctrine headings: each pairs with a compact return link so a
+   fourteen-section page is navigable in both directions. */
+.contract-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.contract-heading-row .doctrine-heading {
+  margin-bottom: 0;
+}
+
+.contents-back {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--muted-dim);
+  text-decoration: none;
+  transition: color var(--duration-quick) var(--ease-out);
+}
+
+.contents-back:hover,
+.contents-back:focus-visible {
+  color: var(--signal-access);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

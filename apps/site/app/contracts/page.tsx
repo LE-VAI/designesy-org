@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import './contracts.css';
 import { Topbar } from '../lib/topbar';
@@ -62,7 +62,7 @@ const CONTRACT_CONTENTS = [
   { title: 'Typography rules', id: 'typography-rules' },
   { title: 'Spacing and layout rules', id: 'spacing-and-layout' },
   { title: 'Shape and surface rules', id: 'shape-and-surface' },
-  { title: 'Component behavior and states', id: 'component-states' },
+  { title: 'Component states', id: 'component-states' },
   { title: 'Accessibility requirements', id: 'accessibility-requirements' },
   { title: 'Motion and reduced-motion guidance', id: 'motion-and-reduced-motion' },
   { title: 'Copywriting principles', id: '09e-copywriting' },
@@ -75,6 +75,18 @@ const CONTRACT_CONTENTS = [
 type ContentsId = (typeof CONTRACT_CONTENTS)[number]['id'];
 
 const sectionId = (id: ContentsId) => id;
+
+/** A numbered doctrine section heading with a compact return link to Contents. */
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <div className="contract-heading-row">
+      <h2 className="doctrine-heading">{children}</h2>
+      <Link className="contents-back" href="#contract-contents">
+        ↑ Contents
+      </Link>
+    </div>
+  );
+}
 
 /** A sub-contract's side datum: its live version and verification count. */
 function packageDatum(c: { version: string; verification: { checks: readonly unknown[] } }) {
@@ -567,7 +579,7 @@ export default function ContractsPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up">
+        <section className="doctrine-section fade-up" id="contract-contents">
           <h2 className="doctrine-heading">Contract contents</h2>
           <div className="text-cell" style={{ marginBottom: '1.5rem' }}>
             <p className="surface-note">
@@ -630,7 +642,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('source-and-provenance')}>
-          <h2 className="doctrine-heading">01 · Source and provenance</h2>
+          <SectionHeading>01 · Source and provenance</SectionHeading>
           <CheckGrid items={[
               {
                 title: 'Public implementation',
@@ -660,7 +672,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('primitive-tokens')}>
-          <h2 className="doctrine-heading">02 · Primitive tokens</h2>
+          <SectionHeading>02 · Primitive tokens</SectionHeading>
           {/* Group labels are headings, in the section's one subhead style. */}
           <h3 style={SUBHEAD}>Colors (exact values)</h3>
           <TokenTable rows={PRIMITIVE_COLORS} />
@@ -777,7 +789,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('semantic-tokens')}>
-          <h2 className="doctrine-heading">03 · Semantic tokens</h2>
+          <SectionHeading>03 · Semantic tokens</SectionHeading>
           <div className="doctrine-cols">
             <div className="definition">
               <p className="definition-label">Surface roles</p>
@@ -812,7 +824,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('typography-rules')}>
-          <h2 className="doctrine-heading">04 · Typography rules</h2>
+          <SectionHeading>04 · Typography rules</SectionHeading>
           <ul className="principle-list">
             {TYPOGRAPHY_RULES.map((rule, i) => (
               <li className="principle" key={rule}>
@@ -828,7 +840,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('spacing-and-layout')}>
-          <h2 className="doctrine-heading">05 · Spacing and layout rules</h2>
+          <SectionHeading>05 · Spacing and layout rules</SectionHeading>
           <TokenTable
             rows={SPACING_RULES.map((r) => ({
               token: r.name,
@@ -845,12 +857,12 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('shape-and-surface')}>
-          <h2 className="doctrine-heading">06 · Shape and surface rules</h2>
+          <SectionHeading>06 · Shape and surface rules</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(SHAPE_RULES)} />
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('component-states')}>
-          <h2 className="doctrine-heading">07 · Component behavior and states</h2>
+          <SectionHeading>07 · Component states</SectionHeading>
           <div className="principle-list">
             {COMPONENT_STATES.map((item, i) => (
               <div className="principle" key={item.name}>
@@ -916,37 +928,26 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('accessibility-requirements')}>
-          <h2 className="doctrine-heading">08 · Accessibility requirements</h2>
+          <SectionHeading>08 · Accessibility requirements</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(A11Y_REQUIREMENTS)} />
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('motion-and-reduced-motion')}>
-          <h2 className="doctrine-heading">09 · Motion and reduced-motion</h2>
+          <SectionHeading>09 · Motion and reduced-motion</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(MOTION_RULES)} />
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">09a · Ten non-negotiable motion standards</h2>
+          <SectionHeading>09a · Ten non-negotiable motion standards</SectionHeading>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             The positive form of the motion anti-patterns below. Every
             motion-bearing artifact must pass all ten.
           </p>
-          <div className="principle-list">
-            {TEN_MOTION_STANDARDS.map((standard, i) => (
-              <div className="principle" key={standard}>
-                <span className="principle-num">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="principle-body">
-                  <p>{standard}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CheckGrid items={checkItemsFromStrings(TEN_MOTION_STANDARDS)} />
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">09b · Motion anti-patterns</h2>
+          <SectionHeading>09b · Motion anti-patterns</SectionHeading>
           <h3 style={SUBHEAD}>Block on sight</h3>
           <CheckGrid items={checkItemsFromStrings(MOTION_BLOCK_ON_SIGHT, { avoid: true })} />
           <h3 style={{ ...SUBHEAD, marginTop: '1.5rem' }}>Caution</h3>
@@ -954,7 +955,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">09c · Spring physics</h2>
+          <SectionHeading>09c · Spring physics</SectionHeading>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Custom <code style={{ color: 'var(--ink)' }}>$type: spring</code> via{' '}
             <code style={{ color: 'var(--ink)' }}>$extensions.designesy</code>.
@@ -965,7 +966,7 @@ export default function ContractsPage() {
 
         {/* Linked from the design system contract's Contents (Acoustics). */}
         <section className="doctrine-section fade-up" id="acoustic-tokens">
-          <h2 className="doctrine-heading">09d · Acoustic tokens</h2>
+          <SectionHeading>09d · Acoustic tokens</SectionHeading>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Custom <code style={{ color: 'var(--ink)' }}>$type: sound</code> via{' '}
             <code style={{ color: 'var(--ink)' }}>$extensions.designesy</code>.
@@ -976,7 +977,7 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('09e-copywriting')}>
-          <h2 className="doctrine-heading">10 · Copywriting ({COPYWRITING_SINCE})</h2>
+          <SectionHeading>10 · Copywriting ({COPYWRITING_SINCE})</SectionHeading>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             UX copy principles adopted in {COPYWRITING_SINCE} from NN/g, Polaris, IBM
             Carbon, Microsoft Fluent, Apple HIG, and Atlassian. Gap source:{' '}
@@ -1002,22 +1003,22 @@ export default function ContractsPage() {
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('anti-patterns')}>
-          <h2 className="doctrine-heading">11 · Anti-patterns</h2>
+          <SectionHeading>11 · Anti-patterns</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(ANTI_PATTERNS, { avoid: true })} />
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('implementation-notes')}>
-          <h2 className="doctrine-heading">12 · Implementation notes</h2>
+          <SectionHeading>12 · Implementation notes</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(IMPLEMENTATION_NOTES)} />
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('verification-criteria')}>
-          <h2 className="doctrine-heading">13 · Verification criteria</h2>
+          <SectionHeading>13 · Verification criteria</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(VERIFICATION)} />
         </section>
 
         <section className="doctrine-section fade-up" id={sectionId('open-tensions')}>
-          <h2 className="doctrine-heading">14 · Open tensions</h2>
+          <SectionHeading>14 · Open tensions</SectionHeading>
           <CheckGrid items={checkItemsFromStrings(OPEN_TENSIONS, { avoid: true })} />
         </section>
 
