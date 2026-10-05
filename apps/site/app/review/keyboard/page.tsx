@@ -296,7 +296,8 @@ export default function SiteKeyboardPage() {
           <h2 className="doctrine-heading">Expected tab order</h2>
           <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
             Order is document order. No positive tabindex values are used on
-            shared chrome.
+            shared chrome. Check each stop off as you verify it; checks stay
+            on this device only.
           </p>
           <div className="row-stack" role="list">
             {TAB_ORDER.map((item) => (
@@ -334,6 +335,10 @@ export default function SiteKeyboardPage() {
 
         <section className="doctrine-section fade-up" id="method">
           <h2 className="doctrine-heading">Re-run method</h2>
+          <p className="surface-note" style={{ marginBottom: '1.5rem' }}>
+            Check each stop off as you verify it; checks stay on this device
+            only.
+          </p>
           <div className="row-stack" role="list">
             {METHOD.map((item, i) => (
               <ToggleRow key={item.step} index={String(i + 1).padStart(2, '0')}>
