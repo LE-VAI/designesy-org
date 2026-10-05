@@ -272,6 +272,124 @@ jobs:
         run: |
           echo "Alias verification complete."
 
+  # ── Job 4: Preview protection + bypass verification ────────────────────────
+  # Previews sit behind Deployment Protection, so an automated consumer reaches
+  # them only with the Protection Bypass for Automation secret (the
+  # x-vercel-protection-bypass header). This job proves BOTH halves on every
+  # preview deploy:
+  #
+  #   1. The preview is PROTECTED. A request without the header must NOT get
+  #      the site. If protection were silently disabled, a bypass test would
+  #      still read 200 and the gate would pass while proving nothing — the
+  #      "check that passes when it cannot see" defect this repo has removed
+  #      twice already.
+  #   2. The bypass token WORKS. The header returns 200, and the preview
+  #      serves the commit that just deployed (/api/version parity).
+  #
+  # This job is also the drift alarm for the secret itself: if the token is
+  # rotated or revoked in Vercel settings, the next preview fails here with
+  # the header mismatch, instead of a future consumer discovering it mid-run.
+  #
+  # curl-only like smoke-test: no checkout, no browser install. The rendered
+  # gates already run in CI against the build; this lane proves the ACCESS
+  # path against a real, protected deployment.
+  preview-gate:
+    name: Verify preview protection + bypass
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: |
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment == 'Preview'
+
+    steps:
+      - name: Check protection, bypass, and commit parity
+        env:
+          PREVIEW: ${{ github.event.deployment_status.target_url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          EXPECTED_SHA: ${{ github.event.deployment.sha || github.sha }}
+        run: |
+          echo "## Preview protection + bypass" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -z "$PREVIEW" ]; then
+            echo "✗ No preview target_url on the deployment_status event" >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview gate: no target URL"
+            exit 1
+          fi
+          echo "Preview: $PREVIEW" >> $GITHUB_STEP_SUMMARY
+          echo "Expected commit: $EXPECTED_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -z "$BYPASS" ]; then
+            echo "✗ VERCEL_AUTOMATION_BYPASS_SECRET is not set — the token cannot be checked" >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview gate: bypass secret missing"
+            exit 1
+          fi
+
+          # Half 1: protection must be ON. 200 without the header means the
+          # preview is public, and this gate's other half would prove nothing.
+          BARE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$PREVIEW/" 2>/dev/null || echo "000")
+          if [ "$BARE_STATUS" = "200" ]; then
+            {
+              echo "✗ **The preview is NOT protected.** A request with no bypass"
+              echo "header returned 200. Deployment Protection is either off or"
+              echo "scoped past this URL, so the bypass token is being exercised"
+              echo "by nothing. Check Settings → Deployment Protection on the"
+              echo "project; previews are meant to stay protected."
+            } >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview protection: OFF (bare request returned $BARE_STATUS)"
+            exit 1
+          fi
+          echo "✓ Protection on: bare request returns $BARE_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Protection on: bare request returns $BARE_STATUS"
+
+          # Half 2: the bypass token opens the protected preview.
+          BYPASS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+            -H "x-vercel-protection-bypass: $BYPASS" "$PREVIEW/" 2>/dev/null || echo "000")
+          if [ "$BYPASS_STATUS" != "200" ]; then
+            {
+              echo "✗ **The bypass token did not open the preview.** The header"
+              echo "returned $BYPASS_STATUS. Likely causes: the secret was rotated"
+              echo "or revoked in Vercel (Settings → Deployment Protection →"
+              echo "Protection Bypass for Automation), or the GitHub secret is stale."
+              echo "Revoking invalidates existing deployments — redeploy after"
+              echo "regenerating, then update this repository's secret."
+            } >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview bypass: FAIL (header request returned $BYPASS_STATUS)"
+            exit 1
+          fi
+          echo "✓ Bypass works: header request returns $BYPASS_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Bypass works: header request returns $BYPASS_STATUS"
+
+          # The preview serves the commit that just deployed (same strict
+          # pattern as alias-verify: a malformed field cannot read as a match).
+          VERSION_JSON=$(curl -s --max-time 20 \
+            -H "x-vercel-protection-bypass: $BYPASS" "$PREVIEW/api/version" 2>/dev/null || echo '')
+          PREVIEW_SHA=$(printf '%s' "$VERSION_JSON" | grep -oE '"commit"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | grep -oE '[0-9a-f]{40}' || true)
+          if [ -z "$PREVIEW_SHA" ]; then
+            {
+              echo "✗ **Could not measure the preview's commit.** /api/version did"
+              echo "not report one, so parity cannot be verified. This is a FAILURE,"
+              echo "not a skip. Raw response (truncated):"
+              echo "\`$(printf '%s' "$VERSION_JSON" | head -c 200)\`"
+            } >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview parity: could not measure"
+            exit 1
+          fi
+          if [ "$PREVIEW_SHA" = "$EXPECTED_SHA" ]; then
+            echo "✓ Preview serves the expected commit: \`${PREVIEW_SHA}\`" >> $GITHUB_STEP_SUMMARY
+            echo "✓ Preview serves the expected commit: ${PREVIEW_SHA}"
+          else
+            echo "✗ Preview serves \`${PREVIEW_SHA}\`, expected \`${EXPECTED_SHA}\`" >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview parity: STALE — expected ${EXPECTED_SHA}, preview serves ${PREVIEW_SHA}"
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Preview protection + bypass verified" >> $GITHUB_STEP_SUMMARY
+          echo "Preview protection + bypass verified."
+
   # ── Rendered visual floor ─────────────────────────────────────────────────
   # The smoke job above is curl-based: status codes and headers only. It cannot
   # see the two defect classes that actually shipped on this site -- a 130-
