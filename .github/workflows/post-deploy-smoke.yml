@@ -30,8 +30,20 @@ on:
   # This replaces polling with a clean event hook.
   deployment_status:
     types: [success]
-  # Manual trigger for re-running smoke tests on demand.
+  # Manual trigger for re-running smoke tests on demand. The preview_url
+  # input lets the preview gate run against any protected preview, which is
+  # also the fallback while deployment_status delivery to workflows is
+  # unreliable (see the preview-gate job's comment).
   workflow_dispatch:
+    inputs:
+      preview_url:
+        description: 'Protected preview URL for the preview gate (optional)'
+        required: false
+        type: string
+      expected_sha:
+        description: 'Commit the preview should serve (optional; defaults to main HEAD)'
+        required: false
+        type: string
 
 concurrency:
   group: smoke-${{ github.ref }}
@@ -290,6 +302,15 @@ jobs:
   # rotated or revoked in Vercel settings, the next preview fails here with
   # the header mismatch, instead of a future consumer discovering it mid-run.
   #
+  # KNOWN DELIVERY GAP (2026-10-05): deployment_status events do not reliably
+  # create workflow runs in this repo — the smoke workflow has zero
+  # deployment-triggered runs in its entire life (all manual dispatches), a
+  # 2026-09-28 burst of deployment_status runs failed at startup against a
+  # since-deleted dynamic workflow, and a controlled status post created no
+  # run. So this job ALSO accepts workflow_dispatch with a preview_url input:
+  # the gate logic is identical either way, and a manual dispatch can prove
+  # any preview while the event chain is repaired separately.
+  #
   # curl-only like smoke-test: no checkout, no browser install. The rendered
   # gates already run in CI against the build; this lane proves the ACCESS
   # path against a real, protected deployment.
@@ -298,16 +319,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     if: |
-      github.event_name == 'deployment_status' &&
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment_status.environment == 'Preview'
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.preview_url != '') ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment == 'Preview')
 
     steps:
       - name: Check protection, bypass, and commit parity
         env:
-          PREVIEW: ${{ github.event.deployment_status.target_url }}
+          PREVIEW: ${{ github.event.deployment_status.target_url || github.event.inputs.preview_url }}
           BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          EXPECTED_SHA: ${{ github.event.deployment.sha || github.sha }}
+          EXPECTED_SHA: ${{ github.event.deployment.sha || github.event.inputs.expected_sha || github.sha }}
         run: |
           echo "## Preview protection + bypass" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
