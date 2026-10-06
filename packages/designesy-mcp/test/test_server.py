@@ -325,3 +325,50 @@ class TestVersionConsistency:
         assert len(parts) == 3, f"Expected semver x.y.z, got {mcp.SERVER_VERSION}"
         for part in parts:
             assert part.isdigit(), f"Version part '{part}' is not numeric"
+
+
+# ── 7. Every published surface reports the pyproject version ──────────────────
+#
+# PyPI and the MCP registry publish from pyproject.toml, but the HTTP server,
+# its server card, server.json and the Action restated the version as literals
+# and sat at 1.12.0 while 1.12.2 shipped (found 2026-10-06). publish-mcp-
+# registry.yml rewrites server.json from the tag at publish time, so the
+# registry was right and nothing noticed the repo copy was stale.
+
+REPO = Path(__file__).resolve().parents[3]
+
+
+def _pyproject_version() -> str:
+    for line in (REPO / "packages/designesy-mcp/pyproject.toml").read_text(encoding="utf-8").splitlines():
+        if line.strip().startswith("version") and "=" in line:
+            return line.split("=")[1].strip().strip('"').strip("'")
+    pytest.fail("Could not find version in pyproject.toml")
+
+
+class TestPublishedSurfacesMatchPyproject:
+    def test_site_constant(self):
+        src = (REPO / "apps/site/app/lib/mcp-version.ts").read_text(encoding="utf-8")
+        assert f"export const MCP_SERVER_VERSION = '{_pyproject_version()}';" in src
+
+    def test_server_json(self):
+        doc = json.loads((REPO / "server.json").read_text(encoding="utf-8"))
+        v = _pyproject_version()
+        assert doc["version"] == v
+        assert [p["version"] for p in doc["packages"]] == [v] * len(doc["packages"])
+
+    def test_action_sarif_driver(self):
+        src = (REPO / "action/dist/index.js").read_text(encoding="utf-8")
+        assert f"semanticVersion: '{_pyproject_version()}'," in src
+
+    @pytest.mark.parametrize("rel", [
+        "apps/site/app/api/mcp/route.ts",
+        "apps/site/app/.well-known/mcp/server-card.json/route.ts",
+    ])
+    def test_site_routes_read_the_constant(self, rel):
+        # A literal here is how the drift started, so none may come back: the
+        # route must import the constant and state no x.y.z version of its own.
+        import re
+        src = (REPO / rel).read_text(encoding="utf-8")
+        assert "MCP_SERVER_VERSION" in src, f"{rel} does not use MCP_SERVER_VERSION"
+        literal = re.search(r"""(?:version:\s*|designesy-mcp/)['"`]?\d+\.\d+\.\d+""", src)
+        assert literal is None, f"{rel} restates a version literal: {literal.group(0)!r}"

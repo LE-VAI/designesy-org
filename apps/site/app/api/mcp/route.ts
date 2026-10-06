@@ -21,10 +21,11 @@
 //   guardrails, monitor, compare, report, tokens, a11y, motion).
 // 1 UI resource (ui://designesy/report-app) renders the report dashboard.
 //
-// MCP Registry: io.github.LE-VAI/designesy-org v1.12.0 (auto-republished on tag via OIDC)
+// MCP Registry: io.github.LE-VAI/designesy-org (version: lib/mcp-version.ts; auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { MCP_SERVER_VERSION } from '../../lib/mcp-version';
 import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
@@ -52,7 +53,7 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const res = await safeFetch(url, {
     headers: {
       'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': 'designesy-mcp/1.12.0 (https://www.designesy.org)',
+      'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)`,
     },
   });
 
@@ -307,7 +308,7 @@ const handler = createMcpHandler(
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.12.0' },
+              headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
             });
             if (!res.ok) {
               return {
@@ -701,7 +702,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
           try {
             // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
             const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': 'designesy-mcp/1.12.0' },
+              headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
             });
             if (!res.ok) {
               return {
@@ -1148,7 +1149,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     // Stateless 2026-07-28: server identity reported via server/discover.
     serverInfo: {
       name: 'designesy',
-      version: '1.12.0',
+      version: MCP_SERVER_VERSION,
     },
     verboseLogs: true,
   },
