@@ -12,6 +12,7 @@ name: Publish to npm
 #   stylelint-v*     → packages/stylelint-plugin-dtcg-tokens → @designesy/stylelint-plugin-dtcg-tokens
 #   lab-builder-v*   → packages/lab-builder  → @designesy/lab-builder
 #   cli-v*           → packages/cli          → @designesy/cli
+#   score-v*         → packages/score        → @designesy/score
 #
 # Prerequisites:
 #   - npm provenance requires a PUBLIC repo (this one is public ✓)
@@ -27,6 +28,7 @@ on:
       - "stylelint-v*"
       - "lab-builder-v*"
       - "cli-v*"
+      - "score-v*"
   workflow_dispatch:         # allow manual re-publish from the Actions tab
 
 permissions:
@@ -69,6 +71,10 @@ jobs:
             echo "dir=packages/cli" >> "$GITHUB_OUTPUT"
             echo "name=@designesy/cli" >> "$GITHUB_OUTPUT"
             echo "version=${TAG#cli-v}" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == score-v* ]]; then
+            echo "dir=packages/score" >> "$GITHUB_OUTPUT"
+            echo "name=@designesy/score" >> "$GITHUB_OUTPUT"
+            echo "version=${TAG#score-v}" >> "$GITHUB_OUTPUT"
           else
             echo "Unknown tag prefix: $TAG"
             exit 1
