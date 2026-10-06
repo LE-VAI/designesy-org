@@ -1623,8 +1623,8 @@
 }
 
 .inspect[data-ix-3d][data-ix-active] .ix-scene { will-change: transform; }
-.inspect[data-ix-3d][data-ix-active] .mp { will-change: translate, rotate; }
-.inspect[data-ix-3d][data-ix-active] .mp [data-z] { will-change: translate, transform; }
+.inspect[data-ix-3d][data-ix-active] .mp { will-change: transform; }
+.inspect[data-ix-3d][data-ix-active] .mp [data-z] { will-change: transform; }
 
 /* --- The scroll-driven layer --------------------------------------------
    Each step's block is a view timeline, hoisted to the section so the stage

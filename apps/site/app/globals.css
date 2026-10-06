@@ -7081,13 +7081,14 @@ button.check-cell {
 
 /* Paths break before a "/", never inside a word: each "/"-segment is a
    nowrap span (open/page.tsx), so wrap moves a whole segment to the next
-   line (break-all split "design-system.js" / "on"). The link's box is 24px,
-   the WCAG 2.5.8 floor, not the 44px of .row-meta a: that box left an empty
-   20px band under every path line and, when a pair wrapped, an empty line
-   between the two paths. Two wrapped paths still sit 28px apart. */
+   line (break-all split "design-system.js" / "on"). The link keeps the 44px
+   box of .row-meta a. A 24px box (the WCAG 2.5.8 AA floor) closed the empty
+   band under each path line, but the site scores every other site against
+   the 44px bar (v24, 2.5.5 Enhanced) and has to clear it itself; at a 28px
+   row pitch a 44px hit area cannot fit without that band. */
 .row-meta.open-package-paths a {
   min-width: 0;
-  min-height: 1.5rem;
+  min-height: 2.75rem;
   color: var(--muted);
   text-decoration: underline;
   text-decoration-color: var(--line);
