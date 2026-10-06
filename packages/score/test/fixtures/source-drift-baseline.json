@@ -2,10 +2,10 @@
   "$comment": "Known divergences between the two 42-check engines, pinned to the canonical hash of BOTH sides. kind=intentional: the copies differ by design (transport, output envelope). kind=debt: a fix landed in route.ts and was never ported; porting it and deleting the entry is the goal. See scripts/source-drift.mjs.",
   "divergent": {
     "fn:checkDesignMdSpec": {
-      "route": "7c035099a4cd8f4f",
-      "engine": "968dddb4c9859880",
+      "route": "c476c4006d26e99a",
+      "engine": "bc2ad9cbed72209b",
       "kind": "intentional",
-      "why": "Transport, with the verdict logic now ALIGNED (measured 2026-09-30). route.ts fetches via safeFetch (throws on failure -> its own SKIP) and engine.ts via httpsFetch with an SSRF guard (returns an outcome object, so the equivalent SKIP happens at the length check). Every verdict branch now carries the same status: SKIP not-served, WARN no-frontmatter, WARN linter-unavailable, FAIL lint errors, WARN lint warnings, PASS linted clean, WARN lint threw. The linter-unavailable branch was PASS in engine.ts, which asserted validation that never ran; ported route.ts's WARN. Only the fetch wiring differs, so this stays baselined as transport rather than debt."
+      "why": "Transport, with the verdict logic now ALIGNED (measured 2026-09-30). route.ts fetches via safeFetch (throws on failure -> its own SKIP) and engine.ts via httpsFetch with an SSRF guard (returns an outcome object, so the equivalent SKIP happens at the length check). Every verdict branch now carries the same status: SKIP not-served, WARN no-frontmatter, MANUAL linter-unavailable, FAIL lint errors, WARN lint warnings, PASS linted clean, WARN lint threw. The linter-unavailable branch was PASS in engine.ts (asserted validation that never ran), then WARN (2026-09-30), which charged the scored site for a package missing from the runtime: the npm CLI scored www.designesy.org 96.1 against the API's 98. Both copies moved to MANUAL, weight 0, on 2026-10-06 (score 0.5.1). Only the fetch wiring differs, so this stays baselined as transport rather than debt."
     },
     "fn:emitCanonical": {
       "route": "a9126cc3e8e35702",

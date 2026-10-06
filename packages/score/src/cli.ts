@@ -184,8 +184,10 @@ async function main(): Promise<void> {
   let scope: ScoreScope | undefined;
   if (args.scope === 'contract' || args.scope === 'universal') scope = args.scope;
 
+  // Progress and the gate verdict go to stderr: stdout carries only the
+  // result, so --json and the JSON formats pipe straight into a parser.
   if (!args.quiet) {
-    console.log(`${DIM}Scoring ${url} locally (42-check engine, scope=${scope || 'auto'})…${RESET}`);
+    console.error(`${DIM}Scoring ${url} locally (42-check engine, scope=${scope || 'auto'})…${RESET}`);
   }
 
   let result;
@@ -244,7 +246,7 @@ ${BOLD}Quality gate failed${RESET}: ${result.unreachableDetail ?? 'the target co
   }
 
   if (!args.quiet) {
-    console.log(`\n${BOLD}Quality gate passed${RESET}`);
+    console.error(`\n${BOLD}Quality gate passed${RESET}`);
   }
 }
 

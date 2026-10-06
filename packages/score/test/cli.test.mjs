@@ -9,7 +9,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -35,6 +35,12 @@ function runCli(...args) {
       stderr: err.stderr?.toString() ?? '',
     };
   }
+}
+
+/** Like runCli, but keeps stderr on success too (execFileSync drops it). */
+function spawnCli(...args) {
+  const r = spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', timeout: 60000 });
+  return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
 }
 
 describe('CLI — argument validation', () => {
@@ -82,6 +88,32 @@ describe('CLI — scoring (live network)', { skip: SKIP_LIVE }, () => {
     const r = runCli('example.com', '--min-score', '90', '--quiet');
     assert.equal(r.status, 1);
     assert.match(r.stderr, /quality gate failed/i);
+  });
+
+  // No --quiet: progress and the gate verdict print on a normal run, and they
+  // must land on stderr. The --quiet tests below cannot see this; 0.5.0 put
+  // both lines on stdout around the JSON and every one of them still passed.
+  it('--json without --quiet writes only JSON to stdout', () => {
+    for (const extra of [[], ['--format', 'canonical'], ['--format', 'google']]) {
+      const r = spawnCli('example.com', '--json', ...extra);
+      assert.equal(r.status, 0, r.stderr);
+      assert.doesNotThrow(() => JSON.parse(r.stdout), `stdout for ${extra.join(' ') || 'default'} is not pure JSON`);
+      assert.match(r.stderr, /Scoring https:\/\/example\.com\//);
+      assert.match(r.stderr, /Quality gate passed/);
+    }
+  });
+
+  // A linter missing from THIS runtime says nothing about the site, so v37
+  // must not cost the site points: MANUAL (weight 0), never WARN. This package
+  // ships without @google/design.md, so a site that serves /DESIGN.md takes
+  // that branch here.
+  it('v37 is MANUAL, not WARN, when the DESIGN.md linter is unavailable', () => {
+    const r = spawnCli('https://www.designesy.org/', '--json');
+    assert.equal(r.status, 0, r.stderr);
+    const v37 = JSON.parse(r.stdout).checks.find((c) => c.id === 'v37');
+    assert.ok(v37, 'v37 missing from the result');
+    if (/linter unavailable/.test(v37.detail)) assert.equal(v37.status, 'MANUAL', v37.detail);
+    else assert.match(v37.detail, /linted|not publicly served/, `v37 took an unexpected branch: ${v37.detail}`);
   });
 
   it('outputs valid JSON with --json --format canonical', () => {
