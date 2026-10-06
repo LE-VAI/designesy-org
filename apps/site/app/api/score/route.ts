@@ -2299,13 +2299,15 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     const mod = await import('@google/design.md/linter');
     lintDesignMd = mod.lint;
   } catch (e) {
+    // MANUAL (weight 0), matching engine.ts: the linter did not run here, which
+    // says nothing about the site, so it must not cost the site points.
     const msg = e instanceof Error ? e.message : 'unknown error';
     return {
       id: 'v37',
       item: ITEM,
       category: CATEGORY,
-      status: 'WARN',
-      detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime.`,
+      status: 'MANUAL',
+      detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime; run the full audit to resolve.`,
     };
   }
 

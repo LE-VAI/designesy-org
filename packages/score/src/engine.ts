@@ -2052,13 +2052,14 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     const mod = await import('@google/design.md/linter');
     lintDesignMd = mod.lint;
   } catch (e) {
-    // WARN, not PASS. The file was fetched but NOTHING validated it: reporting
-    // PASS here asserted "served with valid frontmatter" on the strength of the
-    // frontmatter check alone — which the branch above already ran, and which
-    // would have WARNed rather than reached here. Implying validation that never
-    // happened is the same false-PASS class as the all-SKIP review verdict.
+    // MANUAL, not PASS and not WARN. The file was fetched but NOTHING validated
+    // it: PASS would assert validation that never happened (the false-PASS
+    // class of the all-SKIP review verdict). WARN charged the scored site for a
+    // package missing from THIS runtime, so the same page scored lower from the
+    // npm CLI than from the API. Unverified-here is what MANUAL means (v02,
+    // v04, v21): weight 0, resolved by a run that has the linter.
     const msg = e instanceof Error ? e.message : 'unknown error';
-    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime.` };
+    return { id: 'v37', item: ITEM, category: CATEGORY, status: 'MANUAL', detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime; run the full audit to resolve.` };
   }
   try {
     const report = lintDesignMd(r.text);
