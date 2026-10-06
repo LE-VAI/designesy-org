@@ -10,6 +10,8 @@
 // report 2026-07. The official registry listing at io.github.LE-VAI/designesy-org
 // remains the canonical registration; this card is the per-origin discovery layer.
 
+import { MCP_SERVER_VERSION } from '../../../lib/mcp-version';
+
 export const dynamic = 'force-static';
 
 const SERVER_URL = 'https://www.designesy.org/api/mcp';
@@ -44,7 +46,7 @@ export function GET() {
     'server-card-version': '0.1',
     server: {
       name: 'designesy',
-      version: '1.12.0',
+      version: MCP_SERVER_VERSION,
       description:
         'Design-system contract verification, scoring, and review tools for AI agents.',
       icon: `${HOMEPAGE}/badge.svg`,
