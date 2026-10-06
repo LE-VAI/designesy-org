@@ -66,31 +66,33 @@ Packages:
   @designesy/score    42-check design-contract scoring engine (zero dependencies)
 `;
 
-function runSubcommand(cmd: string, args: string[]): void {
-  // Resolve the subcommand's CLI entry point. Try locations in order:
-  //   1. ../../node_modules/@designesy/<cmd>/dist/cli.js (npm flat-hoist — the common case)
-  //   2. ../../../node_modules/@designesy/<cmd>/dist/cli.js (deeper nesting)
-  //   3. ../node_modules/@designesy/<cmd>/dist/cli.js (sibling inside this pkg)
-  //   4. ../../node_modules/<mirror>/dist/cli.js (unscoped mirror flat-hoist)
-  //   5. ../../../node_modules/<mirror>/dist/cli.js (unscoped mirror deeper)
-  //   6. ../../<cmd>/dist/cli.js (monorepo sibling — dev)
-  // __dirname is .../node_modules/designesy-cli/dist (or .../packages/cli/dist in dev).
-  // npm flat-hoists subpackage deps to the project-root node_modules/, which is
-  // 3 levels up from dist: dist → designesy-cli → node_modules → <project>/node_modules.
+// The engine's dist/cli.js sits beside the entry its "import" export
+// condition names (dist/engine.js, dist/validator.js). Resolving through Node
+// finds the copy THIS package depends on: the nested one when versions
+// conflict, the hoisted one otherwise, and pnpm's store. A subpath like
+// '@designesy/score/dist/cli.js' cannot be resolved instead: both packages'
+// exports maps hide it, so require.resolve throws on it.
+function resolveSubcommand(cmd: string): string | null {
   const mirror = cmd === 'tokens' ? 'designesy-tokens' : 'designesy-score-local';
-  const candidates = [
-    resolve(__dirname, '..', '..', '..', 'node_modules', '@designesy', cmd, 'dist', 'cli.js'),
-    resolve(__dirname, '..', '..', '..', '..', 'node_modules', '@designesy', cmd, 'dist', 'cli.js'),
-    resolve(__dirname, '..', 'node_modules', '@designesy', cmd, 'dist', 'cli.js'),
-    resolve(__dirname, '..', '..', '..', 'node_modules', mirror, 'dist', 'cli.js'),
-    resolve(__dirname, '..', '..', '..', '..', 'node_modules', mirror, 'dist', 'cli.js'),
-    resolve(__dirname, '..', '..', cmd, 'dist', 'cli.js'),     // monorepo sibling (dev)
-  ];
-
-  let cliPath: string | null = null;
-  for (const p of candidates) {
-    if (existsSync(p)) { cliPath = p; break; }
+  for (const id of [`@designesy/${cmd}`, mirror]) {
+    try {
+      const cli = resolve(dirname(fileURLToPath(import.meta.resolve(id))), 'cli.js');
+      if (existsSync(cli)) return cli;
+    } catch { /* not installed under this name, or Node < 20.6: try the paths */ }
   }
+  // Filesystem fallback, nearest first. __dirname is
+  // <project>/node_modules/@designesy/cli/dist when installed, or
+  // packages/cli/dist in the monorepo, where ../../<cmd> is the sibling.
+  const candidates = [
+    resolve(__dirname, '..', 'node_modules', '@designesy', cmd, 'dist', 'cli.js'),   // nested
+    resolve(__dirname, '..', '..', cmd, 'dist', 'cli.js'),                           // hoisted, or monorepo sibling
+    resolve(__dirname, '..', '..', '..', mirror, 'dist', 'cli.js'),                  // hoisted unscoped mirror
+  ];
+  return candidates.find((p) => existsSync(p)) ?? null;
+}
+
+function runSubcommand(cmd: string, args: string[]): void {
+  const cliPath = resolveSubcommand(cmd);
 
   if (!cliPath) {
     console.error(`Error: Could not find the '${cmd}' subcommand engine.`);
