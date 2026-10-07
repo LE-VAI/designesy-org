@@ -1,0 +1,95 @@
+name: Production alias freshness
+
+# Does www.designesy.org serve the latest successful Production deployment?
+#
+# Vercel intermittently leaves the custom domains on the previous build: the new
+# Production deployment is Ready, but the alias does not move.
+#
+# Each push to main is already covered: ci.yml's post-merge `domain-freshness`
+# job waits for the pushed commit to be served. (post-deploy-smoke.yml's alias job
+# only runs on `deployment_status` events, which have never reached it.) What
+# nothing watched is the time BETWEEN pushes -- an alias that goes stale after a
+# rollback, a promote, or a domain change, or one that stays stale after a failed
+# post-merge check. This runs on a schedule and compares the domain with the
+# newest Production deployment GitHub has recorded as successful.
+#
+# The truth sources are GitHub's Deployments API (Vercel reports every deploy
+# there) and the site's own /api/version, which reports VERCEL_GIT_COMMIT_SHA.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: alias-freshness
+  cancel-in-progress: false
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Compare the production domain with the latest successful deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DOMAIN: https://www.designesy.org
+        run: |
+          set -euo pipefail
+
+          # The newest Production deployment whose latest status is "success".
+          latest_success() {
+            for id in $(gh api "repos/$REPO/deployments?environment=Production&per_page=20" --jq '.[].id'); do
+              state=$(gh api "repos/$REPO/deployments/$id/statuses?per_page=1" --jq '.[0].state // ""')
+              if [ "$state" = "success" ]; then
+                gh api "repos/$REPO/deployments/$id" --jq '.sha'
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          EXPECTED=$(latest_success || true)
+          if [ -z "$EXPECTED" ]; then
+            echo "::error::Could not find any successful Production deployment to compare against."
+            exit 1
+          fi
+
+          # The alias can trail a fresh deploy by a minute; allow ~5 minutes.
+          SERVING=""
+          for i in $(seq 1 10); do
+            SERVING=$(curl -fsS --max-time 20 "$DOMAIN/api/version" \
+              | grep -oE '"commit"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' | grep -oE '[0-9a-f]{40}' || true)
+            [ "$SERVING" = "$EXPECTED" ] && break
+            sleep 30
+          done
+
+          {
+            echo "## Production alias freshness"
+            echo ""
+            echo "| | commit |"
+            echo "|---|---|"
+            echo "| latest successful Production deployment | \`$EXPECTED\` |"
+            echo "| \`$DOMAIN\` is serving | \`${SERVING:-unmeasurable}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -z "$SERVING" ]; then
+            echo "::error::$DOMAIN/api/version reported no commit; freshness cannot be verified."
+            exit 1
+          fi
+          if [ "$SERVING" != "$EXPECTED" ]; then
+            {
+              echo ""
+              echo "**STALE ALIAS.** The deployment is Ready but the domain still serves an"
+              echo "older build. Promote the latest Production deployment in Vercel"
+              echo "(\`vercel promote <deployment-url> --yes\`), then re-run this workflow."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Stale alias: expected $EXPECTED, domain serves $SERVING"
+            exit 1
+          fi
+          echo "Alias fresh: $SERVING"

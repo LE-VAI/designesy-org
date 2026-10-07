@@ -3233,9 +3233,16 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 // Vercel Data Cache on subsequent calls with the same targetUrl+scope. Per the
 // Next docs, the cache key is derived from the argument list, so targetUrl and
 // scope together form the key. revalidateTag('score') purges all entries.
+//
+// The build's commit is part of the key. With the static key alone, a deploy
+// that changed the engine kept serving scores computed by the PREVIOUS build
+// until the TTL lapsed -- on 2026-10-06 the site's own leaderboard row stayed at
+// a stale 95.7 after the engine fix had shipped. Keyed by commit, a new deploy
+// starts from a clean cache. Outside Vercel there is no commit, and the key is
+// stable for local runs.
 export const scoreUrl = unstable_cache(
   async (targetUrl: string, scope?: ScoreScope) => scoreUrlUncached(targetUrl, scope),
-  ['designesy-score'],
+  ['designesy-score', process.env.VERCEL_GIT_COMMIT_SHA ?? 'local'],
   { revalidate: SCORE_TTL_SECONDS, tags: ['score'] }
 );
 
