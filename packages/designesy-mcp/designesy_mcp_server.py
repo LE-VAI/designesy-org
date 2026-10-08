@@ -1318,7 +1318,41 @@ def _contrast_ratio(fg: str, bg: str) -> float:
 # ── Main score implementation ──────────────────────────────────────────────
 
 
-def _score_remote(url: str) -> dict[str, Any] | None:
+# The /api/score body fields of the same names, with the same values the
+# remote MCP tool (apps/site/app/api/mcp/route.ts) accepts. The first format
+# is the default.
+SCORE_FORMATS = ("designesy", "canonical", "review", "google")
+SCORE_SCOPES = ("contract", "universal")
+
+
+def _post_score_api(url: str, fmt: str, scope: str | None = None) -> str:
+    """POST one scoring request to /api/score and return the response body.
+
+    The body carries format always and scope only when given, so the engine's
+    scope auto-detection still applies when the caller omits it. The
+    User-Agent names this server: the site's usage counters classify
+    `designesy-mcp/` as mcp, and the browser User-Agent this call sent before
+    counted every MCP score as a browser visit. Raises on a network failure or
+    an HTTP error status (urllib raises HTTPError for 4xx and 5xx).
+    """
+    body: dict[str, Any] = {"url": url, "format": fmt}
+    if scope is not None:
+        body["scope"] = scope
+    req = urllib.request.Request(
+        f"{BASE_URL}/api/score",
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "text/markdown" if fmt == "review" else "application/json",
+            "User-Agent": f"designesy-mcp/{SERVER_VERSION}",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=20, context=_SSL_CONTEXT) as resp:
+        return resp.read().decode("utf-8")
+
+
+def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     """POST to the canonical 42-check engine at /api/score.
 
     The site API is the single source of truth for the contract it serves
@@ -1328,14 +1362,7 @@ def _score_remote(url: str) -> dict[str, Any] | None:
     (caller falls back to the local engine).
     """
     try:
-        req = urllib.request.Request(
-            f"{BASE_URL}/api/score",
-            data=json.dumps({"url": url}).encode("utf-8"),
-            headers={**_BROWSER_HEADERS, "Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=20, context=_SSL_CONTEXT) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        data = json.loads(_post_score_api(url, "designesy", scope))
     except Exception:
         return None
     if not data.get("ok"):
@@ -1383,21 +1410,92 @@ def _score_remote(url: str) -> dict[str, Any] | None:
     }
 
 
-def _score_impl(url: str | None = None) -> dict[str, Any]:
+def _score_api_failure(exc: Exception) -> str:
+    """Describe a failed /api/score call, with the engine's own error text."""
+    if isinstance(exc, urllib.error.HTTPError):
+        try:
+            detail = exc.read().decode("utf-8", "replace").strip()
+        except Exception:
+            detail = ""
+        try:
+            detail = json.loads(detail).get("error") or detail
+        except Exception:
+            pass
+        return f"HTTP {exc.code}: {detail or exc.reason}"
+    return f"{type(exc).__name__}: {exc}"
+
+
+def _score_impl(
+    url: str | None = None,
+    format: str | None = None,
+    scope: str | None = None,
+) -> dict[str, Any] | str:
     """Score a live URL against the Designesy design contract.
 
     Primary path: delegate to the canonical 42-check engine at
-    /api/score (same engine the npm CLI and site use). Fallback: the
-    local 26-check subset (v01-v23 + x01-x03) when the API is
-    unreachable, so the tool still works offline.
+    /api/score (same engine the npm CLI and site use).
+
+    format designesy (the default) reshapes the engine's native JSON into
+    this tool's long-standing shape, and falls back to the local 26-check
+    subset (v01-v23 + x01-x03) when the API is unreachable, so the tool
+    still works offline. That subset has no scope modes.
+
+    format canonical and google return the engine's JSON unchanged, and
+    format review returns its markdown unchanged (a str, which the
+    JSON-RPC layer sends as the text content). Only the live engine
+    produces those three, so when the API is unreachable they return an
+    error instead of the native JSON.
     """
     if not url:
         url = f"{BASE_URL}/"
+    fmt = "designesy" if format is None else format
 
-    remote = _score_remote(url)
-    if remote is not None:
-        return remote
-    return _score_local_impl(url)
+    if fmt not in SCORE_FORMATS:
+        return {
+            "success": False,
+            "error": f"Unknown format {fmt!r}. Supported: {', '.join(SCORE_FORMATS)}.",
+            "url": url,
+        }
+    if scope is not None and scope not in SCORE_SCOPES:
+        return {
+            "success": False,
+            "error": (
+                f"Unknown scope {scope!r}. Supported: {', '.join(SCORE_SCOPES)}; "
+                "omit it to let the engine auto-detect."
+            ),
+            "url": url,
+        }
+
+    if fmt == "designesy":
+        remote = _score_remote(url, scope)
+        if remote is not None:
+            return remote
+        local = _score_local_impl(url)
+        if scope is not None:
+            local["scope_note"] = (
+                f"scope={scope!r} was not applied: the live engine was "
+                "unreachable, and the local offline subset that produced "
+                "this result has no scope modes."
+            )
+        return local
+
+    try:
+        body = _post_score_api(url, fmt, scope)
+        if fmt == "review":
+            return body
+        return json.loads(body)
+    except Exception as exc:
+        return {
+            "success": False,
+            "error": (
+                f"format={fmt!r} needs the live scoring engine at "
+                f"{BASE_URL}/api/score, and the call failed "
+                f"({_score_api_failure(exc)}). The local offline engine "
+                "produces only the default designesy format."
+            ),
+            "url": url,
+            "format": fmt,
+        }
 
 
 def _score_local_impl(url: str) -> dict[str, Any]:
@@ -1933,27 +2031,40 @@ TOOLS = [
     {
         "name": "designesy_score",
         "description": (
-            "Score a live URL against the Designesy design contract — a "
-            "deterministic 42-check verification engine that returns a "
-            "numeric score, letter grade (A–F), and per-check breakdown. "
+            "Score a live URL against the Designesy design contract with "
+            "the deterministic 42-check verification engine at "
+            "https://www.designesy.org/api/score. Returns a numeric score, "
+            "a letter grade (A-F), and the check results. "
             "Use this to audit whether a website or AI-generated UI "
             "complies with a real design contract (tokens, motion, "
             "accessibility, cadence, takt, typography, copywriting). When "
             "NOT to use: for token-file validation only, use "
             "designesy_tokens_score; for a Lottie file, use "
             "designesy_motion_score; for a qualitative critique, use "
-            "designesy_design_review. Executable — fetches the URL "
-            "server-side, extracts CSS, runs 42 checks. Results cached "
-            "~24h server-side per URL. Checks needing a live browser (Core Web "
-            "Vitals, sound toggle, overflow) return MANUAL, not FAIL — "
-            "run the full audit (/api/score/audit) to resolve them. "
-            "Checks that are not applicable to the site (no tokens, no "
+            "designesy_design_review. The engine fetches the URL "
+            "server-side, extracts its CSS, and runs 42 checks. Results "
+            "are cached ~24h server-side per URL and scope. Checks that "
+            "need a live browser (Core Web Vitals, sound toggle, overflow) "
+            "return MANUAL; the full audit (/api/score/audit) resolves "
+            "them. Checks that do not apply to the site (no tokens, no "
             "buttons, no DESIGN.md) return SKIP (N/A). "
-            "Returns JSON: { url, score (0–100), grade (A–F), pass_count, "
-            "fail_count, checks[{id, name, status, weight, category}] }. "
-            "Pass format='canonical' for review-findings.json schema, "
-            "'review' for markdown, or 'google' for design.md-compatible "
-            "output."
+            "format selects the output. designesy (the default) returns "
+            "JSON: { url, contract_version, summary { total, pass, fail, "
+            "warn, skip, manual, score (0-1), score_percent (0-100), "
+            "grade }, tokens_extracted, checks[{ id, item, category, "
+            "status, detail }], note }. canonical returns the engine's "
+            "review-findings.json schema JSON unchanged. review returns "
+            "the engine's markdown report unchanged (coverage by category, "
+            "a findings table of the FAIL and WARN checks, and a verdict). "
+            "google returns the "
+            "engine's @google/design.md-compatible JSON unchanged. "
+            "scope sets the scoring scope: contract or universal. Omit it "
+            "and the engine auto-detects: contract for designesy.org, "
+            "universal for every other site. If the engine is "
+            "unreachable, format designesy falls back to a local offline "
+            "subset of 26 checks that has no scope modes, and the other "
+            "three formats return an error, because only the live engine "
+            "produces them."
         ),
         "inputSchema": {
             "type": "object",
@@ -1961,6 +2072,29 @@ TOOLS = [
                 "url": {
                     "type": "string",
                     "description": "URL to score. Defaults to https://www.designesy.org/ if not provided.",
+                },
+                "format": {
+                    "type": "string",
+                    "enum": list(SCORE_FORMATS),
+                    "default": "designesy",
+                    "description": (
+                        "Output format. designesy (default): the native "
+                        "JSON. canonical: the review-findings.json schema. "
+                        "review: a markdown report. google: the "
+                        "@google/design.md-compatible JSON."
+                    ),
+                },
+                "scope": {
+                    "type": "string",
+                    "enum": list(SCORE_SCOPES),
+                    "description": (
+                        "Scoring scope. contract: every check counts "
+                        "absence against the site. universal: optional "
+                        "features and Designesy-specific token checks "
+                        "return SKIP when absent. Omit to auto-detect: "
+                        "contract for designesy.org, universal for every "
+                        "other site."
+                    ),
                 },
             },
         },
@@ -2887,7 +3021,7 @@ def _report_impl(url: str) -> dict[str, Any]:
 # ── Tool dispatch ───────────────────────────────────────────────────────────
 
 
-def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
+def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     if name == "designesy_catalog":
         return _catalog_impl()
     elif name == "designesy_contract":
@@ -2908,7 +3042,11 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
     elif name == "designesy_llms_full_txt":
         return _llms_full_txt_impl()
     elif name == "designesy_score":
-        return _score_impl(url=args.get("url"))
+        return _score_impl(
+            url=args.get("url"),
+            format=args.get("format"),
+            scope=args.get("scope"),
+        )
     elif name == "designesy_tokens_score":
         return _tokens_score_impl(url=args.get("url"), dtcg_file=args.get("dtcg_file"))
     elif name == "designesy_a11y_score":
@@ -2985,7 +3123,10 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
             return _error(req_id, -32000, f"Failed to fetch URL: {e}")
         except Exception as e:
             return _error(req_id, -32000, f"Tool execution failed: {e}")
-        text = json.dumps(res, indent=2, default=str)
+        # A str result (designesy_score format=review) is already the text
+        # the tool returns, so it is sent as written; JSON-encoding it would
+        # wrap the markdown in quotes and escape every newline.
+        text = res if isinstance(res, str) else json.dumps(res, indent=2, default=str)
         return _result(req_id, {
             "content": [{"type": "text", "text": text}],
             "isError": not res.get("success", True) if isinstance(res, dict) and "success" in res else False,
