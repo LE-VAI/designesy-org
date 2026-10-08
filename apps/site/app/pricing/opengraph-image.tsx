@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Pricing',
     title: 'Open core, free forever',
-    lede: 'Free forever. Continuity at $29/site/month. Enterprise for CI gates and on-prem.',
+    lede: 'Free forever, CI gate included. Continuity at $29 a month for 5 sites. Enterprise for private, on-prem scoring.',
     path: 'designesy.org/pricing',
   });
 }

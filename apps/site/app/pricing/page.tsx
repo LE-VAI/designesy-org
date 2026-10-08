@@ -13,11 +13,11 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Pricing',
   description:
-    'Designesy pricing: open core stays free. Continuity adds scheduled scans, drift alerts, and score history at $29/site/month. Enterprise for CI/CD gates and on-prem scoring.',
+    'Designesy pricing: open core stays free, CI gate and score API included. Continuity adds scheduled scans, drift alerts, and score history at $29 a month for 5 sites. Enterprise runs private scoring on your own infrastructure.',
   path: '/pricing',
   ogTitle: 'Pricing · Designesy',
   ogDescription:
-    'Open core free forever. Continuity at $29/site/month for scheduled scans and drift alerts. Enterprise for CI gates and on-prem.',
+    'Open core free forever, CI gate included. Continuity at $29 a month for 5 sites: scheduled scans and drift alerts. Enterprise for private, on-prem scoring.',
 });
 
 const TIERS = [
@@ -25,9 +25,11 @@ const TIERS = [
     name: 'Open',
     price: 'Free',
     suffix: 'forever',
-    sub: `Score any URL with the full ${ENGINE_CHECK_COUNT}-check engine, drift radar, AI readiness, DTCG validation.`,
+    sub: `Score any URL with the full ${ENGINE_CHECK_COUNT}-check engine, drift radar, AI readiness, DTCG validation, and gate your CI on the result.`,
     bullets: [
       `${ENGINE_CHECK_COUNT}-check score on any URL`,
+      'CI gate (GitHub Action or CLI) + public score API, no key',
+      'Your own DESIGN.md or tokens as the contract (coming)',
       '12-check drift radar',
       '10-check AI readiness score',
       'DTCG token file validation',
@@ -40,15 +42,15 @@ const TIERS = [
   {
     name: 'Continuity',
     price: '$29',
-    suffix: '/site / month',
-    sub: 'Scheduled scans, email drift alerts, score history, baseline snapshots. 5 sites included.',
+    suffix: '/ month',
+    sub: 'Watches your sites over time: scheduled scans, email drift alerts, score history, baseline snapshots. 5 sites.',
     bullets: [
       'Everything in Open',
       'Scheduled scans (daily or weekly)',
       'Email drift alerts when a score changes',
       'Score history + trend charts (30-day)',
       'Baseline snapshots for comparison',
-      'Multi-site dashboard (5 sites included)',
+      'Multi-site dashboard (5 sites)',
     ],
     cta: { label: 'Join Continuity waitlist', href: '/continuity' },
     primary: false,
@@ -57,11 +59,11 @@ const TIERS = [
     name: 'Enterprise',
     price: 'Custom',
     suffix: '',
-    sub: 'API access, CI/CD gates, custom contract scoring, SSO, on-prem. For teams shipping with agents at scale.',
+    sub: 'Private scoring on your own infrastructure: a private contract instance, SSO, audit trail, on-prem. For teams shipping with agents at scale.',
     bullets: [
       'Everything in Continuity',
-      'API access + CI/CD gates (GitHub Actions, GitLab CI)',
-      'Custom contract scoring (your rules)',
+      'Private and staging URLs scored on your infrastructure',
+      'Private contract instance (on-prem or VPC)',
       'SSO/SAML + audit trail',
       'Unlimited sites + 1-year history',
       'On-prem scoring engine + dedicated CSM + SLA',
@@ -82,9 +84,10 @@ export default function PricingPage() {
             Open core stays free.
           </h1>
           <p className="surface-lede">
-            Score any site against the contract for free, forever. Continuity adds
-            scheduled scans, drift alerts, and score history at $29 per site per
-            month. Enterprise for CI gates and on-prem.
+            Score any site against the contract for free, forever, and gate your
+            CI on it. Continuity adds scheduled scans, drift alerts, and score
+            history at $29 a month for 5 sites. Enterprise runs the engine on your
+            own infrastructure.
           </p>
           <p className="surface-note">
             No credit card to start. The free tier is the whole score engine.
@@ -162,8 +165,8 @@ export default function PricingPage() {
                 </strong>{' '}
                 Every score is computed by the same deterministic {ENGINE_CHECK_COUNT}-check engine
                 against the same published contract. Enterprise customers pay for
-                private scoring, custom contracts, and CI integration, never for
-                public leaderboard placement. If a scored site is also an
+                private scoring on their own infrastructure, never for public
+                leaderboard placement. If a scored site is also an
                 enterprise customer, their public score is computed identically to
                 any non-customer&rsquo;s score.
               </p>
@@ -215,14 +218,15 @@ export default function PricingPage() {
             </details>
             <details className="pricing-faq-item">
               <summary className="pricing-faq-q">
-                What&rsquo;s the difference between a private contract host
-                and a private contract instance?
+                Can I score against my own design system?
               </summary>
               <p className="pricing-faq-a">
-                Continuity lets you host your own contract: your rules, your
-                scoring thresholds, on infrastructure Designesy runs. Enterprise
-                gives you a private contract instance on your own
-                infrastructure (on-prem or VPC) with SSO and audit trail.
+                Soon, on every tier, free: point the engine at your DESIGN.md or
+                DTCG tokens in place of the Designesy contract. Continuity
+                watches your contract over time with scheduled scans, drift
+                alerts, and history. Enterprise runs a private contract instance
+                on your own infrastructure (on-prem or VPC) with SSO and an
+                audit trail.
               </p>
             </details>
             <details className="pricing-faq-item">
@@ -230,8 +234,8 @@ export default function PricingPage() {
                 How many sites are included in Continuity?
               </summary>
               <p className="pricing-faq-a">
-                5 sites are included with the $29/site/month plan. Each site
-                gets scheduled scans, drift alerts, and its own score history.
+                Continuity is $29 a month for 5 sites. Each site gets scheduled
+                scans, drift alerts, and its own score history.
                 Need more? Enterprise covers unlimited sites.
               </p>
             </details>
@@ -333,25 +337,25 @@ export default function PricingPage() {
                 <tr>
                   <td>Multi-site dashboard</td>
                   <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                  <td>5 sites included</td>
+                  <td>5 sites</td>
                   <td>Unlimited</td>
                 </tr>
                 <tr>
-                  <td>Private contract host</td>
+                  <td>Monitor your own contract (coming)</td>
                   <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                   <td><span className="pricing-compare-check">✓</span></td>
                   <td><span className="pricing-compare-check">✓</span></td>
                 </tr>
                 <tr>
-                  <td>API access + CI/CD gates</td>
-                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td>CI gate (GitHub Action or CLI) + score API</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
                   <td><span className="pricing-compare-check">✓</span></td>
                 </tr>
                 <tr>
-                  <td>Custom contract scoring</td>
-                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
-                  <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
+                  <td>Score against your own contract (coming)</td>
+                  <td><span className="pricing-compare-check">✓</span></td>
+                  <td><span className="pricing-compare-check">✓</span></td>
                   <td><span className="pricing-compare-check">✓</span></td>
                 </tr>
                 <tr>
@@ -376,8 +380,8 @@ export default function PricingPage() {
             </table>
           </div>
           <p className="surface-note" style={{ marginTop: '0.75rem' }}>
-            Open features are live today. Continuity features are in early
-            access. Enterprise features are available by conversation:{' '}
+            Open features are live today, except those marked coming.
+            Continuity features are in early access. Enterprise features are available by conversation:{' '}
             <a href="mailto:hello@designesy.org" className="text-link">
               contact us
             </a>
@@ -387,7 +391,7 @@ export default function PricingPage() {
 
         <section className="doctrine-section fade-up fade-up-delay-4">
           <p className="pricing-desk-note">
-            Continuity is in early access at $29/site/month. Join the{' '}
+            Continuity is in early access at $29 a month for 5 sites. Join the{' '}
             <Link href="/continuity" className="text-link">
               Continuity waitlist
             </Link>{' '}

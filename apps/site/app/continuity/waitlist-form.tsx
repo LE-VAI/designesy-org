@@ -115,8 +115,8 @@ export function ContinuityWaitlistForm() {
               disabled={status === 'loading'}
             >
               <option value="">Choose one</option>
-              <option value="continuity">Continuity ($29/site/mo, scans and alerts)</option>
-              <option value="enterprise">Enterprise (CI gates + on-prem)</option>
+              <option value="continuity">Continuity ($29/mo for 5 sites, scans and alerts)</option>
+              <option value="enterprise">Enterprise (private + on-prem)</option>
               <option value="unsure">Not sure yet</option>
             </select>
           </span>

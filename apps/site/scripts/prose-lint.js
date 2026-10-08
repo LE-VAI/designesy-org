@@ -128,7 +128,8 @@ const ALLOW = [
     why: 'CSS function names are the subject of the sentence, not a bug.',
   },
   // Real currency in pricing copy. Verified against /pricing and /continuity:
-  // "$29/site/month" is the Continuity tier price, stated five ways.
+  // "$29 a month for 5 sites" is the Continuity tier price (one plan price
+  // since 2026-10-08; it read "$29/site/month" beside "5 sites included").
   {
     rule: 'stray-dollar-before-number',
     on: /^\$29/,
