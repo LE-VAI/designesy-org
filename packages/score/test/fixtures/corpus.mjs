@@ -162,7 +162,162 @@ export const FIXTURES = [
           'REGRESSION FIXTURE (caught 2026-09-17). v05 previously matched any @media mentioning prefers-reduced-motion, ' +
           'so `no-preference` — which expresses the opposite intent — passed as readily as `reduce`. That is a false PASS ' +
           'on the accessibility primitive the check exists to verify. Any change that makes this fixture PASS again has ' +
-          'reintroduced substring matching on the feature name instead of evaluating its value.',
+          'reintroduced substring matching on the feature name instead of evaluating its value. ' +
+          'Engine 1.1.0 lets a no-preference block PASS when it opts INTO motion (good-reduced-motion-opt-in). This block ' +
+          'holds only the reduce kill switch (durations of 0.01ms), which stills motion for users with no preference and ' +
+          'leaves it running for users who asked for less, so it must keep reading WARN.',
+      },
+    ],
+  },
+
+  // ── Engine 1.1.0 baseline fixes (added 2026-10-08) ────────────────────────
+  //
+  // Each fix gets a fixture that held the old wrong verdict, plus a control
+  // that keeps the verdict the fix must not move.
+
+  {
+    name: 'good-reduced-motion-opt-in',
+    referent:
+      'A stylesheet that honours reduced motion by making motion opt-in: its animation and transition are declared only inside @media (prefers-reduced-motion: no-preference), so it ships no reduce block because nothing is left to switch off.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root{ --paper:#fbfbfc; --ink:#111114; font-size:16px; }
+@media (prefers-reduced-motion: no-preference){
+  .hero { animation: rise 400ms ease-out both; }
+  button { transition: transform 120ms ease-out, opacity 120ms ease-out; }
+}
+@keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+button:focus-visible { outline:2px solid var(--ink); }
+input, textarea { font-size:16px; }`,
+    expect: [
+      {
+        id: 'v05',
+        status: 'PASS',
+        why:
+          'ENGINE 1.1.0 FIX. Motion that exists only under no-preference is never shown to a reduce preference, which is a ' +
+          'recommended way to honour it. Engine 1.0.0 read WARN here because it accepted only a reduce block.',
+      },
+    ],
+  },
+
+  {
+    name: 'broken-reduced-motion-empty-opt-in',
+    referent:
+      'A stylesheet with an empty prefers-reduced-motion: no-preference block and no reduce block: the shape of a gate that was set up and never filled.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root{ --paper:#fbfbfc; --ink:#111114; font-size:16px; }
+@media (prefers-reduced-motion: no-preference){ }
+.hero { animation: rise 400ms ease-out both; }
+button:focus-visible { outline:2px solid var(--ink); }
+input, textarea { font-size:16px; }`,
+    expect: [
+      {
+        id: 'v05',
+        status: 'WARN',
+        why:
+          'The no-preference block gates nothing, and the animation runs for every user. An empty block must not count as ' +
+          'opt-in motion, or the 1.1.0 fix would pass any page that writes the media query and puts nothing in it.',
+      },
+    ],
+  },
+
+  {
+    name: 'edge-no-form-fields',
+    referent:
+      'A content page with no form fields and no input rule in its CSS: a marketing or documentation page, the shape most leaderboard home pages have.',
+    scope: 'universal',
+    // Two single-line replacements: the file may be checked out with CRLF, so a
+    // search string spanning a line break would match on one platform only.
+    html: GOOD_HTML.replace('<label for="f">Email address</label>', '').replace('<input id="f" name="email" type="email">', ''),
+    css: GOOD_CSS.replace('\ninput, textarea { font-size:16px; }', ''),
+    expect: [
+      {
+        id: 'v27',
+        status: 'SKIP',
+        why:
+          'ENGINE 1.1.0 FIX. No field exists for iOS Safari to zoom into, so the 16px floor has nothing to protect. ' +
+          'Engine 1.0.0 read WARN here because it had no zero-inputs branch.',
+      },
+    ],
+  },
+
+  {
+    name: 'edge-hidden-field-only',
+    referent:
+      'A page whose only form control is a hidden input (a CSRF or tracking token), with no input rule in its CSS.',
+    scope: 'universal',
+    html: GOOD_HTML.replace('<input id="f" name="email" type="email">', '<input type="hidden" name="token" value="abc">'),
+    css: GOOD_CSS.replace('\ninput, textarea { font-size:16px; }', ''),
+    expect: [
+      {
+        id: 'v27',
+        status: 'SKIP',
+        why: 'A hidden input cannot take focus, so iOS Safari never zooms into it. It must not make the page count as having a field.',
+      },
+    ],
+  },
+
+  {
+    name: 'broken-field-without-floor',
+    referent:
+      'The control for the two fixtures above: the same page keeps its email field, and the CSS still sets no input font-size.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS.replace('\ninput, textarea { font-size:16px; }', ''),
+    expect: [
+      {
+        id: 'v27',
+        status: 'WARN',
+        why:
+          'A real email field with no declared 16px floor is the case v27 exists for. The 1.1.0 SKIP applies only when the ' +
+          'markup has no field, so this verdict must not move.',
+      },
+    ],
+  },
+
+  {
+    name: 'universal-cadence-taste-absent',
+    referent:
+      'An external site that does not adopt the Designesy Cadence rules: no text-wrap balance or pretty, no tabular-nums, px font sizes. Scored as any external site is (scope=universal).',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: GOOD_CSS,
+    expect: [
+      {
+        id: 'v14',
+        status: 'SKIP',
+        why:
+          'ENGINE 1.1.0 FIX. v14 restates Designesy Cadence taste. Under scope=universal the absence of a Designesy-specific ' +
+          'pattern is SKIP (Tier 2); engine 1.0.0 kept v14 in Tier 1 and read WARN.',
+      },
+      {
+        id: 'v18',
+        status: 'SKIP',
+        why:
+          'ENGINE 1.1.0 FIX. text-wrap balance and pretty are Designesy Cadence taste; their absence on an external site is ' +
+          'SKIP under scope=universal. Engine 1.0.0 read WARN.',
+      },
+    ],
+  },
+
+  {
+    name: 'contract-cadence-taste-absent',
+    referent:
+      'The control for the fixture above: the same page scored under scope=contract, the strict mode designesy.org is scored in.',
+    scope: 'contract',
+    html: GOOD_HTML,
+    css: GOOD_CSS,
+    expect: [
+      {
+        id: 'v14',
+        status: 'WARN',
+        why: 'Under scope=contract the Cadence rules are mandatory, so missing ones still WARN. The tier move changes only the universal scope.',
+      },
+      {
+        id: 'v18',
+        status: 'WARN',
+        why: 'Under scope=contract text-wrap balance and pretty are required, so their absence still WARNs.',
       },
     ],
   },

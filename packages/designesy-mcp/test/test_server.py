@@ -233,6 +233,70 @@ class TestTokenValidation:
         assert "bare hex" in t10["detail"].lower() or "$ref" in t10["detail"].lower()
 
 
+# ── 3b. t06 type list: the 13 types DTCG 2025.10 defines ─────────────────────
+#
+# Before 2026-10-08 the list lacked cubicBezier and carried seven names the
+# format does not define, so t06 WARNed on a conformant easing token and passed
+# "spacing" or "string" as standard. Each test below exercised the old wrong
+# verdict.
+
+DTCG_2025_10_TYPES = {
+    # Types section
+    "color", "dimension", "fontFamily", "fontWeight", "duration", "cubicBezier", "number",
+    # Composite types section
+    "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
+}
+
+NOT_DTCG_TYPES = ["string", "boolean", "link", "borderStyle", "borderWeight", "radius", "spacing"]
+
+_CONTRACT_STUB = {
+    "id": "test", "version": "1.0", "status": "active",
+    "checks": [{"item": f"check {i}"} for i in range(10)],
+}
+
+
+def _one_token_file(type_name, value):
+    return json.dumps({
+        "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+        "$tokens": {"group": {"token": {"$type": type_name, "$value": value}}},
+    })
+
+
+class TestDtcgTypeList:
+    def test_list_is_exactly_the_13_spec_types(self):
+        assert set(mcp.DTCG_STANDARD_TYPES) == DTCG_2025_10_TYPES
+        assert len(mcp.DTCG_STANDARD_TYPES) == 13
+
+    def test_cubic_bezier_token_is_standard(self):
+        """Old verdict: t06 WARN and t07 WARN (cubicBezier missing from the list)."""
+        with patch.object(mcp, "_fetch", return_value=_CONTRACT_STUB):
+            result = mcp._tokens_score_impl(dtcg_file=_one_token_file("cubicBezier", [0.23, 1, 0.32, 1]))
+        checks = {c["id"]: c for c in result["checks"]}
+        assert checks["t06"]["status"] == "PASS", checks["t06"]["detail"]
+        assert checks["t07"]["status"] == "SKIP", checks["t07"]["detail"]
+
+    @pytest.mark.parametrize("type_name", NOT_DTCG_TYPES)
+    def test_names_outside_the_spec_are_non_standard(self, type_name):
+        """Old verdict: t06 PASS (each name sat in the list as if standard)."""
+        with patch.object(mcp, "_fetch", return_value=_CONTRACT_STUB):
+            result = mcp._tokens_score_impl(dtcg_file=_one_token_file(type_name, "x"))
+        t06 = {c["id"]: c for c in result["checks"]}["t06"]
+        assert t06["status"] == "WARN", t06["detail"]
+        assert type_name in t06["detail"]
+
+    def test_site_mcp_route_carries_the_same_list(self):
+        """The hosted MCP endpoint (apps/site) validates with its own copy."""
+        import re
+
+        route = Path(__file__).resolve().parents[3] / "apps" / "site" / "app" / "api" / "mcp" / "route.ts"
+        if not route.exists():
+            pytest.skip("apps/site is not present (sdist build); the repo checkout runs this test")
+        src = route.read_text(encoding="utf-8")
+        m = re.search(r"const DTCG_STANDARD_TYPES = new Set\(\[(.*?)\]\)", src, re.S)
+        assert m, "DTCG_STANDARD_TYPES not found in apps/site/app/api/mcp/route.ts"
+        assert set(re.findall(r"'([A-Za-z]+)'", m.group(1))) == DTCG_2025_10_TYPES
+
+
 # ── 4. SSRF protection ────────────────────────────────────────────────────────
 
 

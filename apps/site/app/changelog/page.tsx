@@ -317,6 +317,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'The site described one alignment system and implemented four, and the disagreement was invisible to every automated check because none of them compared one region\'s edge to another\'s. The accessibility tokens close a measured contrast failure: the brand blue as text read 2.0 to 2.3 to 1 in dark mode against a 4.5 to 1 minimum. Naming the motion tiering settles a documented conflict between two readings of the same clause.',
     source: 'Designesy a11y contract v0.1.1, WCAG 2.2 AA (2.4.11, 1.4.3, 2.5.8), edge-contract measurements',
   },
+
+  // ── v0.4.2 (engine 1.1.0): baseline fixes ──
+  {
+    version: 'v0.4.2 · engine 1.1.0',
+    date: '2026-10-08',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.1.0: four baseline fixes',
+    description:
+      'v05 passes a site that declares its motion only inside prefers-reduced-motion: no-preference, provided the block opts into motion; an empty block, or one that only switches motion off, still warns. v27 reads N/A on a page with no text input, textarea or select when its CSS sets no input font size. v14 and v18 join the optional tier, so an external site that does not adopt the Cadence rules is skipped on them. The MCP token validator checks against the 13 types DTCG 2025.10 defines. Scored on pages captured from the 30 leaderboard sites on 2026-10-08, 21 change at least one verdict.',
+    checks: ['v05', 'v14', 'v18', 'v27'],
+    rationale:
+      'Each fix removes a verdict the engine could not defend. Gating motion behind no-preference is a recommended way to honour reduced motion; a page with no field gives iOS nothing to zoom into; and v14 and v18 judged external sites on Designesy taste under the scope meant to be fair to them. The engine version moves so a score from before the fix and one from after it can be told apart.',
+    source: 'Media Queries Level 5 (prefers-reduced-motion), DTCG Format Module 2025.10, engine 1.1.0 entry in CHANGELOG.md',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -343,6 +358,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
   { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed.' },
   { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
+  { version: 'v0.4.2 · engine 1.1.0', date: '2026-10-08', checks: 42, title: 'Engine baseline fixes', summary: 'v05 accepts opt-in motion, v27 skips pages with no field, v14 and v18 become optional for external sites, and the token validator uses the 13 DTCG types. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

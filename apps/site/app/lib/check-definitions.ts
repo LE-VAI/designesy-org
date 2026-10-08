@@ -166,5 +166,10 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *   1.0.0  2026-09-17  first explicit engine version. Precedes this constant;
  *                      earlier results carry no engine version and cannot be
  *                      attributed to a build.
+ *   1.1.0  2026-10-08  baseline fixes. v05 passes motion gated behind
+ *                      prefers-reduced-motion: no-preference; v27 reads SKIP on
+ *                      a page with no field to zoom into; v14 and v18 move to
+ *                      Tier 2, so scope=universal skips their absence. The
+ *                      CHANGELOG entry lists the leaderboard verdicts that move.
  */
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';

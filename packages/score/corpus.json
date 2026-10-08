@@ -1,10 +1,10 @@
 {
-  "corpus_version": "1.1.0",
-  "engine_version": "1.0.0",
-  "fixtures": 18,
-  "pinned_checks": 27,
-  "pinned_checks_matching": 27,
-  "digest": "cd567f98852ebd482ace7e4d53190594715de8b2c4d84025ec7ed459a8293673",
+  "corpus_version": "1.2.0",
+  "engine_version": "1.1.0",
+  "fixtures": 25,
+  "pinned_checks": 36,
+  "pinned_checks_matching": 36,
+  "digest": "1c818706141b659d6f24326326e637717a98cc89182a140f84eab9a5b05374e0",
   "note": "Known-answer fixtures for the Designesy scoring engine. Each fixture pins expected verdicts for named checks, and `observed` records what the engine actually returned. A mismatch between expected and observed means the engine changed behavior for a known input — either a regression, or an intentional change whose pin was not yet updated. Fixtures whose name starts with \"broken-\" are deliberately defective pages; they exist so the corpus can catch a check that stopped detecting something, which a corpus of well-formed pages alone cannot do.",
   "fixtures_detail": [
     {
@@ -121,13 +121,13 @@
       "referent": "The single most common CSS performance anti-pattern: transition:all on every interactive element.",
       "scope": "universal",
       "observed": {
-        "score": 93,
+        "score": 94.4,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 1,
-          "warn": 7,
-          "skip": 8,
+          "warn": 5,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -165,7 +165,210 @@
           "expected": "WARN",
           "observed": "WARN",
           "matches": true,
-          "why": "REGRESSION FIXTURE (caught 2026-09-17). v05 previously matched any @media mentioning prefers-reduced-motion, so `no-preference` — which expresses the opposite intent — passed as readily as `reduce`. That is a false PASS on the accessibility primitive the check exists to verify. Any change that makes this fixture PASS again has reintroduced substring matching on the feature name instead of evaluating its value."
+          "why": "REGRESSION FIXTURE (caught 2026-09-17). v05 previously matched any @media mentioning prefers-reduced-motion, so `no-preference` — which expresses the opposite intent — passed as readily as `reduce`. That is a false PASS on the accessibility primitive the check exists to verify. Any change that makes this fixture PASS again has reintroduced substring matching on the feature name instead of evaluating its value. Engine 1.1.0 lets a no-preference block PASS when it opts INTO motion (good-reduced-motion-opt-in). This block holds only the reduce kill switch (durations of 0.01ms), which stills motion for users with no preference and leaves it running for users who asked for less, so it must keep reading WARN."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "good-reduced-motion-opt-in",
+      "referent": "A stylesheet that honours reduced motion by making motion opt-in: its animation and transition are declared only inside @media (prefers-reduced-motion: no-preference), so it ships no reduce block because nothing is left to switch off.",
+      "scope": "universal",
+      "observed": {
+        "score": 85.4,
+        "grade": "B",
+        "counts": {
+          "pass": 17,
+          "fail": 0,
+          "warn": 5,
+          "skip": 17,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v05",
+          "expected": "PASS",
+          "observed": "PASS",
+          "matches": true,
+          "why": "ENGINE 1.1.0 FIX. Motion that exists only under no-preference is never shown to a reduce preference, which is a recommended way to honour it. Engine 1.0.0 read WARN here because it accepted only a reduce block."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-reduced-motion-empty-opt-in",
+      "referent": "A stylesheet with an empty prefers-reduced-motion: no-preference block and no reduce block: the shape of a gate that was set up and never filled.",
+      "scope": "universal",
+      "observed": {
+        "score": 83.6,
+        "grade": "B",
+        "counts": {
+          "pass": 16,
+          "fail": 0,
+          "warn": 6,
+          "skip": 17,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v05",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "The no-preference block gates nothing, and the animation runs for every user. An empty block must not count as opt-in motion, or the 1.1.0 fix would pass any page that writes the media query and puts nothing in it."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "edge-no-form-fields",
+      "referent": "A content page with no form fields and no input rule in its CSS: a marketing or documentation page, the shape most leaderboard home pages have.",
+      "scope": "universal",
+      "observed": {
+        "score": 96.6,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 5,
+          "skip": 11,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v27",
+          "expected": "SKIP",
+          "observed": "SKIP",
+          "matches": true,
+          "why": "ENGINE 1.1.0 FIX. No field exists for iOS Safari to zoom into, so the 16px floor has nothing to protect. Engine 1.0.0 read WARN here because it had no zero-inputs branch."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "edge-hidden-field-only",
+      "referent": "A page whose only form control is a hidden input (a CSRF or tracking token), with no input rule in its CSS.",
+      "scope": "universal",
+      "observed": {
+        "score": 96.6,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 5,
+          "skip": 11,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v27",
+          "expected": "SKIP",
+          "observed": "SKIP",
+          "matches": true,
+          "why": "A hidden input cannot take focus, so iOS Safari never zooms into it. It must not make the page count as having a field."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "broken-field-without-floor",
+      "referent": "The control for the two fixtures above: the same page keeps its email field, and the CSS still sets no input font-size.",
+      "scope": "universal",
+      "observed": {
+        "score": 95.6,
+        "grade": "A",
+        "counts": {
+          "pass": 23,
+          "fail": 0,
+          "warn": 6,
+          "skip": 10,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v27",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "A real email field with no declared 16px floor is the case v27 exists for. The 1.1.0 SKIP applies only when the markup has no field, so this verdict must not move."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "universal-cadence-taste-absent",
+      "referent": "An external site that does not adopt the Designesy Cadence rules: no text-wrap balance or pretty, no tabular-nums, px font sizes. Scored as any external site is (scope=universal).",
+      "scope": "universal",
+      "observed": {
+        "score": 96.8,
+        "grade": "A",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 5,
+          "skip": 10,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v14",
+          "expected": "SKIP",
+          "observed": "SKIP",
+          "matches": true,
+          "why": "ENGINE 1.1.0 FIX. v14 restates Designesy Cadence taste. Under scope=universal the absence of a Designesy-specific pattern is SKIP (Tier 2); engine 1.0.0 kept v14 in Tier 1 and read WARN."
+        },
+        {
+          "id": "v18",
+          "expected": "SKIP",
+          "observed": "SKIP",
+          "matches": true,
+          "why": "ENGINE 1.1.0 FIX. text-wrap balance and pretty are Designesy Cadence taste; their absence on an external site is SKIP under scope=universal. Engine 1.0.0 read WARN."
+        }
+      ],
+      "scoreBetween": null
+    },
+    {
+      "name": "contract-cadence-taste-absent",
+      "referent": "The control for the fixture above: the same page scored under scope=contract, the strict mode designesy.org is scored in.",
+      "scope": "contract",
+      "observed": {
+        "score": 88.2,
+        "grade": "B",
+        "counts": {
+          "pass": 24,
+          "fail": 0,
+          "warn": 14,
+          "skip": 1,
+          "manual": 3,
+          "total": 42
+        }
+      },
+      "expectations": [
+        {
+          "id": "v14",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Under scope=contract the Cadence rules are mandatory, so missing ones still WARN. The tier move changes only the universal scope."
+        },
+        {
+          "id": "v18",
+          "expected": "WARN",
+          "observed": "WARN",
+          "matches": true,
+          "why": "Under scope=contract text-wrap balance and pretty are required, so their absence still WARNs."
         }
       ],
       "scoreBetween": null
@@ -202,13 +405,13 @@
       "referent": "A page where a template emitted the site name as an h1 in the header and the page title as another h1 in main.",
       "scope": "universal",
       "observed": {
-        "score": 92.7,
+        "score": 94.2,
         "grade": "A",
         "counts": {
           "pass": 22,
           "fail": 0,
-          "warn": 9,
-          "skip": 8,
+          "warn": 7,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -229,13 +432,13 @@
       "referent": "A client-rendered shell that ships markup with no heading at all — the shape the engine grades when JavaScript would have injected the h1.",
       "scope": "universal",
       "observed": {
-        "score": 87.9,
+        "score": 89.4,
         "grade": "B",
         "counts": {
           "pass": 18,
           "fail": 1,
-          "warn": 9,
-          "skip": 11,
+          "warn": 7,
+          "skip": 13,
           "manual": 3,
           "total": 42
         }
@@ -268,8 +471,8 @@
         "counts": {
           "pass": 23,
           "fail": 1,
-          "warn": 7,
-          "skip": 8,
+          "warn": 5,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -290,13 +493,13 @@
       "referent": "The blunt performance fix: will-change sprayed onto elements with non-transform properties.",
       "scope": "universal",
       "observed": {
-        "score": 94.2,
+        "score": 95.6,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 0,
-          "warn": 8,
-          "skip": 8,
+          "warn": 6,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -317,13 +520,13 @@
       "referent": "Button and label text ending in periods — the copywriting inconsistency v39 targets from Microsoft Fluent guidance.",
       "scope": "universal",
       "observed": {
-        "score": 94.4,
+        "score": 95.9,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 0,
-          "warn": 8,
-          "skip": 8,
+          "warn": 6,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -344,13 +547,13 @@
       "referent": "Navigation-as-buttons: a marketing header whose buttons are bare nouns rather than verb phrases.",
       "scope": "universal",
       "observed": {
-        "score": 94.4,
+        "score": 95.9,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 0,
-          "warn": 8,
-          "skip": 8,
+          "warn": 6,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -376,8 +579,8 @@
         "counts": {
           "pass": 6,
           "fail": 4,
-          "warn": 21,
-          "skip": 8,
+          "warn": 20,
+          "skip": 9,
           "manual": 3,
           "total": 42
         }
@@ -408,13 +611,13 @@
       "referent": "A stylesheet that declares a perfectly good 66ch measure on a decorative container while every paragraph runs unconstrained — the exact shape that passed the old check.",
       "scope": "universal",
       "observed": {
-        "score": 94.9,
+        "score": 96,
         "grade": "A",
         "counts": {
           "pass": 24,
           "fail": 0,
-          "warn": 8,
-          "skip": 7,
+          "warn": 6,
+          "skip": 9,
           "manual": 3,
           "total": 42
         }
@@ -435,13 +638,13 @@
       "referent": "A stylesheet that puts the measure where it belongs — on paragraph selectors — which is the state designesy.org was moved to.",
       "scope": "universal",
       "observed": {
-        "score": 95.9,
+        "score": 97.2,
         "grade": "A",
         "counts": {
           "pass": 25,
           "fail": 0,
-          "warn": 7,
-          "skip": 7,
+          "warn": 5,
+          "skip": 9,
           "manual": 3,
           "total": 42
         }
@@ -462,13 +665,13 @@
       "referent": "A stylesheet with the measure on prose but set far too wide — 95ch, well past the readable band.",
       "scope": "universal",
       "observed": {
-        "score": 94.9,
+        "score": 96,
         "grade": "A",
         "counts": {
           "pass": 24,
           "fail": 0,
-          "warn": 8,
-          "skip": 7,
+          "warn": 6,
+          "skip": 9,
           "manual": 3,
           "total": 42
         }
@@ -489,13 +692,13 @@
       "referent": "A design system that reaches all five of its distinct typefaces through declared :root tokens — the shape next/font produces, and the shape the site itself ships. Five faces behind aliases is genuine typography drift and must be reported as such; the failure mode pinned here is a resolver that skips aliased declarations and reports 0, PASSING a page it never read.",
       "scope": "universal",
       "observed": {
-        "score": 94.3,
+        "score": 95.4,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 0,
-          "warn": 8,
-          "skip": 8,
+          "warn": 6,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -516,13 +719,13 @@
       "referent": "The control for the fixture above: the SAME five faces declared directly, with no token layer. It exists so the aliased fixture cannot pass by having both sides change together.",
       "scope": "universal",
       "observed": {
-        "score": 94.3,
+        "score": 95.4,
         "grade": "A",
         "counts": {
           "pass": 23,
           "fail": 0,
-          "warn": 8,
-          "skip": 8,
+          "warn": 6,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }
@@ -543,13 +746,13 @@
       "referent": "A two-hop alias chain, which is the shape the live site ships: --sans -> var(--font-sans) -> 'Schibsted Grotesk'. Resolving one level is not enough — the intermediate literal 'var(--font-sans)' would then be attributed as its own family, double-counting one typeface.",
       "scope": "universal",
       "observed": {
-        "score": 95.4,
+        "score": 96.8,
         "grade": "A",
         "counts": {
           "pass": 24,
           "fail": 0,
-          "warn": 7,
-          "skip": 8,
+          "warn": 5,
+          "skip": 10,
           "manual": 3,
           "total": 42
         }

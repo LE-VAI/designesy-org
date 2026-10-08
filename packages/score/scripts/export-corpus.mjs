@@ -40,8 +40,14 @@ const OUT = join(HERE, '..', 'corpus.json');
  * -two-hop-chain), which pin the resolver defect that silently DROPPED every
  * aliased font declaration and PASSED pages whose typefaces were all reached
  * through tokens.
+ *
+ * 1.2.0 (2026-10-08): engine 1.1.0 fixtures. v05 opt-in motion gated behind
+ * prefers-reduced-motion: no-preference (PASS) and an empty no-preference block
+ * (WARN); v27 on pages with no field, a hidden field only, and a text field
+ * (SKIP, SKIP, WARN); v14 and v18 absent under each scope (SKIP universal, WARN
+ * contract).
  */
-const CORPUS_VERSION = '1.1.0';
+const CORPUS_VERSION = '1.2.0';
 
 /**
  * Engine version. Read from the server constant when reachable; the package
@@ -49,7 +55,7 @@ const CORPUS_VERSION = '1.1.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.0.0';
+const ENGINE_VERSION = '1.1.0';
 
 async function build() {
   const rows = await runCorpus();

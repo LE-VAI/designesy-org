@@ -368,11 +368,17 @@ const handler = createMcpHandler(
         const dimensionValues: Array<{ path: string; value: string }> = [];
         const deprecatedPatterns: string[] = [];
 
+        // The 13 types DTCG 2025.10 defines: seven in its Types section and six
+        // in its Composite types section. Until 2026-10-08 (shipped with engine
+        // 1.1.0) this list lacked cubicBezier and carried seven names the format
+        // does not define (string, boolean, link, borderStyle, borderWeight,
+        // radius, spacing), so t06 WARNed on a conformant easing token and passed
+        // those names as standard. packages/designesy-mcp carries the same list,
+        // and its test suite asserts the two stay equal.
         const DTCG_STANDARD_TYPES = new Set([
           'color', 'dimension', 'fontFamily', 'fontWeight', 'duration',
-          'number', 'string', 'boolean', 'link', 'gradient', 'shadow',
-          'border', 'transition', 'typography', 'strokeStyle',
-          'borderStyle', 'borderWeight', 'radius', 'spacing',
+          'cubicBezier', 'number',
+          'strokeStyle', 'border', 'transition', 'shadow', 'gradient', 'typography',
         ]);
 
         const VALID_DIMENSION_UNITS = [
