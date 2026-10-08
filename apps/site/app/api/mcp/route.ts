@@ -246,19 +246,26 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_score',
       {
-        description: `Score a live URL against the Designesy design contract: a deterministic ${ENGINE_CHECK_COUNT}-check verification engine that returns a numeric score, letter grade (A-F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable: fetches the URL server-side, extracts CSS, runs 42 checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL (not FAIL); run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). Returns JSON: { url, score (0-100), grade (A-F), pass_count, fail_count, checks[{id, name, status, weight, category}] }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output.`,
+        description: `Score a live URL against the Designesy design contract: a deterministic ${ENGINE_CHECK_COUNT}-check verification engine that returns a numeric score, letter grade (A-F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable: fetches the URL server-side, extracts CSS, runs ${ENGINE_CHECK_COUNT} checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL (not FAIL); run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). Returns JSON: { url, score (0-100), grade (A-F), pass_count, fail_count, checks[{id, name, status, weight, category}] }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output. Pass scope="contract" or "universal" to set the scoring scope instead of auto-detecting it.`,
+        // format and scope are the /api/score body fields of the same names.
+        // The description offered format while this schema held only url, so a
+        // client had no way to send it.
         inputSchema: z.object({
           url: z.string().optional().describe('URL to score. Defaults to https://www.designesy.org/ if not provided.'),
+          format: z.enum(['designesy', 'canonical', 'review', 'google']).optional().describe('Output format. designesy (default): the native JSON. canonical: the review-findings.json schema. review: a markdown report. google: the @google/design.md-compatible JSON.'),
+          scope: z.enum(['contract', 'universal']).optional().describe('Scoring scope. contract: every check counts absence against the site. universal: optional features and Designesy-specific token checks return SKIP when absent. Omit to auto-detect: contract for designesy.org, universal for every other site.'),
         }),
       },
-      async ({ url }) => {
+      async ({ url, format, scope }) => {
         const targetUrl = url || `${BASE_URL}/`;
+        const outputFormat = format ?? 'designesy';
         // Call the internal /api/score endpoint (same Vercel project, same runtime)
         const scoreUrl = `${BASE_URL}/api/score`;
         const res = await fetch(scoreUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: targetUrl }),
+          // scope is sent only when given, so the engine's auto-detection still applies.
+          body: JSON.stringify({ url: targetUrl, format: outputFormat, ...(scope ? { scope } : {}) }),
         });
 
         if (!res.ok) {
@@ -266,6 +273,14 @@ const handler = createMcpHandler(
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Score API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
             isError: true,
+          };
+        }
+
+        // The review format is markdown (text/markdown), so it is returned as
+        // the engine wrote it; res.json() would throw on it.
+        if (outputFormat === 'review') {
+          return {
+            content: [{ type: 'text' as const, text: await res.text() }],
           };
         }
 
