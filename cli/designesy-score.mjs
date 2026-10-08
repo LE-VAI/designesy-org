@@ -229,6 +229,8 @@ function httpsPost(apiBase, body, timeoutMs = 15000) {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json, text/markdown',
+        // Names the surface for the engine's usage counters (no data about the run).
+        'User-Agent': `designesy-score-cli/${VERSION}`,
         'Content-Length': Buffer.byteLength(payload),
       },
       timeout: timeoutMs,

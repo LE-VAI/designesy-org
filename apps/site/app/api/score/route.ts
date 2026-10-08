@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import { recordUsage, scoreClientOf } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { buildReceipt } from '../../lib/receipt';
@@ -3529,6 +3530,9 @@ export async function POST(request: Request) {
       { status: 429 }
     );
   }
+
+  // F7 usage counters (lib/usage.ts): which surface called, never what it scored.
+  after(() => recordUsage(`score:${scoreClientOf(request.headers.get('user-agent'))}`, request));
 
   let body: { url?: unknown; format?: unknown; scope?: unknown };
   try {
