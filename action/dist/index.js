@@ -261,7 +261,8 @@ async function main() {
   try {
     const res = await fetch(`${api}/api/score`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown' },
+      // Names the surface for the engine's usage counters (no data about the run).
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/markdown', 'User-Agent': 'designesy-contract-check/1' },
       body: JSON.stringify({ url, format, scope }),
     });
     const text = await res.text();
