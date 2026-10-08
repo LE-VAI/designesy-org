@@ -10,7 +10,10 @@ name: Publish to MCP Registry
 
 on:
   push:
-    tags: ["v*"]            # triggers on version tags like v1.3.1
+    # Full version tags only (v1.2.3). The Action's floating major tag `v1` also
+    # matches "v*"; pushing it ran this workflow on 2026-08-16 and failed, and
+    # the registry step would publish a version named "1" if it ever succeeded.
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:        # allow manual re-publish from the Actions tab
 
 permissions:
