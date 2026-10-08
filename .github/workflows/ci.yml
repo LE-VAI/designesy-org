@@ -27,6 +27,10 @@ on:
     branches: [main]
   push:
     branches: [main]
+  # Started by rescore-leaderboard.yml on its PR branch: CI on a PR opened by
+  # github-actions[bot] waits for a human approval (GitHub, 2026-06-11), but a
+  # dispatch always runs, and its checks land on the same head commit.
+  workflow_dispatch:
 
 # Cancel superseded runs on the same ref — saves CI minutes.
 concurrency:
