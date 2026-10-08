@@ -125,7 +125,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 
 ## The 42-check verification engine
 
-`designesy_score` runs 40 deterministic checks across 13 weighted categories:
+`designesy_score` runs 42 deterministic checks across 14 weighted categories:
 
 | Category | Weight | What it measures |
 |---|---|---|
@@ -135,6 +135,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | motion | 10 | Motion hygiene — duration tokens, easing tokens, reduced-motion blocks |
 | tokens | 9 | DTCG 2025.10 conformance — `$type`, `$value`, `$description`, colorSpace |
 | takt | 8 | Timing discipline — transition bands, animation hierarchy |
+| copywriting | 8 | UX copy — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS |
 | poise | 7 | Composure — viewport overflow, scroll behavior, print styles |
 | identity | 6 | Brand coherence — title, meta description, favicon, og tags |
 | interaction | 6 | Interaction primitives — hover states, press feedback, disabled states |
@@ -143,7 +144,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | security | 5 | Security headers — CSP, X-Content-Type-Options, referrer policy |
 | spec | 4 | Spec conformance — `lang` attr, `charset`, doctype |
 
-No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself — in public, at 93% A (36 pass / 0 fail / 1 skip / 3 manual).
+No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself, in public: its current score is on the [leaderboard](https://www.designesy.org/leaderboard).
 
 ## Standards positioning
 

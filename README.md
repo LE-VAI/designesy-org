@@ -92,14 +92,14 @@ The same 42-check engine powers an MCP server (17 tools for AI agents), a zero-d
 
 ## Contract verification
 
-![Designesy Score](https://img.shields.io/badge/contract%20score-93%25%20A%20grade-brightgreen)
+[![Designesy contract score](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org)](https://www.designesy.org/leaderboard) [![Last scored](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fleaderboard&query=%24.lastScored&label=last%20scored&color=blue)](https://www.designesy.org/leaderboard)
 
-The live site is verified against the design system contract — 40 deterministic checks with provenance back to tokens. Current score: **93% (Grade A)** — 36 passed, 0 failed, 0 warned, 1 skipped, 3 manual (browser-only checks; the skip is DESIGN.md not yet served at the site root — see [/contracts/design-system](https://www.designesy.org/contracts/design-system)). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
+The live site is verified against the design system contract — 42 deterministic checks with provenance back to tokens. Both badges read the live leaderboard, which the weekly re-score refreshes, so the score here cannot drift from the engine; the per-check result is on the [score page](https://www.designesy.org/score). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
-## Contract v0.4.0
+## The contract
 
-- **40 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
-- **Copywriting principles** (v0.4.0) — 16 UX copy principles + 4 verification checks (button verb phrases, no trailing periods, descriptive link text, no ALL CAPS)
+- **42 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
+- **Copywriting principles** (added in v0.4.0) — 16 UX copy principles + 4 verification checks (button verb phrases, no trailing periods, descriptive link text, no ALL CAPS)
 - **10 Non-Negotiable Motion Standards** — deliberate easing, explicit properties, opacity entrances, keyboard stillness, no layout animation, touch gating, bounded duration, reduced-motion paths, asymmetric press, no ease-in
 - **10 acoustic cues** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume v0.1.0 engine, interaction-only
 - **9 open tensions** — documented, not hidden
@@ -178,7 +178,7 @@ No — all 17 tools are read-only. The MCP endpoint is stateless Streamable HTTP
 Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.
 
 **What does it score against?**
-The Designesy v0.4.0 design-system contract — 42 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
+The current Designesy design-system contract — 42 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
 
 **Can I use it in CI?**
 Yes. The [GitHub Action](#github-action) gates your workflow on contract compliance — fail the build if the score drops below your threshold.
