@@ -10,7 +10,7 @@ import type { CategoryBreakdown } from './seed';
 
 /** The day the batch below was run: the date every per-category figure on the
     data pages carries, beside the composite's weekly re-score date. */
-export const BATCH_RUN_DATE = '2026-09-28';
+export const BATCH_RUN_DATE = '2026-10-08';
 
 export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakdown>> = {
   "https://linear.app": {
@@ -27,7 +27,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://vercel.com": {
-    "cadence": { score: 94.4, weight: 18, pass: 8, fail: 0, warn: 1, skip: 3 },
+    "cadence": { score: 83.3, weight: 18, pass: 7, fail: 1, warn: 1, skip: 3 },
     "accessibility": { score: 62.5, weight: 15, pass: 2, fail: 1, warn: 1, skip: 2 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 1 },
@@ -196,21 +196,21 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://carbondesignsystem.com": {
-    "cadence": { score: 66.7, weight: 18, pass: 3, fail: 1, warn: 2, skip: 6 },
-    "accessibility": { score: 62.5, weight: 15, pass: 2, fail: 1, warn: 1, skip: 2 },
-    "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
+    "cadence": { score: 71.4, weight: 18, pass: 4, fail: 1, warn: 2, skip: 5 },
+    "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 2 },
+    "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 1 },
-    "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
+    "tokens": { score: 100, weight: 9, pass: 2, fail: 0, warn: 0, skip: 0 },
     "takt": { score: 75, weight: 8, pass: 1, fail: 0, warn: 1, skip: 0 },
     "poise": { score: 100, weight: 7, pass: 1, fail: 0, warn: 0, skip: 1 },
-    "identity": { score: 50, weight: 6, pass: 1, fail: 1, warn: 0, skip: 0 },
+    "identity": { score: 100, weight: 6, pass: 2, fail: 0, warn: 0, skip: 0 },
     "interaction": { score: 100, weight: 6, pass: 1, fail: 0, warn: 0, skip: 0 },
     "performance": { score: null, weight: 6, pass: 0, fail: 0, warn: 0, skip: 0 },
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://spectrum.adobe.com": {
-    "cadence": { score: 50, weight: 18, pass: 1, fail: 1, warn: 5, skip: 5 },
-    "accessibility": { score: 62.5, weight: 15, pass: 1, fail: 0, warn: 3, skip: 2 },
+    "cadence": { score: 60, weight: 18, pass: 1, fail: 0, warn: 4, skip: 7 },
+    "accessibility": { score: 50, weight: 15, pass: 0, fail: 0, warn: 4, skip: 2 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 1 },
     "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
@@ -378,9 +378,9 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://x.com": {
-    "cadence": { score: 71.4, weight: 18, pass: 3, fail: 0, warn: 4, skip: 5 },
+    "cadence": { score: 81.3, weight: 18, pass: 5, fail: 0, warn: 3, skip: 4 },
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 2 },
-    "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
+    "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 3, fail: 0, warn: 0, skip: 1 },
     "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
     "takt": { score: 50, weight: 8, pass: 0, fail: 0, warn: 1, skip: 1 },
@@ -394,7 +394,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "cadence": { score: 70, weight: 18, pass: 2, fail: 0, warn: 3, skip: 7 },
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 2 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
-    "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 1 },
+    "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 1 },
     "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
     "takt": { score: 75, weight: 8, pass: 1, fail: 0, warn: 1, skip: 0 },
     "poise": { score: 100, weight: 7, pass: 1, fail: 0, warn: 0, skip: 1 },
