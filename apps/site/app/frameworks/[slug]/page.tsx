@@ -13,7 +13,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { PageShareButton } from '../../lib/page-share';
-import { CATEGORY_WEIGHTS, ENGINE_VERSION } from '../../lib/check-definitions';
+import { CATEGORY_WEIGHTS } from '../../lib/check-definitions';
 import { SEED, type Grade } from '../../leaderboard/seed';
 import { EngineHead, EngineNext } from '../../lib/engine/engine-page';
 import { display } from '../../lib/engine/types';
@@ -23,6 +23,7 @@ import {
   BATCH_CATEGORIES,
   BATCH_RUN_DATE,
   SCORES_DATE,
+  SCORES_ENGINE_VERSION,
   CATEGORY_LABELS,
   bySlug,
   slugify,
@@ -149,7 +150,7 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
             id="fw-strip"
             title={`${site.name} on the grade scale`}
             note={`Every scored site at its composite score; ${site.name} is the larger dot, read out above. Sites a point or two apart stack.`}
-            source={`Weekly run of ${SCORES_DATE}. Engine ${ENGINE_VERSION}.`}
+            source={`Weekly run of ${SCORES_DATE}. Engine ${SCORES_ENGINE_VERSION}.`}
             tableLabel="Every site's score"
             table={
               <DataTable
