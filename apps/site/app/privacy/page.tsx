@@ -60,6 +60,12 @@ const COLLECT = [
     limit: 'No ad profiles',
   },
   {
+    title: 'Usage counts for the score API and MCP tools',
+    meta: 'For each day: how many calls each MCP tool and the score API received, which kind of client made them (browser, MCP, GitHub Action, CLI, or script), and an approximate number of distinct callers. Callers are counted through a one-way hash of the network address, salted per day, inside a counting sketch that cannot list them. The URL scored, any contract, and the address itself are not stored. Counts expire after 400 days.',
+    held: 'Held by Designesy LLC',
+    limit: 'No URLs or addresses · 400 days',
+  },
+  {
     title: 'What the browser keeps locally',
     meta: 'Interface preferences that stay on your device when present (for example sound or motion preference used by live labs). These are not sold and are not required for reading docs.',
     held: 'Stays on your device',

@@ -28,6 +28,8 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { MCP_SERVER_VERSION } from '../../lib/mcp-version';
 import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
+import { after } from 'next/server';
+import { recordUsage, toolCallNames } from '../../lib/usage';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
 import { safeFetch } from '../../lib/url-guard';
@@ -1266,4 +1268,20 @@ async function compatibilityShim(request: Request): Promise<Response> {
 
 // Stateless protocol: GET (discover/stream) and POST (requests).
 // No DELETE — there are no sessions to close.
-export { handler as GET, compatibilityShim as POST };
+// F7 usage counters (lib/usage.ts): count each tools/call by tool name. The body
+// is read once here and handed on in a fresh Request, as the shim above does,
+// because a consumed body cannot be read again on Vercel's Node.js runtime.
+async function countedPost(request: Request): Promise<Response> {
+  if (request.method !== 'POST') return compatibilityShim(request);
+  const bodyText = await request.text();
+  for (const name of toolCallNames(bodyText)) {
+    after(() => recordUsage(`mcp:${name}`, request));
+  }
+  return compatibilityShim(new Request(request.url, {
+    method: 'POST',
+    headers: new Headers(request.headers),
+    body: bodyText,
+  }));
+}
+
+export { handler as GET, countedPost as POST };
