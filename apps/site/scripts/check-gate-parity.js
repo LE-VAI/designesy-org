@@ -83,6 +83,10 @@ function main() {
   // never chain into `npm run build`, which runs before anything is served.
   // touched-routes.js is the sweep's route mapper, invoked by the CI step, not
   // a gate of its own.
+  //
+  // check-readme-facts.js reads the repo-root and PyPI READMEs, which sit
+  // outside apps/site and are not part of the deployed site: a stale README
+  // cannot change what the deploy serves, so the build has nothing to gate.
   const CI_ONLY = new Set([
     'check-gate-parity.js',
     'edge-contract.js',
@@ -90,6 +94,7 @@ function main() {
     'qa-keyboard.js',
     'a11y-sweep.js',
     'touched-routes.js',
+    'check-readme-facts.js',
   ]);
 
   const onlyInBuild = inBuild.filter((g) => !inCi.includes(g));

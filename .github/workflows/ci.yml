@@ -130,6 +130,12 @@ jobs:
         if: always()
         run: node scripts/check-contract-version.js
 
+      # README and PyPI README facts (check count, category count, contract
+      # version) read from the engine source, so a bump cannot leave them stale.
+      - name: README facts guard
+        if: always()
+        run: node scripts/check-readme-facts.js
+
       # ── The gates below ran in `npm run build` but NOT here ────────────────
       #
       # This job's own comment promised it mirrors `npm run build` "step for
