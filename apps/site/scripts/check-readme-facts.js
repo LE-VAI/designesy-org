@@ -7,9 +7,10 @@
  * ENGINE_CHECK_COUNT (lib/check-definitions.ts) and CONTRACT_VERSION
  * (lib/design-system-contract.ts) -- and check-contract-version.js keeps the
  * current version from being hardcoded inside app/. But nothing read the
- * READMEs, so they kept stale facts: the repo README said "40 checks" and
- * "Contract v0.4.0" while the engine ran 42 checks on v0.4.2, and the PyPI
- * README said "40 deterministic checks across 13 weighted categories".
+ * READMEs, so they kept stale facts: both READMEs gave a check count two
+ * below the engine's, the repo README headed a section with contract v0.4.0
+ * while the engine ran v0.4.2, and the PyPI README listed one category fewer
+ * than CATEGORY_WEIGHTS.
  * Glama and other listings copy these files, so a stale README is a stale
  * public listing.
  *
