@@ -35,19 +35,36 @@ jobs:
       # correct version. Previous failures (v1.9.0, v1.9.1) happened because
       # pyproject.toml was not bumped before tagging — PyPI rejected the
       # already-uploaded version with 400 Bad Request.
-      - name: Sync pyproject.toml version with tag
+      # VERIFY, never sync. This step used to rewrite pyproject.toml from the tag
+      # (added after v1.9.0/v1.9.1 were tagged without a bump). Syncing one file let
+      # the other version surfaces drift: v1.12.2 shipped reporting 1.12.1 in its MCP
+      # handshake (SERVER_VERSION). The package tests already require SERVER_VERSION,
+      # the site constant, server.json and the Action's SARIF driver to equal
+      # pyproject.toml, but nothing ran them before upload. Now a tag must point at a
+      # commit where every surface is already bumped, and the tests gate the upload.
+      - name: Verify the tag matches pyproject.toml
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          cd packages/designesy-mcp
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
-          echo "Synced pyproject.toml version -> $VERSION"
-          grep '^version' pyproject.toml
+          FILE_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' packages/designesy-mcp/pyproject.toml)
+          if [ "$FILE_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag v$VERSION but pyproject.toml says $FILE_VERSION. Bump every version surface in a commit, then tag that commit."
+            exit 1
+          fi
+          echo "Tag and pyproject.toml agree: $VERSION"
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+
+      # A published version cannot be replaced, so the package's own tests (including
+      # the four version-surface checks) must pass before anything is built or uploaded.
+      - name: Run package tests
+        run: |
+          pip install pytest
+          cd packages/designesy-mcp
+          python -m pytest test -q
 
       - name: Install build tools
         run: pip install build twine
