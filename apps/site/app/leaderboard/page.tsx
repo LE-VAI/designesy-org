@@ -8,7 +8,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { PageShareButton } from '../lib/page-share';
 import { AgentActions } from '../lib/agent-actions';
-import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT, ENGINE_VERSION } from '../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead } from '../lib/engine/engine-page';
 import { SubmitForm } from './submit-form/submit-form';
 import { LEADERBOARD_VERSION } from './seed';
@@ -20,6 +20,7 @@ import {
   BATCH_CATEGORIES,
   BATCH_RUN_DATE,
   SCORES_DATE,
+  SCORES_ENGINE_VERSION,
   CATEGORY_LABELS,
   fmt,
   toneOf,
@@ -118,7 +119,7 @@ export default function LeaderboardPage() {
           route="/leaderboard"
           name="Leaderboard"
           thesis={`${COHORT.length} sites on one scale. The engine that grades designesy.org grades every one of them with the same ${ENGINE_CHECK_COUNT} checks, and re-scores them every Monday.`}
-          facts={[`${COHORT.length} sites`, `scored ${SCORES_DATE}`, `engine ${ENGINE_VERSION}`]}
+          facts={[`${COHORT.length} sites`, `scored ${SCORES_DATE}`, `engine ${SCORES_ENGINE_VERSION}`]}
           contract={{ href: '/methodology', label: 'how a score is made' }}
         >
           <div className="dx-actions">
@@ -181,7 +182,7 @@ export default function LeaderboardPage() {
                 is a score held over from an earlier run.
               </>
             }
-            source={`Weekly run of ${SCORES_DATE}. Engine ${ENGINE_VERSION}, contract v${LEADERBOARD_VERSION}.`}
+            source={`Weekly run of ${SCORES_DATE}. Engine ${SCORES_ENGINE_VERSION}, contract v${LEADERBOARD_VERSION}.`}
             tableRef={{ id: 'ranking', label: 'the ranking below' }}
           >
             <CohortStrip

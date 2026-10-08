@@ -45,6 +45,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Engine 1.1.0 (2026-10-08): four baseline defects fixed; 21 of the 30
+  leaderboard sites change at least one verdict.** `ENGINE_VERSION` is now
+  `1.1.0`, so every result and receipt scored from here on names the build that
+  produced it. Both engine copies (`apps/site/app/api/score/route.ts` and
+  `packages/score/src/engine.ts`) carry the identical change; the source-drift
+  gate reports them in agreement.
+
+  - **v05: motion gated behind `prefers-reduced-motion: no-preference` passes.**
+    Declaring motion only inside a `no-preference` block is a recommended way to
+    honour reduced motion, because a user who asked for less never receives it.
+    Engine 1.0.0 accepted only a `reduce` block and WARNed this pattern. The block
+    has to opt into motion: an animation, a transition, smooth scrolling or a view
+    transition. An empty block still WARNs, and so does a block that only switches
+    motion off (the `reduce` kill switch filed under the wrong query, which stills
+    motion for users with no preference and leaves it running for users who asked
+    for less). The existing regression fixture `broken-reduced-motion-inverted`
+    pins that last case and still reads WARN.
+  - **v27: a page with no field to zoom into reads SKIP.** When the CSS shows
+    neither a sub-16px input rule nor a 16px floor, a page whose HTML carries no
+    text input, textarea or select now reads SKIP, as v38 already does for a page
+    with no buttons. It used to read WARN. Inputs that take no typed text (hidden,
+    checkbox, radio, submit, button, reset, image, file, range, color) do not
+    count as fields. A sub-16px input rule still FAILs and a declared floor still
+    PASSes, on any page.
+  - **v14 and v18 move to Tier 2.** Both encode Designesy Cadence taste (the
+    Cadence umbrella rule set, and `text-wrap: balance` plus `pretty`) yet sat in
+    Tier 1, so `scope=universal` WARNed external sites for not adopting them.
+    Their absence now reads SKIP under `scope=universal`, the treatment v15, v19,
+    v20 and x01 to x03 already receive. `scope=contract`, which designesy.org is
+    scored under, is unchanged.
+  - **MCP DTCG validator (t06, t07): the type list is the 13 types DTCG 2025.10
+    defines.** `cubicBezier` was missing, so a conformant easing token WARNed on
+    t06 and t07. Seven names the format does not define (`string`, `boolean`,
+    `link`, `borderStyle`, `borderWeight`, `radius`, `spacing`) were accepted as
+    standard. Fixed in the hosted endpoint (`apps/site/app/api/mcp/route.ts`) and
+    in the Python package, whose tests now assert that the two lists are equal.
+    This tool is separate from the site score, so no leaderboard verdict moves
+    with it. `packages/tokens` keeps its own 15-type list (it also accepts
+    `string` and `boolean`) and is untouched by this release.
+
+  **Leaderboard impact, measured.** The HTML and CSS of every seed site in
+  `apps/site/app/leaderboard/seed.ts` were fetched once on 2026-10-08 through the
+  package engine's fetch path, then scored by engine 1.0.0 and engine 1.1.0 on
+  the same bytes, with the live DESIGN.md probe (v37) enabled. 27 of 30 sites
+  were reachable; nytimes.com, getdesy.com and cssdesignawards.com were not,
+  which matches their held-over flags in `seed.ts`. 21 sites change at least one
+  verdict: v14 on 19 sites, v18 on 17, v27 on 10 and v05 on 1. No other check
+  moves. Six sites move nothing: linear.app, vercel.com (a), stripe.com,
+  www.designesy.org, github.com and x.com (a). The live leaderboard keeps its
+  1.0.0 scores until its next weekly re-score.
+
+  | Site | Check: 1.0.0 → 1.1.0 | Score: 1.0.0 → 1.1.0 | Delta | Grade |
+  |---|---|---|---|---|
+  | apple.com | v14 WARN → SKIP; v18 WARN → SKIP | 82.1 → 83.1 | +1.0 | B |
+  | mozaika.design | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 62.8 → 64.3 | +1.5 | D |
+  | designesy.ai.studio | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 74.8 → 76.8 | +2.0 | C |
+  | stitch.withgoogle.com | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 61.2 → 63.5 | +2.3 | D |
+  | zeroheight.com | v18 WARN → SKIP | 70 → 70 | 0 | C |
+  | roastbyai.com (a) | v14 WARN → SKIP; v18 WARN → SKIP | 72.2 → 74.7 | +2.5 | C |
+  | atlassian.design (a) | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 89.1 → 91.9 | +2.8 | B → A (b) |
+  | primer.style | v27 WARN → SKIP | 82.4 → 84.1 | +1.7 | B |
+  | carbondesignsystem.com | v14 WARN → SKIP; v18 WARN → SKIP | 67.8 → 69.3 | +1.5 | D |
+  | spectrum.adobe.com | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 63.5 → 65.1 | +1.6 | D |
+  | m3.material.io | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 67.6 → 66.4 | -1.2 | D |
+  | radix-ui.com | v05 WARN → PASS; v14 WARN → SKIP | 63.2 → 65.2 | +2.0 | D |
+  | geist.dev | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 62.0 → 64.4 | +2.4 | D |
+  | plex.ibm.com | v14 WARN → SKIP; v18 WARN → SKIP | 58.3 → 56.8 | -1.5 | F |
+  | awwwards.com (a) | v14 WARN → SKIP; v18 WARN → SKIP | 70 → 70 | 0 | C |
+  | fwa.org | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 48.0 → 47.9 | -0.1 | F |
+  | pentagram.com | v14 WARN → SKIP | 56.3 → 56.6 | +0.3 | F |
+  | vam.ac.uk | v14 WARN → SKIP; v18 WARN → SKIP | 70 → 70 | 0 | C |
+  | notion.so | v14 WARN → SKIP | 65.0 → 65.5 | +0.5 | D |
+  | figma.com | v14 WARN → SKIP; v18 WARN → SKIP; v27 WARN → SKIP | 76.6 → 79.4 | +2.8 | C |
+  | wikipedia.org | v14 WARN → SKIP; v18 WARN → SKIP | 80.7 → 83.0 | +2.3 | B |
+
+  (a) On the captured bytes, engine 1.0.0 does not reproduce this site's live
+  2026-10-08 score (live: vercel.com 79.6, roastbyai.com 71.2, atlassian.design
+  86.1, awwwards.com 70.3, x.com 87.8), so the page or the fetch differed from the
+  weekly run. The verdict moves and deltas in these rows hold for the captured
+  bytes; the live values are not measured. The other 22 reachable sites reproduce
+  their live 1.0.0 score exactly. www.designesy.org shows one PASS fewer than
+  live at the same score, because the package engine reports v37 as MANUAL where
+  the hosted engine runs the DESIGN.md linter.
+  (b) The grade change rests on a 1.0.0 score of 89.1 that the live run did not
+  reproduce: live, atlassian.design scored 86.1 with one more FAIL. Whether its
+  live grade moves is not measured.
+
+  Scores can fall. Removing a WARN (half credit) from a category that averages
+  below half credit lowers that category, which is why m3.material.io,
+  plex.ibm.com and fwa.org drop. A score that holds at 70 (zeroheight.com,
+  awwwards.com, vam.ac.uk) is held by the accessibility floor, which caps any
+  site whose accessibility category is below 60% at 70.
+
+  The calibration corpus grows from 18 fixtures to 25 (corpus 1.2.0): fixtures
+  that held each old wrong verdict, plus controls that keep the verdicts the
+  fixes must not move. Fourteen existing fixtures change their counts: thirteen
+  universal-scope fixtures because v14 and v18 now SKIP on them, and
+  `edge-empty-page` because it has no field and v27 now SKIPs. Every pinned
+  verdict still holds. `packages/score/test/engine-1-1-0.test.mjs` pins the edges
+  of each rule.
+
 - **`designesy-score` 1.0.5 (npm CLI): the v07 label no longer names an internal
   project.** 1.0.4 was built from a branch that never merged and printed a
   control-plane name in the v07 `item` on every run. 1.0.5 is built from `main`,

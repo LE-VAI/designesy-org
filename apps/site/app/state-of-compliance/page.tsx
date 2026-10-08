@@ -14,7 +14,7 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT, CONTRACT_VERSION } from '../hero-stats';
-import { CATEGORY_WEIGHTS, ENGINE_VERSION } from '../lib/check-definitions';
+import { CATEGORY_WEIGHTS } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import {
   COHORT,
@@ -25,6 +25,7 @@ import {
   BATCH_CATEGORIES,
   BATCH_RUN_DATE,
   SCORES_DATE,
+  SCORES_ENGINE_VERSION,
   CATEGORY_LABELS,
   WEIGHT_TOTAL,
   categoryStats,
@@ -155,7 +156,7 @@ export default function StateOfCompliancePage() {
                 that one is designesy.org, scored by its own engine.
               </>
             }
-            source={`Weekly run of ${SCORES_DATE}, engine ${ENGINE_VERSION}.`}
+            source={`Weekly run of ${SCORES_DATE}, engine ${SCORES_ENGINE_VERSION}.`}
             table={
               <DataTable
                 caption={`Sites per grade, weekly run of ${SCORES_DATE}.`}
@@ -413,7 +414,7 @@ export default function StateOfCompliancePage() {
           </dl>
           <p className="dx-src">
             State of Design Compliance · edition 1 · compliance index v{COMPLIANCE_INDEX_VERSION} · {COHORT_STATS.count} sites ·
-            contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · scored {SCORES_DATE} · categories from the batch of{' '}
+            contract {CONTRACT_VERSION} · engine {SCORES_ENGINE_VERSION} · scored {SCORES_DATE} · categories from the batch of{' '}
             {BATCH_RUN_DATE}
           </p>
         </section>

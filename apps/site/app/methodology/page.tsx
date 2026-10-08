@@ -151,7 +151,7 @@ const CHECKS: CheckDef[] = [
     id: 'v05',
     item: 'prefers-reduced-motion disables entrance and wordmark breath',
     category: 'motion',
-    how: 'Regex-searches for @media (prefers-reduced-motion: reduce). PASS if the media query is declared. This is the vestibular-safety primitive: without it, motion-sensitive users cannot use the site.',
+    how: 'Reads each @media (prefers-reduced-motion) block by its value. PASS if a reduce block declares rules, or if a no-preference block opts into motion (an animation, a transition, smooth scrolling or a view transition), which keeps that motion from anyone who asked for less. WARN if neither: an empty block, or a no-preference block that only switches motion off, honours nothing. This is the vestibular-safety primitive: without it, motion-sensitive users cannot use the site.',
   },
   {
     id: 'v11',
@@ -201,7 +201,7 @@ const CHECKS: CheckDef[] = [
     id: 'v27',
     item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)',
     category: 'accessibility',
-    how: 'Searches CSS for input/textarea/select font-size declarations ≥ 16px (or 1rem). PASS if the floor is detected. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks mobile UX.',
+    how: 'Searches CSS for input/textarea/select font-size declarations. FAIL if one is below 16px, PASS if the 16px (1rem) floor is declared. With neither, WARN if the page has a text input, textarea or select; N/A if it has none, since nothing can zoom. Inputs below 16px trigger a layout-shift zoom on iPhone that breaks mobile UX.',
   },
   {
     id: 'v35',
@@ -243,7 +243,7 @@ const CHECKS: CheckDef[] = [
     id: 'v14',
     item: 'Cadence typography rules match live CSS and contract.cadence',
     category: 'cadence',
-    how: 'Checks for the Cadence rule set: font-synthesis: none, text-underline-position: from-font, text-decoration-skip-ink: auto, -webkit-font-smoothing: antialiased, -moz-osx-font-smoothing: grayscale, root font-size: 16px, all sizes in rem. PASS if all present.',
+    how: 'Checks for the Cadence rule set: font-synthesis: none, text-underline-position: from-font, text-decoration-skip-ink: auto, -webkit-font-smoothing: antialiased, -moz-osx-font-smoothing: grayscale, root font-size: 16px, all sizes in rem. PASS if all present. These are Designesy Cadence rules, so on an external site (scope=universal) their absence is N/A.',
   },
   {
     id: 'v15',
@@ -267,7 +267,7 @@ const CHECKS: CheckDef[] = [
     id: 'v18',
     item: 'text-wrap: balance + pretty both present in live CSS',
     category: 'cadence',
-    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement: unsupported browsers ignore them.',
+    how: 'Searches for text-wrap: balance (headings) and text-wrap: pretty (paragraphs). PASS if both are present. Progressive enhancement: unsupported browsers ignore them. A Designesy Cadence rule, so on an external site (scope=universal) its absence is N/A.',
   },
   {
     id: 'v19',

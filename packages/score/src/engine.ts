@@ -89,7 +89,11 @@ const TIER2_ABSENCE_PATTERNS: Array<{ id: string; absenceMatch: RegExp }> = [
   { id: 'v08', absenceMatch: /^missing:/ },
   { id: 'v10', absenceMatch: /^missing:/ },
   { id: 'v13', absenceMatch: /^no press-scale|only scale\(0\)|no press-scale \(scale/ },
+  // v14 and v18 are Designesy Cadence taste; Tier 1 until engine 1.1.0. See the
+  // notes on the same entries in apps/site/app/api/score/route.ts.
+  { id: 'v14', absenceMatch: /^missing:/ },
   { id: 'v15', absenceMatch: /missing complete font-smoothing/ },
+  { id: 'v18', absenceMatch: /^balance=(?:true|false) pretty=(?:true|false)$/ },
   { id: 'v19', absenceMatch: /^only \d+ instances/ },
   { id: 'v20', absenceMatch: /^no ::selection rule found/ },
   { id: 'v23', absenceMatch: /^only \d+\/5 duration tokens|no.*duration tokens/i },
@@ -663,6 +667,40 @@ function checkTabularNums(css: string): CheckResult {
   return { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', status: 'WARN', detail: `only ${count} instances (threshold: 8)` };
 }
 
+/**
+ * v05 helper: does a `prefers-reduced-motion: no-preference` block opt INTO
+ * motion?
+ *
+ * Gating motion behind `no-preference` is a recommended way to honour reduced
+ * motion: the motion exists only for users who have not asked for less, so a
+ * `reduce` preference receives none of it. The block counts when it declares an
+ * animation, a transition, smooth scrolling or a view transition.
+ *
+ * A block that only switches motion off (`animation: none`, durations of 10ms or
+ * less) is the `reduce` kill switch filed under the wrong query. It stills motion
+ * for users with no preference and leaves it running for users who asked for
+ * less, which inverts the preference, so it does not count. The calibration
+ * fixture broken-reduced-motion-inverted pins that case.
+ */
+function optsIntoMotion(body: string): boolean {
+  if (/@view-transition\s*\{[^}]*navigation\s*:\s*auto/i.test(body)) return true;
+  const declRe = /(?:^|[{;\s])(animation|animation-name|animation-duration|transition|transition-property|transition-duration|scroll-behavior|view-transition-name)\s*:\s*([^;{}]+)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = declRe.exec(body)) !== null) {
+    const prop = m[1].toLowerCase();
+    const value = m[2].replace(/!important/i, '').trim().toLowerCase();
+    if (prop === 'scroll-behavior') {
+      if (value === 'smooth') return true;
+      continue;
+    }
+    if (/^(?:none|initial|unset|revert|revert-layer|0|0s|0ms)$/.test(value)) continue;
+    const times = [...value.matchAll(/(?:^|[\s,(])(\d*\.?\d+)(ms|s)\b/g)].map((t) => parseFloat(t[1]) * (t[2] === 's' ? 1000 : 1));
+    if (times.length > 0 && times.every((t) => t <= 10)) continue;
+    return true;
+  }
+  return false;
+}
+
 function checkReducedMotion(css: string): CheckResult {
   const ITEM = 'prefers-reduced-motion disables entrance and wordmark breath';
   const CATEGORY = 'motion';
@@ -673,15 +711,19 @@ function checkReducedMotion(css: string): CheckResult {
   // string anywhere, including inside /* */.
   const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
 
-  // Match the media query and require the `reduce` VALUE specifically.
-  // The prior regex accepted any @media containing the feature name, so
-  // `@media (prefers-reduced-motion: NO-PREFERENCE)` — which expresses the
-  // OPPOSITE intent, opting INTO motion — passed as readily as `reduce`. That
-  // is a false PASS on the exact accessibility primitive the check exists to
-  // verify. `no-preference` is not a reduced-motion block.
+  // Match the media query and read its VALUE. Two shapes honour reduced motion:
+  //   * `reduce` with a non-empty body: motion is switched off for those users.
+  //   * `no-preference` with a body that opts INTO motion (optsIntoMotion): the
+  //     motion is opt-in, so a reduce preference never receives it.
+  // Until engine 1.1.0 only the first shape passed, and a site that gated all
+  // of its motion behind `no-preference` was WARNed for following a recommended
+  // pattern. A bare substring match on the feature name stays wrong in both
+  // directions: an empty block, or a `no-preference` block that only switches
+  // motion off, honours nothing and still WARNs.
   const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
   let match: RegExpExecArray | null;
   let sawReduce = false;
+  let sawMotionOptIn = false;
   let sawNoPreference = false;
   while ((match = mqRe.exec(code)) !== null) {
     const value = match[1].toLowerCase();
@@ -697,7 +739,11 @@ function checkReducedMotion(css: string): CheckResult {
       }
     }
     const body = close > open ? code.slice(open + 1, close).trim() : '';
-    if (value === 'no-preference') { sawNoPreference = true; continue; }
+    if (value === 'no-preference') {
+      sawNoPreference = true;
+      if (optsIntoMotion(body)) sawMotionOptIn = true;
+      continue;
+    }
     // A `reduce` query that declares no rules reduces nothing.
     if (body.length > 0) sawReduce = true;
   }
@@ -705,10 +751,13 @@ function checkReducedMotion(css: string): CheckResult {
   if (sawReduce) {
     return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'prefers-reduced-motion: reduce block declares rules' };
   }
+  if (sawMotionOptIn) {
+    return { id: 'v05', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'motion is opt-in: declared inside a prefers-reduced-motion: no-preference block, so a reduce preference receives none of it' };
+  }
   if (sawNoPreference) {
     return {
       id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN',
-      detail: 'a prefers-reduced-motion media query exists but uses `no-preference`: that opts INTO motion rather than reducing it. Reduced-motion support requires the `reduce` value.',
+      detail: 'a prefers-reduced-motion: no-preference block exists but gates no motion: it is empty, or it only switches motion off, which stills motion for users with no preference and leaves it running for users who asked for less. Declare motion inside no-preference, or switch it off inside reduce.',
     };
   }
   return { id: 'v05', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'missing prefers-reduced-motion: reduce media query' };
@@ -1020,9 +1069,33 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
   return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families, palette drift (recommended ≤3): ${list}` };
 }
 
+/**
+ * v27 helper: does the delivered markup carry a field iOS Safari zooms into on
+ * focus? That is a <textarea>, a <select>, or an <input> of any type except the
+ * ones that take no typed text: hidden, checkbox, radio, submit, button, reset,
+ * image, file, range and color. An <input> with no type is a text field.
+ */
+function hasZoomableField(html: string): boolean {
+  const visible = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+  if (/<(?:textarea|select)\b/i.test(visible)) return true;
+  const inputs = visible.match(/<input\b[^>]*>/gi) || [];
+  return inputs.some((tag) => {
+    const type = /\stype\s*=\s*["']?([a-z-]+)/i.exec(tag);
+    return !type || !/^(?:hidden|checkbox|radio|submit|button|reset|image|file|range|color)$/i.test(type[1]);
+  });
+}
+
 // v27 — Input font-size 16px floor (iOS Safari auto-zoom prevention).
 // Scans CSS for input/textarea/select font-size below 16px (1rem).
-function checkInputFontFloor(css: string): CheckResult {
+//
+// Since engine 1.1.0 the page's own markup decides applicability. When the CSS
+// shows neither a sub-16px input rule nor a 16px floor, a page with no field iOS
+// can zoom into (hasZoomableField) has nothing to check and reads SKIP, as v38
+// does for a page with no buttons. It used to read WARN. The CSS verdicts are
+// unchanged: a sub-16px input rule still FAILs and a declared floor still PASSes,
+// because both describe the stylesheet that fields rendered later by script
+// would also inherit.
+function checkInputFontFloor(css: string, html: string): CheckResult {
   // Find input/textarea/select rules with font-size < 16px or < 1rem.
   const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
   const below: string[] = [];
@@ -1040,6 +1113,7 @@ function checkInputFontFloor(css: string): CheckResult {
     const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css)
       || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
+    if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
     return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
   }
   return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'FAIL', detail: `${below.length} input(s) below 16px floor: ${below.join(', ')}` };
@@ -2215,7 +2289,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
     checkFontFamilyCount(css, tokens),
-    checkInputFontFloor(css),
+    checkInputFontFloor(css, html),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
     checkSemanticColorVocabulary(tokens),

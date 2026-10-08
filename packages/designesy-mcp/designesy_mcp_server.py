@@ -2353,6 +2353,20 @@ _RESOURCE_FETCHERS = {
 # ── Living-systems tool implementations ─────────────────────────────────────
 
 
+# The 13 types DTCG 2025.10 defines: seven in its Types section and six in
+# its Composite types section. Until 2026-10-08 (shipped with engine 1.1.0)
+# this list lacked cubicBezier and carried seven names the format does not
+# define (string, boolean, link, borderStyle, borderWeight, radius, spacing),
+# so t06 WARNed on a conformant easing token and passed those names as
+# standard. apps/site/app/api/mcp/route.ts carries the same list; the test
+# suite asserts the two stay equal.
+DTCG_STANDARD_TYPES = frozenset({
+    "color", "dimension", "fontFamily", "fontWeight", "duration",
+    "cubicBezier", "number",
+    "strokeStyle", "border", "transition", "shadow", "gradient", "typography",
+})
+
+
 def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> dict[str, Any]:
     """Validate a design token file against W3C DTCG 2025.10 format."""
     contract = _fetch("https://www.designesy.org/contracts/tokens.json", as_json=True)
@@ -2413,13 +2427,6 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
     all_types: set[str] = set()
     dimension_values: list[tuple[str, str]] = []  # (token_path, $value)
     deprecated_patterns: list[str] = []
-
-    DTCG_STANDARD_TYPES = {
-        "color", "dimension", "fontFamily", "fontWeight", "duration",
-        "number", "string", "boolean", "link", "gradient", "shadow",
-        "border", "transition", "typography", "strokeStyle",
-        "borderStyle", "borderWeight", "radius", "spacing",
-    }
 
     VALID_DIMENSION_UNITS = {
         "px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
