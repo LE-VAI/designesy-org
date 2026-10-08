@@ -246,7 +246,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_score',
       {
-        description: `Score a live URL against the Designesy design contract: a deterministic ${ENGINE_CHECK_COUNT}-check verification engine that returns a numeric score, letter grade (A-F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable: fetches the URL server-side, extracts CSS, runs ${ENGINE_CHECK_COUNT} checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL (not FAIL); run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). Returns JSON: { url, score (0-100), grade (A-F), pass_count, fail_count, checks[{id, name, status, weight, category}] }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output. Pass scope="contract" or "universal" to set the scoring scope instead of auto-detecting it.`,
+        description: `Score a live URL against the Designesy design contract: a deterministic ${ENGINE_CHECK_COUNT}-check verification engine that returns a numeric score, letter grade (A-F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable: fetches the URL server-side, extracts CSS, runs ${ENGINE_CHECK_COUNT} checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL (not FAIL); run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). The default format returns the engine's JSON: { score (0-100), grade (A-F), pass, warn, fail, skip, manual, total, checks[{id, item, category, status, detail, remediation, weight}], categoryScores, contractVersion, receipt }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output. Pass scope="contract" or "universal" to set the scoring scope instead of auto-detecting it.`,
         // format and scope are the /api/score body fields of the same names.
         // The description offered format while this schema held only url, so a
         // client had no way to send it.
@@ -263,7 +263,8 @@ const handler = createMcpHandler(
         const scoreUrl = `${BASE_URL}/api/score`;
         const res = await fetch(scoreUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          // The user agent names this surface for the usage counters (lib/usage.ts).
+          headers: { 'Content-Type': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)` },
           // scope is sent only when given, so the engine's auto-detection still applies.
           body: JSON.stringify({ url: targetUrl, format: outputFormat, ...(scope ? { scope } : {}) }),
         });

@@ -1,4 +1,10 @@
-import { CHECKS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import {
+  CATEGORY_WEIGHTS,
+  CHECKS,
+  ENGINE_CHECK_COUNT,
+  ENGINE_MANUAL_CHECK_COUNT,
+  ENGINE_SCORED_CHECK_COUNT,
+} from '../../lib/check-definitions';
 import {
   designSystemContract } from '../../lib/design-system-contract';
 
@@ -46,7 +52,7 @@ export function GET() {
   const md = `---
 name: Designesy
 version: ${c.version}
-description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, ${ENGINE_CHECK_COUNT} automated checks.
+description: Organization-first design system contract. Deterministic verification, DTCG-aligned tokens, ${ENGINE_CHECK_COUNT} checks (${ENGINE_SCORED_CHECK_COUNT} automated).
 standards:
   - WCAG 2.1 AA
   - APCA
@@ -58,7 +64,7 @@ standards:
 
 ## Overview
 
-Organization-first design system with deterministic verification. The contract is the scoring basis: ${ENGINE_CHECK_COUNT} automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against 14 weighted categories. No LLM, no vibes.
+Organization-first design system with deterministic verification. The contract is the scoring basis: ${ENGINE_SCORED_CHECK_COUNT} automated checks extract live CSS, compare :root tokens, run WCAG/APCA contrast math, and score against ${Object.keys(CATEGORY_WEIGHTS).length} weighted categories; ${ENGINE_MANUAL_CHECK_COUNT} more are left to a person. No LLM, no vibes.
 
 ## Tokens
 

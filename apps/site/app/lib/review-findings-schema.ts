@@ -259,7 +259,7 @@ export const REVIEW_FINDINGS_SCHEMA = {
       properties: {
         id: {
           type: 'string',
-          description: 'Check identifier (designesy v01-v37, Lighthouse audit id, Google rule name).',
+          description: 'Check identifier (a designesy check id such as v01 or x01, a Lighthouse audit id, or a Google rule name).',
         },
         item: {
           type: 'string',

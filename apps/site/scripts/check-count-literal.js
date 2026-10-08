@@ -54,13 +54,13 @@ const SCAN_ROOTS = [path.join(APP, 'app'), path.join(APP, 'scripts')];
 /** Read the scored-check count (excludes MANUAL) from the registry. */
 function readScoredCheckCount() {
   const src = fs.readFileSync(REGISTRY, 'utf8');
-  const xIds = new Set(src.match(/\{ id: 'x\d+'/g) || []);
+  // Manual checks are the entries typed 'manual' (v02, v04, v21 today). An
+  // earlier version subtracted the x-prefixed ids instead, which are automated
+  // checks; it agreed only because both sets happened to hold three entries.
+  // This mirrors ENGINE_SCORED_CHECK_COUNT (CHECKS filtered to type 'auto').
+  const manual = (src.match(/type: 'manual'/g) || []).length;
   const total = readEngineCheckCount();
-  // The three x01-x03 checks are the MANUAL/browser-only additions on this
-  // registry. Deriving "total minus manual" here mirrors
-  // ENGINE_SCORED_CHECK_COUNT; if the manual set changes, the gate compares the
-  // wrong pair and fails loudly rather than passing quietly.
-  return total === null ? null : total - xIds.size;
+  return total === null ? null : total - manual;
 }
 
 function readEngineCheckCount() {
