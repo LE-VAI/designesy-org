@@ -22,6 +22,15 @@
  *   removed and no value was silently changed.
  */
 
+import {
+  CATEGORY_WEIGHTS,
+  CHECKS,
+  ENGINE_CHECK_COUNT,
+  ENGINE_MANUAL_CHECK_COUNT,
+  ENGINE_SCORED_CHECK_COUNT,
+  ENGINE_VERSION,
+} from './check-definitions';
+
 export const designSystemContract = {
   id: 'designesy.design-system',
   version: '0.4.2',
@@ -45,6 +54,7 @@ export const designSystemContract = {
     springs: 'Spring physics tokens via custom $type: spring',
     acoustic: 'Acoustic cue tokens via custom $type: sound (net-new vs W3C DTCG)',
     copywriting: 'UX copywriting principles from NN/g, Polaris, Carbon, Fluent, HIG, Krehel /better-writing (v0.4.0)',
+    verification_checks: 'every engine check by id, category, type, threshold, and weight, from the engine registry',
   },
   provenance: {
     implementation: 'designesy.org (Next.js App Router)',
@@ -1197,6 +1207,30 @@ export const designSystemContract = {
     'Link text is descriptive, never bare "click here", "learn more", "here" (copywriting v40)',
     'No ALL CAPS UI text except eyebrow labels (copywriting v41)',
   ],
+  // The checks the engine runs, enumerated from its own registry
+  // (lib/check-definitions), so this export and /api/score cannot disagree.
+  // `verification` above is the human checklist and names few checks by id;
+  // this is the machine list an agent or a CI gate can bind to.
+  verification_checks: {
+    count: ENGINE_CHECK_COUNT,
+    scored: ENGINE_SCORED_CHECK_COUNT,
+    manual: ENGINE_MANUAL_CHECK_COUNT,
+    engine_version: ENGINE_VERSION,
+    endpoint: 'https://www.designesy.org/api/score',
+    category_weights: CATEGORY_WEIGHTS,
+    checks: CHECKS.map(({ id, item, category, type, threshold, pass, fail, warn, ceiling, weight }) => ({
+      id,
+      item,
+      category,
+      type,
+      threshold,
+      pass,
+      fail,
+      warn,
+      ceiling,
+      weight,
+    })),
+  },
   open_tensions: [
     'Light theme is partly contracted: materials, field and instrument tokens carry light values, the color roles do not; the dark technical foundation is provisional',
     '--activation exists but has limited public surface usage',
