@@ -47,16 +47,28 @@ const CATEGORIES = (weights[1].match(/\b[a-z]+\s*:\s*\d+/g) || []).length;
 
 // The GitHub Action's metadata is what the Marketplace listing shows, so it is
 // held to the same facts as the READMEs.
+//
+// Two shipped texts joined the list on 2026-10-08, after both were found
+// stating a check count two below the engine's and no gate read either file:
+// action/dist/index.js writes the PR comment and job summary footer, and
+// app/export/designmd/route.ts is the DESIGN.md served at /DESIGN.md. Both now
+// derive the number, so these rules hold the line if a literal comes back.
 const FILES = [
   'README.md',
   path.join('packages', 'designesy-mcp', 'README.md'),
   'action.yml',
   path.join('action', 'action.yml'),
   path.join('action', 'README.md'),
+  path.join('action', 'dist', 'index.js'),
+  path.join('apps', 'site', 'app', 'export', 'designmd', 'route.ts'),
 ];
 
 const RULES = [
   { what: 'check count', expect: CHECKS, re: /\b(\d+)-check (?:design|contract|verification|deterministic|engine|audit|scoring)/gi },
+  // The Action's footer separates its fields with a middle dot ("N-check · format: google").
+  { what: 'check count', expect: CHECKS, re: /\b(\d+)-check ·/g },
+  // The DESIGN.md export's Verification list ("- **Checks:** N").
+  { what: 'check count', expect: CHECKS, re: /\*\*Checks:\*\*\s*(\d+)\b/g },
   // (?<!\+ ) skips sub-counts such as "16 UX copy principles + 4 verification checks".
   { what: 'check count', expect: CHECKS, re: /(?<!\+ )\b(\d+) (?:deterministic|verification) checks\b/gi },
   { what: 'check count', expect: CHECKS, re: /\b(\d+) checks across \d+ weighted categories/gi },

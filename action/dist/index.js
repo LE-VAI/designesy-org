@@ -98,6 +98,15 @@ function normalizeGrade(g) {
   return String(g || '').trim().toUpperCase().charAt(0);
 }
 
+// The engine's check count, as its own response reports it: `total` in the
+// designesy format, `summary.total` in canonical, one finding per check in
+// google. The comment footer once carried a typed count two below the engine's,
+// so the number now comes from the response. Returns '' when the
+// response carries no count, and the footer then omits the number.
+function checkCountLabel(n) {
+  return Number.isInteger(n) && n > 0 ? `${n}-check` : '';
+}
+
 // ── SARIF v2.1.0 builder ────────────────────────────────────────────────────
 // Converts designesy check results into a SARIF file that GitHub code-scanning
 // can ingest. Each check becomes a rule; each FAIL/WARN check becomes a result.
@@ -315,7 +324,10 @@ async function main() {
     const gErr = body.summary?.errors ?? 0;
     const gWarn = body.summary?.warnings ?? 0;
     const gInfo = body.summary?.infos ?? 0;
-    const googleMd = `## Designesy Contract Check\n\n| URL | Format | Errors / Warnings / Infos |\n|---|---|---|\n| ${url} | google | ${gErr} / ${gWarn} / ${gInfo} |\n\nℹ️ Google format carries no numeric score/grade — quality gate skipped.\n\n<sub>Engine: ${api} · 40-check · format: google</sub>`;
+    const gFooter = [`Engine: ${api}`, checkCountLabel(Array.isArray(body.findings) ? body.findings.length : 0), 'format: google']
+      .filter(Boolean)
+      .join(' · ');
+    const googleMd = `## Designesy Contract Check\n\n| URL | Format | Errors / Warnings / Infos |\n|---|---|---|\n| ${url} | google | ${gErr} / ${gWarn} / ${gInfo} |\n\nℹ️ Google format carries no numeric score/grade — quality gate skipped.\n\n<sub>${gFooter}</sub>`;
     appendSummary(googleMd);
     if (postComment) await postPrComment(googleMd, ghToken);
     console.log(`Google format result — errors ${gErr}, warnings ${gWarn}, infos ${gInfo}.`);
@@ -425,9 +437,13 @@ async function main() {
     md.push(`📋 **SARIF** — ${sarifResultCount} finding(s) written to \`${sarifOutput}\`. Upload with \`github/codeql-action/upload-sarif@v4\`.`);
     md.push(``);
   }
-  md.push(`<sub>Engine: ${api} · 40-check deterministic design-contract verification · format: ${format} · scope: ${scope} · full result in the \`result\` step output.</sub>`);
-  appendSummary(md.join('\n'));
-  if (postComment) await postPrComment(md, ghToken);
+  const countLabel = checkCountLabel(Number(total));
+  md.push(`<sub>Engine: ${api} · ${countLabel ? `${countLabel} ` : ''}deterministic design-contract verification · format: ${format} · scope: ${scope} · full result in the \`result\` step output.</sub>`);
+  // One string for both sinks. The PR comment was passed the array itself, and
+  // the issues-comments API takes `body` as a string.
+  const summaryMd = md.join('\n');
+  appendSummary(summaryMd);
+  if (postComment) await postPrComment(summaryMd, ghToken);
 
   console.log(`Score ${score} (${grade}) — pass ${pass}, warn ${warn}, fail ${failC}, skip ${skip}.`);
   if (breach) {

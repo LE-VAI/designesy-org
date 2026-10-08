@@ -1,8 +1,30 @@
-import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { CHECKS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import {
   designSystemContract } from '../../lib/design-system-contract';
 
 export const dynamic = 'force-static';
+
+// The registry's check ids as runs of consecutive numbers per prefix, e.g.
+// "v01 to v29, v34 to v43, x01 to x03". Read from CHECKS so the list follows
+// the registry: a typed range here once named v30 to v33, which do not exist,
+// and left out v42 and v43, which do.
+function checkIdRanges(ids: readonly string[]): string {
+  const parsed = ids
+    .map((id) => {
+      const m = /^([a-z]+)(\d+)$/i.exec(id);
+      return { id, prefix: m ? m[1] : id, n: m ? Number(m[2]) : Number.NaN };
+    })
+    .sort((a, b) => a.prefix.localeCompare(b.prefix) || a.n - b.n);
+  const runs: string[] = [];
+  let i = 0;
+  while (i < parsed.length) {
+    let j = i;
+    while (j + 1 < parsed.length && parsed[j + 1].prefix === parsed[i].prefix && parsed[j + 1].n === parsed[j].n + 1) j++;
+    runs.push(i === j ? parsed[i].id : `${parsed[i].id} to ${parsed[j].id}`);
+    i = j + 1;
+  }
+  return runs.join(', ');
+}
 
 // /export/designmd — Google Labs DESIGN.md format
 // YAML frontmatter + markdown sections. The 8 canonical sections (Overview,
@@ -82,7 +104,7 @@ ${colorRows}
 
 ## Verification
 
-- **Checks:** 40 (v01 to v41 + x01–x03)
+- **Checks:** ${ENGINE_CHECK_COUNT} (${checkIdRanges(CHECKS.map((check) => check.id))})
 - **Categories:** 14 weighted (cadence 18, accessibility 15, semantic 12, motion 10, copywriting 8, tokens 9, takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3, security 5, spec 4)
 - **A11y floor:** 60% (accessibility category below 60% caps overall score at C/70)
 - **Standards:** WCAG 2.1 AA + APCA supplementary + DTCG 2025.10 + EU AI Act Art 50
