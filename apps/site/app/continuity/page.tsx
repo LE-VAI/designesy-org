@@ -59,15 +59,15 @@ const LADDER: {
   {
     name: 'Open',
     title: 'Free forever',
-    body: `${ENGINE_CHECK_COUNT}-check score, drift radar, AI readiness, DTCG validation. No credit card. 5 local score history.`,
+    body: `${ENGINE_CHECK_COUNT}-check score, drift radar, AI readiness, DTCG validation, CI gate. No credit card. 5 local score history.`,
     status: 'Live',
     state: 'pass',
     action: { label: 'Start scoring', href: '/score' },
   },
   {
     name: 'Continuity',
-    title: '$29 / site / month',
-    body: 'Scheduled scans (daily/weekly), email drift alerts, 30-day score history + trend charts, baseline snapshots, multi-site dashboard (5 sites included).',
+    title: '$29 / month',
+    body: 'Scheduled scans (daily/weekly), email drift alerts, 30-day score history + trend charts, baseline snapshots, multi-site dashboard (5 sites).',
     status: 'Early access',
     state: 'hold',
     action: { label: 'Join the waitlist', href: '#waitlist-title' },
@@ -75,7 +75,7 @@ const LADDER: {
   {
     name: 'Enterprise',
     title: 'Custom',
-    body: 'API access, CI/CD gates, custom contract scoring, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
+    body: 'Private contract instance, private and staging URLs scored on your infrastructure, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
     status: 'By conversation',
     state: 'hold',
     action: { label: 'Contact us', href: 'mailto:hello@designesy.org' },
@@ -102,7 +102,7 @@ export default function ContinuityPage() {
           <p className="surface-note">
             Open core stays free: {ENGINE_CHECK_COUNT}-check scoring, drift radar, AI readiness,
             DTCG validation. Continuity is the layer that remembers: scheduled
-            scans, drift alerts, and score history at $29/site/month.
+            scans, drift alerts, and score history at $29 a month for 5 sites.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Waitlist</span>

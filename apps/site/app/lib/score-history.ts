@@ -8,7 +8,7 @@
 // long tail of duplicates). 90-day retention — entries older than that
 // are pruned on read.
 //
-// The Continuity tier ($29/site/month) replaces this with server-side
+// The Continuity tier ($29 a month for 5 sites) replaces this with server-side
 // 30-day history + drift alerts. The free tier seeds that promise: a
 // returning user sees their last 5 scores, and the upgrade prompt surfaces
 // "scheduled scans + drift alerts" — see the pricing page.
