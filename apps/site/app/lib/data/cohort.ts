@@ -9,12 +9,14 @@
 // from one batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both
 // says both.
 
-import { SEED, LEADERBOARD_LAST_SCORED, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
+import { SEED, LEADERBOARD_LAST_SCORED, LEADERBOARD_ENGINE_VERSION, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES, BATCH_RUN_DATE } from '../../leaderboard/batch-data';
 import { CATEGORY_WEIGHTS } from '../check-definitions';
 
 export { BATCH_RUN_DATE };
 export const SCORES_DATE = LEADERBOARD_LAST_SCORED;
+/** The engine version that produced the scores dated SCORES_DATE (not the repo's current engine). */
+export const SCORES_ENGINE_VERSION = LEADERBOARD_ENGINE_VERSION;
 export const SELF_URL = 'https://www.designesy.org';
 
 export type CohortSite = {

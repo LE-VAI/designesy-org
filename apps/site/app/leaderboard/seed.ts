@@ -136,6 +136,12 @@ export const SEED: SeedSite[] = [
 
 export const LEADERBOARD_LAST_SCORED = '2026-10-08';
 
+// The engine version that produced these scores, read from the engine's own
+// receipt by scripts/rescore-leaderboard.mjs. The pages used to print the
+// repo's ENGINE_VERSION beside these numbers, so an engine bump labelled
+// scores the previous engine made with the new version until the next run.
+export const LEADERBOARD_ENGINE_VERSION = '1.0.0';
+
 export const LEADERBOARD_POLICY =
   'Curated seed (30 sites) + open submission. Scores are deterministic: 42 checks, no LLM. Sites scoring below 50 stay listed, flagged "needs work". No paywall, no pay-to-remove.';
 

@@ -201,6 +201,9 @@ async function fetchScore(url) {
     // The engine's own check count, so the seed header describes the engine that
     // actually ran rather than a number pinned in this script.
     totalChecks: data.total ?? null,
+    // The engine version from the engine's receipt, so the pages can name the
+    // engine that produced these scores rather than the repo's current one.
+    engineVersion: data.receipt?.engine_version ?? null,
   };
 }
 
@@ -217,7 +220,7 @@ async function fetchScore(url) {
 // date, LEADERBOARD_LAST_SCORED, and the count in LEADERBOARD_POLICY.
 // Unknown present or FUTURE fields pass through untouched, so schema
 // additions no longer break the weekly re-score.
-function generateSeedTS(src, entries, lastScored, contractVersion, totalChecks) {
+function generateSeedTS(src, entries, lastScored, contractVersion, totalChecks, engineVersion) {
   let out = src;
 
   // 1. Header comment: "All N sites re-scored DATE with the N-check engine
@@ -257,6 +260,16 @@ function generateSeedTS(src, entries, lastScored, contractVersion, totalChecks) 
       throw new Error('generateSeedTS: LEADERBOARD_VERSION declaration not found in seed.ts');
     }
     out = out.replace(verRe, `$1${bare}$2`);
+  }
+
+  // 1c. LEADERBOARD_ENGINE_VERSION: the engine that produced these scores,
+  //     from its own receipt. Kept as-is when no reply carried one.
+  if (engineVersion) {
+    const engRe = /(export const LEADERBOARD_ENGINE_VERSION = ')[^']+(';)/;
+    if (!engRe.test(out)) {
+      throw new Error('generateSeedTS: LEADERBOARD_ENGINE_VERSION declaration not found in seed.ts');
+    }
+    out = out.replace(engRe, `$1${engineVersion}$2`);
   }
 
   // 2. Each entry: rewrite the fields we own inside its object literal.
@@ -393,6 +406,7 @@ async function main() {
   // that actually produced these numbers rather than being hand-maintained.
   let runContractVersion = null;
   let runTotalChecks = null;
+  let runEngineVersion = null;
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
@@ -439,6 +453,9 @@ async function main() {
       if (runContractVersion === null && result.contractVersion) {
         runContractVersion = result.contractVersion;
       }
+      if (runEngineVersion === null && result.engineVersion) {
+        runEngineVersion = result.engineVersion;
+      }
       if (runTotalChecks === null && result.totalChecks) {
         runTotalChecks = result.totalChecks;
       }
@@ -483,8 +500,8 @@ async function main() {
 
   // Write the updated seed.ts
   console.log(`Writing updated seed.ts (last scored ${lastScored})...`);
-  console.log(`  engine reported: contract ${runContractVersion ?? 'unknown'}, ${runTotalChecks ?? '?'} checks`);
-  const newSeedTS = generateSeedTS(src, entries, lastScored, runContractVersion, runTotalChecks);
+  console.log(`  engine reported: engine ${runEngineVersion ?? 'unknown'}, contract ${runContractVersion ?? 'unknown'}, ${runTotalChecks ?? '?'} checks`);
+  const newSeedTS = generateSeedTS(src, entries, lastScored, runContractVersion, runTotalChecks, runEngineVersion);
   writeFileSync(SEED_PATH, newSeedTS, 'utf-8');
 
   // Write this week's snapshot (for next week's delta)

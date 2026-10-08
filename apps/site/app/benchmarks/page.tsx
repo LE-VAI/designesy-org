@@ -14,10 +14,10 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { AgentActions } from '../lib/agent-actions';
-import { CATEGORY_WEIGHTS, CHECKS as REGISTRY, ENGINE_MANUAL_CHECK_COUNT, ENGINE_VERSION } from '../lib/check-definitions';
+import { CATEGORY_WEIGHTS, CHECKS as REGISTRY, ENGINE_MANUAL_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import { display } from '../lib/engine/types';
-import { byUrl, SELF_URL, SCORES_DATE, fmt, toneOf } from '../lib/data/cohort';
+import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt, toneOf } from '../lib/data/cohort';
 import { DataTable } from '../lib/data/figure';
 import { unbroken } from '../lib/data/unbroken';
 
@@ -118,7 +118,7 @@ const COMPARE = [2, 4, 3, 3];
 const DESCRIBE = [2, 4, 6];
 
 const SOURCES = [
-  { what: 'designesy score', where: `the weekly leaderboard run of ${SCORES_DATE}, engine ${ENGINE_VERSION}` },
+  { what: 'designesy score', where: `the weekly leaderboard run of ${SCORES_DATE}, engine ${SCORES_ENGINE_VERSION}` },
   { what: 'hallmark, 57 gates', where: 'github.com/Nutlope/hallmark, skills/hallmark/references/slop-test.md' },
   { what: 'slop-eval, 108 tells', where: 'github.com/fabricioctelles/skills, skills/slop-eval/references/tells.md' },
   { what: 'slop-eval scoring', where: 'github.com/fabricioctelles/skills, skills/slop-eval/SKILL.md' },
