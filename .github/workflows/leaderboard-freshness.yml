@@ -1,0 +1,65 @@
+name: Leaderboard freshness
+
+# Is the public leaderboard's data recent?
+#
+# From 2026-09-28 to 2026-10-08 the leaderboard served the same data while
+# nothing anywhere turned red: the weekly re-score opened its PR, the PR's CI
+# waited on an approval no one gave, and the run still reported success
+# (rescore-leaderboard.yml, v3 header). A check inside that workflow can only
+# report on runs that happen. This one reads what a visitor sees --
+# /api/leaderboard's lastScored -- every day, so a missed week turns red
+# whatever the cause: a failed re-score, an unmerged PR, or a deploy that never
+# reached the domain.
+#
+# The re-score runs Mondays 10:00 UTC and stamps lastScored on every run, so
+# the data is at most 7 days old when everything works. 8 days leaves room for
+# a Monday run that lands late; a missed Monday fails here by Wednesday.
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # daily 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Compare the leaderboard's lastScored with today
+        env:
+          DOMAIN: https://www.designesy.org
+          MAX_AGE_DAYS: 8
+        run: |
+          set -euo pipefail
+
+          LAST=$(curl -fsS --max-time 30 "$DOMAIN/api/leaderboard" | jq -r '.lastScored // empty')
+          if [ -z "$LAST" ]; then
+            echo "::error::$DOMAIN/api/leaderboard reported no lastScored; freshness cannot be verified."
+            exit 1
+          fi
+          AGE=$(( ( $(date -u +%s) - $(date -u -d "$LAST" +%s) ) / 86400 ))
+
+          {
+            echo "## Leaderboard freshness"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| \`lastScored\` on $DOMAIN | \`$LAST\` |"
+            echo "| age | $AGE day(s); the limit is $MAX_AGE_DAYS |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$AGE" -gt "$MAX_AGE_DAYS" ]; then
+            {
+              echo ""
+              echo "**STALE LEADERBOARD.** Open the latest Rescore Leaderboard run: a red"
+              echo "run names the failed check or the stale branch; an open"
+              echo "\`leaderboard/weekly-*\` PR needs merging; a merged one with old data"
+              echo "here means the deploy did not reach the domain."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Leaderboard data is $AGE days old (lastScored $LAST, limit $MAX_AGE_DAYS)."
+            exit 1
+          fi
+          echo "Leaderboard fresh: lastScored $LAST, $AGE day(s) old."

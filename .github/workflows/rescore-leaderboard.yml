@@ -13,6 +13,18 @@ name: Rescore Leaderboard
 # a row. v2 fixes by committing to a throwaway branch and opening a PR;
 # the existing required-checks gate then auto-lands the data refresh.
 #
+# v3 (2026-10-08): v2 never landed a single refresh. Since GitHub's
+# 2026-06-11 change, CI on a PR opened by github-actions[bot] waits for a
+# write-access user to approve it, and the run expires unapproved. The wait
+# step also read BRANCH from `env:`, where `$(date ...)` is never expanded, so
+# it polled a branch that does not exist, timed out, and exited 0: every week
+# read "success" while the PR sat stranded and the leaderboard went stale.
+# v3 starts CI itself with workflow_dispatch (which always runs, and whose
+# checks land on the PR's head commit), merges only when branch protection
+# reports CLEAN, and fails the run on a failed check, a stale branch or a
+# timeout. leaderboard-freshness.yml independently alarms if the public data
+# is more than 8 days old, whatever the cause.
+#
 # The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
 # scores as a JSON response — it can't write to the repo. This workflow IS
 # the write path. It runs the re-score, generates the updated TypeScript,
@@ -30,15 +42,15 @@ on:
 permissions:
   contents: write            # needed to push the leaderboard branch
   pull-requests: write       # needed to open the auto-PR
-  actions: read             # needed to wait for required-checks before auto-merge
+  actions: write            # needed to start CI on the PR branch (workflow_dispatch)
 
 jobs:
   rescore:
     runs-on: ubuntu-latest
-    # Re-scoring 30 sites against the live engine takes ~7 min and the
-    # auto-merge wait loop can run another 10 — 15 min timed out mid-wait
-    # on the first 42-check run (2026-08-31), stranding an auto-mergeable PR.
-    timeout-minutes: 25
+    # Re-scoring 30 sites against the live engine takes ~7 min, and the wait
+    # for CI allows 20 more -- 15 min timed out mid-wait on the first 42-check
+    # run (2026-08-31), stranding an auto-mergeable PR.
+    timeout-minutes: 35
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -85,6 +97,9 @@ jobs:
           /api/score engine. Delta badges computed from the previous week's
           snapshot. Triggered by .github/workflows/rescore-leaderboard.yml."
           git push -u origin "${BRANCH}"
+          # Later steps read the branch from here. A value under `env:` is a
+          # literal: `$(date ...)` there is never run.
+          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
           # Labels must exist before gh pr create can attach them — the
           # 2026-08-30 run failed with "could not add label: 'leaderboard'
@@ -107,29 +122,47 @@ jobs:
             --label "leaderboard,automated" \
             --assignee LE-VAI
 
-      - name: Wait for required checks + auto-merge
+      - name: Start CI on the PR branch
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: leaderboard/weekly-$(date -u +%Y-%m-%d)
         run: |
-          # Poll the PR's status checks until they complete (success or failure).
-          for i in $(seq 1 30); do
-            STATE=$(gh pr view "${BRANCH}" --json mergeStateStatus --jq '.mergeStateStatus' 2>/dev/null || echo "PENDING")
-            echo "Attempt $i: PR state = ${STATE}"
+          # The pull_request run GitHub opened for this PR waits for an approval
+          # no one gives. A workflow_dispatch started with GITHUB_TOKEN always
+          # runs, and its check runs land on the same head commit, which is what
+          # branch protection reads. Chosen by the repo owner, 2026-10-08.
+          gh workflow run ci.yml --ref "${BRANCH}"
+
+      - name: Wait for required checks, then merge
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Every way this can end without a merge fails the run, so a stranded
+          # PR shows red. The old loop exited 0 on all of them.
+          for i in $(seq 1 40); do
+            sleep 30
+            STATE=$(gh pr view "${BRANCH}" --json mergeStateStatus --jq '.mergeStateStatus') || STATE=UNKNOWN
+            FAILED=$(gh pr checks "${BRANCH}" --required --json bucket               --jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' 2>/dev/null) || true
+            FAILED=${FAILED:-0}
+            echo "Attempt $i: merge state ${STATE}, ${FAILED} required check(s) failed"
+            if [ "${FAILED}" != "0" ]; then
+              echo "::error::A required check failed on ${BRANCH}; the PR is left open for review."
+              exit 1
+            fi
             case "${STATE}" in
-              CLEAN)
-                echo "Required checks passed — auto-merging."
-                gh pr merge "${BRANCH}" --auto --squash --delete-branch
+              CLEAN|HAS_HOOKS|UNSTABLE)
+                # Branch protection is satisfied; gh refuses the merge otherwise.
+                gh pr merge "${BRANCH}" --squash --delete-branch
+                echo "Merged ${BRANCH}."
                 exit 0
                 ;;
-              BLOCKED|UNSTABLE|BEHIND)
-                echo "Required checks failed or branch behind — leaving for operator review."
-                exit 0
-                ;;
-              *)
-                sleep 30
+              BEHIND|DIRTY)
+                echo "::error::${BRANCH} is ${STATE} against main. Re-run this workflow to re-score from the current main."
+                exit 1
                 ;;
             esac
           done
-          echo "Timed out waiting for required checks (10 min) — leaving PR open for operator."
+          echo "::error::Required checks did not finish within 20 minutes; ${BRANCH} is left open."
+          exit 1

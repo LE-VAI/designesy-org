@@ -118,7 +118,7 @@ const handler = createMcpHandler(
       {
         description: 'Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; cached ~24h server-side. Returns the full contract JSON, or a single section when "section" is provided. Pass section to get one slice (e.g. "motion" for just the motion tokens) instead of the full contract, which saves tokens when you only need one dimension.',
         inputSchema: z.object({
-          section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction).'),
+          section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, verification_checks, open_tensions, components, interaction).'),
         }),
       },
       async ({ section }) => {
