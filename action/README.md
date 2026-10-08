@@ -1,6 +1,6 @@
 # Designesy Contract Check (GitHub Action)
 
-Score a URL against the **Designesy design-system contract** — 40 deterministic checks covering tokens, motion, accessibility, cadence, takt, typography, and copywriting — and fail your workflow when the score or grade drops below your threshold. A design-contract quality gate for CI, exactly like a test threshold but for design compliance.
+Score a URL against the **Designesy design-system contract** — 42 deterministic checks covering tokens, motion, accessibility, cadence, takt, typography, and copywriting — and fail your workflow when the score or grade drops below your threshold. A design-contract quality gate for CI, exactly like a test threshold but for design compliance.
 
 Supports **4 emission formats** so the result integrates with any downstream tool: `designesy` (default native shape), `canonical` (the [review-findings.json schema](https://www.designesy.org/specs/review-findings.json) — the standard for design verification findings), `review` (jakubkrehel better-interface markdown), and `google` (`@google/design.md`-compatible `{findings, summary, designSystem}`).
 
