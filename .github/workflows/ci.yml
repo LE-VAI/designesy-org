@@ -507,11 +507,24 @@ jobs:
           cat /tmp/next.log
           exit 1
 
+      # Normally ~80 s. On 2026-10-08 it hung with no output until the job's
+      # 20-minute timeout, cancelling every gate after it, while the identical
+      # tree had passed minutes earlier. Each attempt is bounded at 240 s and a
+      # timeout gets one retry; a real failure is never retried, and a hang
+      # that repeats still fails. The step shell runs `bash -e`, so the exit
+      # code is captured with `|| rc=$?` rather than read after the pipeline.
       - name: Edge contract
         shell: bash
         run: |
           set -o pipefail
-          node scripts/edge-contract.js --base http://127.0.0.1:3422 --json | tee /tmp/edge.json
+          for attempt in 1 2; do
+            rc=0
+            timeout --kill-after=10s 240s node scripts/edge-contract.js --base http://127.0.0.1:3422 --json | tee /tmp/edge.json || rc=$?
+            if [ "$rc" -ne 124 ] && [ "$rc" -ne 137 ]; then exit "$rc"; fi
+            echo "::warning::Edge contract attempt $attempt timed out after 240 s"
+          done
+          echo "::error::Edge contract timed out on both attempts"
+          exit 1
 
       - name: Glass blur
         # playwright-core does not download browsers, so this must use a system
