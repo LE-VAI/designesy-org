@@ -1,7 +1,7 @@
 # Designesy Score — PR preview deployment scoring.
 #
 # When Vercel finishes building a preview deployment for a PR, this workflow
-# runs the 40-check Designesy design-contract engine against the preview URL
+# runs the Designesy design-contract engine against the preview URL
 # and posts a sticky comment on the PR with the score, grade, and any failing
 # checks.
 #

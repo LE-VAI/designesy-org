@@ -1,6 +1,6 @@
 name: "Designesy Contract Check"
 description: >-
-  Score any URL against a 40-check design contract; fail CI on regression.
+  Score any URL against a 42-check design contract; fail CI on regression.
   SARIF + baseline ratchet supported.
 author: "designesy"
 branding:

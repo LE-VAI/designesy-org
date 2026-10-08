@@ -45,7 +45,15 @@ const VERSION = versionMatch[1];
 const CHECKS = checkIds.length;
 const CATEGORIES = (weights[1].match(/\b[a-z]+\s*:\s*\d+/g) || []).length;
 
-const FILES = ['README.md', path.join('packages', 'designesy-mcp', 'README.md')];
+// The GitHub Action's metadata is what the Marketplace listing shows, so it is
+// held to the same facts as the READMEs.
+const FILES = [
+  'README.md',
+  path.join('packages', 'designesy-mcp', 'README.md'),
+  'action.yml',
+  path.join('action', 'action.yml'),
+  path.join('action', 'README.md'),
+];
 
 const RULES = [
   { what: 'check count', expect: CHECKS, re: /\b(\d+)-check (?:design|contract|verification|deterministic|engine|audit|scoring)/gi },
