@@ -20,6 +20,11 @@
  *   and the accessibility tokens the WCAG 2.2 AA pass introduced. It adds
  *   public tokens and rewords the reduced-motion tiering; no check was
  *   removed and no value was silently changed.
+ * v0.4.3 is the text-contrast pass (2026-10-09): every status, grade and
+ *   activation hue gains a text token, --<hue>-ink, that meets 4.5:1 on every
+ *   surface in both themes, and the light --muted-dim tier darkens to clear
+ *   the raised and lifted planes. Hues stay for marks and tints; no check,
+ *   weight or verdict changed.
  */
 
 import {
@@ -33,7 +38,7 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.2',
+  version: '0.4.3',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
@@ -1380,6 +1385,16 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/contracts/a11y.json',
+        'https://www.designesy.org/changelog',
+      ],
+    },
+    {
+      version: '0.4.3',
+      date: '2026-10-09',
+      summary:
+        'Text-contrast pass. A rendered sweep of every public page in both themes found 230 text elements under WCAG AA in the light theme and 11 in the dark, nearly all a colour meant for marks used as text. Every status, grade and activation hue now has a text token, --<hue>-ink: equal to the hue in the dark theme and mixed toward --ink in oklab in the light theme (--warn-ink, --ok-ink, --error-ink, --grade-a-ink to --grade-f-ink, --activation-ink), each at least 4.5:1 on paper, surface, raised and lifted. Light --muted-dim moves from #70707a to #686872. Hues stay for dots, bars, borders and tints. No check, weight or verdict changed.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/changelog',
       ],
     },
