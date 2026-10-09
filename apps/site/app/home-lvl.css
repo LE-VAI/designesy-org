@@ -724,7 +724,7 @@
 }
 
 .vc-log-line.is-pass .vc-log-status { color: var(--lv-ink-accent); }
-.vc-log-line.is-warn .vc-log-status { color: var(--warn); }
+.vc-log-line.is-warn .vc-log-status { color: var(--warn-ink); }
 .vc-log-line.is-fail .vc-log-status { color: var(--error); }
 .vc-log-line.is-manual .vc-log-status,
 .vc-log-line.is-ran .vc-log-status { color: var(--muted); }

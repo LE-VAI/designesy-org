@@ -303,6 +303,8 @@ function EngineTile({
       : score >= 70
         ? 'var(--warn)'
         : 'var(--error)';
+  // The grade letter is text: warn text uses --warn-ink (globals.css).
+  const ink = fill === 'var(--warn)' ? 'var(--warn-ink)' : fill;
   const pass = result?.pass || 0;
   const warn = result?.warn || 0;
   const fail = result?.fail || 0;
@@ -323,7 +325,7 @@ function EngineTile({
       </span>
       {ok ? (
         <>
-          <span className="score-engine-tile-grade" style={{ color: fill }}>
+          <span className="score-engine-tile-grade" style={{ color: ink }}>
             {grade}<span className="score-engine-tile-score"> · {score}</span>
           </span>
           <span className="score-engine-tile-pwf">

@@ -84,7 +84,7 @@ const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP
 const GRADE_COLOR: Record<string, string> = {
   A: 'var(--ok)',
   B: 'var(--signal-light)',
-  C: 'var(--warn)',
+  C: 'var(--warn-ink)',
   D: 'var(--grade-d)',
   F: 'var(--error)',
 };
@@ -313,7 +313,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       cat.score >= 90
                         ? 'var(--ok)'
                         : cat.score >= 70
-                          ? 'var(--warn)'
+                          ? 'var(--warn-ink)'
                           : 'var(--error)',
                   }}
                 >

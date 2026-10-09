@@ -366,7 +366,7 @@ const CHANGE_COLORS: Record<string, string> = {
   modified: 'var(--signal-text)',
   removed: 'var(--error)',
   adopted: 'var(--signal-text)',
-  deprecated: 'var(--warn)',
+  deprecated: 'var(--warn-ink)',
 };
 
 // ── Component ───────────────────────────────────────────────────────────────

@@ -207,6 +207,12 @@ jobs:
         if: always()
         run: node scripts/check-jsx-glue.js
 
+      # Text in the warn hue uses --warn-ink: the bare light-theme --warn is
+      # 3.51:1 on --paper, under 4.5:1 for text.
+      - name: Warn ink contrast
+        if: always()
+        run: node scripts/check-warn-ink.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js

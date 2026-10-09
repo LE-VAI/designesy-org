@@ -2744,7 +2744,7 @@ button.mt-row {
 }
 
 .eg-row[data-status="FAIL"] .eg-row-status { color: var(--error); }
-.eg-row[data-status="WARN"] .eg-row-status { color: var(--warn); }
+.eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
 .eg-row[data-status="PASS"] .eg-row-status { color: var(--lv-ink-accent); }
 
 .eg-chev {
