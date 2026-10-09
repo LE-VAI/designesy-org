@@ -72,8 +72,12 @@ describe('valid-tokens.json', () => {
     assert.equal(getCheck(result, 't10').status, 'PASS');
   });
 
-  it('t11: all $type names valid → PASS', () => {
-    assert.equal(getCheck(result, 't11').status, 'PASS');
+  it('t11: uses the string and boolean extensions → WARN naming both paths', () => {
+    const t11 = getCheck(result, 't11');
+    assert.equal(t11.status, 'WARN');
+    assert.match(t11.detail, /^2 token\(s\) use a common extension type outside DTCG 2025\.10/);
+    assert.match(t11.detail, /string\.fontStack: "string"/);
+    assert.match(t11.detail, /boolean\.darkMode: "boolean"/);
   });
 
   it('t12: no names starting with $ → PASS', () => {
@@ -180,6 +184,149 @@ describe('invalid-tokens.json', () => {
 
   it('t20: invalid $deprecated → FAIL', () => {
     assert.equal(getCheck(result, 't20').status, 'FAIL');
+  });
+});
+
+// ── $type: 13 DTCG types plus 2 extensions ─────────────────────────────
+//
+// The BASELINE values below were measured by running these fixtures through
+// the build before this change (origin/main 24a79e0e, where t11 listed string
+// and boolean as spec types). They are pinned here so the claim "a file that
+// uses only the 13 DTCG types scores exactly as before" is checked on every run.
+
+const DTCG_2025_10_TYPES = [
+  'color', 'dimension', 'fontFamily', 'fontWeight', 'duration', 'cubicBezier', 'number',
+  'strokeStyle', 'border', 'transition', 'shadow', 'gradient', 'typography',
+];
+
+function loadFixture(name) {
+  return JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf-8'));
+}
+
+function typesIn(node, out = new Set()) {
+  if (node && typeof node === 'object' && !Array.isArray(node)) {
+    if (typeof node.$type === 'string') out.add(node.$type);
+    for (const [key, child] of Object.entries(node)) {
+      if (!key.startsWith('$')) typesIn(child, out);
+    }
+  }
+  return out;
+}
+
+const standardOnlyJson = loadFixture('standard-only-tokens.json');
+const stringExtensionJson = loadFixture('string-extension-tokens.json');
+const unknownTypeJson = loadFixture('unknown-type-tokens.json');
+
+describe('standard-only-tokens.json (13 DTCG types, no extensions)', () => {
+  const result = validateTokens(standardOnlyJson, 'standard-only-tokens.json');
+
+  it('fixture uses all 13 DTCG 2025.10 types and nothing else', () => {
+    assert.deepEqual([...typesIn(standardOnlyJson)].sort(), [...DTCG_2025_10_TYPES].sort());
+  });
+
+  it('scores exactly as before the change (baseline: 100, A, 20 pass, 0 warn, 0 fail)', () => {
+    assert.deepEqual(
+      { score: result.score, grade: result.grade, valid: result.valid, pass: result.pass, warn: result.warn, fail: result.fail, total: result.total },
+      { score: 100, grade: 'A', valid: true, pass: 20, warn: 0, fail: 0, total: 20 },
+    );
+  });
+
+  it('every check keeps its baseline status (all PASS)', () => {
+    assert.deepEqual(result.checks.map((c) => `${c.id}:${c.status}`), result.checks.map((c) => `${c.id}:PASS`));
+  });
+
+  it('t11: item names 13 DTCG types plus 2 extensions', () => {
+    assert.equal(getCheck(result, 't11').item, '$type is one of 13 DTCG types plus 2 extensions (string, boolean)');
+  });
+});
+
+describe('string-extension-tokens.json (standard-only plus 1 string token)', () => {
+  const result = validateTokens(stringExtensionJson, 'string-extension-tokens.json');
+  const standard = validateTokens(standardOnlyJson, 'standard-only-tokens.json');
+
+  it('fixture adds exactly 1 string token to the standard-only fixture', () => {
+    assert.equal(result.tokensCount, standard.tokensCount + 1);
+    assert.deepEqual([...typesIn(stringExtensionJson)].sort(), [...DTCG_2025_10_TYPES, 'string'].sort());
+  });
+
+  it('produces exactly 1 WARN, and it is the t11 extension finding', () => {
+    const warns = result.checks.filter((c) => c.status === 'WARN');
+    assert.equal(result.warn, 1);
+    assert.deepEqual(warns.map((c) => c.id), ['t11']);
+  });
+
+  it('t11 WARN detail names the token path and says the type is outside DTCG 2025.10', () => {
+    assert.equal(
+      getCheck(result, 't11').detail,
+      '1 token(s) use a common extension type outside DTCG 2025.10, accepted with a warning: label.productName: "string"',
+    );
+  });
+
+  it('still passes $type validation: no FAIL, valid, t05 and t14 PASS', () => {
+    assert.equal(result.fail, 0);
+    assert.equal(result.valid, true);
+    assert.equal(getCheck(result, 't05').status, 'PASS');
+    assert.equal(getCheck(result, 't14').status, 'PASS');
+  });
+
+  it('t11 is the only check whose status differs from the standard-only file', () => {
+    const changed = result.checks
+      .filter((c, i) => c.status !== standard.checks[i].status)
+      .map((c) => `${c.id}:${standard.checks.find((s) => s.id === c.id).status}->${c.status}`);
+    assert.deepEqual(changed, ['t11:PASS->WARN']);
+  });
+
+  it('scores 98 (19.5 of 20 points, rounded); the baseline before the change was 100', () => {
+    assert.equal(result.score, 98);
+    assert.equal(result.grade, 'A');
+  });
+});
+
+describe('unknown-type-tokens.json (standard-only plus 1 radius token)', () => {
+  const result = validateTokens(unknownTypeJson, 'unknown-type-tokens.json');
+
+  it('t11 still FAILs with the same detail as before the change', () => {
+    const t11 = getCheck(result, 't11');
+    assert.equal(t11.status, 'FAIL');
+    assert.equal(t11.detail, '1 token(s) with invalid $type: shape.corner: "radius"');
+  });
+
+  it('scores exactly as before the change (baseline: 90, A, 18 pass, 0 warn, 2 fail: t05, t11)', () => {
+    assert.deepEqual(
+      { score: result.score, grade: result.grade, valid: result.valid, pass: result.pass, warn: result.warn, fail: result.fail },
+      { score: 90, grade: 'A', valid: false, pass: 18, warn: 0, fail: 2 },
+    );
+    assert.deepEqual(result.checks.filter((c) => c.status === 'FAIL').map((c) => c.id), ['t05', 't11']);
+  });
+});
+
+describe('t11 extension reporting', () => {
+  it('a boolean token → WARN naming its path', () => {
+    const result = validateTokens({
+      $schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
+      flags: { $type: 'boolean', beta: { $value: true, $description: 'Beta flag' } },
+    });
+    const t11 = getCheck(result, 't11');
+    assert.equal(t11.status, 'WARN');
+    assert.match(t11.detail, /flags\.beta: "boolean"/);
+    assert.equal(getCheck(result, 't05').status, 'PASS');
+  });
+
+  it('counts every extension use and names the first 5 paths', () => {
+    const labels = { $type: 'string' };
+    for (let i = 1; i <= 7; i++) labels[`l${i}`] = { $value: `v${i}`, $description: 'd' };
+    const t11 = getCheck(validateTokens({ labels }), 't11');
+    assert.equal(t11.status, 'WARN');
+    assert.match(t11.detail, /^7 token\(s\) use a common extension type/);
+    assert.match(t11.detail, /labels\.l5: "string"…$/);
+    assert.doesNotMatch(t11.detail, /labels\.l6/);
+  });
+
+  it('an invalid type still FAILs when extension types are also present, and the detail reports both', () => {
+    const t11 = getCheck(validateTokens(invalidJson), 't11');
+    assert.equal(t11.status, 'FAIL');
+    assert.match(t11.detail, /^1 token\(s\) with invalid \$type: invalidType: "colour"; /);
+    assert.match(t11.detail, /use a common extension type outside DTCG 2025\.10/);
   });
 });
 
