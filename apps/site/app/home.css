@@ -1523,6 +1523,9 @@ button.pillar {
        column (.home-hero-copy, home-lvl.css) grows by the same ratio
        (0.034/73.6 = 0.4287/928), so every rotator line breaks exactly where it
        breaks at 1440: three lines at 1280, 1440, 1920 and 2560, measured. */
-    font-size: clamp(2.6rem, 1rem + 4.5vw, clamp(4.6rem, 4.6rem + (100vw - 1440px) * 0.034, 6.15rem));
+    font-size: min(
+      clamp(2.6rem, 1rem + 4.5vw, clamp(4.6rem, 4.6rem + (100vw - 1440px) * 0.034, 6.15rem)),
+      7cqi
+    );
   }
 }
