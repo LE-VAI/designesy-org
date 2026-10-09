@@ -114,8 +114,19 @@ jobs:
 
       - name: Confirm publication
         if: startsWith(github.ref, 'refs/tags/')
+        # The registry can take a few minutes to serve a new version (npm took
+        # about 3 on 2026-10-08). Poll for up to 10 minutes; a version that never
+        # appears fails the run. This step used to print a note and pass on a
+        # 404, so a failed publish read green.
         run: |
-          sleep 5
           VERSION=${{ steps.pkg.outputs.version }}
           NAME=${{ steps.pkg.outputs.name }}
-          npm view "$NAME@$VERSION" version || echo "Version may take a few minutes to appear"
+          for i in $(seq 1 30); do
+            if [ "$(npm view "$NAME@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
+              echo "npm serves $NAME@$VERSION (check $i)"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::$NAME@$VERSION did not appear on npm within 10 minutes"
+          exit 1
