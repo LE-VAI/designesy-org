@@ -1232,6 +1232,34 @@ html[data-motion="paused"] *::after {
   animation-play-state: paused !important;
 }
 
+/* One-shot entrances end; they are not held. An entrance that starts at
+   opacity 0, held on its first frame, hides what it brings in, and the pause
+   restores before first paint: every page built on .fade-up rendered empty
+   for a visitor who had paused motion. These jump to their last frame, which
+   is what a visitor with motion sees once they finish. Loops stay held.
+   scripts/check-paused-entrances.js makes every entrance that starts at
+   opacity 0 declare how it pauses, and scripts/check-motion-pause.js compares
+   routes with motion on and paused. */
+html[data-motion="paused"] :is(
+  .fade-up,
+  .score-card-item,
+  .score-card-drawer,
+  .audit-progress-panel,
+  .audit-progress-step,
+  .score-verify-log-step,
+  .row-check,
+  .check-cell-check,
+  .constel-node,
+  .demo-stagger-bar,
+  .orb-canvas-wrap,
+  .eg-inst-target > [data-host],
+  .eg-inst-state > span,
+  .ix-foot,
+  .hero-seam-mark :is(.seam-dot, .seam-orbit, .seam-square, .seam-square-satellite, .seam-triangle, .seam-block)
+) {
+  animation-delay: -3600s !important;
+}
+
 .motion-toggle-row {
   display: none;
 }
