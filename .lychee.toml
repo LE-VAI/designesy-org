@@ -31,6 +31,12 @@ exclude_path = [
   # the captured page's markup. "Fixing" them would mean editing a recording,
   # which corrupts the very input the parity test depends on.
   "test/fixtures/parity-page\\.json",
+  # The offline engine's golden fixture (2026-10-08) records what the Python
+  # engine must return for crafted inputs, including URLs built to be wrong:
+  # an invalid port, a lookalike host, an unresolvable subdomain. They are
+  # test data; checking them failed link-check on main from the commit that
+  # added the file.
+  "test/fixtures/offline-engine-golden\\.json",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
