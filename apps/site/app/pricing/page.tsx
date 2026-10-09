@@ -6,6 +6,13 @@ import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import {
+  REVIEW_CHECKOUT_URL,
+  REVIEW_CTA_LABEL,
+  REVIEW_DISCLOSURE,
+  REVIEW_OFFER_PATH,
+  REVIEW_PRICE,
+} from '../lib/review-offer';
 
 // ISR — static content that revalidates hourly
 export const revalidate = 3600;
@@ -87,7 +94,8 @@ export default function PricingPage() {
             Score any site against the contract for free, forever, and gate your
             CI on it. Continuity adds scheduled scans, drift alerts, and score
             history at $29 a month for 5 sites. Enterprise runs the engine on your
-            own infrastructure.
+            own infrastructure. A Designesy Review puts a person on your store
+            or app flow, one time, for {REVIEW_PRICE}.
           </p>
           <p className="surface-note">
             No credit card to start. The free tier is the whole score engine.
@@ -150,11 +158,92 @@ export default function PricingPage() {
           </div>
         </section>
 
+        {/* The one-time Review sits under the recurring tiers as a card of
+            its own, so the row above stays a like-for-like ladder of plans.
+            It is the tier card's anatomy laid on the firewall's face/side
+            split (pricing.css): name, price and one line in the face, ending
+            on the 7-line, with the call to action under them; what the buyer
+            receives as key rows behind the divider. Its button takes the
+            secondary recipe: Open keeps the page's one filled primary. The
+            disclosure follows the card whole, as the offer requires wherever
+            the Review is described. */}
+        <section
+          className="doctrine-section fade-up fade-up-delay-2"
+          aria-labelledby="pricing-review-name"
+        >
+          <div className="pricing-review definition-split">
+            <div className="definition-face">
+              <div className="pricing-card-head">
+                <h2 className="pricing-card-name" id="pricing-review-name">
+                  Designesy Review
+                </h2>
+                <div className="pricing-card-price">
+                  <span className="pricing-card-price-value" data-tabular>
+                    {REVIEW_PRICE}
+                  </span>
+                  <span className="pricing-card-price-suffix">one-time</span>
+                </div>
+                <p className="pricing-card-sub">
+                  A person reviews your store or app flow and hands you a
+                  prioritized fix list for the barriers your shoppers hit.
+                </p>
+              </div>
+              <div className="pricing-review-actions">
+                <a
+                  href={REVIEW_CHECKOUT_URL}
+                  className="pricing-cta-link"
+                  data-cuelume-press="tick"
+                >
+                  {REVIEW_CTA_LABEL}
+                </a>
+                <Link
+                  href={REVIEW_OFFER_PATH}
+                  className="text-link"
+                  data-cuelume-hover="tick"
+                >
+                  See what a Review covers
+                </Link>
+              </div>
+            </div>
+            <dl className="definition-side">
+              <div>
+                <dt>Score</dt>
+                <dd>{ENGINE_CHECK_COUNT} automated checks, each failure named</dd>
+              </div>
+              <div>
+                <dt>Review</dt>
+                <dd>8 dimensions, a verdict and its evidence</dd>
+              </div>
+              <div>
+                <dt>Spot-check</dt>
+                <dd>Manual, WCAG 2.2 AA</dd>
+              </div>
+              <div>
+                <dt>Verdict</dt>
+                <dd>Fix list, P0 to P2</dd>
+              </div>
+              <div>
+                <dt>Re-score</dt>
+                <dd>1, within 30 days</dd>
+              </div>
+              <div>
+                <dt>Delivery</dt>
+                <dd>5 business days</dd>
+              </div>
+            </dl>
+          </div>
+          <p className="surface-note pricing-review-note">{REVIEW_DISCLOSURE}</p>
+        </section>
+
         {/* The firewall is one reading card in two panes (pricing.css, on
             the shared face/side split): the statement in the face, ending
             on the 7-line, and what is not for sale as key rows behind the
-            divider. Its eyebrow names it; no resting stripe. */}
-        <section className="doctrine-section fade-up fade-up-delay-2">
+            divider. Its eyebrow names it; no resting stripe. The offer page
+            links here by its id. */}
+        <section
+          className="doctrine-section fade-up fade-up-delay-2"
+          id="independence-firewall"
+        >
           <div className="pricing-firewall definition-split">
             <div className="definition-face">
               <p className="pricing-firewall-label">Independence firewall</p>

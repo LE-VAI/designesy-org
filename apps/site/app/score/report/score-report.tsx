@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
+import { ReviewPrompt } from '../../lib/review-prompt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 type CheckResult = {
   id: string;
@@ -546,6 +547,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <a href="/methodology#what-engine-measures" style={{ color: 'var(--signal-text)' }}>methodology</a>{' '}
           for what the engine can and cannot measure.
         </p>
+        {/* After the caveat that the score calibrates judgment: a person can
+            supply the judgment. One quiet line. */}
+        <ReviewPrompt />
       </div>
     </div>
   );
