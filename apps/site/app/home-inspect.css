@@ -166,7 +166,7 @@
    reader is scrolling through, so they must stay readable: at opacity 0.36
    every colour here fell to 1.5-3.0:1 (axe 4.13.0, 2026-10-02). Unlit, the
    title takes --muted (7.98:1 dark, 7.11:1 light) and the text and numeral
-   --muted-dim (5.07:1 dark, 4.74:1 light); the lit step gets its full
+   --muted-dim (5.07:1 dark, 5.33:1 light); the lit step gets its full
    colours back below. */
 .inspect-step-n,
 .inspect-step-title,

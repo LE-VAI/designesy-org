@@ -406,7 +406,7 @@
   font: 500 0.66rem/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted-dim);
+  color: var(--muted);
 }
 
 .vc-grid-head {
@@ -725,7 +725,7 @@
 
 .vc-log-line.is-pass .vc-log-status { color: var(--lv-ink-accent); }
 .vc-log-line.is-warn .vc-log-status { color: var(--warn-ink); }
-.vc-log-line.is-fail .vc-log-status { color: var(--error); }
+.vc-log-line.is-fail .vc-log-status { color: var(--error-ink); }
 .vc-log-line.is-manual .vc-log-status,
 .vc-log-line.is-ran .vc-log-status { color: var(--muted); }
 
@@ -1027,11 +1027,11 @@ html[data-motion="paused"] .vc-glow {
   box-shadow: inset 0 0 0 1px currentColor;
 }
 
-.hero-cohort-grade.is-a { color: var(--grade-a); }
-.hero-cohort-grade.is-b { color: var(--grade-b); }
-.hero-cohort-grade.is-c { color: var(--grade-c); }
-.hero-cohort-grade.is-d { color: var(--grade-d); }
-.hero-cohort-grade.is-f { color: var(--grade-f); }
+.hero-cohort-grade.is-a { color: var(--grade-a-ink); }
+.hero-cohort-grade.is-b { color: var(--grade-b-ink); }
+.hero-cohort-grade.is-c { color: var(--grade-c-ink); }
+.hero-cohort-grade.is-d { color: var(--grade-d-ink); }
+.hero-cohort-grade.is-f { color: var(--grade-f-ink); }
 
 .hero-cohort-more {
   display: inline-flex;

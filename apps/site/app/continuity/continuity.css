@@ -373,7 +373,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
 }
 
 .waitlist-optional {
-  color: var(--muted-dim);
+  color: var(--muted);
 }
 
 /* The fields are wells, the same material as the site's URL bars
@@ -399,7 +399,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
 
 .waitlist-field input::placeholder,
 .waitlist-field textarea::placeholder {
-  color: var(--muted-dim);
+  color: var(--muted);
   opacity: 1;
 }
 

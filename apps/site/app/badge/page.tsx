@@ -52,11 +52,11 @@ const VARIANTS = [
 ];
 
 const GRADES = [
-  { grade: 'A', min: '≥90%', color: 'var(--ok)' },
+  { grade: 'A', min: '≥90%', color: 'var(--ok-ink)' },
   { grade: 'B', min: '≥80%', color: 'var(--grade-b-light)' },
   { grade: 'C', min: '≥70%', color: 'var(--warn-ink)' },
-  { grade: 'D', min: '≥60%', color: 'var(--grade-d)' },
-  { grade: 'F', min: '<60%', color: 'var(--error)' },
+  { grade: 'D', min: '≥60%', color: 'var(--grade-d-ink)' },
+  { grade: 'F', min: '<60%', color: 'var(--error-ink)' },
 ];
 
 export default function BadgePage() {

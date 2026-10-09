@@ -1801,7 +1801,7 @@
 }
 
 .eg-delta-up { color: var(--lv-ink-accent); }
-.eg-delta-down { color: var(--error); }
+.eg-delta-down { color: var(--error-ink); }
 
 @container bench (width < 40rem) {
   .eg-diff-head,
@@ -2743,7 +2743,7 @@ button.mt-row {
   color: var(--muted);
 }
 
-.eg-row[data-status="FAIL"] .eg-row-status { color: var(--error); }
+.eg-row[data-status="FAIL"] .eg-row-status { color: var(--error-ink); }
 .eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
 .eg-row[data-status="PASS"] .eg-row-status { color: var(--lv-ink-accent); }
 
