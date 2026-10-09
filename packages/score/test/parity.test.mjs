@@ -5,12 +5,12 @@
  * The previous version compared the two engines by calling the LIVE
  * designesy.org API, and CI set SKIP_LIVE_TESTS=1 to avoid a network dependency.
  * So the test was skipped on every CI run — meaning the ONLY detector for
- * divergence between the two 42-check implementations never executed.
+ * divergence between the two 44-check implementations never executed.
  *
  * That matters because these two copies have a history of silently diverging.
  * The drift and monitor engines held the same 12 checks as hand-maintained
  * duplicates and disagreed about 9 of 12 on the same page; that was fixed on
- * 2026-09-25 by giving them ONE implementation. The 42-check engine is still two
+ * 2026-09-25 by giving them ONE implementation. The 44-check engine is still two
  * copies, and until now nothing compared them in CI.
  *
  * WHAT IT DOES NOW
@@ -62,7 +62,7 @@ async function scoreFixture(fx) {
   return scoreFromParts({ html: fx.html, css: fx.css, scope: fx.scope, offline: true });
 }
 
-describe('engine parity — 42-check engine, offline', () => {
+describe('engine parity — 44-check engine, offline', () => {
   it('has a usable recorded fixture', () => {
     assert.ok(
       existsSync(FIXTURE),
@@ -99,9 +99,9 @@ describe('engine parity — 42-check engine, offline', () => {
     }
   });
 
-  it('produces the full 42-check set offline', async () => {
+  it('produces the full 44-check set offline', async () => {
     const result = await scoreFixture(loadFixture());
-    assert.equal(result.total, 42, `engine returned ${result.total} checks, expected 42`);
+    assert.equal(result.total, 44, `engine returned ${result.total} checks, expected 44`);
     assert.ok(
       typeof result.score === 'number' && result.score >= 0 && result.score <= 100,
       `score out of range: ${result.score}`,

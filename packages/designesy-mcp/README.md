@@ -94,7 +94,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Executable verification
 | Tool | What it does |
 |---|---|
-| `designesy_score` | Run the 42-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 42 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
+| `designesy_score` | Run the 44-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 44 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
 | `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
@@ -123,16 +123,16 @@ The server also exposes 7 MCP resources (read-only URIs):
 | `designesy://llms` | Short agent brief (text) |
 | `designesy://llms-full` | Full agent brief (text) |
 
-## The 42-check verification engine
+## The 44-check verification engine
 
-`designesy_score` runs 42 deterministic checks across 14 weighted categories:
+`designesy_score` runs 44 deterministic checks across 14 weighted categories:
 
 | Category | Weight | What it measures |
 |---|---|---|
 | cadence | 18 | Typography rhythm — line-height, font-synthesis, text-underline-position, skip-ink |
-| accessibility | 15 | WCAG 2.2 primitives — reduced-motion, forced-colors, AI disclosure, focus-visible |
+| accessibility | 15 | WCAG 2.2 primitives — reduced-motion, forced-colors, AI disclosure, focus-visible, status colors used as text in every theme |
 | semantic | 12 | Token architecture — `:root` custom properties, no raw hex, semantic naming |
-| motion | 10 | Motion hygiene — duration tokens, easing tokens, reduced-motion blocks |
+| motion | 10 | Motion hygiene — duration tokens, easing tokens, reduced-motion blocks, content that stays visible when motion is paused |
 | tokens | 9 | DTCG 2025.10 conformance — `$type`, `$value`, `$description`, colorSpace |
 | takt | 8 | Timing discipline — transition bands, animation hierarchy |
 | copywriting | 8 | UX copy — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS |
@@ -162,7 +162,7 @@ The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — the
 
 ### Contract vs. opinion
 
-No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 42-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
+No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 44-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
 
 ## Caching
 

@@ -36,7 +36,7 @@ const CATEGORIES_ONLY = process.argv.includes('--categories-only');
 // Last-resort check count, used only if the engine reply omits `total`. The
 // engine's own number is preferred so the seed header cannot drift from the
 // engine it describes; this value is a fallback, not the source of truth.
-const ENGINE_CHECK_COUNT_FALLBACK = 42;
+const ENGINE_CHECK_COUNT_FALLBACK = 44;
 
 // ── The per-category batch (batch-data.ts) ──────────────────────────────────
 //

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Source drift between the two 42-check engines.
+ * Source drift between the two 44-check engines.
  *
  * WHY THIS EXISTS
  * The scoring engine lives in two hand-maintained copies:

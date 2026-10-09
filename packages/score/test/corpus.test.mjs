@@ -48,7 +48,7 @@ describe('calibration corpus — known-answer fixtures', () => {
     const rows = await runCorpus();
     assert.equal(rows.length, offlineCount, 'a fixture failed to score');
     for (const { fixture, result } of rows) {
-      assert.equal(result.total, 42, `${fixture.name}: expected 42 checks, got ${result.total}`);
+      assert.equal(result.total, 44, `${fixture.name}: expected 44 checks, got ${result.total}`);
       assert.ok(
         typeof result.score === 'number' && result.score >= 0 && result.score <= 100,
         `${fixture.name}: score out of range (${result.score})`,

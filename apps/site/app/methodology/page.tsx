@@ -171,6 +171,12 @@ const CHECKS: CheckDef[] = [
     category: 'motion',
     how: 'Checks :root for the 5 duration tokens: --duration, --duration-quick, --duration-fast, --duration-medium, --duration-slow. PASS if all 5 are declared. Hardcoded ms values in component CSS are the anti-pattern.',
   },
+  {
+    id: 'v45',
+    item: 'Pausing motion keeps content visible',
+    category: 'motion',
+    how: 'Finds a pause that holds every element: animation-play-state: paused on * under an attribute or class on the document (html[data-motion="paused"]), or inside prefers-reduced-motion: reduce. Then finds each one-shot entrance whose first keyframe sets opacity 0 or visibility hidden, which the pause would hold invisible. PASS if every such entrance has an override under the pause (animation: none, animation-name: none, animation-play-state: running, or a negative animation-delay at least as long as the animation) for its selector or a compound it contains. FAIL if an entrance has none. WARN if the override exists but its selector or scope does not clearly match. N/A if no rule pauses every element. Found on this site: paused visitors got empty pages.',
+  },
 
   // ── Accessibility (15%) — carries the a11y floor ──
   {
@@ -208,6 +214,12 @@ const CHECKS: CheckDef[] = [
     item: 'Forced-colors readiness: @media (forced-colors: active) block present',
     category: 'accessibility',
     how: 'Searches CSS for @media (forced-colors: active) and forced-color-adjust. PASS if both are present. Windows High Contrast Mode and Chrome forced-colors recolor the page; without this media query, critical UI becomes illegible.',
+  },
+  {
+    id: 'v44',
+    item: 'Status colors used as text meet contrast in every declared theme',
+    category: 'accessibility',
+    how: 'Finds the status colors (custom properties named ok, success, warn, warning, error, danger, info, grade-a to grade-f and the like, or a hue the stylesheet also paints as a mark) that a rule uses as text color, directly, through one alias or at reduced alpha. Resolves each in every declared theme (:root, [data-theme] or .dark/.light blocks, prefers-color-scheme blocks), including var() chains and color-mix() rounded to the 8-bit color a browser paints, and measures it on the background the rule sets, else on the page background of that theme. PASS if every use clears 4.5:1 (3:1 for 24px, or 18.66px bold) in every theme. FAIL if any falls short. WARN if a background cannot be resolved, or alpha-reduced text clears only at full alpha. N/A if no status color is used as text. Found on this site: light --warn as text measured 3.51:1.',
   },
 
   // ── Identity (6%) — engine returns these as category: 'identity' ──
@@ -388,12 +400,12 @@ const CATEGORY_NOTES: Record<string, string> = {
   cadence:
     'Typography rendering discipline: font smoothing, rem scales, line-height, text-wrap, tabular figures, selection styling, font synthesis, underline position and skip-ink.',
   accessibility:
-    'WCAG 2.2 AA primitives: contrast, touch targets, heading hierarchy, the input font floor, button text contrast and forced-colors readiness. It carries the accessibility floor.',
+    'WCAG 2.2 AA primitives: contrast, touch targets, heading hierarchy, the input font floor, button text contrast, forced-colors readiness and status colors used as text in every theme. It carries the accessibility floor.',
   semantic:
     'Whether the color system speaks in roles (ink, surface, danger) or in hues (blue-500), and covers the status states. Wired on 2026-08-30, so batch runs before that date score it empty.',
   copywriting:
     'UX copy discipline: verb-led buttons, no trailing periods, descriptive link text, no all-caps. Heuristics grounded in NN/g, Microsoft Fluent, IBM Carbon and WCAG 2.4.4.',
-  motion: 'Motion hygiene: no transition: all, will-change kept to transform and opacity, a reduced-motion block, and duration tokens.',
+  motion: 'Motion hygiene: no transition: all, will-change kept to transform and opacity, a reduced-motion block, duration tokens, and content that stays visible when motion is paused.',
   tokens: 'Token architecture: the --paper foundation, and whether tokens are layered from primitive to semantic to component.',
   takt: 'Interaction feel: press scales above the 0.95 floor (0.96 for cells, 0.985 for cards, 0.995 for surfaces). Named for the German word for precise, musical timing.',
   security: 'Unicode security: UTS #39 confusable detection in token names and CSS identifiers, against Cyrillic and Greek homoglyphs shadowing Latin names.',

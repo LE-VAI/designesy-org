@@ -212,6 +212,16 @@
    "why": "Recorded from https://www.designesy.org/ on the offline path; reproducible from this fixture."
   },
   {
+   "id": "v44",
+   "status": "FAIL",
+   "why": "Added for engine 1.2.0 without re-recording: the branch engine reads this recorded css (2026-09-25, before the site's 2026-10-08 ink fix) as FAIL, with light --warn and --activation painting text under 4.5:1, which is the defect the check was written from. Reproducible offline."
+  },
+  {
+   "id": "v45",
+   "status": "SKIP",
+   "why": "Added for engine 1.2.0 without re-recording: the recorded css has no rule that pauses every element (the site-wide pause shipped later), so v45 is not applicable here. Reproducible offline."
+  },
+  {
    "id": "v37",
    "status": "SKIP",
    "why": "Needs the network or a browser; recorded so the exclusion list cannot go stale, not asserted offline."

@@ -14,7 +14,7 @@ npx designesy-score designesy.org
 ## What's new in 1.0.0
 
 **The engine runs locally.** In 0.x, the CLI called the designesy.org API. In 1.0.0,
-it fetches the target URL, extracts CSS + `:root` tokens, and runs all 42 checks
+it fetches the target URL, extracts CSS + `:root` tokens, and runs all 44 checks
 in-process. No server dependency, no rate limits, works even if designesy.org is down.
 
 - **`--scope` flag** — `contract` (strict) or `universal` (fair to external sites)
@@ -75,7 +75,7 @@ npx designesy-score verify linear.app --json
 | **FAIL** | `/DESIGN.md` served, lint errors | `1` |
 | **SKIP** | `/DESIGN.md` not served (no public convention requires it) | `0` |
 
-This checks the **spec layer** (file format). For the full 42-check
+This checks the **spec layer** (file format). For the full 44-check
 design-system contract score, use `designesy-score <url>`.
 
 ## Options

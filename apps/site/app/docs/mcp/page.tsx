@@ -138,7 +138,7 @@ const TOOLS = [
   {
     name: 'designesy_report',
     kind: 'Executable · MCP App',
-    desc: 'Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.',
+    desc: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.`,
     args: 'url: string',
     source: '/api/report + /api/report/app',
   },

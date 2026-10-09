@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 42-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. Zero dependencies.
+Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. Zero dependencies.
 
 ## Install
 
@@ -54,14 +54,14 @@ console.log(result.fail);    // 3
 console.log(result.checks);  // [{ id: 'v01', status: 'PASS', detail: '...' }, ...]
 ```
 
-## The 42 checks
+## The 44 checks
 
 | Category | Checks | Weight |
 |---|---|---|
 | cadence | v14, v15, v16, v17, v18, v19, v20, v26, v28, x01, x02, x03 | 18 |
-| accessibility | v06, v22, v24, v25, v27, v35 | 15 |
+| accessibility | v06, v22, v24, v25, v27, v35, v44 | 15 |
 | semantic | v42, v43 | 12 |
-| motion | v05, v11, v12, v23 | 10 |
+| motion | v05, v11, v12, v23, v45 | 10 |
 | tokens | v01, v29 | 9 |
 | takt | v10, v13 | 8 |
 | copywriting | v38, v39, v40, v41 | 8 |
@@ -85,7 +85,7 @@ Plus 12 anti-slop deductions (S1 to S12) and 7 originality lifts (O1 to O7).
 
 ## Scope system
 
-- **contract** (default for designesy.org): All 42 checks active. Absence = WARN/FAIL.
+- **contract** (default for designesy.org): All 44 checks active. Absence = WARN/FAIL.
 - **universal** (default for external sites): Optional features SKIP on absence instead of penalizing.
 
 Auto-detect: `designesy.org` → contract, everything else → universal.

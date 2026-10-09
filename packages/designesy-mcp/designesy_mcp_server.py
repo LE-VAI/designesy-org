@@ -261,6 +261,12 @@ _NOT_PORTED = (
     "checklist (v01-v23, x01-x03), and engine 1.1.0 did not change it. The "
     "live engine runs it."
 )
+_NOT_PORTED_V44_V45 = (
+    "not ported: added to the live engine for 1.2.0, after this fallback's "
+    "original checklist (v01-v23, x01-x03). It needs a CSS rule model and "
+    "theme-aware colour resolution this port does not carry. The live engine "
+    "runs it."
+)
 _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v24": _NOT_PORTED,
     "v25": _NOT_PORTED,
@@ -276,6 +282,8 @@ _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v39": _NOT_PORTED,
     "v40": _NOT_PORTED,
     "v41": _NOT_PORTED,
+    "v44": _NOT_PORTED_V44_V45,
+    "v45": _NOT_PORTED_V44_V45,
     "v37": (
         "needs the network: it fetches /DESIGN.md from the target origin and "
         "lints it with an optional package. The live engine's own offline mode "
@@ -1516,10 +1524,10 @@ def _post_score_api(url: str, fmt: str, scope: str | None = None) -> str:
 
 
 def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
-    """POST to the canonical 42-check engine at /api/score.
+    """POST to the canonical 44-check engine at /api/score.
 
     The site API is the single source of truth for the contract it serves
-    (42 checks, 14 categories). The version is reported from that reply, not
+    (44 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
     Returns the normalized response, or None if the API is unreachable
     (caller falls back to the local engine).
@@ -1559,11 +1567,12 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
             for c in checks
         ],
             "note": (
-                # Version read from the engine's own reply rather than pinned
-                # here. This read "v0.4.0" while the site served v0.4.1: a
-                # second copy of a fact the response already carries, which is
-                # the shape that drifts every time the contract moves.
-                f"Canonical 42-check engine ({data.get('contractVersion', 'unknown')}). "
+                # Version and check count read from the engine's own reply
+                # rather than pinned here. This read "v0.4.0" while the site
+                # served v0.4.1: a second copy of a fact the response already
+                # carries, which is the shape that drifts every time the
+                # contract or the engine moves.
+                f"Canonical {data.get('total', len(checks))}-check engine ({data.get('contractVersion', 'unknown')}). "
                 f"{data.get('pass', 0)} passed, "
             f"{data.get('fail', 0)} failed, {data.get('warn', 0)} warned, "
             f"{data.get('skip', 0)} skipped, {data.get('manual', 0)} manual "
@@ -1595,7 +1604,7 @@ def _score_impl(
 ) -> dict[str, Any] | str:
     """Score a live URL against the Designesy design contract.
 
-    Primary path: delegate to the canonical 42-check engine at
+    Primary path: delegate to the canonical 44-check engine at
     /api/score (same engine the npm CLI and site use).
 
     format designesy (the default) reshapes the engine's native JSON into
@@ -1976,7 +1985,7 @@ TOOLS = [
         "name": "designesy_score",
         "description": (
             "Score a live URL against the Designesy design contract with "
-            "the deterministic 42-check verification engine at "
+            "the deterministic 44-check verification engine at "
             "https://www.designesy.org/api/score. Returns a numeric score, "
             "a letter grade (A-F), and the check results. "
             "Use this to audit whether a website or AI-generated UI "
@@ -1986,7 +1995,7 @@ TOOLS = [
             "designesy_tokens_score; for a Lottie file, use "
             "designesy_motion_score; for a qualitative critique, use "
             "designesy_design_review. The engine fetches the URL "
-            "server-side, extracts its CSS, and runs 42 checks. Results "
+            "server-side, extracts its CSS, and runs 44 checks. Results "
             "are cached ~24h server-side per URL and scope. Checks that "
             "need a live browser (Core Web Vitals, sound toggle, overflow) "
             "return MANUAL; the full audit (/api/score/audit) resolves "
@@ -2006,7 +2015,7 @@ TOOLS = [
             "and the engine auto-detects: contract for designesy.org, "
             "universal for every other site. If the engine is "
             "unreachable, format designesy falls back to the offline "
-            "engine: 27 of the 42 checks run locally, each mirroring the "
+            "engine: 27 of the 44 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
             "checks it did not run) and scope, and its note says so. The "
@@ -2170,7 +2179,7 @@ TOOLS = [
             "dangling alias chains). Use this when you need to verify "
             "whether a site (especially an AI-generated one) is drifting "
             "off its own declared token system. When NOT to use: for a "
-            "full 42-check design-contract score, use designesy_score; "
+            "full 44-check design-contract score, use designesy_score; "
             "for token-file format validation, use "
             "designesy_tokens_score. Executable — fetches the URL "
             "server-side, extracts all CSS (inline + linked stylesheets), "
@@ -2369,7 +2378,7 @@ TOOLS = [
         "description": (
             "Generate a unified design-intelligence report for a single "
             "URL — the synthesis capstone of the Designesy dynasty. "
-            "Fires /score (42-check audit), /drift (12-check drift "
+            "Fires /score (44-check audit), /drift (12-check drift "
             "radar), and /readiness (10-check AI readiness) in "
             "parallel, then computes a weighted composite: score × 0.5 "
             "+ drift × 0.3 + readiness × 0.2. One input, one output, "

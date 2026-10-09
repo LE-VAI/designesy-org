@@ -1,5 +1,5 @@
 /**
- * Source drift — the two 42-check engines must not diverge silently.
+ * Source drift — the two 44-check engines must not diverge silently.
  *
  * route.ts (the site and the MCP endpoint) and engine.ts (the npm CLI) are two
  * hand-maintained copies of one engine. This suite fails when a change lands in
@@ -185,7 +185,8 @@ describe('source drift — the package public API surface', () => {
         'isValidUrl', 'normalizeInputUrl', 'scoreFromParts', 'scoreUrl', 'statusToSeverity',
       ],
       const: ['CONTRACT_VERSION'],
-      type: ['CheckResult', 'PageOutcome', 'ScorePartsInput', 'ScoreResult', 'ScoreScope'],
+      // CheckEvidence: engine 1.2.0, the evidence v44 and v45 attach to their results.
+      type: ['CheckEvidence', 'CheckResult', 'PageOutcome', 'ScorePartsInput', 'ScoreResult', 'ScoreScope'],
     };
     const actual = surface();
     const added = {};
