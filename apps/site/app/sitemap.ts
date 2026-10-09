@@ -210,6 +210,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.75,
     },
     {
+      url: `${BASE}/learn/the-pause-button-that-emptied-our-pages`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.75,
+    },
+    {
       url: `${BASE}/privacy`,
       lastModified: NOW,
       changeFrequency: 'monthly',
