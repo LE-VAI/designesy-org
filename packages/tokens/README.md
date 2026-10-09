@@ -53,7 +53,7 @@ Score: 90/100  Grade: A  —  18 pass, 2 warn, 0 fail
   ✓ t08  PASS  DTCG 2025.10 structural validation
   ✓ t09  PASS  No type drift between themes
   ✓ t10  PASS  Dimension units are px or rem only
-  ✓ t11  PASS  $type is one of 15 valid spec types
+  ✓ t11  PASS  $type is one of 13 DTCG types plus 2 extensions (string, boolean)
   ✓ t12  PASS  Token names don't start with $ (except $root)
   ✓ t13  PASS  Token names don't contain {, }, or .
   ✓ t14  PASS  $value matches $type structure (primitives)
@@ -106,7 +106,7 @@ npx @designesy/tokens tokens.json --quiet
 | t08 | DTCG 2025.10 structural validation | Passes | — | Schema violation |
 | t09 | No type drift between themes | Consistent | — | Drift detected |
 | t10 | Dimension units are px or rem only | Valid units | — | Invalid unit |
-| t11 | `$type` is one of 15 valid spec types | All valid | — | Invalid type name |
+| t11 | `$type` is one of 13 DTCG types plus 2 extensions (`string`, `boolean`) | All DTCG types | Extension type used | Invalid type name |
 | t12 | Token names don't start with `$` (except `$root`) | All valid | — | Name starts with `$` |
 | t13 | Token names don't contain `{`, `}`, or `.` | All valid | — | Forbidden character |
 | t14 | `$value` matches `$type` structure (primitives) | All conform | — | Value/type mismatch |
@@ -116,6 +116,19 @@ npx @designesy/tokens tokens.json --quiet
 | t18 | Alias type compatibility | All compatible | — | Type mismatch |
 | t19 | Circular reference detection | No cycles | — | Circular chain detected |
 | t20 | `$deprecated` value valid | All valid | — | Invalid value type |
+
+## Token types
+
+t11 checks each `$type` against 13 DTCG types plus 2 extensions (`string`, `boolean`).
+
+| Group | Types | t11 result |
+|-------|-------|------------|
+| DTCG 2025.10 primitive (7) | `color`, `dimension`, `fontFamily`, `fontWeight`, `duration`, `cubicBezier`, `number` | PASS |
+| DTCG 2025.10 composite (6) | `strokeStyle`, `border`, `transition`, `shadow`, `gradient`, `typography` | PASS |
+| Extension (2) | `string`, `boolean` | WARN |
+| Any other value, such as `colour` or `radius` | | FAIL |
+
+DTCG 2025.10 defines 13 types. `string` and `boolean` are outside it, and some tools emit them, so the validator accepts both and reports each use. The t11 WARN detail gives the number of tokens that use an extension type and names up to 5 of their paths. t14 still checks their values: a `string` token needs a JSON string, and a `boolean` token needs `true` or `false`.
 
 ## Scoring
 

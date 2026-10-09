@@ -5,6 +5,19 @@ All notable changes to @designesy/tokens are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+## [0.3.0] — 2026-10-08
+
+### Fixed
+- fontWeight keywords now match the DTCG 2025.10 schema (`format/values/fontWeight.json`): 18 keywords, compound names hyphenated (`semi-bold`, `extra-light`), including `hairline` and `book`. Earlier versions listed unhyphenated spellings and lacked `hairline` and `book`, so t14 failed keywords the spec allows and passed ones it does not define. An unhyphenated spelling such as `semibold` now fails t14 with a message naming the spec spelling.
+
+### Changed
+- t11 checks `$type` against 13 DTCG types plus 2 extensions (`string`, `boolean`). DTCG 2025.10 defines 13 types. Earlier versions counted `string` and `boolean` among them and described the list as "15 valid spec types".
+- A token typed `string` or `boolean` is still accepted. t11 reports it as a WARN that counts every such token and names up to 5 paths. For a file that uses either type and has no invalid `$type`, t11 moves from PASS to WARN (0.5 of 20 points), so its score drops by 2.5 before rounding.
+- A file that uses only the 13 DTCG types gets the same score, grade, and per-check statuses as before.
+- A `$type` outside both lists, such as `radius`, still fails t11 with the same detail as before.
+
 ## [0.2.2] — 2026-08-16
 
 ### Changed — CrCoNi hardening

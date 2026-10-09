@@ -59,7 +59,7 @@ Checks (t01-t20):
   t08  DTCG 2025.10 structural validation
   t09  No type drift between themes
   t10  Dimension units are px or rem only
-  t11  $type is one of 15 valid spec types
+  t11  $type is one of 13 DTCG types plus 2 extensions (string, boolean)
   t12  Token names don't start with $ (except $root)
   t13  Token names don't contain {, }, or .
   t14  $value matches $type structure (primitives)
@@ -72,6 +72,9 @@ Checks (t01-t20):
 
 Scoring: 20 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/20) × 100.
 Grades: A≥90, B≥80, C≥70, D≥60, F<60.
+
+Types: the 13 DTCG 2025.10 types pass t11. The 2 extensions (string,
+boolean) are accepted, and t11 reports each use as a WARN.
 
 Options:
   --json         Output raw JSON result (no formatted table)

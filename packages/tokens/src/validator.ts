@@ -71,6 +71,13 @@ interface TraversalResult {
   nameSegments: string[];
 }
 
+/**
+ * The 13 token types DTCG 2025.10 defines: 7 primitive, 6 composite.
+ *
+ * Matches the $type enum in the shipped schema
+ * (https://www.designtokens.org/schemas/2025.10/format.json), which lists these
+ * 13 values and no others.
+ */
 const DTCG_TYPES = new Set([
   'color',
   'dimension',
@@ -79,15 +86,28 @@ const DTCG_TYPES = new Set([
   'duration',
   'cubicBezier',
   'number',
-  'boolean',
-  'string',
   'strokeStyle',
   'border',
+  'transition',
   'shadow',
   'gradient',
-  'transition',
   'typography',
 ]);
+
+/**
+ * 2 extension types outside DTCG 2025.10.
+ *
+ * Some tools emit `string` and `boolean`, so the validator accepts them: t05 does
+ * not treat them as custom types, and t14 still checks their $value shape. t11
+ * reports each use as a WARN, because the type is outside the 13.
+ *
+ * Earlier versions listed these 2 inside the spec set and described it as
+ * "15 valid spec types". DTCG 2025.10 defines 13.
+ */
+const EXTENSION_TYPES = new Set(['string', 'boolean']);
+
+/** Every $type the validator accepts: 13 DTCG types plus 2 extensions. */
+const ACCEPTED_TYPES = new Set([...DTCG_TYPES, ...EXTENSION_TYPES]);
 
 /**
  * Root-level $-prefixed properties this validator recognises.
@@ -138,25 +158,24 @@ const VALID_COLOR_SPACES = new Set([
   'xyz-d50',
 ]);
 
-// Font weight predefined string keywords (§8.4)
+// Font weight predefined string keywords (§8.4). These are the 18 keywords in
+// the published DTCG 2025.10 schema (format/values/fontWeight.json), which
+// spells compound names with a hyphen. An earlier list used unhyphenated
+// spellings (semibold, extralight) and lacked hairline and book, so it failed
+// keywords the spec allows and passed ones it does not define.
 const FONT_WEIGHT_KEYWORDS = new Set([
-  'thin',
-  'extralight',
-  'ultralight',
-  'light',
-  'normal',
-  'regular',
-  'medium',
-  'semibold',
-  'demibold',
-  'bold',
-  'extrabold',
-  'ultrabold',
-  'black',
-  'heavy',
-  'extrablack',
-  'ultrablack',
+  'thin', 'hairline', 'extra-light', 'ultra-light', 'light', 'normal', 'regular',
+  'book', 'medium', 'semi-bold', 'demi-bold', 'bold', 'extra-bold', 'ultra-bold',
+  'black', 'heavy', 'extra-black', 'ultra-black',
 ]);
+
+// Unhyphenated spellings some tools emit, mapped to the spec keyword, so the
+// error can name the fix.
+const FONT_WEIGHT_UNHYPHENATED: Record<string, string> = {
+  extralight: 'extra-light', ultralight: 'ultra-light', semibold: 'semi-bold',
+  demibold: 'demi-bold', extrabold: 'extra-bold', ultrabold: 'ultra-bold',
+  extrablack: 'extra-black', ultrablack: 'ultra-black',
+};
 
 const VALID_DIMENSION_UNITS = new Set(['px', 'rem']);
 const VALID_DURATION_UNITS = new Set(['ms', 's']);
@@ -480,7 +499,10 @@ function validatePrimitiveValue(type: string, value: unknown): string[] {
         }
       } else if (typeof value === 'string') {
         if (!FONT_WEIGHT_KEYWORDS.has(value)) {
-          errors.push(`fontWeight string "${value}" is not a valid keyword`);
+          const spec = FONT_WEIGHT_UNHYPHENATED[value];
+          errors.push(spec
+            ? `fontWeight string "${value}" is not a DTCG 2025.10 keyword; the spec spelling is "${spec}"`
+            : `fontWeight string "${value}" is not a valid keyword`);
         }
       } else {
         errors.push(`fontWeight must be a number (1-1000) or keyword string, got ${typeof value}`);
@@ -781,8 +803,10 @@ function checkT04ColorSpace(traversal: TraversalResult): CheckResult {
  * t05: Custom types namespaced under $extensions.designesy.* (or equivalent).
  */
 function checkT05CustomTypes(traversal: TraversalResult): CheckResult {
+  // ACCEPTED_TYPES, so the 2 extension types are reported by t11 alone and are
+  // not also failed here as un-namespaced custom types.
   const customTypes = traversal.tokens.filter(
-    (t) => t.type !== null && !DTCG_TYPES.has(t.type),
+    (t) => t.type !== null && !ACCEPTED_TYPES.has(t.type),
   );
   if (customTypes.length === 0) {
     return { id: 't05', item: 'Custom types namespaced under $extensions', status: 'PASS', detail: 'No custom types found' };
@@ -978,24 +1002,51 @@ function checkT10Dimensions(traversal: TraversalResult): CheckResult {
 // ── New checks (t11-t20) ─────────────────────────────────────────────────
 
 /**
- * t11: $type is one of the 15 valid spec types.
+ * t11: $type is one of 13 DTCG types plus 2 extensions (string, boolean).
  * §5.2.2: "The $type property MUST be a plain JSON string, whose value is one
  * of the values specified in this specification's respective type definitions."
+ *
+ * FAIL: a $type outside both lists (e.g. "colour", "radius"). The FAIL detail
+ *       for such a file is the same as in earlier versions.
+ * WARN: every $type is accepted and at least 1 token uses an extension type.
+ *       The detail counts every such token and names up to 5 paths, the same
+ *       sample size as the other checks.
+ * PASS: every typed token uses one of the 13 DTCG types.
+ *
+ * A file that uses only the 13 DTCG types gets the same status as before, so
+ * its score does not change.
  */
+const T11_ITEM = '$type is one of 13 DTCG types plus 2 extensions (string, boolean)';
+
 function checkT11ValidTypeNames(traversal: TraversalResult): CheckResult {
   const invalid = traversal.tokens.filter(
-    (t) => t.type !== null && !DTCG_TYPES.has(t.type),
+    (t) => t.type !== null && !ACCEPTED_TYPES.has(t.type),
   );
-  if (invalid.length === 0) {
-    return { id: 't11', item: '$type is one of 15 valid spec types', status: 'PASS', detail: `All typed tokens use valid spec types` };
+  const extensions = traversal.tokens.filter(
+    (t) => t.type !== null && EXTENSION_TYPES.has(t.type),
+  );
+  const extensionNote =
+    extensions.length === 0
+      ? ''
+      : `${extensions.length} token(s) use a common extension type outside DTCG 2025.10, accepted with a warning: ` +
+        `${extensions.slice(0, 5).map((t) => `${t.path}: "${t.type}"`).join(', ')}${extensions.length > 5 ? '…' : ''}`;
+
+  if (invalid.length > 0) {
+    const sample = invalid.slice(0, 5).map((t) => `${t.path}: "${t.type}"`).join(', ');
+    return {
+      id: 't11',
+      item: T11_ITEM,
+      status: 'FAIL',
+      detail: `${invalid.length} token(s) with invalid $type: ${sample}${invalid.length > 5 ? '…' : ''}` +
+        (extensionNote ? `; ${extensionNote}` : ''),
+    };
   }
-  const sample = invalid.slice(0, 5).map((t) => `${t.path}: "${t.type}"`).join(', ');
-  return {
-    id: 't11',
-    item: '$type is one of 15 valid spec types',
-    status: 'FAIL',
-    detail: `${invalid.length} token(s) with invalid $type: ${sample}${invalid.length > 5 ? '…' : ''}`,
-  };
+
+  if (extensions.length > 0) {
+    return { id: 't11', item: T11_ITEM, status: 'WARN', detail: extensionNote };
+  }
+
+  return { id: 't11', item: T11_ITEM, status: 'PASS', detail: 'All typed tokens use the 13 DTCG 2025.10 types' };
 }
 
 /**
