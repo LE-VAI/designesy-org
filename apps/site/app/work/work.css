@@ -806,7 +806,7 @@
 .cs-side-note b {
   font: 600 0.95rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
-  color: var(--ok);
+  color: var(--ok-ink);
 }
 
 /* --- The grade scale, drawn to scale -------------------------------------

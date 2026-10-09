@@ -223,7 +223,7 @@ export const designSystemContract = {
     muted_dim: {
       token: '--muted-dim',
       value: '#7d7d7d',
-      role: 'Tertiary / meta text',
+      role: 'Tertiary / meta text: 5.07:1 on paper and 4.54:1 on raised in dark (on lifted planes the dim tier rides --muted); light #686872, 5.33:1 on paper and 4.68:1 on lifted',
     },
     paper: { token: '--paper', value: '#010102', role: 'Page background' },
     surface: { token: '--surface', value: '#0a0a0c', role: 'Card / panel base' },
@@ -252,6 +252,11 @@ export const designSystemContract = {
       value: '#fecc34',
       role: 'Activation highlight (reserved)',
     },
+    activation_ink: {
+      token: '--activation-ink',
+      value: 'var(--activation)',
+      role: 'Activation used as text: --activation on dark (13.81:1 on paper); on light, --activation mixed 55% toward --ink in oklab (#79602c, 5.76:1 on paper, 5.06:1 on lifted). Light --activation itself (#d4a017, 2.30:1 on paper) is for borders and highlights',
+    },
     signal_access: {
       token: '--signal-access',
       value: '#5d7bff',
@@ -272,6 +277,11 @@ export const designSystemContract = {
       value: '#4ade80',
       role: 'Verification status: pass',
     },
+    ok_ink: {
+      token: '--ok-ink',
+      value: 'var(--ok)',
+      role: 'Pass status used as text: --ok on dark (11.97:1 on paper, 10.35:1 on lifted); on light, --ok mixed 70% toward --ink in oklab (#215f35, 7.38:1 on paper, 6.47:1 on lifted). Light --ok itself (#15803d, 4.26:1 on lifted) is for icons, dots, bars and tints',
+    },
     warn: {
       token: '--warn',
       value: '#facc15',
@@ -280,12 +290,17 @@ export const designSystemContract = {
     warn_ink: {
       token: '--warn-ink',
       value: 'var(--warn)',
-      role: 'Warn used as text: --warn on dark (13.62:1 on paper); on light, --warn mixed 70% toward --ink in oklab (#7f5e21, 5.79:1 on paper). Light --warn itself (#b07d04, 3.51:1 on paper) is for icons, dots and tints',
+      role: 'Warn used as text: --warn on dark (13.62:1 on paper); on light, --warn mixed 70% toward --ink in oklab (#7f5e21, 5.76:1 on paper as painted, 5.06:1 on lifted). Light --warn itself (#b07d04, 3.51:1 on paper) is for icons, dots and tints',
     },
     error: {
       token: '--error',
       value: '#f87171',
       role: 'Verification status: fail',
+    },
+    error_ink: {
+      token: '--error-ink',
+      value: 'var(--error)',
+      role: 'Fail status used as text: --error on dark (7.54:1 on paper, 6.52:1 on lifted); on light, --error mixed 70% toward --ink in oklab (#9e2c29, 7.13:1 on paper, 6.26:1 on lifted). Light --error itself (#dc2626, 4.10:1 on lifted) is for icons, dots, bars and tints',
     },
     grade_a: {
       token: '--grade-a',
@@ -312,10 +327,35 @@ export const designSystemContract = {
       value: '#ef4444',
       role: 'Grade scale F (<60%): red, score emblem arc',
     },
+    grade_a_ink: {
+      token: '--grade-a-ink',
+      value: 'var(--grade-a)',
+      role: 'Grade A used as text: --grade-a on dark (9.16:1 on paper, 7.91:1 on lifted); on light, --grade-a mixed 70% toward --ink in oklab (#215f35, 7.38:1 on paper, 6.47:1 on lifted). Light --grade-a itself (#15803d, 4.26:1 on lifted) is for arcs, borders and tints',
+    },
+    grade_b_ink: {
+      token: '--grade-b-ink',
+      value: 'var(--grade-b)',
+      role: 'Grade B used as text: --grade-b on dark (10.56:1 on paper, 9.13:1 on lifted); on light, --grade-b mixed 65% toward --ink in oklab (#4a6f26, 5.65:1 on paper, 4.96:1 on lifted). Light --grade-b itself (#65a30d, 2.99:1 on paper) is for arcs, borders and tints',
+    },
+    grade_c_ink: {
+      token: '--grade-c-ink',
+      value: 'var(--grade-c)',
+      role: 'Grade C used as text: --grade-c on dark (10.88:1 on paper, 9.40:1 on lifted); on light, --grade-c mixed 70% toward --ink in oklab (#7f5e21, 5.76:1 on paper, 5.06:1 on lifted). Light --grade-c itself (#b07d04, 3.51:1 on paper) is for arcs, borders and tints',
+    },
+    grade_d_ink: {
+      token: '--grade-d-ink',
+      value: 'var(--grade-d)',
+      role: 'Grade D used as text: --grade-d on dark (9.22:1 on paper, 7.97:1 on lifted); on light, --grade-d mixed 70% toward --ink in oklab (#a64723, 5.73:1 on paper, 5.02:1 on lifted). Light --grade-d itself (#ea580c, 3.44:1 on paper) is for arcs, borders and tints',
+    },
+    grade_f_ink: {
+      token: '--grade-f-ink',
+      value: 'var(--grade-f)',
+      role: 'Grade F used as text: --grade-f on dark (5.54:1 on paper, 4.79:1 on lifted); on light, --grade-f mixed 70% toward --ink in oklab (#9e2c29, 7.13:1 on paper, 6.26:1 on lifted). Light --grade-f itself (#dc2626, 4.10:1 on lifted) is for arcs, borders and tints',
+    },
     grade_b_light: {
       token: '--grade-b-light',
       value: '#a3e635',
-      role: 'Lighter lime for constellation text on dark surfaces',
+      role: 'Lighter lime for grade-B text on dark surfaces (13.84:1 on paper); light value is --grade-b-ink (#4a6f26, 5.65:1 on paper), because light lime #65a30d is 2.99:1',
     },
     grade_d_glow: {
       token: '--grade-d-glow',
@@ -335,12 +375,12 @@ export const designSystemContract = {
     error_text: {
       token: '--error-text',
       value: '#fecaca',
-      role: 'Light red-200 for error text on dark error surfaces',
+      role: 'Light red-200 for error text on dark error surfaces (14.42:1 on paper); light value is --error-ink (#9e2c29, 7.13:1 on paper)',
     },
     amber_notice: {
       token: '--amber-notice',
       value: '#c9a227',
-      role: 'Amber for score-drawer remediation heading: contract-restrained',
+      role: 'Amber for score-drawer remediation heading: contract-restrained (8.62:1 on paper); light value is --warn-ink (#7f5e21, 5.76:1 on paper), because light amber #b07d04 is 3.51:1',
     },
     shimmer_1: {
       token: '--shimmer-1',

@@ -82,11 +82,11 @@ const CATEGORIES: { key: string; label: string }[] = [
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
 const GRADE_COLOR: Record<string, string> = {
-  A: 'var(--ok)',
+  A: 'var(--ok-ink)',
   B: 'var(--signal-light)',
   C: 'var(--warn-ink)',
-  D: 'var(--grade-d)',
-  F: 'var(--error)',
+  D: 'var(--grade-d-ink)',
+  F: 'var(--error-ink)',
 };
 
 function gradeColor(grade: string | undefined): string {
@@ -311,10 +311,10 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   style={{
                     color:
                       cat.score >= 90
-                        ? 'var(--ok)'
+                        ? 'var(--ok-ink)'
                         : cat.score >= 70
                           ? 'var(--warn-ink)'
-                          : 'var(--error)',
+                          : 'var(--error-ink)',
                   }}
                 >
                   {cat.score}%

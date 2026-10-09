@@ -203,6 +203,14 @@ const HISTORY_KEY = 'designesy.verify.history.v1';
 const HISTORY_MAX = 5;
 const HISTORY_RETENTION = 90 * 24 * 60 * 60 * 1000; // 90 days
 
+// Status hues are mark colours (bars, dials). Text in a status takes the
+// hue's text token, which the light theme mixes toward --ink (globals.css).
+const STATUS_INK: Record<string, string> = {
+  'var(--ok)': 'var(--ok-ink)',
+  'var(--warn)': 'var(--warn-ink)',
+  'var(--error)': 'var(--error-ink)',
+};
+
 function readHistory(): VerifyHistoryEntry[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -303,8 +311,8 @@ function EngineTile({
       : score >= 70
         ? 'var(--warn)'
         : 'var(--error)';
-  // The grade letter is text: warn text uses --warn-ink (globals.css).
-  const ink = fill === 'var(--warn)' ? 'var(--warn-ink)' : fill;
+  // The grade letter is text: each status hue has a text token (globals.css).
+  const ink = STATUS_INK[fill] || fill;
   const pass = result?.pass || 0;
   const warn = result?.warn || 0;
   const fail = result?.fail || 0;

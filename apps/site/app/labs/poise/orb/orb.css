@@ -259,7 +259,7 @@
 
 .orb-button-primary {
   background: var(--signal);
-  color: var(--ink);
+  color: var(--paper-on-signal);
 }
 
 @media (hover: hover) {

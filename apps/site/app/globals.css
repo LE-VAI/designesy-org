@@ -52,6 +52,7 @@
      not with --paper (#0a0a0c). White on signal is 8.59:1 (AAA). */
   --paper-on-signal: #ffffff;
   --activation: #fecc34;
+  --activation-ink: var(--activation);
 
   /* Ambient field — separate from the signal family on purpose.
      The field is the largest single surface in the composition: at 1440x900 it
@@ -141,6 +142,14 @@
      the two are the same. scripts/check-warn-ink.js holds both themes at
      4.5:1 and keeps text off the bare hue. */
   --warn-ink: var(--warn);
+  /* The same rule for the other status hues, the grade hues and
+     --activation: each is a mark colour (icon, dot, bar, arc, tint) and its
+     text token is --<hue>-ink, equal to the hue here and mixed toward --ink
+     in the light theme. scripts/check-warn-ink.js holds every one at 4.5:1 on
+     --paper, --surface, --surface-raised and --surface-lifted in both themes,
+     and keeps text off the bare hues. */
+  --ok-ink: var(--ok);
+  --error-ink: var(--error);
 
   /* Grade scale colors — five-band semantics for score/badge/constellation.
      A=green, B=lime, C=yellow, D=orange, F=red.
@@ -153,6 +162,11 @@
   --grade-d: #fb923c;
   --grade-f: #ef4444;
   --grade-b-light: #a3e635;  /* lighter lime for constellation text on dark */
+  --grade-a-ink: var(--grade-a);
+  --grade-b-ink: var(--grade-b);
+  --grade-c-ink: var(--grade-c);
+  --grade-d-ink: var(--grade-d);
+  --grade-f-ink: var(--grade-f);
   --grade-d-glow: #f97316;   /* orange-600 glow variant for D-grade emblem/hero proof */
   --signal-pos: #34d399;     /* emerald for positive signal points */
   --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
@@ -439,12 +453,16 @@ read-along {
      --paper #fbfbfc — so the real ratio was 4.35:1, below the WCAG AA 4.5:1
      floor for body text. The light-mode eyebrows, row-meta, and group labels
      that use this token are body text, not decorative, so the miss mattered.
-     #70707a measures 4.74:1 against the ACTUAL paper, holding a margin above
-     the floor rather than sitting on it. Verified with the same WCAG relative-
-     luminance formula, against #fbfbfc, not #ffffff. */
+     #70707a measured 4.74:1 against the ACTUAL paper, but the same text also
+     sits on the raised and lifted planes, where it fell to 4.498:1 on
+     --surface-raised and 4.16:1 on --surface-lifted (a live sweep found 214
+     such elements on 47 pages). #686872 measures 5.33:1 on --paper, 5.06:1 on
+     --surface-raised and 4.68:1 on --surface-lifted, and still sits a clear
+     step under --muted (7.11:1). Verified with the WCAG relative-luminance
+     formula against the actual surfaces, not #ffffff. */
   --ink: #1a1a1e;
   --muted: #555560;
-  --muted-dim: #70707a;
+  --muted-dim: #686872;
 
   /* Paper: warm near-white with faint blue cast (same hue as dark paper) */
   --paper: #fbfbfc;
@@ -469,6 +487,9 @@ read-along {
   --signal-dim: rgba(1, 51, 203, 0.08);
   --paper-on-signal: #ffffff;
   --activation: #d4a017;
+  /* 55%, not the 70% the other ink tokens use: the hue is so light that 70%
+     gives 3.64:1 on --surface-lifted. 55% gives 5.06:1. */
+  --activation-ink: color-mix(in oklab, var(--activation) 55%, var(--ink));
 
   /* Ambient field, light mode — dimmed deliberately.
      On near-white paper the same dots that read as depth in dark mode become
@@ -501,20 +522,33 @@ read-along {
   --error: #dc2626;
   --warn: #b07d04;
   --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink));
+  /* --ok and --error pass on --paper (4.85, 4.67) but not on the lifted
+     plane (4.26, 4.10) or on their own tints, so their text mixes too. */
+  --ok-ink: color-mix(in oklab, var(--ok) 70%, var(--ink));
+  --error-ink: color-mix(in oklab, var(--error) 70%, var(--ink));
 
   /* Grade scale colors — deeper saturation for legibility on light surfaces.
-     Same five-band semantics as dark theme, adjusted for contrast. */
+     Same five-band semantics as dark theme, adjusted for contrast. These are
+     mark colours: --grade-b is 2.99:1 on --paper and --grade-d 3.44:1, so a
+     grade letter or word uses the --grade-*-ink text token. */
   --grade-a: #15803d;
   --grade-b: #65a30d;
   --grade-c: #b07d04;
   --grade-d: #ea580c;
   --grade-f: #dc2626;
-  --grade-b-light: #65a30d;
+  --grade-a-ink: color-mix(in oklab, var(--grade-a) 70%, var(--ink));
+  /* 65%: lime is light enough that 70% gives only 4.48:1 on --surface-lifted. */
+  --grade-b-ink: color-mix(in oklab, var(--grade-b) 65%, var(--ink));
+  --grade-c-ink: color-mix(in oklab, var(--grade-c) 70%, var(--ink));
+  --grade-d-ink: color-mix(in oklab, var(--grade-d) 70%, var(--ink));
+  --grade-f-ink: color-mix(in oklab, var(--grade-f) 70%, var(--ink));
+  /* Three tokens that are only ever text take their ink token in light. */
+  --grade-b-light: var(--grade-b-ink);
   --grade-d-glow: #ea580c;
   --signal-pos: #059669;
   --live: #15803d;
-  --error-text: #dc2626;
-  --amber-notice: #b07d04;
+  --error-text: var(--error-ink);
+  --amber-notice: var(--warn-ink);
 
   /* Surface depth vocabulary adapted for light */
   --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
@@ -6263,7 +6297,7 @@ button.check-cell {
 
 /* avoid items show an X in the activation accent instead of a blue checkmark */
 .check-cell.is-avoid .check-cell-check {
-  color: var(--activation);
+  color: var(--activation-ink);
 }
 
 @keyframes check-pop {
@@ -9810,12 +9844,12 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--error);
+  color: var(--error-ink);
 }
 
 .score-error-title {
   font-weight: 600;
-  color: var(--error);
+  color: var(--error-ink);
   margin-bottom: var(--space-fine-20);
 }
 
@@ -9926,10 +9960,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   gap: var(--space-24);
 }
 
-.score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok); }
+.score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok-ink); }
 .score-grade-emblem.is-c { background: color-mix(in srgb, var(--grade-c) 12%, transparent); border-color: color-mix(in srgb, var(--grade-c) 30%, transparent); color: var(--warn-ink); }
-.score-grade-emblem.is-d { background: color-mix(in srgb, var(--grade-d-glow) 12%, transparent); border-color: color-mix(in srgb, var(--grade-d-glow) 30%, transparent); color: var(--grade-d); }
-.score-grade-emblem.is-f { background: color-mix(in srgb, var(--grade-f) 12%, transparent); border-color: color-mix(in srgb, var(--grade-f) 30%, transparent); color: var(--error); }
+.score-grade-emblem.is-d { background: color-mix(in srgb, var(--grade-d-glow) 12%, transparent); border-color: color-mix(in srgb, var(--grade-d-glow) 30%, transparent); color: var(--grade-d-ink); }
+.score-grade-emblem.is-f { background: color-mix(in srgb, var(--grade-f) 12%, transparent); border-color: color-mix(in srgb, var(--grade-f) 30%, transparent); color: var(--error-ink); }
 
 
 /* Grade-colored arc fills — match the emblem grade colors */
@@ -10145,16 +10179,16 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-tile.is-pass { border-color: color-mix(in srgb, var(--grade-a) 20%, transparent); }
-.score-metric-tile.is-pass .score-metric-val { color: var(--ok); }
-.score-metric-tile.is-pass .score-metric-lbl { color: color-mix(in srgb, var(--ok) 80%, transparent); }
+.score-metric-tile.is-pass .score-metric-val { color: var(--ok-ink); }
+.score-metric-tile.is-pass .score-metric-lbl { color: var(--ok-ink); }
 
 .score-metric-tile.is-fail { border-color: color-mix(in srgb, var(--grade-f) 20%, transparent); }
-.score-metric-tile.is-fail .score-metric-val { color: var(--error); }
-.score-metric-tile.is-fail .score-metric-lbl { color: color-mix(in srgb, var(--error) 80%, transparent); }
+.score-metric-tile.is-fail .score-metric-val { color: var(--error-ink); }
+.score-metric-tile.is-fail .score-metric-lbl { color: var(--error-ink); }
 
 .score-metric-tile.is-warn { border-color: color-mix(in srgb, var(--grade-c) 20%, transparent); }
 .score-metric-tile.is-warn .score-metric-val { color: var(--warn-ink); }
-.score-metric-tile.is-warn .score-metric-lbl { color: color-mix(in srgb, var(--warn) 80%, transparent); }
+.score-metric-tile.is-warn .score-metric-lbl { color: var(--warn-ink); }
 
 .score-metric-tile.is-skip { border-color: var(--line); }
 .score-metric-tile.is-skip .score-metric-val { color: var(--muted); }
@@ -10482,7 +10516,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-grade.is-empty {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--error);
+  color: var(--error-ink);
 }
 
 .score-engine-tile-score {
@@ -10501,9 +10535,9 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-weight: 700;
 }
 
-.score-engine-tile-pwf b.is-pass { color: var(--ok); }
+.score-engine-tile-pwf b.is-pass { color: var(--ok-ink); }
 .score-engine-tile-pwf b.is-warn { color: var(--warn-ink); }
-.score-engine-tile-pwf b.is-fail { color: var(--error); }
+.score-engine-tile-pwf b.is-fail { color: var(--error-ink); }
 
 /* ── Collapsible check groups (FAIL/WARN/MANUAL/SKIP/PASS bucketing) ──────────
    Mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. Each group has
@@ -10668,7 +10702,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 .score-check-group.is-fail .score-check-group-count {
   background: color-mix(in srgb, var(--grade-f) 15%, transparent);
-  color: var(--error);
+  color: var(--error-ink);
 }
 
 .score-check-group.is-warn .score-check-group-count {
@@ -10678,7 +10712,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 .score-check-group.is-pass .score-check-group-count {
   background: color-mix(in srgb, var(--grade-a) 15%, transparent);
-  color: var(--ok);
+  color: var(--ok-ink);
 }
 
 .score-check-group-chevron {
@@ -11326,7 +11360,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-search-input::placeholder {
-  color: var(--muted-dim);
+  color: var(--muted);
   opacity: 1;
 }
 
@@ -11531,8 +11565,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   text-transform: uppercase;
 }
 
-.score-card-status-pill.is-pass { background: color-mix(in srgb, var(--grade-a) 15%, transparent); color: var(--ok); border: 1px solid color-mix(in srgb, var(--grade-a) 30%, transparent); }
-.score-card-status-pill.is-fail { background: color-mix(in srgb, var(--grade-f) 15%, transparent); color: var(--error); border: 1px solid color-mix(in srgb, var(--grade-f) 30%, transparent); }
+.score-card-status-pill.is-pass { background: color-mix(in srgb, var(--grade-a) 15%, transparent); color: var(--ok-ink); border: 1px solid color-mix(in srgb, var(--grade-a) 30%, transparent); }
+.score-card-status-pill.is-fail { background: color-mix(in srgb, var(--grade-f) 15%, transparent); color: var(--error-ink); border: 1px solid color-mix(in srgb, var(--grade-f) 30%, transparent); }
 .score-card-status-pill.is-warn { background: color-mix(in srgb, var(--grade-c) 15%, transparent); color: var(--warn-ink); border: 1px solid color-mix(in srgb, var(--grade-c) 30%, transparent); }
 .score-card-status-pill.is-skip { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
@@ -11850,7 +11884,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
 
 .badge-grade-row.is-qualifying .badge-grade-status {
-  color: var(--ok);
+  color: var(--ok-ink);
 }
 
 
@@ -12183,8 +12217,8 @@ html[data-motion="paused"] .pricing-card::after {
 
 /* Grade tints reuse the existing is-a/is-b/is-c/is-d/is-f grade palette
    defined for score-hero-card. Same tokens, no new colors. */
-.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal)); border-color: var(--grade-a-line, var(--line-strong)); }
-.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal)); border-color: var(--grade-b-line, var(--line)); }
+.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal-text)); border-color: var(--grade-a-line, var(--line-strong)); }
+.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal-text)); border-color: var(--grade-b-line, var(--line)); }
 .score-history-emblem.is-c { color: var(--grade-c-text, var(--muted)); border-color: var(--grade-c-line, var(--line)); }
 .score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
 .score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
@@ -12433,7 +12467,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-error p {
-  color: var(--error);
+  color: var(--error-ink);
   margin-bottom: var(--space-24);
 }
 
@@ -12516,8 +12550,8 @@ html[data-motion="paused"] .pricing-card::after {
   font-variant-numeric: tabular-nums;
 }
 
-.report-count--pass { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-.report-count--fail { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
+.report-count--pass { color: var(--ok-ink); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.report-count--fail { color: var(--error-ink); background: color-mix(in srgb, var(--error) 12%, transparent); }
 .report-count--warn { color: var(--warn-ink); background: color-mix(in srgb, var(--warn) 12%, transparent); }
 .report-count--skip { color: var(--muted); background: var(--surface-soft); }
 .report-count--manual { color: var(--muted); background: var(--surface-soft); }
@@ -12700,8 +12734,8 @@ html[data-motion="paused"] .pricing-card::after {
   border-radius: 3px;
 }
 
-.report-check-status--pass { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
-.report-check-status--fail { color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+.report-check-status--pass { color: var(--ok-ink); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.report-check-status--fail { color: var(--error-ink); background: color-mix(in srgb, var(--error) 10%, transparent); }
 .report-check-status--warn { color: var(--warn-ink); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .report-check-status--skip { color: var(--muted); background: var(--surface-soft); }
 .report-check-status--manual { color: var(--muted); background: var(--surface-soft); }
@@ -12757,7 +12791,7 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--error);
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--error) 8%, transparent);
-  color: var(--error);
+  color: var(--error-ink);
   font-size: 0.9rem;
   font-weight: 500;
   line-height: 1.5;
@@ -13291,11 +13325,11 @@ select {
   line-height: 1;
 }
 
-.constel-grade.is-a { color: var(--grade-a); }
+.constel-grade.is-a { color: var(--grade-a-ink); }
 .constel-grade.is-b { color: var(--grade-b-light); }
 .constel-grade.is-c { color: var(--warn-ink); }
-.constel-grade.is-d { color: var(--grade-d); }
-.constel-grade.is-f { color: var(--error); }
+.constel-grade.is-d { color: var(--grade-d-ink); }
+.constel-grade.is-f { color: var(--error-ink); }
 
 .constel-pct {
   font-size: clamp(0.8rem, 0.8rem + 0.3vw, 1rem);
@@ -13391,13 +13425,13 @@ select {
 }
 
 .score-delta-chip.is-up {
-  color: var(--ok);
+  color: var(--ok-ink);
   background: color-mix(in srgb, var(--grade-a) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--grade-a) 28%, transparent);
 }
 
 .score-delta-chip.is-down {
-  color: var(--error);
+  color: var(--error-ink);
   background: color-mix(in srgb, var(--grade-f) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--grade-f) 28%, transparent);
 }
@@ -13501,7 +13535,9 @@ select {
   background: color-mix(in srgb, var(--signal) 10%, transparent);
 }
 
-.score-cat-legend-row.is-unscored {
+/* Unscored rows dim the bar, never the label: at opacity 0.55 the --muted
+   label measured 2.97:1 in dark. The "–" score already says it is unscored. */
+.score-cat-legend-row.is-unscored .score-cat-legend-bar {
   opacity: 0.55;
 }
 
@@ -14251,11 +14287,11 @@ select {
   border: 1px solid var(--line-strong);
   color: var(--muted);
 }
-.hero-proof-recent-grade.is-a { color: var(--grade-a); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
-.hero-proof-recent-grade.is-b { color: var(--grade-b); border-color: color-mix(in srgb, var(--grade-b) 40%, transparent); }
-.hero-proof-recent-grade.is-c { color: var(--grade-c); border-color: color-mix(in srgb, var(--grade-c) 40%, transparent); }
-.hero-proof-recent-grade.is-d { color: var(--grade-d); border-color: color-mix(in srgb, var(--grade-d) 40%, transparent); }
-.hero-proof-recent-grade.is-f { color: var(--grade-f); border-color: color-mix(in srgb, var(--grade-f) 35%, transparent); }
+.hero-proof-recent-grade.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
+.hero-proof-recent-grade.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 40%, transparent); }
+.hero-proof-recent-grade.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 40%, transparent); }
+.hero-proof-recent-grade.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 40%, transparent); }
+.hero-proof-recent-grade.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 35%, transparent); }
 
 
 /* Narrow viewports: construction field hides (see .hero-construction), and
@@ -14946,7 +14982,7 @@ select {
 }
 
 .row--listen.is-playing .listen-btn {
-  color: var(--activation);
+  color: var(--activation-ink);
   border-color: var(--activation);
 }
 
@@ -15214,7 +15250,7 @@ select {
 /* The copied state is a colour change, not a size change: a control that
    resizes on click shifts everything beside it. */
 .agent-action[data-copied='true'] {
-  color: var(--ok, #22c55e);
+  color: var(--ok-ink);
   border-color: currentColor;
 }
 

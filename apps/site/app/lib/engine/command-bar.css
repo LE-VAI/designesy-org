@@ -254,7 +254,7 @@
   box-shadow:
     inset 0 0 0 1px var(--ctl-warn),
     0 0 0 3px color-mix(in srgb, var(--ctl-warn) 18%, transparent);
-  color: var(--ctl-warn);
+  color: var(--warn-ink);
 }
 
 /* A textarea well (the M3 converter): the text area fills the well. */
@@ -538,7 +538,7 @@
   width: var(--space-16);
   height: var(--space-16);
   margin-top: var(--space-2);
-  color: var(--ctl-warn);
+  color: var(--warn-ink);
 }
 
 /* Below the choices the status line reads as the slab's status bar: a

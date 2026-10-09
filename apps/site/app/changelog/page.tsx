@@ -362,9 +362,9 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
 ];
 
 const CHANGE_COLORS: Record<string, string> = {
-  added: 'var(--ok)',
+  added: 'var(--ok-ink)',
   modified: 'var(--signal-text)',
-  removed: 'var(--error)',
+  removed: 'var(--error-ink)',
   adopted: 'var(--signal-text)',
   deprecated: 'var(--warn-ink)',
 };

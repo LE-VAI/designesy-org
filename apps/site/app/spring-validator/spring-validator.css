@@ -763,7 +763,7 @@ html[data-motion="paused"] .sv-answer-glow {
    verdict shows (it was amber beside a red verdict: one result, three
    hues). The token holds 4.5:1 on reading material in both themes. */
 .sv-checklist[data-verdict="violation"] .sv-check-item[data-state="fail"] .sv-check-mark {
-  color: var(--error);
+  color: var(--error-ink);
 }
 
 /* Not applicable: a neutral hold mark and a quieter label. It carries no

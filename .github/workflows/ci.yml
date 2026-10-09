@@ -207,9 +207,10 @@ jobs:
         if: always()
         run: node scripts/check-jsx-glue.js
 
-      # Text in the warn hue uses --warn-ink: the bare light-theme --warn is
-      # 3.51:1 on --paper, under 4.5:1 for text.
-      - name: Warn ink contrast
+      # Text in a status or grade hue uses its --<hue>-ink token: several bare
+      # light-theme hues are under 4.5:1 for text (--warn 3.51:1, --grade-b
+      # 2.99:1 on --paper). Every ink token is measured on all four surfaces.
+      - name: Status and grade ink contrast
         if: always()
         run: node scripts/check-warn-ink.js
 
