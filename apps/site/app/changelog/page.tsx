@@ -332,6 +332,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'Each fix removes a verdict the engine could not defend. Gating motion behind no-preference is a recommended way to honour reduced motion; a page with no field gives iOS nothing to zoom into; and v14 and v18 judged external sites on Designesy taste under the scope meant to be fair to them. The engine version moves so a score from before the fix and one from after it can be told apart.',
     source: 'Media Queries Level 5 (prefers-reduced-motion), DTCG Format Module 2025.10, engine 1.1.0 entry in CHANGELOG.md',
   },
+
+  // ── v0.4.3: text-contrast pass ──
+  {
+    version: 'v0.4.3',
+    date: '2026-10-09',
+    dimension: 'tokens',
+    change: 'added',
+    title: 'Text tokens for every status and grade colour',
+    description:
+      'Each status, grade and activation hue gains a text token, --<hue>-ink: the hue itself in the dark theme, and in the light theme the hue mixed toward ink until it reads at 4.5 to 1 or better on every surface. Light --muted-dim darkens from #70707a to #686872. Dots, bars, borders and tints keep the hue.',
+    rationale:
+      'A rendered sweep of every public page found 230 text elements under WCAG AA in the light theme and 11 in the dark. Nearly all were one mistake repeated: a colour chosen to mark a state (3 to 1 is enough for an icon) used to write the word for it (text needs 4.5 to 1). A text token per hue makes the right choice the default, and the site build now fails on a bare hue used as text.',
+    source: 'WCAG 2.2 SC 1.4.3 and 1.4.11, rendered contrast sweep of designesy.org (2026-10-08), CSS Color 5 color-mix()',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -358,6 +372,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
   { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed.' },
   { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
+  { version: 'v0.4.3', date: '2026-10-09', checks: 42, title: 'Text-contrast pass', summary: 'Every status, grade and activation colour gains a text token that reads at 4.5 to 1 or better in both themes; light --muted-dim darkens. No check or verdict changed.' },
   { version: 'v0.4.2 · engine 1.1.0', date: '2026-10-08', checks: 42, title: 'Engine baseline fixes', summary: 'v05 accepts opt-in motion, v27 skips pages with no field, v14 and v18 become optional for external sites, and the token validator uses the 13 DTCG types. The contract is unchanged.' },
 ];
 
