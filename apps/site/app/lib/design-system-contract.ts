@@ -277,6 +277,11 @@ export const designSystemContract = {
       value: '#facc15',
       role: 'Verification status: warn',
     },
+    warn_ink: {
+      token: '--warn-ink',
+      value: 'var(--warn)',
+      role: 'Warn used as text: --warn on dark (13.62:1 on paper); on light, --warn mixed 70% toward --ink in oklab (#7f5e21, 5.79:1 on paper). Light --warn itself (#b07d04, 3.51:1 on paper) is for icons, dots and tints',
+    },
     error: {
       token: '--error',
       value: '#f87171',
