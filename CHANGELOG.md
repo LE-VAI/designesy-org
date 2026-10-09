@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.2] — 2026-10-09
+
+**designesy-mcp 1.13.2** (PyPI, MCP registry): every tool declares a title and the four MCP annotation hints.
+
 ### Added
 
 - **MCP tool titles and annotations.** Each of the 17 tools on the hosted
