@@ -3,4 +3,4 @@
 // Action's SARIF driver. The source of truth is packages/designesy-mcp/
 // pyproject.toml (PyPI and the MCP registry publish from it);
 // packages/designesy-mcp/test/test_server.py fails CI if any surface drifts.
-export const MCP_SERVER_VERSION = '1.13.0';
+export const MCP_SERVER_VERSION = '1.13.1';

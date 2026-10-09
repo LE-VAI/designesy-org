@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.1] — 2026-10-08
+
+**designesy-mcp 1.13.1** (PyPI, MCP registry): the offline fallback mirrors engine 1.1.0 under a drift gate.
+
 ### Changed
 
 - **PyPI MCP server: the offline fallback mirrors engine 1.1.0, under a drift
