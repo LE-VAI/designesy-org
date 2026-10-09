@@ -193,909 +193,940 @@ def _fetch_llms_full_txt() -> str:
     return _fetch(f"{BASE_URL}/llms-full.txt", as_json=False)
 
 
-# ── designesy_score: executable verification engine ──────────────────────────
+# ── designesy_score: the offline engine ──────────────────────────────────────
 #
-# Fetches a URL's HTML + linked CSS, concatenates all stylesheet text, and
-# runs the 23-item contract verification checklist automatically. Each item
-# is scored PASS / FAIL / WARN / SKIP with provenance back to the contract
-# token or rule that drove the check. This is the thin end of the wedge:
-# the verification checklist, automated. Future versions expand to the
-# 8 review dimensions.
+# designesy_score asks the live engine at /api/score first. When that call
+# fails, format designesy falls back to this offline engine, which fetches the
+# page itself and runs a subset of the live engine's checks locally.
 #
-# Zero external Python dependencies: uses urllib + regex only. CDP checks
-# (v02, v21) use Node's built-in WebSocket (Node 21+) — no npm packages required.
-# Computed-style checks that require a live DOM (focus-visible
-# rendering, prefers-reduced-motion at runtime) are approximated by
-# parsing CSS text for the relevant selectors and media queries.
+# It MIRRORS one live engine build, OFFLINE_ENGINE_MIRRORS. Each check it runs
+# is a port of the TypeScript check in packages/score/src/engine.ts, which
+# packages/score/scripts/source-drift.mjs keeps identical to the live route
+# (apps/site/app/api/score/route.ts): the same item, category, status and
+# detail text, the same token inference, and the same scope filter. The checks
+# it does not run are listed in _OFFLINE_NOT_IMPLEMENTED with the reason, and
+# the result names them.
+#
+# DRIFT GATE. test/test_offline_engine_parity.py scores the shared fixture
+# corpus with this engine and compares every check it runs against
+# test/fixtures/offline-engine-golden.json, which
+# packages/score/scripts/export-offline-golden.mjs writes from the built
+# TypeScript engine. CI runs that script with --check, so the golden cannot
+# fall behind the TypeScript engine, and the parity test fails until this port
+# follows it. Until this gate nothing compared the two: measured on the golden
+# when it was introduced (2026-10-08), the previous fallback disagreed with the
+# live engine's status on at least one run for 23 of its 26 checks (agreeing
+# everywhere only on v03, v07 and v09), and raised ValueError on scale(0.9.5).
+#
+# JAVASCRIPT SEMANTICS. The port keeps JavaScript behaviour wherever the two
+# languages differ, because a verdict that leans on a difference would
+# otherwise disagree with the live engine without anything failing:
+#   - _js_re compiles the TypeScript regex source with JavaScript semantics:
+#     ASCII \w \d \b and case folding, JS whitespace for \s, `.` stops at all
+#     four JS line terminators, and a trailing `$` matches only at the end.
+#   - _js_float and _js_int parse the longest numeric prefix, as parseFloat
+#     and parseInt do ("0.9.5" is 0.9, "5g" in hex is 5), and return NaN
+#     rather than raising.
+#   - _js_num and _js_fixed format numbers as Number#toString and
+#     Number#toFixed do (13 prints "13", 0.125 to 2 places prints "0.13").
+#   - _js_trim strips the JS whitespace set, which includes U+FEFF.
+#   - _js_pow returns NaN where Math.pow does, never a complex number.
 
-
+import math
+import os
 import re
-from html.parser import HTMLParser
-from urllib.parse import urljoin
+import subprocess
+from decimal import Decimal, ROUND_HALF_UP
+from urllib.parse import urljoin, urlparse
+
+# The live engine build this engine mirrors, and the contract revision that
+# build reports. Both are asserted against the golden the TypeScript engine
+# writes, so neither can claim a version the port does not match.
+OFFLINE_ENGINE_MIRRORS = "1.1.0"
+OFFLINE_CONTRACT_VERSION = "v0.4.1"
+
+# The live engine's checks that this engine does not run, in the live engine's
+# order. The parity test asserts that these and OFFLINE_CHECK_IDS together are
+# exactly the live engine's check list, so a check added to the live engine
+# fails the test until it is ported or listed here with a reason.
+_NOT_PORTED = (
+    "not ported: added to the live engine after this fallback's original "
+    "checklist (v01-v23, x01-x03), and engine 1.1.0 did not change it. The "
+    "live engine runs it."
+)
+_OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
+    "v24": _NOT_PORTED,
+    "v25": _NOT_PORTED,
+    "v26": _NOT_PORTED,
+    "v28": _NOT_PORTED,
+    "v29": _NOT_PORTED,
+    "v42": _NOT_PORTED,
+    "v43": _NOT_PORTED,
+    "v34": _NOT_PORTED,
+    "v35": _NOT_PORTED,
+    "v36": _NOT_PORTED,
+    "v38": _NOT_PORTED,
+    "v39": _NOT_PORTED,
+    "v40": _NOT_PORTED,
+    "v41": _NOT_PORTED,
+    "v37": (
+        "needs the network: it fetches /DESIGN.md from the target origin and "
+        "lints it with an optional package. The live engine's own offline mode "
+        "pins it to SKIP for the same reason."
+    ),
+}
+
+# The checks this engine runs, in the live engine's order.
+OFFLINE_CHECK_IDS: tuple[str, ...] = (
+    "v01", "v02", "v03", "v04", "v05", "v06", "v07", "v08", "v09", "v10",
+    "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19", "v20",
+    "v21", "v22", "v23", "x01", "x02", "x03", "v27",
+)
+
+# route.ts MAX_STYLESHEETS: the live engine fetches at most this many distinct
+# linked stylesheets.
+_MAX_STYLESHEETS = 60
 
 
-class _StylesheetExtractor(HTMLParser):
-    """Extract inline <style> text and <link rel=stylesheet href> URLs from HTML."""
+# ── JavaScript-semantics helpers ─────────────────────────────────────────────
 
-    def __init__(self):
-        super().__init__()
-        self.inline_css: list[str] = []
-        self.link_hrefs: list[str] = []
-        self._in_style = False
-        self._style_buf: list[str] = []
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
-        if tag == "style":
-            self._in_style = True
-            self._style_buf = []
-        elif tag == "link":
-            attrs_d = dict(attrs)
-            rel = (attrs_d.get("rel") or "").lower()
-            href = attrs_d.get("href")
-            if "stylesheet" in rel and href:
-                self.link_hrefs.append(href)
-
-    def handle_endtag(self, tag: str):
-        if tag == "style" and self._in_style:
-            self._in_style = False
-            self.inline_css.append("".join(self._style_buf))
-            self._style_buf = []
-
-    def handle_data(self, data: str):
-        if self._in_style:
-            self._style_buf.append(data)
+# The characters String#trim strips and \s matches in JavaScript: WhiteSpace
+# (including U+FEFF and every Zs space) plus the four LineTerminators.
+_JS_WS_CHARS = (
+    "\t\n\x0b\x0c\r \xa0        "
+    "        　﻿"
+)
+_JS_WS_CLASS = (
+    "\\t\\n\\x0b\\x0c\\r \\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029"
+    "\\u202f\\u205f\\u3000\\ufeff"
+)
+_JS_RE_CACHE: dict[tuple[str, str], "re.Pattern[str]"] = {}
 
 
-def _fetch_page_css(url: str) -> str:
-    """Fetch a page and all its CSS (inline + linked), return concatenated text."""
-    html = _fetch(url, as_json=False)
-    parser = _StylesheetExtractor()
-    parser.feed(html)
-    css_parts = list(parser.inline_css)
-    for href in parser.link_hrefs:
-        full_url = urljoin(url, href)
+def _js_re(source: str, flags: str = "") -> "re.Pattern[str]":
+    """Compile a JavaScript regex body (the text between the slashes).
+
+    Flags are the JS ones: "i" folds case, "g" is accepted for readability
+    (iteration is the caller's choice of finditer or search). Any other flag
+    raises, so a pattern whose semantics this cannot reproduce is never ported
+    silently.
+    """
+    key = (source, flags)
+    hit = _JS_RE_CACHE.get(key)
+    if hit is not None:
+        return hit
+    if set(flags) - {"g", "i"}:
+        raise ValueError(f"_js_re does not reproduce JS flag(s) {flags!r}")
+    out: list[str] = []
+    in_class = False
+    i = 0
+    while i < len(source):
+        c = source[i]
+        if c == "\\":
+            nxt = source[i + 1]
+            if nxt == "s":
+                out.append(_JS_WS_CLASS if in_class else f"[{_JS_WS_CLASS}]")
+            elif nxt == "S":
+                # Inside a class this only appears as [\s\S] (any character),
+                # which the union with _JS_WS_CLASS keeps exact.
+                out.append("\\S" if in_class else f"[^{_JS_WS_CLASS}]")
+            else:
+                out.append(c + nxt)
+            i += 2
+            continue
+        if in_class:
+            if c == "]":
+                in_class = False
+        elif c == "[":
+            in_class = True
+        elif c == ".":
+            c = "[^\\n\\r\\u2028\\u2029]"
+        elif c == "$":
+            c = "\\Z"
+        out.append(c)
+        i += 1
+    pattern = re.compile("".join(out), re.ASCII | (re.IGNORECASE if "i" in flags else 0))
+    _JS_RE_CACHE[key] = pattern
+    return pattern
+
+
+def _js_trim(s: str) -> str:
+    """String#trim."""
+    return s.strip(_JS_WS_CHARS)
+
+
+_JS_FLOAT_PREFIX = re.compile(
+    r"[+-]?(?:Infinity|(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)"
+)
+
+
+def _js_float(s: str) -> float:
+    """parseFloat: the longest decimal prefix, NaN when there is none."""
+    m = _JS_FLOAT_PREFIX.match(s.lstrip(_JS_WS_CHARS))
+    if not m:
+        return math.nan
+    text = m.group(0)
+    if text.endswith("Infinity"):
+        return -math.inf if text.startswith("-") else math.inf
+    return float(text)
+
+
+def _js_int(s: str, radix: int = 10) -> float:
+    """parseInt for radix 10 or 16: the longest digit prefix, NaN when none."""
+    t = s.lstrip(_JS_WS_CHARS)
+    sign = 1
+    if t[:1] in ("+", "-"):
+        sign = -1 if t[0] == "-" else 1
+        t = t[1:]
+    if radix == 16 and t[:2] in ("0x", "0X"):
+        t = t[2:]
+    digits = "0123456789" if radix == 10 else "0123456789abcdefABCDEF"
+    n = 0
+    while n < len(t) and t[n] in digits:
+        n += 1
+    if n == 0:
+        return math.nan
+    try:
+        return sign * float(int(t[:n], radix))
+    except OverflowError:
+        return sign * math.inf
+
+
+def _js_num(x: float) -> str:
+    """Number#toString for a finite or non-finite number."""
+    x = float(x)
+    if math.isnan(x):
+        return "NaN"
+    if math.isinf(x):
+        return "Infinity" if x > 0 else "-Infinity"
+    if x == 0:
+        return "0"
+    if x < 0:
+        return "-" + _js_num(-x)
+    # repr is the shortest round-trip form, the same digits JS chooses.
+    mantissa, _, exp = repr(x).partition("e")
+    whole, _, frac = mantissa.partition(".")
+    digits = whole + frac
+    point = len(whole) + (int(exp) if exp else 0)
+    stripped = digits.lstrip("0")
+    point -= len(digits) - len(stripped)
+    digits = stripped.rstrip("0")
+    k, n = len(digits), point
+    if k <= n <= 21:
+        return digits + "0" * (n - k)
+    if 0 < n <= 21:
+        return digits[:n] + "." + digits[n:]
+    if -6 < n <= 0:
+        return "0." + "0" * (-n) + digits
+    e = f"e{'+' if n - 1 >= 0 else '-'}{abs(n - 1)}"
+    return digits + e if k == 1 else digits[0] + "." + digits[1:] + e
+
+
+def _js_fixed(x: float, places: int) -> str:
+    """Number#toFixed: rounds the exact binary value, ties away from zero."""
+    x = float(x)
+    if math.isnan(x):
+        return "NaN"
+    if abs(x) >= 1e21:
+        return _js_num(x)
+    if x == 0:
+        x = 0.0  # (-0).toFixed() has no sign
+    q = Decimal(x).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
+    return f"{q:f}"
+
+
+def _js_bool(b: bool) -> str:
+    return "true" if b else "false"
+
+
+def _js_pow(base: float, exp: float) -> float:
+    """Math.pow: NaN for a negative base with a fractional exponent."""
+    try:
+        return math.pow(base, exp)
+    except ValueError:
+        return math.nan
+    except OverflowError:
+        return math.inf
+
+
+def _js_max(a: float, b: float) -> float:
+    return math.nan if math.isnan(a) or math.isnan(b) else max(a, b)
+
+
+def _js_min(a: float, b: float) -> float:
+    return math.nan if math.isnan(a) or math.isnan(b) else min(a, b)
+
+
+def _js_join(nums: list[float], sep: str = ",") -> str:
+    """Array#join over numbers."""
+    return sep.join(_js_num(v) for v in nums)
+
+
+# ── Page fetch ───────────────────────────────────────────────────────────────
+
+
+def _extract_css_parts(html: str, base_url: str) -> list[str]:
+    """route.ts extractCssLinks: inline <style> bodies, then stylesheet URLs.
+
+    The link pattern needs rel before href, as the live engine's does; a page
+    that writes href first has that sheet ignored by both engines alike.
+    """
+    parts = [m.group(1) for m in _js_re(r"<style[^>]*>([\s\S]*?)<\/style>", "gi").finditer(html)]
+    link_re = _js_re(r"<link[^>]*rel=[\"']?stylesheet[\"']?[^>]*href=[\"']([^\"']+)[\"']", "gi")
+    for m in link_re.finditer(html):
         try:
-            css_parts.append(_fetch(full_url, as_json=False))
+            parts.append(urljoin(base_url, m.group(1)))
+        except ValueError:
+            pass  # malformed href, ignored as the live engine does
+    return parts
+
+
+def _fetch_page_parts(url: str) -> tuple[str, str]:
+    """Fetch a page and its CSS the way route.ts fetchPageResilient assembles it.
+
+    Inline <style> text first, then each distinct linked stylesheet (at most
+    _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
+    fails to load is dropped, not fatal.
+    """
+    html = _fetch(url, as_json=False)
+    parts = _extract_css_parts(html, url)
+    css_parts = [p for p in parts if not p.startswith("http")]
+    external = list(dict.fromkeys(p for p in parts if p.startswith("http")))
+    for href in external[:_MAX_STYLESHEETS]:
+        try:
+            text = _fetch(href, as_json=False)
         except Exception:
-            pass  # skip unreachable stylesheets
-    return "\n".join(css_parts)
+            continue
+        if text:
+            css_parts.append(text)
+    return html, "\n".join(css_parts)
+
+
+# ── Tokens ───────────────────────────────────────────────────────────────────
 
 
 def _extract_root_tokens(css: str) -> dict[str, str]:
-    """Extract :root { --token: value } custom properties from CSS text.
+    """engine.ts extractRootTokens: custom properties declared in :root.
 
-    Handles the common case where the last property in a block has no
-    trailing semicolon (e.g. '--duration-slow:400ms}' with the } as terminator).
-
-    Only the BASE unscoped :root is read for contract-value comparison.
-    Media-query overrides (e.g. @media (prefers-contrast: more) { :root { ... } })
-    are accessibility enhancements, not contract drift — they must NOT clobber
-    the base tokens.  We skip any :root that sits inside an @media block.
+    Media-query :root blocks (one level deep) are stripped first, so an
+    accessibility override does not replace the base token.
     """
+    stripped = _js_re(r"@media[^{]*\{[^@]*?\}\s*\}", "gi").sub("", css)
     tokens: dict[str, str] = {}
-    # Find :root { ... } blocks that are NOT inside @media (...) { ... }.
-    # Strategy: strip @media ... { ... } wrappers first, leaving only top-level
-    # :root blocks.  This prevents media-query overrides from clobbering base
-    # tokens (cascade order would otherwise let the last :root win).
-    # Nested @media braces are handled by removing the outermost @media wrapper.
-    stripped = css
-    # Remove @media (...) { ... } blocks — non-greedy, one level deep.
-    # A media block's closing brace may align with a nested rule's brace, so
-    # we match @media header + balanced-ish block via non-greedy [^}]*{[^}]*}.
-    stripped = re.sub(
-        r"@media[^{]*\{[^@]*?\}\s*\}",  # @media (...) { ...single-level... }
-        "",
-        stripped,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    # Also handle @media blocks whose body contains @media-free nested rules:
-    # strip @media (...) { through its matching close-brace by scanning.
-    # The regex above handles the common case; for robustness, also remove any
-    # :root blocks that are preceded by @media on the same logical chunk.
-    # Find :root { ... } blocks (may be multiple) in the stripped CSS.
-    for m in re.finditer(r":root\s*\{([^}]*)\}", stripped):
-        block = m.group(1)
-        # Match --token: value; OR --token: value} (last prop, no semicolon)
-        for prop in re.finditer(r"--([\w-]+)\s*:\s*([^;]+?)(?:;|$)", block):
-            name = f"--{prop.group(1)}"
-            value = prop.group(2).strip()
-            tokens[name] = value
+    for block in _js_re(r":root\s*\{([^}]*)\}", "g").finditer(stripped):
+        for prop in _js_re(r"--([\w-]+)\s*:\s*([^;]+?)(?:;|$)", "g").finditer(block.group(1)):
+            tokens[f"--{prop.group(1)}"] = _js_trim(prop.group(2))
     return tokens
 
 
-# ── Token-name normalization ─────────────────────────────────────────────────
-#
-# The multi-surface harness principle (Factory insight): the engine must not
-# assume one token vocabulary.  A generic surface might use --bg instead of
-# --paper, --accent instead of --signal, --text instead of --ink.  This layer
-# maps common semantic aliases to Designesy's canonical names so the contrast
-# and duration checks can run on ANY surface, not just designesy.org.
-#
-# The mapping is deliberately permissive: we only alias when the canonical
-# name is absent AND a known alias is present.  We never overwrite a canonical
-# token that already exists.
-
-# Semantic role → list of known alias token names (lowercased, with --).
 _TOKEN_ALIASES: dict[str, list[str]] = {
-    # Surface / background
-    "--paper": [
-        "--bg", "--background", "--surface", "--bg-primary",
-        "--background-color", "--canvas", "--page", "--page-bg",
-        "--bg-base", "--surface-base", "--color-bg", "--color-background",
-        "--color-surface", "--app-bg", "--body-bg", "--main-bg",
-    ],
-    # Foreground / primary text
-    "--ink": [
-        "--text", "--fg", "--foreground", "--text-primary",
-        "--color-text", "--color-foreground", "--text-main",
-        "--text-base", "--body-text", "--content", "--fg-primary",
-    ],
-    # Accent / brand signal
-    "--signal": [
-        "--accent", "--primary", "--brand", "--accent-color",
-        "--color-accent", "--color-primary", "--color-brand",
-        "--brand-color", "--link", "--link-color",
-        "--action", "--action-color", "--cta", "--button-bg",
-    ],
-    # Muted text
-    "--muted": [
-        "--text-muted", "--text-secondary", "--secondary", "--fg-muted",
-        "--color-text-secondary", "--color-muted", "--text-subtle",
-        "--muted-text", "--text-tertiary", "--fg-secondary",
-    ],
-    # Muted-dim (weakest text)
-    "--muted-dim": [
-        "--text-dim", "--text-disabled", "--fg-dim", "--text-faint",
-        "--color-text-disabled", "--text-placeholder", "--placeholder",
-    ],
-    # Motion durations
-    "--duration-quick": [
-        "--duration-fast", "--transition-fast", "--motion-fast",
-        "--speed-fast", "--dur-fast", "--duration-1", "--transition-1",
-    ],
-    "--duration-slow": [
-        "--duration-slow-1", "--transition-slow", "--motion-slow",
-        "--speed-slow", "--dur-slow", "--duration-3", "--transition-3",
-    ],
+    "--paper": ["--bg", "--background", "--surface", "--bg-primary", "--background-color", "--canvas", "--page", "--page-bg", "--bg-base", "--surface-base", "--color-bg", "--color-background", "--color-surface", "--app-bg"],
+    "--ink": ["--text", "--fg", "--foreground", "--text-primary", "--color-text", "--color-foreground", "--text-main", "--text-base", "--body-text"],
+    "--signal": ["--accent", "--primary", "--brand", "--accent-color", "--color-accent", "--color-primary", "--color-brand", "--brand-color", "--link"],
+    "--muted": ["--text-muted", "--text-secondary", "--secondary", "--fg-muted", "--color-text-secondary", "--color-muted", "--text-subtle"],
+    "--muted-dim": ["--text-dim", "--text-disabled", "--fg-dim", "--text-faint"],
+    "--duration-quick": ["--duration-fast", "--transition-fast", "--motion-fast", "--dur-fast"],
+    "--duration-slow": ["--duration-slow-1", "--transition-slow", "--motion-slow", "--dur-slow"],
 }
 
 
-def _normalize_tokens(
-    tokens: dict[str, str], css: str = ""
-) -> tuple[dict[str, str], set[str]]:
-    """Map common semantic token aliases to Designesy canonical names.
+def _resolve_var(value: str, tokens: dict[str, str], depth: int = 0) -> str:
+    """engine.ts resolveVar: follow var(--x) up to 5 hops."""
+    if depth > 5:
+        return _js_trim(value)
+    m = _js_re(r"^\s*var\(\s*(--[\w-]+)").search(value)
+    if not m:
+        return _js_trim(value)
+    ref = tokens.get(m.group(1))
+    if not ref:
+        return _js_trim(value)
+    return _resolve_var(ref, tokens, depth + 1)
 
-    Never overwrites a canonical token that already exists. Only adds
-    canonical names when they're absent and a known alias is present.
-    Returns a tuple of (merged tokens, set of inferred canonical names).
 
-    If css is provided, falls back to value-based inference for any
-    canonical tokens that remain unmapped after alias resolution.
-    """
-    result = dict(tokens)  # copy — don't mutate the original
-    inferred_names: set[str] = set()
-
-    # Layer 1: name aliasing
+def _infer_tokens(tokens: dict[str, str]) -> dict[str, str]:
+    """engine.ts inferTokensFromCss: fill each canonical token from its first alias."""
+    result = dict(tokens)
     for canonical, aliases in _TOKEN_ALIASES.items():
-        if canonical in result and result[canonical]:
-            continue  # canonical already present, skip
-        for alias in aliases:
-            if alias in tokens and tokens[alias]:
-                result[canonical] = tokens[alias]
-                inferred_names.add(canonical)  # aliased, not native
-                break  # first match wins
-
-    # Layer 2: value-based inference from CSS rules.
-    # If alias mapping didn't find a canonical, infer from actual color values
-    # in the stylesheet.  This unblocks surfaces with brand-specific token
-    # names (--v0-blue, --bolt-*, --ph-*) that name aliasing can't reach.
-    if css:
-        inferred = _infer_tokens_from_css(css, tokens)
-        for canonical, value in inferred.items():
-            if canonical not in result or not result[canonical]:
-                result[canonical] = value
-                inferred_names.add(canonical)
-
-    return result, inferred_names
+        if not result.get(canonical):
+            for alias in aliases:
+                if result.get(canonical):
+                    break
+                if result.get(alias):
+                    result[canonical] = _resolve_var(result[alias], result)
+    return result
 
 
-def _infer_tokens_from_css(
-    css: str, tokens: dict[str, str]
-) -> dict[str, str]:
-    """Infer Designesy canonical token values from CSS color usage.
+# ── Colour ───────────────────────────────────────────────────────────────────
 
-    Scans CSS rules for background and color properties, extracts hex colors,
-    and infers semantic roles:
-      - --paper:  lightest background color used on body/html/main
-      - --ink:    darkest text color used on body/p
-      - --signal: most saturated accent color used on a/button/link
-      - --muted:  a medium-gray text color (between --ink and --paper)
-      - --duration-quick / --duration-slow: shortest/longest transition durations
-
-    Returns a dict of canonical token → inferred value.  Only returns values
-    the inference is confident about; missing roles are simply absent.
-    """
-    inferred: dict[str, str] = {}
-
-    # ── Resolve var() chains so we can reach the actual hex values ──
-    # Many surfaces use var(--some-token) in their CSS rules, and the token
-    # may itself reference another token.  Resolve up to 5 levels deep.
-    def _resolve_var(value: str, _depth: int = 0) -> str:
-        """Resolve var(--x) references to their root hex values."""
-        if _depth > 5:
-            return value
-        var_match = re.match(r"\s*var\(\s*(--[\w-]+)", value)
-        if not var_match:
-            return value.strip()
-        ref_name = var_match.group(1)
-        ref_val = tokens.get(ref_name, "")
-        if not ref_val:
-            return value.strip()
-        return _resolve_var(ref_val, _depth + 1)
-
-    # Build a resolved copy of tokens (all var() chains resolved to hex)
-    resolved_tokens: dict[str, str] = {}
-    for name, value in tokens.items():
-        resolved = _resolve_var(value)
-        if resolved.startswith("#"):
-            resolved_tokens[name] = resolved
-
-    # ── Collect hex colors from CSS ──
-    # Helper: extract a hex color from a CSS property value, resolving var()
-    def _extract_color(value: str) -> tuple[float, float, float] | None:
-        """Extract an RGB tuple from a CSS color value, resolving var()."""
-        resolved = _resolve_var(value)
-        rgb = _hex_to_rgb(resolved)
-        return rgb
-
-    # Background colors from body/html/main rules
-    bg_colors: list[tuple[float, float, float]] = []  # (r, g, b) 0-255
-    for sel_match in re.finditer(
-        r"(?:^|})\s*([\w.#:>\s,]*(?:body|html|main|app|root)[\w.#:>\s,]*)\s*\{([^}]*)\}",
-        css, re.IGNORECASE,
-    ):
-        block = sel_match.group(2)
-        for bg_match in re.finditer(r"(?:background(?:-color)?|bg)\s*:\s*([^;]+)", block):
-            rgb = _extract_color(bg_match.group(1))
-            if rgb:
-                bg_colors.append(rgb)
-
-    # Text colors from body/p rules
-    text_colors: list[tuple[float, float, float]] = []
-    for sel_match in re.finditer(
-        r"(?:^|})\s*([\w.#:>\s,]*(?:body|p|span|div)[\w.#:>\s,]*)\s*\{([^}]*)\}",
-        css, re.IGNORECASE,
-    ):
-        block = sel_match.group(2)
-        for color_match in re.finditer(r"(?:^|[\s;])color\s*:\s*([^;]+)", block):
-            rgb = _extract_color(color_match.group(1))
-            if rgb:
-                text_colors.append(rgb)
-
-    # Accent colors from a/button/link rules
-    accent_colors: list[tuple[float, float, float]] = []
-    for sel_match in re.finditer(
-        r"(?:^|})\s*([\w.#:>\s,]*(?:a\b|button|link|cta|btn)[\w.#:>\s,]*)\s*\{([^}]*)\}",
-        css, re.IGNORECASE,
-    ):
-        block = sel_match.group(2)
-        for color_match in re.finditer(r"(?:background(?:-color)?|color)\s*:\s*([^;]+)", block):
-            rgb = _extract_color(color_match.group(1))
-            if rgb:
-                accent_colors.append(rgb)
-
-    # Also check resolved tokens for hex values that name aliasing missed
-    for name, value in resolved_tokens.items():
-        rgb = _hex_to_rgb(value)
-        if rgb:
-            # Heuristic: if token name contains 'bg'/'background'/'surface', it's a bg
-            if any(w in name.lower() for w in ("bg", "background", "surface", "canvas", "page")):
-                bg_colors.append(rgb)
-            elif any(w in name.lower() for w in ("text", "fg", "foreground", "ink", "content")):
-                text_colors.append(rgb)
-            elif any(w in name.lower() for w in ("accent", "primary", "brand", "link", "action")):
-                accent_colors.append(rgb)
-
-    # ── Infer --paper: lightest background ──
-    if bg_colors:
-        lightest_bg = max(bg_colors, key=lambda c: sum(c) / 3)
-        inferred["--paper"] = _rgb_to_hex(lightest_bg)
-
-    # ── Infer --ink: darkest text ──
-    if text_colors:
-        darkest_text = min(text_colors, key=lambda c: sum(c) / 3)
-        inferred["--ink"] = _rgb_to_hex(darkest_text)
-
-    # ── Infer --signal: most saturated accent ──
-    if accent_colors:
-        most_saturated = max(accent_colors, key=lambda c: _saturation(c))
-        inferred["--signal"] = _rgb_to_hex(most_saturated)
-
-    # ── Infer --muted: medium-gray text ──
-    # A muted color is one with low saturation and mid luminance
-    gray_text = [c for c in text_colors if _saturation(c) < 0.15]
-    if gray_text:
-        # Pick one with mid luminance (not the darkest, not the lightest)
-        gray_text.sort(key=lambda c: sum(c) / 3)
-        mid_idx = len(gray_text) // 2
-        inferred["--muted"] = _rgb_to_hex(gray_text[mid_idx])
-
-    # ── Infer duration tokens from transitions ──
-    durations = re.findall(r"transition\s*:[^;]*?(\d+(?:\.\d+)?)\s*(ms|s)\b", css, re.IGNORECASE)
-    duration_ms: list[float] = []
-    for val, unit in durations:
-        ms = float(val) * (1000 if unit.lower() == "s" else 1)
-        if ms > 0:
-            duration_ms.append(ms)
-    # Also check :root tokens for ms/s values
-    for name, value in tokens.items():
-        dur_match = re.match(r"(\d+(?:\.\d+)?)\s*(ms|s)", value.strip(), re.IGNORECASE)
-        if dur_match:
-            ms = float(dur_match.group(1)) * (1000 if dur_match.group(2).lower() == "s" else 1)
-            if ms > 0:
-                duration_ms.append(ms)
-
-    if duration_ms:
-        inferred["--duration-quick"] = f"{min(duration_ms):.0f}ms"
-        inferred["--duration-slow"] = f"{max(duration_ms):.0f}ms"
-
-    return inferred
+Rgb = tuple[float, float, float]
 
 
-def _saturation(rgb: tuple[float, float, float]) -> float:
-    """Calculate HSV saturation (0-1) for an (r, g, b) tuple in 0-255."""
-    r, g, b = [c / 255.0 for c in rgb]
-    mx, mn = max(r, g, b), min(r, g, b)
-    if mx == mn:
-        return 0.0
-    d = mx - mn
-    if mx == r:
-        s = d / (2 - mx - mn) if mx + mn > 1 else d / (mx + mn)
-    elif mx == g:
-        s = d / (2 - mx - mn) if mx + mn > 1 else d / (mx + mn)
+def _hex_to_rgb(color: str) -> Rgb | None:
+    color = _js_trim(color)
+    if not color.startswith("#"):
+        return None
+    hex_part = color[1:]
+    # A character outside the BMP is two UTF-16 units in JS, and every way it
+    # can land in the three two-unit slices yields NaN there, so JS returns null.
+    if any(ord(ch) > 0xFFFF for ch in hex_part):
+        return None
+    if len(hex_part) == 3:
+        hex_part = "".join(c + c for c in hex_part)
+    if len(hex_part) != 6:
+        return None
+    rgb = (_js_int(hex_part[0:2], 16), _js_int(hex_part[2:4], 16), _js_int(hex_part[4:6], 16))
+    if any(math.isnan(v) for v in rgb):
+        return None
+    return rgb
+
+
+def _srgb_to_linear(c: float) -> float:
+    s = c / 255
+    return s / 12.92 if s <= 0.03928 else _js_pow((s + 0.055) / 1.055, 2.4)
+
+
+def _relative_luminance(rgb: Rgb) -> float:
+    return 0.2126 * _srgb_to_linear(rgb[0]) + 0.7152 * _srgb_to_linear(rgb[1]) + 0.0722 * _srgb_to_linear(rgb[2])
+
+
+def _contrast_ratio(a: Rgb, b: Rgb) -> float:
+    la = _relative_luminance(a)
+    lb = _relative_luminance(b)
+    return (_js_max(la, lb) + 0.05) / (_js_min(la, lb) + 0.05)
+
+
+def _resolve_color(value: str, tokens: dict[str, str]) -> Rgb | None:
+    v = _js_trim(value)
+    if not v:
+        return None
+    if v.startswith("#"):
+        return _hex_to_rgb(v)
+    var_match = _js_re(r"^var\(\s*(--[\w-]+)").search(v)
+    if var_match:
+        ref = tokens.get(var_match.group(1))
+        if ref:
+            return _resolve_color(ref, tokens)
+        return None
+    rgb_match = _js_re(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", "i").search(v)
+    if rgb_match:
+        return (_js_int(rgb_match.group(1)), _js_int(rgb_match.group(2)), _js_int(rgb_match.group(3)))
+    return None
+
+
+def _srgb_to_y_apca(rgb: Rgb) -> float:
+    """APCA-W3 0.0.98G-4g screen luminance."""
+    r = _js_pow(rgb[0] / 255, 2.4)
+    g = _js_pow(rgb[1] / 255, 2.4)
+    b = _js_pow(rgb[2] / 255, 2.4)
+    ys = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b
+    if ys < 0.022:
+        ys += _js_pow(0.022 - ys, 1.414)
+    return ys
+
+
+def _apca_contrast(txt: Rgb, bg: Rgb) -> float:
+    txt_ys = _srgb_to_y_apca(txt)
+    bg_ys = _srgb_to_y_apca(bg)
+    if abs(bg_ys - txt_ys) < 0.0005:
+        return 0
+    if bg_ys > txt_ys:
+        sapc = (_js_pow(bg_ys, 0.56) - _js_pow(txt_ys, 0.57)) * 1.14
     else:
-        s = d / (2 - mx - mn) if mx + mn > 1 else d / (mx + mn)
-    # Simpler HSL saturation is fine for ranking
-    l = (mx + mn) / 2
-    return 0.0 if l in (0, 1) else d / (1 - abs(2 * l - 1))
+        sapc = (_js_pow(bg_ys, 0.65) - _js_pow(txt_ys, 0.62)) * 1.14
+    if abs(sapc) < 0.0005:
+        return 0
+    sapc = sapc + 0.027 if sapc < 0 else sapc - 0.027
+    return sapc * 100
 
 
-def _rgb_to_hex(rgb: tuple[float, float, float]) -> str:
-    """Convert (r, g, b) in 0-255 to #rrggbb."""
-    return "#{:02x}{:02x}{:02x}".format(
-        int(round(rgb[0])), int(round(rgb[1])), int(round(rgb[2]))
-    )
+# ── Checks ───────────────────────────────────────────────────────────────────
+#
+# Each function ports the engine.ts check of the same name (in the comment).
+# A check returns {id, item, category, status, detail} exactly as the live
+# engine does; status is PASS, FAIL, WARN, SKIP or MANUAL.
 
 
-def _check_transition_all(css: str) -> tuple[str, str]:
-    """Check no transition:all in the stylesheet."""
-    matches = re.findall(r"transition\s*:\s*all\b", css, re.IGNORECASE)
-    if not matches:
-        return "PASS", "No transition:all found in stylesheet"
-    return "FAIL", f"{len(matches)} instances of transition:all found"
+def _chk(cid: str, item: str, category: str, status: str, detail: str) -> dict[str, str]:
+    return {"id": cid, "item": item, "category": category, "status": status, "detail": detail}
 
 
-def _check_will_change(css: str) -> tuple[str, str]:
-    """Check will-change restricted to transform and opacity only."""
-    bad = []
-    for m in re.finditer(r"will-change\s*:\s*([^;}]+)", css):
-        val = m.group(1).strip()
-        props = [p.strip() for p in val.split(",")]
-        for p in props:
-            if p not in ("transform", "opacity"):
-                bad.append(val)
-    if not bad:
-        return "PASS", "will-change uses only transform/opacity"
-    return "FAIL", f"will-change contains non-transform/opacity: {bad[:3]}"
+def _check_paper_token(tokens: dict[str, str]) -> dict[str, str]:  # checkPaperToken
+    item = "Token values match live site :root foundation"
+    val = tokens.get("--paper")
+    if val:
+        return _chk("v01", item, "tokens", "PASS", f"--paper resolved to {val}")
+    return _chk("v01", item, "tokens", "FAIL", "--paper background token not declared in :root")
 
 
-def _check_font_smoothing(css: str) -> tuple[str, str]:
-    """Check antialiased + grayscale on :root or body."""
-    has_aa = bool(re.search(r"-webkit-font-smoothing\s*:\s*antialiased", css, re.IGNORECASE))
-    has_gs = bool(re.search(r"-moz-osx-font-smoothing\s*:\s*grayscale", css, re.IGNORECASE))
-    if has_aa and has_gs:
-        return "PASS", "font smoothing: antialiased + grayscale present"
-    return "FAIL", f"font smoothing incomplete: -webkit={has_aa}, -moz-osx={has_gs}"
-
-
-def _check_rem_scale(css: str) -> tuple[str, str]:
-    """Check all font-sizes in rem (root/body at 16px allowed as the base).
-
-    The :root or html or body { font-size: 16px } is the rem base.
-    SVG text elements (rules containing fill/stroke, or SVG-context class names)
-    are exempt — they use px by SVG convention.
-    """
-    # Remove :root, html, body { font-size: Npx } — those are the base
-    cleaned = re.sub(
-        r"(?:html|:root|body)\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}",
-        "",
-        css,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    # Remove SVG-context rules entirely — any rule block containing fill/stroke is SVG
-    # Also match SVG-specific class names (radar, chart, svg, icon, marker)
-    cleaned = re.sub(
-        r"[\w.-]*(?:radar|chart|svg|marker|node|dot|arc|ring|halo|beam)[\w.-]*\s*\{[^}]*font-size\s*:\s*\d+px[^}]*\}",
-        "",
-        cleaned,
-        flags=re.IGNORECASE,
-    )
-    # Remove any rule block that contains both font-size:Npx and fill/stroke.
-    # SVG <text>/<tspan> elements use px by convention (they scale with viewBox,
-    # not the rem root) and are exempt from the rem-based-scale rule.
-    # fill/stroke may appear BEFORE or AFTER font-size in the block, so we match
-    # both orderings.  Each [^}]* is bounded to a single rule block (no } inside).
-    cleaned = re.sub(
-        r"\.?[\w-]+\s*\{[^}]*(?:fill|stroke)[^}]*font-size\s*:\s*\d+px[^}]*\}",
-        "",
-        cleaned,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    cleaned = re.sub(
-        r"\.?[\w-]+\s*\{[^}]*font-size\s*:\s*\d+px[^}]*(?:fill|stroke)[^}]*\}",
-        "",
-        cleaned,
-        flags=re.IGNORECASE | re.DOTALL,
-    )
-    px_fonts = re.findall(r"font-size\s*:\s*(\d+)px", cleaned, re.IGNORECASE)
-    has_rem = bool(re.search(r"font-size\s*:\s*[\d.]+rem", css, re.IGNORECASE))
-    has_root_16 = bool(re.search(r"(?:html|:root)\s*\{[^}]*font-size\s*:\s*16px", css, re.IGNORECASE))
-    if px_fonts:
-        return "FAIL", f"non-root px font-sizes found: {px_fonts[:5]}"
-    if has_rem:
-        return "PASS", f"rem-based scale present (root 16px={'yes' if has_root_16 else 'not found'})"
-    return "WARN", "no rem font-sizes found — may be using system defaults"
-
-
-def _check_line_height(css: str) -> tuple[str, str]:
-    """Check headings ~1.08, body ~1.55."""
-    has_heading_lh = bool(re.search(r"line-height\s*:\s*1\.0[5-9]\b", css))
-    has_body_lh = bool(re.search(r"line-height\s*:\s*1\.5[0-9]\b", css))
-    if has_heading_lh and has_body_lh:
-        return "PASS", "line-height by role present (heading ~1.08, body ~1.55)"
-    return "WARN", f"line-height roles: heading={has_heading_lh}, body={has_body_lh}"
-
-
-def _check_text_wrap(css: str) -> tuple[str, str]:
-    """Check text-wrap: balance + pretty both present."""
-    has_balance = bool(re.search(r"text-wrap\s*:\s*balance", css, re.IGNORECASE))
-    has_pretty = bool(re.search(r"text-wrap\s*:\s*pretty", css, re.IGNORECASE))
-    if has_balance and has_pretty:
-        return "PASS", "text-wrap: balance + pretty both present"
-    return "FAIL", f"text-wrap: balance={has_balance}, pretty={has_pretty}"
-
-
-def _check_tabular_nums(css: str) -> tuple[str, str]:
-    """Check tabular-nums present."""
-    count = len(re.findall(r"font-variant-numeric\s*:\s*tabular-nums", css, re.IGNORECASE))
-    if count > 0:
-        return "PASS", f"tabular-nums: {count} instances"
-    return "FAIL", "no tabular-nums found"
-
-
-def _check_selection(css: str, tokens: dict[str, str] | None = None) -> tuple[str, str]:
-    """Check ::selection styled with --signal (or a known alias), not browser default."""
-    sel_match = re.search(r"::selection\s*\{([^}]*)\}", css)
-    if not sel_match:
-        return "FAIL", "no ::selection rule found"
-    block = sel_match.group(1)
-    # Check for canonical --signal or any known alias used in the block
-    if "var(--signal)" in block or "--signal" in block:
-        return "PASS", "::selection styled with var(--signal)"
-    # Check aliases: if the surface uses --accent, --primary, --brand etc.
-    aliases = _TOKEN_ALIASES.get("--signal", [])
-    for alias in aliases:
-        if f"var({alias})" in block or alias in block:
-            return "PASS", f"::selection styled with {alias} (alias for --signal)"
-    return "WARN", f"::selection found but does not reference --signal: {block.strip()[:80]}"
-
-
-def _check_duration_tokens(tokens: dict[str, str]) -> tuple[str, str]:
-    """Check duration tokens present in :root.
-
-    The verification item says '--duration-quick through --duration-slow'.
-    The live site uses --duration-quick, --duration-fast, --duration-medium,
-    --duration-slow. We require at least quick + slow to be present.
-    """
-    all_duration = sorted(
-        k for k in tokens if k.startswith("--duration")
-    )
-    has_quick = "--duration-quick" in tokens
-    has_slow = "--duration-slow" in tokens
-    if has_quick and has_slow:
-        return "PASS", f"duration tokens present: {', '.join(f'{k}={tokens[k]}' for k in all_duration)}"
-    missing = []
-    if not has_quick:
-        missing.append("--duration-quick")
-    if not has_slow:
-        missing.append("--duration-slow")
-    return "FAIL", f"duration tokens missing: {', '.join(missing)} (found: {all_duration})"
-
-
-def _check_contrast_signal(tokens: dict[str, str]) -> tuple[str, str]:
-    """Check primary button text (ink/white) against --signal fill passes WCAG AA."""
-    signal = tokens.get("--signal", "")
-    ink = tokens.get("--ink", "")
-    if not signal or not ink:
-        return "SKIP", "missing --signal or --ink tokens"
-    ratio = _contrast_ratio(signal, ink)
-    if ratio >= 4.5:
-        return "PASS", f"--ink on --signal = {ratio:.2f}:1 (passes AA 4.5:1)"
-    return "FAIL", f"--ink on --signal = {ratio:.2f}:1 (fails AA 4.5:1)"
-
-
-def _check_contrast_muted(tokens: dict[str, str]) -> tuple[str, str]:
-    """Check contrast for ink, muted, and accent on paper."""
-    paper = tokens.get("--paper", "")
-    if not paper:
-        return "SKIP", "missing --paper token"
-    results = []
-    all_pass = True
-    for name in ("--ink", "--muted", "--muted-dim"):
-        color = tokens.get(name)
-        if not color:
-            results.append(f"{name}: missing")
-            all_pass = False
+def _check_contrast_signal(tokens: dict[str, str]) -> dict[str, str]:  # checkContrastSignal
+    item = "Primary button text passes WCAG AA contrast against --signal fill"
+    signal_val = tokens.get("--signal")
+    if not signal_val:
+        return _chk("v22", item, "accessibility", "WARN", "--signal accent token not declared")
+    signal_rgb = _resolve_color(signal_val, tokens)
+    if not signal_rgb:
+        return _chk("v22", item, "accessibility", "SKIP", f"--signal value {signal_val} unresolvable to RGB")
+    best_ratio: float = 0
+    best_name = ""
+    for name in ("--paper", "--ink"):
+        rgb = _resolve_color(tokens.get(name) or "", tokens)
+        if not rgb:
             continue
-        ratio = _contrast_ratio(color, paper)
-        passes = ratio >= 4.5
-        all_pass = all_pass and passes
-        results.append(f"{name} on --paper = {ratio:.2f}:1 ({'PASS' if passes else 'FAIL'})")
-    if all_pass:
-        return "PASS", "; ".join(results)
-    return "WARN", "; ".join(results)
+        r = _contrast_ratio(rgb, signal_rgb)
+        if r > best_ratio:
+            best_ratio, best_name = r, name
+    if best_ratio == 0:
+        return _chk("v22", item, "accessibility", "SKIP", "no --paper/--ink token to test against --signal")
+    ratio = f"{_js_fixed(best_ratio, 2)}:1"
+    if best_ratio >= 4.5:
+        return _chk("v22", item, "accessibility", "PASS", f"{best_name} on --signal = {ratio} (≥ 4.5:1 AA)")
+    if best_ratio >= 3:
+        return _chk("v22", item, "accessibility", "WARN", f"{best_name} on --signal = {ratio} (passes 3:1 large-text, fails 4.5:1 body)")
+    return _chk("v22", item, "accessibility", "FAIL", f"{best_name} on --signal = {ratio} (below 3:1, illegible)")
 
 
-def _check_semantic_html(html: str) -> tuple[str, str]:
-    """v07 — semantic-HTML foundation: single h1, title, meta description, landmark.
+def _check_contrast_readable(tokens: dict[str, str]) -> dict[str, str]:  # checkContrastReadable
+    item = "Contrast remains readable for ink, muted, and accent on paper"
+    item_scored = f"{item} (WCAG 2.1 + APCA)"
+    paper_val = tokens.get("--paper")
+    if not paper_val:
+        return _chk("v06", item, "accessibility", "SKIP", "--paper not declared: cannot test contrast")
+    paper_rgb = _resolve_color(paper_val, tokens)
+    if not paper_rgb:
+        return _chk("v06", item, "accessibility", "SKIP", f"--paper value {paper_val} unresolvable to RGB")
+    results: list[str] = []
+    worst_name, worst_ratio, worst_status = "", math.inf, "PASS"
+    for name in ("--ink", "--muted", "--muted-dim"):
+        val = tokens.get(name)
+        if not val:
+            results.append(f"{name}: not declared")
+            continue
+        rgb = _resolve_color(val, tokens)
+        if not rgb:
+            results.append(f"{name}: unresolvable")
+            continue
+        ratio = _contrast_ratio(rgb, paper_rgb)
+        lc = _apca_contrast(rgb, paper_rgb)
+        st = "PASS"
+        if ratio < 3:
+            st = "FAIL"
+        elif ratio < 4.5:
+            st = "WARN"
+        results.append(f"{name}={_js_fixed(ratio, 2)}:1 Lc{_js_fixed(abs(lc), 0)}({st})")
+        if st == "FAIL":
+            if worst_status != "FAIL" or ratio < worst_ratio:
+                worst_name, worst_ratio, worst_status = name, ratio, "FAIL"
+        elif st == "WARN" and worst_status != "FAIL":
+            if worst_status != "WARN" or ratio < worst_ratio:
+                worst_name, worst_ratio, worst_status = name, ratio, "WARN"
+    detail = ", ".join(results)
+    if worst_status == "FAIL":
+        return _chk("v06", item_scored, "accessibility", "FAIL", f"{detail}; {worst_name} below 3:1")
+    if worst_status == "WARN":
+        return _chk("v06", item_scored, "accessibility", "WARN", f"{detail}; {worst_name} below 4.5:1 AA")
+    return _chk("v06", item_scored, "accessibility", "PASS", detail)
 
-    v07 was REPLACED on the site engine (route.ts / packages/score) by this
-    check. The old version grepped the target site's HTML for an internal
-    control-plane word — meaningless for external sites, which all passed for
-    the wrong reason. This MCP copy kept the old shape, and a later repo-wide
-    text substitution rewrote the literal it searched for, leaving a check that
-    merely looked for the ordinary English word "internal" in a title. That is
-    not a design property and would fail legitimate sites for using a normal
-    word. Kept aligned with the site engine so all three surfaces (site route,
-    standalone engine, MCP stdio) report the same v07.
+
+def _check_transition_all(css: str) -> dict[str, str]:  # checkTransitionAll
+    item = "No transition:all in the live stylesheet"
+    if _js_re(r"transition\s*:\s*all", "i").search(css):
+        return _chk("v11", item, "motion", "FAIL", "found transition:all")
+    return _chk("v11", item, "motion", "PASS", "no transition:all found")
+
+
+def _check_will_change(css: str) -> dict[str, str]:  # checkWillChange
+    item = "will-change restricted to transform and opacity only"
+    for m in _js_re(r"will-change\s*:\s*([^;}]+)", "gi").finditer(css):
+        val = _js_trim(_js_re(r"will-change\s*:\s*", "i").sub("", m.group(0), count=1)).lower()
+        parts = [p for p in (_js_trim(s) for s in val.split(",")) if p]
+        if not (parts and all(p in ("transform", "opacity") for p in parts)):
+            return _chk("v12", item, "motion", "WARN", f"found will-change: {val}")
+    return _chk("v12", item, "motion", "PASS", "will-change restricted cleanly")
+
+
+def _check_focus_visible(css: str) -> dict[str, str]:  # checkFocusVisible
+    item = "Primary interactive elements show focus-visible rings"
+    if _js_re(r":focus-visible", "i").search(css):
+        return _chk("v03", item, "interaction", "PASS", ":focus-visible declared")
+    return _chk("v03", item, "interaction", "FAIL", "missing :focus-visible rules")
+
+
+def _check_text_wrap(css: str) -> dict[str, str]:  # checkTextWrap
+    item = "text-wrap: balance + pretty both present in live CSS"
+    balance = bool(_js_re(r"text-wrap\s*:\s*balance", "i").search(css))
+    pretty = bool(_js_re(r"text-wrap\s*:\s*pretty", "i").search(css))
+    if balance and pretty:
+        return _chk("v18", item, "cadence", "PASS", "both text-wrap values present")
+    return _chk("v18", item, "cadence", "WARN", f"balance={_js_bool(balance)} pretty={_js_bool(pretty)}")
+
+
+def _check_cadence_rules(css: str) -> dict[str, str]:  # checkCadenceRules
+    item = "Cadence typography rules match live CSS and contract.cadence"
+    rules = [
+        ("font-smoothing", r"font-smoothing\s*:\s*(antialiased|grayscale)"),
+        ("rem-based sizes", r"font-size\s*:\s*[\d.]+rem"),
+        ("line-height", r"line-height\s*:\s*[\d.]+"),
+        ("text-wrap", r"text-wrap\s*:\s*(balance|pretty)"),
+        ("tabular-nums", r"tabular-nums"),
+    ]
+    missing = [name for name, src in rules if not _js_re(src, "i").search(css)]
+    if not missing:
+        return _chk("v14", item, "cadence", "PASS", "all Cadence rules present")
+    return _chk("v14", item, "cadence", "WARN", f"missing: {', '.join(missing)}")
+
+
+def _check_tabular_nums(css: str) -> dict[str, str]:  # checkTabularNums
+    item = "tabular-nums: 8 instances across the live CSS"
+    count = len(_js_re(r"tabular-nums", "gi").findall(css))
+    if count >= 8:
+        return _chk("v19", item, "cadence", "PASS", f"{count} instances found")
+    return _chk("v19", item, "cadence", "WARN", f"only {count} instances (threshold: 8)")
+
+
+def _opts_into_motion(body: str) -> bool:  # optsIntoMotion
+    """Does a prefers-reduced-motion: no-preference block opt INTO motion?
+
+    It counts when it declares an animation, a transition, smooth scrolling or
+    a view transition. A block that only switches motion off (none, or
+    durations of 10ms or less) is the reduce kill switch under the wrong query:
+    it stills motion for users with no preference and leaves it running for
+    users who asked for less, so it does not count.
     """
-    visible_html = re.sub(r"<script[\s\S]*?</script>", "", html, flags=re.IGNORECASE)
-    visible_html = re.sub(r"<style[\s\S]*?</style>", "", visible_html, flags=re.IGNORECASE)
-    h1_count = len(re.findall(r"<h1\b", visible_html, re.IGNORECASE))
-    has_title = bool(re.search(r"<title\b[^>]*>[^<]+</title>", html, re.IGNORECASE))
-    has_meta_desc = bool(re.search(r"""<meta\s+name=["']description["']""", html, re.IGNORECASE))
-    has_landmark = bool(re.search(r"<(main|header|nav)\b", visible_html, re.IGNORECASE))
+    if _js_re(r"@view-transition\s*\{[^}]*navigation\s*:\s*auto", "i").search(body):
+        return True
+    decl_re = _js_re(
+        r"(?:^|[{;\s])(animation|animation-name|animation-duration|transition|transition-property"
+        r"|transition-duration|scroll-behavior|view-transition-name)\s*:\s*([^;{}]+)",
+        "gi",
+    )
+    for m in decl_re.finditer(body):
+        prop = m.group(1).lower()
+        value = _js_trim(_js_re(r"!important", "i").sub("", m.group(2), count=1)).lower()
+        if prop == "scroll-behavior":
+            if value == "smooth":
+                return True
+            continue
+        if _js_re(r"^(?:none|initial|unset|revert|revert-layer|0|0s|0ms)$").search(value):
+            continue
+        times = [
+            _js_float(t.group(1)) * (1000 if t.group(2) == "s" else 1)
+            for t in _js_re(r"(?:^|[\s,(])(\d*\.?\d+)(ms|s)\b", "g").finditer(value)
+        ]
+        if times and all(t <= 10 for t in times):
+            continue
+        return True
+    return False
 
+
+def _check_reduced_motion(css: str) -> dict[str, str]:  # checkReducedMotion
+    """v05 (engine 1.1.0). Two shapes honour reduced motion: a `reduce` block
+    with rules, or motion declared only inside a `no-preference` block (opt-in
+    motion, see _opts_into_motion). An empty no-preference block, or one that
+    only switches motion off, still WARNs. Comments are stripped first, so a
+    commented-out query counts for nothing.
+    """
+    item = "prefers-reduced-motion disables entrance and wordmark breath"
+    code = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub("", css)
+    mq_re = _js_re(r"@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{", "gi")
+    saw_reduce = saw_opt_in = saw_no_preference = False
+    for match in mq_re.finditer(code):
+        value = match.group(1).lower()
+        # Capture the block body by brace-matching from the opening brace.
+        open_at = match.end() - 1
+        depth = 0
+        close_at = -1
+        for brace in re.finditer(r"[{}]", code[open_at:]):
+            if brace.group(0) == "{":
+                depth += 1
+            else:
+                depth -= 1
+                if depth == 0:
+                    close_at = open_at + brace.start()
+                    break
+        body = _js_trim(code[open_at + 1:close_at]) if close_at > open_at else ""
+        if value == "no-preference":
+            saw_no_preference = True
+            if _opts_into_motion(body):
+                saw_opt_in = True
+            continue
+        if len(body) > 0:
+            saw_reduce = True
+    if saw_reduce:
+        return _chk("v05", item, "motion", "PASS", "prefers-reduced-motion: reduce block declares rules")
+    if saw_opt_in:
+        return _chk("v05", item, "motion", "PASS", "motion is opt-in: declared inside a prefers-reduced-motion: no-preference block, so a reduce preference receives none of it")
+    if saw_no_preference:
+        return _chk(
+            "v05", item, "motion", "WARN",
+            "a prefers-reduced-motion: no-preference block exists but gates no motion: it is empty, or it "
+            "only switches motion off, which stills motion for users with no preference and leaves it running "
+            "for users who asked for less. Declare motion inside no-preference, or switch it off inside reduce.",
+        )
+    return _chk("v05", item, "motion", "WARN", "missing prefers-reduced-motion: reduce media query")
+
+
+def _visible_html(html: str) -> str:
+    return _js_re(r"<style[\s\S]*?<\/style>", "gi").sub("", _js_re(r"<script[\s\S]*?<\/script>", "gi").sub("", html))
+
+
+def _check_semantic_html(html: str) -> dict[str, str]:  # checkSemanticHtmlFoundation
+    item = "Semantic HTML foundation: single h1, title, meta description, landmark"
+    visible = _visible_html(html)
+    h1_count = len(_js_re(r"<h1\b", "gi").findall(visible))
+    has_title = bool(_js_re(r"<title\b[^>]*>[^<]+<\/title>", "i").search(html))
+    has_meta_desc = bool(_js_re(r"<meta\s+name=[\"']description[\"']", "i").search(html))
+    has_landmark = bool(_js_re(r"<(main|header|nav)\b", "i").search(visible))
     signals: list[str] = []
     failures: list[str] = []
     if h1_count == 1:
         signals.append("single h1")
     else:
         failures.append("no h1" if h1_count == 0 else f"{h1_count} h1s")
-    if has_title:
-        signals.append("title")
-    else:
-        failures.append("no title")
-    if has_meta_desc:
-        signals.append("meta description")
-    else:
-        failures.append("no meta description")
-    if has_landmark:
-        signals.append("landmark")
-    else:
-        failures.append("no main/header/nav")
-
+    (signals if has_title else failures).append("title" if has_title else "no title")
+    (signals if has_meta_desc else failures).append("meta description" if has_meta_desc else "no meta description")
+    (signals if has_landmark else failures).append("landmark" if has_landmark else "no main/header/nav")
     if not failures:
-        return "PASS", ", ".join(signals)
+        return _chk("v07", item, "identity", "PASS", ", ".join(signals))
     if len(failures) <= 2:
-        return "WARN", f"ok: {', '.join(signals)} · missing: {', '.join(failures)}"
-    return "FAIL", f"missing: {', '.join(failures)}"
+        return _chk("v07", item, "identity", "WARN", f"ok: {', '.join(signals)} · missing: {', '.join(failures)}")
+    return _chk("v07", item, "identity", "FAIL", f"missing: {', '.join(failures)}")
 
 
-def _check_focus_visible(css: str) -> tuple[str, str]:
-    """Check focus-visible rings present."""
-    count = len(re.findall(r":focus-visible", css))
-    if count > 0:
-        return "PASS", f"focus-visible: {count} rules present"
-    return "FAIL", "no :focus-visible rules found"
-
-
-def _check_reduced_motion(css: str) -> tuple[str, str]:
-    """Check prefers-reduced-motion disables entrance and wordmark breath."""
-    has_mq = bool(re.search(r"@media\s*\(prefers-reduced-motion", css))
-    if not has_mq:
-        return "FAIL", "no prefers-reduced-motion media query found"
-    # Check that it disables animations
-    mq_blocks = re.findall(r"@media\s*\(prefers-reduced-motion[^{]*\{([^@]*?)(?:\}|@media)", css, re.DOTALL)
-    combined = " ".join(mq_blocks)
-    has_animation_none = bool(re.search(r"animation\s*:\s*none", combined, re.IGNORECASE))
-    has_transition_none = bool(re.search(r"transition\s*:\s*none", combined, re.IGNORECASE))
-    if has_animation_none or has_transition_none:
-        return "PASS", "prefers-reduced-motion disables animations/transitions"
-    return "WARN", "prefers-reduced-motion query present but may not fully disable motion"
-
-
-def _check_press_scale(css: str) -> tuple[str, str]:
-    """Check press scale 0.96 on cells and 0.985 on cards — both above 0.95 floor.
-
-    Only checks scale() transforms in :active, [data-press], or .press contexts.
-    Other scale transforms (entrance animations, decorative) are not press scales.
-    """
-    # Find scale() values in press-related contexts
+def _check_press_scale(css: str) -> dict[str, str]:  # checkPressScale
+    item = "Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)"
+    # Keyframes are stripped: scale(0) in a ripple keyframe is a start state.
+    stripped = _js_re(r"@keyframes\s+[^{]+\{[^@]*?\}", "gi").sub("", css)
     press_scales: list[float] = []
-    # Match :active { ... scale(X) ... } blocks
-    for m in re.finditer(r"(?:active|data-press|\.press)[^{]*\{([^}]*)\}", css):
-        block = m.group(1)
-        for sm in re.finditer(r"transform\s*:\s*scale\(([0-9.]+)\)", block):
-            press_scales.append(float(sm.group(1)))
-    # Also match :active within compound selectors
-    for m in re.finditer(r":active\s*\{([^}]*)\}", css):
-        block = m.group(1)
-        for sm in re.finditer(r"transform\s*:\s*scale\(([0-9.]+)\)", block):
-            val = float(sm.group(1))
-            if val not in press_scales:
-                press_scales.append(val)
+    decorative_below: list[str] = []
+    active_below = False
+    active_below_val = ""
+    for block in stripped.split("}"):
+        scale_match = _js_re(r"scale\(\s*([0-9.]+)\s*\)", "i").search(block)
+        if not scale_match:
+            continue
+        num = _js_float(scale_match.group(1))
+        if math.isnan(num) or num >= 1:
+            continue
+        press_scales.append(num)
+        if 0 < num < 0.95:
+            if _js_re(r":active|\.is-pressed|\[data-press|\.press\b", "i").search(block):
+                active_below = True
+                active_below_val = _js_num(num)
+            else:
+                decorative_below.append(_js_num(num))
+    if active_below:
+        return _chk("v13", item, "takt", "FAIL", f"found scale({active_below_val}) in :active context: below 0.95 floor, reads as a glitch")
+    if decorative_below:
+        real = [s for s in press_scales if 0.95 <= s < 1]
+        if real:
+            vals = ", ".join(_js_fixed(s, 3) for s in real)
+            return _chk("v13", item, "takt", "PASS", f"{len(real)} press-scale(s) found: {vals}; {len(decorative_below)} decorative scale(s) below floor (non-press, ignored)")
+        return _chk("v13", item, "takt", "WARN", f"{len(decorative_below)} decorative scale(s) below 0.95 floor: {', '.join(decorative_below)} (outside :active context); no valid press scales found")
+    real = [s for s in press_scales if s > 0]
+    if real:
+        vals = ", ".join(_js_fixed(s, 3) for s in real)
+        return _chk("v13", item, "takt", "PASS", f"{len(real)} press-scale(s) found: {vals}")
+    if press_scales:
+        return _chk("v13", item, "takt", "WARN", "only scale(0) found (animation initial states): no press scale detected")
+    return _chk("v13", item, "takt", "WARN", "no press-scale (scale() < 1) found in CSS")
 
-    if not press_scales:
-        return "WARN", "no press-scale transforms found — press may use data attributes or JS"
 
-    below_floor = [s for s in press_scales if s < 0.95]
-    if below_floor:
-        return "FAIL", f"press scale values below 0.95 floor: {below_floor}"
-    has_096 = any(abs(s - 0.96) < 0.01 for s in press_scales)
-    has_0985 = any(abs(s - 0.985) < 0.01 for s in press_scales)
-    detail = f"press scales: {press_scales} (all above 0.95 floor)"
-    if has_096:
-        detail += " — 0.96 cell scale present"
-    if has_0985:
-        detail += " — 0.985 card scale present"
-    return "PASS", detail
+def _check_line_height_by_role(css: str) -> dict[str, str]:  # checkLineHeightByRole
+    item = "Line-height by role: headings 1.08, body 1.55 confirmed"
+    heading_re = _js_re(r"(?:h1|h2|h3|h4|h5|h6|\.h\d|heading|title)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)", "gi")
+    body_re = _js_re(r"(?:body|p|article|\.body|\.prose|\.copy)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)", "gi")
+    heading = [_js_float(m.group(1)) for m in heading_re.finditer(css)]
+    body = [_js_float(m.group(1)) for m in body_re.finditer(css)]
+    heading_ok = any(1.0 <= lh <= 1.15 for lh in heading)
+    body_ok = any(1.4 <= lh <= 1.7 for lh in body)
+    if heading_ok and body_ok:
+        return _chk("v17", item, "cadence", "PASS", f"headings {_js_join(heading) or 'n/a'}, body {_js_join(body) or 'n/a'}")
+    if not heading and not body:
+        return _chk("v17", item, "cadence", "WARN", "no role-scoped line-height declarations found")
+    missing: list[str] = []
+    if not heading_ok:
+        missing.append("heading 1.0-1.15")
+    if not body_ok:
+        missing.append("body 1.4-1.7")
+    return _chk("v17", item, "cadence", "WARN", f"missing: {', '.join(missing)} (found headings {_js_join(heading) or 'none'}, body {_js_join(body) or 'none'})")
 
 
-# ── Poise / Takt / Cadence checks (ported from Next.js route.ts) ───────────
-#
-# v08, v09, v10, v14 were previously hardcoded SKIPs that claimed to require
-# page-specific checks (e.g. /labs/poise).  The Next.js engine implements these
-# as static CSS/HTML regex checks that work on ANY page's CSS — they verify
-# contract patterns are present, not that a specific route renders them.
-# These ports match the Next.js checkPoiseInteractionRules, checkPoiseKeyboardPath,
-# checkTaktFeelRules, and checkCadenceRules functions exactly.
+def _check_selection_styled(css: str) -> dict[str, str]:  # checkSelectionStyled
+    item = "::selection styled with var(--signal) instead of the browser default"
+    rules = [m.group(0) for m in _js_re(r"::selection\s*\{[^}]*\}", "gi").finditer(css)]
+    if not rules:
+        return _chk("v20", item, "cadence", "WARN", "no ::selection rule found: browser default will show")
+    if any(_js_re(r"var\(\s*--signal", "i").search(r) for r in rules):
+        return _chk("v20", item, "cadence", "PASS", "::selection uses --signal token")
+    if any(_js_re(r"(background|color)\s*:", "i").search(r) for r in rules):
+        return _chk("v20", item, "cadence", "PASS", "::selection styled with custom color (token reference recommended)")
+    return _chk("v20", item, "cadence", "WARN", "::selection rule exists but no color/background set")
 
-def _check_poise_interaction_rules(css: str) -> tuple[str, str]:
-    """v08 — Poise interaction rules match contract.interaction.
 
-    Ported from Next.js checkPoiseInteractionRules (route.ts:852-885).
-    3 CSS regex rules; PASS if ≥2 match.
+def _check_duration_tokens(tokens: dict[str, str]) -> dict[str, str]:  # checkDurationTokens
+    item = "Duration tokens --duration-quick through --duration-slow present in :root"
+    required = ["--duration", "--duration-quick", "--duration-fast", "--duration-medium", "--duration-slow"]
+    present = [t for t in required if tokens.get(t)]
+    missing = [t for t in required if not tokens.get(t)]
+    if not missing:
+        return _chk("v23", item, "motion", "PASS", "all 5 duration tokens present")
+    if len(present) >= 3:
+        return _chk("v23", item, "motion", "WARN", f"{len(present)}/5 present, missing: {', '.join(missing)}")
+    return _chk("v23", item, "motion", "FAIL", f"only {len(present)}/5 duration tokens present, missing: {', '.join(missing)}")
+
+
+def _check_font_synthesis(css: str) -> dict[str, str]:  # checkFontSynthesis
+    item = "font-synthesis: none set (Cadence resolved tension)"
+    if _js_re(r"font-synthesis\s*:\s*none", "i").search(css):
+        return _chk("x01", item, "cadence", "PASS", "font-synthesis: none declared")
+    if _js_re(r"font-synthesis\s*:", "i").search(css):
+        return _chk("x01", item, "cadence", "WARN", "font-synthesis declared but not set to none")
+    return _chk("x01", item, "cadence", "WARN", "no font-synthesis rule found: browser may synthesize missing weights")
+
+
+def _check_underline_position(css: str) -> dict[str, str]:  # checkUnderlinePosition
+    item = "text-underline-position: from-font set (Cadence resolved tension)"
+    if _js_re(r"text-underline-position\s*:\s*(from-font|under)", "i").search(css):
+        return _chk("x02", item, "cadence", "PASS", "text-underline-position set to from-font/under")
+    if _js_re(r"text-underline-position\s*:", "i").search(css):
+        return _chk("x02", item, "cadence", "WARN", "text-underline-position declared but not from-font/under")
+    return _chk("x02", item, "cadence", "WARN", "no text-underline-position rule: browser default may clip descenders")
+
+
+def _check_skip_ink(css: str) -> dict[str, str]:  # checkSkipInk
+    item = "text-decoration-skip-ink: auto set"
+    if _js_re(r"text-decoration-skip-ink\s*:\s*(auto|none)", "i").search(css):
+        return _chk("x03", item, "cadence", "PASS", "text-decoration-skip-ink set to auto/none")
+    if _js_re(r"text-decoration-skip-ink\s*:", "i").search(css):
+        return _chk("x03", item, "cadence", "WARN", "text-decoration-skip-ink declared but not auto/none")
+    return _chk("x03", item, "cadence", "WARN", "no text-decoration-skip-ink rule: underlines may cross letterforms")
+
+
+def _has_zoomable_field(html: str) -> bool:  # hasZoomableField
+    """A <textarea>, a <select>, or an <input> that takes typed text.
+
+    An <input> with no type is a text field; hidden, checkbox, radio, submit,
+    button, reset, image, file, range and color take no typed text.
     """
+    visible = _visible_html(html)
+    if _js_re(r"<(?:textarea|select)\b", "i").search(visible):
+        return True
+    for tag in _js_re(r"<input\b[^>]*>", "gi").finditer(visible):
+        typ = _js_re(r"\stype\s*=\s*[\"']?([a-z-]+)", "i").search(tag.group(0))
+        if not typ or not _js_re(r"^(?:hidden|checkbox|radio|submit|button|reset|image|file|range|color)$", "i").search(typ.group(1)):
+            return True
+    return False
+
+
+def _check_input_font_floor(css: str, html: str) -> dict[str, str]:  # checkInputFontFloor
+    """v27 (engine 1.1.0). A sub-16px input rule FAILs and a declared 16px
+    floor PASSes, from the CSS alone. With neither, the page's own markup
+    decides: no field iOS Safari can zoom into reads SKIP (it used to WARN),
+    and a text field with no floor still WARNs.
+    """
+    item = "Input font-size ≥16px (prevents iOS Safari auto-zoom)"
+    input_re = _js_re(r"(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "gi")
+    below: list[str] = []
+    for m in input_re.finditer(css):
+        val = _js_float(m.group(1))
+        unit = m.group(2).lower()
+        px = val * 16 if unit == "rem" else val
+        if px < 16:
+            below.append(f"{_js_num(val)}{unit} ({_js_num(px)}px)")
+    if not below:
+        floor = r"font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)"
+        has_floor = bool(
+            _js_re(r"input\s*\{[^}]*" + floor, "i").search(css)
+            or _js_re(r"input\s*[,][^{]*\{[^}]*" + floor, "i").search(css)
+        )
+        if has_floor:
+            return _chk("v27", item, "accessibility", "PASS", "input font-size floor detected")
+        if not _has_zoomable_field(html):
+            return _chk("v27", item, "accessibility", "SKIP", "no text input, textarea or select found in HTML: nothing for the 16px floor to protect")
+        return _chk("v27", item, "accessibility", "WARN", "no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus")
+    return _chk("v27", item, "accessibility", "FAIL", f"{len(below)} input(s) below 16px floor: {', '.join(below)}")
+
+
+def _check_poise_interaction_rules(css: str) -> dict[str, str]:  # checkPoiseInteractionRules
+    item = "Poise interaction rules match live /labs/poise and contract.interaction"
     rules = [
         ("fine-pointer hover guard", r"@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)"),
         ("press settle scale ~0.97", r"scale\s*\(\s*0?\.9[5-9]\s*\)"),
         ("opacity-only mark breath", r"@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:"),
     ]
-    found = [name for name, pattern in rules if re.search(pattern, css, re.IGNORECASE)]
-    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
+    found = [name for name, src in rules if _js_re(src, "i").search(css)]
+    missing = [name for name, src in rules if not _js_re(src, "i").search(css)]
     if len(found) >= 2:
-        return "PASS", f"static half verified: {', '.join(found)} (interaction-feel half requires browser)"
-    return "WARN", f"missing: {', '.join(missing)}"
+        return _chk("v08", item, "poise", "PASS", f"static half verified: {', '.join(found)} (interaction-feel half requires browser)")
+    return _chk("v08", item, "poise", "WARN", f"missing: {', '.join(missing)}")
 
 
-def _check_poise_keyboard_path(css: str, html: str) -> tuple[str, str]:
-    """v09 — Poise keyboard-path verification.
-
-    Ported from Next.js checkPoiseKeyboardPath (route.ts:894-929).
-    5 signals (CSS + HTML regex); PASS if ≥3 signals + guard check.
-    """
-    has_focus_visible = bool(re.search(r":focus-visible", css, re.IGNORECASE))
-    has_focus = bool(re.search(r":focus[^-]", css, re.IGNORECASE))
-    strips_outline = bool(re.search(r":focus[^{]*\{[^}]*outline\s*:\s*(?:none|0)\s*[;}]", css, re.IGNORECASE))
-    has_focus_ring = bool(re.search(r":focus[^{]*\{[^}]*(?:box-shadow|outline\s*:\s*[^n0])", css, re.IGNORECASE))
-    has_tabindex = bool(re.search(r"tabindex\s*=", html, re.IGNORECASE))
-    has_aria = bool(re.search(r"aria-(?:label|labelledby|describedby|expanded|selected|pressed)", html, re.IGNORECASE))
-
-    if strips_outline and not has_focus_ring:
-        return "WARN", "focus styles strip outline without replacement ring"
+def _check_poise_keyboard_path(css: str, html: str) -> dict[str, str]:  # checkPoiseKeyboardPath
+    item = "Poise keyboard-path verification remains published and current"
+    has_focus_visible = bool(_js_re(r":focus-visible", "i").search(css))
+    has_focus = bool(_js_re(r":focus[^-]", "i").search(css))
+    strips_outline = bool(_js_re(r":focus[^{]*\{[^}]*outline\s*:\s*(none|0)\s*[;}]", "i").search(css))
+    has_focus_ring = bool(_js_re(r":focus[^{]*\{[^}]*(box-shadow|outline\s*:\s*[^n0])", "i").search(css))
+    has_tabindex = bool(_js_re(r"tabindex\s*=", "i").search(html))
+    has_aria = bool(_js_re(r"aria-(label|labelledby|describedby|expanded|selected|pressed)", "i").search(html))
     signals = sum([has_focus_visible, has_focus, has_focus_ring, has_tabindex, has_aria])
+    if strips_outline and not has_focus_ring:
+        return _chk("v09", item, "poise", "WARN", "focus styles strip outline without replacement ring")
     if signals >= 3:
-        return "PASS", f"static half verified: {signals} keyboard-affordance signals (tab-order traversal requires browser)"
-    return "WARN", f"only {signals} keyboard-affordance signals found"
+        return _chk("v09", item, "poise", "PASS", f"static half verified: {signals} keyboard-affordance signals (tab-order traversal requires browser)")
+    return _chk("v09", item, "poise", "WARN", f"only {signals} keyboard-affordance signals found")
 
 
-def _check_takt_feel_rules(css: str) -> tuple[str, str]:
-    """v10 — Takt interface-feel rules match contract.takt.
-
-    Ported from Next.js checkTaktFeelRules (route.ts:939-972).
-    3 CSS regex rules; PASS if ≥2 match.
-    """
+def _check_takt_feel_rules(css: str) -> dict[str, str]:  # checkTaktFeelRules
+    item = "Takt interface-feel rules match live CSS and contract.takt"
     rules = [
         ("stagger enter animation-delay", r"animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)"),
-        ("soften exit transform ease-out", r"transition\s*:[^;]*transform[^;]*(?:ease-out|cubic-bezier\([^)]*0[, ])"),
+        ("soften exit transform ease-out", r"transition\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\([^)]*0[, ])"),
         ("concentric border-radius set", r"border-radius\s*:\s*\d+"),
     ]
-    found = [name for name, pattern in rules if re.search(pattern, css, re.IGNORECASE)]
-    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
+    found = [name for name, src in rules if _js_re(src, "i").search(css)]
+    missing = [name for name, src in rules if not _js_re(src, "i").search(css)]
     if len(found) >= 2:
-        return "PASS", f"static half verified: {', '.join(found)} (press-behavior + hit-area require browser)"
-    return "WARN", f"missing: {', '.join(missing)}"
+        return _chk("v10", item, "takt", "PASS", f"static half verified: {', '.join(found)} (press-behavior + hit-area require browser)")
+    return _chk("v10", item, "takt", "WARN", f"missing: {', '.join(missing)}")
 
 
-def _check_cadence_rules(css: str) -> tuple[str, str]:
-    """v14 — Cadence typography rules match contract.cadence (umbrella check).
-
-    Ported from Next.js checkCadenceRules (route.ts:470-486).
-    5 CSS regex rules; PASS if all 5 present. This is the umbrella check —
-    the individual rules are also checked by v15-v19.
-    """
-    rules = [
-        ("font-smoothing", r"font-smoothing\s*:\s*(?:antialiased|grayscale)"),
-        ("rem-based sizes", r"font-size\s*:\s*[\d.]+rem"),
-        ("line-height", r"line-height\s*:\s*[\d.]+"),
-        ("text-wrap", r"text-wrap\s*:\s*(?:balance|pretty)"),
-        ("tabular-nums", r"tabular-nums"),
-    ]
-    missing = [name for name, pattern in rules if not re.search(pattern, css, re.IGNORECASE)]
-    if not missing:
-        return "PASS", "all Cadence rules present"
-    return "WARN", f"missing: {', '.join(missing)}"
+def _check_font_smoothing(css: str) -> dict[str, str]:  # checkFontSmoothing
+    item = "Font smoothing: antialiased + grayscale on :root confirmed"
+    has_aa = bool(_js_re(r"-webkit-font-smoothing\s*:\s*antialiased", "i").search(css))
+    has_moz = bool(_js_re(r"-moz-osx-font-smoothing\s*:\s*grayscale", "i").search(css))
+    if has_aa and has_moz:
+        return _chk("v15", item, "cadence", "PASS", "both font-smoothing properties present")
+    return _chk("v15", item, "cadence", "WARN", "missing complete font-smoothing declaration")
 
 
-def _check_token_values_match(
-    tokens: dict[str, str],
-    contract: dict,
-    inferred_tokens: set[str] | None = None,
-) -> tuple[str, str]:
-    """Check live :root token values match contract values.
-
-    Contract colors are {token, value, role} objects. We compare the .value field.
-
-    For inferred tokens (mapped via alias or value-based inference), we use
-    SEMANTIC MATCH: instead of exact hex comparison, we validate the token's
-    role is structurally correct (e.g. --paper is the lightest color, --ink
-    is the darkest, --signal is the most saturated).  This prevents the check
-    from universally failing on non-Designesy surfaces whose colors are
-    semantically correct but have different exact values.
-    """
-    inferred_tokens = inferred_tokens or set()
-    contract_colors = contract.get("colors", {})
-    mismatches = []
-    semantic_checks = []
-    checked = 0
-
-    for key, spec in contract_colors.items():
-        if not isinstance(spec, dict):
-            continue
-        css_token = spec.get("token")
-        contract_val = spec.get("value")
-        if not css_token or not contract_val:
-            continue
-        live_val = tokens.get(css_token)
-        if not live_val:
-            continue
-        checked += 1
-
-        if css_token in inferred_tokens:
-            # SEMANTIC MATCH: validate the role is correct, not the exact value.
-            semantic_result = _semantic_role_check(css_token, live_val, tokens)
-            if semantic_result is not None:
-                ok, detail = semantic_result
-                if ok:
-                    semantic_checks.append(f"{css_token}: {detail}")
-                else:
-                    mismatches.append(f"{css_token}: {detail}")
-            # If semantic_result is None, we can't validate this role — skip it
-            continue
-
-        # EXACT MATCH: for native tokens, compare exact hex values
-        norm_live = live_val.lower().replace(" ", "")
-        norm_contract = str(contract_val).lower().replace(" ", "")
-        if norm_live != norm_contract:
-            mismatches.append(f"{css_token}: live={live_val} vs contract={contract_val}")
-
-    if not mismatches:
-        parts = [f"token values match contract ({checked} checked)"]
-        if semantic_checks:
-            parts.append(f"semantic roles verified: {'; '.join(semantic_checks[:3])}")
-        return "PASS", "; ".join(parts)
-    return "FAIL", f"token mismatches: {'; '.join(mismatches[:3])}"
+def _check_rem_scale(css: str) -> dict[str, str]:  # checkRemScale
+    item = "Rem-based scale: all text sizes in rem, root at 16px confirmed"
+    rem = len(_js_re(r"font-size\s*:\s*[\d.]+rem", "gi").findall(css))
+    px = len(_js_re(r"font-size\s*:\s*[\d.]+px", "gi").findall(css))
+    if rem > px:
+        return _chk("v16", item, "cadence", "PASS", f"{rem} rem vs {px} px")
+    return _chk("v16", item, "cadence", "WARN", f"{px} px vs {rem} rem")
 
 
-def _semantic_role_check(
-    token: str, value: str, all_tokens: dict[str, str]
-) -> tuple[bool, str] | None:
-    """Validate that an inferred token's value is semantically correct for its role.
-
-    Returns (True, detail) if the role is correct, (False, detail) if wrong,
-    or None if we can't validate this role (not a color, or no reference colors).
-
-    Role validations:
-      --paper:  should be a light color (high luminance)
-      --ink:    should be a dark color (low luminance)
-      --signal: should be a saturated color (high saturation relative to palette)
-      --muted:  should be a low-saturation, mid-luminance color
-    """
-    rgb = _hex_to_rgb(value)
-    if rgb is None:
-        return None  # not a hex color, can't validate
-
-    luminance = sum(rgb) / 3  # 0-255, higher = lighter
-    saturation = _saturation(rgb)
-
-    if token == "--paper":
-        # Paper should be the lightest color in the palette (or close to it)
-        if luminance >= 200:
-            return True, f"light surface (luminance {luminance:.0f}/255)"
-        return False, f"expected light surface but luminance is {luminance:.0f}/255"
-
-    if token == "--ink":
-        # Ink should be a dark color
-        if luminance <= 100:
-            return True, f"dark text (luminance {luminance:.0f}/255)"
-        return False, f"expected dark text but luminance is {luminance:.0f}/255"
-
-    if token == "--signal":
-        # Signal should be the most saturated accent in the palette
-        # Find the most saturated color among all resolved tokens
-        all_saturated = []
-        for _name, _val in all_tokens.items():
-            _rgb = _hex_to_rgb(_val)
-            if _rgb:
-                all_saturated.append((_saturation(_rgb), _name))
-        if all_saturated:
-            max_sat = max(s for s, _ in all_saturated)
-            if saturation >= max_sat * 0.7:  # within 70% of the most saturated
-                return True, f"accent color (saturation {saturation:.2f})"
-            return False, f"expected saturated accent but saturation is {saturation:.2f} (max in palette: {max_sat:.2f})"
-        return None  # can't validate without palette reference
-
-    if token in ("--muted", "--muted-dim"):
-        # Muted should be a low-saturation color
-        if saturation < 0.2:
-            return True, f"muted color (saturation {saturation:.2f})"
-        return False, f"expected low-saturation muted but saturation is {saturation:.2f}"
-
-    # For duration tokens, any valid ms value is semantically correct
-    if token.startswith("--duration"):
-        return True, f"duration={value}"
-
-    return None  # unknown role, can't validate
-
-
-def _check_font_synthesis(css: str) -> tuple[str, str]:
-    """Check font-synthesis: none is set."""
-    has = bool(re.search(r"font-synthesis\s*:\s*none", css, re.IGNORECASE))
-    if has:
-        return "PASS", "font-synthesis: none present"
-    return "FAIL", "font-synthesis: none not found"
-
-
-def _check_text_underline_position(css: str) -> tuple[str, str]:
-    """Check text-underline-position: from-font is set."""
-    has = bool(re.search(r"text-underline-position\s*:\s*from-font", css, re.IGNORECASE))
-    if has:
-        return "PASS", "text-underline-position: from-font present"
-    return "FAIL", "text-underline-position: from-font not found"
-
-
-def _check_skip_ink(css: str) -> tuple[str, str]:
-    """Check text-decoration-skip-ink: auto is set."""
-    has = bool(re.search(r"text-decoration-skip-ink\s*:\s*auto", css, re.IGNORECASE))
-    if has:
-        return "PASS", "text-decoration-skip-ink: auto present"
-    return "FAIL", "text-decoration-skip-ink: auto not found"
-
-
-# ── CDP-powered checks (live browser) ──────────────────────────────────────
+# ── Browser-only checks: v02, v04, v21 ───────────────────────────────────────
 #
-# These checks use the Chrome DevTools Protocol to run in a real browser,
-# unblocking the SKIPs that static CSS analysis can't reach.  They fall
-# back to SKIP if CDP is not available (Chrome not running on port 9222).
-# The Node script (cdp-viewport-check.cjs) handles the WebSocket dance.
+# The live engine reports these MANUAL: they need a browser, and the full
+# audit (/api/score/audit) resolves them. This engine reports the same MANUAL,
+# except that v02 and v21 are measured when a Chrome DevTools endpoint is
+# running on 127.0.0.1:9222 (the Node scripts beside this file drive it). A
+# probe that cannot run or measure leaves the check MANUAL, never PASS.
+#
 # .cjs extension is required: this package sits inside a "type": "module"
 # monorepo, so a bare .js file is parsed as ESM and `require` throws
-# "require is not defined in ES module scope" — the checker then returned
-# SKIP and check v02 silently never ran.
+# "require is not defined in ES module scope", and the probe never ran.
 
-import subprocess
-import os
+_V02_ITEM = "Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+"
+_V04_ITEM = "Sound toggle flips aria-pressed and applies the audio preference"
+_V21_ITEM = "Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1"
+_V02_MANUAL = "requires browser viewport trace: run the full audit to resolve"
+_V04_MANUAL = "requires live DOM interaction: run the full audit to resolve"
+_V21_MANUAL = "requires CDP trace: run the full audit to resolve"
 
 _CDP_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-viewport-check.cjs")
 _CDP_CWV_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-cwv-expr.cjs")
@@ -1120,15 +1151,11 @@ def _extract_json_from_stdout(stdout: str) -> dict | None:
     brace-depth counting.  Handles multi-line pretty-printed JSON.
     """
     import json as _json
-    # Search backwards for a line that starts with '{' — the JSON output
-    # is always pretty-printed on its own line after the debug logs.
     for i in range(len(stdout) - 1, -1, -1):
         if stdout[i] == '{':
-            # Check if this '{' is at the start of a line (or preceded by newline/whitespace)
             line_start = i == 0 or stdout[i - 1] == '\n'
             if not line_start:
                 continue
-            # Try to extract a complete JSON object starting here
             json_str = stdout[i:]
             depth = 0
             end = 0
@@ -1149,14 +1176,14 @@ def _extract_json_from_stdout(stdout: str) -> dict | None:
 
 
 def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
-    """Check viewport overflow at 375/720/860/1080px via CDP.
+    """v02 through CDP: horizontal overflow at 375/720/860/1080px.
 
-    Falls back to SKIP if CDP is not available.
+    MANUAL when the probe cannot run or cannot measure.
     """
     if not _cdp_available():
-        return "SKIP", "CDP not available — Chrome not running on port 9222"
+        return "MANUAL", _V02_MANUAL
     if not os.path.exists(_CDP_SCRIPT):
-        return "SKIP", "CDP viewport script not found"
+        return "MANUAL", f"{_V02_MANUAL} (CDP viewport script not found)"
 
     try:
         result = subprocess.run(
@@ -1165,15 +1192,15 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
             cwd=os.path.dirname(_CDP_SCRIPT),
         )
         if result.returncode != 0:
-            return "SKIP", f"CDP viewport script failed: {result.stderr.strip()[:200]}"
+            return "MANUAL", f"CDP viewport script failed: {result.stderr.strip()[:200]}"
 
         data = _extract_json_from_stdout(result.stdout)
         if not data:
-            return "SKIP", "CDP check failed to parse output"
+            return "MANUAL", "CDP check failed to parse output"
 
         widths_data = data.get("widths", [])
         if not widths_data:
-            return "SKIP", "CDP check returned no width data"
+            return "MANUAL", "CDP check returned no width data"
 
         # Fidelity gate: a width that was not actually emulated cannot be
         # reported as verified. The checker sets measured=False when the
@@ -1194,9 +1221,7 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
 
         overflows = [w for w in widths_data if w.get("overflow")]
         if not overflows:
-            details = ", ".join(
-                f"{w['width']}px:ok" for w in widths_data
-            )
+            details = ", ".join(f"{w['width']}px:ok" for w in widths_data)
             return "PASS", f"no overflow at any breakpoint ({details})"
         fail_details = "; ".join(
             f"{w['width']}px: scrollWidth={w['scrollWidth']} > innerWidth={w['innerWidth']}"
@@ -1204,21 +1229,20 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
         )
         return "FAIL", f"horizontal overflow: {fail_details}"
     except subprocess.TimeoutExpired:
-        return "SKIP", "CDP viewport check timed out"
+        return "MANUAL", "CDP viewport check timed out"
     except Exception as e:
-        return "SKIP", f"CDP viewport check error: {e}"
+        return "MANUAL", f"CDP viewport check error: {e}"
 
 
 def _check_cwv_cdp(url: str) -> tuple[str, str]:
-    """Check Core Web Vitals (LCP/INP/CLS) via CDP live browser.
+    """v21 through CDP: Core Web Vitals (LCP < 2500ms, INP < 200ms, CLS < 0.1).
 
-    Falls back to SKIP if CDP is not available.
-    Contract thresholds: LCP < 2500ms, INP < 200ms, CLS < 0.1
+    MANUAL when the probe cannot run or measured nothing.
     """
     if not _cdp_available():
-        return "SKIP", "CDP not available — Chrome not running on port 9222"
+        return "MANUAL", _V21_MANUAL
     if not os.path.exists(_CDP_CWV_SCRIPT):
-        return "SKIP", "CDP CWV script not found"
+        return "MANUAL", f"{_V21_MANUAL} (CDP CWV script not found)"
 
     try:
         result = subprocess.run(
@@ -1227,92 +1251,224 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
             cwd=os.path.dirname(_CDP_CWV_SCRIPT),
         )
         if result.returncode != 0:
-            return "SKIP", f"CDP CWV script failed: {result.stderr.strip()[:200]}"
+            return "MANUAL", f"CDP CWV script failed: {result.stderr.strip()[:200]}"
 
         data = _extract_json_from_stdout(result.stdout)
         if not data:
-            return "SKIP", "CDP CWV check failed to find JSON in output"
+            return "MANUAL", "CDP CWV check failed to find JSON in output"
 
         lcp = data.get("lcp", 0)
         inp = data.get("inp", 0)
         cls = data.get("cls", 0)
-        lcp_pass = data.get("lcpPass", False)
-        inp_pass = data.get("inpPass", False)
-        cls_pass = data.get("clsPass", False)
         plausible = data.get("plausible", False)
-
         if not plausible:
-            return "SKIP", f"CWV values not plausible: LCP={lcp}ms INP={inp}ms CLS={cls}"
+            return "MANUAL", f"CWV values not plausible: LCP={lcp}ms INP={inp}ms CLS={cls}"
 
-        # inp_pass / lcp_pass can be None (not measured) — treat as SKIP, not FAIL
+        # A pass flag of None means not measured: SKIP for that metric, not FAIL.
         def _status(v):
-            if v is True: return "PASS"
-            if v is False: return "FAIL"
-            return "SKIP"  # None = not measured
+            if v is True:
+                return "PASS"
+            if v is False:
+                return "FAIL"
+            return "SKIP"
 
-        lcp_s = _status(lcp_pass)
-        inp_s = _status(inp_pass)
-        cls_s = _status(cls_pass)
+        lcp_s = _status(data.get("lcpPass", False))
+        inp_s = _status(data.get("inpPass", False))
+        cls_s = _status(data.get("clsPass", False))
         details = f"LCP={lcp}ms ({lcp_s}), INP={inp}ms ({inp_s}), CLS={cls} ({cls_s})"
-
-        # If any measured metric FAILed, the check FAILs
         measured = [s for s in (lcp_s, inp_s, cls_s) if s != "SKIP"]
         if measured and all(s == "PASS" for s in measured):
-            # All measured metrics pass — unmeasured metrics are SKIP, not FAIL
             skipped = [name for name, s in (("LCP", lcp_s), ("INP", inp_s), ("CLS", cls_s)) if s == "SKIP"]
             if skipped:
                 details += f" — {', '.join(skipped)} not measured (no interaction during probe)"
             return "PASS", details
         if measured and any(s == "FAIL" for s in measured):
             return "FAIL", details
-        # Nothing was measured
-        return "SKIP", details
+        return "MANUAL", details
     except subprocess.TimeoutExpired:
-        return "SKIP", "CDP CWV check timed out"
+        return "MANUAL", "CDP CWV check timed out"
     except Exception as e:
-        return "SKIP", f"CDP CWV check error: {e}"
+        return "MANUAL", f"CDP CWV check error: {e}"
 
 
-# ── WCAG contrast calculation ─────────────────────────────────────────────
+def _browser_check(cid: str, item: str, category: str, manual_detail: str, probe, url: str, browser_probes: bool) -> dict[str, str]:
+    if not browser_probes:
+        return _chk(cid, item, category, "MANUAL", manual_detail)
+    status, detail = probe(url)
+    return _chk(cid, item, category, status, detail)
 
 
-def _hex_to_rgb(color: str) -> tuple[int, int, int] | None:
-    """Parse #rgb or #rrggbb to (r, g, b). Returns None if not parseable."""
-    color = color.strip()
-    if not color.startswith("#"):
-        return None
-    hex_part = color[1:]
-    if len(hex_part) == 3:
-        hex_part = "".join(c * 2 for c in hex_part)
-    if len(hex_part) != 6:
-        return None
+# ── Scope: contract vs universal (engine.ts applyScopeFilter) ────────────────
+#
+# Under scope=universal, a Tier 2 check whose detail reports the feature ABSENT
+# reads SKIP (the feature is optional and the site does not use it), and a
+# Tier 3 check (Designesy token naming) reads SKIP when it FAILs or WARNs.
+# Engine 1.1.0 moved v14 and v18 into Tier 2. The detail patterns are the
+# live engine's, which is why every detail above is ported verbatim.
+
+_TIER2_ABSENCE_PATTERNS: list[tuple[str, str, str]] = [
+    ("v08", r"^missing:", ""),
+    ("v10", r"^missing:", ""),
+    ("v13", r"^no press-scale|only scale\(0\)|no press-scale \(scale", ""),
+    ("v14", r"^missing:", ""),
+    ("v15", r"missing complete font-smoothing", ""),
+    ("v18", r"^balance=(?:true|false) pretty=(?:true|false)$", ""),
+    ("v19", r"^only \d+ instances", ""),
+    ("v20", r"^no ::selection rule found", ""),
+    ("v23", r"^only \d+\/5 duration tokens|no.*duration tokens", "i"),
+    ("v28", r"^no max-width in ch units", ""),
+    ("x01", r"^no font-synthesis rule", ""),
+    ("x02", r"^no text-underline-position rule", ""),
+    ("x03", r"^no text-decoration-skip-ink rule", ""),
+]
+_TIER3_CONTRACT_ONLY = frozenset({"v01", "v22", "v29"})
+SCOPE_CONTRACT_HOSTS = ("designesy.org", "www.designesy.org")
+
+
+def _apply_scope_filter(checks: list[dict[str, str]], scope: str) -> list[dict[str, str]]:
+    if scope == "contract":
+        return checks
+    out = []
+    for c in checks:
+        if c["id"] in _TIER3_CONTRACT_ONLY:
+            if c["status"] in ("FAIL", "WARN"):
+                c = {**c, "status": "SKIP", "detail": f"{c['detail']} (skipped: scope=universal; this check verifies Designesy-specific token naming, and the site may use different token names)"}
+            out.append(c)
+            continue
+        tier2 = next((t for t in _TIER2_ABSENCE_PATTERNS if t[0] == c["id"]), None)
+        if tier2 and c["status"] in ("WARN", "FAIL") and _js_re(tier2[1], tier2[2]).search(c["detail"]):
+            c = {**c, "status": "SKIP", "detail": f"{c['detail']} (skipped: scope=universal; this feature is optional and not present on this site)"}
+        out.append(c)
+    return out
+
+
+def _auto_detect_scope(target_url: str) -> str:
+    """engine.ts autoDetectScope: contract for designesy.org, else universal.
+
+    A URL that new URL() would reject (no scheme, a bad port) is universal,
+    as it is in the live engine.
+    """
     try:
-        return (int(hex_part[0:2], 16), int(hex_part[2:4], 16), int(hex_part[4:6], 16))
+        cleaned = target_url.strip("".join(chr(i) for i in range(0x21)))
+        cleaned = cleaned.replace("\t", "").replace("\n", "").replace("\r", "")
+        parsed = urlparse(cleaned)
+        parsed.port  # raises ValueError on an invalid port, as new URL() throws
+        if not parsed.scheme:
+            return "universal"
+        host = (parsed.hostname or "").lower()
     except ValueError:
-        return None
+        return "universal"
+    return "contract" if host in SCOPE_CONTRACT_HOSTS else "universal"
 
 
-def _relative_luminance(color: str) -> float | None:
-    """Calculate WCAG relative luminance for a hex color."""
-    rgb = _hex_to_rgb(color)
-    if rgb is None:
-        return None
-    r, g, b = [c / 255.0 for c in rgb]
-    # Linearize
-    def lin(c: float) -> float:
-        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+# ── Run ──────────────────────────────────────────────────────────────────────
 
 
-def _contrast_ratio(fg: str, bg: str) -> float:
-    """Calculate WCAG contrast ratio between two hex colors."""
-    l1 = _relative_luminance(fg)
-    l2 = _relative_luminance(bg)
-    if l1 is None or l2 is None:
-        return 0.0
-    lighter = max(l1, l2)
-    darker = min(l1, l2)
-    return (lighter + 0.05) / (darker + 0.05)
+def _offline_checks(
+    html: str,
+    css: str,
+    subject: str | None = None,
+    scope: str | None = None,
+    browser_probes: bool = False,
+) -> tuple[str, dict[str, str], list[dict[str, str]]]:
+    """Run every offline check on fetched parts: engine.ts scoreFromParts.
+
+    Returns (effective scope, raw :root tokens, checks). `subject` is used
+    only for scope auto-detection and the browser probes; nothing is fetched
+    from it here. With browser_probes False (the parity test, and any caller
+    without a browser), v02 and v21 read MANUAL as in the live engine.
+    """
+    target = subject or "https://fixture.local/"
+    raw_tokens = _extract_root_tokens(css)
+    tokens = _infer_tokens(raw_tokens)
+    effective = scope or _auto_detect_scope(target)
+    checks = [
+        _check_paper_token(tokens),
+        _browser_check("v02", _V02_ITEM, "responsive", _V02_MANUAL, _check_viewport_overflow_cdp, target, browser_probes),
+        _check_focus_visible(css),
+        _chk("v04", _V04_ITEM, "poise", "MANUAL", _V04_MANUAL),
+        _check_reduced_motion(css),
+        _check_contrast_readable(tokens),
+        _check_semantic_html(html),
+        _check_poise_interaction_rules(css),
+        _check_poise_keyboard_path(css, html),
+        _check_takt_feel_rules(css),
+        _check_transition_all(css),
+        _check_will_change(css),
+        _check_press_scale(css),
+        _check_cadence_rules(css),
+        _check_font_smoothing(css),
+        _check_rem_scale(css),
+        _check_line_height_by_role(css),
+        _check_text_wrap(css),
+        _check_tabular_nums(css),
+        _check_selection_styled(css),
+        _browser_check("v21", _V21_ITEM, "performance", _V21_MANUAL, _check_cwv_cdp, target, browser_probes),
+        _check_contrast_signal(tokens),
+        _check_duration_tokens(tokens),
+        _check_font_synthesis(css),
+        _check_underline_position(css),
+        _check_skip_ink(css),
+        _check_input_font_floor(css, html),
+    ]
+    return effective, raw_tokens, _apply_scope_filter(checks, effective)
+
+
+def _offline_result(
+    url: str,
+    html: str,
+    css: str,
+    scope: str | None = None,
+    browser_probes: bool = False,
+) -> dict[str, Any]:
+    """Score fetched parts and shape the result the way designesy_score returns it."""
+    effective, raw_tokens, checks = _offline_checks(html, css, url, scope, browser_probes)
+    counts = {s: sum(1 for c in checks if c["status"] == s) for s in ("PASS", "FAIL", "WARN", "SKIP", "MANUAL")}
+    total = len(checks)
+    # PASS=1, WARN=0.5, FAIL=0; SKIP and MANUAL reach no verdict and are excluded.
+    scored = total - counts["SKIP"] - counts["MANUAL"]
+    score = (counts["PASS"] + 0.5 * counts["WARN"]) / scored if scored > 0 else 0.0
+    grade = _score_grade(score)
+    not_run = list(_OFFLINE_NOT_IMPLEMENTED)
+    in_engine = total + len(not_run)
+    return {
+        "url": url,
+        "engine": {
+            "kind": "offline",
+            "mirrors_engine_version": OFFLINE_ENGINE_MIRRORS,
+            "checks_run": total,
+            "checks_in_live_engine": in_engine,
+            "not_run": not_run,
+        },
+        "scope": effective,
+        "contract_version": OFFLINE_CONTRACT_VERSION,
+        "summary": {
+            "total": total,
+            "pass": counts["PASS"],
+            "fail": counts["FAIL"],
+            "warn": counts["WARN"],
+            "skip": counts["SKIP"],
+            "manual": counts["MANUAL"],
+            "score": round(score, 4),
+            "score_percent": round(score * 100, 1),
+            "grade": grade,
+        },
+        "tokens_extracted": len(raw_tokens),
+        "checks": checks,
+        "note": (
+            f"Offline engine, not the live one: {BASE_URL}/api/score could not "
+            f"be used, so {total} of the live engine's {in_engine} checks ran "
+            f"locally. They mirror live engine {OFFLINE_ENGINE_MIRRORS}: for the "
+            f"same HTML, CSS and scope ({effective}) each one reaches the live "
+            f"engine's verdict. The other {len(not_run)} ({', '.join(not_run)}) "
+            f"do not run offline, and the score is an unweighted pass rate over "
+            f"the checks that reached a verdict (PASS 1, WARN 0.5), not the live "
+            f"engine's weighted score. {counts['PASS']} passed, {counts['FAIL']} "
+            f"failed, {counts['WARN']} warned, {counts['SKIP']} skipped, "
+            f"{counts['MANUAL']} manual (need a browser). Score "
+            f"{round(score * 100, 1)}% ({grade})."
+        ),
+    }
 
 
 # ── Main score implementation ──────────────────────────────────────────────
@@ -1436,9 +1592,11 @@ def _score_impl(
     /api/score (same engine the npm CLI and site use).
 
     format designesy (the default) reshapes the engine's native JSON into
-    this tool's long-standing shape, and falls back to the local 26-check
-    subset (v01-v23 + x01-x03) when the API is unreachable, so the tool
-    still works offline. That subset has no scope modes.
+    this tool's long-standing shape, and falls back to the offline engine
+    (_score_local_impl) when the API is unreachable, so the tool still works
+    offline. The offline engine runs a subset of the live engine's checks,
+    mirrors live engine OFFLINE_ENGINE_MIRRORS for each one, and applies the
+    same scope: the one requested, or the one auto-detected from the URL.
 
     format canonical and google return the engine's JSON unchanged, and
     format review returns its markdown unchanged (a str, which the
@@ -1470,14 +1628,7 @@ def _score_impl(
         remote = _score_remote(url, scope)
         if remote is not None:
             return remote
-        local = _score_local_impl(url)
-        if scope is not None:
-            local["scope_note"] = (
-                f"scope={scope!r} was not applied: the live engine was "
-                "unreachable, and the local offline subset that produced "
-                "this result has no scope modes."
-            )
-        return local
+        return _score_local_impl(url, scope)
 
     try:
         body = _post_score_api(url, fmt, scope)
@@ -1498,232 +1649,18 @@ def _score_impl(
         }
 
 
-def _score_local_impl(url: str) -> dict[str, Any]:
-    """Run the 23-item contract verification checklist against a live URL.
+def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
+    """Score a live URL with the offline engine, the fallback for designesy_score.
 
-    This is the executable verification engine. It fetches the page HTML,
-    extracts all CSS (inline + linked), and runs each verification item
-    automatically with provenance back to contract tokens and rules.
+    Fetches the page and its CSS the way the live engine assembles them, then
+    runs the offline checks (_offline_checks) under the requested scope, or
+    the one auto-detected from the URL. v02 and v21 are measured when a Chrome
+    DevTools endpoint is running on 127.0.0.1:9222, and read MANUAL otherwise.
+    It fetches only the page and its stylesheets; the contract JSON from
+    designesy.org, which the previous engine's v01 needed, is not fetched.
     """
-
-    # Fetch page CSS
-    css = _fetch_page_css(url)
-    raw_tokens = _extract_root_tokens(css)
-    # Normalize: map common semantic aliases (--bg→--paper, --accent→--signal,
-    # etc.) and fall back to value-based inference from CSS rules so the
-    # contrast and duration checks can score ANY surface, not just
-    # designesy.org.  Multi-surface harness principle.
-    tokens, inferred_tokens = _normalize_tokens(raw_tokens, css=css)
-
-    # Fetch contract for token-value comparison
-    contract = _fetch_contract()
-
-    # Also fetch HTML for the no-internal naming check
-    html = _fetch(url, as_json=False)
-
-    # Run all checks
-    checks = [
-        {
-            "id": "v01",
-            "item": "Token values match the live site :root foundation",
-            "category": "tokens",
-            "result": _check_token_values_match(tokens, contract, inferred_tokens),
-        },
-        {
-            "id": "v02",
-            "item": "Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+",
-            "category": "responsive",
-            "result": _check_viewport_overflow_cdp(url),
-        },
-        {
-            "id": "v03",
-            "item": "Primary interactive elements show focus-visible rings",
-            "category": "interaction",
-            "result": _check_focus_visible(css),
-        },
-        {
-            "id": "v04",
-            "item": "Sound toggle flips aria-pressed and applies the audio preference",
-            "category": "poise",
-            "result": ("SKIP", "requires live DOM click — toggle aria-pressed + [data-audio] attribute (both engines agree: not statically parseable)"),
-        },
-        {
-            "id": "v05",
-            "item": "prefers-reduced-motion disables entrance and wordmark breath",
-            "category": "motion",
-            "result": _check_reduced_motion(css),
-        },
-        {
-            "id": "v06",
-            "item": "Contrast remains readable for ink, muted, and accent on paper",
-            "category": "accessibility",
-            "result": _check_contrast_muted(tokens),
-        },
-        {
-            "id": "v07",
-            "item": "Semantic HTML foundation: single h1, title, meta description, landmark",
-            "category": "identity",
-            "result": _check_semantic_html(html),
-        },
-        {
-            "id": "v08",
-            "item": "Poise interaction rules match live /labs/poise and contract.interaction",
-            "category": "poise",
-            "result": _check_poise_interaction_rules(css),
-        },
-        {
-            "id": "v09",
-            "item": "Poise keyboard-path verification remains published and current",
-            "category": "poise",
-            "result": _check_poise_keyboard_path(css, html),
-        },
-        {
-            "id": "v10",
-            "item": "Takt interface-feel rules match live CSS and contract.takt",
-            "category": "takt",
-            "result": _check_takt_feel_rules(css),
-        },
-        {
-            "id": "v11",
-            "item": "No transition:all in the live stylesheet",
-            "category": "motion",
-            "result": _check_transition_all(css),
-        },
-        {
-            "id": "v12",
-            "item": "will-change restricted to transform and opacity only",
-            "category": "motion",
-            "result": _check_will_change(css),
-        },
-        {
-            "id": "v13",
-            "item": "Press scale 0.96 on cells, 0.985 on cards/rows — both above 0.95 floor",
-            "category": "takt",
-            "result": _check_press_scale(css),
-        },
-        {
-            "id": "v14",
-            "item": "Cadence typography rules match live CSS and contract.cadence",
-            "category": "cadence",
-            "result": _check_cadence_rules(css),
-        },
-        {
-            "id": "v15",
-            "item": "Font smoothing: antialiased + grayscale on :root confirmed",
-            "category": "cadence",
-            "result": _check_font_smoothing(css),
-        },
-        {
-            "id": "v16",
-            "item": "Rem-based scale: all text sizes in rem, root at 16px confirmed",
-            "category": "cadence",
-            "result": _check_rem_scale(css),
-        },
-        {
-            "id": "v17",
-            "item": "Line-height by role: headings 1.08, body 1.55 confirmed",
-            "category": "cadence",
-            "result": _check_line_height(css),
-        },
-        {
-            "id": "v18",
-            "item": "text-wrap: balance + pretty both present in live CSS",
-            "category": "cadence",
-            "result": _check_text_wrap(css),
-        },
-        {
-            "id": "v19",
-            "item": "tabular-nums: 8 instances across the live CSS",
-            "category": "cadence",
-            "result": _check_tabular_nums(css),
-        },
-        {
-            "id": "v20",
-            "item": "::selection styled with var(--signal) — not browser default",
-            "category": "cadence",
-            "result": _check_selection(css, tokens),
-        },
-        {
-            "id": "v21",
-            "item": "Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1",
-            "category": "performance",
-            "result": _check_cwv_cdp(url),
-        },
-        {
-            "id": "v22",
-            "item": "Primary button text passes WCAG AA 4.5:1 contrast against --signal fill",
-            "category": "accessibility",
-            "result": _check_contrast_signal(tokens),
-        },
-        {
-            "id": "v23",
-            "item": "Duration tokens --duration-quick through --duration-slow present in :root",
-            "category": "motion",
-            "result": _check_duration_tokens(tokens),
-        },
-        # Extended checks beyond the original 23 (contract v0.3.0 additions)
-        {
-            "id": "x01",
-            "item": "font-synthesis: none set (Cadence resolved tension)",
-            "category": "cadence",
-            "result": _check_font_synthesis(css),
-        },
-        {
-            "id": "x02",
-            "item": "text-underline-position: from-font set (Cadence resolved tension)",
-            "category": "cadence",
-            "result": _check_text_underline_position(css),
-        },
-        {
-            "id": "x03",
-            "item": "text-decoration-skip-ink: auto set",
-            "category": "cadence",
-            "result": _check_skip_ink(css),
-        },
-    ]
-
-    # Tally
-    passed = sum(1 for c in checks if c["result"][0] == "PASS")
-    failed = sum(1 for c in checks if c["result"][0] == "FAIL")
-    warned = sum(1 for c in checks if c["result"][0] == "WARN")
-    skipped = sum(1 for c in checks if c["result"][0] == "SKIP")
-    total = len(checks)
-
-    # Score: PASS=1, WARN=0.5, FAIL=0, SKIP=excluded
-    scored = total - skipped
-    score = (passed + 0.5 * warned) / scored if scored > 0 else 0.0
-
-    return {
-        "url": url,
-        "contract_version": contract.get("version", "unknown"),
-        "summary": {
-            "total": total,
-            "pass": passed,
-            "fail": failed,
-            "warn": warned,
-            "skip": skipped,
-            "score": round(score, 4),
-            "score_percent": round(score * 100, 1),
-            "grade": _score_grade(score),
-        },
-        "tokens_extracted": len(tokens),
-        "checks": [
-            {
-                "id": c["id"],
-                "item": c["item"],
-                "category": c["category"],
-                "status": c["result"][0],
-                "detail": c["result"][1],
-            }
-            for c in checks
-        ],
-        "note": (
-            f"Executable verification engine. {passed} passed, {failed} failed, "
-            f"{warned} warned, {skipped} skipped (require live browser). "
-            f"Score {round(score*100,1)}% ({_score_grade(score)}). "
-            f"Extended checks (x01-x03) cover v0.3.0 resolved tensions."
-        ),
-    }
+    html, css = _fetch_page_parts(url)
+    return _offline_result(url, html, css, scope, browser_probes=True)
 
 
 def _score_grade(score: float) -> str:
@@ -2061,10 +1998,13 @@ TOOLS = [
             "scope sets the scoring scope: contract or universal. Omit it "
             "and the engine auto-detects: contract for designesy.org, "
             "universal for every other site. If the engine is "
-            "unreachable, format designesy falls back to a local offline "
-            "subset of 26 checks that has no scope modes, and the other "
-            "three formats return an error, because only the live engine "
-            "produces them."
+            "unreachable, format designesy falls back to the offline "
+            "engine: 27 of the 42 checks run locally, each mirroring the "
+            "live engine's verdict, under the same scope. Its result adds "
+            "engine (kind offline, the engine version it mirrors, and the "
+            "checks it did not run) and scope, and its note says so. The "
+            "other three formats return an error, because only the live "
+            "engine produces them."
         ),
         "inputSchema": {
             "type": "object",

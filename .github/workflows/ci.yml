@@ -340,6 +340,15 @@ jobs:
         # Fails when the fixtures changed but corpus.json did not, so the
         # published artifact cannot drift from the tests it describes.
         run: node scripts/export-corpus.mjs --check
+
+      - name: Verify the Python offline engine's golden is current
+        working-directory: packages/score
+        # The PyPI MCP server falls back to a Python port of this engine. Its
+        # parity test (build-mcp job) compares the port against this golden,
+        # check by check. This step fails when the engine, its version, the
+        # corpus or the parity page changed and the golden did not; the
+        # regenerated golden then fails the Python test until the port follows.
+        run: node scripts/export-offline-golden.mjs --check
   # ── Job 6: Post-merge domain freshness ─────────────────────────────────────
   # Verifies that the PRODUCTION DOMAIN is serving the commit that was just
   # merged — not merely that a deployment exists.

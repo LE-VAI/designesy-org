@@ -773,7 +773,7 @@ class TestScoreFormatScope:
         with patch.object(mcp.urllib.request, "urlopen", engine), \
                 patch.object(mcp, "_score_local_impl", return_value=dict(local_result)) as local:
             result = mcp._score_impl(url="https://example.com/")
-        local.assert_called_once_with("https://example.com/")
+        local.assert_called_once_with("https://example.com/", None)
         assert result == local_result
 
     def test_default_format_falls_back_when_the_engine_reply_is_not_ok(self):
@@ -784,11 +784,12 @@ class TestScoreFormatScope:
             assert mcp._score_impl(url="https://example.com/") == {"note": "local"}
         local.assert_called_once()
 
-    def test_fallback_says_when_a_requested_scope_was_not_applied(self):
+    def test_fallback_applies_the_requested_scope(self):
+        # The offline engine has scope modes since it mirrors engine 1.1.0, so
+        # the requested scope is passed on rather than reported as dropped.
         engine = _Engine(error=urllib.error.URLError("network unreachable"))
-        with patch.object(mcp.urllib.request, "urlopen", engine), \
-                patch.object(mcp, "_score_local_impl", return_value={"note": "local"}):
+        with patch.object(mcp.urllib.request, "urlopen", engine),                 patch.object(mcp, "_score_local_impl", return_value={"note": "local"}) as local:
             result = mcp._score_impl(url="https://example.com/", scope="contract")
         assert engine.bodies == [{"url": "https://example.com/", "format": "designesy", "scope": "contract"}]
-        assert result["note"] == "local"
-        assert "scope='contract' was not applied" in result["scope_note"]
+        local.assert_called_once_with("https://example.com/", "contract")
+        assert result == {"note": "local"}

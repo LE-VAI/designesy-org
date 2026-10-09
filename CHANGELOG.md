@@ -6,6 +6,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **PyPI MCP server: the offline fallback mirrors engine 1.1.0, under a drift
+  gate.** When the live engine is unreachable, `designesy_score` (format
+  `designesy`) falls back to a Python engine in `packages/designesy-mcp`.
+  Nothing compared it with the live engine. Measured against the new golden, it
+  disagreed with the live engine's status on at least one run for 23 of its 26
+  checks (only v03, v07 and v09 agreed everywhere), and it raised `ValueError`
+  on `scale(0.9.5)`.
+
+  - Its 26 checks are now ports of the TypeScript checks, with the same item,
+    category, status and detail, the same token inference, and the same scope
+    filter. v05, v14 and v18 carry their 1.1.0 behaviour, and v27 is added with
+    its 1.1.0 behaviour, so 27 of the 42 checks run offline.
+  - `scope` now applies offline, requested or auto-detected from the URL as the
+    live engine does. It used to be dropped with a `scope_note`.
+  - v02, v04 and v21 read MANUAL without a browser, as in the live engine
+    (all three read SKIP before).
+  - The result names itself: `engine.kind` is `offline`,
+    `engine.mirrors_engine_version` is `1.1.0`, `engine.not_run` lists the 15
+    checks it does not run (each with a reason in the source), and `scope` is
+    reported. Its score stays an unweighted pass rate over the checks it runs,
+    and its note says that this is not the live engine's score.
+  - It collects CSS the way the live route does (inline first, then each
+    distinct stylesheet linked with `rel` before `href`, at most 60), and no
+    longer fetches the contract from designesy.org, which only the old v01 used.
+
+  **Drift gate.** `packages/score/scripts/export-offline-golden.mjs` scores the
+  25 offline corpus fixtures, the recorded parity page, 77 edge inputs and 8
+  scope auto-detection cases with the built TypeScript engine, under both scopes
+  (215 runs), and writes `packages/designesy-mcp/test/fixtures/offline-engine-golden.json`.
+  `test_offline_engine_parity.py` requires the Python engine to match every run,
+  check by check, and requires its ported and listed checks to be exactly the
+  live engine's 42. CI runs the exporter with `--check`. No version is bumped.
+
+
 ## [1.13.0] — 2026-10-08
 
 Released together: **designesy-mcp 1.13.0** (PyPI, MCP registry) and
