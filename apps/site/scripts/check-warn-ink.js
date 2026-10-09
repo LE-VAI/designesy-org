@@ -37,12 +37,27 @@
  *      surfaces, and on --paper, --surface and --surface-raised in dark. Dark
  *      --surface-lifted is excluded on purpose: dark scopes on that plane
  *      re-point --muted-dim to --muted (spring-validator.css does).
+ *   7. Followed aliases. The case-study state tokens in work.css (--cs-ink
+ *      paints the word, --cs-hue the dot and ring) are traced through every
+ *      declaration: an alias used as text may not take a bare hue, or another
+ *      alias that can carry one (`--cs-ink: var(--cs-hue)` while a state sets
+ *      `--cs-hue: var(--ok)`). Each value it can take is measured like an ink
+ *      token, on the four surfaces in both themes.
+ *   8. The report app (lib/report-app-html.ts) serves its own palette: a light
+ *      :root block and a prefers-color-scheme dark block. Its text never uses
+ *      the bare --ok, --warn or --error (in its CSS, its inline style strings,
+ *      or a variable that an inline `color:` reads), and its text tokens
+ *      (--ink, --muted, --muted-dim and the three status inks) are at least
+ *      4.5:1 on every surface it paints: --surface, --surface-raised, the
+ *      --surface-soft wash over each, the --surface-hover wash, and each status
+ *      ink on its own 12% tint.
  *
  * WHAT IT DOES NOT CATCH
- *   A hue reached through a component-scoped alias (`--sv-hue: var(--warn)`
- *   then `color: var(--sv-hue)`), a colour held in a variable and applied
- *   elsewhere (`style={{ color: ink }}`), and opacity applied to text. A source
- *   scan cannot follow those; they are reviewed by hand.
+ *   A hue reached through a component-scoped alias that is not listed in
+ *   FOLLOW (`--sv-hue` paints only the 24px verdict word, large text that
+ *   needs 3:1 and has it), a colour held in a variable and applied elsewhere
+ *   (`style={{ color: ink }}`), and opacity applied to text. A source scan
+ *   cannot follow those; they are reviewed by hand.
  *
  * Usage: node scripts/check-warn-ink.js        (exit 1 on any failure)
  */
@@ -138,7 +153,48 @@ function scanTsx(file) {
   }
 }
 
-for (const file of walk(APP)) (file.endsWith('.css') ? scanCss : scanTsx)(file);
+const files = walk(APP);
+for (const file of files) (file.endsWith('.css') ? scanCss : scanTsx)(file);
+
+// ── 7. Followed aliases ─────────────────────────────────────────────────────
+// Component-scoped custom properties whose values reach text.
+const FOLLOW = ['cs-ink', 'cs-hue'];
+const aliasDecls = Object.fromEntries(FOLLOW.map((n) => [n, []]));
+const aliasTextUses = Object.fromEntries(FOLLOW.map((n) => [n, []]));
+const ALIAS_DECL = new RegExp(`(?<![-\\w])--(${FOLLOW.join('|')})\\s*:\\s*([^;{}]+)`, 'g');
+const ALIAS_USE = new RegExp(`(?<![-\\w])(?:color|-webkit-text-fill-color)\\s*:\\s*var\\(--(${FOLLOW.join('|')})\\)`, 'g');
+const ALIAS_VAR = new RegExp(`var\\(--(${FOLLOW.join('|')})(?![\\w-])`);
+for (const file of files.filter((f) => f.endsWith('.css'))) {
+  const src = fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  for (const m of src.matchAll(ALIAS_DECL)) aliasDecls[m[1]].push({ where: `${rel(file)}:${lineOf(src, m.index)}`, value: m[2].trim() });
+  for (const m of src.matchAll(ALIAS_USE)) aliasTextUses[m[1]].push(`${rel(file)}:${lineOf(src, m.index)}`);
+}
+// An alias carries a hue when any declaration gives it a bare (or
+// alpha-reduced) hue, or another alias that carries one.
+function carriesHue(name, seen = new Set()) {
+  if (seen.has(name)) return false;
+  seen.add(name);
+  return aliasDecls[name].some(({ value }) => {
+    if (HUE_VAR.test(value) && !/var\(--ink\)/.test(value)) return true;
+    const other = ALIAS_VAR.exec(value);
+    return !!other && carriesHue(other[1], seen);
+  });
+}
+const aliasTextValues = [];
+for (const name of FOLLOW) {
+  if (!aliasTextUses[name].length) continue;
+  for (const { where, value } of aliasDecls[name]) {
+    const hue = HUE_VAR.exec(value);
+    const other = ALIAS_VAR.exec(value);
+    if (hue && !/var\(--ink\)/.test(value)) {
+      failures.push(`${where} sets --${name}, which paints text (${aliasTextUses[name][0]}), to the --${hue[1]} hue (${value}); use var(--${hue[1]}-ink)`);
+    } else if (other && carriesHue(other[1])) {
+      failures.push(`${where} sets --${name}, which paints text (${aliasTextUses[name][0]}), to --${other[1]}, which a state sets to a bare hue; give --${name} a text token in each state`);
+    } else if (!other) {
+      aliasTextValues.push({ where: `${where} --${name}`, value });
+    }
+  }
+}
 
 // ── 3. The tokens, in both themes ──────────────────────────────────────────
 const css = fs.readFileSync(GLOBALS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -227,16 +283,18 @@ function splitTop(s) {
   return out;
 }
 
-// Resolve a declared value in one theme: hex, var() (the light block falls
-// back to the root block, as the cascade does) and color-mix() with an opaque
-// pair. Anything else returns null and is reported as unmeasurable.
-function resolve(theme, value, depth = 0) {
+// Resolve a declared value against a scope: a list of token blocks, first
+// match wins, as the cascade does (the site's light block falls back to its
+// root block; the report app's dark block falls back to its light root).
+// Handles hex, var(), and color-mix() with an opaque pair. Anything else
+// returns null and is reported as unmeasurable.
+function resolveIn(scope, value, depth = 0) {
   if (!value || depth > 12) return null;
   const v = value.replace(/\s*!important$/, '').trim();
   const hex = /^#([0-9a-f]{6})$/i.exec(v);
   if (hex) return [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16) / 255);
   const ref = /^var\(--([\w-]+)\)$/.exec(v);
-  if (ref) return resolve(theme, decl(themes[theme], ref[1]) || decl(themes.dark, ref[1]), depth + 1);
+  if (ref) return resolveIn(scope, scope.map((b) => decl(b, ref[1])).find(Boolean), depth + 1);
   const cm = /^color-mix\(\s*in\s+(srgb|oklab)\s*,(.*)\)$/s.exec(v);
   if (cm) {
     const parts = splitTop(cm[2]).map((part) => {
@@ -244,7 +302,7 @@ function resolve(theme, value, depth = 0) {
       return pm ? { color: pm[1], p: Number(pm[2]) / 100 } : { color: part, p: null };
     });
     if (parts.length !== 2) return null;
-    const [a, b] = parts.map((x) => resolve(theme, x.color, depth + 1));
+    const [a, b] = parts.map((x) => resolveIn(scope, x.color, depth + 1));
     if (!a || !b) return null;
     let [p1, p2] = [parts[0].p, parts[1].p];
     if (p1 === null && p2 === null) [p1, p2] = [0.5, 0.5];
@@ -256,19 +314,49 @@ function resolve(theme, value, depth = 0) {
   return null;
 }
 
+// A translucent wash composited over an opaque base, rounded to 8-bit: an
+// rgba() token, or a hue at N% with transparent (the status tints).
+function overlay(scope, washValue, base) {
+  const v = (washValue || '').trim();
+  const ref = /^var\(--([\w-]+)\)$/.exec(v);
+  if (ref) return overlay(scope, scope.map((b) => decl(b, ref[1])).find(Boolean), base);
+  const rgba = /^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/.exec(v);
+  let color;
+  let alpha;
+  if (rgba) {
+    color = [rgba[1], rgba[2], rgba[3]].map((c) => Number(c) / 255);
+    alpha = Number(rgba[4]);
+  } else {
+    const tint = /^color-mix\(\s*in\s+srgb\s*,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*,\s*transparent\s*\)$/.exec(v);
+    if (!tint) return null;
+    color = resolveIn(scope, tint[1]);
+    alpha = Number(tint[2]) / 100;
+  }
+  if (!color || !base) return null;
+  // Browsers carry alpha in 8 bits too: rgba(0,0,0,0.03) blends at 8/255, so a
+  // wash over #f5f5f7 paints #ededef, not #eeeef0.
+  const a8 = Math.round(alpha * 255) / 255;
+  return to8bit(to8bit(color).map((c, i) => c * a8 + base[i] * (1 - a8)));
+}
+
+const SITE_SCOPE = { dark: () => [themes.dark], light: () => [themes.light, themes.dark] };
+const resolve = (theme, value) => resolveIn(SITE_SCOPE[theme](), value);
+
 const lines = [];
-function measure(label, theme, color, surfaces) {
-  for (const surface of surfaces) {
-    const bg = resolve(theme, `var(--${surface})`);
-    if (!bg) {
-      failures.push(`globals.css: cannot read ${theme} --${surface}`);
+// backgrounds: [{ name, rgb }]; text must hold 4.5:1 on every one.
+function measureOn(label, theme, color, backgrounds) {
+  for (const { name, rgb } of backgrounds) {
+    if (!rgb) {
+      failures.push(`cannot read ${theme} ${name} (for ${label})`);
       continue;
     }
-    const ratio = contrast(color, bg);
-    lines.push({ label, theme, surface, color: toHex(color), ratio });
-    if (ratio < MIN) failures.push(`${theme} ${label} ${toHex(color)} is ${ratio.toFixed(3)}:1 on --${surface}, under ${MIN}:1`);
+    const ratio = contrast(color, rgb);
+    lines.push({ label, theme, surface: name, color: toHex(color), ratio });
+    if (ratio < MIN) failures.push(`${theme} ${label} ${toHex(color)} is ${ratio.toFixed(3)}:1 on ${name}, under ${MIN}:1`);
   }
 }
+const siteSurfaces = (theme, names) => names.map((n) => ({ name: `--${n}`, rgb: resolve(theme, `var(--${n})`) }));
+const measure = (label, theme, color, names) => measureOn(label, theme, color, siteSurfaces(theme, names));
 
 for (const theme of ['dark', 'light']) {
   if (!themes[theme]) {
@@ -298,6 +386,89 @@ for (const theme of ['dark', 'light']) {
     }
     measure(`${where} ${value}`, theme, color, SURFACES);
   }
+  for (const { where, value } of aliasTextValues) {
+    const color = resolve(theme, value);
+    if (!color) {
+      failures.push(`${where}: cannot measure ${theme} "${value}"`);
+      continue;
+    }
+    measure(`${where} = ${value}`, theme, color, SURFACES);
+  }
+}
+
+// ── 8. The report app's own palette ────────────────────────────────────────
+const REPORT_APP = path.join(APP, 'lib', 'report-app-html.ts');
+const APP_HUES = ['ok', 'warn', 'error'];
+const APP_TEXT = ['ink', 'muted', 'muted-dim', 'ok-ink', 'warn-ink', 'error-ink'];
+const APP_HUE_VAR = new RegExp(`var\\(--(${APP_HUES.join('|')})(?![\\w-])`);
+const APP_HUE_LITERAL = new RegExp(`['"]var\\(--(${APP_HUES.join('|')})\\)['"]`);
+let appReadings = 0;
+{
+  const src = fs.readFileSync(REPORT_APP, 'utf8');
+  const at = (i) => `${rel(REPORT_APP)}:${lineOf(src, i)}`;
+  const style = src.slice(src.indexOf('<style>'), src.indexOf('</style>'));
+  const clean = style.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  const blockAfter = (text, re) => {
+    const m = re.exec(text || '');
+    if (!m) return null;
+    const open = text.indexOf('{', m.index + m[0].length - 1);
+    let depth = 0;
+    for (let j = open; j < text.length; j++) {
+      if (text[j] === '{') depth++;
+      else if (text[j] === '}' && --depth === 0) return text.slice(open + 1, j);
+    }
+    return null;
+  };
+  const light = blockAfter(clean, /:root\s*\{/);
+  const dark = blockAfter(blockAfter(clean, /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{/), /:root\s*\{/);
+  if (!light || !dark) failures.push(`${rel(REPORT_APP)}: cannot find the light :root block and the dark prefers-color-scheme block`);
+
+  // Text in a bare app hue: CSS rules and inline style strings ...
+  for (const m of src.matchAll(/(?<![-\w])(color|-webkit-text-fill-color)\s*:\s*([^;{}"'\n]+)/g)) {
+    const hue = APP_HUE_VAR.exec(m[2]);
+    if (hue && !/var\(--ink\)/.test(m[2])) failures.push(`${at(m.index)} paints report-app text with the --${hue[1]} hue (${m[2].trim()}); use var(--${hue[1]}-ink)`);
+  }
+  // ... SVG text filled with one ...
+  for (const m of src.matchAll(/<text\b[^>]*fill:\s*var\(--(ok|warn|error)\)/g)) {
+    failures.push(`${at(m.index)} fills report-app SVG text with the --${m[1]} hue; use var(--${m[1]}-ink)`);
+  }
+  // ... and a variable an inline `color:' + x` reads, at its last assignment.
+  for (const m of src.matchAll(/color:\s*'\s*\+\s*([A-Za-z_$][\w$]*)/g)) {
+    const assigns = [...src.slice(0, m.index).matchAll(new RegExp(`\\b(?:var|let|const)\\s+${m[1]}\\s*=\\s*([^;]+);`, 'g'))];
+    const last = assigns[assigns.length - 1];
+    if (!last) failures.push(`${at(m.index)}: inline color reads ${m[1]}, which is not assigned before it`);
+    else {
+      const hue = APP_HUE_LITERAL.exec(last[1]);
+      if (hue) failures.push(`${at(m.index)} sets report-app text from ${m[1]}, which can be var(--${hue[1]}); use var(--${hue[1]}-ink)`);
+    }
+  }
+
+  // Every text token on every surface the app paints, in both modes.
+  const scopes = { light: [light], dark: [dark, light] };
+  for (const theme of light && dark ? ['dark', 'light'] : []) {
+    const scope = scopes[theme];
+    const surface = resolveIn(scope, 'var(--surface)');
+    const raised = resolveIn(scope, 'var(--surface-raised)');
+    const backgrounds = [
+      { name: 'app --surface', rgb: surface },
+      { name: 'app --surface-raised', rgb: raised },
+      { name: 'app soft on surface', rgb: overlay(scope, 'var(--surface-soft)', surface) },
+      { name: 'app soft on raised', rgb: overlay(scope, 'var(--surface-soft)', raised) },
+      { name: 'app hover on surface', rgb: overlay(scope, 'var(--surface-hover)', surface) },
+    ];
+    for (const name of APP_TEXT) {
+      const value = scope.map((b) => decl(b, name)).find(Boolean);
+      const color = resolveIn(scope, value);
+      if (!color) {
+        failures.push(`${rel(REPORT_APP)}: cannot measure ${theme} --${name} "${value}"`);
+        continue;
+      }
+      appReadings++;
+      const hue = /^(ok|warn|error)-ink$/.exec(name);
+      const tint = hue ? [{ name: 'its 12% tint on raised', rgb: overlay(scope, `color-mix(in srgb, var(--${hue[1]}) 12%, transparent)`, raised) }] : [];
+      measureOn(`report app --${name}`, theme, color, [...backgrounds, ...tint]);
+    }
+  }
 }
 
 // One line per token and theme: its painted colour and the ratio on each surface.
@@ -315,4 +486,4 @@ if (failures.length) {
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, --muted-dim and ${inlineMixes.length} inline ink mixes are at least ${MIN}:1 on every surface in both themes.`);
+console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, --muted-dim, ${inlineMixes.length} inline ink mixes, ${aliasTextValues.length} followed alias values (${FOLLOW.map((n) => `--${n}`).join(', ')}) and ${appReadings} report-app tokens are at least ${MIN}:1 on every surface in both themes.`);

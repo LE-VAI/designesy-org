@@ -48,19 +48,6 @@
   --cs-band-ink: color-mix(in srgb, var(--ink) 42%, transparent);
 }
 
-/* State text. The state tokens are text-safe on the reading surfaces in
-   both themes except light-mode warn (#b07d04 is 3.6:1 on white, an icon
-   colour), which mixes toward ink to 5.8:1 and keeps its hue. */
-.cs-state,
-.work-index {
-  --cs-warn-ink: var(--warn);
-}
-
-[data-theme="light"] .cs-state,
-[data-theme="light"] .work-index {
-  --cs-warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink));
-}
-
 /* ==========================================================================
    Type pieces
    ========================================================================== */
@@ -137,8 +124,12 @@
 }
 
 .cs-state {
+  /* --cs-hue paints the dot and the ring; --cs-ink paints the word. Each
+     state sets both, because the state hues are mark colours: light --ok
+     and --error fall to 4.26:1 and 4.10:1 on --surface-lifted, light --warn
+     is 3.51:1 on --paper. Text takes the hue's --<hue>-ink token. */
   --cs-hue: var(--muted);
-  --cs-ink: var(--cs-hue);
+  --cs-ink: var(--muted);
   display: inline-flex;
   align-items: center;
   gap: var(--space-6);
@@ -160,10 +151,10 @@
   background: var(--cs-hue);
 }
 
-.cs-state[data-state="pass"] { --cs-hue: var(--ok); }
-.cs-state[data-state="fail"] { --cs-hue: var(--error); }
-.cs-state[data-state="warn"] { --cs-hue: var(--warn); --cs-ink: var(--cs-warn-ink); }
-.cs-state[data-state="skip"] { --cs-hue: var(--muted); }
+.cs-state[data-state="pass"] { --cs-hue: var(--ok); --cs-ink: var(--ok-ink); }
+.cs-state[data-state="fail"] { --cs-hue: var(--error); --cs-ink: var(--error-ink); }
+.cs-state[data-state="warn"] { --cs-hue: var(--warn); --cs-ink: var(--warn-ink); }
+.cs-state[data-state="skip"] { --cs-hue: var(--muted); --cs-ink: var(--muted); }
 
 .cs-state.is-before {
   font-weight: 500;
@@ -1278,12 +1269,12 @@
 
 .work-row-grade[data-tone="pass"] {
   --cs-hue: color-mix(in srgb, var(--ok) 48%, transparent);
-  --cs-ink: var(--ok);
+  --cs-ink: var(--ok-ink);
 }
 
 .work-row-grade[data-tone="warn"] {
   --cs-hue: color-mix(in srgb, var(--warn) 48%, transparent);
-  --cs-ink: var(--cs-warn-ink);
+  --cs-ink: var(--warn-ink);
 }
 
 /* The readout's text breaks only between its segments (page.tsx binds each
