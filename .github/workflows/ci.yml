@@ -214,6 +214,18 @@ jobs:
         if: always()
         run: node scripts/check-warn-ink.js
 
+      # Every focus style resolves outside its component's scope: the
+      # findings filter lost its ring because --ctl-focus lived only on the bar.
+      - name: Focus rings
+        if: always()
+        run: node scripts/check-focus-rings.js
+
+      # Every entrance that starts at opacity 0 declares how it behaves when a
+      # visitor pauses motion; a held first frame once emptied whole pages.
+      - name: Paused entrances
+        if: always()
+        run: node scripts/check-paused-entrances.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
@@ -548,6 +560,11 @@ jobs:
         # what a local Windows run uses, so the channel stays explicit and the
         # same everywhere.
         run: node scripts/check-glass-blur.js --base http://127.0.0.1:3422 --channel chrome
+
+      # Pausing animations (WCAG 2.2.2) must never hide content: a paused
+      # visitor once got empty surface pages (.fade-up held on its first frame).
+      - name: Motion pause
+        run: node scripts/check-motion-pause.js --base http://127.0.0.1:3422 --channel chrome
 
       - name: Keyboard QA
         run: node scripts/qa-keyboard.js --base http://127.0.0.1:3422

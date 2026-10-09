@@ -91,6 +91,7 @@ function main() {
     'check-gate-parity.js',
     'edge-contract.js',
     'check-glass-blur.js',
+    'check-motion-pause.js',
     'qa-keyboard.js',
     'a11y-sweep.js',
     'touched-routes.js',
