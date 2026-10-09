@@ -158,25 +158,24 @@ const VALID_COLOR_SPACES = new Set([
   'xyz-d50',
 ]);
 
-// Font weight predefined string keywords (§8.4)
+// Font weight predefined string keywords (§8.4). These are the 18 keywords in
+// the published DTCG 2025.10 schema (format/values/fontWeight.json), which
+// spells compound names with a hyphen. An earlier list used unhyphenated
+// spellings (semibold, extralight) and lacked hairline and book, so it failed
+// keywords the spec allows and passed ones it does not define.
 const FONT_WEIGHT_KEYWORDS = new Set([
-  'thin',
-  'extralight',
-  'ultralight',
-  'light',
-  'normal',
-  'regular',
-  'medium',
-  'semibold',
-  'demibold',
-  'bold',
-  'extrabold',
-  'ultrabold',
-  'black',
-  'heavy',
-  'extrablack',
-  'ultrablack',
+  'thin', 'hairline', 'extra-light', 'ultra-light', 'light', 'normal', 'regular',
+  'book', 'medium', 'semi-bold', 'demi-bold', 'bold', 'extra-bold', 'ultra-bold',
+  'black', 'heavy', 'extra-black', 'ultra-black',
 ]);
+
+// Unhyphenated spellings some tools emit, mapped to the spec keyword, so the
+// error can name the fix.
+const FONT_WEIGHT_UNHYPHENATED: Record<string, string> = {
+  extralight: 'extra-light', ultralight: 'ultra-light', semibold: 'semi-bold',
+  demibold: 'demi-bold', extrabold: 'extra-bold', ultrabold: 'ultra-bold',
+  extrablack: 'extra-black', ultrablack: 'ultra-black',
+};
 
 const VALID_DIMENSION_UNITS = new Set(['px', 'rem']);
 const VALID_DURATION_UNITS = new Set(['ms', 's']);
@@ -500,7 +499,10 @@ function validatePrimitiveValue(type: string, value: unknown): string[] {
         }
       } else if (typeof value === 'string') {
         if (!FONT_WEIGHT_KEYWORDS.has(value)) {
-          errors.push(`fontWeight string "${value}" is not a valid keyword`);
+          const spec = FONT_WEIGHT_UNHYPHENATED[value];
+          errors.push(spec
+            ? `fontWeight string "${value}" is not a DTCG 2025.10 keyword; the spec spelling is "${spec}"`
+            : `fontWeight string "${value}" is not a valid keyword`);
         }
       } else {
         errors.push(`fontWeight must be a number (1-1000) or keyword string, got ${typeof value}`);

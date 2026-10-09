@@ -330,6 +330,35 @@ describe('t11 extension reporting', () => {
   });
 });
 
+// ── fontWeight keywords (DTCG 2025.10 schema, format/values/fontWeight.json) ──
+
+describe('fontWeight keywords', () => {
+  const weights = (value) => getCheck(validateTokens({ w: { $type: 'fontWeight', x: { $value: value, $description: 'd' } } }), 't14');
+
+  it('accepts every hyphenated spec keyword, including hairline and book', () => {
+    for (const k of ['thin', 'hairline', 'extra-light', 'ultra-light', 'light', 'normal', 'regular', 'book', 'medium',
+      'semi-bold', 'demi-bold', 'bold', 'extra-bold', 'ultra-bold', 'black', 'heavy', 'extra-black', 'ultra-black']) {
+      assert.equal(weights(k).status, 'PASS', k);
+    }
+  });
+
+  it('rejects an unhyphenated spelling and names the spec spelling', () => {
+    const t14 = weights('semibold');
+    assert.equal(t14.status, 'FAIL');
+    assert.match(t14.detail, /the spec spelling is "semi-bold"/);
+  });
+
+  it('rejects an unknown keyword with the generic message', () => {
+    const t14 = weights('superbold');
+    assert.equal(t14.status, 'FAIL');
+    assert.match(t14.detail, /"superbold" is not a valid keyword/);
+  });
+
+  it('still accepts numeric weights', () => {
+    assert.equal(weights(600).status, 'PASS');
+  });
+});
+
 // ── Edge cases ─────────────────────────────────────────────────────────
 
 describe('edge cases', () => {
