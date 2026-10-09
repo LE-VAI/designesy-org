@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-10-08
+
+Released together: **designesy-mcp 1.13.0** (PyPI, MCP registry) and
+**@designesy/score 0.6.0** (npm). The entries below were merged since 1.12.2.
+Headlines: engine 1.1.0 (v05, v27, v14/v18 tiering, the 13-type DTCG list) now
+ships in the npm CLI's bundled engine; the PyPI `designesy_score` tool passes
+`format` and `scope` through to the engine and identifies itself as
+`designesy-mcp/1.13.0`.
+
 ### Changed
 
 - **`@designesy/score` 0.5.0 — the standalone engine is converged with the site
