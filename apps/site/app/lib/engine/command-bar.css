@@ -37,6 +37,11 @@
   --ctl-h: var(--space-56);
   --ctl-t: var(--duration-fast) var(--ease-out);
   --ctl-t-quick: var(--duration-quick) var(--ease-out);
+  /* Every use below falls back to --signal-access: the segmented control
+     and the "more" disclosure also render outside a bar (the findings
+     filter), where this scope does not reach and the focus ring vanished.
+     scripts/check-focus-rings.js holds every focus rule to a root token or
+     a fallback. */
   --ctl-focus: var(--signal-access);
   --ctl-warn: var(--lv-warn-a);
 }
@@ -240,9 +245,9 @@
 
 .eg-bar-field:focus-within {
   box-shadow:
-    inset 0 0 0 1px var(--ctl-focus),
-    0 0 0 3px color-mix(in srgb, var(--ctl-focus) 22%, transparent);
-  color: var(--ctl-focus);
+    inset 0 0 0 1px var(--ctl-focus, var(--signal-access)),
+    0 0 0 3px color-mix(in srgb, var(--ctl-focus, var(--signal-access)) 22%, transparent);
+  color: var(--ctl-focus, var(--signal-access));
 }
 
 .eg-bar-field[data-invalid] {
@@ -318,7 +323,7 @@
 }
 
 .eg-more > summary:focus-visible {
-  outline: 2px solid var(--ctl-focus);
+  outline: 2px solid var(--ctl-focus, var(--signal-access));
   outline-offset: 2px;
   border-radius: var(--radius-sm);
   box-shadow: none;
@@ -357,7 +362,7 @@
   color: var(--ink);
   font: 400 1rem/1.5 var(--sans);
   letter-spacing: -0.005em;
-  caret-color: var(--ctl-focus);
+  caret-color: var(--ctl-focus, var(--signal-access));
   text-overflow: ellipsis;
 }
 
@@ -445,7 +450,7 @@
 }
 
 .eg-bar-go:focus-visible {
-  outline: 2px solid var(--ctl-focus);
+  outline: 2px solid var(--ctl-focus, var(--signal-access));
   outline-offset: 2px;
   border-radius: var(--ctl-r-in);
   box-shadow:
@@ -631,7 +636,7 @@
 }
 
 .eg-seg-opt:focus-visible {
-  outline: 2px solid var(--ctl-focus);
+  outline: 2px solid var(--ctl-focus, var(--signal-access));
   outline-offset: 0;
   border-radius: calc(var(--radius-md) - var(--space-2));
   box-shadow: none;
