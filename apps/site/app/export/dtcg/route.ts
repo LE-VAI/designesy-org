@@ -1,12 +1,14 @@
 import { designSystemContract } from '../../lib/design-system-contract';
+import { CATEGORY_WEIGHTS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 
 export const dynamic = 'force-static';
 
 // /export/dtcg — W3C Design Tokens Format Module 2025.10
 // Serializes the FULL designesy contract token surface into DTCG
 // $value/$type/$description structure with structured color values
-// (colorSpace + components, not bare hex). Custom types (spring, sound)
-// are declared via $extensions.designesy per the DTCG extension point.
+// (colorSpace + components, not bare hex). Every token uses one of the 13
+// DTCG 2025.10 types. Springs and sound cues have no DTCG type, so they live
+// in $extensions.designesy (the DTCG extension point), not as tokens.
 // This is the machine-readable export for agents and build tools that
 // consume design tokens.
 //
@@ -88,7 +90,7 @@ export function GET() {
   // ── Build DTCG document ─────────────────────────────────────────────────
   const dtcg: Record<string, unknown> = {
     $schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
-    $description: `Designesy design system contract v${c.version}: W3C DTCG 2025.10 format. Custom types (spring, sound) declared via $extensions.designesy.`,
+    $description: `Designesy design system contract v${c.version}: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.`,
     // $version is NOT a DTCG 2025.10 property. Verified against the shipped
     // schema: its root permits exactly $schema, $type, $description,
     // $extensions, $extends, $deprecated, $root — with additionalProperties:
@@ -201,6 +203,7 @@ export function GET() {
   if (Object.keys(shadowGroup).length > 0) dtcg.shadow = shadowGroup;
 
   // Motion tokens (durations + easings + springs)
+  const springExtension: Record<string, { response_s: number; damping: number; description?: string }> = {};
   const motion = c.motion as Record<string, { token?: string; value?: string; role?: string } | unknown>;
   if (motion) {
     // $value is string OR number[] (cubicBezier is an array of four numbers);
@@ -227,33 +230,16 @@ export function GET() {
         $description?: string;
         $extensions?: unknown;
       }> = {};
-    const springGroup: Record<string, {
-        $value: string | number[] | { value: number; unit: 'ms' | 's' };
-        $type: string;
-        $description?: string;
-        $extensions?: unknown;
-      }> = {};
     for (const [key, raw] of Object.entries(motion)) {
       if (typeof raw !== 'object' || raw === null) continue;
       const spec = raw as { token?: string; value?: string; role?: string };
       if (key === 'springs') {
-        // Custom $type: spring via $extensions.designesy — DTCG has no spring type.
+        // DTCG 2025.10 has no spring type. Springs used to be emitted as tokens
+        // typed 'string' (a common extension, not a DTCG type); they now sit in
+        // $extensions.designesy.springs with their numeric parameters.
         const springs = raw as Record<string, { damping: number; response: number; description?: string }>;
         for (const [sk, sv] of Object.entries(springs)) {
-          // $type: 'string' (a SPEC type) + the custom semantics under
-          // $extensions.designesy. The comment above has always said this was
-          // the intent; the implementation set a custom $type instead, which
-          // failed BOTH t05 (no $extensions) and t11 (not a spec type).
-          //
-          // 'string' rather than a numeric pair because the value is a
-          // human-readable summary, and t14 validates $value against $type —
-          // declaring 'number' for "0.4s response, 1 damping" would fail it.
-          springGroup[sk] = {
-            $value: `${sv.response}s response, ${sv.damping} damping`,
-            $type: 'string',
-            $description: sv.description,
-            $extensions: { designesy: { type: 'spring', response: sv.response, damping: sv.damping } },
-          };
+          springExtension[sk] = { response_s: sv.response, damping: sv.damping, description: sv.description };
         }
         continue;
       }
@@ -301,7 +287,6 @@ export function GET() {
     }
     if (Object.keys(durationGroup).length > 0) motionGroup.duration = durationGroup;
     if (Object.keys(easeGroup).length > 0) motionGroup.ease = easeGroup;
-    if (Object.keys(springGroup).length > 0) motionGroup.spring = springGroup;
     if (Object.keys(motionGroup).length > 0) dtcg.motion = motionGroup;
   }
 
@@ -325,30 +310,15 @@ export function GET() {
     if (Object.keys(fontGroup).length > 0) dtcg.fontFamily = fontGroup;
   }
 
-  // Sound cue tokens — custom $type: sound via $extensions.designesy.
-  // DTCG 2025.10 has no sound type; the cues are emitted as first-class
-  // tokens (not just raw metadata) so agents can consume cue→role mappings
-  // as machine-readable design tokens.
+  // Sound cues: DTCG 2025.10 has no sound type, so the cue-to-role map sits in
+  // $extensions.designesy.sound_cues (the full acoustic contract is also in
+  // $extensions.designesy.acoustic). They used to be tokens typed 'string'.
   const acoustic = (c as Record<string, unknown>).acoustic as
     | { cues?: { token: string; cue: string; role: string }[] }
     | undefined;
-  if (acoustic?.cues) {
-    const soundGroup: Record<string, { $value: string; $type: string; $description: string; $extensions?: unknown }> = {};
-    for (const cue of acoustic.cues) {
-      const name = cue.token.replace('--cue:', '');
-      // 'string' is the spec type; the acoustic semantics move to $extensions.
-      // DTCG has no sound type, and t11 accepts no custom $type at all, so a
-      // spec type plus a namespaced extension is the only shape that satisfies
-      // both checks. The cue name stays in $value so existing consumers that
-      // read it directly are unaffected.
-      soundGroup[name] = {
-        $value: cue.cue,
-        $type: 'string',
-        $description: cue.role,
-        $extensions: { designesy: { type: 'sound', cue: cue.cue } },
-      };
-    }
-    if (Object.keys(soundGroup).length > 0) dtcg.sound = soundGroup;
+  const soundCueExtension: Record<string, { cue: string; role: string }> = {};
+  for (const cue of acoustic?.cues ?? []) {
+    soundCueExtension[cue.token.replace('--cue:', '')] = { cue: cue.cue, role: cue.role };
   }
 
   // $extensions for non-DTCG-standard groups (typography, takt, acoustic, verification)
@@ -360,9 +330,11 @@ export function GET() {
       layout: (c as Record<string, unknown>).layout,
       materials: (c as Record<string, unknown>).materials,
       acoustic: (c as Record<string, unknown>).acoustic,
+      springs: springExtension,
+      sound_cues: soundCueExtension,
       verification: {
-        checks: 40,
-        categories: 13,
+        checks: ENGINE_CHECK_COUNT,
+        categories: Object.keys(CATEGORY_WEIGHTS).length,
         a11y_floor: '60% (a11y < 60% caps score at C/70)',
         standards: 'WCAG 2.1 AA + APCA + DTCG 2025.10 + EU AI Act Art 50',
       },
