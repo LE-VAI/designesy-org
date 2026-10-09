@@ -105,6 +105,7 @@ const INDEX: SearchItem[] = [
   { title: 'Learn', href: '/learn', group: 'Learn', keywords: 'tutorials guides education', meta: '' },
   { title: 'What is design verification?', href: '/learn/what-is-design-verification', group: 'Learn', keywords: 'definition explainer automated evaluation live site published contract', meta: 'Article' },
   { title: 'Design verification vs linting vs visual regression', href: '/learn/design-verification-vs-linting-vs-visual-regression', group: 'Learn', keywords: 'lint linting stylelint visual regression snapshot baseline diff token drift comparison', meta: 'Article' },
+  { title: 'The pause button that emptied our pages', href: '/learn/the-pause-button-that-emptied-our-pages', group: 'Learn', keywords: 'case study pause animations motion toggle wcag 2.2.2 reduced motion fade in invisible', meta: 'Article' },
   { title: 'Why we built a public design score', href: '/learn/why-we-built-a-public-design-score', group: 'Learn', keywords: 'public score honesty transparency same checks same thresholds', meta: 'Article' },
   // Blog: each of these routes redirects to its post on dev.to, so none is
   // prerendered as a page and Pagefind cannot index them; this list is how

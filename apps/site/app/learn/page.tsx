@@ -41,6 +41,14 @@ const ARTICLES = [
     kind: 'Position',
     minutes: 4,
   },
+  {
+    slug: 'the-pause-button-that-emptied-our-pages',
+    title: 'The pause button that emptied our pages',
+    lede:
+      'Our WCAG 2.2.2 pause control left 8 pages blank for the visitors who used it. How we found it, why every check passed, and the gate that now catches it.',
+    kind: 'Case study',
+    minutes: 3,
+  },
 ];
 
 export default function LearnPage() {

@@ -99,6 +99,7 @@ const MARKDOWN_ROUTES = [
   'learn/what-is-design-verification',
   'learn/why-we-built-a-public-design-score',
   'learn/design-verification-vs-linting-vs-visual-regression',
+  'learn/the-pause-button-that-emptied-our-pages',
   'review',
   'pricing',
   'graph',

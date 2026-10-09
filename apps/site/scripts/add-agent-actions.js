@@ -52,6 +52,7 @@ const ROUTES = {
   'learn/what-is-design-verification': ['/learn/what-is-design-verification.md', 'the design verification article'],
   'learn/why-we-built-a-public-design-score': ['/learn/why-we-built-a-public-design-score.md', 'the public score article'],
   'learn/design-verification-vs-linting-vs-visual-regression': ['/learn/design-verification-vs-linting-vs-visual-regression.md', 'the verification vs linting article'],
+  'learn/the-pause-button-that-emptied-our-pages': ['/learn/the-pause-button-that-emptied-our-pages.md', 'the pause case study'],
   'review': ['/review.md', 'the review index'],
   'pricing': ['/pricing.md', 'the pricing page'],
   'graph': ['/graph.md', 'the graph page'],
