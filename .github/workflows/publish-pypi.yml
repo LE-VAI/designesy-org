@@ -83,7 +83,19 @@ jobs:
           twine upload --non-interactive dist/*.whl dist/*.tar.gz
 
       - name: Confirm publication
+        # The registry can take a few minutes to serve a new version (npm took
+        # about 3 on 2026-10-08). Poll for up to 10 minutes; a version that never
+        # appears fails the run. This step used to print a note and pass on a
+        # 404, so a failed publish read green.
         run: |
-          sleep 5
           VERSION=${GITHUB_REF#refs/tags/v}
-          curl -s "https://pypi.org/pypi/designesy-mcp/$VERSION/json" | python3 -c "import sys,json; d=json.load(sys.stdin); print('PyPI version:', d['info']['version'])" || echo "Version may take a few minutes to appear"
+          for i in $(seq 1 30); do
+            SERVED=$(curl -fsS "https://pypi.org/pypi/designesy-mcp/$VERSION/json" 2>/dev/null               | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])" 2>/dev/null || true)
+            if [ "$SERVED" = "$VERSION" ]; then
+              echo "PyPI serves designesy-mcp $VERSION (check $i)"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::designesy-mcp $VERSION did not appear on PyPI within 10 minutes"
+          exit 1
