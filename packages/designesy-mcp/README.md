@@ -14,7 +14,7 @@
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](cursor://anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
 
-A **read-only stdio MCP server** exposing [designesy.org](https://www.designesy.org)'s design-intelligence infrastructure as native agent tools.
+A **stdio MCP server** exposing [designesy.org](https://www.designesy.org)'s design-intelligence infrastructure as native agent tools. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
 
 Zero external dependencies. Pure Python stdlib. Implements the [Model Context Protocol](https://modelcontextprotocol.io) JSON-RPC 2.0 over stdio.
 
@@ -170,7 +170,9 @@ All responses are cached with a 5-minute TTL. The server only fetches public, ma
 
 ## Safety
 
-**Read-only.** This server never writes anywhere. It does not execute code, mutate files, or access credentials.
+**Read-only, with one exception.** `designesy_monitor_score` can send email: when you pass an `email` address and a drift alert fires, designesy.org sends an HTML drift-alert email to that address through Resend, if the server has a Resend key configured. A repeated call can send another email. The other 16 tools only read. The server writes no local files and reads no credentials.
+
+Every tool declares a `title` and the MCP annotation hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), matching the hosted endpoint at `https://www.designesy.org/api/mcp`. `designesy_monitor_score` is the one tool marked `readOnlyHint: false`.
 
 ## Provenance
 
