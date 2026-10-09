@@ -27,10 +27,16 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Designesy Report</title>
 <style>
+  /* Status hues (--ok, --warn, --error) paint the dial and the tints; text in a
+     status uses its --*-ink token. In light the hues are 2.4-3.7:1 on this
+     page's surfaces, so each ink mixes 65% toward --ink in oklab, which holds
+     4.5:1 on every surface here, the soft washes and the status tints
+     included. In dark the hues already do, so the inks are the hues.
+     scripts/check-warn-ink.js measures this palette from this file. */
   :root {
     --ink: #1a1a1e;
     --muted: #555560;
-    --muted-dim: #888890;
+    --muted-dim: #686872; /* was #888890, 3.0-3.5:1; now 4.75:1 on the darkest wash */
     --surface: #ffffff;
     --surface-raised: #f5f5f7;
     --surface-soft: rgba(0,0,0,0.03);
@@ -40,6 +46,9 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
     --ok: #16a34a;
     --error: #dc2626;
     --warn: #ca8a04;
+    --ok-ink: color-mix(in oklab, var(--ok) 65%, var(--ink));
+    --error-ink: color-mix(in oklab, var(--error) 65%, var(--ink));
+    --warn-ink: color-mix(in oklab, var(--warn) 65%, var(--ink));
     --radius: 6px;
     --radius-sm: 4px;
     --radius-lg: 12px;
@@ -52,7 +61,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
     :root {
       --ink: #f5f5f7;
       --muted: #a0a0a0;
-      --muted-dim: #7d7d7d;
+      --muted-dim: #848484; /* was #7d7d7d, 4.26:1 on the soft wash over a card */
       --surface: #0a0a0c;
       --surface-raised: #121216;
       --surface-soft: rgba(255,255,255,0.03);
@@ -62,6 +71,9 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
       --ok: #4ade80;
       --error: #f87171;
       --warn: #facc15;
+      --ok-ink: var(--ok);
+      --error-ink: var(--error);
+      --warn-ink: var(--warn);
     }
   }
   * { box-sizing: border-box; }
@@ -79,9 +91,9 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   .composite-grade { font-size: 1.6rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
   .composite-score { font-size: 0.95rem; color: var(--muted); margin: 0.25rem 0 0.5rem; font-family: var(--mono); }
   .composite-totals { font-size: 0.8rem; color: var(--muted-dim); margin: 0; }
-  .badge-pass { color: var(--ok); }
-  .badge-warn { color: var(--warn); }
-  .badge-fail { color: var(--error); }
+  .badge-pass { color: var(--ok-ink); }
+  .badge-warn { color: var(--warn-ink); }
+  .badge-fail { color: var(--error-ink); }
 
   .engines { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
   .engine-card { padding: 1rem 1.25rem; background: var(--surface-soft); border: 1px solid var(--line); border-radius: var(--radius); }
@@ -89,7 +101,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   .engine-grade { font-size: 1.4rem; font-weight: 700; margin: 0 0 0.25rem; }
   .engine-totals { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.2rem; }
   .engine-desc { font-size: 0.7rem; color: var(--muted-dim); margin: 0; }
-  .engine-fail { font-size: 0.8rem; color: var(--error); margin: 0; }
+  .engine-fail { font-size: 0.8rem; color: var(--error-ink); margin: 0; }
 
   .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   .tab { font-family: var(--sans); font-size: 0.8rem; font-weight: 400; color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.4rem 0.8rem; cursor: pointer; transition: background 150ms var(--ease), color 150ms var(--ease), border-color 150ms var(--ease); }
@@ -103,9 +115,9 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   .check-title { font-size: 0.85rem; font-weight: 500; margin: 0 0 0.2rem; }
   .check-detail { font-size: 0.75rem; color: var(--muted); margin: 0; word-break: break-word; }
   .status { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.1rem 0.4rem; border-radius: var(--radius-sm); flex-shrink: 0; margin-top: 0.1rem; }
-  .status-PASS { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
-  .status-FAIL { color: var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); }
-  .status-WARN { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+  .status-PASS { color: var(--ok-ink); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+  .status-FAIL { color: var(--error-ink); background: color-mix(in srgb, var(--error) 12%, transparent); }
+  .status-WARN { color: var(--warn-ink); background: color-mix(in srgb, var(--warn) 12%, transparent); }
   .status-SKIP { color: var(--muted-dim); background: var(--surface-soft); }
   .status-MANUAL { color: var(--muted-dim); background: var(--surface-soft); }
 
@@ -123,7 +135,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
   .re-run-btn:disabled { opacity: 0.5; cursor: wait; }
 
   .state { padding: 2rem 1rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
-  .state.error { color: var(--error); }
+  .state.error { color: var(--error-ink); }
   .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .dial circle { transition: none !important; } }
@@ -225,9 +237,9 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
         '<p class="engine-fail">' + (result && result.error ? result.error : 'Engine did not return a score') + '</p></div>';
     }
     var s = result.score, g = result.grade;
-    var fill = s >= 90 ? 'var(--ok)' : s >= 70 ? 'var(--warn)' : 'var(--error)';
+    var ink = s >= 90 ? 'var(--ok-ink)' : s >= 70 ? 'var(--warn-ink)' : 'var(--error-ink)';
     return '<div class="engine-card"><p class="engine-label">' + label + ' ' + weight + '</p>' +
-      '<p class="engine-grade" style="color:' + fill + '">' + g + ' · ' + s + '</p>' +
+      '<p class="engine-grade" style="color:' + ink + '">' + g + ' · ' + s + '</p>' +
       '<p class="engine-totals">' + (result.pass||0) + ' pass · ' + (result.warn||0) + ' warn · ' + (result.fail||0) + ' fail of ' + (result.total||0) + '</p>' +
       '<p class="engine-desc">' + desc + '</p></div>';
   }
