@@ -889,6 +889,23 @@ def _check_paper_token(tokens: dict[str, str]) -> dict[str, str]:  # checkPaperT
 
 def _check_contrast_signal(tokens: dict[str, str]) -> dict[str, str]:  # checkContrastSignal
     item = "Primary button text passes WCAG AA contrast against --signal fill"
+    # A contract that names its primary action pair (--action fill, --on-action
+    # label) is measured on exactly that pair; otherwise the better of --paper
+    # or --ink on --signal, as before.
+    action_val = tokens.get("--action")
+    on_action_val = tokens.get("--on-action")
+    if action_val and on_action_val:
+        fill_rgb = _resolve_color(action_val, tokens)
+        label_rgb = _resolve_color(on_action_val, tokens)
+        if not fill_rgb or not label_rgb:
+            return _chk("v22", item, "accessibility", "SKIP", f"--action {action_val} or --on-action {on_action_val} unresolvable to RGB")
+        pair = _contrast_ratio(label_rgb, fill_rgb)
+        pair_str = f"{_js_fixed(pair, 2)}:1"
+        if pair >= 4.5:
+            return _chk("v22", item, "accessibility", "PASS", f"--on-action on --action = {pair_str} (≥ 4.5:1 AA)")
+        if pair >= 3:
+            return _chk("v22", item, "accessibility", "WARN", f"--on-action on --action = {pair_str} (passes 3:1 large-text, fails 4.5:1 body)")
+        return _chk("v22", item, "accessibility", "FAIL", f"--on-action on --action = {pair_str} (below 3:1, illegible)")
     signal_val = tokens.get("--signal")
     if not signal_val:
         return _chk("v22", item, "accessibility", "WARN", "--signal accent token not declared")

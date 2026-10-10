@@ -553,12 +553,29 @@ function checkPaperToken(tokens: Record<string, string>): CheckResult {
 }
 
 function checkContrastSignal(tokens: Record<string, string>): CheckResult {
-  // v22 — REAL WCAG 2.1 contrast between --signal (button fill) and the text
-  // on top of it. Contracts typically put --paper or --ink text on --signal.
-  // We test both --paper-on-signal and --ink-on-signal; the better ratio wins
-  // (designers choose the higher-contrast pairing). AA threshold: 4.5:1 for
-  // body text, 3:1 for large/UI — buttons are large text, but we hold the 4.5:1
-  // bar because button labels are often small (12-14px).
+  // v22 — REAL WCAG 2.1 contrast between the primary button's fill and its
+  // label. AA threshold: 4.5:1 for body text, 3:1 for large/UI — buttons are
+  // large text, but we hold the 4.5:1 bar because button labels are often
+  // small (12-14px).
+  //
+  // A contract that names its primary action pair (--action, the fill, and
+  // --on-action, the label) is measured on exactly that pair: it is what the
+  // button paints, so a better-contrast token elsewhere cannot stand in for a
+  // label that fails. Without both tokens the check reads the convention most
+  // contracts use: --paper or --ink text on --signal, the better ratio winning
+  // (designers choose the higher-contrast pairing).
+  const actionVal = tokens['--action'];
+  const onActionVal = tokens['--on-action'];
+  if (actionVal && onActionVal) {
+    const fillRgb = resolveColor(actionVal, tokens);
+    const labelRgb = resolveColor(onActionVal, tokens);
+    if (!fillRgb || !labelRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--action ${actionVal} or --on-action ${onActionVal} unresolvable to RGB` };
+    const pairRatio = contrastRatio(labelRgb, fillRgb);
+    const pairStr = `${pairRatio.toFixed(2)}:1`;
+    if (pairRatio >= 4.5) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'PASS', detail: `--on-action on --action = ${pairStr} (≥ 4.5:1 AA)` };
+    if (pairRatio >= 3) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: `--on-action on --action = ${pairStr} (passes 3:1 large-text, fails 4.5:1 body)` };
+    return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'FAIL', detail: `--on-action on --action = ${pairStr} (below 3:1, illegible)` };
+  }
   const signalVal = tokens['--signal'];
   if (!signalVal) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: '--signal accent token not declared' };
   const signalRgb = resolveColor(signalVal, tokens);
