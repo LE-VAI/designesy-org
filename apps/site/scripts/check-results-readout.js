@@ -18,8 +18,11 @@
  * lines include the longest the engine can produce, at 390 and 1440 wide:
  *   R1. the grade letter (.rs-grade) and the numeral (.rs-num) share one
  *       font family, size and weight, and their baselines sit within 2px;
- *   R2. every count line (.rs-detail, and the engine tiles' line on /score)
- *       and the list's legend stay on one line, and none is clipped;
+ *   R2. every count line (.rs-detail, and the engine tiles' line on /score),
+ *       the list's legend and each status filter tab stay on one line, and
+ *       none is clipped (the plain status names are long: "Needs a browser
+ *       run" broke onto three lines in a 105px tab, and ran into the next
+ *       tab at 390, before the tabs took their labels' width);
  *   R3. no visible text in the result (.rs) or the engine tiles is set below
  *       12px.
  *
@@ -220,7 +223,7 @@ function measure() {
   // One line: every run of text sits on one line (the vertical centres of its
   // text boxes agree within half the font size; a legend's swatches are not
   // text and do not count), and nothing is cut off.
-  for (const el of document.querySelectorAll('.rs-detail, .rs-legend, .score-engine-tile-pwf')) {
+  for (const el of document.querySelectorAll('.rs-detail, .rs-legend, .score-engine-tile-pwf, .score-filter-tab')) {
     if (!visible(el)) continue;
     const centres = [];
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
