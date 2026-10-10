@@ -44,6 +44,16 @@ exclude_path = [
   # link extractor reads as URLs such as ".../open.json/nOptional". Every URL
   # in them is test data captured from the site, not a link this repo publishes.
   "test/fixtures/published-docs/",
+  # The motion and trim fixtures (2026-10-10) are the same kind of test data:
+  # the motion contract the site serves, hand-written Lottie files, and the
+  # /api/report and /api/guardrails results captured for www.designesy.org so
+  # both MCP servers' trimming can be compared offline. The guardrails capture
+  # holds generated file text with escaped newlines, which the extractor reads
+  # as URLs such as "https://www.designesy.org//n", and the DTCG $schema URL the
+  # engine emitted that day. They record what the engines returned; they are
+  # not links this repo publishes.
+  "test/fixtures/motion/",
+  "test/fixtures/trim/",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
