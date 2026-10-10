@@ -5238,13 +5238,16 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-/* Keyboard path — focus ring from the contract's own --focus-ring token.
-   Offset outside the pill so the ring never clips against the marquee's
-   mask gradient. */
+/* Keyboard path: the house ring, --signal-access, as every focus rule takes
+   it (see :focus-visible). The contract's --focus-ring still resolves to
+   --signal-light, which measures under 3:1 beside the dark surfaces, so the
+   site no longer draws a ring with it until the contract moves too. Offset
+   outside the pill so the ring never clips against the marquee's mask
+   gradient. */
 .state-marquee-pill:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
-  border-color: var(--focus-ring);
+  border-color: var(--signal-access);
 }
 
 /* Live — bold signal pills with pulse dot */
@@ -15027,8 +15030,10 @@ select {
     background 0.18s var(--ease-out);
 }
 
+/* The house ring (see .state-marquee-pill:focus-visible for why not
+   --focus-ring). */
 .listen-btn:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 

@@ -41,8 +41,10 @@
  *               control hidden until focused (the skip link) appears whole
  *               over whatever lay there, so its band is found by its
  *               computed outline colour instead of by the diff.
- *     extends   the ring is present on all four sides and reaches as far out
- *               on each as on its widest side (1px of tolerance). A ring a
+ *     extends   the ring is present on all four sides and its furthest point
+ *               on each reaches as far out as on its widest side (1px of
+ *               tolerance; the furthest point, so a pill's curved ends read
+ *               true). A ring a
  *               parent cuts off is missing or short on the cut sides; an
  *               inset ring drawn inside on purpose reaches the same depth
  *               all round and passes.
@@ -52,8 +54,12 @@
  *               found it drawn as the ring on 30 stops of /docs, /pricing
  *               and /review.
  *   A second sweep runs at that review's conditions: /docs, /pricing and
- *   /review, dark, 1280x800. Named controls must be reached by Tab and pass
- *   wherever their route is swept: the first "Start here" card on /docs.
+ *   /review, dark, 1280x800. A third takes the pages whose own sheets draw
+ *   rings (/badge, /changelog, /labs/poise/orb, /open), dark and light at
+ *   1440. Named controls must be reached by Tab and pass wherever their route
+ *   is swept, however deep they sit: the first "Start here" card on /docs, a
+ *   state marquee pill on /, a listen button, the badge copy button, a
+ *   changelog tab and check, and the orb lab's two buttons and its link.
  *   Then the invalid state: on /score and /compare it presses Enter in the
  *   empty first field (the form refuses on the client and sends nothing; the
  *   probe asserts no /api/ request left the page), and holds the invalid
@@ -97,9 +103,27 @@ const VIEWPORTS = [
 // A second sweep at the conditions of an outside site review, which found the
 // --signal fill (#0133cb, 2.32:1 on the dark page) drawn as the ring on 30
 // focus stops across these pages: dark theme, 1280 wide.
-const EXTRA_PASSES = [{ theme: 'dark', vp: { w: 1280, h: 800 }, routes: ['/docs', '/pricing', '/review'] }];
-// Controls that must be reached by Tab and pass, wherever their route is swept.
-const NAMED = [{ route: '/docs', selector: '#start-here .docs-card-grid a.row', label: 'the first "Start here" card' }];
+// And the pages whose own sheets draw rings (badge, changelog, the orb lab,
+// the open index's listen buttons), in both themes at 1440.
+const PAGE_ROUTES = ['/badge', '/changelog', '/labs/poise/orb', '/open'];
+const EXTRA_PASSES = [
+  { theme: 'dark', vp: { w: 1280, h: 800 }, routes: ['/docs', '/pricing', '/review'] },
+  { theme: 'dark', vp: { w: 1440, h: 900 }, routes: PAGE_ROUTES },
+  { theme: 'light', vp: { w: 1440, h: 900 }, routes: PAGE_ROUTES },
+];
+// Controls that must be reached by Tab and pass, wherever their route is
+// swept, however deep in the tab order they sit.
+const NAMED = [
+  { route: '/docs', selector: '#start-here .docs-card-grid a.row', label: 'the first "Start here" card' },
+  { route: '/', selector: '.state-marquee-pill', label: 'a state marquee pill' },
+  { route: '/open', selector: '.listen-btn', label: 'a listen button' },
+  { route: '/badge', selector: '.badge-snippet-copy', label: 'the badge snippet copy button' },
+  { route: '/changelog', selector: '.changelog-tab', label: 'a changelog tab' },
+  { route: '/changelog', selector: '.changelog-check', label: 'a changelog check' },
+  { route: '/labs/poise/orb', selector: '.orb-button-primary', label: 'the orb primary button' },
+  { route: '/labs/poise/orb', selector: '.orb-button-ghost', label: 'the orb ghost button' },
+  { route: '/labs/poise/orb', selector: '.orb-attr-link', label: 'the orb attribution link' },
+];
 // Never a ring colour on the dark theme: the brand fill, 2.32:1 on the page.
 const FORBIDDEN_DARK_RING = { 'rgb(1, 51, 203)': '--signal (#0133cb), a fill colour' };
 const PAD = 6; // the crop: the box plus this much on every side
@@ -127,7 +151,12 @@ const DEFECTS = {
     .copy-prompt-btn:focus-visible, .back-button:focus-visible, .director-dock:focus-visible,
     .score-signal-raw > summary:focus-visible, .state-marquee-toggle:focus-visible,
     .pipeline-step:focus-within .pipeline-node, .pricing-cta-link:focus-visible,
-    .pricing-faq-q:focus-visible, .mcp-pre > code:focus-visible { outline-color: var(--signal-light); }
+    .pricing-faq-q:focus-visible, .mcp-pre > code:focus-visible,
+    .state-marquee-pill:focus-visible, .listen-btn:focus-visible { outline-color: var(--signal-light); }
+    .orb-button-primary:focus-visible, .orb-button-ghost:focus-visible, .orb-attr-link:focus-visible,
+    .orb-param input[type='range']:focus-visible { outline: none; }
+    .orb-button-primary:focus-visible, .orb-button-ghost:focus-visible { box-shadow: 0 0 0 3px rgba(51, 88, 232, 0.4); }
+    .orb-attr-link:focus-visible { box-shadow: 0 0 0 2px rgba(51, 88, 232, 0.4); }
     .agent-action:focus-visible, .docs-card-grid .row:focus-visible, .docs-toc-list a:focus-visible,
     .lottie-tip-close:focus-visible { outline-color: var(--signal); }
     .topbar .wordmark:focus-visible, .topbar .cmdk-trigger:focus-visible,
@@ -328,7 +357,11 @@ async function analyse(lab, a, b, box, conf) {
           lines: got.length,
           contrast: med(got.map((l) => l.adjacent)),
           change: med(got.map((l) => l.change)),
-          reach: med(got.map((l) => l.reach)),
+          // The furthest the ring gets out on this side, not the median: on a
+          // pill (radius half its height) the 25% and 75% lines meet the ring
+          // on the end's curve, inside the box's flat edge, while a parent
+          // that clips cuts the whole side at once.
+          reach: got.length ? Math.max(...got.map((l) => l.reach)) : null,
           width: med(got.map((l) => l.width)),
           solid3: med(got.map((l) => l.solid3)),
           ring: got.length ? got[Math.floor((got.length - 1) / 2)].ring : null,
@@ -606,6 +639,13 @@ async function namedCase(page, lab, vp, probe, shots, slug) {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.scrollTo(0, 0);
   });
+  // A control the layout does not render at this width (the marquee leaves
+  // the homepage on a phone) is listed as skipped, not failed.
+  const rendered = await page.evaluate((sel) => [...document.querySelectorAll(sel)].some((e) => {
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';
+  }), probe.selector);
+  if (!rendered) return { name: probe.label, skipped: 'not rendered at this width' };
   let reached = false;
   for (let i = 0; i < 200 && !reached; i++) {
     await page.keyboard.press('Tab');
@@ -687,9 +727,11 @@ async function main() {
   const combos = [];
   for (const theme of themes) for (const vp of viewports) combos.push({ theme, vp, routes });
   // --routes narrows the extra passes as well; a pass left with no route is dropped.
+  // A route the main sweep already covers at that theme and width is not swept twice.
   for (const p of EXTRA_PASSES) {
     if (!themes.includes(p.theme) || !widths.includes(p.vp.w)) continue;
-    const rs = routeArg ? p.routes.filter((r) => routes.includes(r)) : p.routes;
+    const main = combos.find((c) => c.theme === p.theme && c.vp.w === p.vp.w && c.routes === routes);
+    const rs = (routeArg ? p.routes.filter((r) => routes.includes(r)) : p.routes).filter((r) => !(main && routes.includes(r)));
     if (rs.length) combos.push({ theme: p.theme, vp: p.vp, routes: rs });
   }
   const JOBS = Math.max(1, Number(opt(args, '--jobs') || 1));
