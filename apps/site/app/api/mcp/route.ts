@@ -27,6 +27,9 @@
 import { CONTRACT_VERSION, designSystemContract } from '../../lib/design-system-contract';
 import { MCP_SERVER_VERSION } from '../../lib/mcp-version';
 import { designReviewRubric, publishedJson, publishedText } from '../../lib/mcp-reference';
+// Every error a tool returns passes through sanitizeErrorText, so no result
+// carries a path on the machine that ran it (check-mcp-tool-parity.js).
+import { sanitizeErrorText } from '../../lib/error-text';
 import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
 import { after } from 'next/server';
@@ -88,7 +91,7 @@ function contractError(message: string, unknown: string[], valid: string[]) {
   return {
     ...jsonContent({
       success: false,
-      error: `${message} Valid sections: ${valid.join(', ')}.`,
+      error: sanitizeErrorText(`${message} Valid sections: ${valid.join(', ')}.`),
       unknown_sections: unknown,
       valid_sections: valid,
     }),
@@ -306,7 +309,7 @@ const handler = createMcpHandler(
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Score API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Score API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -353,7 +356,7 @@ const handler = createMcpHandler(
             tokenData = JSON.parse(dtcg_file);
           } catch {
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in dtcg_file parameter' }, null, 2) }],
+              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Invalid JSON in dtcg_file parameter') }, null, 2) }],
               isError: true,
             };
           }
@@ -365,7 +368,7 @@ const handler = createMcpHandler(
             });
             if (!res.ok) {
               return {
-                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Fetch failed: ${res.status} ${res.statusText}` }, null, 2) }],
+                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Fetch failed: ${res.status} ${res.statusText}`) }, null, 2) }],
                 isError: true,
               };
             }
@@ -375,14 +378,14 @@ const handler = createMcpHandler(
           }
         } else {
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Either url or dtcg_file is required', contract_id: contract.id, contract_version: contract.version }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Either url or dtcg_file is required'), contract_id: contract.id, contract_version: contract.version }, null, 2) }],
             isError: true,
           };
         }
 
         if (fetchError) {
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: fetchError }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(fetchError) }, null, 2) }],
             isError: true,
           };
         }
@@ -649,7 +652,7 @@ const handler = createMcpHandler(
             brandConfig = JSON.parse(config);
           } catch {
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in config parameter' }, null, 2) }],
+              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Invalid JSON in config parameter') }, null, 2) }],
               isError: true,
             };
           }
@@ -755,7 +758,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
             lottieData = JSON.parse(lottie_file);
           } catch {
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in lottie_file parameter' }, null, 2) }],
+              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Invalid JSON in lottie_file parameter') }, null, 2) }],
               isError: true,
             };
           }
@@ -767,7 +770,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
             });
             if (!res.ok) {
               return {
-                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Fetch failed: ${res.status} ${res.statusText}` }, null, 2) }],
+                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Fetch failed: ${res.status} ${res.statusText}`) }, null, 2) }],
                 isError: true,
               };
             }
@@ -777,14 +780,14 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
           }
         } else {
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Either url or lottie_file is required', contract_id: contract.id, contract_version: contract.version }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Either url or lottie_file is required'), contract_id: contract.id, contract_version: contract.version }, null, 2) }],
             isError: true,
           };
         }
 
         if (fetchError) {
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: fetchError }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(fetchError) }, null, 2) }],
             isError: true,
           };
         }
@@ -947,7 +950,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Drift API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Drift API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -980,7 +983,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Readiness API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Readiness API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -1013,7 +1016,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Guardrails API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Guardrails API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -1064,7 +1067,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Monitor API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Monitor API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -1098,7 +1101,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Compare API returned ${res.status}: ${errText}`, urlA, urlB }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Compare API returned ${res.status}: ${errText}`), urlA, urlB }, null, 2) }],
             isError: true,
           };
         }
@@ -1152,7 +1155,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Report API returned ${res.status}: ${errText}`, url }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Report API returned ${res.status}: ${errText}`), url }, null, 2) }],
             isError: true,
           };
         }

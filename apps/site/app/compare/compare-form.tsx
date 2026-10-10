@@ -280,6 +280,7 @@ export function CompareForm({ initialA, initialB, registry }: { initialA: string
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="the diff is the result · completeness grade: pass 1 · warn 0.5 · fail 0"
         restNote="Name two sites and each dimension fills with both answers, A on the left and B on the right."
         restCard={

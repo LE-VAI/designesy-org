@@ -661,6 +661,7 @@ export function M3BridgeTool() {
             <p>Tokens need the --md- prefix in CSS, or md. keys in JSON.</p>
           </>
         }
+        errorText={(result?.errors ?? []).slice(0, 3).join(' ')}
         scoring="valid when all five checks pass"
         restNote="Paste Material 3 tokens, or load the sample, and convert. Each stage of the conversion counts what it found."
       />

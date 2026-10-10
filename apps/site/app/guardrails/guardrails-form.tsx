@@ -171,6 +171,7 @@ export function GuardrailsForm({ initialUrl, registry }: { initialUrl: string; r
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="written 1 · not written 0 · over 6 files"
         restNote="Emit from a URL and each file fills in with its size. Pick a file to read it below."
         // Where each file goes, as the last line of its own cell (it was a
