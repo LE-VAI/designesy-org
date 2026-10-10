@@ -45,7 +45,7 @@ const emitWarning = process.emitWarning;
 process.emitWarning = (warning, ...rest) =>
   String(warning).includes('Module type of') ? undefined : emitWarning.call(process, warning, ...rest);
 
-const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss, categoryChips } = await import(
+const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss, categoryChips, resultAnnouncement } = await import(
   pathToFileURL(path.join(APP, 'app', 'score', 'verdict.ts')).href
 );
 
@@ -180,6 +180,25 @@ check('the report renders the empty-run card, never a defaulted F 0.0%', () => {
   assert.doesNotMatch(report, /result\.score \?\? 0|result\.grade \?\? 'F'/, 'the report defaults a missing score or grade again');
   // The failure block's retry runs the score again.
   assert.match(report, /<h2>Score failed<\/h2>[\s\S]{0,300}onClick=\{retry\}[\s\S]{0,120}Try again/);
+});
+
+check('the report announces a finished run in the approved words', () => {
+  const run = {
+    grade: 'D', score: 67.9, fail: 1, total: 44,
+    categoryScores: { accessibility: { score: 50, fail: 1, weight: 15 }, tokens: { score: 100, fail: 0, weight: 9 } },
+  };
+  assert.equal(resultAnnouncement(run), 'Contract score D, 67.9 out of 100. 1 failed check, in Accessibility.');
+  assert.equal(resultAnnouncement({ grade: 'A', score: 100, fail: 0 }), 'Contract score A, 100.0 out of 100. No failed checks.');
+  assert.equal(
+    resultAnnouncement({ grade: 'F', score: 56.6, fail: 3, categoryScores: { motion: { score: 50, fail: 1, weight: 10 }, cadence: { score: 60, fail: 2, weight: 18 } } }),
+    'Contract score F, 56.6 out of 100. 3 failed checks, in Cadence and Motion.',
+  );
+  // The live region is mounted empty and written after paint, and the success
+  // branch keeps it (it used to unmount there, so a finished report was silent).
+  const report = fs.readFileSync(path.join(APP, 'app', 'score', 'report', 'score-report.tsx'), 'utf8');
+  assert.match(report, /role="status" aria-live="polite">\s*\{liveText\}\s*<\/p>/);
+  assert.match(report, /resultAnnouncement\(result\)/);
+  assert.equal((report.match(/\{live\}/g) || []).length, 4, 'the live region is not in all four branches');
 });
 
 if (failures.length) {

@@ -6,7 +6,7 @@ import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-d
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
-import { isEmptyRun, emptyRunReason } from '../verdict';
+import { isEmptyRun, emptyRunReason, resultAnnouncement } from '../verdict';
 import { ScoreEmptyRun } from '../score-empty-run';
 type CheckResult = {
   id: string;
@@ -115,6 +115,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   // Bumped by "Try again" on the failure and empty-run states, to run again.
   const [attempt, setAttempt] = useState(0);
+  // What the polite region says. It starts empty and is written after the
+  // page has painted (below), so the loading line arrives as a change.
+  const [liveText, setLiveText] = useState('');
   const retry = () => setAttempt((a) => a + 1);
 
   useEffect(() => {
@@ -212,15 +215,30 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // form shows, never a grade. The report used to default a missing score to 0
   // and a missing grade to F, so a site that refused the fetch read "F 0.0%".
   const emptyRun = status === 'ok' && !!result && (isEmptyRun(result) || result.score == null || !result.grade);
+  // A screen reader announces a change to a live region, never the text it
+  // was mounted with: the page starts loading, so the loading line was in the
+  // region from the server render and was never read, and on success the
+  // region unmounted, so a finished report was silent while focus stayed on
+  // the page body. The region now renders empty, every message is written
+  // into it once the page has painted, and it stays mounted on success too,
+  // where it reads the result (focus is left alone, so nothing is said twice).
+  const message =
+    status === 'loading'
+      ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
+      : status === 'error'
+        ? `Score failed. ${error ?? ''}`
+        : emptyRun && result
+          ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
+          : result
+            ? resultAnnouncement(result)
+            : '';
+  useEffect(() => {
+    const id = window.setTimeout(() => setLiveText(message), 150);
+    return () => window.clearTimeout(id);
+  }, [message]);
   const live = (
     <p key="live" className="sr-only" role="status" aria-live="polite">
-      {status === 'loading'
-        ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
-        : status === 'error'
-          ? `Score failed. ${error ?? ''}`
-          : emptyRun && result
-            ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
-            : ''}
+      {liveText}
     </p>
   );
 
@@ -309,7 +327,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const scored = pass + warn + fail;
 
   return (
-    <div className="report">
+    <>
+    {live}
+    <div key="report" className="report">
       {/* ── HERO (Adobe Stardust: overall integer + letter + version label) ── */}
       <div className="report-hero">
         <div className="report-hero-score">
@@ -601,5 +621,6 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </p>
       </div>
     </div>
+    </>
   );
 }

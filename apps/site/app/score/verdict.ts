@@ -9,7 +9,7 @@ export type VerdictInput = {
   /** Set by /api/score when the target could not be fetched at all. */
   unreachable?: boolean;
   unreachableDetail?: string;
-  categoryScores?: Record<string, { score: number | null }>;
+  categoryScores?: Record<string, { score: number | null; fail?: number; weight?: number }>;
 };
 
 export const CATEGORIES: { key: string; label: string }[] = [
@@ -90,6 +90,26 @@ export function verdictLine(r: VerdictInput): string {
     return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
   }
   return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
+}
+
+// The sentence the report's live region reads when a run lands, in the
+// approved words: "Contract score D, 67.9 out of 100. 1 failed check, in
+// Accessibility." The categories named are those with a failed check, most
+// failures first (then the heavier weight).
+export function resultAnnouncement(r: VerdictInput & { grade?: string | null; score?: number | null }): string {
+  const value = (Math.round((r.score ?? 0) * 10) / 10).toFixed(1);
+  const head = `Contract score ${r.grade ?? 'F'}, ${value} out of 100.`;
+  const fails = r.fail ?? 0;
+  if (fails === 0) return `${head} No failed checks.`;
+  const where = Object.entries(r.categoryScores ?? {})
+    .filter(([, c]) => (c.fail ?? 0) > 0)
+    .sort(([, a], [, b]) => (b.fail ?? 0) - (a.fail ?? 0) || (b.weight ?? 0) - (a.weight ?? 0))
+    .map(([key]) => categoryLabel(key));
+  const count = `${fails} failed ${fails === 1 ? 'check' : 'checks'}`;
+  if (where.length === 0) return `${head} ${count}.`;
+  if (where.length === 1) return `${head} ${count}, in ${where[0]}.`;
+  if (where.length === 2) return `${head} ${count}, in ${where[0]} and ${where[1]}.`;
+  return `${head} ${count} across ${where.length} categories, most in ${where[0]}.`;
 }
 
 // ── Evidence ──────────────────────────────────────────────────────────────
