@@ -97,6 +97,7 @@ function main() {
     'qa-keyboard.js',
     'check-status-messages.js',
     'a11y-sweep.js',
+    'check-dock-clearance.js',
     'touched-routes.js',
     'check-readme-facts.js',
   ]);
