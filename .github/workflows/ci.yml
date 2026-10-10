@@ -566,6 +566,12 @@ jobs:
       - name: Motion pause
         run: node scripts/check-motion-pause.js --base http://127.0.0.1:3422 --channel chrome
 
+      # The largest content must not fade in from opacity 0: LCP is recorded
+      # only once it paints visibly, so the surface-page header (.fade-up) held
+      # LCP 0.6 s behind first paint until its entrance became a rise.
+      - name: LCP entrance
+        run: node scripts/check-lcp-entrance.js --base http://127.0.0.1:3422 --channel chrome
+
       - name: Keyboard QA
         run: node scripts/qa-keyboard.js --base http://127.0.0.1:3422
 
