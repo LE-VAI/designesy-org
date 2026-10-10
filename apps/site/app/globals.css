@@ -16211,9 +16211,10 @@ html[data-motion="paused"] .senses-panel {
   .back-button {
     display: none;
   }
-  /* The Studio pill tucks below the screen edge while the visitor reads down
-     the page and returns when they scroll up or reach the end (the pacing
-     lives in lib/director-dock). Hidden, it is also out of the tab order. */
+  /* The Studio pill stays tucked below the screen edge and comes up only at
+     the end of the page, in the room kept for it below the content (the
+     pacing lives in lib/director-dock). Hidden, it is also out of the tab
+     order. */
   .director-dock {
     animation: none;
     opacity: 0;
@@ -16329,10 +16330,10 @@ html[data-motion="paused"] .senses-panel {
                      The name stays the control's accessible name and shows
                      as a tag beside the circle on hover or keyboard focus.
      721 to 1319px   no gutter to rest in (42.5px at 1280, under the 44px
-                     target), so the circles tuck below the screen edge while
-                     the visitor reads down, and come up on a scroll up, at
-                     the end of the page, or when Tab reaches them (the phone
-                     pacing, lib/director-dock).
+                     target), so the circles stay tucked below the screen
+                     edge and come up at the end of the page, in the footer's
+                     clearance, or when Tab reaches them (the phone pacing,
+                     lib/director-dock).
      720 and under   the phone rules above.
    Media queries count the scrollbar gutter (15 to 17px) and fixed positioning
    does not, so each threshold assumes the widest scrollbar. The inset reads
