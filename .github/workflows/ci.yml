@@ -591,6 +591,13 @@ jobs:
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
 
+      # A floating pill must never sit on what it floats over: the Studio pill
+      # came up on a scroll up, mid-page, and hid a phone's score values. Each
+      # route at 320, 390, 768 and 1440, dark and light, plus a mocked
+      # stripe.com score result, walked down and back up.
+      - name: Dock clearance
+        run: node scripts/check-dock-clearance.js --base http://127.0.0.1:3422 --channel chrome
+
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,
       # layout, lib, next.config, public/) -> the full set, scripts-only

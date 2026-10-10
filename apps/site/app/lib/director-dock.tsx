@@ -26,34 +26,56 @@ export function StudioGlyph() {
   );
 }
 
-// Phone pacing: the pill tucks away after this much downward travel, comes
-// back after this much upward travel, and always shows this close to the end.
-const DOWN = 12;
-const UP = 28;
-const END = 96;
-// The widths where the shell leaves no gutter to park a 44px circle in. Keep
-// in step with the "Gutter parking" block in globals.css (its 721 to 1319px
-// tier). There the pills come up only at the end of the page, inside the
-// footer's dock clearance: 76px of foot (offset, height, gap) less the pill's
-// 64px (offset, height) leaves 12px of scroll in which nothing sits under it.
-const TUCKED = '(min-width: 721px) and (max-width: 1319.98px)';
-const TUCKED_END = 12;
+// The widths where the shell leaves no gutter to park a 44px circle in:
+// phones, and the 721 to 1319px tier. Keep in step with the "Gutter parking"
+// block in globals.css.
+const NO_GUTTER = '(max-width: 1319.98px)';
+
+/**
+ * The scroll distance from the end of the page within which the pill, at
+ * rest, sits wholly in the room left below the page's last content (the body's
+ * and the footer's bottom padding, which exist to clear it): that room less
+ * the pill's own foot (its bottom offset, safe-area inset included, and its
+ * height). Measured, not written down, so a change to the padding, the pill or
+ * the inset moves it too. Negative when a page leaves less room than the pill
+ * needs: then the pill does not come up there at all.
+ */
+function footRoom(pill: HTMLElement): number {
+  // The last element in the page's flow: the footer, or main on a page
+  // without one. The Studio's own nav is in flow but holds only the fixed
+  // pill, so it has no height and is passed over, as are fixed layers.
+  let last: Element | null = null;
+  for (let c = document.body.lastElementChild; c; c = c.previousElementSibling) {
+    const cs = getComputedStyle(c);
+    if (cs.display === 'none' || cs.position === 'fixed' || cs.position === 'absolute') continue;
+    if (c.getBoundingClientRect().height > 0) {
+      last = c;
+      break;
+    }
+  }
+  if (!last) return 0;
+  const lcs = getComputedStyle(last);
+  const contentEnd =
+    last.getBoundingClientRect().bottom +
+    window.scrollY -
+    parseFloat(lcs.paddingBottom) -
+    parseFloat(lcs.borderBottomWidth);
+  const room = document.documentElement.scrollHeight - contentEnd;
+  return room - (parseFloat(getComputedStyle(pill).bottom) + pill.offsetHeight);
+}
 
 /**
  * Pacing for the two floating pills (Studio and Back), which set
- * data-shown on the pill wherever CSS tucks it away:
- *  - phones: like the browser's own toolbar. Out of the way while the visitor
- *    reads down the page, back as soon as they scroll up, and there at the end
- *    of every page, where the body's bottom padding keeps it clear of content.
- *    It stays tucked over the first screen, which belongs to the page's own
- *    heading and controls (at 375 by 667 it sat on the homepage's Scope
- *    control).
- *  - laptops and tablets with no gutter beside the shell (TUCKED): the phone
- *    pacing. End-of-page only hid the Studio from every 1280 laptop for the
- *    whole read; a scroll up is the visitor stopping to navigate, so the
- *    circle may cross the content edge for that moment, and it leaves again
- *    on the next scroll down.
- *  - wider: CSS parks the pill in the gutter and this does nothing.
+ * data-shown on the pill wherever CSS tucks it away (phones, and laptops and
+ * tablets with no gutter beside the shell, NO_GUTTER): the pill comes up only
+ * where room is kept for it, at the end of the page (footRoom), and stays
+ * tucked everywhere else. It used to come up on any scroll up as well, like
+ * the browser's own toolbar, and there it sat on whatever the bottom corner
+ * held: on a phone, the score's category values ("Tokens 100" under the pill
+ * at 390). No place mid-page is free of content at these widths, so none is
+ * safe. The phone menu carries the Studio too, and from 721px Tab still
+ * brings the circle up (globals.css, :focus-visible).
+ * Wider, CSS parks the pill in the gutter and this does nothing.
  *
  * It also lets Escape dismiss the name tag the compact circles show on hover
  * or focus (WCAG 1.4.13), until the pointer leaves or focus moves.
@@ -62,11 +84,7 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
   useEffect(() => {
     const el = ref.current;
     if (!el || !active) return;
-    const phone = window.matchMedia('(max-width: 720px)');
-    const tucked = window.matchMedia(TUCKED);
-    let lastY = window.scrollY;
-    let down = 0;
-    let up = 0;
+    const noGutter = window.matchMedia(NO_GUTTER);
     let shown = false;
     let frame = 0;
     const show = (v: boolean) => {
@@ -76,24 +94,11 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
     };
     const update = () => {
       frame = 0;
-      const y = window.scrollY;
-      const dy = y - lastY;
-      lastY = y;
       // A modal layer holds the page still; its scroll events are not reading.
       if (document.documentElement.hasAttribute('data-scroll-lock')) return;
       const doc = document.documentElement;
-      const toEnd = doc.scrollHeight - (y + window.innerHeight);
-      if (toEnd <= (tucked.matches ? TUCKED_END : END)) return show(true);
-      if (y < window.innerHeight * 0.6) return show(false);
-      if (dy > 0) {
-        up = 0;
-        down += dy;
-        if (down > DOWN) show(false);
-      } else if (dy < 0) {
-        down = 0;
-        up -= dy;
-        if (up > UP) show(true);
-      }
+      const toEnd = doc.scrollHeight - (window.scrollY + window.innerHeight);
+      show(toEnd <= footRoom(el));
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -104,10 +109,9 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
     const bind = () => {
       window.removeEventListener('scroll', onScroll);
       grow.disconnect();
-      if (phone.matches || tucked.matches) {
+      if (noGutter.matches) {
         window.addEventListener('scroll', onScroll, { passive: true });
         grow.observe(document.body);
-        lastY = window.scrollY;
         update();
       } else {
         show(false);
@@ -121,14 +125,12 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
     };
     const unquiet = () => el.removeAttribute('data-quiet');
     bind();
-    phone.addEventListener('change', bind);
-    tucked.addEventListener('change', bind);
+    noGutter.addEventListener('change', bind);
     document.addEventListener('keydown', onKey);
     el.addEventListener('pointerleave', unquiet);
     el.addEventListener('blur', unquiet);
     return () => {
-      phone.removeEventListener('change', bind);
-      tucked.removeEventListener('change', bind);
+      noGutter.removeEventListener('change', bind);
       document.removeEventListener('keydown', onKey);
       el.removeEventListener('pointerleave', unquiet);
       el.removeEventListener('blur', unquiet);
