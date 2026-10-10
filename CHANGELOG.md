@@ -30,18 +30,35 @@ the site's. Contract mode moves to engine 1.3.0.
     `color` that reads a status color (directly, through one alias, or at
     reduced alpha) in every theme the stylesheet declares (`:root`,
     `[data-theme]` and `.dark`/`.light` blocks, including attribute
-    combinations, and `prefers-color-scheme` blocks). It resolves `var()`
+    combinations, and `prefers-color-scheme` blocks). A theme named by part of
+    a compound theme selector also reads that compound's tokens before the
+    root's: primer.style declares its dark `--fgColor-danger` only under
+    `[data-color-mode=dark][data-dark-theme=dark]`. It resolves `var()`
     chains, `color-mix()` in srgb, oklab and oklch (rounded to the 8-bit color
-    a browser paints), `light-dark()` and relative color syntax, and measures
-    on the rule's own background or the theme's page background. Large text (24px,
-    or 18.66px bold) needs 3:1. Only a color named as a status (ok, success,
-    warn, warning, error, danger, fail, destructive, info, grade-a to grade-f)
-    can FAIL. A hue that counts only because the stylesheet also paints it as
-    a fill or border WARNs at most, because its real surface is often a fill on
-    an ancestor that a static reading cannot see. Disabled states are exempt,
-    as WCAG 1.4.3 exempts inactive controls. SKIP when no status color is used
-    as text. Results carry `evidence`: up to 20 measured uses (selector, token,
-    theme, color, background, ratio, threshold) and a count of the rest.
+    a browser paints), `light-dark()` and relative color syntax.
+    It measures on a surface the stylesheet attests: the rule's own background,
+    another rule's for the same element, or the nearest ancestor compound's in
+    the same selector (a `:hover` ancestor's own fill, else its fill without the
+    state), with translucent fills composited over the next surface out, else
+    the theme's page background. When an ancestor in an interactive state
+    (hover, active, focus, checked, expanded, selected, open) paints no fill
+    the stylesheet declares, the surface is unresolved and the finding WARNs at
+    most: v44 never FAILs a pairing it cannot attest. Text needs 4.5:1, large
+    text (24px, or 18.66px bold) 3:1. A non-text use is a graphic under WCAG
+    1.4.11 and needs 3:1: an svg subject, a class whose role word is icon,
+    octicon, glyph, spinner or indicator (or an `icon-`/`octicon-` prefix), a
+    progress or meter bar, a color named for an icon (`--button-danger-iconColor`),
+    or an element that paints its own background with `currentColor`. Only a
+    color named as a status (ok, success, warn, warning, error, danger, fail,
+    destructive, info, grade-a to grade-f) can FAIL. A hue that counts only
+    because the stylesheet also paints it as a fill or border WARNs at most,
+    because its real surface is often a fill on an ancestor that a static
+    reading cannot see. Disabled states are exempt, as WCAG 1.4.3 exempts
+    inactive controls. SKIP when no status color is used as text. Results carry
+    `evidence`: up to 20 measured uses (selector, token, theme, color,
+    background, ratio, threshold) and a count of the rest. A ratio that misses
+    its threshold by less than a rounding step is shown rounded down (4.49, not
+    4.50, against 4.5).
   - **v45 (motion): pausing motion keeps content visible.** A site-level pause
     (`animation-play-state: paused` on every element, under an attribute or
     class on the document or inside `prefers-reduced-motion: reduce`) holds
@@ -115,10 +132,10 @@ by engine 1.1.0 and engine 1.2.0 on the same bytes. The scores below use the
 site's arithmetic. The DESIGN.md probe (v37) was off in both runs, so a site
 that serves a DESIGN.md can differ from its live score by that check. 26 of 30
 sites were reachable; nytimes.com and cssdesignawards.com returned 403,
-getdesy.com refused the connection and awwwards.com timed out. v44: 3 FAIL,
-7 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
-alone move 8 sites by -3.6 to +1.2 (mean -0.15); the slop fixes alone move 11
-by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +10.8 (mean +2.07),
+getdesy.com refused the connection and awwwards.com timed out. v44: 2 FAIL,
+8 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
+alone move 8 sites by -3.6 to +1.2 (mean -0.09); the slop fixes alone move 11
+by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +12.3 (mean +2.13),
 and five change grade. The live leaderboard keeps its current scores until the
 re-score that runs on release.
 
@@ -138,7 +155,7 @@ re-score that runs on release.
   | roastbyai.com | SKIP | SKIP | S8 4 → 0 | 74.7 → 82.7 | 0 | +8 | +8 | C → B |
   | atlassian.design | PASS | SKIP | no change | 91.9 → 93.1 | +1.2 | 0 | +1.2 | A |
   | primer.style | FAIL | SKIP | S2 2 → 0; S8 1 → 0 | 85.4 → 89.8 | -3.6 | +8 | +4.4 | B |
-  | carbondesignsystem.com | FAIL | SKIP | S2 3 → 0; S8 2 → 0 | 69.3 → 80.1 | -2.2 | +13 | +10.8 | D → B |
+  | carbondesignsystem.com | WARN | SKIP | S2 3 → 0; S8 2 → 0 | 69.3 → 81.6 | -0.7 | +13 | +12.3 | D → B |
   | spectrum.adobe.com | SKIP | SKIP | no change | 69.1 → 69.1 | 0 | 0 | 0 | D |
   | m3.material.io | WARN | SKIP | no change | 66.4 → 66.4 | 0 | 0 | 0 | D |
   | radix-ui.com | WARN | SKIP | S2 2 → 0 | 65.2 → 70.0 | +0.4 | +4.8 | +4.8 | D → C |
@@ -157,16 +174,32 @@ re-score that runs on release.
 
   A WARN carries half credit, so whether it raises or lowers a score depends on
   where the accessibility category already stands; on this cohort the v44 WARNs
-  move scores by 0 to +0.6. A score that holds at 70 (linear.app,
+  move scores by -0.7 to +0.6. A score that holds at 70 (linear.app,
   zeroheight.com, vam.ac.uk) is held by the accessibility floor. pentagram.com
   stays at 56.6 because its slop deduction is still at the 20-point cap without
-  S8. The three v44 FAILs need reading by hand. On github.com and primer.style
-  most findings are status-named colors for buttons and controls in a hover or
-  rest state whose red fill sits on the parent element (white on white,
-  1.00:1), which a static reading cannot see; github.com also paints
-  `--brand-color-success-emphasis` as text at 2.46:1 on white. On
-  carbondesignsystem.com the finding is `--cds-support-success` at 3.05:1 on a
-  progress bar and its status icon.
+  S8.
+
+  **The two v44 FAILs, read by hand**, each finding against the stylesheet
+  it came from. carbondesignsystem.com WARNs rather than FAILs: its progress
+  bar and status icon (`--cds-support-success`, 3.05:1) are graphics and clear
+  3:1, and a ghost-button color it also paints as a mark stays a WARN.
+  primer.style: the danger button's counter on hover, white on 20% white over
+  #cf222e (#d94e58), 4.05:1; and its keyboard hint in the dark theme, #9198a1
+  on #2a313c, 4.497:1. github.com, 95 in five groups. 46 are in the Dark
+  Dimmed theme, with both values from its `dark_dimmed` theme file:
+  `--fgColor-danger` #e5534b on #212830 (4.02:1) 33 times, and 13 danger
+  labels, buttons and counters on that theme's surfaces (2.84 to 4.36:1).
+  4 are Primer Brand's dark red #fa383d on the Dark Dimmed canvas (4.04:1).
+  27 are Primer Brand colors when the appearance follows the system and a dark
+  theme fills the day slot (`[data-color-mode=auto][data-light-theme=dark]`
+  and its dimmed and high-contrast variants): the brand declares only
+  `[data-color-mode=light]` and `[data-color-mode=dark]`, so it keeps its light
+  palette on the dark canvas (2.78 to 4.41:1). The cascade produces that as
+  written; only a signed-in visitor with those settings reaches it. 8 are
+  `--brand-color-success-emphasis` as text, 2.46:1 on white and 2.13 to 2.94:1
+  in the dark themes, under 3:1 even as a graphic. 10 are danger-button
+  counters and a keyboard hint in the light, colorblind, high-contrast and dark
+  themes, measured on the button's own fill (3.59 to 4.49:1).
 
 ## [1.13.2] — 2026-10-09
 

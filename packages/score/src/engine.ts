@@ -1832,12 +1832,32 @@ function tokenNameSegments(name: string): string[] {
 //
 // Each text use is measured in every theme it applies to: the :root block and
 // every [data-theme]/.dark/.light block and prefers-color-scheme block, each
-// over the root. The background is the rule's own background when it declares
-// one (a translucent tint composited over the page), else the theme's page
-// background (html/body, else --paper/--bg/--background/--surface, else white
-// or black by scheme). Large text (24px, or 18.66px at weight 700) needs 3:1.
-// Static: per-component surfaces set on an ancestor are not modelled, so the
-// check under-reports rather than over-reports.
+// over the root. A theme named by fewer keys than a compound theme that
+// contains it ([data-color-mode=dark] inside [data-color-mode=dark]
+// [data-dark-theme=dark]) also reads that compound's tokens before the root's.
+//
+// The surface is attested, never assumed. Walking the selector from its
+// subject outward, the first rule that paints a background for that element
+// is its surface: the rule itself, another rule for the same selector, then
+// each ancestor compound (its full prefix, the prefix without its interactive
+// state, the compound alone, the compound without its state). A translucent
+// fill composites over the next surface out. With no fill in the selector, the
+// surface is the theme's page background (html/body, else
+// --paper/--bg/--background/--surface, else white or black by scheme), unless
+// an ancestor compound carries an interactive state (:hover, :active, :focus,
+// :checked, [aria-expanded], [aria-selected], [aria-pressed], [aria-current],
+// [open]): such a state usually changes a fill this reading cannot find, so
+// the pairing is unattested and WARNs at most. v44 never FAILs a pairing it
+// cannot attest.
+//
+// Text needs 4.5:1, large text (24px, or 18.66px at weight 700) 3:1. A
+// non-text use is a graphical object under WCAG 1.4.11 and needs 3:1: its
+// subject is an svg element, or a class whose role word (the last word, or a
+// leading icon- or octicon- prefix) is icon, octicon, glyph, spinner or
+// indicator, or a progress or meter bar; or the colour it reads is named for
+// one of those (--button-danger-iconColor); or the element paints its own
+// background with currentColor, so the colour is a fill measured against the
+// surface behind it.
 
 const V44_STATUS_WORDS = ['ok', 'success', 'pass', 'positive', 'warn', 'warning', 'caution', 'error', 'danger', 'fail', 'negative', 'destructive', 'info'];
 const V44_ON_FILL_WORDS = ['on', 'foreground', 'contrast', 'inverse', 'inverted'];
@@ -1908,6 +1928,48 @@ function v44BackgroundColor(value: string, scope: Array<Record<string, string>>,
   return null;
 }
 
+// Interactive states that usually change a fill.
+const V44_STATE = /^(?::(?:hover|active|focus|focus-visible|focus-within|checked|target)|\[(?:aria-(?:expanded|selected|pressed|current|checked)|open)(?:[~|^$*]?=[^\]]*)?\])$/i;
+const V44_NON_TEXT_TYPES = /^(?:svg|path|circle|rect|ellipse|line|polyline|polygon|use|g)$/i;
+const V44_NON_TEXT_WORDS = ['icon', 'octicon', 'glyph', 'spinner', 'indicator'];
+
+/** A selector part with its theme keys removed, and the html/:root/body that carried them. */
+function keylessPart(part: string): string {
+  const rest = withoutThemeKeys(part);
+  return (themeSelectorKeys(part).length ? rest.replace(/^(?:html|:root|body)(?=\s|$)/i, '') : rest).trim();
+}
+
+/** A lookup key for a run of compounds: simple selectors, combinators kept. */
+function compoundsKey(comps: Array<{ comb: string; compound: string }>, stateless: boolean): string {
+  return comps
+    .map((c, i) => `${i === 0 ? '' : c.comb === ' ' ? ' ' : c.comb}${simpleSelectors(c.compound).filter((x) => !stateless || !V44_STATE.test(x)).join('')}`)
+    .join('');
+}
+
+/**
+ * Whether a selector's subject is a graphical object rather than text: every
+ * alternative's subject is an svg element, or has a class whose role word (the
+ * last word, after any CSS-module hash) is icon, octicon, glyph, spinner or
+ * indicator, or that names an icon by prefix (icon-check, octicon-x), or is a
+ * bar of a progress or meter component.
+ */
+function nonTextSubject(part: string): boolean {
+  return expandIsWhere(part).every((alt) => {
+    const comps = selectorCompounds(alt);
+    const subject = simpleSelectors(comps[comps.length - 1]?.compound ?? '');
+    if (subject.some((x) => V44_NON_TEXT_TYPES.test(x))) return true;
+    return subject.some((x) => {
+      if (!x.startsWith('.')) return false;
+      const segs = x.slice(1).split(/[-_]+/).filter(Boolean);
+      while (segs.length > 1 && /\d/.test(segs[segs.length - 1])) segs.pop();
+      const words = segs.flatMap((w) => w.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().split(' '));
+      const last = words[words.length - 1] ?? '';
+      return V44_NON_TEXT_WORDS.includes(last) || ((words[0] === 'icon' || words[0] === 'octicon') && words.length > 1)
+        || (last === 'bar' && words.some((w) => w === 'progress' || w === 'meter'));
+    });
+  });
+}
+
 function checkStatusTextContrast(css: string): CheckResult {
   const ID = 'v44';
   const ITEM = 'Status colors used as text meet contrast in every declared theme';
@@ -1968,20 +2030,33 @@ function checkStatusTextContrast(css: string): CheckResult {
       }
     }
   }
-  // A theme's tokens, then those of every theme whose keys it includes (a
-  // [data-color-mode=dark] block also applies under
-  // [data-color-mode=dark][data-dark-theme=dark_dimmed]), most specific first,
-  // then the root's.
+  // A theme's tokens; then those of every compound theme that contains it,
+  // because a page that matches [data-color-mode=dark] also carries the theme
+  // attribute those compounds add (primer.style declares --fgColor-danger only
+  // under [data-color-mode=dark][data-dark-theme=dark]): nearest first, and
+  // among those the one whose added keys repeat the theme's own value
+  // ([data-dark-theme=dark] for [data-color-mode=dark]), then source order;
+  // then those of every theme it includes (a [data-color-mode=dark] block
+  // also applies under [data-color-mode=dark][data-dark-theme=dark_dimmed]),
+  // most specific first; then the root's.
   const scopeCache = new Map<string, Array<Record<string, string>>>();
   const scopeOf = (key: string): Array<Record<string, string>> => {
     const hit = scopeCache.get(key);
     if (hit) return hit;
     const t = themes.get(key) as Theme;
-    const wider = key === 'root' || t.media ? [] : [...themes.entries()]
-      .filter(([k, o]) => k !== key && k !== 'root' && !o.media && o.keys.length < t.keys.length && o.keys.every((x) => t.keys.includes(x)))
+    const others = key === 'root' || t.media ? [] : [...themes.entries()].filter(([k, o]) => k !== key && k !== 'root' && !o.media);
+    const valueOf = (k: string) => /=([\w-]+)\]$/.exec(k)?.[1] ?? k.replace(/^\./, '');
+    const own = new Set(t.keys.map(valueOf));
+    const repeats = (o: Theme) => o.keys.filter((x) => !t.keys.includes(x)).every((x) => own.has(valueOf(x)));
+    const narrower = others
+      .filter(([, o]) => o.keys.length > t.keys.length && t.keys.every((x) => o.keys.includes(x)))
+      .sort((a, b) => a[1].keys.length - b[1].keys.length || Number(repeats(b[1])) - Number(repeats(a[1])))
+      .map(([, o]) => o.tokens);
+    const wider = others
+      .filter(([, o]) => o.keys.length < t.keys.length && o.keys.every((x) => t.keys.includes(x)))
       .sort((a, b) => b[1].keys.length - a[1].keys.length)
       .map(([, o]) => o.tokens);
-    const scope = key === 'root' ? [root.tokens] : [t.tokens, ...wider, root.tokens];
+    const scope = key === 'root' ? [root.tokens] : [t.tokens, ...narrower, ...wider, root.tokens];
     scopeCache.set(key, scope);
     return scope;
   };
@@ -2104,6 +2179,25 @@ function checkStatusTextContrast(css: string): CheckResult {
     pageBg.set(key, found ?? plain);
   }
 
+  // Every background a rule paints, by selector (theme keys removed), for
+  // attesting a text use's surface. Latest rule first.
+  const bgIndex = new Map<string, Array<{ where: Where; value: string }>>();
+  for (let r = parsed.length - 1; r >= 0; r--) {
+    const { rule, decls } = parsed[r];
+    const bg = [...decls].reverse().find((d) => d.prop === 'background-color' || d.prop === 'background');
+    if (!bg) continue;
+    if (rule.at.some((a) => /^@media\b.*\b(?:print|forced-colors)\b/.test(a))) continue;
+    const where = whereOf(rule);
+    for (const part of splitCssTopLevel(rule.selector, ',')) {
+      // Indexed as written: a :hover rule's fill is the hovered element's,
+      // never the resting one's. The lookup side drops a state, not this side.
+      const k = compoundsKey(selectorCompounds(keylessPart(part)), false);
+      const list = bgIndex.get(k) ?? [];
+      list.push({ where, value: bg.value });
+      bgIndex.set(k, list);
+    }
+  }
+
   // 4. Every text use, in every theme it applies to.
   type Finding = { selector: string; token: string; theme: string; value: string; background: string; ratio: number | null; need: number; status: 'PASS' | 'WARN' | 'FAIL'; note: string };
   const findings: Finding[] = [];
@@ -2155,7 +2249,9 @@ function checkStatusTextContrast(css: string): CheckResult {
         else if (/^\d+$/.test(w)) weight = parseInt(w, 10);
       }
     }
-    const need = px !== null && (px >= 24 || (px >= 18.66 && weight >= 700)) ? 3 : 4.5;
+    // A colour named for a graphic (an icon colour) is not text.
+    const graphicToken = [direct, alias, alias ? aliasOf.get(alias) : undefined].some((nm) => nm && tokenNameSegments(nm).some((w) => V44_NON_TEXT_WORDS.includes(w)));
+    const need = graphicToken || (px !== null && (px >= 24 || (px >= 18.66 && weight >= 700))) ? 3 : 4.5;
     const ownBg = [...decls].reverse().find((d) => d.prop === 'background-color' || d.prop === 'background');
     const ownTokens: Record<string, string> = {};
     for (const d of decls) if (d.prop.startsWith('--')) ownTokens[d.prop] = d.value;
@@ -2174,6 +2270,7 @@ function checkStatusTextContrast(css: string): CheckResult {
       return [{}, ...[...new Set(values)].map((value) => ({ [alias]: value }))];
     };
     const sel = shortSelector(rule.selector);
+    const parts = splitCssTopLevel(rule.selector, ',');
     for (const key of applies) {
       const t = themes.get(key) as Theme;
       for (const variant of variantsIn(key)) {
@@ -2181,40 +2278,92 @@ function checkStatusTextContrast(css: string): CheckResult {
         const fg = resolveThemeColor(text.value, scope, t.dark);
         if (!fg) { unresolved++; continue; }
         if (fg[3] <= 0) continue;
-        let bg: Rgba | null = pageBg.get(key) as Rgba;
-        if (ownBg) {
-          const c = v44BackgroundColor(ownBg.value, scope, t.dark);
-          // The same test for the rule's own surface: in a theme whose scheme
-          // differs from the root's, a surface that resolves exactly as it does
-          // in the root did not follow the theme, and is not measured.
-          if (key !== 'root' && t.dark !== root.dark && c && c !== 'none') {
-            const inRoot = v44BackgroundColor(ownBg.value, [ownTokens, variant, root.tokens], root.dark);
-            if (inRoot && inRoot !== 'none' && toHexColor(inRoot) === toHexColor(c) && inRoot[3] === c[3]) { unresolved++; continue; }
+        // One fill: its color in this theme; 'stale' when, in a theme whose
+        // scheme differs from the root's, it resolves exactly as in the root
+        // (the surface did not follow the theme, so it is not measured).
+        const fill = (value: string): Rgba | 'none' | 'unreadable' | 'stale' => {
+          const c = v44BackgroundColor(value, scope, t.dark);
+          if (c === null) return 'unreadable';
+          if (c !== 'none' && key !== 'root' && t.dark !== root.dark) {
+            const inRoot = v44BackgroundColor(value, [ownTokens, variant, root.tokens], root.dark);
+            if (inRoot && inRoot !== 'none' && toHexColor(inRoot) === toHexColor(c) && inRoot[3] === c[3]) return 'stale';
           }
-          bg = c === 'none' ? bg : c === null ? null : c[3] >= 1 ? c : v44Composite(c, bg);
-        }
+          return c;
+        };
+        const indexed = (k: string): string | null => {
+          for (const e of bgIndex.get(k) ?? []) if (reaches(t, e.where)) return e.value;
+          return null;
+        };
+        type Surface = { bg: Rgba | null; attested: boolean; stale: boolean; need: number };
+        const surfaces: Surface[] = parts.map((part) => {
+          const comps = selectorCompounds(keylessPart(part));
+          const n = comps.length - 1;
+          let partNeed = nonTextSubject(keylessPart(part)) ? 3 : need;
+          const layers: Rgba[] = [];
+          for (let k = n; k >= 0; k--) {
+            let value: string | null = null;
+            if (k === n && ownBg) value = ownBg.value;
+            const prefix = comps.slice(0, k + 1);
+            const lone = [{ comb: '', compound: comps[k].compound }];
+            for (const cand of [compoundsKey(prefix, false), compoundsKey(prefix, true), compoundsKey(lone, false), compoundsKey(lone, true)]) {
+              if (value !== null) break;
+              value = indexed(cand);
+            }
+            if (value === null) continue;
+            // An element that paints its own background with currentColor
+            // (a progress bar, a dot) uses the colour as a fill: a graphic,
+            // measured against the surface behind it.
+            if (k === n && /^\s*currentcolor\s*$/i.test(value)) { partNeed = 3; continue; }
+            const c = fill(value);
+            if (c === 'stale') return { bg: null, attested: false, stale: true, need: partNeed };
+            if (c === 'unreadable') return { bg: null, attested: true, stale: false, need: partNeed };
+            if (c === 'none') continue;
+            layers.push(c);
+            if (c[3] >= 1) break;
+          }
+          const opaque = layers.length > 0 && layers[layers.length - 1][3] >= 1;
+          const stateAbove = comps.slice(0, n).some((c) => simpleSelectors(c.compound).some((x) => V44_STATE.test(x)));
+          let base: Rgba = opaque ? (layers.pop() as Rgba) : (pageBg.get(key) as Rgba);
+          for (let i = layers.length - 1; i >= 0; i--) base = v44Composite(layers[i], base);
+          return { bg: base, attested: opaque || !stateAbove, stale: false, need: partNeed };
+        });
         const solid: Rgba = [Math.round(fg[0]), Math.round(fg[1]), Math.round(fg[2]), 1];
         const value = toHexColor(solid) + (fg[3] < 1 ? ` at ${Math.round(fg[3] * 100)}%` : '');
-        const dedupe = `${sel}|${token}|${value}|${bg ? toHexColor(bg) : '?'}|${need}`;
+        type Measured = { background: string; ratio: number | null; need: number; status: Finding['status']; note: string };
+        const measured: Measured[] = [];
+        for (const sf of surfaces) {
+          if (sf.stale) continue;
+          if (!sf.bg) {
+            measured.push({ background: 'unresolved', ratio: null, need: sf.need, status: 'WARN', note: 'its background cannot be resolved' });
+            continue;
+          }
+          const bg = sf.bg;
+          const full = contrastRatio([solid[0], solid[1], solid[2]], [bg[0], bg[1], bg[2]]);
+          const shown = fg[3] < 1 ? v44Composite(fg, bg) : solid;
+          const painted = contrastRatio([shown[0], shown[1], shown[2]], [bg[0], bg[1], bg[2]]);
+          let status: Finding['status'] = full < sf.need ? 'FAIL' : painted < sf.need ? 'WARN' : 'PASS';
+          let note = status === 'WARN' ? `clears ${sf.need}:1 only at full alpha (${full.toFixed(2)}:1)` : '';
+          if (status === 'FAIL' && !sf.attested) {
+            status = 'WARN';
+            note = 'is only a warning: the surface is unresolved, because an ancestor in an interactive state (hover, active, focus, expanded, open) usually changes a fill this check cannot find';
+          } else if (status === 'FAIL' && !byName) {
+            status = 'WARN';
+            note = 'is only a warning: the color is not named as a status, it counts because the stylesheet also paints it as a mark, and its real surface may be a fill this check cannot see';
+          }
+          // Shown to two places; a miss that would round up to the bar is
+          // rounded down instead, so 4.497 reads 4.49, never 4.50 against 4.5.
+          const rounded = Math.round(painted * 100) / 100;
+          const shownRatio = painted < sf.need && rounded >= sf.need ? Math.floor(painted * 100) / 100 : rounded;
+          measured.push({ background: toHexColor(bg), ratio: shownRatio, need: sf.need, status, note });
+        }
+        if (!measured.length) { unresolved++; continue; }
+        const order = { FAIL: 0, WARN: 1, PASS: 2 };
+        measured.sort((a, b) => order[a.status] - order[b.status] || (a.ratio === null ? 0 : a.ratio / a.need) - (b.ratio === null ? 0 : b.ratio / b.need));
+        const worst = measured[0];
+        const dedupe = `${sel}|${token}|${value}|${worst.background}|${worst.need}|${worst.status}`;
         if (seen.has(dedupe)) continue;
         seen.add(dedupe);
-        if (!bg) {
-          findings.push({ selector: sel, token, theme: t.label, value, background: 'unresolved', ratio: null, need, status: 'WARN', note: 'its background cannot be resolved' });
-          continue;
-        }
-        const full = contrastRatio([solid[0], solid[1], solid[2]], [bg[0], bg[1], bg[2]]);
-        const shown = fg[3] < 1 ? v44Composite(fg, bg) : solid;
-        const painted = contrastRatio([shown[0], shown[1], shown[2]], [bg[0], bg[1], bg[2]]);
-        let status: Finding['status'] = full < need ? 'FAIL' : painted < need ? 'WARN' : 'PASS';
-        let note = status === 'WARN' ? `clears ${need}:1 only at full alpha (${full.toFixed(2)}:1)` : '';
-        if (status === 'FAIL' && !byName) {
-          status = 'WARN';
-          note = 'is only a warning: the color is not named as a status, it counts because the stylesheet also paints it as a mark, and its real surface may be a fill this check cannot see';
-        }
-        findings.push({
-          selector: sel, token, theme: t.label, value, background: toHexColor(bg),
-          ratio: Math.round(painted * 100) / 100, need, status, note,
-        });
+        findings.push({ selector: sel, token, theme: t.label, value, ...worst });
       }
     }
   }

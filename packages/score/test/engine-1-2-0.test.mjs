@@ -167,6 +167,97 @@ describe('v44: status colors used as text meet contrast in every declared theme'
     assert.match(c.detail, /^not applicable/);
   });
 
+  it('measures a descendant of a hovered compound on that compound\'s fill', async () => {
+    // github.com and primer.style: white on the danger fill, read as white on the page.
+    const css = ':root { --paper: #ffffff; --bg-danger: #cf222e; --danger-fg-hover: #ffffff; } body { background: var(--paper); } .btn-danger:hover { background: var(--bg-danger); } .btn-danger:hover .label { color: var(--danger-fg-hover); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'PASS');
+    assert.equal(c.evidence.findings[0].background, '#cf222e');
+  });
+
+  it('reads the ancestor\'s base rule when its state paints no fill of its own', async () => {
+    const css = ':root { --paper: #ffffff; --danger-hover: #ff8182; } body { background: var(--paper); } .menu { background: #1f2328; } .menu:hover .label { color: var(--danger-hover); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'PASS');
+    assert.equal(c.evidence.findings[0].background, '#1f2328');
+  });
+
+  it('composites a translucent fill over the ancestor fill it sits on', async () => {
+    // primer.style's danger counter: white on #fff3 over #cf222e is white on #d94e58, 4.05:1.
+    const css = ':root { --paper: #ffffff; --counter-danger-fg: #ffffff; } body { background: var(--paper); } .btn:hover { background: #cf222e; } .btn:hover .counter { background: #ffffff33; color: var(--counter-danger-fg); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'FAIL');
+    const [f] = c.evidence.findings;
+    assert.deepEqual({ background: f.background, ratio: f.ratio }, { background: '#d94e58', ratio: 4.05 });
+  });
+
+  it('never reads a hovered fill as the resting element\'s surface', async () => {
+    const css = ':root { --paper: #ffffff; --fg-danger: #cf222e; } body { background: var(--paper); } .btn:hover { background: #cf222e; } .btn .label { color: var(--fg-danger); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'PASS');
+    assert.equal(c.evidence.findings[0].background, '#ffffff');
+  });
+
+  it('WARNs, never FAILs, a pairing whose surface it cannot attest', async () => {
+    // The hovered ancestor paints no fill this sheet declares: white on the page is not a pairing it can attest.
+    const css = ':root { --paper: #ffffff; --danger-fg-hover: #ffffff; } body { background: var(--paper); } .btn-danger:hover .label { color: var(--danger-fg-hover); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'WARN');
+    const [f] = c.evidence.findings;
+    assert.equal(f.status, 'WARN');
+    assert.match(f.note, /surface is unresolved/);
+  });
+
+  it('reads a compound theme\'s tokens for the theme it contains', async () => {
+    // primer.style declares --fgColor-danger for dark only under [data-color-mode=dark][data-dark-theme=dark].
+    // Of the compounds that contain the theme, the one that repeats its value is read first, whatever the source order.
+    const css = `:root { --bgColor-default: #ffffff; --fgColor-danger: #d1242f; }
+      [data-color-mode=dark] { --bgColor-default: #0d1117; }
+      [data-color-mode=dark][data-dark-theme=dark_dimmed] { --bgColor-default: #212830; --fgColor-danger: #ff7b72; }
+      [data-color-mode=dark][data-dark-theme=dark] { --fgColor-danger: #f85149; }
+      body { background: var(--bgColor-default); }
+      .msg { color: var(--fgColor-danger); }`;
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'PASS');
+    const dark = c.evidence.findings.find((f) => f.theme === '[data-color-mode=dark]');
+    assert.ok(dark, 'the [data-color-mode=dark] theme is measured');
+    assert.deepEqual({ value: dark.value, background: dark.background }, { value: '#f85149', background: '#0d1117' });
+  });
+
+  it('holds a non-text use to 3:1 and status text to 4.5:1 (WCAG 1.4.11, 1.4.3)', async () => {
+    // carbondesignsystem.com's progress bar: --cds-support-success #24a148 on #f4f4f4, 3.05:1.
+    const base = ':root { --paper: #f4f4f4; --cds-support-success: #24a148; } body { background: var(--paper); } .cds--progress-bar__bar { background-color: currentColor; }';
+    for (const sel of ['.done .cds--progress-bar__bar', '.done .cds--progress-bar__status-icon', '.done svg', '.done .octicon-check', '.done .icon-for-success']) {
+      const c = await check('v44', { css: `${base} ${sel} { color: var(--cds-support-success); }` });
+      assert.equal(c.status, 'PASS', sel);
+      assert.equal(c.evidence.findings[0].need, 3, sel);
+    }
+    for (const sel of ['.done .status-text', '.done .x-icon, .done .x-label']) {
+      const c = await check('v44', { css: `${base} ${sel} { color: var(--cds-support-success); }` });
+      assert.equal(c.status, 'FAIL', sel);
+      assert.equal(c.evidence.findings[0].need, 4.5, sel);
+    }
+  });
+
+  it('holds a color named for an icon to 3:1, and a currentColor fill to 3:1 against the surface behind it', async () => {
+    const named = ':root { --paper: #f4f4f4; --button-success-iconColor: #24a148; } body { background: var(--paper); } .btn .visual { color: var(--button-success-iconColor); }';
+    const c1 = await check('v44', { css: named });
+    assert.equal(c1.status, 'PASS');
+    assert.equal(c1.evidence.findings[0].need, 3);
+    const dot = ':root { --paper: #f4f4f4; --success: #24a148; } body { background: var(--paper); } .dot { background-color: currentColor; color: var(--success); }';
+    const c2 = await check('v44', { css: dot });
+    assert.equal(c2.status, 'PASS');
+    assert.deepEqual({ need: c2.evidence.findings[0].need, background: c2.evidence.findings[0].background }, { need: 3, background: '#f4f4f4' });
+  });
+
+  it('shows a ratio that misses by less than a rounding step below the bar', async () => {
+    // primer.style dark: #9198a1 on #2a313c is 4.497:1; it reads 4.49, never 4.50 against 4.5.
+    const css = ':root { --paper: #2a313c; --kbd-danger-fg: #9198a1; color-scheme: dark; } body { background: var(--paper); } .kbd { color: var(--kbd-danger-fg); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'FAIL');
+    assert.equal(c.evidence.findings[0].ratio, 4.49);
+  });
+
   it('caps evidence at 20 findings and counts the rest', async () => {
     const rules = Array.from({ length: 25 }, (_, i) => `.s${i} { color: var(--warn); }`).join('\n');
     const c = await check('v44', { css: `${LIGHT}\n${rules}` });

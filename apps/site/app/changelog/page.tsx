@@ -355,7 +355,7 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'added',
     title: 'Engine 1.2.0: status text contrast and paused entrances',
     description:
-      'v44 measures every status color a stylesheet uses as text, in every theme it declares, and fails a color named as a status that reads under 4.5 to 1 (3 to 1 for large text). v45 fails an entrance that starts at opacity 0 and stays held invisible when a visitor pauses motion. Every score gains both, so the engine runs 44 checks. The S2 and S8 anti-slop rules stop deducting for components and prose, and the npm engine caps scores by the same accessibility floor as the site.',
+      'v44 measures every status color a stylesheet uses as text, in every theme it declares, and fails a color named as a status that reads under 4.5 to 1 (3 to 1 for large text, an icon or a bar) on a surface the stylesheet attests; where it cannot attest the surface, it warns. v45 fails an entrance that starts at opacity 0 and stays held invisible when a visitor pauses motion. Every score gains both, so the engine runs 44 checks. The S2 and S8 anti-slop rules stop deducting for components and prose, and the npm engine caps scores by the same accessibility floor as the site.',
     checks: ['v44', 'v45'],
     rationale:
       'Both defects shipped on this site and passed every check the engine had: the CSS was valid and the default view looked right. The light warning color wrote status words at 3.51 to 1, and the pause control emptied whole pages for the visitors who had asked for less motion. A check that catches its own author is the one worth publishing.',
