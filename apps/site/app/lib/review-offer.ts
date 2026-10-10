@@ -17,13 +17,13 @@ export const REVIEW_PRICE = '$899';
 /**
  * CHECKOUT. Every "Get the full Review" button links here.
  *
- * Paste the Stripe Payment Link (https://buy.stripe.com/...) in place of the
- * mailto once it exists. Until then the buttons open an email to
- * hello@designesy.org with the subject filled in, so no call to action on the
- * site is ever a dead end.
+ * The live Stripe Payment Link for the $899 Designesy Review (one-off price,
+ * quantity fixed at 1, the site URL collected as a required custom field).
+ * To pause sales, swap this back to
+ * 'mailto:hello@designesy.org?subject=Designesy%20Review' so no call to action
+ * on the site is ever a dead end.
  */
-export const REVIEW_CHECKOUT_URL =
-  'mailto:hello@designesy.org?subject=Designesy%20Review';
+export const REVIEW_CHECKOUT_URL = 'https://buy.stripe.com/bJeeVf6Lh2q28ypc1Mdby00';
 
 /**
  * A published sample Review. While this is null the "See a sample Review"
