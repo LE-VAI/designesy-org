@@ -46,7 +46,7 @@ pip install designesy-mcp && designesy-mcp
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 44-check engine powers an MCP server (17 tools for AI agents), a zero-dependency CLI (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
 **Designesy Contract Check** is a GitHub Action that scores any URL against a **44-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
 
