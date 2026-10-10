@@ -330,11 +330,11 @@ export default function HomePage() {
             <p className="home-kicker">
               <span className="home-kicker-live" aria-hidden="true" />
               <span>
-                Contract <b>{CONTRACT_VERSION}</b> is live · <b>{ENGINE_CHECK_COUNT}</b> checks<span className="home-kicker-more">, rescored weekly</span>
+                Contract <b className="home-kicker-version">{CONTRACT_VERSION}</b> is live · <b>{ENGINE_CHECK_COUNT}</b> checks<span className="home-kicker-more">, rescored weekly</span>
               </span>
             </p>
             <h1 className="hero-title hero-display" id="hero-title" aria-label={HERO_HEADLINE}>
-              <span className="hero-display-line" aria-hidden="true">
+              <span className="hero-display-line is-premise" aria-hidden="true">
                 {HERO_LINE_1}
               </span>
               <span className="hero-display-line is-accent" aria-hidden="true">
@@ -351,7 +351,7 @@ export default function HomePage() {
 
             <p className="hero-sub">
               Designesy publishes design judgment as a versioned contract, then verifies any live
-              page against it. {ENGINE_CHECK_COUNT} checks, one grade, and evidence you can cite.
+              page against it. One grade, with evidence you can cite.
             </p>
 
             {/* THE PRODUCT: the URL input, as one command bar */}

@@ -34,6 +34,7 @@ import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
 import { safeFetch } from '../../lib/url-guard';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_catalog',
       {
+        ...mcpToolDisplay('designesy_catalog'),
         // The count is DERIVED from the catalog this tool serves, never restated.
         // It read a hardcoded "23 published packages" and went stale when the
         // catalog reached 24, so the description and the payload disagreed about
@@ -118,6 +120,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_contract',
       {
+        ...mcpToolDisplay('designesy_contract'),
         description: 'Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; cached ~24h server-side. Returns the full contract JSON, or a single section when "section" is provided. Pass section to get one slice (e.g. "motion" for just the motion tokens) instead of the full contract, which saves tokens when you only need one dimension.',
         inputSchema: z.object({
           section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, verification_checks, open_tensions, components, interaction).'),
@@ -147,6 +150,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_design_review',
       {
+        ...mcpToolDisplay('designesy_design_review'),
         description: 'Get the Designesy Design Review framework: an 8-dimension rubric (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility) plus the agent prompt, output format, and verification checklist for a qualitative design critique. Use this when you want a structured rubric to critique a design holistically, rather than a numeric compliance score. When NOT to use: for a deterministic numeric score, use designesy_score; this tool gives you a rubric, not a number. Read-only: returns the rubric + prompt. The calling agent performs the actual critique (this tool does not evaluate the design for you). Returns JSON: { rubric, dimensions[8], agent_prompt, output_format, verification_checklist }. Pass artifact/purpose/context/rules to get a pre-filled critique prompt; omit all four to get the blank framework.',
         inputSchema: z.object({
           artifact: z.string().optional().describe('URL or description of the artifact to review.'),
@@ -188,6 +192,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_skill_md',
       {
+        ...mcpToolDisplay('designesy_skill_md'),
         description: 'Get the Designesy SKILL.md: the agent-skill-format export of the design-system contract, written as behavioral rules an AI coding agent can drop into .agents/skills/ or a system prompt. Use this when you want the contract in a form that steers how an agent *builds* UI (tokens, anti-patterns, behavioral rules, verification). When NOT to use: for the raw contract JSON, use designesy_contract; for scoring, use designesy_score. Read-only: no side effects. Returns markdown text (SKILL.md format) to drop into .agents/skills/ or paste into a system prompt. No parameters.',
       },
       async () => {
@@ -202,6 +207,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_agent_json',
       {
+        ...mcpToolDisplay('designesy_agent_json'),
         description: 'Get the Designesy agent discovery document (/.well-known/agent.json): the org identity, authority, ingest protocol, package index, machine-export list, permission policy, and citation templates. Use this when you are integrating with or enumerating Designesy as a machine agent and need the canonical discovery/manifest endpoint rather than one specific contract. When NOT to use: for the package list, use designesy_catalog (lighter); for the contract, use designesy_contract. Read-only: no side effects. Returns the /.well-known/agent.json object: { identity, authority, ingest_protocol, package_index, permission_policy, citation_templates }. No parameters.',
       },
       async () => {
@@ -216,6 +222,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_llms_txt',
       {
+        ...mcpToolDisplay('designesy_llms_txt'),
         description: 'Get the Designesy /llms.txt: a short agent-facing brief with the canonical reference, topic index, ingest steps, package list, and contact. Use this first when you don\'t know what Designesy is; it\'s the cheapest orientation path before pulling heavier artifacts. When NOT to use: for the full expanded brief, use designesy_llms_full_txt; for the contract itself, use designesy_contract. Read-only: no side effects. Returns text/plain (~500 tokens). No parameters.',
       },
       async () => {
@@ -230,6 +237,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_llms_full_txt',
       {
+        ...mcpToolDisplay('designesy_llms_full_txt'),
         description: 'Get the Designesy /llms-full.txt, the complete agent-facing brief: ingest protocol, discovery endpoints, every package, standing rules, anti-patterns, and a paste-ready agent prompt. Use this for comprehensive onboarding to the Designesy ecosystem when the short /llms.txt is not enough. When NOT to use: for a quick orientation, use designesy_llms_txt first (~500 tokens vs ~3000). Read-only: no side effects. Returns text/plain (~3000 tokens, includes a paste-ready agent prompt). No parameters.',
       },
       async () => {
@@ -246,6 +254,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_score',
       {
+        ...mcpToolDisplay('designesy_score'),
         description: `Score a live URL against the Designesy design contract: a deterministic ${ENGINE_CHECK_COUNT}-check verification engine that returns a numeric score, letter grade (A-F), and per-check breakdown. Use this to audit whether a website or AI-generated UI complies with a real design contract (tokens, motion, accessibility, cadence, takt, typography, copywriting). When NOT to use: for token-file validation only, use designesy_tokens_score; for a Lottie file, use designesy_motion_score; for a qualitative critique, use designesy_design_review. Executable: fetches the URL server-side, extracts CSS, runs ${ENGINE_CHECK_COUNT} checks. Results cached ~24h per URL. Checks needing a live browser (Core Web Vitals, sound toggle, overflow) return MANUAL (not FAIL); run the full audit (/api/score/audit) to resolve them. Checks that are not applicable to the site (no tokens, no buttons, no DESIGN.md) return SKIP (N/A). The default format returns the engine's JSON: { score (0-100), grade (A-F), pass, warn, fail, skip, manual, total, checks[{id, item, category, status, detail, remediation, weight}], categoryScores, contractVersion, receipt }. Pass format="canonical" for review-findings.json schema, "review" for markdown, or "google" for design.md-compatible output. Pass scope="contract" or "universal" to set the scoring scope instead of auto-detecting it.`,
         // format and scope are the /api/score body fields of the same names.
         // The description offered format while this schema held only url, so a
@@ -299,6 +308,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_tokens_score',
       {
+        ...mcpToolDisplay('designesy_tokens_score'),
         description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS/FAIL/WARN. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (t01-t10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
@@ -593,6 +603,7 @@ const handler = createMcpHandler(
     server.registerTool(
       'designesy_a11y_score',
       {
+        ...mcpToolDisplay('designesy_a11y_score'),
         description: 'Get the Designesy WCAG 2.2 AA accessibility verification framework: 11 conformance checks (a01-a11) plus a ready-to-run Playwright + axe-core 4.13.0 script template targeting your URL. Use this to audit a site for accessibility violations. When NOT to use: for a full design-contract score (not just a11y), use designesy_score. Does NOT run the scan: axe-core needs a real browser DOM. Returns the 11 checks + a Playwright script you execute locally (npm i -D @axe-core/playwright). The score comes from your local run, not from this tool. Returns JSON: { checks[{id (a01-a11), name, status: "PENDING_EXECUTION"}], playwright_script, install_command, run_command }. Pass config (JSON string) to customize axe.configure(), for example with branding overrides or rule disables. Omit for standard WCAG 2.2 AA.',
         inputSchema: z.object({
           url: z.string().describe('URL to scan for accessibility. The returned script template will target this URL.'),
@@ -698,6 +709,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_motion_score',
       {
+        ...mcpToolDisplay('designesy_motion_score'),
         description: 'Validate a Lottie animation file against the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards, returning 10 checks (m01-m10) with PASS/FAIL/WARN. The DTCG 2025.10 spec leaves motion tokens as a second-class citizen: there is no standard for motion token structure, reduced-motion markers, or animation accessibility. Designesy\'s motion validator fills this gap: it checks required fields (v, fr, ip, op, w, h, layers), $version, a markers array for reduced-motion compliance, and no deprecated version. Use this to verify a motion/animation asset is well-formed AND accessible: the only validator that checks both. When NOT to use: for full-site motion scoring (not a single Lottie file), use designesy_score. Executable: fetches the URL or parses the raw Lottie JSON, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (m01-m10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a Lottie JSON file. The tool fetches and validates it.'),
@@ -894,6 +906,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_drift_score',
       {
+        ...mcpToolDisplay('designesy_drift_score'),
         description: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full 42-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable: fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.'),
@@ -926,6 +939,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_readiness_score',
       {
+        ...mcpToolDisplay('designesy_readiness_score'),
         description: 'Score a URL for design-system AI readiness, the 6th maturity axis (zeroheight 2026). 10 checks probe the target origin for machine-readable artifacts: DTCG token files, llms.txt, agent.json, MCP endpoint (tools/list), DESIGN.md, token $description, component schemas, sitemap.xml, robots.txt, and Open Graph/Twitter meta. Use this to verify whether a design system is the default context AI tools build from, or whether AI is silently working around it. When NOT to use: for full design-contract scoring, use designesy_score; for AI-drift detection, use designesy_drift_score. Executable: fetches the URL and probes the origin via HEAD/GET for each artifact. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to score for AI readiness. Defaults to https://www.designesy.org/ if not provided.'),
@@ -958,6 +972,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_guardrails',
       {
+        ...mcpToolDisplay('designesy_guardrails'),
         description: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation, (6) DESIGN.md file (Google open spec, google-labs-code/design.md), the de-facto AI-readable design-context standard: YAML front matter plus a markdown body. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable: fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd }, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.'),
@@ -989,9 +1004,12 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     // computes 10 governance checks (m01-m10) comparing the current run
     // against snapshot history supplied by the caller. Sends email alerts
     // via Resend when drift is detected + email provided + key set.
+    // That email is a side effect outside this server, so this is the one
+    // tool annotated readOnlyHint: false (see MCP_TOOL_ANNOTATIONS).
     server.registerTool(
       'designesy_monitor_score',
       {
+        ...mcpToolDisplay('designesy_monitor_score'),
         description: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): schedule registered, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email address is provided, sends an HTML drift-alert email via Resend (requires RESEND_API_KEY env var). Pass a history array of prior snapshots to compute deltas; omit it for a first-run baseline. Use this to watch a design system over time: "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable: fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts, emailAlert }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.'),
@@ -1039,6 +1057,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_compare',
       {
+        ...mcpToolDisplay('designesy_compare'),
         description: 'Diff two design systems from live URLs, using the only URL-scoped design-token diff engine. Fetches both URLs in parallel, extracts their :root custom properties, and produces a structured diff across 8 dimensions: tokens added (in A not B), removed (in B not A), renamed (heuristic Levenshtein ≤ 2), value-changed (same name, different value), scale-stop-changed (spacing/radius/color scale steps), contrast-drift-per-pair (WCAG contrast ratio change for shared color tokens), structure-delta (token count + category distribution), and score-delta (runs /score on both URLs and diffs). Use this to answer "what actually changed between two design systems" or "how does our design system differ from a reference". When NOT to use: for single-site drift detection, use designesy_drift_score; for continuous monitoring, use designesy_monitor_score. Executable: fetches both URLs, extracts CSS + tokens, computes diff. No browser needed. Returns JSON: { ok, urlA, urlB, score (0-100, diff completeness), grade, pass, warn, fail, total, tokensA, tokensB, added[], removed[], renamed[], valueChanged[], scaleDiff, structureDelta, contrastDrift[], scoreDelta, checks[] }. Results cached ~24h per URL pair.',
         inputSchema: z.object({
           urlA: z.string().describe('First URL to compare (e.g. your design system).'),
@@ -1083,6 +1102,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     server.registerTool(
       'designesy_report',
       {
+        ...mcpToolDisplay('designesy_report'),
         description: 'Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable: fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.',
         inputSchema: z.object({
           url: z.string().describe('Public URL to generate a design-intelligence report for.'),

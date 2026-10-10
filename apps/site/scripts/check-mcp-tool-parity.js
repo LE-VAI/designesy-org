@@ -21,6 +21,25 @@
  *   - every registry entry is registered in the route (no silent removals)
  * A one-directional check would let the other half drift.
  *
+ * TITLES AND ANNOTATIONS (added 2026-10-09)
+ * MCP clients and directories show a tool's title and its behaviour hints
+ * (readOnlyHint, destructiveHint, idempotentHint, openWorldHint) to the person
+ * deciding whether to let it run. Directories reject a tool that lacks a title
+ * or a readOnlyHint/destructiveHint. A missing hint falls back to the spec
+ * default, which is the least safe reading (readOnlyHint false, destructiveHint
+ * true), and a wrong hint misinforms that person. So this gate also asserts:
+ *   - every tool has an MCP_TOOL_ANNOTATIONS entry with a title that follows
+ *     the copy rules and all four hints written as true/false literals, and a
+ *     read-only tool is never marked destructive;
+ *   - every registerTool() config spreads mcpToolDisplay() for its OWN name and
+ *     does not override title or annotations after it;
+ *   - packages/designesy-mcp (the PyPI stdio server) declares the same title
+ *     and the same four hints for every tool. Its own test suite asserts the
+ *     same agreement from the other side, so either CI job catches a drift.
+ * The PyPI file sits outside apps/site. A missing file fails this gate, except
+ * in a Vercel build (VERCEL=1), which may upload only apps/site; there the
+ * agreement check prints NOT EVALUATED instead of passing silently.
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -31,6 +50,10 @@ const path = require('node:path');
 const APP = path.join(__dirname, '..');
 const ROUTE = path.join(APP, 'app', 'api', 'mcp', 'route.ts');
 const REGISTRY = path.join(APP, 'app', 'lib', 'mcp-tool-registry.ts');
+const PYPI = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'designesy_mcp_server.py');
+
+const HINTS = ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'];
+const TITLE_MAX_WORDS = 5;
 
 /**
  * Strip comments so a tool name in prose cannot satisfy the assertion.
@@ -108,6 +131,60 @@ function stripComments(src) {
   return out.join('');
 }
 
+/**
+ * Replace the contents of string literals with spaces (quotes kept), so a
+ * description or .describe() text cannot look like a `title:` key or a brace.
+ * Input must already be comment-free and must start outside a string.
+ */
+function blankStrings(code) {
+  const out = [];
+  let inString = null;
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i];
+    if (inString) {
+      if (c === '\\') {
+        out.push(' ', ' ');
+        i++;
+        continue;
+      }
+      if (c === inString) {
+        inString = null;
+        out.push(c);
+        continue;
+      }
+      out.push(c === '\n' ? '\n' : ' ');
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') inString = c;
+    out.push(c);
+  }
+  return out.join('');
+}
+
+/**
+ * Keep only the characters at the top level of the first object literal in
+ * `code` (depth 1), blanking everything nested deeper. Used to find the keys of
+ * a registerTool() config without matching keys inside its inputSchema.
+ */
+function topLevelOfObject(code) {
+  let depth = 0;
+  const out = [];
+  for (const c of code) {
+    if (c === '{' || c === '(' || c === '[') {
+      depth++;
+      out.push(depth === 1 ? c : ' ');
+      continue;
+    }
+    if (c === '}' || c === ')' || c === ']') {
+      out.push(depth === 1 ? c : ' ');
+      depth--;
+      continue;
+    }
+    out.push(depth === 1 ? c : c === '\n' ? '\n' : ' ');
+  }
+  return out.join('');
+}
+
 /** Extract tool names from server.registerTool('name', ...) calls. */
 function routeToolNames(src) {
   const code = stripComments(src);
@@ -123,6 +200,31 @@ function routeToolNames(src) {
   return names;
 }
 
+/**
+ * For each registerTool() call: which mcpToolDisplay() names its config spreads,
+ * and which top-level keys of the config would override that spread.
+ * The config is the text between the tool name and the handler (`async (`).
+ */
+function routeToolConfigs(src) {
+  const code = stripComments(src);
+  const re = /registerTool\(\s*'([a-z0-9_]+)'\s*,/g;
+  const starts = [];
+  let m;
+  while ((m = re.exec(code)) !== null) starts.push({ name: m[1], from: m.index + m[0].length, at: m.index });
+  const configs = new Map();
+  starts.forEach((s, i) => {
+    const end = i + 1 < starts.length ? starts[i + 1].at : code.length;
+    const segment = code.slice(s.from, end);
+    const handlerAt = segment.search(/\basync\s*\(/);
+    const config = handlerAt >= 0 ? segment.slice(0, handlerAt) : segment;
+    const spreads = [...config.matchAll(/\.\.\.\s*mcpToolDisplay\(\s*'([a-z0-9_]+)'\s*\)/g)].map((x) => x[1]);
+    const top = topLevelOfObject(blankStrings(config));
+    const overrides = [...top.matchAll(/(?:^|[\s,{])(title|annotations)\s*:/g)].map((x) => x[1]);
+    configs.set(s.name, { spreads, overrides, handlerFound: handlerAt >= 0 });
+  });
+  return configs;
+}
+
 /** Extract names from the registry's MCP_TOOL_NAMES array literal. */
 function registryToolNames(src) {
   const code = stripComments(src);
@@ -133,6 +235,254 @@ function registryToolNames(src) {
   let m;
   while ((m = re.exec(arr[1])) !== null) names.add(m[1]);
   return names;
+}
+
+/**
+ * Read a one-entry-per-line annotation table: the lines between `startRe` and
+ * the first line that is a bare closing brace. Returns null when the table is
+ * not found, else { entries: Map(name -> {title, hints}), unreadable: [lines] }.
+ *
+ * `quote` is the string quote the language uses, and `bool` maps its boolean
+ * literals to JS booleans. A hint whose value is anything but a literal is
+ * recorded as such, never coerced.
+ */
+function readAnnotationTable(lines, startRe, entryRe, quote, bool) {
+  const start = lines.findIndex((l) => startRe.test(l));
+  if (start < 0) return null;
+  const entries = new Map();
+  const unreadable = [];
+  const titleRe = new RegExp(`${quote === '"' ? '"title"' : 'title'}\\s*:\\s*${quote}((?:[^${quote}\\\\]|\\\\.)*)${quote}`);
+  const literals = Object.keys(bool).join('|');
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*\}/.test(line)) break;
+    if (/^\s*$/.test(line) || /^\s*(#|\/\/)/.test(line)) continue;
+    const m = line.match(entryRe);
+    if (!m) {
+      unreadable.push(line.trim());
+      continue;
+    }
+    const body = m[2];
+    const t = body.match(titleRe);
+    const hints = {};
+    for (const h of HINTS) {
+      const key = quote === '"' ? `"${h}"` : h;
+      const hm = body.match(new RegExp(`${key}\\s*:\\s*([^,}\\s]+)`));
+      if (!hm) continue;
+      hints[h] = new RegExp(`^(${literals})$`).test(hm[1]) ? bool[hm[1]] : `not a literal: ${hm[1]}`;
+    }
+    entries.set(m[1], { title: t ? t[1] : null, hints });
+  }
+  return { entries, unreadable };
+}
+
+function registryAnnotations(src) {
+  const code = stripComments(src);
+  return readAnnotationTable(
+    code.split(/\r?\n/),
+    /MCP_TOOL_ANNOTATIONS\s*=\s*\{\s*$/,
+    /^\s*([a-z0-9_]+)\s*:\s*\{(.*)\}\s*,?\s*$/,
+    "'",
+    { true: true, false: false },
+  );
+}
+
+function pypiAnnotations(src) {
+  return readAnnotationTable(
+    src.split(/\r?\n/),
+    /^TOOL_ANNOTATIONS\b.*=\s*\{\s*$/,
+    /^\s*"([a-z0-9_]+)"\s*:\s*\{(.*)\}\s*,?\s*$/,
+    '"',
+    { True: true, False: false },
+  );
+}
+
+/** House copy rules for a tool title. Returns a list of problems. */
+function titleProblems(title) {
+  const problems = [];
+  if (!title || !title.trim()) return ['empty'];
+  if (title.includes('\u2014')) problems.push('contains an em dash');
+  const words = title.trim().split(/\s+/);
+  if (words.length > TITLE_MAX_WORDS) problems.push(`${words.length} words (at most ${TITLE_MAX_WORDS})`);
+  const articles = words.filter((w) => /^(a|an|the)$/i.test(w));
+  if (articles.length) problems.push(`uses the article "${articles[0]}"`);
+  return problems;
+}
+
+function annotationFindings(registered, ann, configs) {
+  const findings = [];
+  if (ann === null) {
+    findings.push({
+      id: 'annotations-table-unreadable',
+      why: 'Could not find `export const MCP_TOOL_ANNOTATIONS = {` in the registry, so no title or hint can be checked. The gate fails rather than passing quietly.',
+      fix: 'Restore the MCP_TOOL_ANNOTATIONS table in app/lib/mcp-tool-registry.ts, one entry per line.',
+    });
+    return findings;
+  }
+  for (const line of ann.unreadable) {
+    findings.push({
+      id: 'annotations-line-unreadable',
+      why: `This line of MCP_TOOL_ANNOTATIONS is not a one-line \`name: { ... },\` entry, so its values cannot be checked: ${line}`,
+      fix: 'Write each tool\'s entry on a single line.',
+    });
+  }
+  const titles = new Map();
+  for (const n of registered) {
+    const e = ann.entries.get(n);
+    if (!e) {
+      findings.push({
+        id: `annotation-missing:${n}`,
+        why: `"${n}" is registered in the MCP route but has no MCP_TOOL_ANNOTATIONS entry, so clients see no title and fall back to the least safe hints.`,
+        fix: `Add a one-line '${n}' entry with title, readOnlyHint, destructiveHint, idempotentHint and openWorldHint to MCP_TOOL_ANNOTATIONS.`,
+      });
+      continue;
+    }
+    if (!e.title) {
+      findings.push({
+        id: `title-missing:${n}`,
+        why: `"${n}" has no title. Directories reject a tool without one.`,
+        fix: `Give '${n}' a short human title in MCP_TOOL_ANNOTATIONS.`,
+      });
+    } else {
+      const problems = titleProblems(e.title);
+      if (problems.length) {
+        findings.push({
+          id: `title-copy:${n}`,
+          why: `The title "${e.title}" breaks the copy rules: ${problems.join('; ')}.`,
+          fix: `Rewrite it in at most ${TITLE_MAX_WORDS} words, without articles or em dashes.`,
+        });
+      }
+      if (titles.has(e.title)) {
+        findings.push({
+          id: `title-duplicate:${n}`,
+          why: `"${n}" and "${titles.get(e.title)}" share the title "${e.title}", so a person cannot tell them apart.`,
+          fix: 'Give each tool its own title.',
+        });
+      } else {
+        titles.set(e.title, n);
+      }
+    }
+    for (const h of HINTS) {
+      if (typeof e.hints[h] !== 'boolean') {
+        findings.push({
+          id: `hint-missing:${n}:${h}`,
+          why: `"${n}" does not set ${h} to a true/false literal (${e.hints[h] === undefined ? 'absent' : e.hints[h]}). A client would apply the spec default instead of a decision read from the code.`,
+          fix: `Set ${h}: true or false on '${n}' in MCP_TOOL_ANNOTATIONS.`,
+        });
+      }
+    }
+    if (e.hints.readOnlyHint === true && e.hints.destructiveHint === true) {
+      findings.push({
+        id: `hint-contradiction:${n}`,
+        why: `"${n}" is marked both read-only and destructive.`,
+        fix: 'A read-only tool makes no updates: set destructiveHint: false, or readOnlyHint: false if it does write.',
+      });
+    }
+    const c = configs.get(n);
+    if (c) {
+      if (!c.spreads.includes(n)) {
+        findings.push({
+          id: `route-not-annotated:${n}`,
+          why: `The registerTool('${n}', ...) config does not spread mcpToolDisplay('${n}'), so the endpoint serves it without its title and hints.`,
+          fix: `Add \`...mcpToolDisplay('${n}'),\` as the first entry of its config in app/api/mcp/route.ts.`,
+        });
+      }
+      for (const other of c.spreads.filter((s) => s !== n)) {
+        findings.push({
+          id: `route-annotation-mismatch:${n}`,
+          why: `The registerTool('${n}', ...) config spreads mcpToolDisplay('${other}'), so it would serve another tool's title and hints.`,
+          fix: `Change it to mcpToolDisplay('${n}').`,
+        });
+      }
+      for (const key of c.overrides) {
+        findings.push({
+          id: `route-annotation-override:${n}:${key}`,
+          why: `The registerTool('${n}', ...) config sets \`${key}\` itself, which overrides the registry entry and is invisible to this gate.`,
+          fix: `Remove \`${key}\` from the config and change MCP_TOOL_ANNOTATIONS instead.`,
+        });
+      }
+      if (!c.handlerFound) {
+        findings.push({
+          id: `route-config-unreadable:${n}`,
+          why: `Could not find the handler (\`async (\`) after registerTool('${n}', ...), so its config boundary is unknown.`,
+          fix: 'Keep the handler an `async (...) => {}` function, or update this gate.',
+        });
+      }
+    }
+  }
+  for (const n of ann.entries.keys()) {
+    if (!registered.has(n)) {
+      findings.push({
+        id: `annotation-phantom:${n}`,
+        why: `"${n}" has an MCP_TOOL_ANNOTATIONS entry but is not registered in the MCP route.`,
+        fix: `Remove '${n}' from MCP_TOOL_ANNOTATIONS, or register it in app/api/mcp/route.ts.`,
+      });
+    }
+  }
+  return findings;
+}
+
+function pypiFindings(remote, pypi) {
+  const findings = [];
+  if (pypi === null) {
+    findings.push({
+      id: 'pypi-annotations-unreadable',
+      why: 'Could not find `TOOL_ANNOTATIONS ... = {` in packages/designesy-mcp/designesy_mcp_server.py, so the two servers cannot be compared.',
+      fix: 'Restore the TOOL_ANNOTATIONS table there, one entry per line.',
+    });
+    return { findings, agreedTitles: 0, agreedHints: 0 };
+  }
+  for (const line of pypi.unreadable) {
+    findings.push({
+      id: 'pypi-annotations-line-unreadable',
+      why: `This line of the PyPI TOOL_ANNOTATIONS is not a one-line \`"name": { ... },\` entry: ${line}`,
+      fix: 'Write each tool\'s entry on a single line.',
+    });
+  }
+  let agreedTitles = 0;
+  let agreedHints = 0;
+  const names = new Set([...remote.entries.keys(), ...pypi.entries.keys()]);
+  for (const n of names) {
+    const r = remote.entries.get(n);
+    const p = pypi.entries.get(n);
+    if (!p) {
+      findings.push({
+        id: `pypi-annotation-missing:${n}`,
+        why: `"${n}" is annotated for the hosted endpoint but not in the PyPI server.`,
+        fix: `Add '${n}' to TOOL_ANNOTATIONS in packages/designesy-mcp/designesy_mcp_server.py with the same title and hints.`,
+      });
+      continue;
+    }
+    if (!r) {
+      findings.push({
+        id: `pypi-annotation-extra:${n}`,
+        why: `"${n}" is annotated in the PyPI server but not in the hosted endpoint's registry.`,
+        fix: `Add it to MCP_TOOL_ANNOTATIONS, or remove it from the PyPI TOOL_ANNOTATIONS.`,
+      });
+      continue;
+    }
+    if (r.title !== p.title) {
+      findings.push({
+        id: `pypi-title-disagrees:${n}`,
+        why: `"${n}" is titled "${r.title}" on the hosted endpoint and "${p.title}" in the PyPI server.`,
+        fix: 'Use one title on both surfaces.',
+      });
+    } else {
+      agreedTitles++;
+    }
+    for (const h of HINTS) {
+      if (r.hints[h] !== p.hints[h]) {
+        findings.push({
+          id: `pypi-hint-disagrees:${n}:${h}`,
+          why: `"${n}" has ${h} ${String(r.hints[h])} on the hosted endpoint and ${String(p.hints[h])} in the PyPI server. Both proxy the same engines, so one of them misinforms the person approving the call.`,
+          fix: `Re-read the code for '${n}' and set the same ${h} on both surfaces.`,
+        });
+      } else if (typeof r.hints[h] === 'boolean') {
+        agreedHints++;
+      }
+    }
+  }
+  return { findings, agreedTitles, agreedHints };
 }
 
 function main() {
@@ -147,8 +497,10 @@ function main() {
     }
   }
 
-  const registered = routeToolNames(fs.readFileSync(ROUTE, 'utf8'));
-  const declared = registryToolNames(fs.readFileSync(REGISTRY, 'utf8'));
+  const routeSrc = fs.readFileSync(ROUTE, 'utf8');
+  const registrySrc = fs.readFileSync(REGISTRY, 'utf8');
+  const registered = routeToolNames(routeSrc);
+  const declared = registryToolNames(registrySrc);
 
   const findings = [];
   if (declared === null) {
@@ -185,16 +537,58 @@ function main() {
     }
   }
 
+  // Titles and annotation hints, on the hosted endpoint.
+  const remoteAnn = registryAnnotations(registrySrc);
+  const annFindings = annotationFindings(registered, remoteAnn, routeToolConfigs(routeSrc));
+  findings.push(...annFindings);
+  const annotated = remoteAnn
+    ? [...registered].filter((n) => !annFindings.some((f) => f.id.endsWith(`:${n}`) || f.id.includes(`:${n}:`))).length
+    : 0;
+
+  // Agreement with the PyPI stdio server.
+  let pypi;
+  if (fs.existsSync(PYPI)) {
+    if (remoteAnn === null) {
+      pypi = { evaluated: false, reason: 'the hosted registry table is unreadable (reported above)' };
+    } else {
+      const res = pypiFindings(remoteAnn, pypiAnnotations(fs.readFileSync(PYPI, 'utf8')));
+      findings.push(...res.findings);
+      pypi = { evaluated: true, agreedTitles: res.agreedTitles, agreedHints: res.agreedHints };
+    }
+  } else if (process.env.VERCEL === '1') {
+    pypi = { evaluated: false, reason: `${path.relative(APP, PYPI)} is not in this Vercel build` };
+  } else {
+    findings.push({
+      id: 'pypi-server-missing',
+      why: `${PYPI} is missing, so the hosted and PyPI titles and hints cannot be compared. Outside a Vercel build the file is expected to be present.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    pypi = { evaluated: false, reason: 'file missing' };
+  }
+
   if (asJson) {
     console.log(
       JSON.stringify(
-        { ok: findings.length === 0, registered: registered.size, declared: declared ? declared.size : null, findings },
+        {
+          ok: findings.length === 0,
+          registered: registered.size,
+          declared: declared ? declared.size : null,
+          annotated,
+          pypi,
+          findings,
+        },
         null,
         2,
       ),
     );
   } else if (findings.length === 0) {
     console.log(`mcp-tool-parity: OK — ${registered.size} tool(s) match in both the route and the registry`);
+    console.log(`mcp-tool-parity: OK — ${annotated} tool(s) carry a title and all four annotation hints, applied in the route`);
+    if (pypi.evaluated) {
+      console.log(`mcp-tool-parity: OK — the PyPI server agrees on ${pypi.agreedTitles} title(s) and ${pypi.agreedHints} hint value(s)`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] PyPI agreement: ${pypi.reason}`);
+    }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);
     for (const f of findings) {

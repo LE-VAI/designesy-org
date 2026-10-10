@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-designesy_mcp_server — read-only stdio MCP server exposing designesy.org's
-design intelligence infrastructure as native agent tools and resources.
+designesy_mcp_server — stdio MCP server exposing designesy.org's design
+intelligence infrastructure as native agent tools and resources. Every tool
+reads only, except designesy_monitor_score, which can send an alert email (see
+SAFETY below).
 
 Zero external dependencies (stdlib only). Implements the MCP JSON-RPC 2.0
 protocol over stdio (initialize, tools/list, tools/call, resources/list,
@@ -29,9 +31,14 @@ PROVENANCE:
     The server caches responses with a 5-minute TTL. No local files are read.
 
 SAFETY:
-    READ-ONLY. This server never writes anywhere. It only fetches public
-    machine-readable exports from designesy.org via HTTPS. It does not touch
-    source roots, credentials, or local files.
+    Read-only with one exception. designesy_monitor_score posts to
+    designesy.org's /api/monitor, which sends a drift-alert email through
+    Resend when the caller passes `email`, an alert fires, and the server has
+    a Resend key configured. Every other tool only reads: the document tools
+    fetch designesy.org exports, and the scoring tools fetch the URLs the
+    caller supplies, directly or through designesy.org's engines. The server
+    writes no local files and reads no credentials. TOOL_ANNOTATIONS records
+    each tool's hints.
 """
 from __future__ import annotations
 
@@ -44,7 +51,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.1"
+SERVER_VERSION = "1.13.2"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -2395,6 +2402,81 @@ TOOLS = [
         },
     },
 ]
+
+# ── Tool titles and annotations ─────────────────────────────────────────────
+#
+# A display title and four behaviour hints per tool, as MCP 2025-06-18 defines
+# them (Tool.title and ToolAnnotations):
+#
+#   readOnlyHint     True: the tool does not modify its environment.
+#   destructiveHint  True: it may make destructive updates; False: additive
+#                    only. Meaningful only when readOnlyHint is False.
+#   idempotentHint   True: repeating a call with the same arguments has no
+#                    additional effect. Meaningful only when readOnlyHint is
+#                    False.
+#   openWorldHint    True: it may interact with external entities beyond the
+#                    server (here, any URL the caller supplies).
+#
+# All four are explicit on every tool, so none is left to a default a client
+# may not share. The hosted endpoint carries the same table in
+# apps/site/app/lib/mcp-tool-registry.ts (MCP_TOOL_ANNOTATIONS); the test suite
+# and apps/site/scripts/check-mcp-tool-parity.js both fail when the two
+# disagree. Keep one entry per line: that check reads this table line by line.
+#
+# Why the values hold for this package:
+# - The seven document tools and designesy_a11y_score fetch fixed designesy.org
+#   exports only. designesy_a11y_score writes its url argument into the
+#   returned script and never fetches it. Closed world.
+# - designesy_tokens_score and designesy_motion_score fetch the caller's url.
+#   designesy_score posts to the designesy.org engine, which fetches the url;
+#   when the engine is unreachable, its offline fallback fetches the page here
+#   and, only when a Chrome DevTools endpoint answers on 127.0.0.1:9222, opens
+#   a tab there to measure and then closes it. That probe leaves nothing
+#   behind, so the tool stays read-only. The other scoring tools post to the
+#   designesy.org engines, which fetch the url. Open world.
+# - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
+#   email through Resend when the caller passes `email`, an alert fires (one
+#   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
+#   instance has not sent the same alert set for that url and address within
+#   the hour. Sending mail is additive, so destructiveHint is False; a repeated
+#   call can send another email, so idempotentHint is False.
+
+TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
+    "designesy_catalog": {"title": "List Designesy packages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_contract": {"title": "Get design contract", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_design_review": {"title": "Get design review rubric", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_skill_md": {"title": "Get contract as SKILL.md", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_agent_json": {"title": "Get agent discovery document", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_llms_txt": {"title": "Get llms.txt brief", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_llms_full_txt": {"title": "Get llms-full.txt brief", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_score": {"title": "Score URL against contract", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_tokens_score": {"title": "Validate DTCG tokens", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_a11y_score": {"title": "Get WCAG audit kit", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
+    "designesy_motion_score": {"title": "Validate Lottie animation", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_drift_score": {"title": "Score UI drift", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_readiness_score": {"title": "Score AI readiness", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_guardrails": {"title": "Generate build-contract bundle", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_monitor_score": {"title": "Monitor drift with email alerts", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True},
+    "designesy_compare": {"title": "Compare two design systems", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+    "designesy_report": {"title": "Build composite design report", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+}
+
+
+def _with_title_and_annotations(tool: dict[str, Any]) -> dict[str, Any]:
+    """Return the tool with its title and annotations, title right after name.
+
+    The title goes in both places the spec reads it from: Tool.title
+    (2025-06-18) and annotations.title (2025-03-26). Display precedence is
+    title, then annotations.title, then name, so both come from one entry.
+    A tool missing from TOOL_ANNOTATIONS raises KeyError at import, so an
+    untitled tool cannot ship.
+    """
+    entry = TOOL_ANNOTATIONS[tool["name"]]
+    rest = {k: v for k, v in tool.items() if k != "name"}
+    return {"name": tool["name"], "title": entry["title"], **rest, "annotations": dict(entry)}
+
+
+TOOLS = [_with_title_and_annotations(t) for t in TOOLS]
 
 TOOL_MAP = {t["name"]: t for t in TOOLS}
 

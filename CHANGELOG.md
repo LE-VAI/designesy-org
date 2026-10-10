@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.2] — 2026-10-09
+
+**designesy-mcp 1.13.2** (PyPI, MCP registry): every tool declares a title and the four MCP annotation hints.
+
+### Added
+
+- **MCP tool titles and annotations.** Each of the 17 tools on the hosted
+  endpoint (`/api/mcp`) and in the PyPI stdio server now declares a `title`
+  (as `Tool.title` and `annotations.title`) and all four MCP 2025-06-18 hints:
+  `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`.
+  Every value was read from the handler and the API route it calls. Sixteen
+  tools are read-only. `designesy_monitor_score` is marked `readOnlyHint:
+  false`, `destructiveHint: false` and `idempotentHint: false`, because
+  `/api/monitor` sends a drift-alert email through Resend when the caller
+  passes `email`, an alert fires and the server has a Resend key.
+  `designesy_a11y_score` and the seven document tools are closed world; the
+  tools that fetch a caller's URL are open world.
+- **The annotations are gated.** `check-mcp-tool-parity.js` fails when a tool
+  lacks a title or one of the four hints, when the route does not apply a
+  tool's own entry, or when the PyPI server's titles and hints differ from the
+  hosted endpoint's. The Python suite (`test_tool_annotations.py`) asserts the
+  same from the package side, against the served `tools/list`.
+
+### Fixed
+
+- **The PyPI summary and README no longer call the server read-only.** Both
+  said it never writes anywhere, while `designesy_monitor_score` can send
+  email. The summary now reads "Read-only except monitor alerts, which can send
+  email when configured", and the README's Safety section states when the email
+  goes out.
+
 ## [1.13.1] — 2026-10-08
 
 **designesy-mcp 1.13.1** (PyPI, MCP registry): the offline fallback mirrors engine 1.1.0 under a drift gate.

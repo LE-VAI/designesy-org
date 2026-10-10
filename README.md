@@ -172,7 +172,7 @@ Designesy is a system.
 ## FAQ
 
 **Does it need an API key?**
-No — all 17 tools are read-only. The MCP endpoint is stateless Streamable HTTP with no authentication.
+No. The MCP endpoint is stateless Streamable HTTP with no authentication. Sixteen of the 17 tools are read-only; `designesy_monitor_score` can send a drift-alert email to an address you pass.
 
 **Is it deterministic?**
 Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.

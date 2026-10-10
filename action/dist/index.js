@@ -187,7 +187,7 @@ function buildSarif(scoreBody, url) {
         tool: {
           driver: {
             name: 'Designesy',
-            semanticVersion: '1.13.1',
+            semanticVersion: '1.13.2',
             informationUri: 'https://www.designesy.org',
             rules,
           },

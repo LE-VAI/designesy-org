@@ -127,6 +127,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A version is a name, not a column of figures: tabular slots set each
+   period a digit wide, and "v0.4.3" read as "v0 . 4 . 3". */
+.home .home-kicker .home-kicker-version {
+  font-variant-numeric: normal;
+  font-feature-settings: normal;
+}
+
+/* The premise and the claim. Both lines keep the ink; the weight carries
+   the hierarchy, so "AI makes execution free." reads as the setup and
+   "We make execution provable." as the answer. At 700 the premise was the
+   heaviest thing on the page, and it is not ours. */
+.home .hero-display-line.is-premise {
+  font-weight: 450;
+}
+
 .home-kicker-live {
   position: relative;
   width: 7px;
@@ -136,13 +151,16 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 20%, transparent);
 }
 
-/* The claim's measure, on the claim (it used to cap the whole copy column,
-   form included). It grows in step with the headline's size (home.css): 58rem
-   up to a 1440px viewport, then +0.4287px per pixel (0.034 x 928/73.6) to
-   77.6rem, so the measure stays 12.61em wide at every size and the claim
-   breaks to the same three lines at 1440, 1920 and 2560. */
+/* The claim is a couplet: one sentence per line at every width from 721px.
+   The old 12.61em measure was sized for the rotating word, and once the
+   word stopped rotating it broke the static claim into a staircase that
+   left "provable." alone on a third line. The measure is now the second
+   line's own width ("We make execution provable." sets 13.86em in
+   Fraunces 700 at opsz 32) plus room, so it scales with the type, and the
+   size is capped at 7cqi of the hero (home.css) so that width always fits
+   the column: 49px at 768, 73.6px at 1440, 98.4px at 2560. */
 .home .home-hero .hero-title {
-  max-width: clamp(58rem, 58rem + (100vw - 1440px) * 0.4287, 77.6rem);
+  max-width: min(100%, 14.2em);
   margin-bottom: 1.4rem;
 }
 
@@ -158,6 +176,10 @@
    baseline, the bar 0.15-0.2em) and left a blob at the word's left end. At
    -0.17em its top clears the descender by 2px at 390, 5px at 1440. */
 .hero-proof-line {
+  /* The resting rule: the console withdraws the underline for about seven
+     seconds of every twelve while it runs, and "provable" lost its mark.
+     The track stays; the verdict fills it. */
+  background: color-mix(in oklab, var(--ink) 16%, transparent);
   position: absolute;
   left: 0.02em;
   right: 0.02em;
