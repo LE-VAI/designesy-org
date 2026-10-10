@@ -6,11 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**@designesy/score 0.7.1** (npm). Engine 1.2.0, unchanged: no check, verdict
-or weight changes. Under `npx`, v37 now runs the way it already runs on
-designesy.org, and no result carries a local file path.
+## [1.13.5] — 2026-10-10
+
+**designesy-mcp 1.13.5** (PyPI, MCP registry): no result or error the PyPI server returns carries a local file path.
 
 ### Fixed
+
+- **The PyPI server scrubs local paths from what it returns.** A caught
+  error's text could carry the file system of the machine running the server:
+  the browser-probe errors (v02, v21), a failed `/api/score` call and the
+  JSON-RPC error messages quoted the exception as raised, path included.
+  `_scrub_local_paths` replaces absolute paths (a drive letter, a UNC share, a
+  POSIX home, temp or system root), `file://` URLs and npm cache segments with
+  "a local path", "a local file" or "the npm cache", keeps the clause that
+  says what failed, and runs on every offline check detail too. It mirrors
+  `sanitizeErrorText` in the TypeScript engines, and
+  `test/test_error_text.py` shares their cases.
+
+### Also merged since 1.13.4
+
+**@designesy/score 0.7.1** (npm), released on its own (`score-v0.7.1`).
+Engine 1.2.0, unchanged: no check, verdict or weight changes. Under `npx`, v37
+now runs the way it already runs on designesy.org, and no result carries a
+local file path.
 
 - **v37 runs under `npx @designesy/score`.** The engine lints a site's
   `/DESIGN.md` with Google's `@google/design.md` linter, but 0.7.0 did not
@@ -34,12 +52,6 @@ designesy.org, and no result carries a local file path.
   local path"). The source-drift gate compares the function and the
   orchestrators' call to it. `test/error-text.test.mjs` pins the cases, each
   failing with the sanitiser removed.
-- **designesy-mcp (next release): the same scrub in the PyPI server.** Its
-  browser-probe errors (v02, v21), a failed `/api/score` call and JSON-RPC
-  error messages could carry a local path the same way; `_scrub_local_paths`
-  mirrors the TypeScript function and its tests share the cases. No version
-  bump here: 1.13.4 shipped without it, so it ships with the next
-  designesy-mcp release.
 
 ## [1.13.4] — 2026-10-10
 
