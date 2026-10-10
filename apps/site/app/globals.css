@@ -9752,14 +9752,9 @@ a.lab-card:focus-visible .lab-card-arrow {
     top: calc(var(--space-72) + var(--space-16));
   }
 
-  /* In the 450px pane the status tabs take balanced rows, as on a phone. */
+  /* In the 450px pane the status tabs wrap into rows, as on a phone. */
   .score-results > .score-controls-card .score-filter-segmented {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .score-results > .score-controls-card .score-filter-segmented:has(> .score-filter-tab:nth-child(4):last-child) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
   }
 }
 
@@ -11252,9 +11247,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     var(--rim) border-box;
   border-radius: var(--radius-sm);
   box-shadow: var(--elev-1);
-  /* Transform only: the tabs share equal tracks, so the pill's width rarely
-     changes between them, and when it does it snaps rather than animating a
-     layout property. */
+  /* Transform only: the pill's width follows the selected tab's label and
+     snaps, rather than animating a layout property. */
   transition: transform var(--duration, 0.3s) var(--ease-out, ease-out);
   pointer-events: none;
   z-index: 0;
@@ -11290,8 +11284,21 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 }
 
+/* Each tab takes its label's width on one line, and the strip wraps into the
+   rows it needs. The plain status names ("Needs a browser run", "Does not
+   apply") are longer than the ones they replaced ("Manual", "N/A"): in equal
+   tracks they broke onto three lines in a 105px tab at 1440 and ran into the
+   next tab at 390. An 8px inset keeps all six on one row in the 650px home
+   card (12px left the sixth alone on a second). The indicator follows the
+   active tab on both axes. */
+.score-filter-segmented {
+  flex-wrap: wrap;
+}
+
 .score-filter-tab {
-  flex: 1;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  padding-inline: var(--space-8);
   height: 2.25rem;
   display: flex;
   align-items: center;
@@ -11850,19 +11857,9 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     text-align: center;
   }
 
-  /* The status tabs wrap into balanced rows instead of scrolling: at 390 the
-     last tab was cut mid-word ("Manua…") with no scroll cue. The column count
-     follows the tab count (3 to 6 tabs), so no row holds a single tab; the
-     indicator moves on both axes. */
-  .score-filter-segmented {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .score-filter-segmented:has(> .score-filter-tab:nth-child(4):last-child) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
+  /* The status tabs wrap into rows instead of scrolling: at 390 the last tab
+     was cut mid-word ("Manua…") with no scroll cue. Each row fills the strip;
+     the indicator moves on both axes. */
   .score-filter-tab {
     padding: 0 var(--space-fine-60);
     font-size: 0.75rem;
