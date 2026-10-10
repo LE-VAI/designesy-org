@@ -1000,6 +1000,14 @@ p {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  /* Room for the focus ring. The row scrolls sideways, and a scroller clips
+     its padding box on both axes: the links fill its 44px height, so their
+     rings (2px, 2px out) lost the top and bottom, and the first and last
+     link lost a side. The row pads 6px all round and gives it back as
+     margin, so the links stay where they were and the ring fits inside the
+     clip. The capsule pads its row by the same 6px, so the room is there. */
+  padding: var(--space-6);
+  margin: calc(-1 * var(--space-6));
 }
 
 .nav-links::-webkit-scrollbar {
@@ -1038,7 +1046,18 @@ p {
 }
 
 .nav-links a:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+}
+
+/* The capsule's other controls take the same 2px offset as its links, not
+   the global 3px. The capsule pads its 44px controls by 6px, so a ring 3px
+   out put its last pixel on the capsule's lit rim, a light grey line the
+   ring cannot hold 3:1 against; at 2px a pixel of glass separates them. */
+.topbar .wordmark:focus-visible,
+.topbar .cmdk-trigger:focus-visible,
+.topbar .senses-trigger:focus-visible,
+.topbar .topbar-cta:focus-visible {
   outline-offset: 2px;
 }
 
@@ -2369,7 +2388,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .pipeline-step:focus-within .pipeline-node {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -3495,6 +3514,12 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   .footer-badge:hover {
     opacity: 1;
   }
+}
+
+/* Focus lifts the badge to full opacity as hover does. Its ring is drawn on
+   the badge, so at rest the 0.85 dimmed the ring as well (2.76:1 measured). */
+.footer-badge:focus-visible {
+  opacity: 1;
 }
 
 /*
@@ -4943,7 +4968,7 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 
 /* Focus ring must remain visible on the card surface: the row is a link. */
 .docs-card-grid .row:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
   border-radius: var(--radius);
 }
@@ -5124,7 +5149,7 @@ html[data-motion="paused"] .docs-card-grid .row::before {
 .state-marquee-toggle:focus-visible {
   border-color: var(--muted);
   color: var(--ink);
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 1px;
 }
 
@@ -5213,13 +5238,16 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-/* Keyboard path — focus ring from the contract's own --focus-ring token.
-   Offset outside the pill so the ring never clips against the marquee's
-   mask gradient. */
+/* Keyboard path: the house ring, --signal-access, as every focus rule takes
+   it (see :focus-visible). The contract's --focus-ring still resolves to
+   --signal-light, which measures under 3:1 beside the dark surfaces, so the
+   site no longer draws a ring with it until the contract moves too. Offset
+   outside the pill so the ring never clips against the marquee's mask
+   gradient. */
 .state-marquee-pill:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
-  border-color: var(--focus-ring);
+  border-color: var(--signal-access);
 }
 
 /* Live — bold signal pills with pulse dot */
@@ -5344,7 +5372,7 @@ button.row:active {
 
 .row:focus-visible,
 .layer-item:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -6706,7 +6734,7 @@ button.check-cell {
     transform: translateY(-7px) rotate(-45deg);
   }
   .nav-trigger:focus-visible {
-    outline: 2px solid var(--signal-light);
+    outline: 2px solid var(--signal-access);
     outline-offset: 2px;
   }
   /* Mobile drawer scrim — frosted dim (not just opaque). The 4px blur
@@ -6808,7 +6836,7 @@ button.check-cell {
     }
   }
   .nav-drawer-close:focus-visible {
-    outline: 2px solid var(--signal-light);
+    outline: 2px solid var(--signal-access);
     outline-offset: 2px;
   }
   .nav-drawer-close-icon {
@@ -6845,7 +6873,7 @@ button.check-cell {
     font-weight: 600;
   }
   .nav-drawer a:focus-visible {
-    outline: 2px solid var(--signal-light);
+    outline: 2px solid var(--signal-access);
     outline-offset: 2px;
   }
 }
@@ -8645,7 +8673,7 @@ a.field-card:active {
   transform: scale(0.97);
 }
 .copy-prompt-btn:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 1px;
 }
 .copy-prompt-btn.is-copied {
@@ -8762,14 +8790,47 @@ html[data-motion="paused"] .copy-prompt-btn:active {
 
 /* --- Focus --- */
 
+/* The ring is --signal-access, the signal's on-surface tint, in both themes.
+   It was --signal-light (#3358e8), which on the dark theme measured 3.68:1 on
+   paper, 3.28 on raised and 3.16 on lifted, and fell under 3:1 against what
+   rings actually sit beside: 2.42 on the check cells' fill, 2.83 on the
+   capsule's lip, 1.94 on its lit rim (WCAG 1.4.11 asks 3:1). #5d7bff holds
+   5.71 / 5.11 / 4.93 on that ladder and 3.7 on the cell fill; the light
+   theme's #2a4cd8 holds 6.7 on white. Every house focus rule takes the same
+   token, and scripts/check-focus-visibility.js measures the rings in pixels. */
 :focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
   /* Companion dim halo under the outline — keeps the outline crisp at
      2px while adding a subtle signal atmosphere. Outline stays primary
      (forced-colors safe). */
   box-shadow: 0 0 0 4px var(--signal-dim);
+}
+
+/* A link inside running text shows focus inside its own box: the box fills
+   with the access signal and its text turns to paper, the highlight pattern
+   for inline links. A ring cannot work there. It reaches past the box (the
+   house ring 5px out), a word space is about 4px at these sizes and
+   punctuation sits flush, so the ring painted into the next word: CI
+   measured 1.86:1 where the ring met the "t" after "Continuity waitlist" on
+   /pricing, and on Windows the same ring ran 1px into that letter's box.
+   The fill holds 5.71:1 on the dark paper (6.50 on the light) and the text
+   on it the same. The underline border goes transparent so the fill runs to
+   the box's foot (in paper it read as the fill stopping a pixel short). The
+   outline stays, transparent: forced colours paint it in the system colour
+   and drop the fill. a.text-link out-ranks the history foot's link colour;
+   the meta links come after their hover rule. */
+a.text-link:focus-visible,
+.lab-meta-item a:focus-visible,
+:is(p, li, dd) > a:not([class]):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  background-color: var(--signal-access);
+  color: var(--paper);
+  text-decoration-color: currentColor;
+  border-bottom-color: transparent;
+  box-shadow: none;
 }
 
 /* Card focus-visible — match hover state so keyboard focus is not second-class */
@@ -8831,7 +8892,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .skip-link:focus,
 .skip-link:focus-visible {
   transform: translateY(0);
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -8884,7 +8945,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .back-button:focus-visible {
   opacity: 1;
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -9000,7 +9061,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   opacity: 1;
   border-color: var(--line-strong);
   color: var(--ink);
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -11078,7 +11139,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signal-raw > summary:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -14609,7 +14670,7 @@ select {
 }
 
 .lottie-tip-close:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--signal-access);
   outline-offset: 1px;
 }
 
@@ -14994,8 +15055,10 @@ select {
     background 0.18s var(--ease-out);
 }
 
+/* The house ring (see .state-marquee-pill:focus-visible for why not
+   --focus-ring). */
 .listen-btn:focus-visible {
-  outline: 2px solid var(--focus-ring);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -15175,7 +15238,7 @@ select {
 }
 
 .docs-toc-list a:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 
@@ -15274,7 +15337,7 @@ select {
 }
 
 .agent-action:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--signal-access);
   outline-offset: 2px;
 }
 

@@ -212,8 +212,13 @@
   transform: scale(0.97);
 }
 
+/* Focus: the house ring round the whole slider, with the thumb's halo kept
+   as a second cue. The halo alone (35% of the signal) measured 1.6:1 on the
+   page, under the 3:1 a focus indicator needs, and it marked only the
+   thumb. */
 .orb-param input[type='range']:focus-visible {
-  outline: none;
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
   box-shadow: none;
 }
 
@@ -272,9 +277,11 @@
   transform: scale(0.97);
 }
 
+/* The house ring, 2px out, so page shows between it and the signal fill. The
+   40% halo it replaces measured 1.45:1 dark and 1.82:1 light. */
 .orb-button-primary:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(51, 88, 232, 0.4);
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
 }
 
 .orb-button-ghost {
@@ -295,10 +302,12 @@
   transform: scale(0.97);
 }
 
+/* The house ring (the 40% halo measured 1.77:1 dark); the edge takes the
+   same signal. */
 .orb-button-ghost:focus-visible {
-  outline: none;
-  border-color: var(--signal-light);
-  box-shadow: 0 0 0 3px rgba(51, 88, 232, 0.4);
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+  border-color: var(--signal-access);
 }
 
 /* ── Attribution footer (TASL pattern, dropwire reference) ─────────────── */
@@ -331,12 +340,19 @@
   }
 }
 
+/* These links sit inside running text, a period flush after the last one, so
+   focus is the house highlight for inline links (globals.css, after
+   :focus-visible): the box fills with the access signal, the text turns to
+   paper, and a transparent outline is left for forced colours. The 40% halo
+   it replaces measured 1.44:1 dark, 1.81:1 light. */
 .orb-attr-link:focus-visible {
-  outline: none;
-  color: var(--ink);
-  border-bottom-color: var(--signal-light);
-  box-shadow: 0 0 0 2px rgba(51, 88, 232, 0.4);
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  background-color: var(--signal-access);
+  color: var(--paper);
+  border-bottom-color: transparent;
   border-radius: 2px;
+  box-shadow: none;
 }
 
 /* ── Mark-settle entrance (the ONE authored moment) ────────────────────── */
