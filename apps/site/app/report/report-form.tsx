@@ -74,8 +74,8 @@ export function ReportForm({
   const synthesis = toOutcomes(r?.synthesis);
 
   const weights = (
-    <div className="eg-weights" aria-label="Composite weighting">
-      <span className="eg-label">The composite, drawn to its weights</span>
+    <div className="eg-weights" aria-label="Combined score weighting">
+      <span className="eg-label">The combined score, drawn to its weights</span>
       <div className="eg-weights-row">
         {ENGINES.map((e) => {
           const sub = phase === 'done' ? r?.[e.key] : undefined;
@@ -181,7 +181,7 @@ export function ReportForm({
         }
         errorText={error}
         scoring="re-weighted when an engine returns nothing"
-        restNote="Build a report and each share of the bar fills to its engine's score. The composite is their weighted sum."
+        restNote="Build a report and each share of the bar fills to its engine's score. The combined score is their weighted sum."
         restCard={
           <div className="eg-ref">
             <span className="eg-label">Why these weights</span>

@@ -12,6 +12,7 @@ import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import selfReportRaw from './self-report.json';
+import { fmtScore } from '../score/verdict';
 
 // Self-report receipt data — regenerated weekly from the live engines by
 // scripts/rescore-leaderboard.mjs. Imported (not fetched) so this page stays
@@ -464,9 +465,9 @@ export default function DocsPage() {
             {hasReceipt && selfReport && scoreEngine && driftEngine && readinessEngine ? (
               <>
                 <p>
-                  The composite grade is{' '}
+                  The combined score is{' '}
                   <strong>
-                    {compositeGrade} ({selfReport.composite}/100)
+                    {compositeGrade} ({fmtScore(selfReport.composite as number)} /100)
                   </strong>
                   , a weighted synthesis of the design-score engine (
                   {scoreEngine.score}/100, {scoreEngine.grade}), the drift engine
@@ -502,7 +503,7 @@ export default function DocsPage() {
               <p>
                 This section reads its figures from a generated file. The file
                 is absent, so no numbers are asserted here; run the live
-                composite report below for current values.
+                report below for its combined score.
               </p>
             )}
           </div>
@@ -514,7 +515,7 @@ export default function DocsPage() {
                 data-cuelume-hover="tick"
                 data-cuelume-press
               >
-                Run the live composite report
+                Run the live report
               </Link>
               {' '}or read the{' '}
               <Link

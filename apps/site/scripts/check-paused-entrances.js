@@ -32,7 +32,7 @@ const path = require('path');
 
 const ENDED = new Set([
   'fadeUp', 'scoreCardReveal', 'scoreDrawerOpen', 'auditPanelIn', 'auditStepIn',
-  'verifyStepIn', 'check-fade', 'check-pop', 'constelNodeIn', 'demo-stagger-fade',
+  'verifyStepIn', 'check-fade', 'check-pop', 'demo-stagger-fade',
   'orb-mark-settle', 'eg-host-in', 'eg-host-fade', 'eg-state-in', 'ix-foot',
   'seamDockScatter',
 ]);

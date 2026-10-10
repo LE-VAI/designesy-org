@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../../api/score/route';
+import { fmtScore } from '../verdict';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -74,7 +75,7 @@ function renderBadge(state: BadgeState): string {
   if (state.kind === 'scored') {
     gradeText = state.grade;
     gradeColor = GRADE_FILL[state.grade] || NEUTRAL_FILL;
-    valueText = `${state.score}%`;
+    valueText = `${fmtScore(state.score)} /100`;
   } else if (state.kind === 'unreachable') {
     gradeText = '–';
     gradeColor = NEUTRAL_FILL;
