@@ -4,7 +4,7 @@
  * WHY THIS EXISTS
  * Anthropic's Software Directory Policy, section 2F: software that gives Claude
  * tools "must not direct Claude to dynamically pull behavioral instructions
- * from external sources for Claude to execute". Until designesy-mcp 1.13.3 the
+ * from external sources for Claude to execute". Until designesy-mcp 1.13.4 the
  * document tools returned the published agent files verbatim, so a tool result
  * could carry a second-person prompt ("You are working with Designesy...") and
  * fetch-then-follow steps ("If machine_url is present, fetch it for structured

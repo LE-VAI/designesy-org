@@ -54,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.3"
+SERVER_VERSION = "1.13.4"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -207,7 +207,7 @@ def _fetch_llms_full_txt() -> str:
 #
 # Anthropic's Software Directory Policy, section 2F: software that gives Claude
 # tools must not direct Claude to pull behavioral instructions from external
-# sources to execute. Until 1.13.3 the document tools returned the published
+# sources to execute. Until 1.13.4 the document tools returned the published
 # agent files verbatim, so a tool result could carry a second-person prompt
 # ("You are working with Designesy...") and fetch-then-follow steps ("If
 # machine_url is present, fetch it for structured rules"). Those files stay

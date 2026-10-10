@@ -40,7 +40,7 @@
  * in a Vercel build (VERCEL=1), which may upload only apps/site; there the
  * agreement check prints NOT EVALUATED instead of passing silently.
  *
- * REFERENCE-DATA OUTPUT (added for designesy-mcp 1.13.3)
+ * REFERENCE-DATA OUTPUT (added for designesy-mcp 1.13.4)
  * The document tools wrap what they return as labeled reference data and leave
  * out any part written as steps or a prompt for an AI agent (Anthropic
  * Software Directory Policy 2F). The hosted endpoint does it in

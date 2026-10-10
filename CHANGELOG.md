@@ -6,10 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**designesy-mcp** (hosted endpoint `/api/mcp` and PyPI server): tool output
-reads as reference data, `designesy_contract` can return only the sections you
-need, and every description matches what its tool returns. Made for Anthropic's
-Software Directory Policy (sections 2B, 2F and 5B).
+## [1.13.4] — 2026-10-10
+
+**designesy-mcp 1.13.4** (PyPI, MCP registry, hosted `/api/mcp`): tool output reads as reference data, `designesy_contract` returns only the sections you ask for, and every description matches what its tool returns (Anthropic Software Directory Policy 2B, 2F, 5B).
 
 ### Changed
 
