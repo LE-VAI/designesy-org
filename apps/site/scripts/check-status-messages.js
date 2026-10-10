@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Status messages gate: a failed score run is announced (WCAG 2.2 SC 4.1.3).
+ * Status messages gate: a failed run is announced, with its reason (WCAG 2.2
+ * SC 4.1.3).
  *
  * WHY THIS EXISTS
  * When a score run failed, screen readers heard nothing. The only live region
@@ -12,18 +13,29 @@
  * keyboard walk passed: nothing is wrong with markup that is never announced.
  * Only failing a run and reading what the browser exposes finds it.
  *
+ * The seven other pages built on the instrument (drift, compare, guardrails,
+ * readiness, report, monitor and the M3 converter) had the four-engine form's
+ * shape: the instrument's live line said "stopped without a result" and the
+ * reason sat in the side column, which is drawn, not announced. Each now
+ * hands the instrument its reason as errorText, so the line that was in the
+ * tree all along reads it.
+ *
  * WHAT IT ASSERTS
  * Each surface below is loaded with its API answering with a failure that
  * carries a unique message. The response is held until the browser's
  * accessibility tree (CDP Accessibility.getFullAXTree, the tree a screen
  * reader is served) has been read once, then released, and the tree is read
- * again when the message is on screen. For the message:
+ * again when the message is on screen. The M3 converter fails in the browser,
+ * with no request to hold, so its tree is read at rest and then the convert
+ * that fails is pressed. For the message:
  *   A. it sits inside a live region (aria-live polite or assertive, which
  *      role=status and role=alert imply);
  *   B. that region is an alert, which is announced when it is inserted, or a
  *      region that was already in the tree before the message arrived (the
  *      same DOM node), because a polite region mounted with its text already
- *      in it is not reliably read;
+ *      in it is not reliably read. On an instrument surface it must be the
+ *      second: the instrument's polite line, the same node as before the
+ *      failure, so an alert added beside it does not pass;
  *   C. exactly one live region carries it, so it is announced once;
  *   D. where the surface draws the error icon, the icon's strokes stay inside
  *      its circle (a <line> without y2 ran from y=8 to y=0, out of the top),
@@ -32,10 +44,12 @@
  *
  * PROVING IT CAN FAIL
  * Against a build without the fix, A fails on every surface. --break injects
- * two later regressions into a fixed build, and the gate must exit 1:
- *   - the score form's alert becomes a freshly mounted status region (B), and
+ * three later regressions into a fixed build, and the gate must exit 1:
+ *   - the score form's alert becomes a freshly mounted status region (B),
  *   - the four-engine form's visible card becomes a second alert next to the
- *     instrument's polite line (C).
+ *     instrument's polite line (C), and
+ *   - on every instrument surface, the side column's drawn reason becomes an
+ *     alert next to the polite line (C, and the instrument form of B).
  *
  * Usage:
  *   node scripts/check-status-messages.js --base http://127.0.0.1:3422
@@ -149,9 +163,51 @@ const SURFACES = [
     ready: async () => {},
     trigger: null,
   },
+  // The instrument surfaces: one engine each, its reason read by the
+  // instrument's polite line (instrument: true holds them to that node).
+  ...[
+    ['drift radar (/drift)', '/drift', 'drift', 'URL to scan for drift'],
+    ['guardrails (/guardrails)', '/guardrails', 'guardrails', 'URL to emit guardrails from'],
+    ['AI readiness (/readiness)', '/readiness', 'readiness', 'URL to probe for AI readiness'],
+    ['report (/report)', '/report', 'report', 'URL to report on'],
+    ['drift monitor (/monitor)', '/monitor', 'monitor', 'URL to watch for drift'],
+  ].map(([name, route, api, label]) => ({
+    name: `${name}: run fails`,
+    route,
+    held: `**/api/${api}`,
+    mocks: { [`**/api/${api}`]: fail },
+    ready: (page) => page.getByRole('textbox', { name: label }).waitFor(),
+    trigger: submit(label),
+    instrument: true,
+  })),
+  {
+    name: 'compare (/compare): run fails',
+    route: '/compare',
+    held: '**/api/compare',
+    mocks: { '**/api/compare': fail },
+    ready: (page) => page.getByRole('textbox', { name: 'Second URL, site B' }).waitFor(),
+    trigger: async (page) => {
+      await page.getByRole('textbox', { name: 'First URL, site A' }).fill('example.com');
+      await submit('Second URL, site B')(page);
+    },
+    instrument: true,
+  },
+  {
+    // Converted in the browser: no request to fail, so input with no
+    // Material 3 tokens is the failure, and its parser's message the probe.
+    name: 'M3 converter (/m3-bridge): conversion fails',
+    route: '/m3-bridge',
+    held: null,
+    mocks: {},
+    message: 'No M3 tokens found. Expected CSS custom properties starting with --md-',
+    hydrated: '#m3-input',
+    ready: (page) => page.getByRole('textbox', { name: 'Material 3 tokens to convert' }).fill(':root { color: red; }'),
+    trigger: (page) => page.getByRole('button', { name: 'Convert to DTCG' }).click(),
+    instrument: true,
+  },
 ];
 
-// --break: the two regressions this gate must catch on a fixed build.
+// --break: the regressions this gate must catch on a fixed build.
 const BREAK_SCRIPT = () => {
   const swap = () => {
     // Score form: its alert becomes a status region mounted with its text in it.
@@ -160,6 +216,11 @@ const BREAK_SCRIPT = () => {
     }
     // Four-engine form: the visible card becomes a second announcer.
     for (const el of document.querySelectorAll('.eg-bench .score-error-card:not([role])')) {
+      el.setAttribute('role', 'alert');
+    }
+    // Every instrument: the side column's drawn reason becomes an announcer
+    // next to the polite line.
+    for (const el of document.querySelectorAll('.eg-inst .eg-error:not([role])')) {
       el.setAttribute('role', 'alert');
     }
   };
@@ -173,7 +234,7 @@ function deferred() {
 }
 
 /** The live regions in the accessibility tree, and where the message sits. */
-async function readTree(cdp) {
+async function readTree(cdp, message) {
   const { nodes } = await cdp.send('Accessibility.getFullAXTree');
   const byId = new Map(nodes.map((n) => [n.nodeId, n]));
   const prop = (n, name) => (n.properties || []).find((p) => p.name === name)?.value?.value;
@@ -199,7 +260,7 @@ async function readTree(cdp) {
   const hits = [];
   for (const n of nodes) {
     if (n.ignored || n.role?.value !== 'StaticText') continue;
-    if (!(n.name?.value || '').includes(MESSAGE)) continue;
+    if (!(n.name?.value || '').includes(message)) continue;
     let root = null;
     for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) {
       if (!p.ignored && liveOf(p)) {
@@ -236,36 +297,42 @@ async function probe(browser, surface) {
     });
   }
   const page = await ctx.newPage();
+  const message = surface.message ?? MESSAGE;
   const out = { surface: surface.name, route: surface.route, failures: [] };
   try {
     await page.goto(BASE + surface.route, { waitUntil: 'load', timeout: 60000 });
-    // Hydrated: React has attached to the page's form (or, on the report
-    // page, the request it fires on mount has arrived).
+    // Hydrated: React has attached to the page's form, or the converter's
+    // field (or, on the report page, the request it fires on mount has
+    // arrived).
     if (surface.trigger) {
       await page.waitForFunction(
-        () => {
-          const f = document.querySelector('form.eg-bar');
+        (sel) => {
+          const f = document.querySelector(sel);
           return !!f && Object.keys(f).some((k) => k.startsWith('__react'));
         },
-        null,
+        surface.hydrated ?? 'form.eg-bar',
         { timeout: 30000 },
       );
     }
     await surface.ready(page);
-    if (surface.trigger) await surface.trigger(page);
-    await Promise.race([
-      arrived.promise,
-      page.waitForTimeout(30000).then(() => {
-        throw new Error(`the ${surface.held} request never arrived`);
-      }),
-    ]);
+    if (surface.held) {
+      if (surface.trigger) await surface.trigger(page);
+      await Promise.race([
+        arrived.promise,
+        page.waitForTimeout(30000).then(() => {
+          throw new Error(`the ${surface.held} request never arrived`);
+        }),
+      ]);
+    }
     await page.waitForTimeout(300);
     const cdp = await ctx.newCDPSession(page);
-    const before = await readTree(cdp);
+    const before = await readTree(cdp, message);
+    // A surface with no request to hold is made to fail after the first read.
+    if (!surface.held) await surface.trigger(page);
     gate.release();
-    await page.getByText(MESSAGE).first().waitFor({ timeout: 20000 });
+    await page.getByText(message).first().waitFor({ timeout: 20000 });
     await page.waitForTimeout(300);
-    const after = await readTree(cdp);
+    const after = await readTree(cdp, message);
     out.before = before.regions;
     out.after = after.regions;
     out.hits = after.hits;
@@ -290,6 +357,19 @@ async function probe(browser, surface) {
     }
     if (roots.length > 1) {
       out.failures.push(`C: ${roots.length} live regions carry the message, so it is announced ${roots.length} times`);
+    }
+    if (surface.instrument) {
+      // What the instrument's live line reads now: the stop, and the reason.
+      out.line = await page.evaluate(() => document.querySelector('.eg-inst > p[aria-live="polite"]')?.textContent ?? null);
+      const others = roots.filter((dom) => {
+        const region = after.regions.find((r) => r.dom === dom);
+        return !(region?.live === 'polite' && region.role !== 'alert' && preexisting.has(dom));
+      });
+      if (roots.length && (others.length || !(out.line || '').includes(message))) {
+        out.failures.push(
+          `B: on an instrument surface the reason belongs in the instrument's polite line, the node that was in the tree before the failure; it reads ${JSON.stringify(out.line)}${others.length ? `, and ${others.length} other live region(s) carry the message` : ''}`,
+        );
+      }
     }
 
     if (surface.icon) {
@@ -354,6 +434,7 @@ async function probe(browser, surface) {
     for (const r of results) {
       const where = (r.hits || []).map((h) => (h.root === null ? 'not live' : `${h.rootRole}`)).join(', ');
       console.log(`  ${r.failures.length ? 'FAIL' : 'ok  '} ${r.surface}${where ? `: message in ${where}` : ''}`);
+      if (r.line !== undefined) console.log(`         live line: ${JSON.stringify(r.line)}`);
       for (const f of r.failures) console.log(`         ${f}`);
     }
   }

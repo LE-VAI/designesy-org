@@ -247,6 +247,7 @@ export function MonitorForm({
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="pass 1 · warn 0.5 · fail 0 · the grade measures the watch"
         restNote="Run a URL and each governance check lights. The first run sets the baseline; later runs compare against it."
         restCard={
