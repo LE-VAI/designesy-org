@@ -48,7 +48,12 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-12);
-  margin: 0 0 var(--space-20);
+  /* Room for the focus ring. A scroller clips its padding box on both axes,
+     and the line is one 17px row, so the link's ring (2px, 3px out) lost its
+     top and bottom. The line pads 6px above and below and gives it back as
+     margin: the same layout, and the whole ring inside the clip. */
+  padding-block: var(--space-6);
+  margin: calc(-1 * var(--space-6)) 0 calc(var(--space-20) - var(--space-6));
   overflow-x: auto;
   scrollbar-width: none;
   font: 500 0.74rem/1.4 var(--mono);
@@ -3509,13 +3514,14 @@ html[data-motion="paused"] .eg .eg-rule {
   }
   /* The path line's links ("the methodology") were 16px tall. The line is a
      scroller, which clips vertically too, so it takes the padding the links
-     need and gives it back as margin: 44px targets, the same layout. The
-     link's rule is its text underline (above), so the padding moves the hit
-     area and never the rule: it stays 3px under the glyphs. */
+     need, and the 6px their focus ring needs beyond that (above), and gives
+     it back as margin: 44px targets, the same layout. The link's rule is its
+     text underline (above), so the padding moves the hit area and never the
+     rule: it stays 3px under the glyphs. */
   .eg-path {
-    padding-block: var(--space-14);
-    margin-top: calc(-1 * var(--space-14));
-    margin-bottom: calc(var(--space-20) - var(--space-14));
+    padding-block: calc(var(--space-14) + var(--space-6));
+    margin-top: calc(-1 * (var(--space-14) + var(--space-6)));
+    margin-bottom: calc(var(--space-20) - var(--space-14) - var(--space-6));
   }
   .eg-path a {
     display: inline-block;

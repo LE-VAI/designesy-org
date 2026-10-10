@@ -257,6 +257,24 @@
   color: var(--warn-ink);
 }
 
+/* Invalid and focused shows both states. The amber shadow above keeps saying
+   the field was refused; focus adds a 2px outline in the focus colour, 3px
+   out, so it starts where the amber halo ends and encloses it.
+   An outline, not a third box-shadow: the focus ring and the invalid style
+   were both box-shadow at one specificity, so the later rule erased the
+   earlier, and focusing a refused field changed no pixel at all (WCAG
+   2.4.7) on every engine form. Neither of those rules sets outline, so no
+   source order can cancel focus again, and an outline survives forced
+   colours, where box-shadow is dropped. The ring is a 2px perimeter of the
+   focus colour, the area WCAG 2.4.13 asks of a focus indicator, measured at
+   5.0:1 against the slab and 3.3:1 against the amber halo it encloses on the
+   dark theme (6.6 and 5.4 on the light).
+   scripts/check-focus-visibility.js holds it in pixels. */
+.eg-bar-field[data-invalid]:focus-within {
+  outline: 2px solid var(--ctl-focus, var(--signal-access));
+  outline-offset: 3px;
+}
+
 /* A textarea well (the M3 converter): the text area fills the well. */
 .eg-bar-field.is-area {
   display: block;
@@ -893,7 +911,8 @@ html[data-motion="paused"] .eg-go-spin {
   .eg-seg-track {
     border: 1px solid CanvasText;
   }
-  .eg-bar-field:focus-within {
+  .eg-bar-field:focus-within,
+  .eg-bar-field[data-invalid]:focus-within {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }

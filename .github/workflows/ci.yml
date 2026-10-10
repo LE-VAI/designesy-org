@@ -485,9 +485,11 @@ jobs:
   # @sparticuz/chromium is already a dependency, so no browser install step is
   # needed on Linux; each script launches it itself.
   visual-gates:
-    name: Visual gates (edges, glass, keyboard, a11y)
+    name: Visual gates (edges, glass, focus, keyboard, a11y)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 25, not 20: the focus visibility sweep (~1,100 focusings) adds about
+    # five minutes to a job that ran eight.
+    timeout-minutes: 25
     needs: build-site
     if: always() && needs.build-site.result == 'success'
     defaults:
@@ -560,6 +562,14 @@ jobs:
         # what a local Windows run uses, so the channel stays explicit and the
         # same everywhere.
         run: node scripts/check-glass-blur.js --base http://127.0.0.1:3422 --channel chrome
+
+      # Focus rings measured in pixels: every control's ring changes the page,
+      # holds 3:1 against what it sits beside, and is not cut off by a
+      # scroller; a refused (invalid) field still shows focus. The static
+      # focus-ring gate proves a rule resolves; only pixels show a rule that
+      # another rule overrides, a colour too faint, or a ring a parent clips.
+      - name: Focus visibility
+        run: node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel chrome
 
       # Pausing animations (WCAG 2.2.2) must never hide content: a paused
       # visitor once got empty surface pages (.fade-up held on its first frame).
