@@ -16,7 +16,7 @@
  *
  * Every expected value is READ FROM SOURCE, never hardcoded here, so the guard
  * re-targets itself on a bump. Patterns are deliberately narrow -- they match
- * claims about THIS engine ("42-check design contract", "42 deterministic
+ * claims about THIS engine ("N-check design contract", "N deterministic
  * checks", "across 14 weighted categories", "contract v0.4.2") and not other
  * tools' counts (the 12-check drift radar, the 11-check a11y framework).
  *

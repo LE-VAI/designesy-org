@@ -1,5 +1,5 @@
 {
-  "$comment": "Known divergences between the two 42-check engines, pinned to the canonical hash of BOTH sides. kind=intentional: the copies differ by design (transport, output envelope). kind=debt: a fix landed in route.ts and was never ported; porting it and deleting the entry is the goal. See scripts/source-drift.mjs.",
+  "$comment": "Known divergences between the two 44-check engines, pinned to the canonical hash of BOTH sides. kind=intentional: the copies differ by design (transport, output envelope). kind=debt: a fix landed in route.ts and was never ported; porting it and deleting the entry is the goal. See scripts/source-drift.mjs.",
   "divergent": {
     "fn:checkDesignMdSpec": {
       "route": "c476c4006d26e99a",

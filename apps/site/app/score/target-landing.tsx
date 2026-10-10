@@ -25,7 +25,7 @@ const OUTPUT_TEXT =
  *
  * The example URL is prefilled into ScoreForm via initialUrl — the visitor
  * can edit it to their own URL or just hit Score to run the engine against
- * the example. Either way the engine runs the same 42 checks.
+ * the example. Either way the engine runs the same checks.
  */
 export type TargetLandingProps = {
   /** Platform name, e.g. 'Lovable' */

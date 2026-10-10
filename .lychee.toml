@@ -21,7 +21,7 @@ exclude_path = [
   "package-lock\\.json",
   # Recorded test fixtures. These are verbatim captures of a live page's HTML
   # and CSS, kept so packages/score/test/parity.test.mjs can compare the two
-  # 42-check engine implementations OFFLINE (CI has no network). Every URL
+  # 44-check engine implementations OFFLINE (CI has no network). Every URL
   # inside them is TEST DATA, not a link we publish — checking them would gate
   # CI on whether x.com is up, and on the exact byte-shape of third-party markup
   # we merely recorded.

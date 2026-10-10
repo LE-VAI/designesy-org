@@ -97,7 +97,7 @@ describe('regex backtracking guard', () => {
 
     // The score must still be produced — a timeout that returns early would
     // otherwise pass this test while producing nothing.
-    assert.equal(result.checks.length, 42, 'the engine must still run all 42 checks');
+    assert.equal(result.checks.length, 44, 'the engine must still run all 44 checks');
     assert.equal(typeof result.score, 'number');
   });
 

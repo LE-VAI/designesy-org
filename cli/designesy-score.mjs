@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// designesy-score — CLI for the Designesy 42-check design-contract engine.
+// designesy-score — CLI for the Designesy 44-check design-contract engine.
 // Superseded by @designesy/score; kept working for existing installs.
 //
 // v1.0.0 BREAKING CHANGE: the engine now runs LOCALLY — no server required.
-// Fetches the target URL, extracts CSS + :root tokens, runs all 42 checks
+// Fetches the target URL, extracts CSS + :root tokens, runs all 44 checks
 // in-process, and prints a formatted report. Zero dependencies (Node built-ins only).
 //
 // The --api flag and $SCORE_API env var remain as a REMOTE FALLBACK for anyone
@@ -133,11 +133,11 @@ function parseArgs(argv) {
 
 function printUsage() {
   console.log(`
-designesy-score v${VERSION} — 42-check design-contract scoring engine.
+designesy-score v${VERSION} — 44-check design-contract scoring engine.
 Superseded by @designesy/score: npx @designesy/score@latest <url>
 
 Runs LOCALLY — no server required. Fetches the URL, extracts CSS + tokens,
-and runs all 42 checks in one process. Zero dependencies.
+and runs all 44 checks in one process. Zero dependencies.
 
 Usage:
   designesy-score <url> [options]
@@ -472,7 +472,7 @@ async function main() {
   if (args.scope === 'contract' || args.scope === 'universal') scope = args.scope;
 
   if (!args.quiet) {
-    console.log(`${DIM}Scoring ${normalized} locally (42-check engine, scope=${scope || 'auto'})…${RESET}`);
+    console.log(`${DIM}Scoring ${normalized} locally (44-check engine, scope=${scope || 'auto'})…${RESET}`);
   }
 
   let result;

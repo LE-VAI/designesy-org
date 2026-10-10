@@ -3,7 +3,7 @@
  * Record the parity fixture from a live page.
  *
  * WHY THIS IS A SCRIPT AND NOT A ONE-OFF COMMAND
- * test/parity.test.mjs compares the two 42-check implementations offline, and it
+ * test/parity.test.mjs compares the two 44-check implementations offline, and it
  * refuses to pass if the fixture stops pinning every check the engine emits. So
  * re-recording is a maintenance step someone will need, and an instruction that
  * says "re-record it" without a script is an instruction that gets done by hand
@@ -76,7 +76,7 @@ const fx = {
   sourceUrl: url,
   recordedAt: new Date().toISOString(),
   scope,
-  note: `Recorded from ${url} so the parity suite can compare the two 42-check implementations OFFLINE. html and css are verbatim; expect[] is what the package engine produced from them at record time. Re-record with scripts/record-parity-fixture.mjs and STATE WHY whenever a verdict legitimately changes.`,
+  note: `Recorded from ${url} so the parity suite can compare the two 44-check implementations OFFLINE. html and css are verbatim; expect[] is what the package engine produced from them at record time. Re-record with scripts/record-parity-fixture.mjs and STATE WHY whenever a verdict legitimately changes.`,
   html,
   css,
   expect,

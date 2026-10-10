@@ -46,8 +46,13 @@ const OUT = join(HERE, '..', 'corpus.json');
  * (WARN); v27 on pages with no field, a hidden field only, and a text field
  * (SKIP, SKIP, WARN); v14 and v18 absent under each scope (SKIP universal, WARN
  * contract).
+ *
+ * 1.3.0 (2026-10-09): engine 1.2.0 fixtures. v44 (status hue as text FAIL at
+ * 3.51:1, the ink mix PASS at 5.76:1, a failing prefers-color-scheme dark
+ * block, large text at 3:1) and v45 (a paused opacity-0 entrance FAIL, the
+ * negative-delay override PASS, no pause scope SKIP).
  */
-const CORPUS_VERSION = '1.2.0';
+const CORPUS_VERSION = '1.3.0';
 
 /**
  * Engine version. Read from the server constant when reachable; the package
@@ -55,7 +60,7 @@ const CORPUS_VERSION = '1.2.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.1.0';
+const ENGINE_VERSION = '1.2.0';
 
 async function build() {
   const rows = await runCorpus();

@@ -1,4 +1,4 @@
-// Short, voice-clean labels for the 42 contract checks (lib/check-definitions).
+// Short, voice-clean labels for the contract checks (lib/check-definitions).
 // Data only: imported by server components and passed to client ones as props.
 
 /**
@@ -29,6 +29,7 @@ export const LOG_LABEL: Record<string, string> = {
   v11: 'Transitions name their properties',
   v12: 'will-change kept to transform, opacity',
   v23: 'Duration tokens, quick to slow',
+  v45: 'Paused motion keeps content visible',
   v13: 'Press scale 0.96 cells, 0.985 cards',
   v14: 'Cadence type rules match',
   v15: 'Antialiased font smoothing',
@@ -49,6 +50,7 @@ export const LOG_LABEL: Record<string, string> = {
   v25: 'One h1, heading levels in order',
   v27: 'Inputs at 16px or larger',
   v35: 'Forced-colors styles present',
+  v44: 'Status text at contrast in every theme',
   v07: 'Semantic HTML foundation',
   v34: 'AI disclosure readiness',
   v36: 'Confusable characters screened',

@@ -38,6 +38,11 @@ on:
   schedule:
     - cron: '0 10 * * 1'   # every Monday 10:00 UTC
   workflow_dispatch:         # manual trigger from the Actions tab
+    inputs:
+      expect_engine_version:
+        description: 'Stop before writing anything unless the live engine reports this version (for the re-score right after a release, e.g. 1.2.0). Leave empty otherwise.'
+        required: false
+        default: ''
 
 permissions:
   contents: write            # needed to push the leaderboard branch
@@ -65,6 +70,8 @@ jobs:
       - name: Re-score all leaderboard sites
         env:
           SCORE_API: 'https://www.designesy.org/api/score'
+          # Empty on the weekly schedule; set when dispatched after a release.
+          EXPECT_ENGINE_VERSION: ${{ github.event.inputs.expect_engine_version }}
         run: node scripts/rescore-leaderboard.mjs
 
       - name: Detect changes

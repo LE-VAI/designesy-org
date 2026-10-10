@@ -99,6 +99,7 @@ const HISTORICAL_ALLOWLIST = [
   /^scripts[\\/]prose-lint\.js$/,                // quotes the bug it was built to catch
   /^app[\\/]leaderboard[\\/]seed\.ts$/,          // dated re-score provenance header
   /^app[\\/]api[\\/]leaderboard/,                // dated batch provenance
+  /^scripts[\\/]check-jsx-glue\.js$/,            // quotes the bugs it was built to catch
 ];
 
 function* walk(dir) {
@@ -123,8 +124,12 @@ function* walk(dir) {
  * Find `<N> checks` / `<N> verification` claims where the claim is a LITERAL
  * number. Skips template-literal interpolations (`${...} checks`) by requiring
  * a digit immediately before the word.
+ *
+ * A legal citation ("EU AI Act Art 50 check") puts a number before "check"
+ * that counts nothing. It sat outside the near-the-registry window until the
+ * registry reached 44, six from 50, and then read as a stale total.
  */
-const CLAIM_RE = /\b(\d{1,3})[\s-]+(?:automated[\s-]+)?(?:checks?|verification)\b/gi;
+const CLAIM_RE = /(?<!\bArt(?:icle)?\.?\s{1,3})\b(\d{1,3})[\s-]+(?:automated[\s-]+)?(?:checks?|verification)\b/gi;
 
 function main() {
   const asJson = process.argv.includes('--json');

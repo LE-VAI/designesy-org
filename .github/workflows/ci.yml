@@ -343,7 +343,7 @@ jobs:
         env:
           # Kept deliberately. This was originally set to make CI skip
           # test/parity.test.mjs, whose old version called the live API — so the
-          # only detector for divergence between the two 42-check implementations
+          # only detector for divergence between the two 44-check implementations
           # never ran here.
           #
           # That test is now OFFLINE and runs regardless of this variable, so the
