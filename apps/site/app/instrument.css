@@ -40,12 +40,12 @@
 }
 
 [data-theme="light"] {
-  --lv-glass-ring: rgba(10, 20, 60, 0.09);
+  --lv-glass-ring: rgba(0, 25, 51, 0.09);
   --lv-glass-edge: rgba(255, 255, 255, 0.9);
-  --lv-glass-shadow: 0 36px 80px -36px rgba(20, 32, 90, 0.28), 0 10px 26px -14px rgba(20, 32, 90, 0.16);
+  --lv-glass-shadow: 0 36px 80px -36px rgba(1, 40, 76, 0.28), 0 10px 26px -14px rgba(1, 40, 76, 0.16);
   --lv-sheen: rgba(255, 255, 255, 0.95);
-  --lv-well: rgba(10, 20, 60, 0.035);
-  --lv-well-line: rgba(10, 20, 60, 0.1);
+  --lv-well: rgba(0, 25, 51, 0.035);
+  --lv-well-line: rgba(0, 25, 51, 0.1);
   --lv-pass-a: #3a63f5;
   --lv-pass-b: #0133cb;
   --lv-pass-glow: rgba(1, 51, 203, 0.22);
@@ -53,7 +53,7 @@
   --lv-warn-b: #b07d04;
   --lv-fail-a: #ef5b5b;
   --lv-fail-b: #c62828;
-  --lv-hatch: rgba(10, 20, 60, 0.22);
+  --lv-hatch: rgba(0, 25, 51, 0.22);
   --lv-head: #0133cb;
   --lv-head-ink: var(--paper-on-signal);
 }

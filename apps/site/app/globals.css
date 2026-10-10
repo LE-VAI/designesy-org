@@ -74,22 +74,32 @@
   --line-strong: rgba(255, 255, 255, 0.22);
   --line-faint: rgba(255, 255, 255, 0.06);
 
-  --signal: #0133cb;
-  --signal-light: #3358e8;
-  --signal-access: #5d7bff;
-  /* Signal used AS TEXT. --signal (#0133cb) is a fill: on the dark paper
-     ladder it measures 2.0-2.3:1, so every eyebrow, number and link that
-     borrowed it as a text color failed WCAG 1.4.3 (axe 4.13.0, 2026-10-01:
-     .principle-num on ~20 pages, 57 nodes on /changelog). Dark text lifts to
-     the accessible tint: 5.71 / 5.41 / 5.11 / 4.93:1 on paper / surface /
-     raised / lifted. Light mode keeps #0133cb exactly (8.69:1 on paper). */
+  /* Identity v1 (brand ledger D2, D19): Azure. 6.65:1 on --paper, 5.75:1 on
+     --surface-lifted, so on dark it is fill, text, link and focus at once. */
+  --signal: #0A94FF;
+  --signal-light: #36A7FF;
+  --signal-access: #0A94FF;
+  /* Signal used AS TEXT: --signal-access in both themes. Dark is Azure itself
+     (>= 5.75:1 on every dark surface); light is Deep Azure #016ABB (D19). */
   --signal-text: var(--signal-access);
-  --signal-dim: rgba(1, 51, 203, 0.14);
-  /* Additive — text placed ON a --signal fill must contrast with #0133cb,
-     not with --paper (#0a0a0c). White on signal is 8.59:1 (AAA). */
-  --paper-on-signal: #ffffff;
-  --activation: #fecc34;
+  /* Deep Azure: Azure's own 251 degree hue, darker. Links, focus and selected
+     states on light surfaces (D19). */
+  --signal-deep: #016ABB;
+  --signal-dim: rgba(10, 148, 255, 0.14);
+  /* Gradient end only, never a standalone colour (D7). */
+  --signal-teal: #2CEBCA;
+  /* Text placed ON a --signal fill: ink, 6.65:1 on Azure. White on Azure is
+     3.14:1 and is not used (D9, D19). */
+  --paper-on-signal: #010102;
+  /* Activated Orange, the exact RGB inverse of --signal (D1). Live moments
+     only (D16). 6.0 to 6.94:1 on the dark surfaces. */
+  --activation: #F56B00;
   --activation-ink: var(--activation);
+
+  /* Primary action (D19): the same pair in both themes, Azure + ink. */
+  --action: var(--signal);
+  --on-action: #010102;
+  --action-pressed: #087ED9;
 
   /* Ambient field — separate from the signal family on purpose.
      The field is the largest single surface in the composition: at 1440x900 it
@@ -100,15 +110,15 @@
      without spending the accent budget. Dark mode keeps the field bright: on
      near-black, additive blue reads as depth rather than as decoration, and
      the measured text separation is unaffected (157 vs 159 with it off). */
-  --field-dot-1: #0133cb;
-  --field-dot-2: #3358e8;
-  --field-dot-3: #5d7bff;
+  --field-dot-1: #0A94FF;
+  --field-dot-2: #36A7FF;
+  --field-dot-3: #7CC4FF;
   --field-alpha: 1;
 
   /* Interaction color semantics — explicit state roles */
   --hover-fill: var(--surface-hover);
   --press-fill: var(--surface-soft);
-  --focus-ring: var(--signal-light);
+  --focus-ring: var(--signal-access);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.35);
@@ -196,7 +206,7 @@
   --grade-a: #22c55e;
   --grade-b: #84cc16;
   --grade-c: #eab308;
-  --grade-d: #fb923c;
+  --grade-d: #FB7185;
   --grade-f: #ef4444;
   --grade-b-light: #a3e635;  /* lighter lime for constellation text on dark */
   --grade-a-ink: var(--grade-a);
@@ -204,7 +214,7 @@
   --grade-c-ink: var(--grade-c);
   --grade-d-ink: var(--grade-d);
   --grade-f-ink: var(--grade-f);
-  --grade-d-glow: #f97316;   /* orange-600 glow variant for D-grade emblem/hero proof */
+  --grade-d-glow: #FB7185;   /* D is rose (D5): the orange is the brand's flame, not a grade */
   --signal-pos: #34d399;     /* emerald for positive signal points */
   --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
   --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
@@ -212,11 +222,11 @@
 
   /* Wordmark shimmer gradient stops — decorative animation, not semantic.
      These 6 colors define the light sweep across the wordmark text. */
-  --shimmer-1: #f4f6ff;
-  --shimmer-2: #e8ecff;
-  --shimmer-3: #5b78f0;
-  --shimmer-4: #9eb0ff;
-  --shimmer-5: #dce4ff;
+  --shimmer-1: #f1f7ff;
+  --shimmer-2: #e1effe;
+  --shimmer-3: #0286e9;
+  --shimmer-4: #7cbafd;
+  --shimmer-5: #d3e7fe;
 
   /* Motion contract tokens (Emil Kowalski / Apple WWDC) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -253,8 +263,9 @@
   --surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
   --surface-card-gradient: linear-gradient(135deg, #0d0d11 0%, var(--surface) 100%);
   --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.055);
-  --signal-glow: 0 0 60px rgba(51, 88, 232, 0.18), 0 0 24px rgba(51, 88, 232, 0.28);
-  --signal-gradient: linear-gradient(135deg, var(--signal-light), #6b8aff 130%);
+  --signal-glow: 0 0 60px rgba(54, 167, 255, 0.18), 0 0 24px rgba(54, 167, 255, 0.28);
+  /* Azure to Teal, on black or white grounds only; one per view (D7). */
+  --signal-gradient: linear-gradient(135deg, #0A94FF 0%, #0A94FF 35%, #2CEBCA 100%);
 
   /* Local-scope aliases (declared to close drift d02 — var() refs to undeclared
      custom properties). Each maps to a semantic role; if the contract grows
@@ -423,7 +434,7 @@
      bottom: -7%; height: 18%; z-index: -1; rest opacity .7). A dark pool
      cannot be seen on #010102, so in dark mode the floor is luminous: a faint
      signal-hued bounce light. One per viewport. */
-  --floor-pool: radial-gradient(closest-side, oklch(0.55 0.2 265 / 0.16), transparent);
+  --floor-pool: radial-gradient(closest-side, oklch(0.55 0.2 251 / 0.16), transparent);
   /* Coloured light means a state, and is gone at rest. --glow-signal: this
      surface is active (focused or running). --glow-contact: hover light at
      the pointer. Both are painted on pre-rendered layers whose opacity fades.
@@ -465,12 +476,12 @@ read-along {
      DROPS a value it cannot parse, and an invisible highlight is worse than no
      highlight API — so color-mix()/oklab are deliberately avoided here even
      though the rest of the site uses them. These two literals ARE the site's
-     brand: rgb(1 51 203) is --signal and rgb(51 88 232) is --signal-light,
+     brand: rgb(10 148 255) is --signal and rgb(54 167 255) is --signal-light,
      both identical in light and dark, so no theme branch is needed. The values
      are stated numerically because var() cannot be composed with an alpha
      channel in a way ::highlight() is guaranteed to parse. */
-  --ra-highlight: rgb(1 51 203 / 0.42);
-  --ra-accent: rgb(51 88 232);
+  --ra-highlight: rgb(10 148 255 / 0.42);
+  --ra-accent: rgb(54 167 255);
 }
 
 /* --- Light theme — [data-theme="light"] ---
@@ -516,17 +527,27 @@ read-along {
   --line-strong: rgba(0, 0, 0, 0.18);
   --line-faint: rgba(0, 0, 0, 0.05);
 
-  /* Signal: same blue brand, slightly higher chroma for visibility on light */
-  --signal: #0133cb;
-  --signal-light: #3358e8;
-  --signal-access: #2a4cd8;
-  --signal-text: var(--signal);
-  --signal-dim: rgba(1, 51, 203, 0.08);
-  --paper-on-signal: #ffffff;
-  --activation: #d4a017;
-  /* 55%, not the 70% the other ink tokens use: the hue is so light that 70%
-     gives 3.64:1 on --surface-lifted. 55% gives 5.06:1. */
-  --activation-ink: color-mix(in oklab, var(--activation) 55%, var(--ink));
+  /* Signal: one blue family in both themes (D19). Azure is for fills, the
+     mark's dot and data highlights only on light; never text (3.14:1 on
+     white). Text, links, focus and selected states take Deep Azure. */
+  --signal: #0A94FF;
+  --signal-light: #36A7FF;
+  --signal-access: #016ABB;
+  --signal-text: var(--signal-access);
+  --signal-deep: #016ABB;
+  --signal-dim: rgba(10, 148, 255, 0.08);
+  --paper-on-signal: #010102;
+  /* Fills only on light (3.01:1 on white). Orange text takes --activation-ink,
+     4.56 to 5.37:1 on the four light surfaces. */
+  --activation: #F56B00;
+  --activation-ink: #B04D00;
+
+  /* Primary action (D19): Azure + ink in light too. */
+  --action: #0A94FF;
+  --on-action: #010102;
+  --action-pressed: #087ED9;
+
+  --focus-ring: var(--signal-access);
 
   /* Ambient field, light mode — dimmed deliberately.
      On near-white paper the same dots that read as depth in dark mode become
@@ -537,9 +558,9 @@ read-along {
      they simply stop out-shouting the typography. Light mode measured 14
      ink-to-background separation with the field on vs 7 with it off, i.e. the
      field was doing the anchoring work the type should do. */
-  --field-dot-1: #4a6ad4;
-  --field-dot-2: #7b93e0;
-  --field-dot-3: #a3b4ea;
+  --field-dot-1: #4FA9F5;
+  --field-dot-2: #86C3F7;
+  --field-dot-3: #B5DAFA;
   --field-alpha: 0.45;
 
   /* Shadows: softer on light backgrounds */
@@ -564,24 +585,23 @@ read-along {
   --ok-ink: color-mix(in oklab, var(--ok) 70%, var(--ink));
   --error-ink: color-mix(in oklab, var(--error) 70%, var(--ink));
 
-  /* Grade scale colors — deeper saturation for legibility on light surfaces.
-     Same five-band semantics as dark theme, adjusted for contrast. These are
-     mark colours: --grade-b is 2.99:1 on --paper and --grade-d 3.44:1, so a
-     grade letter or word uses the --grade-*-ink text token. */
+  /* Grade scale colors (D18). Bases are mark colours (arcs, fills, emblems),
+     at least 3:1 on all four light surfaces (WCAG 1.4.11); a grade letter or
+     word uses the --grade-*-ink text token, at least 4.6:1 on all four. D is
+     rose (D5, D17): the orange is the brand's flame. */
   --grade-a: #15803d;
-  --grade-b: #65a30d;
+  --grade-b: #5D960C;
   --grade-c: #b07d04;
-  --grade-d: #ea580c;
+  --grade-d: #C9216C;
   --grade-f: #dc2626;
-  --grade-a-ink: color-mix(in oklab, var(--grade-a) 70%, var(--ink));
-  /* 65%: lime is light enough that 70% gives only 4.48:1 on --surface-lifted. */
-  --grade-b-ink: color-mix(in oklab, var(--grade-b) 65%, var(--ink));
-  --grade-c-ink: color-mix(in oklab, var(--grade-c) 70%, var(--ink));
-  --grade-d-ink: color-mix(in oklab, var(--grade-d) 70%, var(--ink));
-  --grade-f-ink: color-mix(in oklab, var(--grade-f) 70%, var(--ink));
+  --grade-a-ink: #147839;
+  --grade-b-ink: #497509;
+  --grade-c-ink: #896203;
+  --grade-d-ink: #C7216B;
+  --grade-f-ink: #CD2323;
   /* Three tokens that are only ever text take their ink token in light. */
   --grade-b-light: var(--grade-b-ink);
-  --grade-d-glow: #ea580c;
+  --grade-d-glow: #C9216C;
   --signal-pos: #059669;
   --live: #15803d;
   --error-text: var(--error-ink);
@@ -591,7 +611,7 @@ read-along {
   --surface-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.005));
   --surface-card-gradient: linear-gradient(135deg, #fafafc 0%, var(--surface) 100%);
   --inner-light: inset 0 1px 0 rgba(0, 0, 0, 0.04);
-  --signal-glow: 0 0 60px rgba(51, 88, 232, 0.08), 0 0 24px rgba(51, 88, 232, 0.12);
+  --signal-glow: 0 0 60px rgba(54, 167, 255, 0.08), 0 0 24px rgba(54, 167, 255, 0.12);
 
   /* Local-scope aliases (mirror the dark :root block) */
   --fg: var(--signal-access);
@@ -604,24 +624,27 @@ read-along {
   /* Material system, re-lit (see the dark :root block for roles). Light glass
      tints from --surface and runs more opaque; its backdrop drops saturate,
      following the topbar's "neon on light" convention. Rims are a white top
-     edge over a navy ring; shadows are navy rgb(20 32 90) at low alpha with
-     the dark geometry unchanged; the floor is a real navy shadow. */
+     edge over a navy ring; shadows are navy rgb(1 40 76) at low alpha with
+     the dark geometry unchanged; the floor is a real navy shadow. The navy is
+     on Azure's 251 degree hue (identity v1): rgb(10 20 60) and rgb(20 32 90)
+     rotated to 251 degrees at the same OKLCH lightness, chroma clamped to
+     sRGB. */
   --mat-instrument: linear-gradient(180deg, #ffffff, var(--surface-raised));
   --mat-float: #ffffff;
   --glass-thin: color-mix(in srgb, var(--surface) 84%, transparent);
   --glass-regular: color-mix(in srgb, var(--surface) 92%, transparent);
   --glass-filter-thin: blur(16px);
   --glass-filter-regular: blur(24px);
-  --rim: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(10 20 60 / 0.08) 40%, rgb(10 20 60 / 0.11));
+  --rim: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(0 25 51 / 0.08) 40%, rgb(0 25 51 / 0.11));
   /* The brief gives only the hot top (white at 1) and ring (navy .16); the
      40% stop keeps --rim's own ratio between the two. */
-  --rim-hot: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(10 20 60 / 0.12) 40%, rgb(10 20 60 / 0.16));
+  --rim-hot: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(0 25 51 / 0.12) 40%, rgb(0 25 51 / 0.16));
   --specular: inset 0 1px 0 rgb(255 255 255 / 0.9);
-  --elev-1: 0 1px 1px rgb(20 32 90 / 0.06), 0 2px 4px rgb(20 32 90 / 0.05);
-  --elev-2: 0 1px 1px rgb(20 32 90 / 0.06), 0 4px 8px -2px rgb(20 32 90 / 0.07), 0 12px 24px -8px rgb(20 32 90 / 0.09);
-  --elev-3: 0 2px 2px rgb(20 32 90 / 0.05), 0 8px 16px -4px rgb(20 32 90 / 0.07), 0 24px 48px -12px rgb(20 32 90 / 0.1), 0 48px 96px -32px rgb(20 32 90 / 0.14);
-  --elev-4: 0 2px 4px rgb(20 32 90 / 0.06), 0 16px 32px -8px rgb(20 32 90 / 0.1), 0 40px 80px -16px rgb(20 32 90 / 0.14), 0 80px 140px -40px rgb(20 32 90 / 0.18);
-  --floor-pool: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent);
+  --elev-1: 0 1px 1px rgb(1 40 76 / 0.06), 0 2px 4px rgb(1 40 76 / 0.05);
+  --elev-2: 0 1px 1px rgb(1 40 76 / 0.06), 0 4px 8px -2px rgb(1 40 76 / 0.07), 0 12px 24px -8px rgb(1 40 76 / 0.09);
+  --elev-3: 0 2px 2px rgb(1 40 76 / 0.05), 0 8px 16px -4px rgb(1 40 76 / 0.07), 0 24px 48px -12px rgb(1 40 76 / 0.1), 0 48px 96px -32px rgb(1 40 76 / 0.14);
+  --elev-4: 0 2px 4px rgb(1 40 76 / 0.06), 0 16px 32px -8px rgb(1 40 76 / 0.1), 0 40px 80px -16px rgb(1 40 76 / 0.14), 0 80px 140px -40px rgb(1 40 76 / 0.18);
+  --floor-pool: radial-gradient(closest-side, rgb(1 40 76 / 0.2), transparent);
   --glow-contact: radial-gradient(240px circle at var(--spot-x, 50%) var(--spot-y, 0%), color-mix(in srgb, var(--signal-access) 8%, transparent), transparent 62%);
 }
 
@@ -2307,10 +2330,15 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   transform: scale(0.97);
 }
 
+/* The primary action (identity v1, D19): Azure with an ink label in both
+   themes, 6.65:1. Pressed is --action-pressed (ink on it 4.96:1); the token
+   carries the darkening, so no brightness filter stacks on it (a 0.92 filter
+   on #087ED9 paints #0774c8, 4.31:1). Hover lightens on dark and darkens on
+   light: lightening on a white page washes the button out. */
 .button.primary {
-  background: var(--signal);
-  color: var(--paper-on-signal);
-  border: 1px solid var(--signal);
+  background: var(--action);
+  color: var(--on-action);
+  border: 1px solid var(--action);
   box-shadow: var(--inner-light), 0 1px 0 color-mix(in srgb, var(--ink) 8%, transparent) inset;
   transition: background var(--duration-quick) var(--ease-out),
               border-color var(--duration-quick) var(--ease-out),
@@ -2321,17 +2349,30 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   overflow: visible;
 }
 
+/* Light: a 1px inset edge in Deep Azure keeps the button anchored on raised
+   and lifted panels. Visual presence only, not a contrast boundary (1.65 to
+   1.71:1 composited); the ink label identifies the button (WCAG 1.4.11). */
+[data-theme="light"] .button.primary {
+  box-shadow: var(--inner-light), inset 0 0 0 1px rgb(1 106 187 / 0.35);
+}
+
 @media (hover: hover) {
   .button.primary:hover {
     background: var(--signal-light);
     border-color: var(--signal-light);
     box-shadow: var(--inner-light), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
   }
+  [data-theme="light"] .button.primary:hover {
+    background: var(--action-pressed);
+    border-color: var(--action-pressed);
+    box-shadow: var(--inner-light), inset 0 0 0 1px rgb(1 106 187 / 0.35), 0 0 32px color-mix(in srgb, var(--signal-light) 24%, transparent);
+  }
 }
 
-.button.primary:active {
-  background: var(--signal);
-  filter: brightness(0.92);
+.button.primary:active,
+[data-theme="light"] .button.primary:active {
+  background: var(--action-pressed);
+  border-color: var(--action-pressed);
   transform: scale(0.97);
   box-shadow: var(--inner-light);
 }
