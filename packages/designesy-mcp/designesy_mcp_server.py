@@ -1460,7 +1460,7 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
     except subprocess.TimeoutExpired:
         return "MANUAL", "CDP viewport check timed out"
     except Exception as e:
-        return "MANUAL", f"CDP viewport check error: {e}"
+        return "MANUAL", f"CDP viewport check error: {_scrub_local_paths(str(e))}"
 
 
 def _check_cwv_cdp(url: str) -> tuple[str, str]:
@@ -1517,7 +1517,7 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
     except subprocess.TimeoutExpired:
         return "MANUAL", "CDP CWV check timed out"
     except Exception as e:
-        return "MANUAL", f"CDP CWV check error: {e}"
+        return "MANUAL", f"CDP CWV check error: {_scrub_local_paths(str(e))}"
 
 
 def _browser_check(cid: str, item: str, category: str, manual_detail: str, probe, url: str, browser_probes: bool) -> dict[str, str]:
@@ -1552,6 +1552,44 @@ _TIER2_ABSENCE_PATTERNS: list[tuple[str, str, str]] = [
 ]
 _TIER3_CONTRACT_ONLY = frozenset({"v01", "v22", "v29"})
 SCOPE_CONTRACT_HOSTS = ("designesy.org", "www.designesy.org")
+
+
+# Error text in a result: sanitizeErrorText in the TypeScript engines. A caught
+# error's message carries the file system of the machine that ran the server (a
+# browser probe's "No such file or directory" names a path under the Users
+# folder of the account that ran it), and a result is read by people other than
+# whoever ran it. Absolute paths (a drive
+# letter, a UNC share, a POSIX home, temp or system root), file:// URLs and npm
+# cache segments are replaced; the clause that says what failed is kept, and so
+# is trailing punctuation. A path segment may hold spaces, the last one may not.
+_PATH_TAIL = re.compile(r"[.,;:!?)]+$")
+_FILE_URL = re.compile(r"\bfile://[^\s'\"<>`|]*", re.IGNORECASE)
+_UNC_PATH = re.compile(r"\\\\[^\\\s'\"<>`|]+\\(?:[^\\\r\n'\"<>`|*?]+\\)*[^\\\s'\"<>`|*?]*")
+_DRIVE_PATH = re.compile(r"(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'\"<>`|*?]+\1)*[^\\/\s'\"<>`|*?]*")
+_POSIX_PATH = re.compile(
+    r"(^|[\s'\"`(=,:\[])/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel"
+    r"|workspace|workspaces|github|runner|nix|snap)(?:/[^/\r\n'\"<>`|]+(?=/))*/[^/\s'\"<>`|]+"
+)
+_NPM_CACHE = re.compile(r"[^\s'\"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'\"<>`|]*", re.IGNORECASE)
+
+
+def _path_label(label: str, matched: str) -> str:
+    tail = _PATH_TAIL.search(matched)
+    return label + (tail.group(0) if tail else "")
+
+
+def _scrub_local_paths(text: str) -> str:
+    """Replace local file-system detail in text that leaves this process."""
+    text = _FILE_URL.sub(lambda m: _path_label("a local file", m.group(0)), text)
+    text = _UNC_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
+    text = _DRIVE_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
+    text = _POSIX_PATH.sub(lambda m: m.group(1) + _path_label("a local path", m.group(0)), text)
+    return _NPM_CACHE.sub(lambda m: _path_label("the npm cache", m.group(0)), text)
+
+
+def _scrub_check_details(checks: list[dict[str, str]]) -> list[dict[str, str]]:
+    """The checks with every detail passed through _scrub_local_paths."""
+    return [{**c, "detail": _scrub_local_paths(c["detail"])} if isinstance(c.get("detail"), str) else c for c in checks]
 
 
 def _apply_scope_filter(checks: list[dict[str, str]], scope: str) -> list[dict[str, str]]:
@@ -1640,7 +1678,7 @@ def _offline_checks(
         _check_skip_ink(css),
         _check_input_font_floor(css, html),
     ]
-    return effective, raw_tokens, _apply_scope_filter(checks, effective)
+    return effective, raw_tokens, _scrub_check_details(_apply_scope_filter(checks, effective))
 
 
 def _offline_result(
@@ -1807,8 +1845,8 @@ def _score_api_failure(exc: Exception) -> str:
             detail = json.loads(detail).get("error") or detail
         except Exception:
             pass
-        return f"HTTP {exc.code}: {detail or exc.reason}"
-    return f"{type(exc).__name__}: {exc}"
+        return _scrub_local_paths(f"HTTP {exc.code}: {detail or exc.reason}")
+    return _scrub_local_paths(f"{type(exc).__name__}: {exc}")
 
 
 def _score_impl(
@@ -3413,9 +3451,9 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         try:
             res = _dispatch(name, args)
         except urllib.error.URLError as e:
-            return _error(req_id, -32000, f"Failed to fetch URL: {e}")
+            return _error(req_id, -32000, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
         except Exception as e:
-            return _error(req_id, -32000, f"Tool execution failed: {e}")
+            return _error(req_id, -32000, f"Tool execution failed: {_scrub_local_paths(str(e))}")
         # A str result (designesy_score format=review) is already the text
         # the tool returns, so it is sent as written; JSON-encoding it would
         # wrap the markdown in quotes and escape every newline.
@@ -3433,7 +3471,7 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         try:
             content = _RESOURCE_FETCHERS[uri]()
         except Exception as e:
-            return _error(req_id, -32000, f"Failed to read resource: {e}")
+            return _error(req_id, -32000, f"Failed to read resource: {_scrub_local_paths(str(e))}")
         if isinstance(content, str):
             text = content
         else:

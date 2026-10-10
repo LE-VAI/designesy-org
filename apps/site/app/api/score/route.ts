@@ -3854,7 +3854,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   } catch (e) {
     // MANUAL (weight 0), matching engine.ts: the linter did not run here, which
     // says nothing about the site, so it must not cost the site points.
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return {
       id: 'v37',
       item: ITEM,
@@ -3905,7 +3905,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
       detail: `/DESIGN.md linted clean: ${infos} info(s), 0 errors, 0 warnings. Google validates the file; designesy validates the design system. ${totalFindings} finding(s).`,
     };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return {
       id: 'v37',
       item: ITEM,
@@ -3914,6 +3914,36 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
       detail: `/DESIGN.md fetched but lint failed: ${msg}. The file may use a format version the linter doesn't support yet.`,
     };
   }
+}
+
+// ── Error text in a result, shared by both engine copies ───────────────────
+// A caught error's message carries the file system of the machine that ran
+// the engine: Node's "Cannot find package '@google/design.md' imported from
+// <path>" gives the full path of the npm cache the CLI ran from, under the
+// Users folder of the account that ran it, and a result is read by people
+// other than that account. Every check detail passes through
+// sanitizeErrorText before it is returned. It replaces absolute paths (a
+// drive letter, a UNC share, a POSIX home, temp or system root), file:// URLs
+// and npm cache segments, and keeps the clause that says what failed
+// ("Cannot find package '@google/design.md'"). A path segment may hold spaces
+// (an account name often does); the last one may not, so the sentence after
+// a path survives, and trailing punctuation is kept.
+function sanitizeErrorText(text: string): string {
+  const keep = (label: string) => (m: string): string => `${label}${/[.,;:!?)]+$/.exec(m)?.[0] ?? ''}`;
+  return text
+    .replace(/\bfile:\/\/[^\s'"<>`|]*/gi, keep('a local file'))
+    .replace(/\\\\[^\\\s'"<>`|]+\\(?:[^\\\r\n'"<>`|*?]+\\)*[^\\\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(/(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'"<>`|*?]+\1)*[^\\/\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(
+      /(^|[\s'"`(=,:[])\/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel|workspace|workspaces|github|runner|nix|snap)(?:\/[^/\r\n'"<>`|]+(?=\/))*\/[^/\s'"<>`|]+/g,
+      (m: string, lead: string) => `${lead}${keep('a local path')(m.slice(lead.length))}`,
+    )
+    .replace(/[^\s'"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'"<>`|]*/gi, keep('the npm cache'));
+}
+
+/** The checks with every detail passed through sanitizeErrorText. */
+function sanitizeCheckDetails(checks: CheckResult[]): CheckResult[] {
+  return checks.map((c) => (typeof c.detail === 'string' ? { ...c, detail: sanitizeErrorText(c.detail) } : c));
 }
 
 // ── Score arithmetic, shared by both engine copies ─────────────────────────
@@ -4203,7 +4233,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // and tier 3 (contract-specific tokens) when scope=universal. Tier 1 checks
   // (universal accessibility/semantics) are never filtered — their absence is
   // a real WCAG 2.2 violation regardless of scope.
-  checks = applyScopeFilter(checks, effectiveScope);
+  checks = sanitizeCheckDetails(applyScopeFilter(checks, effectiveScope));
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
   const fail = checks.filter((c) => c.status === 'FAIL').length;
@@ -5186,7 +5216,7 @@ export async function POST(request: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json(
-      { ok: false, error: `Could not reach ${url}: ${msg}` },
+      { ok: false, error: `Could not reach ${url}: ${sanitizeErrorText(msg)}` },
       { status: 502 }
     );
   }

@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. Zero dependencies.
+Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. No required dependencies.
 
 ## Install
 
@@ -90,12 +90,14 @@ Plus 12 anti-slop deductions (S1 to S12) and 7 originality lifts (O1 to O7).
 
 Auto-detect: `designesy.org` → contract, everything else → universal.
 
-## Zero dependencies
+## Dependencies
 
-Uses only Node.js built-ins:
+The engine uses only Node.js built-ins:
 - `node:https` for URL fetching (avoids the Windows libuv/undici crash)
 - `node:dns` for SSRF guard (DNS resolution validation)
-- No `ipaddr.js`, no `undici`, no `fetch()`, no external packages
+- No `ipaddr.js`, no `undici`, no `fetch()`
+
+One optional dependency: Google's [`@google/design.md`](https://github.com/google-labs-code/design.md) linter (Apache-2.0), the version the hosted engine runs. v37 uses it to lint a site's `/DESIGN.md`. npm installs it by default, `npx` included. Installed without it (`npm install --omit=optional`), v37 reports MANUAL (not run, weight 0) for a site that serves a DESIGN.md, and every other check is unchanged.
 
 ## SSRF guard
 

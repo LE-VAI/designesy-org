@@ -72,8 +72,12 @@ const ORCHESTRATORS = new Set(['scoreUrlUncached', 'scoreFromParts']);
  * accessibility FAIL). The function is compared as `fn:scoreArithmetic`; the
  * statement that calls it is compared as `call:scoreArithmetic`, so an engine
  * that stops calling it, or calls it with other inputs, is a finding too.
+ *
+ * sanitizeCheckDetails scrubs local paths from every check detail before the
+ * score is computed (published @designesy/score 0.7.0 echoed the CLI user's
+ * npm cache path in v37). An engine that stops calling it would publish them.
  */
-export const SHARED_CALLS = new Set(['scoreArithmetic']);
+export const SHARED_CALLS = new Set(['scoreArithmetic', 'sanitizeCheckDetails']);
 
 /** The shared step a statement calls, if any. */
 function sharedCallIn(node) {

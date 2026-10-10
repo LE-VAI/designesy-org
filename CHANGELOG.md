@@ -6,6 +6,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**@designesy/score 0.7.1** (npm). Engine 1.2.0, unchanged: no check, verdict
+or weight changes. Under `npx`, v37 now runs the way it already runs on
+designesy.org, and no result carries a local file path.
+
+### Fixed
+
+- **v37 runs under `npx @designesy/score`.** The engine lints a site's
+  `/DESIGN.md` with Google's `@google/design.md` linter, but 0.7.0 did not
+  declare the package, so under `npx` the import failed and v37 reported
+  MANUAL for every site that serves a DESIGN.md. 0.7.1 declares
+  `@google/design.md` 0.4.0 (Apache-2.0), the version the hosted engine runs,
+  as an optional dependency, which npm installs by default. For designesy.org
+  the CLI now returns what the site returns: 41 PASS and 3 MANUAL (v02, v04 and
+  v21, which need a browser), where 0.7.0 returned 40 PASS and 4 MANUAL. An
+  install that omits optional dependencies keeps the 0.7.0 behaviour for v37
+  (MANUAL, weight 0). The package's README and description no longer say
+  "zero dependencies": the engine needs none, and this one is optional.
+- **No result carries a local file path.** 0.7.0's v37 detail quoted Node's
+  error verbatim, including the absolute path of the npm cache it ran from,
+  and with it the name of the account that ran the CLI. Both engine copies now
+  pass every check detail, and the site's 502 error text, through one shared
+  `sanitizeErrorText`: absolute paths (a drive letter, a UNC share, a POSIX
+  home, temp or system root), `file://` URLs and npm cache segments become "a
+  local path", "a local file" or "the npm cache", and the clause that says
+  what failed stays ("Cannot find package '@google/design.md' imported from a
+  local path"). The source-drift gate compares the function and the
+  orchestrators' call to it. `test/error-text.test.mjs` pins the cases, each
+  failing with the sanitiser removed.
+- **designesy-mcp (next release): the same scrub in the PyPI server.** Its
+  browser-probe errors (v02, v21), a failed `/api/score` call and JSON-RPC
+  error messages could carry a local path the same way; `_scrub_local_paths`
+  mirrors the TypeScript function and its tests share the cases. No version
+  bump here: 1.13.4 shipped without it, so it ships with the next
+  designesy-mcp release.
+
 ## [1.13.4] — 2026-10-10
 
 **designesy-mcp 1.13.4** (PyPI, MCP registry, hosted `/api/mcp`): tool output reads as reference data, `designesy_contract` returns only the sections you ask for, and every description matches what its tool returns (Anthropic Software Directory Policy 2B, 2F, 5B).

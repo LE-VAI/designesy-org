@@ -6,8 +6,9 @@
  * browser), computes a weighted score (0-100), assigns a letter grade (A-F),
  * and applies anti-slop deductions + originality lifts.
  *
- * Zero dependencies. Uses node:https (not fetch/undici) to avoid the Windows
- * libuv crash during process exit.
+ * No required dependencies. Uses node:https (not fetch/undici) to avoid the
+ * Windows libuv crash during process exit. One optional dependency,
+ * @google/design.md, lints /DESIGN.md for v37; without it v37 is MANUAL.
  *
  * Extracted from apps/site/app/api/score/route.ts — same engine, same checks,
  * same scoring math. The API route wraps this module; the CLI calls it directly.
@@ -3608,7 +3609,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     // package missing from THIS runtime, so the same page scored lower from the
     // npm CLI than from the API. Unverified-here is what MANUAL means (v02,
     // v04, v21): weight 0, resolved by a run that has the linter.
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return { id: 'v37', item: ITEM, category: CATEGORY, status: 'MANUAL', detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime; run the full audit to resolve.` };
   }
   try {
@@ -3623,9 +3624,39 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     // Distinct from the branch above: the linter LOADED and then threw, so the
     // file's format is unsupported rather than the runtime being incomplete.
     // Both WARN, but the messages point at different fixes.
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md fetched but lint failed: ${msg}. The file may use a format version the linter doesn't support yet.` };
   }
+}
+
+// ── Error text in a result, shared by both engine copies ───────────────────
+// A caught error's message carries the file system of the machine that ran
+// the engine: Node's "Cannot find package '@google/design.md' imported from
+// <path>" gives the full path of the npm cache the CLI ran from, under the
+// Users folder of the account that ran it, and a result is read by people
+// other than that account. Every check detail passes through
+// sanitizeErrorText before it is returned. It replaces absolute paths (a
+// drive letter, a UNC share, a POSIX home, temp or system root), file:// URLs
+// and npm cache segments, and keeps the clause that says what failed
+// ("Cannot find package '@google/design.md'"). A path segment may hold spaces
+// (an account name often does); the last one may not, so the sentence after
+// a path survives, and trailing punctuation is kept.
+function sanitizeErrorText(text: string): string {
+  const keep = (label: string) => (m: string): string => `${label}${/[.,;:!?)]+$/.exec(m)?.[0] ?? ''}`;
+  return text
+    .replace(/\bfile:\/\/[^\s'"<>`|]*/gi, keep('a local file'))
+    .replace(/\\\\[^\\\s'"<>`|]+\\(?:[^\\\r\n'"<>`|*?]+\\)*[^\\\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(/(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'"<>`|*?]+\1)*[^\\/\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(
+      /(^|[\s'"`(=,:[])\/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel|workspace|workspaces|github|runner|nix|snap)(?:\/[^/\r\n'"<>`|]+(?=\/))*\/[^/\s'"<>`|]+/g,
+      (m: string, lead: string) => `${lead}${keep('a local path')(m.slice(lead.length))}`,
+    )
+    .replace(/[^\s'"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'"<>`|]*/gi, keep('the npm cache'));
+}
+
+/** The checks with every detail passed through sanitizeErrorText. */
+function sanitizeCheckDetails(checks: CheckResult[]): CheckResult[] {
+  return checks.map((c) => (typeof c.detail === 'string' ? { ...c, detail: sanitizeErrorText(c.detail) } : c));
 }
 
 // ── Score arithmetic, shared by both engine copies ─────────────────────────
@@ -3971,7 +4002,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
       : await checkDesignMdSpec(targetUrl),
   );
 
-  checks = applyScopeFilter(checks, effectiveScope);
+  checks = sanitizeCheckDetails(applyScopeFilter(checks, effectiveScope));
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
   const fail = checks.filter((c) => c.status === 'FAIL').length;
