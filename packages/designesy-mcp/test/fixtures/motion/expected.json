@@ -1,0 +1,657 @@
+{
+  "broken.json": {
+    "contract_id": "designesy.motion",
+    "contract_version": "0.1.0",
+    "contract_status": "provisional",
+    "url": "(inline lottie_file)",
+    "lottie_version": "4.8.0",
+    "layer_count": 2,
+    "score": 8,
+    "grade": "F",
+    "pass_count": 0,
+    "fail_count": 5,
+    "warn_count": 1,
+    "skip_count": 4,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "m01",
+        "name": "Lottie file validates against LAC v1.0.1 JSON Schema",
+        "status": "FAIL",
+        "detail": "Schema violations in the top-level animation object: ip is missing; w must be an integer of at least 0; fr must be a number above 0; 1 layer is not an object; nm must be a string; markers must be an array; slots must be an object. Schema: https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+      },
+      {
+        "id": "m02",
+        "name": "Required fields present (v, fr, ip, op, w, h, layers)",
+        "status": "FAIL",
+        "detail": "Required fields missing: ip. The contract requires v, fr, ip, op, w, h, layers."
+      },
+      {
+        "id": "m03",
+        "name": "No deprecated Bodymovin version (v: \"4.x\")",
+        "status": "FAIL",
+        "detail": "Bodymovin version: v is \"4.8.0\", a 4.x export, which is deprecated: re-export with an exporter that follows the Lottie spec."
+      },
+      {
+        "id": "m04",
+        "name": "markers array present (reduced-motion support)",
+        "status": "FAIL",
+        "detail": "No markers array, so a player has no named segment to choose for reduced motion."
+      },
+      {
+        "id": "m05",
+        "name": "meta object present (attribution, author, description)",
+        "status": "WARN",
+        "detail": "No meta object, so the file carries no attribution, author or description (an attribution gap)."
+      },
+      {
+        "id": "m06",
+        "name": "prefers-reduced-motion path documented (§3.4)",
+        "status": "FAIL",
+        "detail": "No reduced-motion path documented: no marker or slot is named for reduced motion (reduced, calm, static, still, no-motion), and meta does not note an external prefers-reduced-motion wrapper."
+      },
+      {
+        "id": "m07",
+        "name": "Easing uses deliberate curves (§16.1, §16.10)",
+        "status": "SKIP",
+        "detail": "Easing: no eased keyframes to check (2 layers, no animated property with bezier handles), so §16.1 (Easing is deliberate) and §16.10 (Easing is never ease-in) have nothing to test."
+      },
+      {
+        "id": "m08",
+        "name": "Duration ≤ 300ms for UI motion (§16.7)",
+        "status": "SKIP",
+        "detail": "Duration cannot be computed: it needs fr above 0 and op greater than ip (fr 0, ip missing, op 12)."
+      },
+      {
+        "id": "m09",
+        "name": "No layout-property animation (§16.5)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.5 (Layout is not animated) concerns CSS layout properties (width, height, margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes inside its own canvas. Check the page that embeds it with designesy_score."
+      },
+      {
+        "id": "m10",
+        "name": "No motion on keyboard-initiated actions (§16.4)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.4 (Keyboard is still) concerns what starts playback, and whether a keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+      }
+    ],
+    "ten_non_negotiable": [
+      {
+        "num": 1,
+        "rule": "Easing is deliberate",
+        "detail": "Use contract cubicBezier tokens instead of bare CSS keywords"
+      },
+      {
+        "num": 2,
+        "rule": "Properties are explicit",
+        "detail": "Never transition:all. Name exact properties."
+      },
+      {
+        "num": 3,
+        "rule": "Entrances have opacity",
+        "detail": "Animate from scale(0.9-0.97) + opacity, never scale(0)"
+      },
+      {
+        "num": 4,
+        "rule": "Keyboard is still",
+        "detail": "No motion on keyboard-initiated or high-frequency interactions"
+      },
+      {
+        "num": 5,
+        "rule": "Layout is not animated",
+        "detail": "Never animate width/height/margin/padding/top/left. Use transform/opacity."
+      },
+      {
+        "num": 6,
+        "rule": "Touch is gated",
+        "detail": ":hover motion on touch surfaces requires explicit gating"
+      },
+      {
+        "num": 7,
+        "rule": "Duration is bounded",
+        "detail": "UI animation ≤ 300ms unless justified"
+      },
+      {
+        "num": 8,
+        "rule": "Reduced-motion is handled",
+        "detail": "Every animation has prefers-reduced-motion path"
+      },
+      {
+        "num": 9,
+        "rule": "Press is asymmetric",
+        "detail": "Press and release use asymmetric timing"
+      },
+      {
+        "num": 10,
+        "rule": "Easing is never ease-in",
+        "detail": "No ease-in. Deceleration (ease-out) or custom curves only."
+      }
+    ],
+    "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+    "validator_note": "m01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from \"ajv/dist/2020\") with ajv-formats 3 against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+  },
+  "conformant.json": {
+    "contract_id": "designesy.motion",
+    "contract_version": "0.1.0",
+    "contract_status": "provisional",
+    "url": "(inline lottie_file)",
+    "lottie_version": "5.12.0",
+    "layer_count": 1,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 7,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 3,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "m01",
+        "name": "Lottie file validates against LAC v1.0.1 JSON Schema",
+        "status": "SKIP",
+        "detail": "Schema: the top-level animation object has no violation (w, h, fr, ip, op and layers are present and typed as the schema requires). Layer contents are not validated here, so this is not a full schema pass: validate the file with ajv 8 (ajv/dist/2020) and ajv-formats against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+      },
+      {
+        "id": "m02",
+        "name": "Required fields present (v, fr, ip, op, w, h, layers)",
+        "status": "PASS",
+        "detail": "Required fields present: v, fr, ip, op, w, h, layers."
+      },
+      {
+        "id": "m03",
+        "name": "No deprecated Bodymovin version (v: \"4.x\")",
+        "status": "PASS",
+        "detail": "Bodymovin version: v is \"5.12.0\", 5.x or later, so not deprecated."
+      },
+      {
+        "id": "m04",
+        "name": "markers array present (reduced-motion support)",
+        "status": "PASS",
+        "detail": "markers array present with 2 markers: intro, reduced."
+      },
+      {
+        "id": "m05",
+        "name": "meta object present (attribution, author, description)",
+        "status": "PASS",
+        "detail": "meta object present with author, description, keywords, generator."
+      },
+      {
+        "id": "m06",
+        "name": "prefers-reduced-motion path documented (§3.4)",
+        "status": "PASS",
+        "detail": "Reduced-motion path documented in the file: marker \"reduced\"."
+      },
+      {
+        "id": "m07",
+        "name": "Easing uses deliberate curves (§16.1, §16.10)",
+        "status": "PASS",
+        "detail": "Easing: the one eased keyframe uses a custom curve, as §16.1 (Easing is deliberate) and §16.10 (Easing is never ease-in) require."
+      },
+      {
+        "id": "m08",
+        "name": "Duration ≤ 300ms for UI motion (§16.7)",
+        "status": "PASS",
+        "detail": "Duration 300 ms (18 frames at 60 fps) is within the 300 ms bound for UI motion, §16.7 (Duration is bounded)."
+      },
+      {
+        "id": "m09",
+        "name": "No layout-property animation (§16.5)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.5 (Layout is not animated) concerns CSS layout properties (width, height, margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes inside its own canvas. Check the page that embeds it with designesy_score."
+      },
+      {
+        "id": "m10",
+        "name": "No motion on keyboard-initiated actions (§16.4)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.4 (Keyboard is still) concerns what starts playback, and whether a keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+      }
+    ],
+    "ten_non_negotiable": [
+      {
+        "num": 1,
+        "rule": "Easing is deliberate",
+        "detail": "Use contract cubicBezier tokens instead of bare CSS keywords"
+      },
+      {
+        "num": 2,
+        "rule": "Properties are explicit",
+        "detail": "Never transition:all. Name exact properties."
+      },
+      {
+        "num": 3,
+        "rule": "Entrances have opacity",
+        "detail": "Animate from scale(0.9-0.97) + opacity, never scale(0)"
+      },
+      {
+        "num": 4,
+        "rule": "Keyboard is still",
+        "detail": "No motion on keyboard-initiated or high-frequency interactions"
+      },
+      {
+        "num": 5,
+        "rule": "Layout is not animated",
+        "detail": "Never animate width/height/margin/padding/top/left. Use transform/opacity."
+      },
+      {
+        "num": 6,
+        "rule": "Touch is gated",
+        "detail": ":hover motion on touch surfaces requires explicit gating"
+      },
+      {
+        "num": 7,
+        "rule": "Duration is bounded",
+        "detail": "UI animation ≤ 300ms unless justified"
+      },
+      {
+        "num": 8,
+        "rule": "Reduced-motion is handled",
+        "detail": "Every animation has prefers-reduced-motion path"
+      },
+      {
+        "num": 9,
+        "rule": "Press is asymmetric",
+        "detail": "Press and release use asymmetric timing"
+      },
+      {
+        "num": 10,
+        "rule": "Easing is never ease-in",
+        "detail": "No ease-in. Deceleration (ease-out) or custom curves only."
+      }
+    ],
+    "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+    "validator_note": "m01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from \"ajv/dist/2020\") with ajv-formats 3 against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+  },
+  "dot-no-markers.json": {
+    "contract_id": "designesy.motion",
+    "contract_version": "0.1.0",
+    "contract_status": "provisional",
+    "url": "(inline lottie_file)",
+    "lottie_version": "5.7.4",
+    "layer_count": 0,
+    "score": 42,
+    "grade": "F",
+    "pass_count": 1,
+    "fail_count": 2,
+    "warn_count": 3,
+    "skip_count": 4,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "m01",
+        "name": "Lottie file validates against LAC v1.0.1 JSON Schema",
+        "status": "SKIP",
+        "detail": "Schema: the top-level animation object has no violation (w, h, fr, ip, op and layers are present and typed as the schema requires). Layer contents are not validated here, so this is not a full schema pass: validate the file with ajv 8 (ajv/dist/2020) and ajv-formats against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+      },
+      {
+        "id": "m02",
+        "name": "Required fields present (v, fr, ip, op, w, h, layers)",
+        "status": "WARN",
+        "detail": "Required fields present (v, fr, ip, op, w, h, layers), but layers is empty, so the animation draws nothing."
+      },
+      {
+        "id": "m03",
+        "name": "No deprecated Bodymovin version (v: \"4.x\")",
+        "status": "PASS",
+        "detail": "Bodymovin version: v is \"5.7.4\", 5.x or later, so not deprecated."
+      },
+      {
+        "id": "m04",
+        "name": "markers array present (reduced-motion support)",
+        "status": "FAIL",
+        "detail": "No markers array, so a player has no named segment to choose for reduced motion."
+      },
+      {
+        "id": "m05",
+        "name": "meta object present (attribution, author, description)",
+        "status": "WARN",
+        "detail": "No meta object, so the file carries no attribution, author or description (an attribution gap)."
+      },
+      {
+        "id": "m06",
+        "name": "prefers-reduced-motion path documented (§3.4)",
+        "status": "FAIL",
+        "detail": "No reduced-motion path documented: no marker or slot is named for reduced motion (reduced, calm, static, still, no-motion), and meta does not note an external prefers-reduced-motion wrapper."
+      },
+      {
+        "id": "m07",
+        "name": "Easing uses deliberate curves (§16.1, §16.10)",
+        "status": "SKIP",
+        "detail": "Easing: no eased keyframes to check (0 layers, no animated property with bezier handles), so §16.1 (Easing is deliberate) and §16.10 (Easing is never ease-in) have nothing to test."
+      },
+      {
+        "id": "m08",
+        "name": "Duration ≤ 300ms for UI motion (§16.7)",
+        "status": "WARN",
+        "detail": "Duration 2000 ms (60 frames at 30 fps) exceeds the 300 ms bound for UI motion, §16.7 (Duration is bounded). Longer motion needs a stated justification, which this tool cannot read from a file: shorten it if it is UI motion."
+      },
+      {
+        "id": "m09",
+        "name": "No layout-property animation (§16.5)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.5 (Layout is not animated) concerns CSS layout properties (width, height, margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes inside its own canvas. Check the page that embeds it with designesy_score."
+      },
+      {
+        "id": "m10",
+        "name": "No motion on keyboard-initiated actions (§16.4)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.4 (Keyboard is still) concerns what starts playback, and whether a keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+      }
+    ],
+    "ten_non_negotiable": [
+      {
+        "num": 1,
+        "rule": "Easing is deliberate",
+        "detail": "Use contract cubicBezier tokens instead of bare CSS keywords"
+      },
+      {
+        "num": 2,
+        "rule": "Properties are explicit",
+        "detail": "Never transition:all. Name exact properties."
+      },
+      {
+        "num": 3,
+        "rule": "Entrances have opacity",
+        "detail": "Animate from scale(0.9-0.97) + opacity, never scale(0)"
+      },
+      {
+        "num": 4,
+        "rule": "Keyboard is still",
+        "detail": "No motion on keyboard-initiated or high-frequency interactions"
+      },
+      {
+        "num": 5,
+        "rule": "Layout is not animated",
+        "detail": "Never animate width/height/margin/padding/top/left. Use transform/opacity."
+      },
+      {
+        "num": 6,
+        "rule": "Touch is gated",
+        "detail": ":hover motion on touch surfaces requires explicit gating"
+      },
+      {
+        "num": 7,
+        "rule": "Duration is bounded",
+        "detail": "UI animation ≤ 300ms unless justified"
+      },
+      {
+        "num": 8,
+        "rule": "Reduced-motion is handled",
+        "detail": "Every animation has prefers-reduced-motion path"
+      },
+      {
+        "num": 9,
+        "rule": "Press is asymmetric",
+        "detail": "Press and release use asymmetric timing"
+      },
+      {
+        "num": 10,
+        "rule": "Easing is never ease-in",
+        "detail": "No ease-in. Deceleration (ease-out) or custom curves only."
+      }
+    ],
+    "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+    "validator_note": "m01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from \"ajv/dist/2020\") with ajv-formats 3 against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+  },
+  "rejected-curves.json": {
+    "contract_id": "designesy.motion",
+    "contract_version": "0.1.0",
+    "contract_status": "provisional",
+    "url": "(inline lottie_file)",
+    "lottie_version": "5.9.6",
+    "layer_count": 1,
+    "score": 71,
+    "grade": "C",
+    "pass_count": 4,
+    "fail_count": 1,
+    "warn_count": 2,
+    "skip_count": 3,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "m01",
+        "name": "Lottie file validates against LAC v1.0.1 JSON Schema",
+        "status": "SKIP",
+        "detail": "Schema: the top-level animation object has no violation (w, h, fr, ip, op and layers are present and typed as the schema requires). Layer contents are not validated here, so this is not a full schema pass: validate the file with ajv 8 (ajv/dist/2020) and ajv-formats against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+      },
+      {
+        "id": "m02",
+        "name": "Required fields present (v, fr, ip, op, w, h, layers)",
+        "status": "PASS",
+        "detail": "Required fields present: v, fr, ip, op, w, h, layers."
+      },
+      {
+        "id": "m03",
+        "name": "No deprecated Bodymovin version (v: \"4.x\")",
+        "status": "PASS",
+        "detail": "Bodymovin version: v is \"5.9.6\", 5.x or later, so not deprecated."
+      },
+      {
+        "id": "m04",
+        "name": "markers array present (reduced-motion support)",
+        "status": "PASS",
+        "detail": "markers array present with 1 marker: loop."
+      },
+      {
+        "id": "m05",
+        "name": "meta object present (attribution, author, description)",
+        "status": "PASS",
+        "detail": "meta object present with description."
+      },
+      {
+        "id": "m06",
+        "name": "prefers-reduced-motion path documented (§3.4)",
+        "status": "WARN",
+        "detail": "Reduced motion is handled outside the file: meta notes an external prefers-reduced-motion wrapper, which this tool cannot see."
+      },
+      {
+        "id": "m07",
+        "name": "Easing uses deliberate curves (§16.1, §16.10)",
+        "status": "FAIL",
+        "detail": "Easing: 3 of 4 eased keyframes use a curve §16.1 (Easing is deliberate) and §16.10 (Easing is never ease-in) reject (1 linear, 1 ease, 1 ease-in). Use a custom curve that decelerates, such as the contract's cubicBezier tokens."
+      },
+      {
+        "id": "m08",
+        "name": "Duration ≤ 300ms for UI motion (§16.7)",
+        "status": "WARN",
+        "detail": "Duration 1000 ms (30 frames at 30 fps) exceeds the 300 ms bound for UI motion, §16.7 (Duration is bounded). Longer motion needs a stated justification, which this tool cannot read from a file: shorten it if it is UI motion."
+      },
+      {
+        "id": "m09",
+        "name": "No layout-property animation (§16.5)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.5 (Layout is not animated) concerns CSS layout properties (width, height, margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes inside its own canvas. Check the page that embeds it with designesy_score."
+      },
+      {
+        "id": "m10",
+        "name": "No motion on keyboard-initiated actions (§16.4)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.4 (Keyboard is still) concerns what starts playback, and whether a keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+      }
+    ],
+    "ten_non_negotiable": [
+      {
+        "num": 1,
+        "rule": "Easing is deliberate",
+        "detail": "Use contract cubicBezier tokens instead of bare CSS keywords"
+      },
+      {
+        "num": 2,
+        "rule": "Properties are explicit",
+        "detail": "Never transition:all. Name exact properties."
+      },
+      {
+        "num": 3,
+        "rule": "Entrances have opacity",
+        "detail": "Animate from scale(0.9-0.97) + opacity, never scale(0)"
+      },
+      {
+        "num": 4,
+        "rule": "Keyboard is still",
+        "detail": "No motion on keyboard-initiated or high-frequency interactions"
+      },
+      {
+        "num": 5,
+        "rule": "Layout is not animated",
+        "detail": "Never animate width/height/margin/padding/top/left. Use transform/opacity."
+      },
+      {
+        "num": 6,
+        "rule": "Touch is gated",
+        "detail": ":hover motion on touch surfaces requires explicit gating"
+      },
+      {
+        "num": 7,
+        "rule": "Duration is bounded",
+        "detail": "UI animation ≤ 300ms unless justified"
+      },
+      {
+        "num": 8,
+        "rule": "Reduced-motion is handled",
+        "detail": "Every animation has prefers-reduced-motion path"
+      },
+      {
+        "num": 9,
+        "rule": "Press is asymmetric",
+        "detail": "Press and release use asymmetric timing"
+      },
+      {
+        "num": 10,
+        "rule": "Easing is never ease-in",
+        "detail": "No ease-in. Deceleration (ease-out) or custom curves only."
+      }
+    ],
+    "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+    "validator_note": "m01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from \"ajv/dist/2020\") with ajv-formats 3 against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+  },
+  "slot-hold-no-version.json": {
+    "contract_id": "designesy.motion",
+    "contract_version": "0.1.0",
+    "contract_status": "provisional",
+    "url": "(inline lottie_file)",
+    "lottie_version": null,
+    "layer_count": 1,
+    "score": 50,
+    "grade": "F",
+    "pass_count": 3,
+    "fail_count": 3,
+    "warn_count": 0,
+    "skip_count": 4,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "m01",
+        "name": "Lottie file validates against LAC v1.0.1 JSON Schema",
+        "status": "SKIP",
+        "detail": "Schema: the top-level animation object has no violation (w, h, fr, ip, op and layers are present and typed as the schema requires). Layer contents are not validated here, so this is not a full schema pass: validate the file with ajv 8 (ajv/dist/2020) and ajv-formats against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+      },
+      {
+        "id": "m02",
+        "name": "Required fields present (v, fr, ip, op, w, h, layers)",
+        "status": "FAIL",
+        "detail": "Required fields missing: v. The contract requires v, fr, ip, op, w, h, layers."
+      },
+      {
+        "id": "m03",
+        "name": "No deprecated Bodymovin version (v: \"4.x\")",
+        "status": "SKIP",
+        "detail": "Bodymovin version: the file has no v field, so its exporter version cannot be checked (m02 reports the missing field)."
+      },
+      {
+        "id": "m04",
+        "name": "markers array present (reduced-motion support)",
+        "status": "FAIL",
+        "detail": "No markers array, so a player has no named segment to choose for reduced motion."
+      },
+      {
+        "id": "m05",
+        "name": "meta object present (attribution, author, description)",
+        "status": "PASS",
+        "detail": "meta object present, with none of author, description or keywords filled in."
+      },
+      {
+        "id": "m06",
+        "name": "prefers-reduced-motion path documented (§3.4)",
+        "status": "PASS",
+        "detail": "Reduced-motion path documented in the file: slot \"reduced-motion\"."
+      },
+      {
+        "id": "m07",
+        "name": "Easing uses deliberate curves (§16.1, §16.10)",
+        "status": "FAIL",
+        "detail": "Easing: 1 of 1 eased keyframe uses a curve §16.1 (Easing is deliberate) and §16.10 (Easing is never ease-in) reject (1 linear). Use a custom curve that decelerates, such as the contract's cubicBezier tokens."
+      },
+      {
+        "id": "m08",
+        "name": "Duration ≤ 300ms for UI motion (§16.7)",
+        "status": "PASS",
+        "detail": "Duration 250 ms (6 frames at 24 fps) is within the 300 ms bound for UI motion, §16.7 (Duration is bounded)."
+      },
+      {
+        "id": "m09",
+        "name": "No layout-property animation (§16.5)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.5 (Layout is not animated) concerns CSS layout properties (width, height, margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes inside its own canvas. Check the page that embeds it with designesy_score."
+      },
+      {
+        "id": "m10",
+        "name": "No motion on keyboard-initiated actions (§16.4)",
+        "status": "SKIP",
+        "detail": "Not applicable to a Lottie file: §16.4 (Keyboard is still) concerns what starts playback, and whether a keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+      }
+    ],
+    "ten_non_negotiable": [
+      {
+        "num": 1,
+        "rule": "Easing is deliberate",
+        "detail": "Use contract cubicBezier tokens instead of bare CSS keywords"
+      },
+      {
+        "num": 2,
+        "rule": "Properties are explicit",
+        "detail": "Never transition:all. Name exact properties."
+      },
+      {
+        "num": 3,
+        "rule": "Entrances have opacity",
+        "detail": "Animate from scale(0.9-0.97) + opacity, never scale(0)"
+      },
+      {
+        "num": 4,
+        "rule": "Keyboard is still",
+        "detail": "No motion on keyboard-initiated or high-frequency interactions"
+      },
+      {
+        "num": 5,
+        "rule": "Layout is not animated",
+        "detail": "Never animate width/height/margin/padding/top/left. Use transform/opacity."
+      },
+      {
+        "num": 6,
+        "rule": "Touch is gated",
+        "detail": ":hover motion on touch surfaces requires explicit gating"
+      },
+      {
+        "num": 7,
+        "rule": "Duration is bounded",
+        "detail": "UI animation ≤ 300ms unless justified"
+      },
+      {
+        "num": 8,
+        "rule": "Reduced-motion is handled",
+        "detail": "Every animation has prefers-reduced-motion path"
+      },
+      {
+        "num": 9,
+        "rule": "Press is asymmetric",
+        "detail": "Press and release use asymmetric timing"
+      },
+      {
+        "num": 10,
+        "rule": "Easing is never ease-in",
+        "detail": "No ease-in. Deceleration (ease-out) or custom curves only."
+      }
+    ],
+    "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+    "validator_note": "m01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from \"ajv/dist/2020\") with ajv-formats 3 against https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json."
+  }
+}
